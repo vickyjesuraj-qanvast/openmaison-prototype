@@ -28,11 +28,13 @@ export function Dropdown({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
     }
-    // The trigger is a sibling inside the same relative wrapper: a press on it must not
-    // close-then-reopen the menu, so only presses outside the wrapper close it.
+    // Anything outside the menu closes it (user 2026-08-29: the wrapper is sometimes a whole toolbar row) —
+    // except the open trigger itself, whose own click toggles the menu (no close-then-reopen).
     const onDown = (e: MouseEvent) => {
-      const host = ref.current?.parentElement ?? ref.current
-      if (host && !host.contains(e.target as Node)) onClose()
+      const t = e.target as Element | null
+      if (!t || ref.current?.contains(t)) return
+      if (t.closest('[aria-haspopup][aria-expanded="true"]')) return
+      onClose()
     }
     document.addEventListener('keydown', onKey)
     const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)

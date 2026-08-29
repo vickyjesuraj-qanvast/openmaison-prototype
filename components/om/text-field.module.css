@@ -1,0 +1,69 @@
+/* Text Field — DS "Text Field / 48px" (OpenMaison Components; states from 836:23125 + 836:23276):
+   Empty   1px on-surface/border, label sits INSIDE as body-m secondary
+   Active  2px primary, label floats to the top border as 12/16 primary
+   Filled  1px border, floated label secondary
+   Error   1px red, red label, red 12/16 message 4px below
+   Disabled 1px surface-variant, label / text / icon on-surface/disabled
+   Helper text (12/16 secondary) sits where the error message does. */
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-1); flex: 1; min-width: 0; width: 100%; }
+.box {
+  position: relative;
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 48px; width: 100%;
+  padding: 0 12px 0 16px;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  cursor: text;
+  transition: border-color var(--motion-toggle), box-shadow var(--motion-toggle);
+}
+.field[data-kind='select'] .box, .field[data-kind='trigger'] .box { cursor: pointer; }
+.field[data-active] .box { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }   /* 1px border + 1px inset = the DS 2px active stroke, no layout shift */
+.field[data-error] .box { border-color: var(--om-color-tertiary-red-default); box-shadow: none; }
+.field[data-error][data-active] .box { box-shadow: inset 0 0 0 1px var(--om-color-tertiary-red-default); }
+.field[data-disabled] .box { border-color: var(--om-color-surface-variant); cursor: default; }
+
+.label {
+  position: absolute; left: 16px; top: 50%;
+  transform: translateY(-50%);
+  max-width: calc(100% - 32px);
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+  transition: top var(--motion-toggle), left var(--motion-toggle), font-size var(--motion-toggle), line-height var(--motion-toggle), padding var(--motion-toggle), color var(--motion-toggle);
+}
+.field[data-floated] .label {
+  top: 0; left: 12px;
+  padding: 0 4px;
+  background: var(--om-color-surface-default);
+  font: var(--om-type-body-s);
+  line-height: 16px;
+}
+.field[data-active] .label { color: var(--om-color-primary-default); }
+.field[data-error] .label { color: var(--om-color-tertiary-red-default); }
+.field[data-disabled] .label { color: var(--om-color-on-surface-disabled); }
+
+.control {
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; outline: 0; background: none; padding: 0; margin: 0;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: flex; align-items: center;
+  cursor: inherit;
+}
+.control:focus, .control:focus-visible { outline: none; box-shadow: none; }   /* the box carries the DS active stroke; no inner ring */
+.control::placeholder { color: var(--om-color-on-surface-secondary); opacity: 0; transition: opacity var(--motion-toggle); }
+.field[data-floated] .control::placeholder { opacity: 1; }   /* the placeholder only appears once the label has moved out of the way */
+.field[data-disabled] .control { color: var(--om-color-on-surface-disabled); }
+.placeholder { color: var(--om-color-on-surface-secondary); }
+.leading { color: var(--om-color-on-surface-default); font: var(--om-type-body-m); flex-shrink: 0; }
+.trail { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; transition: transform var(--motion-toggle); }
+.field[data-kind='select'][data-open] .trail { transform: rotate(180deg); }   /* select open → chevron up (user 2026-08-28) */
+.field[data-disabled] .trail { color: var(--om-color-on-surface-disabled); }
+.trailSlot { display: inline-flex; align-items: center; flex-shrink: 0; }
+
+.support { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-on-surface-secondary); display: flex; align-items: center; gap: 4px; }
+.field[data-error] .support { color: var(--om-color-tertiary-red-default); }

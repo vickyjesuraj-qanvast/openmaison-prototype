@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { MSG } from '@/lib/forms'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -15,6 +16,7 @@ export function AssignPopover({
   value,
   onClose,
   onApply,
+  requireOne = false,
   position,
 }: {
   open: boolean
@@ -22,6 +24,8 @@ export function AssignPopover({
   value: string[]
   onClose: () => void
   onApply: (memberIds: string[]) => void
+  /** Past New a lead must keep an owner (user 2026-08-29): saving with nobody assigned is blocked with a message. */
+  requireOne?: boolean
   position: { top: number; left: number } | null
 }) {
   const [picked, setPicked] = useState<Set<string>>(new Set(value))
@@ -76,10 +80,11 @@ export function AssignPopover({
             ))}
           </div>
           <div className={styles.foot}>
+            {requireOne && picked.size === 0 ? <span className={styles.footMsg} role="alert">{MSG.assignee}</span> : null}
             <Button variant="secondary" appearance="outlined" onPress={() => setPicked(new Set())}>
               Clear All
             </Button>
-            <Button onPress={() => onApply(Array.from(picked))}>Assign</Button>
+            <Button isDisabled={requireOne && picked.size === 0} onPress={() => onApply(Array.from(picked))}>Assign</Button>
           </div>
         </motion.div>
       ) : null}

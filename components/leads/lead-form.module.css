@@ -8,7 +8,7 @@
   overflow-y: auto;
 }
 .panel {
-  width: 600px; flex-shrink: 0;
+  width: var(--om-modal-m); flex-shrink: 0;
   max-height: calc(100vh - 96px);
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
@@ -38,7 +38,6 @@
 .fieldRow { display: flex; gap: var(--om-spacing-6); align-items: flex-start; width: 100%; }
 .fieldRow > * { flex: 1; min-width: 0; }
 .helper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-top: var(--om-spacing-1); }
-.helperError { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); margin-top: var(--om-spacing-1); }
 .fieldWrap { display: flex; flex-direction: column; width: 100%; }
 
 .moreToggle {
@@ -48,9 +47,10 @@
 }
 .moreToggle span[data-chev] { color: var(--om-color-on-surface-secondary); display: inline-flex; }
 
-/* Composite inputs sharing the FloatingField box anatomy. */
-.divider { width: 1px; align-self: stretch; background: var(--om-color-surface-variant); flex-shrink: 0; }
-.prefix { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* Composite inputs living in the TextField's leading / trailing slots (779:24644, 780:82374). */
+.divider { width: 1px; height: 20px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+.prefix { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.unitSlot { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
 .unitBtn {
   display: inline-flex; gap: var(--om-spacing-1); align-items: center;
   border: 0; background: none; padding: 0; cursor: pointer;

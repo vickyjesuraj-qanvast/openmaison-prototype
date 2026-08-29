@@ -77,6 +77,8 @@ export type ReviewRow = {
   receivedAt: Date
   fileName: string
   existing: Lead | null
+  /** Queue duplicate: the other import row it collided with — same file, or an earlier import still in the queue (no existing lead to merge into). */
+  twin: { data: Record<string, string>; status: string; sameFile: boolean; fileName: string } | null
 }
 
 /** Review queue (779:26221): every imported row still pending or flagged duplicate. */
@@ -84,6 +86,18 @@ export async function fetchReviewRows(): Promise<ReviewRow[]> {
   const rows = await db.select().from(importRows).where(inArray(importRows.status, ['pending', 'duplicate']))
   if (rows.length === 0) return []
   const batchIds = Array.from(new Set(rows.map((r) => r.importId)))
+  // Every row of those imports (approved ones included) so an in-file duplicate can show the row it collided with.
+  const siblings = await db.select().from(importRows).where(inArray(importRows.importId, batchIds))
+  const keyOf = (d: Record<string, string>, on: string | null) => on === 'email' ? (d['Lead Email'] ?? '').trim().toLowerCase() : (d['Lead Phone Number'] ?? '').replace(/\D/g, '')
+  const twinOf = (row: ImportRow): ReviewRow['twin'] => {
+    if (row.status !== 'duplicate' || row.duplicateOfLeadId) return null
+    const d = row.data as Record<string, string>; const on = row.matchedOn ?? 'phone'; const k = keyOf(d, on)
+    if (!k) return null
+    // The importer flags against earlier rows of the same file AND against rows still queued from earlier imports.
+    const rank = (r: ImportRow) => (r.importId === row.importId ? 0 : 10) + (r.status === 'approved' ? 0 : r.status === 'pending' ? 1 : 2)
+    const hit = siblings.filter((r) => r.id !== row.id && keyOf(r.data as Record<string, string>, on) === k).sort((a, b) => rank(a) - rank(b))[0]
+    return hit ? { data: hit.data as Record<string, string>, status: hit.status, sameFile: hit.importId === row.importId, fileName: batchById.get(hit.importId)?.fileName ?? '' } : null
+  }
   const batches = await db.select().from(imports).where(inArray(imports.id, batchIds))
   const dupIds = rows.map((r) => r.duplicateOfLeadId).filter((id): id is string => !!id)
   // Trashed targets are not merge targets: the row falls back to the plain approve/reject flow.
@@ -100,6 +114,7 @@ export async function fetchReviewRows(): Promise<ReviewRow[]> {
         receivedAt: batchById.get(row.importId)?.createdAt ?? new Date(0),
         fileName: batchById.get(row.importId)?.fileName ?? '',
         existing: target,
+        twin: twinOf(row),
       }
     })
     .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime())

@@ -115,6 +115,8 @@ export const leads = sqliteTable(
     notes: text('notes'),
     // Deleted Leads folder: soft delete with reason, purged after 30 days.
     deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+    /** Null until someone opens / clicks the lead — drives the 'new, unseen' band on every new lead (user 2026-08-29). */
+    seenAt: integer('seen_at', { mode: 'timestamp' }),
     deleteReason: text('delete_reason'),
     stageBeforeDelete: text('stage_before_delete'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

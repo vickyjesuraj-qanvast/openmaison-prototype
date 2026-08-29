@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { PROPERTY_TYPE_GROUPS, SOURCES } from '@/lib/leads/enums'
-import { EMPTY_FILTERS, activeGroups, parseDMY, toDMY, type DatePreset, type LeadFilters } from '@/lib/leads/filters'
-import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
+import { EMPTY_FILTERS, activeGroups, parseDMY, type DatePreset, type LeadFilters } from '@/lib/leads/filters'
+import { DateField } from '@/components/om/date-field'
 import type { Member } from '@/lib/db/schema'
 import styles from './filters-modal.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -58,14 +58,12 @@ export function FiltersModal({
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
   const matches = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase())
   const custom = draft.datePreset === 'custom'
-  const [pickerFor, setPickerFor] = useState<'from' | 'to' | null>(null)
-  const fromRef = useRef<HTMLInputElement>(null)
-  const toRef = useRef<HTMLInputElement>(null)
+  const today = useMemo(() => new Date(now), [now])
+  // DateField only ever holds a picker-chosen date, so the only rule left is the range order.
   const fromD = parseDMY(draft.from), toD = parseDMY(draft.to)
-  const fromBad = custom && draft.from.trim() !== '' && !fromD
-  const toBad = custom && draft.to.trim() !== '' && !toD
   const rangeBad = custom && !!fromD && !!toD && fromD.getTime() > toD.getTime()
-  const dateInvalid = fromBad || toBad || rangeBad
+  const dateInvalid = rangeBad
+  const rangeError = rangeBad ? 'From date must be on or before To date' : undefined
 
   const searchBox = (
     <label className={styles.search}>
@@ -181,29 +179,12 @@ export function FiltersModal({
                         </button>
                       ))}
                     </div>
-                    <div className={styles.dateRow} aria-owns={pickerFor ? 'om-date-picker' : undefined}>
-                      <label className={styles.dateField} data-error={fromBad || rangeBad || undefined}>
-                        <input ref={fromRef} className={styles.dateInput} placeholder="From date" value={draft.from} aria-label="From date (d/m/yyyy)"
-                               onFocus={() => setPickerFor('from')} onClick={() => setPickerFor('from')}
-                               onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); focusDatePicker() } }}
-                               onChange={(e) => setDraft((d) => ({ ...d, from: e.target.value, datePreset: 'custom' }))} />
-                        <Icon name="calendar_month" size={16} />
-                      </label>
-                      <label className={styles.dateField} data-error={toBad || rangeBad || undefined}>
-                        <input ref={toRef} className={styles.dateInput} placeholder="To date" value={draft.to} aria-label="To date (d/m/yyyy)"
-                               onFocus={() => setPickerFor('to')} onClick={() => setPickerFor('to')}
-                               onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); focusDatePicker() } }}
-                               onChange={(e) => setDraft((d) => ({ ...d, to: e.target.value, datePreset: 'custom' }))} />
-                        <Icon name="calendar_month" size={16} />
-                      </label>
+                    <div className={styles.dateRow}>
+                      <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined}
+                                 onChange={(v) => setDraft((d) => ({ ...d, from: v, datePreset: 'custom' }))} />
+                      <DateField label="To date" value={draft.to} today={today} error={rangeError}
+                                 onChange={(v) => setDraft((d) => ({ ...d, to: v, datePreset: 'custom' }))} />
                     </div>
-                    <DatePicker open={pickerFor !== null} anchorRef={pickerFor === 'to' ? toRef : fromRef} anchorKey={pickerFor ?? ''} today={new Date(now)}
-                                value={pickerFor === 'to' ? toD : fromD} label={pickerFor === 'to' ? 'To date' : 'From date'}
-                                onSelect={(d) => { const key = pickerFor === 'to' ? 'to' : 'from'; setDraft((x) => ({ ...x, [key]: toDMY(d), datePreset: 'custom' })); setPickerFor(null) }}
-                                onClose={() => setPickerFor(null)} />
-                    {dateInvalid ? (
-                      <span className={styles.dateHelp}>{rangeBad ? 'From date must be on or before To date' : 'Use d/m/yyyy'}</span>
-                    ) : null}
                   </>
                 )}
               </div>

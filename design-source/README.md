@@ -1,5 +1,7 @@
 # Design source — captured from Figma
 
+> Start with **`DESIGN.md`** — the consolidated design context (mock index, DS specs, interaction rules, copy). This README describes only the raw Figma captures below.
+
 Extracted from Figma file `JCGkMBFLjeOyXYiEkOxFMO`, page **Leads - New** (`513:28349`)
 on 2026-08-26. Committed because the Figma MCP quota on the current seat is
 **6 tool calls per month**, so this data cannot casually be re-fetched.

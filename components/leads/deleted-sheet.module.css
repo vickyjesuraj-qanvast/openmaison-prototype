@@ -8,7 +8,7 @@
 }
 .panel {
   position: relative;
-  width: 1200px; height: 928px; max-height: calc(100vh - 96px);
+  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   display: flex; flex-direction: column;

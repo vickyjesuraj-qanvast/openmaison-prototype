@@ -24,7 +24,7 @@
 }
 .monthBtn:hover { color: var(--om-color-on-surface-default); }
 .flip { transform: rotate(180deg); }
-.pager { display: inline-flex; align-items: center; gap: var(--om-spacing-2); margin-right: -6px; }
+.pager { display: inline-flex; align-items: center; gap: 4px; margin-right: -6px; }   /* Today · prev · next (REG-125) */
 .pageBtn {
   width: 24px; height: 24px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -66,3 +66,38 @@
 .year:hover { background: var(--om-color-hover-04p); }
 .year[data-current] { box-shadow: inset 0 0 0 1px var(--om-color-on-surface-default); }
 .year[data-selected] { background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); box-shadow: none; }
+
+/* Time row (invented — no time picker in the mocks, REG-119): hour · minute · AM/PM compact selects + Done. */
+.panel[data-time] { width: 296px; height: 340px; }   /* room for hh : mm AM · Done */
+.panel[data-time] .weekdays, .panel[data-time] .grid { padding-left: 36px; padding-right: 36px; }
+.timeRow {
+  height: 56px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px 12px;
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  margin-top: auto;
+}
+.timeLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-right: 2px; }
+.timeSelect {
+  height: 32px; min-width: 46px;
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 0;
+  padding: 0 2px 0 8px;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  cursor: pointer;
+  transition: border-color var(--motion-toggle);
+}
+.timeSelect[data-empty] { color: var(--om-color-on-surface-secondary); }
+.timeSelect:hover { border-color: var(--om-color-on-surface-secondary); }
+.timeSelect:focus-visible, .timeSelect[aria-expanded='true'] { border-color: var(--om-color-primary-default); outline: 0; }
+.timeSelect :global(.msr) { color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.colon { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0 -2px; }
+.done {
+  margin-left: auto; height: 32px; padding: 0 6px;
+  border: 0; background: none; border-radius: var(--om-radius-1); cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-primary-default);
+  transition: background-color var(--motion-hover);
+}
+.done:hover { background: var(--om-color-primary-variant); }

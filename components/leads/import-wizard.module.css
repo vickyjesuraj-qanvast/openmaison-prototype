@@ -8,7 +8,7 @@
 }
 .panel {
   position: relative;
-  width: 1200px; height: 928px; max-height: calc(100vh - 96px);
+  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   display: flex; flex-direction: column;
@@ -166,7 +166,8 @@
 .select span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .select[data-error] { border-color: var(--om-color-tertiary-red-default); }
 .select:hover { border-color: var(--om-color-on-surface-secondary); }
-.required { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+/* DS inline error text (12/16 red) under the mapping select. */
+.required { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
 .chev { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
 .select[data-open] .chev { transform: rotate(180deg); }
 

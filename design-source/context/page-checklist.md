@@ -29,14 +29,23 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] Side: rail → `right`; FAB → `left`; everything else → `bottom` (auto-clamped to viewport).
 
 ## Surfaces
+- Modal widths come from the scale only: s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`), or xxl = fluid with a 48px margin on every side; height follows content, capped to the viewport; radius 12; centred overlay. Full-page overlays are not used — Review imported leads is an XXL modal.
 - [ ] Closing a multi-step flow or discarding edits asks first via the shared `ConfirmDialog` (`components/om/confirm-dialog.tsx`).
 - [ ] Modals / sheets / dialogs call `useScrollLock(open)` and their overlays contain overscroll; any table inside a scrolling surface has a sticky header.
 
 ## Rows that can overflow
+- Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).
 - [ ] Horizontal chip / tab / pill rows use `ChipRail` (edge fades, chevron pagers, selected chip scrolls into view).
 
 ## Fields
-- [ ] Any date field opens the shared `DatePicker` (`components/om/date-picker.tsx`, 789:84100) and still accepts typed d/m/yyyy.
+- Every text input is `TextField` (`components/om/text-field.tsx`) — never a raw `<input>` with a label. Label inside when empty, floats on focus/value; five DS states (empty / active / filled / error / disabled — 836:23125, 836:23276).
+- Dates are `DateField`; dates with time are `DateTimeField` — read-only triggers over the Material picker. No free-typed dates anywhere.
+- Every field except notes validates: required + format, computed by a pure `validate(...)`, shown inline only after the first submit attempt, re-computed live so errors clear as fixed. Messages come from `lib/forms.ts` `MSG` — add to that vocabulary, don't inline strings.
+- Non-text controls (chip groups, attach rows, tables) show `<FieldError/>` under the control; chip groups pass `error` to `ChoiceChips`.
+- Selects: `TextField mode="select"` (chevron flips while open). Pickers/menus portal through `PortalMenu` / the date picker layer (z 130).
+- Anything already saved opens **read-only** (`ReadOnlyScope` — DS disabled state, action links hidden) with an explicit Edit; keep the title row / Edit link *outside* the scope or it disables itself.
+- File uploads use `Dropzone` (`move-stage/fields.tsx`): a real file chooser (any file accepted), an "Uploading..." state, then the mock's file as a selected row *below* the dropzone (780:91468). Amounts a file can't tell us (Quote amount) are asked only in the upload flow.
+- Anchored popovers on scrolling pages store their anchor element and re-position on capture-phase `scroll` (see `workspace.tsx` follow effect); menus/pickers inside modals close on scroll instead.
 
 ## Motion & states
 - [ ] Surfaces use `lib/motion` tokens; `prefers-reduced-motion` handled (globals collapse it).

@@ -61,7 +61,8 @@ export function LeadsTable({
   openStageId = null,
   rows,
   columns,
-  highlightId,
+  unseenIds,
+  onRowSeen,
   selectable = false,
   selected = EMPTY_SELECTION,
   onToggleSelect = () => {},
@@ -83,7 +84,9 @@ export function LeadsTable({
   openStageId?: string | null
   rows: LeadRow[]
   columns: ColumnConfig[]
-  highlightId?: string
+  /** Leads nobody has opened or clicked yet — they carry the primary band + bold name (user 2026-08-29). */
+  unseenIds?: Set<string>
+  onRowSeen?: (row: LeadRow) => void
   /** Row multi-select — off for the listing (user 2026-08-27: no bulk use case there). */
   selectable?: boolean
   selected?: Set<string>
@@ -265,7 +268,7 @@ export function LeadsTable({
 
   return (
     <div className={styles.card}>
-      <div className={styles.scroller}>
+      <div className={styles.scroller} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
         <div ref={tableRef} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
              style={{ minWidth }}>
           <div className={styles.headRow} role="row">
@@ -305,8 +308,9 @@ export function LeadsTable({
               key={row.id}
               className={styles.row}
               role="row"
-              data-highlight={row.id === highlightId || undefined}
+              data-highlight={unseenIds?.has(row.id) || undefined}
               data-selected={selected.has(row.id) || undefined}
+              onPointerDownCapture={unseenIds?.has(row.id) ? () => onRowSeen?.(row) : undefined}
             >
               {visible.map((col) => (
                 <Fragment key={col.key}>{renderCell(row, col)}</Fragment>
@@ -326,7 +330,10 @@ export function LeadsTable({
                       <DropdownItem onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>
                         <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
                       </DropdownItem>
-                      <DropdownItem onSelect={() => { setMenuRow(null); onReturnRow(row) }}>Return Lead</DropdownItem>
+                      {row.source === 'Qanvast' ? (
+                        /* Return Lead exists only for Qanvast-sourced leads (user 2026-08-29); its own return flow comes later */
+                        <DropdownItem onSelect={() => { setMenuRow(null); onReturnRow(row) }}>Return Lead</DropdownItem>
+                      ) : null}
                     </Dropdown>
                   </span>
                 </span>

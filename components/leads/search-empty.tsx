@@ -7,8 +7,6 @@ import styles from './search-empty.module.css'
 export function SearchEmpty({ onClearAll, searching = true }: { onClearAll: () => void; searching?: boolean }) {
   return (
     <div className={styles.card}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/figma-assets/empty-no-results.svg" alt="" className={styles.art} />
       <span className={styles.title}>No results found</span>
       <span className={styles.sub}>{searching ? 'Check your spelling and try again.' : 'No leads match this filter.'}</span>
       <button type="button" className={styles.clear} onClick={onClearAll}>Clear All</button>

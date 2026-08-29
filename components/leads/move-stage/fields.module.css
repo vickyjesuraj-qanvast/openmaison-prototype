@@ -1,39 +1,4 @@
-/* Floating-label field — h-48, label on the border (from 781:58292). */
-.field { display: flex; flex-direction: column; gap: var(--om-spacing-1); border-radius: var(--om-radius-1); flex: 1; min-width: 0; }
-.box {
-  position: relative;
-  display: flex; align-items: center; gap: 8px;
-  height: 48px; width: 100%;
-  padding: 14px 12px 14px 16px;
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  cursor: pointer;
-  transition: border-color var(--motion-toggle);
-}
-.box:focus-within { border-color: var(--om-color-primary-default); }
-.label {
-  position: absolute; top: -1px; left: 11px;
-  transform: translateY(-50%);
-  background: var(--om-color-surface-default);
-  padding: 0 4px;
-  font: var(--om-type-body-s);
-  color: var(--om-color-on-surface-secondary);
-  line-height: 16px;
-}
-.value {
-  flex: 1; min-width: 0;
-  border: 0; outline: 0; background: none; padding: 0;
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  text-align: left;
-}
-.value::placeholder { color: var(--om-color-on-surface-secondary); }
-.trail { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; transition: transform var(--motion-toggle); }
-/* Select open → chevron up (user 2026-08-28). */
-.box[data-open] .trail { transform: rotate(180deg); }
-.select { position: relative; }
+/* Text fields: components/om/text-field (DS Text Field states, 836:23125 / 836:23276). */
 
 /* Choice chips (Contacted via) */
 .chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
@@ -98,6 +63,7 @@
 
 /* Dropzone (from AutoFill / Upload tab) */
 .dropzone {
+  position: relative;
   width: 100%;
   border: 1px dashed var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1);
@@ -105,14 +71,27 @@
   display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-1);
   text-align: center;
   cursor: pointer;
-  background: var(--om-color-surface-default);
+  background: var(--om-color-surface-bg);   /* 780:90940: #f2f2f2 fill, dashed #ccc */
   transition: border-color var(--motion-toggle), background-color var(--motion-toggle);
 }
 .dropzone:hover, .dropzone[data-over='true'] { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+.dropzone[data-uploading='true'] { cursor: default; }
+.dropzone[data-uploading='true']:hover { border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-bg); }
+.dropzone[data-uploading='true'] .dropTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); }   /* 780:91263 */
+.fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .dropTitle { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .dropTitle b { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
 .dropHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
-/* Validation state (vocabulary from the wizard's error pass — REG). */
-.box[data-error] { border-color: var(--om-color-tertiary-red-default); }
-.box[data-error] .label { color: var(--om-color-tertiary-red-default); }
+
+/* Inline validation message for non-text controls (DS error text, 836:23125). */
+.fieldError { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+.mutedLabel[data-error] { color: var(--om-color-tertiary-red-default); }
+.chips[aria-invalid='true'] .chip { border-color: var(--om-color-tertiary-red-default); }
+
+/* Read-only stage (836:23276 disabled state): chips and notes drop to on-surface/disabled, nothing reacts. */
+.chips[aria-disabled='true'] .chip { color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); cursor: default; }
+.chips[aria-disabled='true'] .chip[data-selected='true'] { background: var(--om-color-surface-bg); border-color: var(--om-color-surface-variant); color: var(--om-color-on-surface-secondary); }
+.chips[aria-disabled='true'] .chip:hover { background: transparent; }
+.notes:disabled { color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+fieldset:disabled input { color: var(--om-color-on-surface-disabled); }

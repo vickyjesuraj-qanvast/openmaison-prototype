@@ -7,7 +7,7 @@
   padding: 48px 0; overflow-y: auto;
 }
 .panel {
-  width: 600px; height: 600px; max-height: calc(100vh - 96px);
+  width: var(--om-modal-m); height: 600px; max-height: calc(100vh - 96px);
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   display: flex; flex-direction: column; overflow: hidden;
@@ -74,19 +74,7 @@
 .chip:hover { background: var(--om-color-surface-bg); }
 .chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
 .dateRow { display: flex; gap: var(--om-spacing-4); }
-.dateField {
-  flex: 1; min-width: 0; height: 36px;
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  padding: 0 var(--om-spacing-3);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  color: var(--om-color-on-surface-secondary);
-}
-.dateField:focus-within { border-color: var(--om-color-primary-default); }
-.dateField[data-error] { border-color: var(--om-color-tertiary-red-default); }
-.dateInput { flex: 1; min-width: 0; width: 100%; border: 0; outline: 0; background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
-.dateInput::placeholder { color: var(--om-color-on-surface-secondary); }
-
+.dateRow > * { flex: 1; min-width: 0; }
 .footer {
   display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
   padding: var(--om-spacing-4) var(--om-spacing-6);
@@ -95,4 +83,3 @@
   box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
 }
-.dateHelp { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }

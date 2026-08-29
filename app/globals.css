@@ -17,6 +17,9 @@
   --app-content-max: 1160px;
   /* Space every page keeps below its last content so the Maison AI FAB (48px, 24px inset) never overlaps it: 24 + 48 + 16. */
   --fab-clearance: 88px;
+  /* Modal widths (designer rule, 2026-08-29): s 400 · m 600 · l 800 · xl 1200; height follows content (capped to the viewport).
+     xxl is fluid: no set width, a 48px margin on every side (viewport − 96 both ways), centred. */
+  --om-modal-s: 400px; --om-modal-m: 600px; --om-modal-l: 800px; --om-modal-xl: 1200px; --om-modal-xxl-margin: 48px;
 }
 
 *,

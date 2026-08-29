@@ -1,0 +1,114 @@
+import type { LeadRow } from '@/lib/leads/queries'
+import { inputDate, money } from '@/lib/format'
+
+/**
+ * "Export all as…" (784:113420 pattern): the listing's leads as a real file the browser downloads.
+ * CSV and XLS (HTML table Excel opens) are plain text; XLSX is a minimal OOXML zip; PDF is a minimal
+ * text-only document. All written here without libraries so the demo never dead-ends.
+ */
+export type ExportFormat = 'CSV' | 'XLS' | 'XLSX' | 'PDF'
+export const EXPORT_FORMATS: ExportFormat[] = ['CSV', 'XLS', 'XLSX', 'PDF']
+
+const COLUMNS: { label: string; value: (r: LeadRow) => string }[] = [
+  { label: 'Lead name', value: (r) => r.name },
+  { label: 'Phone', value: (r) => `+65 ${r.phone}` },
+  { label: 'Email', value: (r) => r.email ?? '' },
+  { label: 'Stage', value: (r) => r.stage },
+  { label: 'Source', value: (r) => r.source },
+  { label: 'Budget (S$)', value: (r) => money(r.budgetMinor) },
+  { label: 'Property type', value: (r) => r.propertyType ?? '' },
+  { label: 'Property address', value: (r) => r.propertyAddress ?? '' },
+  { label: 'Assignees', value: (r) => r.assignees.map((m) => m.name).join(', ') },
+  { label: 'Created', value: (r) => inputDate(r.createdAt) },
+]
+
+export function exportFileName(format: ExportFormat, now: Date): string {
+  const d = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return `openmaison-leads-${d}.${format.toLowerCase()}`
+}
+
+export function buildExport(rows: LeadRow[], format: ExportFormat): Blob {
+  const head = COLUMNS.map((c) => c.label)
+  const body = rows.map((r) => COLUMNS.map((c) => c.value(r)))
+  switch (format) {
+    case 'CSV': return new Blob(['﻿' + [head, ...body].map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' })
+    case 'XLS': return new Blob([htmlTable(head, body)], { type: 'application/vnd.ms-excel' })
+    case 'XLSX': return new Blob([xlsx(head, body).buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    case 'PDF': return new Blob([pdf('OpenMaison — Leads', head, body).buffer as ArrayBuffer], { type: 'application/pdf' })
+  }
+}
+
+export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date): string {
+  const name = exportFileName(format, now)
+  const url = URL.createObjectURL(buildExport(rows, format))
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return name
+}
+
+/* ---------- CSV / XLS ---------- */
+const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const htmlTable = (head: string[], body: string[][]) =>
+  `<html><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`
+
+/* ---------- XLSX: minimal OOXML in a stored (uncompressed) zip ---------- */
+function xlsx(head: string[], body: string[][]): Uint8Array {
+  const colRef = (i: number) => { let s = ''; let n = i; do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 } while (n >= 0); return s }
+  const row = (cells: string[], r: number) => `<row r="${r}">${cells.map((c, i) => `<c r="${colRef(i)}${r}" t="inlineStr"><is><t xml:space="preserve">${esc(c)}</t></is></c>`).join('')}</row>`
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${[head, ...body].map((r, i) => row(r, i + 1)).join('')}</sheetData></worksheet>`
+  const files: [string, string][] = [
+    ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`],
+    ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Leads" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`],
+    ['xl/worksheets/sheet1.xml', sheet],
+  ]
+  return zip(files)
+}
+
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0 } return t })()
+const crc32 = (b: Uint8Array) => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]!) & 0xff]! ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
+function zip(files: [string, string][]): Uint8Array {
+  const enc = new TextEncoder(); const parts: Uint8Array[] = []; const central: Uint8Array[] = []; let offset = 0
+  const u16 = (n: number) => [n & 0xff, (n >>> 8) & 0xff]; const u32 = (n: number) => [n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]
+  for (const [name, text] of files) {
+    const nameB = enc.encode(name), data = enc.encode(text), crc = crc32(data)
+    const local = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameB.length), ...u16(0), ...nameB])
+    parts.push(local, data)
+    central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameB.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset), ...nameB]))
+    offset += local.length + data.length
+  }
+  const cd = central.reduce((n, c) => n + c.length, 0)
+  const eocd = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cd), ...u32(offset), ...u16(0)])
+  const all = [...parts, ...central, eocd]; const out = new Uint8Array(all.reduce((n, p) => n + p.length, 0)); let pos = 0
+  for (const p of all) { out.set(p, pos); pos += p.length }
+  return out
+}
+
+/* ---------- PDF: minimal text-only pages (Helvetica), A4 portrait ---------- */
+function pdf(title: string, head: string[], body: string[][]): Uint8Array {
+  const W = 842, H = 595, M = 40, LH = 14, per = Math.floor((H - M * 2 - 30) / LH)   // landscape A4, fits the ten columns
+  const cols = head.map((_, i) => M + i * Math.floor((W - M * 2) / head.length))
+  const pdfText = (s: string) => s.replace(/[^\x20-\x7e]/g, '?').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
+  const pages: string[] = []
+  for (let p = 0; p < Math.max(1, Math.ceil(body.length / per)); p++) {
+    const lines = [`BT /F2 12 Tf ${M} ${H - M} Td (${pdfText(title)} — page ${p + 1}) Tj ET`]
+    const draw = (cells: string[], y: number, bold: boolean) => cells.forEach((c, i) => lines.push(`BT /${bold ? 'F2' : 'F1'} 8 Tf ${cols[i]} ${y} Td (${pdfText(c.slice(0, 22))}) Tj ET`))
+    draw(head, H - M - 22, true)
+    body.slice(p * per, (p + 1) * per).forEach((r, i) => draw(r, H - M - 22 - LH * (i + 1), false))
+    pages.push(lines.join('\n'))
+  }
+  const objs: string[] = []
+  const add = (s: string) => { objs.push(s); return objs.length }
+  const font1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'), font2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>')
+  const pagesId = objs.length + 1 + pages.length * 2
+  const pageIds = pages.map((content) => { const c = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`); return add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Contents ${c} 0 R /Resources << /Font << /F1 ${font1} 0 R /F2 ${font2} 0 R >> >> >>`) })
+  add(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`)
+  const catalog = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`)
+  let out = '%PDF-1.4\n'; const offsets: number[] = []
+  objs.forEach((o, i) => { offsets.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n` })
+  const xref = out.length
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objs.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return new TextEncoder().encode(out)
+}

@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from './icon'
 import { Tooltip } from './tooltip'
 import { anchoredSurface } from '@/lib/motion'
+import { PortalMenu } from './portal-menu'
+import menuStyles from '@/components/leads/menus.module.css'
 import styles from './date-picker.module.css'
 
 /**
@@ -18,7 +20,10 @@ import styles from './date-picker.module.css'
  */
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const WIDTH = 256, HEIGHT = 284, GAP = 4, EDGE = 8
+const WIDTH = 256, TIME_WIDTH = 296, HEIGHT = 284, TIME_HEIGHT = 340, GAP = 4, EDGE = 8   // date-only = the mock; with time: + 56px time row
+const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1))
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))   // every minute (user 2026-08-29)
+const PERIODS = ['AM', 'PM'] as const
 const YEARS_PER_PAGE = 24
 
 const sameDay = (a: Date | null | undefined, b: Date) => !!a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -30,6 +35,12 @@ function gridFor(y: number, m: number) {
 }
 
 const subscribeNoop = () => () => {}
+/** Anchors may be a field box (DateField) rather than the focusable control itself. */
+function focusAnchor(a: HTMLElement | null) {
+  if (!a) return
+  const t = a.matches('button,input,[tabindex]') ? a : a.querySelector<HTMLElement>('button,input,[tabindex]')
+  ;(t ?? a).focus()
+}
 const PANEL_ID = 'om-date-picker'
 
 /** Hosts call this on ArrowDown in the anchor field to hand keyboard focus to the open picker. */
@@ -42,7 +53,7 @@ export function focusDatePicker() {
 }
 
 export function DatePicker({
-  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date',
+  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date', withTime = false, defaultHour = 10,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
@@ -54,6 +65,10 @@ export function DatePicker({
   onSelect: (date: Date) => void
   onClose: () => void
   label?: string
+  /** Adds an hour / minute / AM-PM row under the grid (no mock — REG-119). Picking a day keeps the picker open; Done closes it. */
+  withTime?: boolean
+  /** Hour applied to a freshly picked day when the field had no time yet. */
+  defaultHour?: number
 }) {
   const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false)
   const [seed, setSeed] = useState({ open, anchorKey })
@@ -72,33 +87,59 @@ export function DatePicker({
     if (!open || !el || !a) return
     const r = a.getBoundingClientRect()
     let top = r.bottom + GAP, flipped = false
-    if (top + HEIGHT > window.innerHeight - EDGE) { top = Math.max(EDGE, r.top - GAP - HEIGHT); flipped = true }
-    const left = Math.min(Math.max(EDGE, r.left), window.innerWidth - WIDTH - EDGE)
+    const height = withTime ? TIME_HEIGHT : HEIGHT, width = withTime ? TIME_WIDTH : WIDTH
+    if (top + height > window.innerHeight - EDGE) { top = Math.max(EDGE, r.top - GAP - height); flipped = true }
+    const left = Math.min(Math.max(EDGE, r.left), window.innerWidth - width - EDGE)
     el.style.top = `${top}px`
     el.style.left = `${left}px`
     el.style.transformOrigin = flipped ? 'bottom left' : 'top left'
-  }, [open, anchorKey, anchorRef])
+  }, [open, anchorKey, anchorRef, withTime])
 
   useEffect(() => {
     if (!open) return
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node
       if (panel.current?.contains(t) || anchorRef.current?.contains(t)) return
+      if (t instanceof Element && t.closest('[data-om-menu]')) return   // the time row's option menus live in their own portal
       onClose()
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      if (document.querySelector('[data-om-menu]')) return   // an open time-row menu consumes Esc first
       e.preventDefault(); e.stopPropagation()
-      if (panel.current?.contains(document.activeElement)) anchorRef.current?.focus()   // keyboard users: focus goes back to the field
+      if (panel.current?.contains(document.activeElement)) focusAnchor(anchorRef.current)   // keyboard users: focus goes back to the field
+      onClose()
+    }
+    // The anchor scrolls with its container while the panel is fixed — close rather than float away (as PortalMenu does).
+    const onScroll = (e: Event) => {
+      const t = e.target
+      if (t instanceof Node && panel.current?.contains(t)) return
+      if (t instanceof Element && t.closest('[data-om-menu]')) return
       onClose()
     }
     const onResize = () => onClose()
     window.addEventListener('pointerdown', onDown, true)
     window.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', onResize)
-    return () => { window.removeEventListener('pointerdown', onDown, true); window.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize) }
+    document.addEventListener('scroll', onScroll, true)
+    return () => { window.removeEventListener('pointerdown', onDown, true); window.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize); document.removeEventListener('scroll', onScroll, true) }
   }, [open, onClose, anchorRef])
 
+  // Time row: edits apply to the current value (or today at defaultHour when nothing is picked yet).
+  const base = () => { const d = value ? new Date(value) : new Date(today); if (!value) d.setHours(defaultHour, 0, 0, 0); return d }
+  const withDay = (day: Date) => { const d = new Date(day); const b = base(); d.setHours(b.getHours(), b.getMinutes(), 0, 0); return d }
+  const setHour12 = (h: string) => { const d = base(); const pm = d.getHours() >= 12; d.setHours((Number(h) % 12) + (pm ? 12 : 0)); onSelect(d) }
+  const setMinute = (m: string) => { const d = base(); d.setMinutes(Number(m)); onSelect(d) }
+  const setPeriod = (p: string) => { const d = base(); const h = d.getHours() % 12; d.setHours(h + (p === 'PM' ? 12 : 0)); onSelect(d) }
+  /** Today CTA (invented — REG-125): date-only picks today and lets the host close; with time it keeps the time and stays open. */
+  const pickToday = () => {
+    setView({ y: today.getFullYear(), m: today.getMonth() }); setMode('days')
+    if (withTime) onSelect(withDay(today)); else onSelect(today)
+  }
+  const cur = value ?? null
+  const hour12 = cur ? String(cur.getHours() % 12 || 12) : ''
+  const minute = cur ? String(cur.getMinutes()).padStart(2, '0') : ''
+  const period = cur ? (cur.getHours() >= 12 ? 'PM' : 'AM') : ''
   const step = (n: number) => setView((v) => { const d = new Date(v.y, v.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() } })
   const yearStart = view.y - 12
 
@@ -119,7 +160,7 @@ export function DatePicker({
   return isClient ? createPortal(
     <AnimatePresence>
       {open ? (
-        <motion.div ref={panel} id={PANEL_ID} className={styles.panel} role="dialog" aria-label={label} tabIndex={-1}
+        <motion.div ref={panel} id={PANEL_ID} className={styles.panel} data-time={withTime || undefined} role="dialog" aria-label={label} tabIndex={-1}
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
                     onPointerDown={(e) => e.preventDefault() /* keep the anchor field focused while picking with the mouse */}>
           <div className={styles.head}>
@@ -129,6 +170,11 @@ export function DatePicker({
               <Icon name="arrow_drop_down" size={24} fill className={mode === 'years' ? styles.flip : undefined} />
             </button>
             <span className={styles.pager}>
+              <Tooltip label="Today">
+                <button type="button" className={styles.pageBtn} aria-label="Today" onClick={pickToday}>
+                  <Icon name="today" size={20} />
+                </button>
+              </Tooltip>
               <Tooltip label={mode === 'years' ? 'Earlier years' : 'Previous month'}>
                 <button type="button" className={styles.pageBtn} aria-label={mode === 'years' ? 'Earlier years' : 'Previous month'}
                         onClick={() => (mode === 'years' ? setView((v) => ({ ...v, y: v.y - YEARS_PER_PAGE })) : step(-1))}>
@@ -154,8 +200,8 @@ export function DatePicker({
                           data-muted={!inMonth || undefined} data-today={sameDay(today, date) || undefined} data-selected={sameDay(value, date) || undefined}
                           aria-pressed={sameDay(value, date) || undefined} aria-current={sameDay(today, date) ? 'date' : undefined}
                           aria-label={`${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`}
-                          onClick={() => onSelect(date)}>
-                    {date.getDate()}
+                          onClick={() => onSelect(withTime ? withDay(date) : date)}>
+                    <span>{date.getDate()}</span>{/* wrapped: the ::before fill would otherwise paint over a bare text node */}
                   </button>
                 ))}
               </div>
@@ -171,9 +217,43 @@ export function DatePicker({
               ))}
             </div>
           )}
+          {withTime && mode === 'days' ? (
+            <div className={styles.timeRow} role="group" aria-label="Time">
+              <TimeSelect label="Hour" value={hour12} options={HOURS} placeholder="hh" onChange={setHour12} />
+              <span className={styles.colon} aria-hidden>:</span>
+              <TimeSelect label="Minute" value={minute} options={MINUTES} placeholder="mm" onChange={setMinute} />
+              <TimeSelect label="AM or PM" value={period} options={PERIODS} placeholder="AM" onChange={setPeriod} />
+              <button type="button" className={styles.done} onClick={() => { focusAnchor(anchorRef.current); onClose() }}>Done</button>
+            </div>
+          ) : null}
         </motion.div>
       ) : null}
     </AnimatePresence>,
     document.body,
   ) : null
+}
+
+/** Compact select for the time row — a bordered 32px trigger with the shared PortalMenu. */
+function TimeSelect({ label, value, options, placeholder, onChange }: { label: string; value: string; options: readonly string[]; placeholder: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLButtonElement | null>(null)
+  return (
+    <>
+      <button ref={ref} type="button" className={styles.timeSelect} aria-label={label} aria-expanded={open} aria-haspopup="listbox"
+              data-empty={!value || undefined} onClick={() => setOpen((o) => !o)}
+              onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true) } }}>
+        {value || placeholder}
+        <Icon name="expand_more" size={16} className={open ? styles.flip : undefined} />
+      </button>
+      <PortalMenu open={open} anchor={ref} onClose={() => setOpen(false)} width={72}>
+        {options.map((o) => (
+          <button key={o} type="button" role="option" aria-selected={o === value} className={menuStyles.item} data-selected={o === value || undefined}
+                  ref={o === value ? (el) => { const m = el?.parentElement; if (el && m) m.scrollTop = el.offsetTop - m.clientHeight / 2 + el.offsetHeight / 2 } : undefined}
+                  onClick={() => { onChange(o); setOpen(false) }}>
+            {o}
+          </button>
+        ))}
+      </PortalMenu>
+    </>
+  )
 }

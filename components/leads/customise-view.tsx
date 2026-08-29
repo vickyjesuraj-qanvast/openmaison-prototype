@@ -80,9 +80,10 @@ export function CustomiseView({
               Pinned ({MAX_PINNED} columns max)
             </p>
             <Reorder.Group axis="y" as="div" values={draft} onReorder={(next: ColumnConfig[]) => setDraft(normalise(next))}>
-              {draft.map((col) => (
+              {draft.map((col, i) => (
                 <Reorder.Item key={col.key} value={col} as="div" className={styles.row}
-                              dragListener={col.key !== LOCKED} data-locked={col.key === LOCKED || undefined}>
+                              dragListener={col.key !== LOCKED} data-locked={col.key === LOCKED || undefined}
+                              data-pin-last={col.pinned && !draft[i + 1]?.pinned || undefined}>
                   <span className={styles.drag} aria-hidden={col.key === LOCKED || undefined}><Icon name="drag_indicator" size={24} /></span>
                   <span className={styles.label}>{col.label}</span>
                   {/* At the 3-column cap only the pinned rows keep their pin (user 2026-08-28). */}

@@ -69,7 +69,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
                 </button>
               ) : null}
               <button type="button" className={styles.close} aria-label="Dismiss" onClick={() => dismiss(s.id)}>
-                <Icon name="close" size={16} />
+                <Icon name="close" size={24} weight={300} />
               </button>
             </motion.div>
           ))}

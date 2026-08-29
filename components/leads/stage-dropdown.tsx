@@ -5,11 +5,12 @@ import { useEffect, useRef } from 'react'
 import { anchoredSurface } from '@/lib/motion'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { Tooltip } from '@/components/om/tooltip'
+import { Icon } from '@/components/om/icon'
 import styles from './menus.module.css'
 import ddStyles from './stage-dropdown.module.css'
 
 export function StageDropdown({
-  open, onClose, onSelect, position, blocked,
+  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1,
 }: {
   open: boolean
   onClose: () => void
@@ -17,14 +18,25 @@ export function StageDropdown({
   position: { top: number; left: number } | null
   /** Linear stage movement: returns why a stage can't be chosen yet (shown as a tooltip), or null when it can. */
   blocked?: (stage: Stage) => string | null
+  /** 836:23422: the lead's stage reads "current"; stages it has passed carry a green check. */
+  current?: Stage | null
+  /** Index (in STAGES) of the last completed active stage — On Hold / Lost leads keep the checks of where they left. */
+  doneThrough?: number
 }) {
   // aria-disabled rather than `disabled`: disabled buttons swallow pointer events, and the tooltip explains the lock.
   const item = (s: Stage) => {
     const why = blocked?.(s) ?? null
+    const isCurrent = s === current
+    const done = !isCurrent && (STAGES as readonly string[]).indexOf(s) <= doneThrough && (STAGES as readonly string[]).includes(s)
     return (
       <Tooltip key={s} label={why ?? ''} side="right" disabled={!why}>
         <button type="button" role="menuitem" className={styles.item} aria-disabled={why ? true : undefined}
-                onClick={why ? undefined : () => onSelect(s)}>{s}</button>
+                aria-current={isCurrent ? 'step' : undefined} data-done={done || undefined}
+                onClick={why ? undefined : () => onSelect(s)}>
+          <span className={ddStyles.itemText}>{s}</span>
+          {isCurrent ? <span className={ddStyles.meta}>current</span> : null}
+          {done ? <span className={ddStyles.done} aria-hidden><Icon name="check_circle" size={20} fill /></span> : null}
+        </button>
       </Tooltip>
     )
   }

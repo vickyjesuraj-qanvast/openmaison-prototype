@@ -27,9 +27,10 @@
 .row {
   display: flex; align-items: center; gap: var(--om-spacing-2);
   height: 56px;
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
 }
+/* 780:80275: only the pinned group carries a divider — under its last row; the other rows have none. */
+.row[data-pin-last] { border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .drag { color: var(--om-color-on-surface-secondary); display: inline-flex; cursor: grab; }
 .drag:active { cursor: grabbing; }
 /* Lead Name is fixed: no drag, pin can't be toggled. */

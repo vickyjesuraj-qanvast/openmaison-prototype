@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { spring } from '@/lib/motion'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { resetPrototype } from '@/app/leads/actions'
 import styles from './ai-sheet.module.css'
 
 /**
@@ -24,14 +26,25 @@ export function AiSheet({
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  // Prototype-only: put everything back to the base state (user 2026-08-29) — leads, imports, tasks, settings and browser prefs.
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const doReset = async () => {
+    setResetting(true)
+    try {
+      await resetPrototype()
+      try { Object.keys(localStorage).filter((k) => k.startsWith('om.')).forEach((k) => localStorage.removeItem(k)) } catch {}
+      window.location.replace('/leads')
+    } catch { setResetting(false); setConfirmReset(false) }
+  }
   useEffect(() => {
-    if (!open) return
+    if (!open || confirmReset) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
     document.addEventListener('keydown', onKey)
     const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
     return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('mousedown', onDown) }
-  }, [open, onClose])
+  }, [open, onClose, confirmReset])
 
   return (
     <AnimatePresence>
@@ -64,8 +77,17 @@ export function AiSheet({
               </motion.button>
             ))}
           </div>
+          <div className={styles.foot}>
+            <button type="button" className={styles.reset} onClick={() => setConfirmReset(true)}>
+              <Icon name="restart_alt" size={18} />
+              Reset prototype to base
+            </button>
+          </div>
         </motion.div>
       ) : null}
+      <ConfirmDialog open={confirmReset} title="Reset the prototype?" tone="danger"
+                     message="Leads, imports, tasks and settings go back to the base state. Anything you tried in this session is lost."
+                     confirmLabel={resetting ? 'Resetting…' : 'Reset'} onCancel={() => { if (!resetting) setConfirmReset(false) }} onConfirm={() => { if (!resetting) void doReset() }} />
     </AnimatePresence>
   )
 }

@@ -1,4 +1,6 @@
 import { STAGES, type Stage } from '@/lib/leads/enums'
+import { MSG } from '@/lib/forms'
+import { parseInputDateTime } from '@/lib/format'
 
 /* Stage details captured by the Move stage window (M2). Pure — shared by the wizard and the listing loader. */
 
@@ -13,18 +15,29 @@ export type ContactLog = {
   collapsed?: boolean
 }
 
+export type MeetingLog = {
+  where: string
+  when: string
+  files: string[]
+  notes: string
+  collapsed?: boolean
+}
+
 export type WizardData = {
   assignees: string[]
   logs: ContactLog[]                       // Contacted
-  metWhere: string; metWhen: string; metFiles: string[]; metNotes: string
+  meetings: MeetingLog[]                   // Met (780:90234 — a log list like Contacted)
   quoteTab: 'system' | 'upload'
   quoteSelected: string | null             // From System quote name
   quoteUploaded: string | null             // Uploaded file name
   quoteAmount: string
   wonQuoteTab: 'system' | 'upload'
-  wonQuote: string | null
+  wonQuote: string | null                  // From System signed quote
+  wonQuoteUploaded: string | null          // Uploaded signed quote (780:92744)
+  wonQuoteAmount: string                   // Only asked in the upload flow — the file can't tell us the amount
   wonContractTab: 'system' | 'upload'
   wonContract: string | null
+  wonContractUploaded: string | null
   milestones: { name: string; meta: string; pct: number }[]
   projectType: string
 }
@@ -36,43 +49,111 @@ export const DEFAULT_MILESTONES = [
   { name: 'Completion', meta: 'Handover', pct: 30 },
 ]
 
+/** Upload flow (780:92744): a signed quote we didn't issue carries no payment split — every milestone starts at 0%. */
+export function zeroMilestones(): WizardData['milestones'] {
+  return DEFAULT_MILESTONES.map((m) => ({ ...m, pct: 0 }))
+}
+
+/** "70,500" → minor units (7050000); anything unparsable → 0. */
+export function amountMinor(s: string): number {
+  const n = Number(s.replace(/,/g, '').trim())
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : 0
+}
+
+const AMOUNT_RE = /^\d[\d,]*$/
+function amountError(s: string): string | undefined {
+  if (!s.trim()) return MSG.required
+  return AMOUNT_RE.test(s.trim()) ? undefined : MSG.amount
+}
+
 export function emptyLog(): ContactLog {
   return { channel: null, when: '', outcome: '', nextStepWhen: '', nextStepMode: '', files: [], notes: '' }
+}
+export function emptyMeeting(): MeetingLog {
+  return { where: '', when: '', files: [], notes: '' }
 }
 
 export function emptyWizardData(assignees: string[]): WizardData {
   return {
     assignees,
     logs: [emptyLog()],
-    metWhere: '', metWhen: '', metFiles: [], metNotes: '',
+    meetings: [emptyMeeting()],
     quoteTab: 'system', quoteSelected: null, quoteUploaded: null, quoteAmount: '',
-    wonQuoteTab: 'system', wonQuote: null,
-    wonContractTab: 'system', wonContract: null,
+    wonQuoteTab: 'system', wonQuote: null, wonQuoteUploaded: null, wonQuoteAmount: '',
+    wonContractTab: 'system', wonContract: null, wonContractUploaded: null,
     milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })),
     projectType: 'Whole-home renovation',
   }
 }
 
+/**
+ * Per-stage validation — every field except notes is mandatory (user 2026-08-29); dates must be real
+ * dates. Keys are the field names the panels render errors under; `stageComplete` derives from it.
+ */
+export type StageErrors = Partial<Record<string, string>>
+export function validateStage(stage: Stage, d: WizardData): StageErrors {
+  const e: StageErrors = {}
+  switch (stage) {
+    case 'New': if (d.assignees.length === 0) e.assignees = MSG.assignee; break   // New is complete only once someone owns the lead (user 2026-08-29)
+    case 'Contacted': {
+      d.logs.forEach((l, i) => {
+        const k = (f: string) => `logs.${i}.${f}`
+        if (!l.channel) e[k('channel')] = MSG.choose
+        if (!l.when) e[k('when')] = MSG.required; else if (!parseInputDateTime(l.when)) e[k('when')] = MSG.dateTime
+        if (!l.outcome) e[k('outcome')] = MSG.required
+        if (l.outcome === 'Callback requested') {
+          if (!l.nextStepWhen) e[k('nextStepWhen')] = MSG.required; else if (!parseInputDateTime(l.nextStepWhen)) e[k('nextStepWhen')] = MSG.dateTime
+          if (!l.nextStepMode) e[k('nextStepMode')] = MSG.required
+        }
+        if (l.files.length === 0) e[k('files')] = MSG.attach
+      })
+      break
+    }
+    case 'Met':
+      d.meetings.forEach((m, i) => {
+        const k = (f: string) => `meetings.${i}.${f}`
+        if (!m.where) e[k('where')] = MSG.required
+        if (!m.when) e[k('when')] = MSG.required; else if (!parseInputDateTime(m.when)) e[k('when')] = MSG.dateTime
+        if (m.files.length === 0) e[k('files')] = MSG.attach
+      })
+      break
+    case 'Quote Sent':
+      if (d.quoteTab === 'system') { if (!d.quoteSelected) e.quote = MSG.choose }
+      else {
+        if (!d.quoteUploaded) e.quote = MSG.attach
+        const a = amountError(d.quoteAmount); if (a) e.quoteAmount = a
+      }
+      break
+    case 'Won': {
+      if (d.wonQuoteTab === 'system') { if (!d.wonQuote) e.wonQuote = MSG.choose }
+      else {
+        if (!d.wonQuoteUploaded) e.wonQuote = MSG.attach
+        const a = amountError(d.wonQuoteAmount); if (a) e.wonQuoteAmount = a
+      }
+      if (d.wonContractTab === 'system') { if (!d.wonContract) e.wonContract = MSG.choose }
+      else if (!d.wonContractUploaded) e.wonContract = MSG.attach
+      const total = d.milestones.reduce((n, m) => n + (Number.isFinite(m.pct) ? m.pct : 0), 0)
+      if (total !== 100) e.milestones = MSG.milestones
+      if (!d.projectType) e.projectType = MSG.required
+      break
+    }
+    default: break
+  }
+  return e
+}
+
 /** Per-stage completeness — drives rail states and Save validation (A1). */
 export function stageComplete(stage: Stage, d: WizardData): boolean {
-  switch (stage) {
-    case 'New': return true
-    case 'Contacted': return d.logs.some((l) => l.channel && l.when)
-    case 'Met': return !!(d.metWhere && d.metWhen)
-    case 'Quote Sent':
-      return d.quoteTab === 'system' ? !!d.quoteSelected : !!(d.quoteUploaded && d.quoteAmount)
-    case 'Won': return !!(d.wonQuote && d.wonContract)
-    default: return true
-  }
+  return Object.keys(validateStage(stage, d)).length === 0
 }
 
 /** Which WizardData fields belong to which stage — the journey reads a stage's details only from that stage's own log. */
 export const STAGE_FIELDS: Record<(typeof STAGES)[number], (keyof WizardData)[]> = {
   'New': [],
   'Contacted': ['logs'],
-  'Met': ['metWhere', 'metWhen', 'metFiles', 'metNotes'],
+  'Met': ['meetings'],
   'Quote Sent': ['quoteTab', 'quoteSelected', 'quoteUploaded', 'quoteAmount'],
-  'Won': ['wonQuoteTab', 'wonQuote', 'wonContractTab', 'wonContract', 'milestones', 'projectType'],
+  'Won': ['wonQuoteTab', 'wonQuote', 'wonQuoteUploaded', 'wonQuoteAmount', 'wonContractTab', 'wonContract', 'wonContractUploaded', 'milestones', 'projectType'],
 }
 
 /** A stage log written by the wizard (as opposed to a quick move, an On Hold/Lost reason, or an undo). */

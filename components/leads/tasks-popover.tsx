@@ -4,21 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { FloatingField } from '@/components/leads/move-stage/fields'
+import { TextField } from '@/components/om/text-field'
+import { FieldError } from '@/components/leads/move-stage/fields'
+import { MSG } from '@/lib/forms'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
-import { displayDate, isDueToday, isOverdue } from '@/lib/format'
+import { displayDate, isDueToday, isOverdue, parseInputDate } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
 import { toDMY } from '@/lib/leads/filters'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { LeadTask } from '@/lib/db/schema'
 import styles from './tasks-popover.module.css'
-
-function parseDMY(s: string): Date | null {
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s.trim())
-  if (!m) return null
-  const dt = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
-  return dt.getDate() === Number(m[1]) && dt.getMonth() === Number(m[2]) - 1 ? dt : null
-}
 
 export type TasksPos = { top: number; left: number; seq: number }
 
@@ -56,7 +51,7 @@ function TaskRow({
     if (!ok) setPendingDue(null)
   }
   const commitDue = async () => {
-    const d = parseDMY(dueText)
+    const d = parseInputDate(dueText)
     if (!d) { setDueError(true); return }
     await commitDate(d)
   }
@@ -89,6 +84,7 @@ function TaskRow({
             )}
           </span>
         ) : editingDue ? (
+          <span className={styles.dueEdit}>
             <input
               ref={dueRef}
               className={styles.dueInput}
@@ -110,6 +106,8 @@ function TaskRow({
                 if (dueText.trim()) void commitDue(); else setEditingDue(false)
               }}
             />
+            {dueError ? <FieldError message={MSG.date} /> : null}
+          </span>
         ) : (
           <button type="button" className={styles.setDue} onClick={() => { setDueText(''); setDueError(false); setEditingDue(true); setPickerOpen(true) }}>
             <Icon name="calendar_add_on" size={16} />
@@ -243,7 +241,7 @@ export function TasksPopover({
           {adding ? (
             <div className={styles.addArea}
                  onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
-              <FloatingField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} />
+              <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} />
               <div className={styles.addBtns}>
                 <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
                 <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>

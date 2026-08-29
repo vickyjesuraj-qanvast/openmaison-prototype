@@ -342,8 +342,6 @@ export function KanbanBoard({
                     {leads.length === 0 ? (
                       searching ? (
                         <div className={styles.noResults}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src="/figma-assets/empty-no-results.svg" alt="" className={styles.noResultsArt} />
                           <span className={styles.noResultsTitle}>No results found</span>
                           <span className={styles.noResultsSub}>{query.trim() ? 'Check your spelling and try again.' : 'No leads match this filter.'}</span>
                           <button type="button" className={styles.clearLink} onClick={onClearSearch}>Clear All</button>

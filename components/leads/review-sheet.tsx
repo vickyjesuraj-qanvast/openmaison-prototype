@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { overlayFade, sheetRise } from '@/lib/motion'
+import { overlayFade, modalPanel } from '@/lib/motion'
 import { displayDate, relativeTime } from '@/lib/format'
 import type { ReviewRow } from '@/lib/leads/queries'
 import styles from './review-sheet.module.css'
@@ -57,16 +57,18 @@ export function ReviewSheet({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  const sources = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const r of rows) { const s = r.data['Lead Source'] || 'Others'; m.set(s, (m.get(s) ?? 0) + 1) }
-    return [...m.entries()].sort((a, b) => b[1] - a[1])
-  }, [rows])
   const duplicates = rows.filter((r) => r.row.status === 'duplicate')
   const clean = rows.filter((r) => r.row.status === 'pending')
+  const effectiveDupOnly = dupOnly && duplicates.length > 0
+  // Chip counts describe what the list shows: with "only duplicates" on they count duplicates only (user 2026-08-29).
+  const countable = effectiveDupOnly ? duplicates : rows
+  const sources = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of countable) { const s = r.data['Lead Source'] || 'Others'; m.set(s, (m.get(s) ?? 0) + 1) }
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }, [countable])
   // Filters are derived from the live queue so a chip/toggle can't go stale after a refresh.
   const activeSource = source !== null && sources.some(([s]) => s === source) ? source : null
-  const effectiveDupOnly = dupOnly && duplicates.length > 0
   const visible = rows.filter((r) => (!activeSource || (r.data['Lead Source'] || 'Others') === activeSource) && (!effectiveDupOnly || r.row.status === 'duplicate'))
   const selected = visible.find((r) => r.row.id === selectedId) ?? visible[0] ?? null
 
@@ -90,19 +92,21 @@ export function ReviewSheet({
     const v = r.data[f.key] ?? ''
     return f.leadKey === 'budgetMinor' ? fmtBudget(v) : v
   }
+  // Frozen-column shadows only while the table is scrolled (user 2026-08-29).
+  const markScroll = (e: React.UIEvent<HTMLDivElement>) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)
   const matchedLabel = (r: ReviewRow) => (r.row.matchedOn === 'email' ? 'Email' : r.row.matchedOn === 'phone' ? 'Phone' : null)
 
   return (
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit">
-          <motion.div className={styles.panel} variants={sheetRise} role="dialog" aria-modal aria-label="Review imported leads">
+          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads">
             <div className={styles.heading}>
               <div className={styles.titleGroup}>
                 <span className={styles.title}>Review imported leads ({rows.length})</span>
               </div>
               <button type="button" className={styles.closeBtn} aria-label="Close review" onClick={onClose} disabled={busy}>
-                <Icon name="close" size={20} family="outlined" />
+                <Icon name="close" size={24} family="outlined" />
               </button>
             </div>
 
@@ -142,7 +146,7 @@ export function ReviewSheet({
                       <span className={styles.cardMeta}>
                         {[r.data['Lead Phone Number'], r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}
                       </span>
-                      {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : 'another lead in this file'}</span> : null}
+                      {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : r.twin ? `${r.twin.data['Lead Name'] || 'a row'} (${r.twin.sameFile ? 'in this file' : 'in the queue'})` : 'another lead in this file'}</span> : null}
                       <div className={styles.cardFoot}>
                         <span className={styles.tag} data-tone={isDup ? 'duplicate' : 'pending'}>{isDup ? 'Duplicate' : 'Pending'}</span>
                         <span className={styles.cardActions}>
@@ -170,7 +174,7 @@ export function ReviewSheet({
                   <>
                     <div className={styles.detailBody}>
                       <span className={styles.detailTitle}>Merge with existing lead</span>
-                      <div className={styles.table} role="table" aria-label="Merge fields">
+                      <div className={styles.table} role="table" onScroll={markScroll} aria-label="Merge fields">
                         <div className={styles.tr} role="row">
                           <div className={`${styles.th} ${styles.cLabel}`} />
                           <div className={`${styles.th} ${styles.cCol}`}>Existing · {displayDate(selected.existing.createdAt)}</div>
@@ -232,12 +236,48 @@ export function ReviewSheet({
                               }}>Merge into Existing</Button>
                     </div>
                   </>
+                ) : selected.row.status === 'duplicate' && selected.twin ? (
+                  <>
+                    {/* In-file duplicate (user 2026-08-29: the match was never shown): the row it collided with, side by side. */}
+                    <div className={styles.detailBody}>
+                      <span className={styles.detailTitle}>{selected.twin.sameFile ? 'Duplicate of another row in this file' : 'Duplicate of a row already in the queue'}</span>
+                      <span className={styles.note}>{selected.twin.sameFile ? 'Both rows came in the same file' : `The same lead was imported earlier (${selected.twin.fileName})`} — there is no existing lead to merge into. Keep both as separate leads, or reject this one.</span>
+                      <div className={styles.table} role="table" onScroll={markScroll} aria-label="Duplicate rows">
+                        <div className={styles.tr} role="row">
+                          <div className={`${styles.th} ${styles.cLabel}`} />
+                          <div className={`${styles.th} ${styles.cCol}`}>{selected.twin.sameFile ? 'In this file' : 'Queued earlier'} · {selected.twin.status === 'approved' ? 'already added' : selected.twin.status === 'pending' ? 'awaiting review' : selected.twin.status}</div>
+                          <div className={`${styles.th} ${styles.cCol}`}>This row · {displayDate(selected.receivedAt)}</div>
+                        </div>
+                        {FIELDS.map((f) => {
+                          const tw = newValue({ ...selected, data: selected.twin!.data }, f)
+                          const nw = newValue(selected, f)
+                          const matched = matchedLabel(selected) === f.label
+                          return (
+                            <div key={f.label} className={styles.tr} role="row" data-matched={matched || undefined}>
+                              <div className={`${styles.td} ${styles.cLabel}`} data-warn={matched || undefined}>
+                                {f.label}{matched ? <span data-warn><Icon name="warning" size={16} /></span> : null}
+                              </div>
+                              <div className={`${styles.td} ${styles.cCol}`}><span className={styles.cValue}>{tw || '—'}</span></div>
+                              <div className={`${styles.td} ${styles.cCol}`}>
+                                {matched ? <span className={`${styles.cValue} ${styles.matchedNote}`}>identical - matched on this</span> : <span className={styles.cValue}>{nw || '—'}</span>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className={styles.footer}>
+                      <span className={styles.spacer} />
+                      <button type="button" className={styles.outlineBtn} data-tone="red" disabled={busy} onClick={() => { void run(() => onReject([selected.row.id])) }}>Reject</button>
+                      <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
+                    </div>
+                  </>
                 ) : (
                   <>
                     <div className={styles.detailBody}>
                       <span className={styles.detailTitle}>{selected.row.status === 'duplicate' ? 'Duplicate of an earlier row in this file' : 'New lead'}</span>
                       {selected.row.status === 'duplicate' ? <span className={styles.note}>No existing lead to merge with — approve to keep it as a separate lead, or reject it.</span> : null}
-                      <div className={styles.table} role="table" aria-label="New lead details">
+                      <div className={styles.table} role="table" onScroll={markScroll} aria-label="New lead details">
                         <div className={styles.tr} role="row">
                           <div className={`${styles.th} ${styles.cLabel}`} />
                           <div className={styles.th} style={{ flex: 1 }}>New · {displayDate(selected.receivedAt)}</div>

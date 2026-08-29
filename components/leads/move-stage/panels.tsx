@@ -1,180 +1,264 @@
 'use client'
 
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Checkbox } from '@/components/ds'
+import { ReadOnlyScope } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
 import { CONTACT_CHANNELS } from '@/lib/leads/enums'
 import { money } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
-import { ChoiceChips, Divider, FileTile, FloatingField, LinkButton, NotesArea, SectionRow, Dropzone } from './fields'
-import type { ContactLog, WizardData } from './types'
+import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
+import { amountMinor, DEFAULT_MILESTONES, zeroMilestones } from '@/lib/leads/stage-data'
+import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 
 const OUTCOMES = ['Callback requested', 'Meeting scheduled', 'No response']
 const NEXT_STEP_BY_OUTCOME: Record<string, string> = { 'Callback requested': 'Schedule a call' }
 
+/** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
-  team, data, update,
-}: { team: Member[]; data: WizardData; update: (patch: Partial<WizardData>) => void }) {
-  const toggle = (id: string) => {
-    const set = new Set(data.assignees)
-    if (set.has(id)) set.delete(id); else set.add(id)
-    update({ assignees: Array.from(set) })
-  }
+  team, data,
+}: { team: Member[]; data: WizardData; update?: (patch: Partial<WizardData>) => void }) {
   return (
     <>
       <p className={styles.panelTitle}>New</p>
       <div className={styles.stack12}>
         <SectionRow label="Assignees" />
         {team.map((m) => (
-          <button key={m.id} type="button"
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
-                  onClick={() => toggle(m.id)}>
+          <div key={m.id}
+               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', width: '100%', textAlign: 'left' }}>
             <Avatar name={m.name} color={m.color} size={40} />
             <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ font: 'var(--om-type-body-m)', color: 'var(--om-color-on-surface-default)' }}>{m.name}</span>
               <span style={{ font: 'var(--om-type-body-s)', color: 'var(--om-color-on-surface-secondary)' }}>{m.isYou ? `${m.role} (you)` : m.role}</span>
             </span>
-            <Checkbox isSelected={data.assignees.includes(m.id)} onChange={() => toggle(m.id)} aria-label={`Assign ${m.name}`} />
-          </button>
+            <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled aria-label={`Assigned: ${m.name}`} />
+          </div>
         ))}
       </div>
     </>
   )
 }
 
-function LogCard({
-  index, log, onChange, onAutoFill, collapsible,
+/** Shared frame for a log card (780:89150 / 780:90234): "Log n" · Auto Fill (editable) or Edit (read-only) · collapse chevron.
+ *  The read-only scope is per log (user 2026-08-29: after Add Log only the new log is open; older logs stay read-only until their own Edit).
+ *  Header controls sit outside the scope so they stay live while the body is disabled. */
+function LogShell({
+  index, collapsed, onToggle, readOnly, onAutoFill, onEdit, onDelete, children,
 }: {
-  index: number; log: ContactLog
-  onChange: (patch: Partial<ContactLog>) => void
-  onAutoFill: () => void
-  collapsible: boolean
+  index: number; collapsed: boolean; onToggle: () => void; readOnly: boolean
+  onAutoFill: () => void; onEdit?: () => void
+  /** Extra logs can be removed while open (user 2026-08-29); the last remaining log never offers it. */
+  onDelete?: () => void
+  children: ReactNode
 }) {
-  const collapsed = !!log.collapsed
-  const nextStep = NEXT_STEP_BY_OUTCOME[log.outcome]
   return (
-    <div className={styles.logCard} data-collapsed={collapsed || undefined}>
+    <div className={styles.logCard} data-collapsed={collapsed || undefined} data-readonly={readOnly || undefined}>
       <div className={styles.logHead}>
         <span className={styles.logTitle}>Log {index + 1}</span>
-        {!collapsed ? (
+        {!collapsed && !readOnly ? (
           <button type="button" className={styles.autoFill} onClick={onAutoFill}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/figma-assets/sparkle.svg" alt="" />
             Auto Fill
           </button>
         ) : null}
-        {collapsible ? (
-          <button type="button" className={styles.logChevron}
-                  aria-label={collapsed ? 'Expand log' : 'Collapse log'}
-                  onClick={() => onChange({ collapsed: !collapsed })}>
-            <Icon name={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={24} />
+        {!collapsed && readOnly && onEdit ? (
+          <button type="button" className={styles.autoFill} onClick={onEdit}>
+            <Icon name="edit" size={20} />
+            Edit
           </button>
         ) : null}
+        {!collapsed && !readOnly && onDelete ? (
+          <button type="button" className={styles.logChevron} aria-label={`Delete log ${index + 1}`} onClick={onDelete}>
+            <Icon name="delete" size={24} weight={300} />
+          </button>
+        ) : null}
+        <button type="button" className={styles.logChevron} aria-label={collapsed ? 'Expand log' : 'Collapse log'} onClick={onToggle}>
+          <Icon name={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={24} />
+        </button>
       </div>
       {!collapsed ? (
-        <div className={styles.logBody}>
-          <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={log.channel}
-                       onChange={(v) => onChange({ channel: v })} />
-          <div className={styles.fieldPair}>
-            <FloatingField label="Date & Time" value={log.when} placeholder="12/8/2026, 3:00PM"
-                           onChange={(v) => onChange({ when: v })} trailingIcon="event" />
-            <FloatingField label="Outcome" value={log.outcome} options={OUTCOMES}
-                           onChange={(v) => onChange({ outcome: v })} />
-          </div>
-          {nextStep ? (
-            <div className={styles.stack24}>
-              <span className={styles.sectionLabel}>Next step: {nextStep}</span>
-              <div className={styles.fieldPair}>
-                <FloatingField label="Date & Time" value={log.nextStepWhen} placeholder="24/8/2026, 7:00PM"
-                               onChange={(v) => onChange({ nextStepWhen: v })} trailingIcon="event" />
-                <FloatingField label="Preferred mode" value={log.nextStepMode} options={[...CONTACT_CHANNELS]}
-                               onChange={(v) => onChange({ nextStepMode: v })} />
-              </div>
-            </div>
-          ) : null}
-          <Divider />
-          <div className={styles.stack12}>
-            <SectionRow label="Attach screenshots of your call attempts"
-                        action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
-            {log.files.length ? (
-              <div style={{ display: 'flex', gap: 12 }}>
-                {log.files.map((f, i) => (
-                  <FileTile key={`${f}-${i}`} name={f} image
-                            onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <Divider />
-          <div className={styles.stack12}>
-            <span className={styles.sectionLabel}>Notes (optional)</span>
-            <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
-          </div>
-        </div>
+        <ReadOnlyScope readOnly={readOnly}>
+          <div className={styles.logBody}>{children}</div>
+        </ReadOnlyScope>
       ) : null}
     </div>
   )
 }
 
+function LogCard({
+  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today,
+}: {
+  index: number; log: ContactLog
+  onChange: (patch: Partial<ContactLog>) => void
+  onAutoFill: () => void
+  onEdit?: () => void
+  onDelete?: () => void
+  readOnly: boolean
+  errors: StageErrors
+  today: Date
+}) {
+  const nextStep = NEXT_STEP_BY_OUTCOME[log.outcome]
+  const err = (f: string) => errors[`logs.${index}.${f}`]
+  return (
+    <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
+              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
+      <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={log.channel}
+                   onChange={(v) => onChange({ channel: v })} error={err('channel')} />
+      <div className={styles.fieldPair}>
+        <DateTimeField label="Date & Time" value={log.when} today={today}
+                       onChange={(v) => onChange({ when: v })} error={err('when')} />
+        <TextField label="Outcome" value={log.outcome} mode="select" options={OUTCOMES}
+                   onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
+      </div>
+      {nextStep ? (
+        <div className={styles.stack24}>
+          <span className={styles.sectionLabel}>Next step: {nextStep}</span>
+          <div className={styles.fieldPair}>
+            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
+                           onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
+            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_CHANNELS]}
+                       onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
+          </div>
+        </div>
+      ) : null}
+      <Divider />
+      <div className={styles.stack12}>
+        <SectionRow label="Attach screenshots of your call attempts"
+                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
+        {log.files.length ? (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {log.files.map((f, i) => (
+              <FileTile key={`${f}-${i}`} name={f} image
+                        onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
+            ))}
+          </div>
+        ) : null}
+        <FieldError message={err('files')} />
+      </div>
+      <Divider />
+      <div className={styles.stack12}>
+        <span className={styles.sectionLabel}>Notes (optional)</span>
+        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
+      </div>
+    </LogShell>
+  )
+}
+
 export function ContactedPanel({
-  data, update, onAutoFill,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; onAutoFill: () => void }) {
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
+}: {
+  data: WizardData; update: (patch: Partial<WizardData>) => void; onAutoFill: () => void
+  /** Per-log read-only (completed stage): which logs are locked, and how a log unlocks. */
+  onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
+  onDeleteLog?: (i: number) => void
+  errors: StageErrors; today: Date
+}) {
   const setLog = (i: number, patch: Partial<ContactLog>) =>
     update({ logs: data.logs.map((l, j) => (j === i ? { ...l, ...patch } : l)) })
   return (
     <>
-      <div className={styles.stack12}>
-        <SectionRow label="" action={undefined} />
-      </div>
       {data.logs.map((log, i) => (
-        <LogCard key={i} index={i} log={log} collapsible={data.logs.length > 1}
+        <LogCard key={i} index={i} log={log} errors={errors} today={today}
+                 readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
+                 onDelete={onDeleteLog && data.logs.length > 1 ? () => onDeleteLog(i) : undefined}
                  onChange={(p) => setLog(i, p)} onAutoFill={onAutoFill} />
       ))}
     </>
   )
 }
 
-export function MetPanel({ data, update }: { data: WizardData; update: (patch: Partial<WizardData>) => void }) {
+/** Met (780:90234): the same log list — Where · Date & Time / divider / meeting documents / divider / notes. */
+function MeetingCard({
+  index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today,
+}: {
+  index: number; log: MeetingLog
+  onChange: (patch: Partial<MeetingLog>) => void
+  onAutoFill: () => void
+  onEdit?: () => void
+  onDelete?: () => void
+  readOnly: boolean
+  errors: StageErrors
+  today: Date
+}) {
+  const err = (f: string) => errors[`meetings.${index}.${f}`]
   return (
-    <div className={styles.logCard}>
-      <div className={styles.logHead}>
-        <span className={styles.logTitle}>Log 1</span>
+    <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
+              readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
+      <div className={styles.fieldPair}>
+        <TextField label="Where" value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
+                   onChange={(v) => onChange({ where: v })} error={err('where')} />
+        <DateTimeField label="Date & Time" value={log.when} today={today}
+                       onChange={(v) => onChange({ when: v })} error={err('when')} />
       </div>
-      <div className={styles.logBody}>
-        <div className={styles.fieldPair}>
-          <FloatingField label="Where" value={data.metWhere} options={['In person', 'Video call', 'Showroom']}
-                         onChange={(v) => update({ metWhere: v })} />
-          <FloatingField label="Date & Time" value={data.metWhen} placeholder="12/8/2026, 3:00PM"
-                         onChange={(v) => update({ metWhen: v })} trailingIcon="event" />
-        </div>
-        <div className={styles.stack12}>
-          <SectionRow label="Attach meeting documents"
-                      action={<LinkButton icon="attach_file" onClick={() => update({ metFiles: [...data.metFiles, 'Q-101'] })}>Attach Files</LinkButton>} />
-          {data.metFiles.length ? (
-            <div style={{ display: 'flex', gap: 12 }}>
-              {data.metFiles.map((f, i) => (
-                <FileTile key={`${f}-${i}`} name={f}
-                          onDelete={() => update({ metFiles: data.metFiles.filter((_, j) => j !== i) })} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-        <div className={styles.stack12}>
-          <span className={styles.sectionLabel}>Notes (optional)</span>
-          <NotesArea value={data.metNotes} onChange={(v) => update({ metNotes: v })} />
-        </div>
+      <Divider />
+      <div className={styles.stack12}>
+        <SectionRow label="Attach meeting documents"
+                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
+        {log.files.length ? (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {log.files.map((f, i) => (
+              <FileTile key={`${f}-${i}`} name={f} onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
+            ))}
+          </div>
+        ) : null}
+        <FieldError message={err('files')} />
       </div>
-    </div>
+      <Divider />
+      <div className={styles.stack12}>
+        <span className={styles.sectionLabel}>Notes (optional)</span>
+        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
+      </div>
+    </LogShell>
   )
 }
 
+export function MetPanel({
+  data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
+}: {
+  data: WizardData; update: (patch: Partial<WizardData>) => void; onAutoFill: () => void
+  onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
+  onDeleteLog?: (i: number) => void
+  errors: StageErrors; today: Date
+}) {
+  const setLog = (i: number, patch: Partial<MeetingLog>) =>
+    update({ meetings: data.meetings.map((m, j) => (j === i ? { ...m, ...patch } : m)) })
+  return (
+    <>
+      {data.meetings.map((m, i) => (
+        <MeetingCard key={i} index={i} log={m} errors={errors} today={today}
+                     readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
+                     onDelete={onDeleteLog && data.meetings.length > 1 ? () => onDeleteLog(i) : undefined}
+                     onChange={(p) => setLog(i, p)} onAutoFill={onAutoFill} />
+      ))}
+    </>
+  )
+}
+
+/**
+ * Simulated upload (780:91263): any picked file shows "Uploading..." for a beat, then the panel shows the
+ * mock's file. The timer lives here so the state can't outlive the panel.
+ */
+function useUploadSim(ms = 1400) {
+  const [uploading, setUploading] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  const start = (onDone: () => void) => {
+    if (timer.current) clearTimeout(timer.current)
+    setUploading(true)
+    timer.current = setTimeout(() => { timer.current = null; setUploading(false); onDone() }, ms)
+  }
+  return { uploading, start }
+}
+
 export function AttachTabs({
-  tab, onTab, selected, onSelect, uploaded, onUpload, onRemoveUpload, quotes,
+  tab, onTab, selected, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes,
 }: {
   tab: 'system' | 'upload'; onTab: (t: 'system' | 'upload') => void
   selected: string | null; onSelect: (name: string) => void
-  uploaded: string | null; onUpload: () => void; onRemoveUpload: () => void
+  uploaded: string | null; uploading?: boolean; onUpload: () => void; onRemoveUpload: () => void
   quotes: { name: string; meta: string[] }[]
 }) {
   return (
@@ -205,18 +289,24 @@ export function AttachTabs({
               <LinkButton>View</LinkButton>
             </button>
           ))
-        ) : uploaded ? (
-          <div className={styles.fileRow}>
-            <span style={{ color: 'var(--om-color-tertiary-red-default)', display: 'inline-flex' }}>
-              <Icon name="picture_as_pdf" size={20} />
-            </span>
-            <span className={styles.quoteName} style={{ flex: 1, minWidth: 0 }}>{uploaded}</span>
-            <button type="button" className={styles.logChevron} aria-label="Remove file" onClick={onRemoveUpload}>
-              <Icon name="delete" size={24} weight={300} />
-            </button>
-          </div>
         ) : (
-          <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" onPick={onUpload} />
+          <>
+            {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row */}
+            <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" uploading={uploading} onPick={onUpload} />
+            {uploaded ? (
+              <div className={styles.quoteRow} data-selected="true" data-file-row="true">
+                <span className={styles.quoteRadio}>
+                  <Icon name="radio_button_checked" size={20} weight={300} fill />
+                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className={styles.pdfBadge} src="/figma-assets/file-pdf.svg" alt="PDF" width={24} height={24} />
+                <span className={styles.quoteName} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploaded}</span>
+                <button type="button" className={styles.logChevron} aria-label="Remove file" onClick={onRemoveUpload}>
+                  <Icon name="delete" size={20} weight={300} />
+                </button>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
     </div>
@@ -224,12 +314,16 @@ export function AttachTabs({
 }
 
 export function QuoteSentPanel({
-  data, update, leadBudgetMinor,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; leadBudgetMinor: number }) {
+  data, update, errors, leadBudgetMinor,
+}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
+  // Attach rows (mock: dead buttons) — local tiles like the other stages; not persisted, no validation key.
+  const [meetingFiles, setMeetingFiles] = useState<string[]>([])
+  const [renderFiles, setRenderFiles] = useState<string[]>([])
   const quotes = [
     { name: 'Whole-home renovation', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
     { name: 'Whole-home renovation-v1', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
   ]
+  const upload = useUploadSim()
   return (
     <>
       <div className={styles.stack12}>
@@ -237,31 +331,56 @@ export function QuoteSentPanel({
         <AttachTabs
           tab={data.quoteTab} onTab={(t) => update({ quoteTab: t })}
           selected={data.quoteSelected} onSelect={(n) => update({ quoteSelected: n })}
-          uploaded={data.quoteUploaded}
-          onUpload={() => update({ quoteUploaded: 'Whole-home renovation.pdf' })}
+          uploaded={data.quoteUploaded} uploading={upload.uploading}
+          onUpload={() => upload.start(() => update({ quoteUploaded: 'Whole-home renovation' }))}   // 780:91468: the mock's file, whatever was picked
           onRemoveUpload={() => update({ quoteUploaded: null })}
           quotes={quotes}
         />
+        <FieldError message={errors.quote} />
       </div>
+      {/* Upload flow only — a system quote already knows its amount */}
       {data.quoteTab === 'upload' && data.quoteUploaded ? (
-        <FloatingField label="Quote amount (S$)" value={data.quoteAmount} placeholder="70,500"
-                       onChange={(v) => update({ quoteAmount: v })} trailingIcon="" readOnly={false} />
+        <TextField label="Quote amount (S$)" value={data.quoteAmount} placeholder="70,500" inputMode="numeric"
+                   onChange={(v) => update({ quoteAmount: v })} error={errors.quoteAmount} />
       ) : null}
       <Divider />
-      <SectionRow label="Attach meeting documents"
-                  action={<LinkButton icon="attach_file">Attach Files</LinkButton>} />
+      <div className={styles.stack12}>
+        <SectionRow label="Attach meeting documents"
+                    action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
+        {meetingFiles.length ? (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {meetingFiles.map((f, i) => (
+              <FileTile key={`${f}-${i}`} name={f} onDelete={() => setMeetingFiles((fs) => fs.filter((_, j) => j !== i))} />
+            ))}
+          </div>
+        ) : null}
+      </div>
       <Divider />
-      <SectionRow label="Attach render (optional)"
-                  action={<LinkButton icon="attach_file">Attach Files</LinkButton>} />
+      <div className={styles.stack12}>
+        <SectionRow label="Attach render (optional)"
+                    action={<LinkButton icon="attach_file" onClick={() => setRenderFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
+        {renderFiles.length ? (
+          <div style={{ display: 'flex', gap: 12 }}>
+            {renderFiles.map((f, i) => (
+              <FileTile key={`${f}-${i}`} name={f} image onDelete={() => setRenderFiles((fs) => fs.filter((_, j) => j !== i))} />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </>
   )
 }
 
 export function WonPanel({
-  data, update, leadBudgetMinor,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; leadBudgetMinor: number }) {
+  data, update, errors, leadBudgetMinor,
+}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
   const quotes = [{ name: 'Whole-home renovation', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Signed on 19 Aug'] }]
   const contracts = [{ name: 'Contract_OliviaM_signed.pdf', meta: ['Signed on 19 Aug'] }]
+  const quoteUpload = useUploadSim()
+  const contractUpload = useUploadSim()
+  const uploadedQuote = data.wonQuoteTab === 'upload'
+  // The split is computed on the signed quote's amount: the system quote's, or the amount typed for an upload (780:92744 total).
+  const basisMinor = uploadedQuote ? amountMinor(data.wonQuoteAmount) : leadBudgetMinor
   const totalPct = data.milestones.reduce((s, m) => s + (m.pct || 0), 0)
   const setPct = (i: number, pct: number) =>
     update({ milestones: data.milestones.map((m, j) => (j === i ? { ...m, pct } : m)) })
@@ -272,32 +391,36 @@ export function WonPanel({
         <AttachTabs
           tab={data.wonQuoteTab} onTab={(t) => update({ wonQuoteTab: t })}
           selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n })}
-          uploaded={data.wonQuoteTab === 'upload' ? data.wonQuote : null}
-          onUpload={() => update({ wonQuote: 'Whole-home renovation.pdf' })}
-          onRemoveUpload={() => update({ wonQuote: null })}
+          uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
+          // An uploaded signed quote carries no payment split we can trust — every milestone drops to 0% (user 2026-08-29)
+          onUpload={() => quoteUpload.start(() => update({ wonQuoteUploaded: 'Whole-home renovation', milestones: zeroMilestones() }))}
+          onRemoveUpload={() => update({ wonQuoteUploaded: null, wonQuoteAmount: '', milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })) })}
           quotes={quotes}
         />
+        <FieldError message={errors.wonQuote} />
       </div>
+      {uploadedQuote && data.wonQuoteUploaded ? (
+        <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" inputMode="numeric"
+                   onChange={(v) => update({ wonQuoteAmount: v })} error={errors.wonQuoteAmount} />
+      ) : null}
+      <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach client signed contract" />
         <AttachTabs
           tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
           selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
-          uploaded={data.wonContractTab === 'upload' ? data.wonContract : null}
-          onUpload={() => update({ wonContract: 'Contract_OliviaM_signed.pdf' })}
-          onRemoveUpload={() => update({ wonContract: null })}
+          uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
+          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: 'Contract_OliviaM_signed.pdf' }))}
+          onRemoveUpload={() => update({ wonContractUploaded: null })}
           quotes={contracts}
         />
+        <FieldError message={errors.wonContract} />
       </div>
+      <Divider />
       <div className={styles.stack12}>
         <div className={styles.rowBetween ?? ''} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
           <span className={styles.sectionLabel} style={{ flex: 1 }}>Payment milestone</span>
-          <LinkButton onClick={() => update({ milestones: [
-            { name: 'Deposit', meta: 'Upon signing', pct: 10 },
-            { name: 'Commencement', meta: 'Works commence', pct: 30 },
-            { name: 'Mid-Project', meta: '50% completion', pct: 30 },
-            { name: 'Completion', meta: 'Handover', pct: 30 },
-          ] })}>Reset to default</LinkButton>
+          <LinkButton onClick={() => update({ milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })) })}>Reset to default</LinkButton>
           <span style={{
             background: 'var(--om-color-tertiary-green-variant2)',
             boxShadow: 'inset 0 0 0 1px var(--om-color-tertiary-green-variant1)',
@@ -308,7 +431,7 @@ export function WonPanel({
         </div>
         <div className={styles.msCard}>
           {data.milestones.map((m, i) => {
-            const amtMinor = Math.round((leadBudgetMinor * (m.pct || 0)) / 100)
+            const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
             return (
               <div key={m.name} className={styles.msRow}>
                 <span className={styles.msIndex}>{i + 1}</span>
@@ -328,13 +451,15 @@ export function WonPanel({
           <div className={`${styles.msRow} ${styles.msTotal}`}>
             <span className={styles.msIndex} />
             <span style={{ flex: 1 }}>Total</span>
-            <span className={styles.msAmt} style={{ width: 'auto' }}>S${money(leadBudgetMinor)}</span>
+            <span className={styles.msAmt} style={{ width: 'auto' }}>S${money(basisMinor)}</span>
           </div>
         </div>
+        <FieldError message={errors.milestones} />
       </div>
-      <FloatingField label="Project type" value={data.projectType}
-                     options={['Whole-home renovation', 'Partial renovation', 'Commercial fit-out']}
-                     onChange={(v) => update({ projectType: v })} />
+      <Divider />
+      <TextField label="Project type" value={data.projectType} mode="select"
+                 options={['Whole-home renovation', 'Partial renovation', 'Commercial fit-out']}
+                 onChange={(v) => update({ projectType: v })} error={errors.projectType} />
     </>
   )
 }

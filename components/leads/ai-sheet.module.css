@@ -29,3 +29,14 @@
   transition: background-color var(--motion-hover);
 }
 .suggestion:hover { background: var(--om-color-hover-04p); }
+
+/* Prototype-only reset (user 2026-08-29): a quiet footer link under the suggestions. */
+.foot { border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); }
+.reset {
+  width: 100%; display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3);
+  border: 0; background: none; border-radius: var(--om-radius-1); cursor: pointer;
+  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover), color var(--motion-hover);
+}
+.reset:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }

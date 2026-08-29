@@ -22,6 +22,13 @@
       "when": 1787985383699,
       "tag": "0002_boring_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787992523120,
+      "tag": "0003_aberrant_salo",
+      "breakpoints": true
     }
   ]
 }

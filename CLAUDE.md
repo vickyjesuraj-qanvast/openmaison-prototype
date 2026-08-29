@@ -1,0 +1,55 @@
+# OpenMaison 2.0 prototype — working context
+
+Hi-fi, pixel-faithful Next.js prototype of OpenMaison's **Leads** module (interior-design studios in Singapore), pitched to clients in live demos. Owner: Vicky (product designer). Phase 1 = lead listing + imports + stage movement (done, polished). Phase 2 = Lead Details / lead journey (not started; waits for Figma).
+
+Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/react` (tokens as `--om-*` CSS variables) — sibling repo.
+
+## How we work (non-negotiable)
+
+1. **The mock wins.** Never invent UI, copy or data. If something is not in a mock, propose first; when the user says build it anyway, log it in `design-source/REGISTER.md` (REG-nnn: what, why, source — `mock` / `user-directed` / `invented copy` / `bug fix`). The register is the audit trail the client sees.
+2. **Verify every change visually** with Playwright at 1440×1024 against a production build on **:3011** (`npx next build && npx next start -p 3011`), screenshots into the scratchpad, then bank the meaningful ones under `design-source/verify/`. **Stop :3011 when done.** The user runs their own `next dev` on **:3000** — never touch it; when they report something you can't reproduce, check their :3000 too.
+3. **DB safety.** `local.db` is the demo data. Tests must leave it as found (diff `leads` stages / `stage_logs` counts before and after); revert any test mutation. Don't seed or reset unless asked.
+4. **Generic pieces everywhere.** Every screen ships the shell (rail, page header, ghost loader `loading.tsx` + `PageReveal`, tooltips, snackbar host, Maison AI FAB). Reuse `components/om/*`; never hand-roll an input, menu, dialog or picker. Checklist: `design-source/context/page-checklist.md`.
+5. **Remember rules.** When the user says "remember this", it goes into the register, the checklist and the memory directory (`~/.claude/projects/-Users-livspace-Documents-GitHub-openmaison-prototype/memory/`).
+6. Keep review workflows compact (the user dislikes long waits). Commit only when the user says so.
+
+## Stack & conventions
+
+- Next 16 App Router (Turbopack), React 19, TS strict + `noUncheckedIndexedAccess`, ESLint react-hooks strict (no `Date.now()`/refs read in render; no setState in effect bodies; use the render-phase adjust pattern or lazy `useState` initialisers), `motion` with `lib/motion` tokens, CSS modules on `--om-*` tokens.
+- Data: Drizzle + libSQL `local.db`. Schema `lib/db/schema.ts`; migrations `pnpm db:generate` → `pnpm db:migrate` (additive only). Server actions in `app/leads/actions.ts` (+ `app/settings/actions.ts`) with `revalidatePath`.
+- Radii: 4 fields/buttons · 8 cards · 12 modals. Elevation `--om-elevation-level-1…5`. Type tokens `--om-type-*`.
+- Modal scale: **s 400 · m 600 · l 800 · xl 1200** (`--om-modal-*`), height to content (viewport-capped); **xxl = fluid, 48px margin on every side**. Modal header standard (779-26016): 64px, 20/24 padding, 20px bold title, bare 24px close icon, 1px divider. No full-page overlays.
+- Snackbar: 344×48, radius 4; action = DS text button in `#CCB2FF`; every inert affordance answers "Coming soon in OpenMaison 2.0".
+
+## Product rules decided so far (all logged in REGISTER.md)
+
+**Stage movement** (Settings › Leads, `settings` table, REG-111…): Linear (default) = one stage at a time, next stage only; Flexible = instant moves with Undo. Won always opens its step (creates the project). On Hold / Lost keep compact dialogs. **Nothing moves backwards** — a completed stage opens read-only in the Move stage window with Edit; kanban drops on earlier columns spring back. Parked leads resume anywhere with a "Resume at X?" confirm. **A lead needs an owner before it leaves New** ("Assign a member first"); past New the Assign popover refuses an empty selection.
+
+**Move stage window** (`components/leads/move-stage/*`): Contacted and Met are **log lists** (Add Log in the title row; each log card = "Log n" · Auto Fill · delete (when >1) · chevron; dividers between field block / attachments / notes). **Read-only is per log**: completed logs stay locked until their own Edit; Add Log opens only the new log. Quote Sent / Won use a whole-stage Edit. New (assignees) is never editable inside the window. Every field except notes is mandatory; validation in `lib/leads/stage-data.ts` (`validateStage`), messages in `lib/forms.ts`. **Contacted journey:** fill (manually or Auto Fill → upload) → Save → *Suggested tasks* → Save adds the ticked tasks (persisted in `lead_tasks`, surfaced later in Lead Details › Tasks) and completes the move; Cancel completes it without tasks. **Upload flow** (Quote Sent / Won, 780:90940 → 91263 → 91468, 780:92744): any picked file → "Uploading..." → the mock's file row under the dropzone; Quote amount (S$) only in the upload flow; an uploaded signed quote zeroes the payment milestones (REG-149).
+
+**Fields** (`components/om/text-field.tsx`, `date-field.tsx`): one `TextField` for everything — Material label-inside-when-empty, DS states from mocks 836-23125 / 836-23276 (empty · active 2px · filled · error red + 12px message · disabled). Dates are never typed: `DateField` / `DateTimeField` open the Material picker (time row + Today are invented, REG-119/125). Errors show after the first submit and clear live.
+
+**Listing**: the primary left band = a **new lead nobody has seen or clicked yet** (`seen_at` null; clears on first click). "Return Lead" only for Qanvast-sourced leads. Anchored popovers (stage dropdown, tasks, assign, customise) follow their cell on scroll and close when it leaves the viewport; dropdown menus close on any press outside the menu. **Frozen columns**: 1px inner border at rest, shadow only while scrolled sideways.
+
+**Review imported leads**: xxl modal; source chips count what the toggle shows; queue duplicates show the row they collided with (same file or an earlier import) side by side; merge table = single-line rows, label column frozen left, Merged result frozen right, equal data columns, 12px caption headers.
+
+**Base state**: `fixtures/baseline.json` is the curated demo state; Maison AI › "Reset prototype to base" restores it (clears `om.*` localStorage, reloads). After curating data, run `pnpm db:baseline` — never edit the JSON by hand.
+
+## Map
+
+- `app/leads/` — listing (`workspace.tsx` owns all listing state, stage-policy helpers `requestStageChange` / `blockedReason` / `journeyIdx`), imports, actions. `app/settings/` — Account setup (only Leads › Stage movement is live).
+- `components/leads/` — table, kanban, toolbar, filters, lead form, import wizard, review sheet, tasks/assign popovers, move-stage wizard + panels + dialogs.
+- `components/om/` — DS-faithful primitives (text field, date picker/fields, portal menu, tooltip, snackbar, choice card, confirm dialog, read-only scope, chip rail, scroll pagers). `components/shell/` — rail, shell, header, skeletons, FAB.
+- `lib/leads/` — enums, queries (`LeadRow` incl. `stageData`, `resumeStage`), stage data + validation, filters, view prefs. `lib/settings/`, `lib/forms.ts` (MSG), `lib/format.ts` (strict date parsers), `lib/db/baseline.ts`.
+- `design-source/` — **`DESIGN.md` (the design counterpart of this file: mock index with node ids, DS specs, interaction rules, copy vocabulary)**, `REGISTER.md` (decisions, REG-1…), `context/page-checklist.md`, `verify/` (banked screenshots), mock notes.
+- Ideation artifacts (claude.ai): stage-movement rethink page, stage-flow playground, stamp-card playground — the "stamp card" (one box per stage) is the direction the user liked; not built.
+
+## Verification recipe
+
+```bash
+npx tsc --noEmit -p . ; npx eslint app components lib
+npx next build && (npx next start -p 3011 &) ; sleep 4
+NODE_PATH=$PWD/node_modules node <scratchpad>/verify-*.cjs   # Playwright, 1440×1024
+pkill -f "next start -p 3011"
+```
+Playwright gotchas: `aria-disabled` elements refuse `.click()` (use `{ force: true }` — not an app bug); locator `has:` needs a page-relative inner locator; card locators like `[class*="card"]` also match `cardHead` (use `[class*="__card"]` + `.first()`); scroll a card into view before measuring; the DS Switch's real input is hidden — click its wrapping label.

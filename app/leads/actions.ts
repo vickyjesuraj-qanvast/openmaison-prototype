@@ -109,7 +109,7 @@ function leadColumns(input: LeadFormInput) {
 export async function createLead(input: LeadFormInput): Promise<string> {
   const now = new Date()
   const id = randomUUID()
-  await db.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })
+  await db.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })   // every new lead carries the band until someone clicks it (user 2026-08-29)
   revalidatePath('/leads')
   return id
 }
@@ -431,4 +431,19 @@ export async function updateStageDetails(input: { leadId: string; stage: string;
     })
   }
   revalidatePath('/leads')
+}
+
+/** The left band marks a lead nobody has opened or clicked yet (user 2026-08-29); the first interaction clears it. */
+export async function markLeadSeen(leadId: string): Promise<void> {
+  const { leads } = await import('@/lib/db/schema')
+  await db.update(leads).set({ seenAt: new Date() }).where(and(eq(leads.id, leadId), isNull(leads.seenAt)))
+  revalidatePath('/leads')
+}
+
+/** Maison AI › "Reset prototype": every table back to fixtures/baseline.json (user 2026-08-29). */
+export async function resetPrototype(): Promise<{ rows: number }> {
+  const { restoreBaseline } = await import('@/lib/db/baseline')
+  const r = await restoreBaseline()
+  revalidatePath('/leads'); revalidatePath('/leads/imports'); revalidatePath('/settings')
+  return { rows: r.rows }
 }

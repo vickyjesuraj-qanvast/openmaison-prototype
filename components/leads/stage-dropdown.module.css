@@ -9,5 +9,10 @@
 .dot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
 .dot[data-tone='green'] { background: var(--om-color-tertiary-green-default); }
 .dot[data-tone='orange'] { background: var(--om-color-tertiary-yellow-default); }
+/* 836:23422: journey metadata on the items — "current" (12px secondary) on the lead's stage, a green check on stages already passed. */
+.itemText { flex: 1; min-width: 0; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.done { color: var(--om-color-tertiary-green-default); display: inline-flex; margin-right: -4px; }
+.done > * { display: inline-flex; }
 /* 780:86452: groups separated by a 1px surface-variant rule with 4px above and below. */
 .rule { height: 1px; margin: var(--om-spacing-1) 0; background: var(--om-color-surface-variant); }

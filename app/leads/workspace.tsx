@@ -39,12 +39,19 @@ import { displayDate } from '@/lib/format'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import type { StageMovement } from '@/lib/settings/types'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { addTask, approveImportRows, assignMembers, completeTask, createLead, deleteForever, deleteLeads, emptyTrash, importLeads, mergeImportRow, moveStage, quickMoveStage, rejectImportRows, restoreLeads, setTaskDue, undoStageMove, updateLead, updateStageDetails } from './actions'
+import { ExportDialog } from '@/components/leads/export-dialog'
+import { addTask, approveImportRows, assignMembers, completeTask, createLead, deleteForever, deleteLeads, emptyTrash, importLeads, markLeadSeen, mergeImportRow, moveStage, quickMoveStage, rejectImportRows, restoreLeads, setTaskDue, undoStageMove, updateLead, updateStageDetails } from './actions'
 import type { LeadRow, ReviewRow } from '@/lib/leads/queries'
 import type { Lead, Member } from '@/lib/db/schema'
 import styles from './leads.module.css'
 
-type Anchored = { id: string; top: number; left: number } | null
+type Anchored = { id: string; el: HTMLElement; top: number; left: number } | null
+
+/* Anchored popovers are fixed-position; these derive their spot from the anchor so they can follow it while the table / board scrolls. */
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom, window.innerHeight - 360), left: r.left } }   // menu hangs from the cell's bottom-left corner (780:86452)
+const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) } }
+const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom + 4, window.innerHeight - 520), left: Math.min(r.left, window.innerWidth - 420) } }
+const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
 function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement }: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
   const comingSoon = useComingSoon()
@@ -64,9 +71,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
   const [addOpen, setAddOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
-  const [customise, setCustomise] = useState<{ top: number; left: number } | null>(null)
+  const [customise, setCustomise] = useState<{ el: HTMLElement; top: number; left: number } | null>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
   const [stageMenu, setStageMenu] = useState<Anchored>(null)
   const [wizard, setWizard] = useState<{ leadId: string; target: Stage } | null>(null)
@@ -96,7 +104,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [nowTick, setNowTick] = useState(initialNow)
   const [leadForm, setLeadForm] = useState<{ mode: 'create' } | { mode: 'edit'; lead: LeadRow } | null>(null)
-  const [tasksFor, setTasksFor] = useState<({ id: string } & TasksPos) | null>(null)
+  const [tasksFor, setTasksFor] = useState<({ id: string; el: HTMLElement } & TasksPos) | null>(null)
   const addRef = useRef<HTMLDivElement>(null)
 
   /* ---- Stage movement policy (Settings › Leads, user 2026-08-29) ----
@@ -107,11 +115,16 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const journeyIdx = (lead: LeadRow) => STAGES.indexOf((isActiveStage(lead.stage) ? lead.stage : lead.resumeStage ?? '') as (typeof STAGES)[number])
   /** Linear movement: why `stage` can't be chosen for `lead` right now (null = allowed). Doubles as the tooltip / snackbar copy. */
   const blockedReason = (lead: LeadRow, stage: Stage): string | null => {
+    // New is not complete without an owner: nothing moves past New until at least one member is assigned (user 2026-08-29), in both policies.
+    if (isActiveStage(stage) && stage !== 'New' && lead.assignees.length === 0) return 'Assign a member first'
+    if (!isActiveStage(lead.stage)) return null   // a parked lead may resume at any stage (with a confirm)
     if (stageMovement !== 'linear' || !isActiveStage(stage)) return null
     const from = journeyIdx(lead)
     if (STAGES.indexOf(stage) <= from + 1) return null
     return `Complete ${STAGES[from + 1]} first`
   }
+  /** A stage the lead has already passed (never a drop target — REG-132). */
+  const isCompletedFor = (lead: LeadRow, stage: Stage) => isActiveStage(lead.stage) && isActiveStage(stage) && STAGES.indexOf(stage) <= journeyIdx(lead)
   const quickMove = async (lead: LeadRow, stage: Stage) => {
     const { logId } = await quickMoveStage({ leadId: lead.id, fromStage: lead.stage, toStage: stage })
     snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void undoStageMove({ leadId: lead.id, logId, toStage: lead.stage }) } })
@@ -119,12 +132,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /** Every stage change — table dropdown or kanban drop — comes through here. */
   const requestStageChange = (lead: LeadRow, stage: Stage) => {
     if (lead.stage === stage) { setPendingDrop(null); return }
-    if (stage === 'On Hold') { setHoldOpenedAt(Date.now()); setOnHold(lead.id); return }
-    if (stage === 'Lost') { setLost(lead.id); return }
+    if (stage === 'On Hold') { setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return }
+    if (stage === 'Lost') { setLostReason('Property too far'); setLost(lead.id); return }
+    const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
+    // A parked lead (On Hold / Lost) resuming really changes where it is — one confirm, any stage.
+    if (!isActiveStage(lead.stage)) { setConfirmMove({ leadId: lead.id, stage }); return }
+    // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
+    if (to <= from) { setWizard({ leadId: lead.id, target: stage }); return }
     if (stageMovement === 'linear') {
-      const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
       if (to === from + 1) { setWizard({ leadId: lead.id, target: stage }); return }
-      if (to <= from) { setConfirmMove({ leadId: lead.id, stage }); return }
       setPendingDrop(null)
       snackbar({ message: blockedReason(lead, stage) ?? `Complete ${STAGES[from + 1]} first` })
       return
@@ -159,24 +175,37 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const clearAll = () => { setQuery(''); setStageScope(null); setFilters(EMPTY_FILTERS) }
   const nothingMatches = rows.length > 0 && filtered.length === 0 && (query.trim() !== '' || activeFilterCount(filters) > 0 || stageScope !== null)
 
-  // Highlight = most recently created lead (mock's "Sample Lead" bar).
-  const highlightId = useMemo(() => {
-    const newest = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
-    return newest?.id
-  }, [rows])
+  // The primary band on a row = a new lead nobody has seen or clicked yet (user 2026-08-29). First interaction clears it.
+  const [seenLocally, setSeenLocally] = useState<Set<string>>(() => new Set())
+  const unseenIds = useMemo(() => new Set(rows.filter((r) => r.seenAt === null && !seenLocally.has(r.id)).map((r) => r.id)), [rows, seenLocally])
+  const markSeen = (row: LeadRow) => {
+    if (!unseenIds.has(row.id)) return
+    setSeenLocally((s) => new Set(s).add(row.id))
+    void markLeadSeen(row.id)
+  }
+  const newest = useMemo(() => [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0], [rows])
 
   // Tasks popover anchored under a task box — table cell or kanban card (user 2026-08-29).
   const openTasks = (row: LeadRow, anchor: HTMLElement) => {
     const t = Date.now()
     setNowTick(t)
     setAssign(null); setStageMenu(null)
-    const r = anchor.getBoundingClientRect()
-    setTasksFor({ id: row.id, seq: t, top: Math.min(r.bottom + 4, window.innerHeight - 520), left: Math.min(r.left, window.innerWidth - 420) })
+    setTasksFor({ id: row.id, seq: t, el: anchor, ...tasksPos(anchor) })
   }
-  const anchorRect = (el: HTMLElement) => {
-    const r = el.getBoundingClientRect()
-    return { top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) }
-  }
+  // Popovers follow their cell while anything scrolls (user 2026-08-29) and close once the anchor leaves the viewport.
+  const anyAnchored = !!(stageMenu || assign || customise || tasksFor)
+  useEffect(() => {
+    if (!anyAnchored) return
+    const follow = () => {
+      setStageMenu((s) => (s ? (offscreen(s.el) ? null : { ...s, ...stagePos(s.el) }) : s))
+      setAssign((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
+      setCustomise((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
+      setTasksFor((s) => (s ? (offscreen(s.el) ? null : { ...s, ...tasksPos(s.el) }) : s))
+    }
+    document.addEventListener('scroll', follow, true)
+    window.addEventListener('resize', follow)
+    return () => { document.removeEventListener('scroll', follow, true); window.removeEventListener('resize', follow) }
+  }, [anyAnchored])
 
   const applyAssign = async (memberIds: string[]) => {
     if (!assign) return
@@ -197,13 +226,12 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   }, [holdDuration, holdOpenedAt])
 
   const aiSuggestions = useMemo(() => {
-    const newest = rows.find((r) => r.id === highlightId)
     return [
       newest ? `Draft intro WhatsApp for ${newest.name}` : 'Draft an intro WhatsApp',
       'Summarise this week’s new leads',
       'Which leads need follow-up today?',
     ]
-  }, [rows, highlightId])
+  }, [newest])
 
   return (
     <PageReveal skeleton={<LeadsSkeleton />}>
@@ -235,7 +263,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   </Tooltip>
                   <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
                     <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
-                    <DropdownItem onSelect={() => { setKebabOpen(false); comingSoon() }}>Export all as…</DropdownItem>
+                    <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportOpen(true) }}>Export all as…</DropdownItem>
                     <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
                     <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/settings') }}>Leads Settings</DropdownItem>
                   </Dropdown>
@@ -279,21 +307,25 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   setPendingDrop({ leadId: lead.id, stage })
                   requestStageChange(lead, stage)
                 }}
-                canDrop={(lead, stage) => !blockedReason(lead, stage)}
-                onDropBlocked={(lead, stage) => snackbar({ message: blockedReason(lead, stage) ?? '' })}
-                onNameClick={() => snackbar({ message: 'Lead Details — coming in the next build' })}
+                canDrop={(lead, stage) => !blockedReason(lead, stage) && !isCompletedFor(lead, stage)}
+                onDropBlocked={(lead, stage) => {
+                  // Backward drops are simply not allowed (user 2026-08-29): the card springs back with the reason.
+                  if (isCompletedFor(lead, stage)) { snackbar({ message: `${stage} is already completed — stages don’t move back` }); return }
+                  snackbar({ message: blockedReason(lead, stage) ?? '' })
+                }}
+                onNameClick={(lead) => { markSeen(lead); snackbar({ message: 'Lead Details — coming in the next build' }) }}
                 onTaskClick={openTasks}
               />
             ) : (
               <LeadsTable
                 rows={filtered}
                 columns={columns}
-                highlightId={highlightId}
+                unseenIds={unseenIds}
+                onRowSeen={markSeen}
                 onNameClick={() => snackbar({ message: 'Lead Details — coming in the next build' })}
                 openStageId={stageMenu?.id ?? null}
                 onStageClick={(row, anchor) => {
-                  const r = anchor.getBoundingClientRect()   // the stage cell: menu hangs from its bottom-left corner (780:86452)
-                  setStageMenu({ id: row.id, top: Math.min(r.bottom, window.innerHeight - 360), left: r.left })
+                  setStageMenu({ id: row.id, el: anchor, ...stagePos(anchor) })
                 }}
                 onTaskClick={openTasks}
                 now={nowTick}
@@ -332,6 +364,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           const row = rows.find((r) => r.id === stageMenu?.id)
           return row ? blockedReason(row, stage) : null
         }}
+        current={rows.find((r) => r.id === stageMenu?.id)?.stage as Stage | undefined ?? null}
+        doneThrough={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? journeyIdx(row) : -1 })()}
         onSelect={(stage) => {
           const leadId = stageMenu!.id
           setStageMenu(null)
@@ -339,12 +373,14 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           if (row) requestStageChange(row, stage)
         }}
       />
+      <ExportDialog open={exportOpen} rows={rows} now={nowTick} onClose={() => setExportOpen(false)}
+                    onDone={(name, format) => snackbar({ message: `Exported ${rows.length} leads as ${format} · ${name}` })} />
       <ConfirmDialog
         open={!!confirmMove}
         tone="primary"
-        title={`Move to ${confirmMove?.stage ?? ''}?`}
-        message="No stage details are needed for this move. Details already recorded stay on the lead’s journey."
-        confirmLabel="Move"
+        title={`Resume at ${confirmMove?.stage ?? ''}?`}
+        message={`${rows.find((r) => r.id === confirmMove?.leadId)?.stage ?? 'On Hold'} ends and the lead continues from ${confirmMove?.stage ?? ''}. Details already recorded stay on its journey.`}
+        confirmLabel="Resume"
         onCancel={() => { setConfirmMove(null); setPendingDrop(null) }}
         onConfirm={async () => {
           const move = confirmMove
@@ -387,14 +423,14 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         reason={holdReason} setReason={setHoldReason}
         duration={holdDuration} setDuration={setHoldDuration}
         followUp={holdFollowUp}
-        onSave={async () => {
+        onSave={async (otherReason) => {
           const lead = rows.find((r) => r.id === onHold)
           setOnHold(null)
           if (!lead) { setPendingDrop(null); return }
           const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
           await moveStage({
             leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
-            payload: { reason: holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
+            payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
             tasks: [],
           })
           snackbar({ message: 'Moved to On Hold' })
@@ -404,11 +440,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         open={!!lost}
         onClose={() => { setLost(null); setPendingDrop(null) }}
         reason={lostReason} setReason={setLostReason}
-        onSave={async () => {
+        onSave={async (otherReason) => {
           const lead = rows.find((r) => r.id === lost)
           setLost(null)
           if (!lead) { setPendingDrop(null); return }
-          await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: lostReason }, tasks: [] })
+          await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: otherReason ? `Others: ${otherReason}` : lostReason }, tasks: [] })
           snackbar({ message: 'Moved to Lost' })
         }}
       />
@@ -418,6 +454,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         value={assignValue}
         onClose={() => setAssign(null)}
         onApply={applyAssign}
+        requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
         position={assign}
       />
       <CustomiseView
@@ -447,6 +484,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onOpenTask={() => snackbar({ message: 'Task Details — coming in the next build' })}
       />
       <LeadFormModal
+        now={nowTick}
         form={leadForm}
         onClose={() => setLeadForm(null)}
         onSubmit={async (mode, data, leadId) => {

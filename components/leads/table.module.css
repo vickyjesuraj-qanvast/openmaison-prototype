@@ -40,15 +40,16 @@
 .hTune:hover { color: var(--om-color-on-surface-default); }
 
 /* Pinned columns stack from the left (inline `left`, scaled by --col-scale for the fluid table).
-   Only the last pinned column — [data-pin-edge] — carries the 2px divider and the group's shadow
+   Only the last pinned column — [data-pin-edge] — carries the 1px edge at rest and the group's shadow while scrolled
    (user rule 2026-08-27); shadow = level-2 turned sideways, clipped so it only falls to the right. */
 .pin { position: sticky; left: 0; z-index: 2; }
 .pin[data-pin-edge] {
-  border-right: var(--om-border-2) solid var(--om-color-surface-variant);
-  /* level-1 turned sideways — as soft as the page header's shadow. */
-  box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06);
-  clip-path: inset(0 -8px 0 0);
+  border-right: var(--om-border-1) solid var(--om-color-surface-variant);   /* at rest: a plain 1px edge (user 2026-08-29) */
+  clip-path: inset(0 -6px 0 0);
+  transition: box-shadow var(--motion-toggle);
 }
+/* The group's shadow only shows while the table is scrolled — set on the scroller by its scroll handler. */
+.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06); }
 .headRow .pin { z-index: 4; }
 
 .row { display: flex; height: 64px; align-items: stretch; position: relative; }
@@ -65,7 +66,7 @@
 }
 .row:hover .cell { background: color-mix(in srgb, black 4%, var(--om-color-surface-default)); }
 
-/* Highlight (newest lead): 4px primary bar + bold name — mock row 1. */
+/* Unseen lead (user 2026-08-29: a new lead nobody has opened or clicked yet): 4px primary bar + bold name — mock row 1. */
 .row[data-highlight='true'] .accent {
   position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--om-color-primary-default); z-index: 3;

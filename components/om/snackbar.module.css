@@ -17,17 +17,28 @@
   background: var(--om-color-inverse-surface-default);
   color: var(--om-color-on-inverse-surface-default);
   font: var(--om-type-body-m);
-  border-radius: var(--om-radius-2);
-  padding: var(--om-spacing-3) var(--om-spacing-4);
+  border-radius: var(--om-radius-1);            /* Snackbar/Default 784:110041: 344 × 48, radius 4 */
+  width: 344px; min-width: 344px; max-width: 344px;   /* fixed width (user 2026-08-29); long messages wrap */
+  min-height: 48px;
+  padding: 6px 12px 6px 16px;
+  gap: var(--om-spacing-2);
   box-shadow: var(--om-elevation-level-3);
 }
+/* Action = DS Buttons / Primary / 36 / Text on the inverse surface: 8px padding, radius 4, subheading-m, inverse primary. */
+.bar > span:first-child { flex: 1; min-width: 0; }
 .action {
-  background: none; border: 0; cursor: pointer; padding: 0;
-  color: var(--om-color-inverse-surface-primary);
+  height: 36px; padding: var(--om-spacing-2);
+  background: none; border: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: #ccb2ff;   /* 784:110041 — the DS inverse primary token renders too saturated on the dark bar; the mock's literal */
   font: var(--om-type-subheading-m);
+  transition: background-color var(--motion-hover);
 }
+.action:hover { background: rgba(255, 255, 255, 0.08); }
+.action:focus-visible { outline: var(--om-border-2) solid #ccb2ff; outline-offset: -2px; }
 .close {
-  background: none; border: 0; cursor: pointer; padding: 0;
-  color: inherit; display: inline-flex; opacity: 0.8;
+  background: none; border: 0; cursor: pointer; padding: 0; margin-left: var(--om-spacing-2);
+  color: inherit; display: inline-flex; border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
 }
-.close:hover { opacity: 1; }
+.close:hover { background: rgba(255, 255, 255, 0.08); }

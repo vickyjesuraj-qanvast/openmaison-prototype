@@ -51,3 +51,33 @@ export const isOverdue = (due: Date | null | undefined, now: number) =>
   !!due && startOfDay(due) < startOfDay(new Date(now))
 export const isDueToday = (due: Date | null | undefined, now: number) =>
   !!due && startOfDay(due) === startOfDay(new Date(now))
+
+/* ---- Input parsing (strict) — fields never accept free text that is not a real date (user 2026-08-29) ---- */
+
+/** `d/m/yyyy` → local midnight, or null. Rejects impossible dates (31/2). */
+export function parseInputDate(s: string): Date | null {
+  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(s)
+  if (!m) return null
+  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
+  return d.getDate() === Number(m[1]) && d.getMonth() === Number(m[2]) - 1 ? d : null
+}
+
+/** `d/m/yyyy, h:mm AM` (space before AM/PM optional) → Date, or null. */
+export function parseInputDateTime(s: string): Date | null {
+  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])\s*$/.exec(s)
+  if (!m) return null
+  const day = parseInputDate(`${m[1]}/${m[2]}/${m[3]}`)
+  const h12 = Number(m[4]), min = Number(m[5])
+  if (!day || h12 < 1 || h12 > 12 || min > 59) return null
+  const pm = m[6]!.toUpperCase() === 'PM'
+  day.setHours((h12 % 12) + (pm ? 12 : 0), min, 0, 0)
+  return day
+}
+
+/** The canonical value date-time fields hold: `12/8/2026, 3:00 PM`. */
+export function formatInputDateTime(d: Date): string {
+  let h = d.getHours()
+  const am = h < 12 ? 'AM' : 'PM'
+  h = h % 12 || 12
+  return `${inputDate(d)}, ${h}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
+}

@@ -30,3 +30,6 @@
   padding: var(--om-spacing-4);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
 }
+
+/* Owner rule past New (user 2026-08-29): DS error text in the footer, before the buttons. */
+.footMsg { margin-right: auto; font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }

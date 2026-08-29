@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ds'
 import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
-import { FloatingField } from '@/components/leads/move-stage/fields'
+import { TextField } from '@/components/om/text-field'
 import styles from '@/components/leads/move-stage/wizard.module.css'
 import type { LeadRow } from '@/lib/leads/queries'
 
@@ -32,8 +32,8 @@ export function DeleteLeadDialog({
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <DangerButton onClick={onDelete}>Delete</DangerButton>
             </>}>
-      <FloatingField label="Reason" value={reason} onChange={setReason}
-                     options={['Spam', 'Duplicate', 'Not a real lead', 'Others']} />
+      <TextField label="Reason" mode="select" value={reason} onChange={setReason}
+                 options={['Spam', 'Duplicate', 'Not a real lead', 'Others']} />
       {lead ? (
         <span className={styles.helper}>
           “{lead.name}” will be permanently deleted in 30 days. Until then, collaborators can view it in the deleted folder.
