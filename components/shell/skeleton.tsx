@@ -1,0 +1,174 @@
+'use client'
+
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import pageStyles from '@/app/leads/leads.module.css'
+import styles from './skeleton.module.css'
+
+/**
+ * Ghost loader — shown on every load / refresh of every page (user rule,
+ * 2026-08-27). Each route ships a skeleton that mirrors its own layout so the
+ * crossfade in `PageReveal` lands content exactly where the bones were.
+ * One highlight sweeps the whole sheet (not per-bone shimmer); its phase is
+ * pinned to a global clock so the `loading.tsx` → page swap doesn't jump.
+ */
+export const SWEEP_MS = 1800
+
+/** Set on the first ghost mount of a load; consumed (read + cleared) by `PageReveal` on mount for its minimum hold. */
+export const ghostClock = { shownAt: null as number | null }
+
+export function GhostSheet({ children, label = 'Loading' }: { children: ReactNode; label?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    // Before paint, so the loading.tsx → page swap keeps the sweep in phase.
+    if (ghostClock.shownAt === null) ghostClock.shownAt = performance.now()
+    ref.current?.style.setProperty('--sweep-delay', `-${Math.round(performance.now() % SWEEP_MS)}ms`)
+  }, [])
+  return (
+    <div ref={ref} className={`${pageStyles.body} ${styles.sheet}`} role="status" aria-label={label} aria-busy>
+      {children}
+    </div>
+  )
+}
+
+export function Bone({ w, h = 16, r, className, style }: { w: number | string; h?: number; r?: number | string; className?: string; style?: CSSProperties }) {
+  return <span className={className ? `${styles.bone} ${className}` : styles.bone} style={{ width: w, height: h, borderRadius: r, ...style }} aria-hidden />
+}
+
+/* Deterministic "text" widths so rows read as real data, not a grid. */
+const NAME_W = [128, 96, 148, 112, 136, 104, 120, 156]
+const STAGE_W = [32, 32, 32, 32, 70, 70, 70, 34]
+const TASK_W = [180, 140, 210, 160, 190, 120, 170, 200]
+const SRC_W = [72, 56, 84, 64, 76, 60, 80, 68]
+const TYPE_W = [92, 70, 104, 84, 96, 74, 100, 88]
+const FILE_W = [168, 132, 190, 150, 176, 140]
+const ERR_W = [72, 210, 72, 168, 72, 240]
+
+/** Leads listing (779:19690 table variant): header · toolbar · table with the default columns. */
+export function LeadsSkeleton() {
+  return (
+    <GhostSheet label="Loading leads">
+      <div className={styles.header}>
+        <Bone w={72} h={28} />
+        <div className={styles.headerActions}>
+          <Bone w={116} h={36} r="var(--om-radius-1)" />
+          <Bone w={126} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+        </div>
+      </div>
+      <div className={pageStyles.content}>
+        <div className={styles.toolbar}>
+          <Bone w={132} h={36} r="var(--om-radius-1)" />
+          <div className={styles.toolbarRight}>
+            <Bone w={280} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />
+            <Bone w={72} h={36} r="var(--om-radius-1)" />
+          </div>
+        </div>
+        <div className={styles.tableWrap}>
+          <div className={styles.tableInner} style={{ minWidth: 1410 }}>
+          <div className={styles.headRow}>
+            <span className={styles.col} style={{ flex: '240 0 240px' }}><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '160 0 160px' }}><Bone w={64} h={12} /></span>
+            <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={48} h={12} /></span>
+            <span className={styles.col} style={{ flex: '138 0 138px' }}><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={88} h={12} /></span>
+            <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={56} h={12} /></span>
+          </div>
+          {NAME_W.map((w, i) => (
+            <div key={i} className={styles.row}>
+              <span className={`${styles.col} ${styles.nameCol}`} style={{ flex: '240 0 240px' }}>
+                <Bone w={w} h={14} /><Bone w={72} h={10} />
+              </span>
+              <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={STAGE_W[i] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
+              <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={TASK_W[i] ?? 160} h={14} /></span>
+              <span className={styles.col} style={{ flex: '160 0 160px' }}>
+                <span className={styles.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>
+              </span>
+              <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={SRC_W[i] ?? 64} h={14} /></span>
+              <span className={styles.col} style={{ flex: '138 0 138px' }}><Bone w={64} h={14} /></span>
+              <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={TYPE_W[i] ?? 88} h={14} /></span>
+              <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={76} h={14} /></span>
+            </div>
+          ))}
+          </div>
+        </div>
+      </div>
+    </GhostSheet>
+  )
+}
+
+/** Lead Import History (779:20147): back + crumb/title, two buttons, section toolbar, 44px rows. */
+export function ImportsSkeleton() {
+  return (
+    <GhostSheet label="Loading import history">
+      <div className={styles.header}>
+        <Bone w={24} h={24} r={12} />
+        <span className={styles.titleBlock}><Bone w={48} h={10} /><Bone w={196} h={22} /></span>
+        <div className={styles.headerActions}>
+          <Bone w={188} h={36} r="var(--om-radius-1)" />
+          <Bone w={104} h={36} r="var(--om-radius-1)" />
+        </div>
+      </div>
+      <div className={pageStyles.content}>
+        <div className={styles.toolbar}>
+          <Bone w={164} h={20} />
+          <div className={styles.toolbarRight}>
+            <Bone w={280} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />
+            
+          </div>
+        </div>
+        <div className={styles.tableWrap}>
+          <div className={styles.tableInner} style={{ minWidth: 1316 }}>
+          <div className={styles.headRow}>
+            <span className={styles.col} style={{ flex: '141 0 141px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '285 0 285px' }}><Bone w={64} h={12} /></span>
+            <span className={styles.col} style={{ flex: '118 0 118px' }}><Bone w={64} h={12} /></span>
+            <span className={styles.col} style={{ flex: '142 0 142px' }}><Bone w={88} h={12} /></span>
+            <span className={styles.col} style={{ flex: '396 0 396px' }}><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '234 0 234px' }}><Bone w={56} h={12} /></span>
+          </div>
+          {FILE_W.map((w, i) => (
+            <div key={i} className={`${styles.row} ${styles.rowShort}`}>
+              <span className={styles.col} style={{ flex: '141 0 141px' }}><Bone w={80} h={14} /></span>
+              <span className={styles.col} style={{ flex: '285 0 285px' }}><Bone w={w} h={14} /></span>
+              <span className={styles.col} style={{ flex: '118 0 118px' }}><Bone w={24} h={14} /></span>
+              <span className={styles.col} style={{ flex: '142 0 142px' }}><Bone w={24} h={14} /></span>
+              <span className={styles.col} style={{ flex: '396 0 396px' }}><Bone w={ERR_W[i] ?? 72} h={14} /></span>
+              <span className={styles.col} style={{ flex: '234 0 234px' }}><Bone w={i % 2 ? 160 : 12} h={14} /></span>
+            </div>
+          ))}
+          </div>
+        </div>
+      </div>
+    </GhostSheet>
+  )
+}
+
+/** Settings (Account setup): header · section rail · one setting card with two option rows. */
+export function SettingsSkeleton() {
+  return (
+    <GhostSheet label="Loading settings">
+      <div className={styles.header}>
+        <Bone w={96} h={28} />
+      </div>
+      <div className={styles.settingsRow}>
+        <div className={styles.settingsNav}>
+          {[64, 72, 68, 80, 74].map((w, i) => (
+            <span key={i} className={styles.settingsNavItem}><Bone w={20} h={20} r={4} /><Bone w={w} h={14} /></span>
+          ))}
+        </div>
+        <div className={styles.settingsPanel}>
+          <div className={styles.settingsHead}><Bone w={64} h={20} /><Bone w={420} h={14} /></div>
+          <div className={styles.settingsCard}>
+            <div className={styles.settingsHead}><Bone w={128} h={16} /><Bone w={360} h={12} /></div>
+            <Bone w="100%" h={72} r="var(--om-radius-1)" />
+            <Bone w="100%" h={72} r="var(--om-radius-1)" />
+          </div>
+        </div>
+      </div>
+    </GhostSheet>
+  )
+}

@@ -1,0 +1,100 @@
+/* Tasks popover — 1:1 from 779:24722 (400w, radius-1, level-3). */
+.pop {
+  position: fixed; z-index: 70;
+  width: 400px;
+  max-height: calc(100vh - 24px);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-3);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+/* Heading 56px: pad 16 / 16 / 16 / 24, heading/h3, 24px close. */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-on-surface-secondary); display: inline-flex;
+  transition: color var(--motion-hover);
+}
+.close:hover { color: var(--om-color-on-surface-default); }
+
+.body { padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* "OPEN TASKS · 3": subheading/s label + count, body/s dot. */
+.sectionLabel {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  font: var(--om-type-subheading-s); text-transform: uppercase;
+  color: var(--om-color-on-surface-secondary);
+}
+.sectionLabel [data-dot] { font: var(--om-type-body-s); }
+
+/* Rows are bordered cards, 8px apart; four rows visible, then the list scrolls. */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-2); max-height: 256px; overflow-y: auto; overscroll-behavior: contain; }
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-2); flex-shrink: 0;
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  transition: background-color var(--motion-hover), border-color var(--motion-hover);
+}
+.row[data-overdue] { background: var(--om-color-tertiary-red-variant2); border-color: var(--om-color-tertiary-red-variant1); }
+.radio {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; flex-shrink: 0;
+  color: var(--om-color-on-surface-secondary);
+  transition: color var(--motion-hover);
+}
+.radio:hover { color: var(--om-color-primary-default); }
+.radio[data-done] { color: var(--om-color-primary-default); }
+.rowMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.rowTitle {
+  font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rowMeta {
+  display: inline-flex; gap: var(--om-spacing-1); align-items: center;
+  font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary);
+}
+.rowMeta [data-dot] { font: var(--om-type-body-s); }
+.rowMeta [data-red] { color: var(--om-color-on-tertiary-red-variant); }
+.rowMeta [data-amber] { color: var(--om-color-on-tertiary-yellow-variant); }
+/* Link text / Primary with leading calendar_add_on 16. */
+.setDue {
+  display: inline-flex; gap: var(--om-spacing-1); align-items: center;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-s);
+  color: var(--om-color-primary-default);
+  transition: color var(--motion-hover);
+}
+.setDue:hover { color: var(--om-color-on-primary-variant); }
+.dueInput {
+  width: 110px; height: 22px;
+  border: var(--om-border-1) solid var(--om-color-primary-default);
+  border-radius: var(--om-radius-1);
+  padding: 0 var(--om-spacing-2);
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-default);
+}
+.dueInput[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.chev { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; }
+.chevBtn { border: 0; background: none; padding: 0; cursor: pointer; border-radius: var(--om-radius-1); transition: color var(--motion-hover); }
+.chevBtn:hover { color: var(--om-color-on-surface-default); }
+
+.empty { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding: var(--om-spacing-2) 0; }
+
+/* modal-bottom 68px: pad 16, border-top, Add Task primary 36. */
+.foot {
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  padding: var(--om-spacing-4);
+}
+.addArea {
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  padding: var(--om-spacing-4);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+}
+.addBtns { display: flex; gap: var(--om-spacing-3); justify-content: flex-end; }

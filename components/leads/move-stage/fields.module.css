@@ -1,0 +1,118 @@
+/* Floating-label field — h-48, label on the border (from 781:58292). */
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-1); border-radius: var(--om-radius-1); flex: 1; min-width: 0; }
+.box {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  height: 48px; width: 100%;
+  padding: 14px 12px 14px 16px;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  cursor: pointer;
+  transition: border-color var(--motion-toggle);
+}
+.box:focus-within { border-color: var(--om-color-primary-default); }
+.label {
+  position: absolute; top: -1px; left: 11px;
+  transform: translateY(-50%);
+  background: var(--om-color-surface-default);
+  padding: 0 4px;
+  font: var(--om-type-body-s);
+  color: var(--om-color-on-surface-secondary);
+  line-height: 16px;
+}
+.value {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: none; padding: 0;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-align: left;
+}
+.value::placeholder { color: var(--om-color-on-surface-secondary); }
+.trail { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; transition: transform var(--motion-toggle); }
+/* Select open → chevron up (user 2026-08-28). */
+.box[data-open] .trail { transform: rotate(180deg); }
+.select { position: relative; }
+
+/* Choice chips (Contacted via) */
+.chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.chip {
+  padding: var(--om-spacing-2) var(--om-spacing-3);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent;
+  font: var(--om-type-subheading-s);
+  color: var(--om-color-on-surface-default);
+  cursor: pointer;
+  transition: background-color var(--motion-toggle), border-color var(--motion-toggle), color var(--motion-toggle);
+}
+.chip[data-selected='true'] {
+  background: var(--om-color-primary-variant);
+  border-color: var(--om-color-primary-default);
+  color: var(--om-color-on-primary-variant);
+}
+.chip:not([data-selected='true']):hover { background: var(--om-color-hover-04p); }
+
+/* Section rows */
+.sectionLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }   /* 100% — the mocks' 90% was a Figma slip (user 2026-08-28) */
+.mutedLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.rowBetween { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: var(--om-spacing-3); }
+.link {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-primary-default);
+  font: var(--om-type-subheading-m);
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.divider { height: 1px; width: 100%; background: var(--om-color-surface-variant); }
+
+/* Attachment tile (146w, from 781:58292) */
+.tile {
+  width: 146px;
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-1);
+  display: flex; flex-direction: column;
+}
+.tileImg { width: 100%; aspect-ratio: 142/108; border-radius: 2px; object-fit: cover; display: block; }
+.tileRow { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2); }
+.tileName { flex: 1; min-width: 0; font: var(--om-type-subheading-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tilePdf { color: var(--om-color-tertiary-red-default); display: inline-flex; }
+.tileDel { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+
+/* Notes textarea */
+.notes {
+  width: 100%; height: 112px; resize: none;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  padding: 12px 16px 8px;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  outline: 0;
+  transition: border-color var(--motion-toggle);
+}
+.notes:focus { border-color: var(--om-color-primary-default); }
+.notes::placeholder { color: var(--om-color-on-surface-secondary); }
+
+/* Dropzone (from AutoFill / Upload tab) */
+.dropzone {
+  width: 100%;
+  border: 1px dashed var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-6);
+  display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-1);
+  text-align: center;
+  cursor: pointer;
+  background: var(--om-color-surface-default);
+  transition: border-color var(--motion-toggle), background-color var(--motion-toggle);
+}
+.dropzone:hover, .dropzone[data-over='true'] { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+.dropTitle { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.dropTitle b { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
+.dropHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Validation state (vocabulary from the wizard's error pass — REG). */
+.box[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.box[data-error] .label { color: var(--om-color-tertiary-red-default); }

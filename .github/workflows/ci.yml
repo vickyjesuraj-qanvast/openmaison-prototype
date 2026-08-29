@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The prototype consumes the design system from a sibling checkout.
+      # It is a private repo, so CI needs a deploy key or PAT in DS_REPO_TOKEN.
+      - name: Check out the design system
+        uses: actions/checkout@v4
+        with:
+          repository: vickyjesuraj-livspace/openmaison-design-system
+          path: openmaison-design-system
+          token: ${{ secrets.DS_REPO_TOKEN }}
+
+      - name: Move this repo alongside the design system
+        run: |
+          mkdir -p ../workspace
+          shopt -s dotglob
+          mv openmaison-design-system ../workspace/
+          mv * ../workspace/openmaison-prototype 2>/dev/null || {
+            mkdir -p ../workspace/openmaison-prototype
+            mv * ../workspace/openmaison-prototype/
+          }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - name: Build the design system
+        working-directory: ../workspace/openmaison-design-system
+        run: |
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm --filter @openmaison/icons build
+          corepack pnpm --filter @openmaison/tokens build
+          corepack pnpm --filter @openmaison/react build
+
+      - name: Install
+        working-directory: ../workspace/openmaison-prototype
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: ../workspace/openmaison-prototype
+        run: corepack pnpm lint
+
+      - name: Typecheck
+        working-directory: ../workspace/openmaison-prototype
+        run: corepack pnpm typecheck
+
+      - name: Build
+        working-directory: ../workspace/openmaison-prototype
+        env:
+          AUTH_SECRET: ci-placeholder-secret-not-used-at-build-time
+        run: corepack pnpm build

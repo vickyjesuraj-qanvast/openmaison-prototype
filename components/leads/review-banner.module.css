@@ -1,0 +1,52 @@
+/* "Review imported leads (N)" banner — 1:1 from 779:26211 (1348×50, 8px inset at the bottom of the body container). */
+.banner {
+  /* Lives in the body's flow and sticks to the viewport bottom while scrolling, so it always spans the body
+     whatever the rail width; at the end of the scroll it rests 8px above the body's edge, as in the mock. */
+  position: sticky; bottom: var(--om-spacing-4); z-index: 40;
+  margin: 0 var(--om-spacing-2) var(--om-spacing-2);
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3);
+  width: calc(100% - 2 * var(--om-spacing-2));
+  text-align: left; cursor: pointer; font: inherit;
+  background: var(--om-color-tertiary-yellow-variant2);
+  transition: background var(--motion-hover), box-shadow var(--motion-hover);
+  border: var(--om-border-1) solid var(--om-color-tertiary-yellow-default);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-1);
+}
+/* Whole banner is the control (user request): hover lifts it a step, the chevron just follows. */
+/* Floating (stuck) banner: level-2 elevation and a 16px body-white strip BEHIND it spanning the body, so rows never
+   show through and the banner sits on top of the body with its shadow visible (the body keeps flowing to the fold). At the end of the scroll the
+   banner rests 8px inside the body as in the mock and the strip is not needed. */
+.banner[data-stuck] { box-shadow: var(--om-elevation-level-2); }
+.strip {
+  display: none;
+  position: fixed; bottom: 0; height: 16px; z-index: 39; pointer-events: none;
+  left: calc(var(--rail-w, 52px) + 16px); right: var(--om-spacing-2);
+  background: var(--om-color-surface-default);   /* the body continues below the fold — a white skirt, not a canvas cut */
+  transition: left var(--motion-modal, 0.2s) ease;
+}
+.strip[data-stuck] { display: block; }
+.sentinel { display: block; height: 1px; margin-top: -1px; pointer-events: none; }
+.banner:hover { background: var(--om-color-tertiary-yellow-variant1); box-shadow: var(--om-elevation-level-2); }
+.banner:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.banner:hover .open { background: var(--om-color-hover-04p); }
+.lead { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.title { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.tag {
+  display: inline-flex; align-items: center;
+  padding: var(--om-spacing-1) var(--om-spacing-2);
+  border-radius: 4px;
+  background: var(--om-color-tertiary-yellow-default);
+  color: #fff;
+  font: var(--om-type-caption-xs); text-transform: uppercase; white-space: nowrap;
+}
+.spacer { flex: 1; }
+.open {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  transition: background var(--motion-hover);
+}

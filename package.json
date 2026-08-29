@@ -1,0 +1,54 @@
+{
+  "name": "openmaison-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.15.1",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "ds:build": "cd ../openmaison-design-system && corepack pnpm --filter @openmaison/icons build && corepack pnpm --filter @openmaison/tokens build && corepack pnpm --filter @openmaison/react build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:reset": "rm -f local.db local.db-shm local.db-wal && pnpm db:migrate",
+    "setup": "tsx scripts/bootstrap.ts && pnpm db:migrate"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.4",
+    "@openmaison/icons": "link:../openmaison-design-system/packages/icons",
+    "@openmaison/react": "link:../openmaison-design-system/packages/react",
+    "@openmaison/tokens": "link:../openmaison-design-system/packages/tokens",
+    "drizzle-orm": "^0.45.2",
+    "motion": "^13.1.1",
+    "next": "^16.3.3",
+    "react": "^19.2.8",
+    "react-aria-components": "^1.8.0",
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.3",
+    "eslint-config-prettier": "^10.1.8",
+    "playwright": "^1.62.1",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  }
+}

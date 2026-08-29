@@ -1,0 +1,344 @@
+[
+ {
+  "lens": "motion-design",
+  "findings": [
+   {
+    "title": "Define a motion token system first; wire prefers-reduced-motion from day one",
+    "detail": "The 59 mocks contain at least 11 distinct animated surface families (menus, popovers, 3 modal families, 2 full-viewport sheets, a 4-step wizard, a kanban board, snackbar, banners, FAB). interaction-states.md defines hover/focus states only - zero motion is specified anywhere, so without a shared scale each surface will get ad-hoc timing and the prototype will read as cheap in a client pitch. All specified states (hover rgba(0,0,0,.04), focus 2px #5500ff) are discrete and must stay instant or near-instant.",
+    "where": "All sections; interaction-states.md; e.g. table-view 779:24429, change-stage 780:86258",
+    "severity": "high",
+    "action": "Create one motion module consumed by every component: durations {fast:120ms, base:180ms, entrance:240ms, sheet:300ms}, easings {standard: cubic-bezier(.4,0,.2,1), decelerate: cubic-bezier(0,0,.2,1), spring: {type:'spring', stiffness:500, damping:38}}. Animate transform/opacity only (never top/left/width directly; use FLIP/layout animations for size). Enter = decelerate, exit = standard at ~0.7x the enter duration. Gate everything through a useReducedMotion() hook: reduced mode replaces all movement with <=80ms opacity fades and disables stagger, drag lift, and count tickers. Hover/focus token changes stay CSS-only at 100-120ms or instant - never spring."
+   },
+   {
+    "title": "Anchored overlay family (dropdowns, popovers, column panel): scale-from-anchor, one shared spec",
+    "detail": "Nine anchored surfaces appear across the renders: Add Lead menu (table-view 780:79798), header kebab menu (780:79849), Assign Member popover (780:87916), Customise-your-view panel (780:80091), stage-scope dropdown (filters 780:93492), row stage-change dropdown (change-stage 780:86452), card kebab (kanban 779:24866), row kebab + Return Lead (tasks 779:24696), Tasks popover (tasks 780:78169), plus every select/mapping dropdown (import 779:26099). These fire constantly during a live demo, so their motion IS the perceived quality of the app.",
+    "where": "table-view 780:79798/780:79849/780:87916/780:80091; tasks 779:24696; filters 780:93492; change-stage 780:86452; kanban 779:24866; import 779:26099",
+    "severity": "high",
+    "action": "One <AnchoredSurface> wrapper (Framer Motion AnimatePresence): enter opacity 0->1 + scale 0.95->1, transform-origin set to the anchor corner (top-left under a cell like the Tasks popover on Farah Ahmad's TASKS cell; top-right under right-aligned kebabs), 140ms decelerate, optional translateY 4->0. Exit 100ms standard, opacity+scale 0.97, no delay. Restraint: never stagger menu items, never spring menus - snappy and identical everywhere. Selects inside modals reuse the exact same component."
+   },
+   {
+    "title": "Modal family with correct depth choreography for stacked nested dialogs",
+    "detail": "Centered modals appear in create-edit (779:24634 Create/781:53641 Edit), deletion (779:24663 Delete this lead?), filters (779:24983 Filters), import (779:26013 wizard shell), and change-stage (780:86258 Move stage). Change-stage additionally stacks second-level dialogs over an already-dimmed modal - Auto Fill (780:89277) and Suggested tasks (780:89545) render a second scrim per the spec's buildNotes. A naive implementation where both layers pop identically will look flat; depth staging here is a cheap world-class signal.",
+    "where": "create-edit 779:24634; deletion 779:24663; filters 779:24983; change-stage 780:89277, 780:89545",
+    "severity": "high",
+    "action": "Base modal: scrim opacity 0->1 in 180ms; panel opacity + scale 0.96->1 + translateY 8->0, 220ms decelerate, starting together (no sequential delay). Exit: panel 140ms standard (opacity + scale 0.98), scrim 160ms. Nested dialog (Auto Fill / Suggested tasks): child enters with the same spec while the parent Move-stage modal animates to scale 0.985 and its content dims ~8% (200ms) - reversing on close - so the stack reads as physical layers. Danger modal (Delete) uses the identical spec: restraint, no shake or attention effects."
+   },
+   {
+    "title": "Move stage modal: directional panel slides + spring check on the stage rail (pitch centerpiece)",
+    "detail": "The Move stage modal's left rail navigates New -> Contacted -> Met -> Quote Sent -> Won, with completed stages gaining a green filled check (780:89011 shows New checked after moving on; 780:90106 shows two checks) and 780:91593 showing the red error-icon rail state. Panels are entirely different forms per stage (assignees, log cards, dropzones, milestone editor). This is the flow the client will watch longest; static panel swaps here would waste the single best stage-change-feedback moment. Log cards also expand/collapse (Log 1 collapsed + Log 2 expanded in 780:89798) and '+ Add Log' appends a card.",
+    "where": "change-stage 780:86258, 780:89011, 780:89798, 780:90106, 780:91593",
+    "severity": "high",
+    "action": "Right panel transitions directionally on rail change: outgoing fades + translateX -16px, incoming from +16px (reversed when moving up the rail), 200ms decelerate, mode='popLayout'. Rail state change is the wow beat: green check scales 0->1 with spring (stiffness 500, damping 26, ~400ms, slight overshoot) 100ms AFTER the panel begins sliding, so the eye catches it. Radio->check is a crossfade under the spring scale. Error state (780:91593): restraint - crossfade rail icon to red + fade the footer error strip in 150ms; no shake. Log cards: Framer Motion layout animation for expand/collapse (height via layout, content fade 120ms); '+ Add Log' appends with fade + translateY 8->0, 180ms."
+   },
+   {
+    "title": "Import wizard: directional step slides in a fixed shell, count-up finale on Step 4",
+    "detail": "The Import Leads modal runs Step 1 of 4 (upload, 779:26013/779:26054) -> Step 2 (mapping, 779:26099) -> Step 3 (preview, 779:26133) -> Step 4 (success, 779:26161 '13 of 13 records imported successfully'). The modal chrome (title, step counter, footer) persists while body content changes completely. Step 1 also swaps its dropzone for the green Success panel, and the upload toast row flips spinner -> green check.",
+    "where": "import 779:26013, 779:26054, 779:26099, 779:26133, 779:26161",
+    "severity": "medium",
+    "action": "Keep the modal shell static; animate only the body: forward = exit -24px/fade, enter +24px->0/fade, 240ms decelerate ('Previous' reverses direction). Step counter text crossfades 120ms. Step 1 dropzone->Success panel: crossfade 200ms with the green check scaling in on spring; toast spinner->check crossfades 150ms. Step 4 wow: check pops on spring, then '13 of 13' animates as a count-up ticker over ~600ms (Framer Motion animate() on a motion value, tabular-nums to prevent width jitter); reduced-motion renders the final number instantly. Restraint: no per-row animation of the Step 3 preview table - it should just be there."
+   },
+   {
+    "title": "Full-viewport sheets: Review overlay must grow out of its docked banner; Deleted Leads slides as a sheet",
+    "detail": "The Review imported leads overlay (779:26221) is entered from a peach banner docked at the bottom of the listing with a chevron-up (779:26186) - the spec explicitly notes the build must implement this transition since no Figma wiring exists. Deleted Leads (779:26316) is likewise 'a large sheet/overlay on top of a dimmed app background', not a routed page. Both are currently just two disconnected frames; the connective motion is what will make the pitch feel engineered rather than slideshow-like.",
+    "where": "review-import 779:26186 -> 779:26221; deletion 779:26316",
+    "severity": "high",
+    "action": "Review overlay: origin-true expansion from the banner - sheet translateY 100%->0 with transform-origin bottom, 300ms decelerate, banner content crossfading into the overlay header ('Review imported leads (4)' persists in both, so animate it as a shared layout element via layoutId); scrim fades in parallel; exit reverses at 220ms, landing back on the docked banner. Deleted Leads sheet: translateY 24px + opacity over 260ms decelerate above its scrim (it is centered, not bottom-docked), exit 180ms. The amber policy banner dismiss inside it: height collapse via layout animation + opacity 160ms standard - restraint, no slide."
+   },
+   {
+    "title": "Review-import queue choreography: card exit, rail re-stack, count ticks - the flow's magic moment",
+    "detail": "Between 779:26221 and 779:26272 the resolved duplicate card leaves the left rail, three PENDING cards move up, the header goes 'Review imported leads (4)' -> '(3)', 'Gmail (7)' -> 'Gmail (3)', and the main panel changes from the merge comparison to the New lead detail. Rendered statically this is a jarring full-repaint; choreographed, it is the moment (alongside the approved B4) that demonstrates the product actually working through a queue.",
+    "where": "review-import 779:26221 -> 779:26272; left rail cards, header counts, main panel",
+    "severity": "high",
+    "action": "Three-beat sequence (~450ms total) on Approve/Reject/Merge: (1) resolved card exits - opacity 0 + translateX -12px, 160ms standard; (2) remaining cards re-stack via Framer Motion layout spring (stiffness 500, damping 40) while header and chip counts tick down with a ~250ms digit roll; (3) main panel crossfades + translateY 8px to the next lead's detail, 200ms decelerate, starting ~120ms after the card exit so beats read sequentially. 'Approve All Clean (3)': stagger the three card exits 60ms apart - a visible batch sweep. Reduced motion: instant list update, counts render final values."
+   },
+   {
+    "title": "Kanban: physical drag lift + FLIP re-layout, and band expand/collapse with column stagger",
+    "detail": "The kanban board (779:19733) has stage columns inside collapsible ACTIVE/INACTIVE bands - 779:19996 shows ACTIVE collapsed to its green rail with INACTIVE's cream columns expanded, and 779:20043 shows a single-column scoped board. Cards carry rich anatomy (name, meta, task row, footer). Drag is the explicitly requested wow surface; band toggling is the structural novelty no competitor demo will have, and both currently exist only as before/after frames.",
+    "where": "kanban 779:19733, 779:19996, 779:20043, 779:24866",
+    "severity": "high",
+    "action": "Drag (Framer Motion drag + Reorder or dnd-kit with FLIP): pickup animates scale 1->1.03 + shadow elevation over 150ms decelerate (cursor: grabbing; no rotation - restraint keeps it premium); sibling cards in both columns re-flow live via layout spring (stiffness 500, damping 40); drop settles with the same spring, shadow/scale returning over 200ms; source/target column count badges tick with a 250ms digit roll. Band expand/collapse: animate the band container width via layout animation, columns inside enter with opacity + translateX -12->0 staggered 30ms per column (max 4), 220ms decelerate; collapse reverses without stagger at 180ms. Card kebab menu uses the shared AnchoredSurface spec."
+   },
+   {
+    "title": "Table view transitions: restrained row choreography for filter/search/view changes; instant hover",
+    "detail": "The table re-renders its body in several states: stage filter cuts 6 rows to 2 (filters 780:94292 'On Hold (2)'), search collapses to the no-results empty state (search 780:95559; per-column variant in kanban 779:19854), and the segmented control swaps the entire table for the board. Row hover reveals Edit + kebab (tasks 779:24696). Over-animating a data table is the classic way prototypes tip from 'world-class' into 'toy'.",
+    "where": "table-view 779:24429; filters 780:94292; search 780:95559; kanban 779:19854; segmented control on all listing screens",
+    "severity": "medium",
+    "action": "Result-set changes: rows exit as a group fade (120ms), incoming rows fade + translateY 4->0 with a 15ms/row stagger capped at 8 rows (total < 250ms) - one gentle cascade, standard easing. Empty-state swap (populated <-> No results found): plain 180ms crossfade of the card body, illustration does NOT animate independently. Table <-> kanban toggle: restraint wins - 180ms crossfade of the content region only (toolbar/header static); do not attempt shared-element morphs of rows into cards, it cannot be made faithful and will look broken. Row hover action reveal: instant (opacity 0->1 at 100ms CSS max, no transform) per interaction-states.md's discrete hover model."
+   },
+   {
+    "title": "Tasks popover footer morph and the snackbar: small-surface motion that sells inline editing",
+    "detail": "The Tasks popover has three footer states built as one component per the spec: Add Task button (780:78169) -> empty field + Cancel/disabled Save (780:78278) -> focused field + enabled Save (780:78222); the popover grows taller when the field appears. Separately, create-edit 780:82576 shows the dark 'Successfully Updated' snackbar bottom-left after saving. Both are moments the presenter will trigger repeatedly while narrating.",
+    "where": "tasks 780:78169 -> 780:78278 -> 780:78222; create-edit 780:82576",
+    "severity": "medium",
+    "action": "Footer swap: Framer Motion layout on the popover shell so height animates smoothly (~200ms decelerate); button fades/scales out (120ms), field fades in + translateY 4->0 (160ms, 60ms overlap), autofocusing the input at animation end. Save enable (light-purple -> solid #5500FF) is a 150ms background-color transition - no scale. On Save: new task row inserts into the list with fade + translateY 6->0 (180ms) while 'OPEN TASKS \u00b7 3' ticks to 4 (250ms digit roll), field clears and footer morphs back. Snackbar: enter translateY 12->0 + opacity, 200ms decelerate from bottom-left; auto-dismiss after 4s with 150ms fade; only one snackbar at a time, replacement crossfades."
+   },
+   {
+    "title": "FAB sheet origin and tab/chip micro-motion: anchor the AI sheet to the FAB; slide, don't blink, tab indicators",
+    "detail": "The Maison AI FAB sits bottom-right on every listing screen (e.g. search 780:95559, table-view 779:19690) and opens the approved scripted sheet (A4) - the open/close motion itself is unspecified. Tab/segmented patterns appear in change-stage's From System / Upload tabs with a purple underline (780:90353 -> 780:90809) and review-import's All / Gmail chips (779:26221); today each state is a separate frame, so switching would hard-blink.",
+    "where": "search 780:95559 (FAB); change-stage 780:90353/780:90809 (tabs); review-import 779:26221 (chips); toolbar segmented control on all listing screens",
+    "severity": "medium",
+    "action": "FAB sheet: expand with transform-origin bottom-right - scale 0.9->1 + opacity + translateY 8->0, 240ms decelerate, the FAB's sparkle icon crossfading to a close glyph (120ms rotate/fade); exit 180ms standard back into the FAB so the surface visibly belongs to it. Tabs (From System/Upload): the purple underline is a shared layoutId element sliding between tabs on a 250ms spring while tab panels crossfade 150ms (dropzone <-> quote list, no directional slide - they are peers, not steps). Chips and the table/kanban segmented control: background/border color transitions 120ms CSS only - restraint, no moving thumb exists in the mocks so do not invent one."
+   }
+  ]
+ },
+ {
+  "lens": "Missing states & interaction gaps (interaction-design pass beyond approved A/B/C list)",
+  "findings": [
+   {
+    "title": "Dead-end affordances have no defined behavior \u2014 clients will click them",
+    "detail": "Across the mocks there are at least ten prominent affordances whose destinations are never designed in any of the 59 screens: 'Insights' (every page header), 'Link to Email' / 'Link to Zapier' / 'Connect to Ads' (Add Lead menu, 780:79798), 'Export all as\u2026' and 'Leads Settings' (kebab menu, 780:79849), 'Manage Stages >' (stage dropdown, 780:93492), 'Create Quote \u203a' and per-quote 'View' links (Quote Sent panel, 780:90353/90575), 'Download Template' / 'Download Skipped Records' (import history, 779:20147), and the task rows' drill-in chevrons and '+2' pills (Tasks popover, 780:78169). In a live pitch, clicking any of these produces either a dead click or an improvised surface.",
+    "where": "table-view (780:79798, 780:79849), filters (780:93492), change-stage (780:90353, 780:90575), import (779:20147), tasks (780:78169, 779:24696)",
+    "severity": "high",
+    "action": "Agree one stub policy with the user before build (per no-invented-design): e.g. every unbuilt destination triggers the standard dark snackbar 'Coming soon in OpenMaison 2.0' (reusing Snackbar/Default from 780:82576), never a dead click and never a disabled look that weakens the pitch. Downloads (template, skipped records) can serve a real static CSV to feel genuine. Get the exact list and copy approved as one batch."
+   },
+   {
+    "title": "No open state exists for any form select or date picker (~12 controls on the demo's main path)",
+    "detail": "The only open menus mocked anywhere are the Step-2 mapping dropdown (779:26099), the stage dropdowns, and the header menus. Every form select has a chevron but no options list: Reason (delete modal 779:24663; On Hold/Lost dialogs 780:92955/93425), Outcome, Where, Preferred mode, Duration, Project type (change-stage), Lead source, Property type, Style, Key collection, Condition, sq-ft unit (create-edit), and no calendar component exists for When / Date & Time / Estimated start date / filter From-To (781:54536) despite calendar icons on all of them. These sit directly on the pitch path (delete a lead, log a contact, move stage).",
+    "where": "deletion (779:24663), change-stage (780:89011, 780:92955, 780:93425), create-edit (780:82282), filters (781:54536)",
+    "severity": "high",
+    "action": "Build one select-menu component (styled after the Step-2 mapping menu: white card, hover row, selected value indicated) and one date-picker, reusing the already-approved C3 task due-date control as the single calendar pattern. Draft the option list for each select (delete reasons, outcomes, durations, styles, conditions, etc.) and submit them for approval in one batch \u2014 none exist in the mocks."
+   },
+   {
+    "title": "Primary click target of a lead row/card is undefined \u2014 there is no lead detail surface",
+    "detail": "Row hover reveals Edit + kebab (779:24696, Benjamin Han row) and kanban cards expose only a kebab, but no mock defines what clicking the lead name or card body does \u2014 and no Lead Detail screen exists in any section, even though the create-edit form's own helper copy promises one ('You can view these notes under the Notes page in Leads Detail', 780:82282). The first thing a client does in a CRM demo is click a lead's name; today that is a dead click with a default cursor.",
+    "where": "tasks (779:24696), kanban (779:19733), create-edit (780:82282), table-view (779:24429)",
+    "severity": "high",
+    "action": "Decide and wire one consistent behavior for name/card-body click in both views. Cheapest coherent option: open the Edit Lead modal (781:53641) \u2014 it already presents the full record \u2014 with the pointer cursor on the name only. Confirm with the user; do not leave the highest-traffic click target inert."
+   },
+   {
+    "title": "Review-imported-leads flow has no terminal state \u2014 the demo dead-ends after the last approve",
+    "detail": "The overlay is mocked at 4 leads (779:26221) and 3 leads (779:26272), but nothing shows the moment the queue reaches zero: 'Approve All Clean (3)' \u2014 a guaranteed pitch click \u2014 has no result state, the left rail has no empty state, and the docked peach banner on the listing (779:26186) has no removal/updated moment. The spec's own open questions confirm no end state exists. The scripted flow currently ends stranded on a full-screen overlay.",
+    "where": "review-import (779:26186, 779:26221, 779:26272)",
+    "severity": "high",
+    "action": "Design the queue-clear moment: after the last resolution, show a brief success state in the overlay (reuse the Step-4 import success illustration + '4 leads reviewed' count), auto-close or offer 'Back to Leads', and remove the docked banner from the listing with the approved leads now visible in the table. Propose copy for approval."
+   },
+   {
+    "title": "Heavyweight modals close silently with unsaved work \u2014 friction is inverted vs delete",
+    "detail": "Create/Edit Lead (14 fields, 780:82282), Move stage (multi-log forms, uploads, payment milestones, 780:89011-780:91935), and the 4-step import wizard all dismiss via X/Cancel/backdrop with no 'discard changes?' guard anywhere in the mocks. Meanwhile deleting one lead requires a reason plus confirmation (779:24663). Losing a fully filled 'Moving to Won' form to a stray backdrop click mid-pitch is a real risk, and the friction hierarchy reads backwards.",
+    "where": "create-edit (780:82282), change-stage (780:89011 through 780:91935), import (779:26013-779:26161)",
+    "severity": "medium",
+    "action": "Add a lightweight discard-confirm (reuse the delete-modal shell: title 'Discard changes?', Cancel / Discard) that appears only when a heavyweight modal is dirty; X on pristine modals and all popovers still closes instantly. Also make backdrop-click a no-op on the Move stage and import wizard modals so only explicit Cancel/X can lose work."
+   },
+   {
+    "title": "Keyboard, Escape, click-outside, and focus-visible are unspecified everywhere",
+    "detail": "interaction-states.md defines hover states and one focus style (search input, 2px #5500ff) and explicitly confirms all other wiring is component-state changes only. Nothing specifies: Esc behavior on stacked layers (Auto Fill dialog over Move stage modal over page, 780:89277), click-outside for the Tasks popover / Assign Member popover / Customise panel / header menus, initial focus and focus trap in modals, focus return on close, or any keyboard focus ring for buttons, links, checkboxes, and menu rows. A keyboard-driven or accessibility-minded client evaluation exposes this immediately.",
+    "where": "all sections; spec: interaction-states.md; layered examples in change-stage (780:89277, 780:89545) and tasks (779:24696)",
+    "severity": "medium",
+    "action": "Adopt one layer policy for the build: Esc closes the topmost layer only; click-outside closes menus and popovers but not modals; modals trap focus, autofocus the first field, and return focus to their trigger. Reuse the 2px #5500ff input-focus token as the universal :focus-visible ring so it's DS-consistent without inventing a new style."
+   },
+   {
+    "title": "Task completion toggle has no completed state, and task-save has no aftermath",
+    "detail": "The Tasks popover's leading radio circles read as completion toggles (780:78169), but no mock shows a completed task: no checked/struck treatment, no 'OPEN TASKS \u00b7 3' decrement, no zero-open-tasks popover state, and no update of the row's TASKS cell / OVERDUE tag / '+2' pill. Likewise, after typing a task and pressing the now-enabled Save (780:78222), no state shows the list appending, the field resetting, or the count incrementing \u2014 the spec's open questions confirm post-save is uncaptured. Clicking a task circle during the pitch must do something.",
+    "where": "tasks (780:78169, 780:78278, 780:78222, 779:24696)",
+    "severity": "medium",
+    "action": "Define the micro-states: circle click fills purple with a strike-through and decrements the count (removed on popover reopen); Save appends the task to the bottom of the list, increments the count, clears and refocuses the field, and updates the anchoring TASKS cell text/pills live. Treat the light-purple Save as truly disabled while empty. Submit as a proposal since none of this is mocked."
+   },
+   {
+    "title": "Irreversible deletes carry zero friction while soft delete carries the most",
+    "detail": "Soft-deleting one lead demands a reason plus a red confirm (779:24663), yet the genuinely irreversible actions have none: 'Delete Forever' and 'Empty Trash' (779:26316) fire from plain links/buttons with no confirmation and no undo, the kanban card kebab exposes a bare red 'Delete' (779:24866) whose connection to the reason modal is unmocked, and the attachment trash icons in the stage modal (781:58292, 780:91365) delete files instantly. The Deleted Leads folder also has no empty state after the single row is restored or purged \u2014 the exact state the demo ends in.",
+    "where": "deletion (779:24663, 779:26316), kanban (779:24866), change-stage (781:58292, 780:91365)",
+    "severity": "medium",
+    "action": "Route kanban-card Delete through the same reason modal; add a simple red-confirm dialog (reuse the delete-modal shell) for Delete Forever and Empty Trash naming the count ('Permanently delete 1 lead? This cannot be undone.'); design the Deleted Leads empty state (reuse the no-results illustration + 'Trash is empty'). Attachment trash can stay instant \u2014 it is re-uploadable \u2014 but state that decision explicitly."
+   },
+   {
+    "title": "Zero-result empty state exists only for search \u2014 filters and stage scopes can also hit zero",
+    "detail": "The only no-results treatment is search-specific: 'No results found / Check your spelling and try again. / Clear All' (780:95559 table; 779:19854 per-column in kanban). But zero rows can equally result from the Filters modal (Apply with a narrow property type) or a stage scope \u2014 'On Hold (2)' happens to match rows in 780:94292, but any stage with zero leads in table or a stage-scoped board has no designed state, and 'check your spelling' is wrong copy when no query is typed. Also unresolved in-mock: whether the search 'Clear All' link clears filters too.",
+    "where": "search (780:95559), kanban (779:19854), filters (780:94292, 779:24983)",
+    "severity": "medium",
+    "action": "Add a filter-variant of the same empty state (same illustration, copy 'No leads match your filters' + 'Clear filters' link) shown when filters/stage scope produce zero rows with no search query; keep the spelling copy exclusively for typed searches. Define 'Clear All' in the search state as clearing the query only, and confirm both copies with the user."
+   },
+   {
+    "title": "Import Step 1 has no gating, no upload-error state, and dropzones have no drag-over state",
+    "detail": "Step 1's 'Next' renders identically enabled in the mid-upload state (779:26013) and the success state (779:26054) \u2014 nothing prevents advancing with no file, and the spec flags this as open. There is no failure treatment for a wrong file type / oversized / unparseable file even though Step 2 already establishes the red error pattern ('Required', 779:26099). None of the three dashed dropzones (import Step 1, Auto Fill 780:89277, quote upload 780:90809) shows a drag-over highlight, so live drag-and-drop in the demo gives no feedback until drop.",
+    "where": "import (779:26013, 779:26054, 779:26099), change-stage (780:89277, 780:90809)",
+    "severity": "medium",
+    "action": "Disable Next until the green success panel exists (use the same washed-purple disabled treatment as the Tasks Save button); add a dropzone drag-over state (border and tint shift to #5500ff family) shared by all three dropzones; add a red error panel variant of the Step-1 success panel (mirror its layout, red palette, 'Re-upload File' retained) using Step 2's error tokens."
+   },
+   {
+    "title": "Pinned columns and table scroll behavior are promised but never shown",
+    "detail": "The Customise panel sells 'PINNED (3 COLUMNS MAX)' with pin icons and an Address column toggled off (780:80091), and every full-page table crop cuts the CREATED column at the viewport edge \u2014 yet no mock shows the resulting interactions: horizontal scroll with pinned-left columns staying fixed, sticky table header on vertical scroll of 99 leads, or where Address inserts when enabled. Step 3's preview table similarly overflows its modal with no scrollbar affordance (779:26133). The board view spans 7+ columns (full-width board crop) with no indication whether the rotated band rails stay fixed during horizontal scroll.",
+    "where": "table-view (780:80091, 780:76390, 779:24429), import (779:26133), kanban (full-board frame after 779:19996)",
+    "severity": "medium",
+    "action": "Specify and build: NAME column and header row sticky in the lead table (NAME is the filled-pin default), horizontal overflow-x on the table container so CREATED/Address are reachable, visible scrollbar in the Step-3 modal table, and band rails position:sticky at the board's left during horizontal scroll. Demo the pin interaction live from the Customise panel to make the promise real."
+   },
+   {
+    "title": "Outcome feedback exists for exactly one action \u2014 'Successfully Updated'",
+    "detail": "The dark snackbar appears once in all 59 mocks (780:82576, after edit-save). Create, delete, restore, Delete Forever, Empty Trash, stage moves, task save, merge, and import approvals all complete with no confirmation moment, and the delete snackbar opportunity for an Undo (the natural pairing with 30-day soft delete, whose merge copy even advertises undo-ability in 779:26221) is absent. In a pitch, silent completions read as 'did that work?'.",
+    "where": "create-edit (780:82576), deletion (779:24663, 779:26316), review-import (779:26221), change-stage (780:92955)",
+    "severity": "low",
+    "action": "Define a snackbar matrix reusing Snackbar/Default verbatim: 'Lead created', 'Lead deleted \u00b7 Undo' (Undo restores, matching the 30-day policy), 'Lead restored', 'Moved to <stage>', 'Task added', '3 leads approved'. One component, bottom-left, auto-dismiss ~5s with X. Submit copy list for approval in one batch."
+   }
+  ]
+ },
+ {
+  "findings": [
+   {
+    "title": "Leaked placeholder strings survive in demo-visible copy",
+    "detail": "Three component-default strings are still rendered as real content: (1) the upload toast in import Step 1 upload-complete reads \"filename.csv\" while the success panel beside it reads \"Import_Leads.csv\"; (2) the Moving to Won screens show the Project type field filled with \"Interior Quote File Name\" \u2014 a layer-name leak sitting on the climactic conversion screen; (3) the task-entry typing state shows the half-sentence \"This is a length\" as the typed value. Additionally every TASKS cell carries \"This is a sample task added by the user\" / \"This is a sample task\u2026\" \u2014 literal 'sample' copy a skeptical client will read aloud. These are consistent across mocks, so a coherent-dataset pass that only reconciles mismatches could carry them straight into the build.",
+    "where": "import \u2014 Step 1 upload complete (779:26054); change-stage \u2014 Moving to Won From System & Upload (780:91853, 780:91935); tasks \u2014 typing state (780:78222); table-view/tasks \u2014 all populated table screens",
+    "severity": "high",
+    "action": "Sweep the build for component-default strings before demo: toast filename must echo the actually-uploaded file; Project type shows a real option (e.g. a renovation type); script the live typing as a real task (\"Send moodboard to Olivia\"); seed task titles with realistic actions like the popover's \"Call home owner as soon as possible\", never \"sample task\" phrasing."
+   },
+   {
+    "title": "Row overflow menu renders as two detached boxes, and \"Return Lead\" is an orphan action",
+    "detail": "On the hovered Benjamin Han row, the kebab opens a menu containing only \"Delete\", while \"Return Lead\" floats in a second detached white box with a visible gap below it \u2014 replicated pixel-perfect this reads as a rendering bug live. \"Return Lead\" also has no defined meaning or follow-on screen anywhere in the 59 mocks, and the kanban card kebab shows only \"Delete\", so the two surfaces disagree on what the overflow menu contains.",
+    "where": "tasks \u2014 screen 05 (779:24696) row overflow state; kanban \u2014 board frame with kebab open (779:24866)",
+    "severity": "high",
+    "action": "Build one anchored menu per trigger. Either cut \"Return Lead\" from the demo build or define its behavior (label, confirmation, result) and rehearse it; align the card kebab and row kebab item lists so a client switching views sees the same actions."
+   },
+   {
+    "title": "Deletion flow has undesigned ends the demo script will walk into",
+    "detail": "In the Deleted Leads sheet the row's second action is clipped at the frame edge \u2014 only red \"De\u2026\" is visible, so its label is literally unspecified. \"Empty Trash\" and \"Delete Forever\" have no confirmation dialogs in any mock, so a live click either destroys data instantly (looks unsafe) or does nothing (looks broken). And there is no empty state for the folder: the natural demo beat \u2014 restore Olivia Martinez \u2014 leaves an undesigned blank table.",
+    "where": "deletion \u2014 Deleted Leads sheet (779:26316); Delete modal (779:24663)",
+    "severity": "high",
+    "action": "Fix the inline action label (\"Delete Forever\", with column width that fits it); add a small confirm dialog for Empty Trash / Delete Forever; design a one-line empty state (\"No deleted leads\") so Restore/Empty Trash land somewhere finished."
+   },
+   {
+    "title": "Prominent chrome affordances are dead ends with no scripted response",
+    "detail": "The header \"Insights\" button appears on every full-page screen but no Insights surface exists in any section. Same for kebab items \"Export all as\u2026\" and \"Leads Settings\", the stage dropdown's \"Manage Stages >\" link, Add Lead menu items \"Link to Email\" / \"Link to Zapier\" / \"Connect to Ads\", the Quote Sent panel's \"Create Quote \u203a\" link, and the download links (\"Download Template\", \"Download Skipped Records\"). In a live pitch a client (or the presenter, off-script) will click at least one of these; a silent no-op reads as broken.",
+    "where": "table-view \u2014 page header + kebab menu (780:79849) + Add Lead menu (780:79798); filters \u2014 stage dropdown (780:93492); change-stage \u2014 Quote Sent From System empty (780:90353); import \u2014 history pages (780:93997, 779:20147)",
+    "severity": "high",
+    "action": "Give every visible clickable a deliberate response: ship a real template CSV for the download links, and a consistent lightweight \"Coming soon\" snackbar (or hide the item) for Insights, Export, Settings, Manage Stages, Create Quote, and the connect options. Decide per item before rehearsal \u2014 no silent clicks."
+   },
+   {
+    "title": "Import Step 2 content previews show names in every column, undermining the mapping story",
+    "detail": "Every CONTENT REVIEW cell \u2014 including Phone, Budget (S$), Date Received and Notes \u2014 repeats \"James Tan / Daniel James / Daniel James\". A client evaluating the mapping step will immediately notice the Phone column previewing person names. The sample CSV also contains duplicate headers (\"Lead Name\" twice, \"Lead Stage\" twice), which makes the mapping exercise itself look confused. This goes beyond seed values: the build must wire previews per column, not per table.",
+    "where": "import \u2014 Step 2 mapping modal (779:26099)",
+    "severity": "medium",
+    "action": "Drive each preview cell from the first three values of that actual column in the demo CSV (numbers under Phone, S$ amounts under Budget, dates under Date Received), and make the demo CSV's headers unique."
+   },
+   {
+    "title": "Won screen shows milestone percentages at 0 % while amounts stay populated",
+    "detail": "In the Moving to Won Upload variant, all four Payment milestone inputs read \"0 %\" yet the amount column still shows S$7,050 / S$21,150 \u00d73 with a populated Total, and the small sum badge is unreadable. A client doing the arithmetic sees the numbers contradict each other on the highest-stakes screen of the pipeline demo.",
+    "where": "change-stage \u2014 Moving to Won, Upload tabs (780:91935), vs From System (780:91853)",
+    "severity": "medium",
+    "action": "Compute amounts and the sum badge live from the percentage inputs in the build: 0 % must show S$0 and a not-100% warning on the badge; do not replicate the mock's frozen state. Seed the demo path with the 10/30/30/30 split summing to the quote amount."
+   },
+   {
+    "title": "Import wizard copy has visible grammar and stale-state defects",
+    "detail": "Step 2/3 helper reads \"\u2026matched to a OpenMaison field name\u2026\" (should be \"an\"); Step 1 success says \"Detected 20 line(s).\" \u2014 the \"(s)\" reads unfinished, and \"lines\" vs the later \"records\" is inconsistent; Step 3's heading \"Review your columns to OpenMaison Fields\" is a copy-paste artifact of Step 2's \"Map your columns to\u2026\" and doesn't parse; the upload toast header still says \"Uploading 1 file\" after the row shows a green completed check.",
+    "where": "import \u2014 Step 1 (779:26013/779:26054), Step 2 (779:26099), Step 3 (779:26133)",
+    "severity": "medium",
+    "action": "One copy pass over the wizard: \"an OpenMaison field\", \"Detected 20 lines\", \"Review your mapped columns\", and flip the toast header to \"Uploaded 1 file\" on completion. Standardise on \"records\" or \"lines\" throughout."
+   },
+   {
+    "title": "\"Successfully Updated\" toast fires after Create and breaks the casing system",
+    "detail": "The post-save listing screen that follows the Create New Lead modal in flow order shows a snackbar reading \"Successfully Updated\" \u2014 wrong verb for a creation, and Title Case where the rest of the product uses sentence case (\"No results found\", \"Check your spelling and try again.\"). If the demo creates a lead and the toast says \"Updated\", it reads as a wiring bug.",
+    "where": "create-edit \u2014 Toast message screen (780:82576) following Create (779:24634/780:82282) and Edit (781:53641)",
+    "severity": "medium",
+    "action": "Two state-specific, sentence-case toasts: \"Lead created\" after Create and \"Changes saved\" (or \"Lead updated\") after Edit; reuse the same snackbar component."
+   },
+   {
+    "title": "\"Clear All\" means three different things, and the deletion surface has three names",
+    "detail": "\"Clear All\" clears the search query in the no-results empty states, clears filter selections in the Filters modal footer, and unchecks members in the Assign Member popover. A client on the search empty state can reasonably fear \"Clear All\" wipes their filters too. Separately, one surface is called \"Deleted Leads\" (title and kebab menu), \"Trash\" (\"Empty Trash\" button) and \"the deleted folder\" (delete-modal body copy) \u2014 three nouns for the same place inside one two-screen flow.",
+    "where": "search \u2014 no-results (780:95559); kanban \u2014 search state (779:19854); filters \u2014 modal footer (779:24983 et al.); table-view \u2014 Assign Member (780:87916); deletion \u2014 modal (779:24663) + Deleted Leads sheet (779:26316)",
+    "severity": "medium",
+    "action": "Rename the search link \"Clear search\" and the assign popover button \"Clear selection\", reserving \"Clear All\" for the Filters modal. Pick one noun for the deletion surface (\"Deleted Leads\") and align the button and modal body copy to it."
+   },
+   {
+    "title": "Filters modal height jumps per tab and the Property type tab can overflow the demo viewport",
+    "detail": "The modal is rendered at a different height on each rail tab \u2014 short for Sort, very tall for Property type, whose 21 checkbox rows in six divider groups render fully with no scroll. At a typical 1440\u00d7900 demo resolution that tab's footer (Clear All / Apply) would fall below the fold, and tab-switching makes the modal visibly resize, which reads as jank on a projector.",
+    "where": "filters \u2014 Sort tab (779:24983) vs Property type tab (781:53980) vs Source/Assignees/Date tabs (781:54190/54363/54536)",
+    "severity": "medium",
+    "action": "Give the modal a fixed max-height (~80vh) with an internally scrolling option pane and a pinned footer, so the shell is stable across tabs and Apply is always reachable."
+   },
+   {
+    "title": "No single date-time format standard across the prototype",
+    "detail": "Dates render as \"17 Jul '26\" (table CREATED, deleted folder), \"31/8/2026\" (create form Estimated start date), \"12/3/2025, 3:00PM\" and \"24/8/2025, 7:00PM\" (Contacted log When / Next step), \"EXISTING \u00b7 12 AUG '26\" (merge header) and \"22 Oct '26\" (On Hold helper). Beyond the seed-data year fix, the mocks give the build no single display format, and the d/m/yyyy numeric style is ambiguous to international clients.",
+    "where": "change-stage \u2014 filled Contacted log (781:58292), On Hold dialog (780:92955); create-edit \u2014 expanded form (780:82282); review-import \u2014 merge header (779:26221); table-view \u2014 CREATED column (780:76390)",
+    "severity": "low",
+    "action": "Specify one display standard for the build (e.g. d MMM ''yy and 12-hour time: \"24 Aug '26, 7:00 PM\") and apply it to every date field, header and helper string; keep all demo dates in the demo year."
+   },
+   {
+    "title": "Required-field story contradicts itself between the Create form and the import wizard",
+    "detail": "The Create/Edit form marks only Lead name* and Lead phone number* required \u2014 Budget is optional under Additional info. But import Step 2 shows the red \"Required\" validation on the Budget (S$) mapping row, even though the step's own helper says only \"Lead Name\" matters and unmatched columns are simply skipped. A client comparing the two moments gets conflicting rules about what a lead needs.",
+    "where": "create-edit \u2014 Create/Edit modals (779:24634, 780:82282, 781:53641); import \u2014 Step 2 mapping error state (779:26099)",
+    "severity": "low",
+    "action": "Define one required set (name + phone) and make the scripted Step 2 error fire on a genuinely required mapping \u2014 an unmapped Lead Name \u2014 which also matches the helper copy verbatim."
+   }
+  ],
+  "lens": "Sales-engineering demo-risk review: placeholder content, dead affordances, undesigned flow ends, and copy/terminology quality across the 10 Lead Listing sections"
+ },
+ {
+  "findings": [
+   {
+    "title": "Content clipped flush at container right edges",
+    "detail": "Import Step 3's preview table bleeds to the modal's right edge: the last header is cut mid-word ('LEAD AD...') and cell text ('Tampin...') is sliced at the modal boundary with no right padding, scrollbar, or fade affordance. The same defect appears in the Deleted Leads sheet, where the ACTIONS column's red row action is clipped to 'De' at the sheet edge (the mock's crop artifact reproduced literally). Every other table (lead listing, import history, review-import panels) sits inside padded containers, so these two read as rendering bugs.",
+    "where": "import section, Import Leads modal Step 3 of 4; deletion section, Deleted Leads folder screen",
+    "severity": "high",
+    "action": "Wrap the Step 3 preview table in an overflow-x:auto container with inner right padding and a visible scrollbar or edge fade; widen/size the Deleted Leads ACTIONS column so both 'Restore' and the full red action label fit inside the sheet, and confirm that label ('Delete Forever' per the bulk bar) before build."
+   },
+   {
+    "title": "Step 3 column mislabeled 'LEAD STAGE' over lead-source values",
+    "detail": "In the import review table the 4th column header reads 'LEAD STAGE' but every value is 'Referral' or 'Direct' \u2014 these are lead sources (stage vocabulary everywhere else is New/Contacted/Met/Quote Sent/Won). The spec (section-specs.json, Step 3 keyElements) names this column LEAD SOURCE, so the render introduced a header/value mismatch. Right after the Step 2 mapping wizard, a mislabeled column undermines the exact feature being demoed.",
+    "where": "import section, Import Leads modal Step 3 of 4",
+    "severity": "high",
+    "action": "Rename the header to LEAD SOURCE (keeping Referral/Direct values), and add a real LEAD STAGE column only if stage values exist in the dataset."
+   },
+   {
+    "title": "Assignee identity rendered three different ways across surfaces",
+    "detail": "The lead table's ASSIGNEES cells show two anonymous grey placeholder silhouettes + '+2'; kanban cards show a single green 'H' initial chip; the Assign Member popover, Filters > Assignees, and Move-stage > New assignee list all show named members with colored initial square avatars (blue 'D' Dane, green 'S' Sarah, photo James). Same leads, same team \u2014 three treatments. The grey silhouettes in the most-seen surface (the table) read as unfinished UI in a demo.",
+    "where": "tasks section screen 05 & table-view section screen 02 (table rows) vs table-view Assign Member popover, filters Assignees tab, kanban card footers",
+    "severity": "medium",
+    "action": "Build one Avatar component (rounded-square, member-colored initial, photo variant) and use it at small size in the table avatar stack and on kanban cards, showing the actual assigned members' initials instead of grey placeholders."
+   },
+   {
+    "title": "Tasks popover footer breaks the button system",
+    "detail": "In the Tasks popover, Cancel is a grey FILLED button while every modal in the product (Create/Edit, Delete, Move stage, Import, Filters) uses an outlined #ccc Cancel/secondary. Additionally the rest-state footer shows 'Add Task' bottom-LEFT, but pressing it swaps to Cancel/Save bottom-RIGHT \u2014 the footer's action alignment jumps sides within one component interaction.",
+    "where": "tasks section, Tasks popover rest / input-empty / input-typing states",
+    "severity": "medium",
+    "action": "Use the standard outlined secondary for Cancel (and the standard disabled-primary token for empty-field Save), and keep one footer alignment (right-aligned) across all three popover footer states."
+   },
+   {
+    "title": "Row overflow menu renders as two detached floating boxes",
+    "detail": "On the hovered Benjamin Han row, the kebab opens a menu containing only 'Delete', with 'Return Lead' in a separate white box floating ~90px below it, unconnected. Every other menu (Add Lead menu, header kebab menu, stage dropdown, kanban card menu) is a single container; the mock's composite documentation artifact has been reproduced as literal UI and looks broken.",
+    "where": "tasks section, screen 05 (row overflow state); compare table-view Add Lead / kebab menus",
+    "severity": "medium",
+    "action": "Render one anchored menu with both items ('Return Lead' + 'Delete', divider-separated if grouped), or drop 'Return Lead' until its trigger is confirmed by design."
+   },
+   {
+    "title": "Filters modal height more than doubles between tabs",
+    "detail": "Measured in the render at equal scale, the modal shell is 350u tall on Sort and Date, 418u on Assignees, 466u on Source, and 761u on Property type \u2014 switching Sort \u2192 Property type mid-session makes the dialog grow ~2.2x and re-center. The Assignees tab also lacks the search bar that Property type and Source carry, so sibling tabs of one modal differ in both size and anatomy.",
+    "where": "filters section, Filters modal Sort / Property type / Source / Assignees / Date tabs",
+    "severity": "medium",
+    "action": "Fix the modal shell at one height (~the Source tab's) and scroll the option list inside the right pane; add the search bar to Assignees for anatomy parity."
+   },
+   {
+    "title": "Date/time formats drift across sections, including a year clash",
+    "detail": "Tables and tasks use \"17 Jul '26\"; review-import headers use caps \"12 AUG '26\"; the Create/Edit modal start date renders numeric \"31/8/2026\"; change-stage logs use \"12/3/2025, 3:00PM\". Worst case: the same appointment appears as 'Monday, 24 Aug '26 at 7PM' in the Suggested tasks dialog and '24/8/2025, 7:00PM' in the adjacent Next-step field \u2014 two formats AND two different years visible in one flow.",
+    "where": "change-stage section (filled log + Suggested tasks dialog), create-edit section (Estimated start date), vs table-view/tasks/review-import date cells",
+    "severity": "medium",
+    "action": "Define one date token (D MMM 'YY) and one date-time token (D MMM 'YY, h:mmA), apply across all fields including form values, and fix the 2025 vs '26 clash in the change-stage sample data."
+   },
+   {
+    "title": "Sibling utility surfaces use different container paradigms",
+    "detail": "'Lead Import History' and 'Deleted Leads' are launched from the same header kebab menu, yet Import History is a routed full page (back arrow + 'Leads /' breadcrumb, side nav visible) while Deleted Leads is a floating overlay sheet over a scrim (X close + breadcrumb, no back arrow). Both are list-level archives of the Leads module; the split navigation model will read as arbitrary in a walkthrough.",
+    "where": "import section screens 38/39 (Lead Import History) vs deletion section Deleted Leads folder",
+    "severity": "medium",
+    "action": "Pick one container for kebab-menu utility destinations \u2014 recommend routed pages with breadcrumb+back for both (Deleted Leads holds a full table) \u2014 or get design sign-off on the intentional split."
+   },
+   {
+    "title": "Suggested-tasks dialog flips selection-list conventions",
+    "detail": "The Suggested tasks dialog places checkboxes LEADING (left of the label), while every other selectable list \u2014 Assign Member popover, Move-stage assignees, Filters Property type/Source/Assignees \u2014 right-aligns the checkbox at the row's trailing edge. Its dismiss button is also labeled 'Close' where all sibling dialogs use 'Cancel'.",
+    "where": "change-stage section, Suggested tasks nested dialog; compare table-view Assign Member popover and filters modal lists",
+    "severity": "low",
+    "action": "Move checkboxes to the trailing edge to match the established option-row component, and relabel 'Close' to 'Cancel' (or document that Close means non-destructive dismiss and apply that rule product-wide)."
+   },
+   {
+    "title": "Import History toolbar inherits dead view-toggle chrome",
+    "detail": "The populated Lead Import History page copies the Leads toolbar wholesale: search, filter icon button, and the table/kanban segmented view toggle with the table segment selected. No alternate (board) view of import history exists anywhere in the 59 mocks, so the toggle is a control that can never do anything in the demo.",
+    "where": "import section, screen 39 (All Import History toolbar)",
+    "severity": "low",
+    "action": "Remove the segmented view toggle (and the filter button unless filters are defined) from Import History, or scope a second view before the pitch."
+   },
+   {
+    "title": "Tag variants and label casing drift inside review-import",
+    "detail": "In the same left rail, the DUPLICATE tag is tinted amber with no border while PENDING directly below is tinted grey WITH a border; the bottom banner's '1 DUPLICATE' tag is a third style (solid orange, white text). In the main panels, the merge table labels the first field 'Lead name' while the clean-lead panel labels it 'Lead Name' \u2014 visible side by side when stepping through the queue.",
+    "where": "review-import section: screen 138 banner, overlay screens 139 (card rail + merge panel) and 152 (clean-lead panel)",
+    "severity": "low",
+    "action": "Use one Tag component variant (tint + border) with semantic color tokens for DUPLICATE/PENDING/OVERDUE, reserving the solid fill for the banner count only if intentional; normalize field-label casing to sentence case ('Lead name') in both review panels."
+   }
+  ],
+  "lens": "Design-system visual & pattern consistency across sections (like-surface comparison: modals, tables, menus, empty states, tags, avatars, toolbars)"
+ }
+]

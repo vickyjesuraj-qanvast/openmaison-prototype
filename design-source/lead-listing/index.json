@@ -1,0 +1,474 @@
+[
+ {
+  "id": "779:19690",
+  "name": "01",
+  "section": "table-view",
+  "file": "screens/779-19690.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "779:24429",
+  "name": "02",
+  "section": "table-view",
+  "file": "screens/779-24429.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "780:76390",
+  "name": "01 - Full view of columns / Tables Row Example",
+  "section": "table-view",
+  "file": "screens/780-76390.png",
+  "px": 898,
+  "py": 280
+ },
+ {
+  "id": "780:79798",
+  "name": "01 - Contextual Menus / Add lead contextual menu",
+  "section": "table-view",
+  "file": "screens/780-79798.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "780:79849",
+  "name": "01 - Contextual Menus / More contextual menu",
+  "section": "table-view",
+  "file": "screens/780-79849.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "780:87916",
+  "name": "01 - Contextual Menus / Assign member",
+  "section": "table-view",
+  "file": "screens/780-87916.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "780:80091",
+  "name": "01 - Contextual Menus / Table customise your view",
+  "section": "table-view",
+  "file": "screens/780-80091.png",
+  "px": 917,
+  "py": 652
+ },
+ {
+  "id": "780:94126",
+  "name": "No leads yet / 116",
+  "section": "table-view",
+  "file": "screens/780-94126.png",
+  "px": 917,
+  "py": 653
+ },
+ {
+  "id": "780:86452",
+  "name": "Change stage dropdown",
+  "section": "change-stage",
+  "file": "screens/780-86452.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:86258",
+  "name": "Stage - new / Default view",
+  "section": "change-stage",
+  "file": "screens/780-86258.png",
+  "px": 602,
+  "py": 427
+ },
+ {
+  "id": "780:89011",
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "file": "screens/780-89011.png",
+  "px": 602,
+  "py": 427
+ },
+ {
+  "id": "780:89277",
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "file": "screens/780-89277.png",
+  "px": 602,
+  "py": 427
+ },
+ {
+  "id": "781:58292",
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "file": "screens/781-58292.png",
+  "px": 601,
+  "py": 488
+ },
+ {
+  "id": "780:89798",
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "file": "screens/780-89798.png",
+  "px": 602,
+  "py": 427
+ },
+ {
+  "id": "780:89545",
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "file": "screens/780-89545.png",
+  "px": 601,
+  "py": 488
+ },
+ {
+  "id": "780:90106",
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "file": "screens/780-90106.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:90353",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-90353.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:90575",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-90575.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:90809",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-90809.png",
+  "px": 601,
+  "py": 428
+ },
+ {
+  "id": "780:91042",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-91042.png",
+  "px": 601,
+  "py": 428
+ },
+ {
+  "id": "780:91365",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-91365.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:91593",
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "file": "screens/780-91593.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:91853",
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "file": "screens/780-91853.png",
+  "px": 602,
+  "py": 520
+ },
+ {
+  "id": "780:91935",
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "file": "screens/780-91935.png",
+  "px": 602,
+  "py": 592
+ },
+ {
+  "id": "780:92955",
+  "name": "Stage - on hold / Default view",
+  "section": "change-stage",
+  "file": "screens/780-92955.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "780:93425",
+  "name": "Stage - lost / Default view",
+  "section": "change-stage",
+  "file": "screens/780-93425.png",
+  "px": 602,
+  "py": 428
+ },
+ {
+  "id": "779:19733",
+  "name": "40",
+  "section": "kanban",
+  "file": "screens/779-19733.png",
+  "px": 948,
+  "py": 674
+ },
+ {
+  "id": "779:19854",
+  "name": "44",
+  "section": "kanban",
+  "file": "screens/779-19854.png",
+  "px": 948,
+  "py": 674
+ },
+ {
+  "id": "779:19996",
+  "name": "42",
+  "section": "kanban",
+  "file": "screens/779-19996.png",
+  "px": 947,
+  "py": 674
+ },
+ {
+  "id": "779:20043",
+  "name": "41",
+  "section": "kanban",
+  "file": "screens/779-20043.png",
+  "px": 947,
+  "py": 674
+ },
+ {
+  "id": "779:24866",
+  "name": "All kanban board buckets / Board",
+  "section": "kanban",
+  "file": "screens/779-24866.png",
+  "px": 866,
+  "py": 547
+ },
+ {
+  "id": "779:24634",
+  "name": "Default view",
+  "section": "create-edit",
+  "file": "screens/779-24634.png",
+  "px": 948,
+  "py": 674
+ },
+ {
+  "id": "781:53641",
+  "name": "Edit - expanded view",
+  "section": "create-edit",
+  "file": "screens/781-53641.png",
+  "px": 947,
+  "py": 742
+ },
+ {
+  "id": "780:82282",
+  "name": "Create - expanded view",
+  "section": "create-edit",
+  "file": "screens/780-82282.png",
+  "px": 947,
+  "py": 742
+ },
+ {
+  "id": "780:82576",
+  "name": "Toast message",
+  "section": "create-edit",
+  "file": "screens/780-82576.png",
+  "px": 948,
+  "py": 674
+ },
+ {
+  "id": "779:24696",
+  "name": "05",
+  "section": "tasks",
+  "file": "screens/779-24696.png",
+  "px": 1511,
+  "py": 1074
+ },
+ {
+  "id": "780:78169",
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "file": "screens/780-78169.png",
+  "px": 419,
+  "py": 420
+ },
+ {
+  "id": "780:78222",
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "file": "screens/780-78222.png",
+  "px": 419,
+  "py": 441
+ },
+ {
+  "id": "780:78278",
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "file": "screens/780-78278.png",
+  "px": 420,
+  "py": 441
+ },
+ {
+  "id": "779:24663",
+  "name": "Lead delete modal",
+  "section": "deletion",
+  "file": "screens/779-24663.png",
+  "px": 1477,
+  "py": 1050
+ },
+ {
+  "id": "779:26316",
+  "name": "Lead deleted folder modal",
+  "section": "deletion",
+  "file": "screens/779-26316.png",
+  "px": 1477,
+  "py": 1050
+ },
+ {
+  "id": "779:20147",
+  "name": "39",
+  "section": "import",
+  "file": "screens/779-20147.png",
+  "px": 734,
+  "py": 522
+ },
+ {
+  "id": "779:26013",
+  "name": "134",
+  "section": "import",
+  "file": "screens/779-26013.png",
+  "px": 734,
+  "py": 522
+ },
+ {
+  "id": "779:26054",
+  "name": "136",
+  "section": "import",
+  "file": "screens/779-26054.png",
+  "px": 735,
+  "py": 522
+ },
+ {
+  "id": "779:26099",
+  "name": "ModalComponent",
+  "section": "import",
+  "file": "screens/779-26099.png",
+  "px": 612,
+  "py": 682
+ },
+ {
+  "id": "779:26133",
+  "name": "ModalComponent",
+  "section": "import",
+  "file": "screens/779-26133.png",
+  "px": 612,
+  "py": 682
+ },
+ {
+  "id": "779:26161",
+  "name": "ModalComponent",
+  "section": "import",
+  "file": "screens/779-26161.png",
+  "px": 612,
+  "py": 408
+ },
+ {
+  "id": "780:93997",
+  "name": "38",
+  "section": "import",
+  "file": "screens/780-93997.png",
+  "px": 734,
+  "py": 522
+ },
+ {
+  "id": "779:26186",
+  "name": "138",
+  "section": "review-import",
+  "file": "screens/779-26186.png",
+  "px": 1253,
+  "py": 891
+ },
+ {
+  "id": "779:26221",
+  "name": "139",
+  "section": "review-import",
+  "file": "screens/779-26221.png",
+  "px": 1253,
+  "py": 891
+ },
+ {
+  "id": "779:26272",
+  "name": "152",
+  "section": "review-import",
+  "file": "screens/779-26272.png",
+  "px": 1253,
+  "py": 891
+ },
+ {
+  "id": "780:93492",
+  "name": "Stage filter dropdown",
+  "section": "filters",
+  "file": "screens/780-93492.png",
+  "px": 853,
+  "py": 607
+ },
+ {
+  "id": "780:94292",
+  "name": "Stage filtered view",
+  "section": "filters",
+  "file": "screens/780-94292.png",
+  "px": 854,
+  "py": 607
+ },
+ {
+  "id": "779:24983",
+  "name": "More filters / Filter - default view - sort",
+  "section": "filters",
+  "file": "screens/779-24983.png",
+  "px": 854,
+  "py": 607
+ },
+ {
+  "id": "781:53980",
+  "name": "More filters / Filter - all property types",
+  "section": "filters",
+  "file": "screens/781-53980.png",
+  "px": 854,
+  "py": 842
+ },
+ {
+  "id": "781:54190",
+  "name": "More filters / Filter - all sources",
+  "section": "filters",
+  "file": "screens/781-54190.png",
+  "px": 853,
+  "py": 607
+ },
+ {
+  "id": "781:54363",
+  "name": "More filters / Filter - all assignees",
+  "section": "filters",
+  "file": "screens/781-54363.png",
+  "px": 854,
+  "py": 607
+ },
+ {
+  "id": "781:54536",
+  "name": "More filters / Filter - date",
+  "section": "filters",
+  "file": "screens/781-54536.png",
+  "px": 854,
+  "py": 607
+ },
+ {
+  "id": "780:95559",
+  "name": "36",
+  "section": "search",
+  "file": "screens/780-95559.png",
+  "px": 1511,
+  "py": 1074
+ }
+]

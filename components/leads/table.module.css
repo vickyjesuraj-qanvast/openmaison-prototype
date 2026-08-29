@@ -1,0 +1,217 @@
+/*
+ * Leads table — pixel values from screens 01/02 + Tables Row Example.
+ * Column widths: 240/146/321/160/132/138/158/115 (=1410).
+ * Fixed-column rule (designer): 2px right border = pinned; table h-scrolls.
+ */
+.card {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-default);
+  overflow: hidden;
+  width: 100%;
+}
+.scroller { overflow-x: auto; width: 100%; }
+.table { display: flex; flex-direction: column; width: 100%; }   /* min-width (sum of mock column widths) set inline; fills a wide container, scrolls in a narrow one */
+
+.headRow { display: flex; height: 56px; align-items: center; position: sticky; top: 0; z-index: 3; background: var(--om-color-surface-default); }
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  height: 100%;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);
+  color: var(--om-color-on-surface-secondary);
+  flex-shrink: 0;
+  background: var(--om-color-surface-default);
+}
+.hLabel {
+  font: var(--om-type-caption-s);
+  text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+.hSort[data-sorted='true'] { color: var(--om-color-primary-default); }
+.hTools { margin-left: auto; display: inline-flex; }
+.hTune { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+.hTune:hover { color: var(--om-color-on-surface-default); }
+
+/* Pinned columns stack from the left (inline `left`, scaled by --col-scale for the fluid table).
+   Only the last pinned column — [data-pin-edge] — carries the 2px divider and the group's shadow
+   (user rule 2026-08-27); shadow = level-2 turned sideways, clipped so it only falls to the right. */
+.pin { position: sticky; left: 0; z-index: 2; }
+.pin[data-pin-edge] {
+  border-right: var(--om-border-2) solid var(--om-color-surface-variant);
+  /* level-1 turned sideways — as soft as the page header's shadow. */
+  box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06);
+  clip-path: inset(0 -8px 0 0);
+}
+.headRow .pin { z-index: 4; }
+
+.row { display: flex; height: 64px; align-items: stretch; position: relative; }
+.cell {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+  background: var(--om-color-surface-default);
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  overflow: hidden;
+  transition: background-color var(--motion-hover);
+}
+.row:hover .cell { background: color-mix(in srgb, black 4%, var(--om-color-surface-default)); }
+
+/* Highlight (newest lead): 4px primary bar + bold name — mock row 1. */
+.row[data-highlight='true'] .accent {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--om-color-primary-default); z-index: 3;
+}
+
+.nameCell { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--om-spacing-1); }
+.name {
+  font: var(--om-type-subtitle-m);
+  cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  transition: color var(--motion-hover);
+}
+.row[data-highlight='true'] .name { font: var(--om-type-heading-h5); }
+/* Row hover turns the name primary (user 2026-08-27) — not just hovering the name itself. */
+.row:hover .name, .name:hover { color: var(--om-color-primary-default); }
+.phone { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+.stageBtn {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+}
+.stageBtn .chev { color: var(--om-color-on-surface-default); display: inline-flex; transition: transform var(--motion-toggle); }
+.cell[data-open] .stageBtn .chev { transform: rotate(180deg); }
+/* Stage menu open (780:86452): 2px inside primary stroke on the whole cell. */
+.cell[data-open] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+
+.taskBox {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  width: 100%; min-width: 281px;   /* mock 281 is the floor; stretches with the fluid column */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-2);
+  cursor: pointer;
+  background: var(--om-color-surface-default);
+  text-align: left;
+  transition: background-color var(--motion-hover);
+}
+.taskBox:hover { background: var(--om-color-hover-04p); }
+.taskText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
+
+.assignLink {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-primary-default);
+  font: var(--om-type-subheading-m);
+  transition: color var(--motion-hover);
+}
+.assignLink:hover { color: var(--om-color-on-primary-variant); }
+.memberStack { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.plusBox {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+}
+.plain { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* B1 selection — overlay checkbox inside the pinned cell; zero layout shift
+   at rest so the resting table stays pixel-identical to the mock. */
+.selBox {
+  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+  z-index: 3; opacity: 0;
+  transition: opacity var(--motion-toggle);
+}
+.row:hover .selBox,
+.row[data-selected='true'] .selBox,
+.table[data-selecting='true'] .selBox { opacity: 1; }
+.headSelBox {
+  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+  z-index: 5; opacity: 0;
+  transition: opacity var(--motion-toggle);
+}
+.headRow:hover .headSelBox,
+.table[data-selecting='true'] .headSelBox { opacity: 1; }
+.row[data-selected='true'] .cell { background: var(--om-color-primary-variant); }
+
+/* Make room for the overlay checkbox: the pinned cell's content slides right
+   on hover / in selection mode (150ms, per-row — no table-wide reflow). */
+/* Only when the table is selectable (listing is not — REG-89). */
+.nameCell { transition: padding-left var(--motion-toggle); }
+.table[data-selectable] .row:hover .nameCell,
+.table[data-selectable] .row[data-selected='true'] .nameCell,
+.table[data-selectable][data-selecting='true'] .nameCell { padding-left: 40px; }
+.hCell:first-of-type { transition: padding-left var(--motion-toggle); }
+.table[data-selectable] .headRow:hover .hCell:first-of-type,
+.table[data-selectable][data-selecting='true'] .hCell:first-of-type { padding-left: 40px; }
+
+/* Row hover actions — Edit + kebab pinned to the visible right edge (779:24696). */
+.rowActions {
+  position: sticky; right: 16px;
+  width: 0; overflow: visible;
+  align-self: center;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .rowActions, .rowActions[data-open], .rowActions:focus-within { opacity: 1; pointer-events: auto; }
+.rowActionsInner {
+  position: absolute; right: 0; top: 50%;
+  transform: translateY(-50%);
+  display: flex; gap: var(--om-spacing-2); align-items: center;
+}
+.rowEdit {
+  height: 36px; padding: 0 var(--om-spacing-4);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary);
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+.rowEdit:hover { background: var(--om-color-surface-bg); }
+.rowKebab {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+.rowKebab:hover { background: var(--om-color-surface-bg); }
+
+/* Copy-phone affordance in the hovered name cell (779:24696). */
+.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.copyBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex;
+  color: var(--om-color-on-surface-secondary);
+  opacity: 0;
+  transition: opacity var(--motion-hover), color var(--motion-hover);
+}
+.row:hover .copyBtn, .copyBtn:focus-visible { opacity: 1; }
+.copyBtn:hover { color: var(--om-color-on-surface-default); }
+
+/* (unused since REG-90 — kept for reference) Invisible click target for the empty tasks cell (REG-44). */
+.taskEmptyTarget {
+  width: 100%; height: 36px;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+}
+
+/* C2 fallback where the name is already bold (highlight row). */
+.row[data-highlight] .name mark { color: var(--om-color-primary-default); }

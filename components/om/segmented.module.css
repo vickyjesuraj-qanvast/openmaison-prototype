@@ -1,0 +1,21 @@
+.group { display: inline-flex; }
+.seg {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  background: transparent;
+  color: var(--om-color-on-surface-secondary);
+  cursor: pointer; padding: 0;
+  transition: background-color var(--motion-toggle), color var(--motion-toggle);
+}
+/* Each segment sits inside a display:contents tooltip wrapper — key off the group's children. */
+.group > :not(:first-child) .seg { margin-left: -1px; }
+.group > :first-child .seg { border-radius: var(--om-radius-1) 0 0 var(--om-radius-1); }
+.group > :last-child .seg { border-radius: 0 var(--om-radius-1) var(--om-radius-1) 0; }
+.seg[aria-pressed='true'] {
+  background: var(--om-color-primary-variant);
+  color: var(--om-color-on-primary-variant);
+  position: relative; z-index: 1;
+}
+.seg:not([aria-pressed='true']):hover { background: var(--om-color-hover-04p); }
+.seg:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; z-index: 2; }

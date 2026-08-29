@@ -1,0 +1,47 @@
+.card {
+  position: fixed; z-index: 70;
+  width: 400px;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex; flex-direction: column;
+  max-height: 756px;
+}
+.head {
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-4) var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); }
+.desc { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); max-width: 350px; }
+.pinnedNote {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  font: var(--om-type-caption-xs);
+  text-transform: uppercase;
+  color: var(--om-color-on-surface-secondary);
+  margin-bottom: var(--om-spacing-2);
+}
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 56px;
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+}
+.drag { color: var(--om-color-on-surface-secondary); display: inline-flex; cursor: grab; }
+.drag:active { cursor: grabbing; }
+/* Lead Name is fixed: no drag, pin can't be toggled. */
+.row[data-locked] .drag { cursor: default; opacity: 0.4; }
+.row[data-locked] .pinBtn { cursor: default; }
+.label { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.pinBtn { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+.pinBtn[data-pinned='true'] { color: var(--om-color-on-surface-default); }
+.pinSlot { width: 16px; height: 16px; display: inline-block; }   /* keeps the row rhythm when the pin is withheld */
+.spacer { flex: 1; }
+.foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}

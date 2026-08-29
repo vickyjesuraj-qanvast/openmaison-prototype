@@ -1,0 +1,46 @@
+/* Settings (Account setup) — no mock yet (user 2026-08-29): built from the shell's own patterns and logged in the register.
+   Section rail = the Filters / Move stage rail; setting groups = the table card frame (border + radius-2). */
+.content {
+  flex: 1; min-height: 0;
+  padding: var(--om-spacing-6);
+  padding-bottom: var(--fab-clearance);
+  display: flex; gap: var(--om-spacing-6); align-items: flex-start;
+}
+.nav {
+  width: 240px; flex-shrink: 0;
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-2) 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.tab {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6);
+  width: 100%;
+  border: 0; background: transparent; cursor: pointer; text-align: left;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-toggle), color var(--motion-toggle);
+}
+.tab:hover { background: color-mix(in srgb, black 3%, var(--om-color-surface-bg)); }
+.tab[data-active] { background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); }
+.tab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.tabIcon { color: var(--om-color-on-surface-secondary); display: inline-flex; }
+.tab[data-active] .tabIcon { color: var(--om-color-primary-default); }
+
+.panel { flex: 1; min-width: 0; max-width: 720px; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.sectionHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.sectionTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); margin: 0; }
+.sectionHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0; }
+
+.setting {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-6);
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);
+}
+.settingHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.settingTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.settingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.choices { display: flex; flex-direction: column; gap: var(--om-spacing-2); }

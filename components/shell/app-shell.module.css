@@ -1,0 +1,14 @@
+/* Page frame — screen #04: surface/bg canvas, 8px padding, 8px gap. Shared by every routed page. */
+.page {
+  min-height: 100dvh;
+  background: var(--om-color-surface-bg);
+  padding: var(--om-spacing-2);
+  display: flex;
+  flex-direction: column;
+}
+.main {
+  flex: 1;
+  display: flex;
+  gap: var(--om-spacing-2);
+  min-height: 0;
+}

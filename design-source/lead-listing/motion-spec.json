@@ -1,0 +1,32 @@
+{
+  "principles": [
+    "Anchored on the designer's own Figma timings: 50ms ease-out for hover micro-motion (56 reactions), 150ms ease-in-out for control toggles (10 reactions) — extended into a coherent scale for surfaces Figma can't express.",
+    "Transform + opacity only — everything runs at 60fps on the compositor; no layout-property animation.",
+    "Orchestrated, not decorated: one hero motion per interaction; everything else supports it.",
+    "prefers-reduced-motion collapses all motion to fast opacity fades (80ms) — no exceptions.",
+    "Implementation: the `motion` library (Framer Motion) for springs/orchestration + CSS transitions for micro-states; motion tokens defined once (durations 50/150/200/280/400ms; easings standard cubic-bezier(0.2,0,0,1), decelerate cubic-bezier(0,0,0.2,1), spring stiffness 380 damping 30)."
+  ],
+  "surfaces": [
+    ["Hover states (buttons, rows, nav items)", "background/color transition 50ms ease-out — exactly the Figma value; no transform"],
+    ["Dropdowns & popovers (stage menu, filters, tasks, assign, customise)", "scale 0.96→1 + fade, transform-origin at the anchor, 150ms decelerate in / 100ms fade out; 8px overshoot-free"],
+    ["Modals (create/edit, delete confirm, import wizard)", "overlay fade 200ms; panel fade + scale 0.98→1 rise 8px, 200ms decelerate; exit 150ms reverse"],
+    ["Sheets (Deleted Leads, Import History, AI suggestions)", "slide-up 24px + fade 240ms decelerate; overlay in parallel; exit slide-down 180ms"],
+    ["Move Stage wizard steps", "cross-fade + 16px horizontal slide in step direction, 220ms standard; stepper rail states smart-animate style 150ms; error shake on failed Save: 3× 4px, 280ms"],
+    ["Kanban drag-and-drop (hero motion)", "lift: scale 1.03 + shadow elevation + 2° tilt, spring; siblings part with 200ms standard; drop: spring settle (stiffness 380/damping 30); wizard opens on settle; cancelled drag springs home"],
+    ["Kanban band collapse/expand", "width animation via transform on a measured container, 280ms standard; column content fades in staggered 30ms"],
+    ["Snackbars", "slide-up 16px + fade 200ms decelerate bottom-left; auto-dismiss at 4s with 150ms fade; hover pauses the timer"],
+    ["Review banner → overlay", "banner chevron rotates 180° 150ms; overlay expands with sheet slide-up 260ms; returning collapses in reverse"],
+    ["Table interactions", "row hover 50ms; stage-change: row background pulse once (brand-soft, 400ms decay); new/updated row: left accent bar wipes in 240ms; sort: rows reorder with FLIP 220ms, capped at 12 animated rows"],
+    ["Tasks popover footer swap", "height auto-animate 180ms + field fade-in; Save enable state 150ms ease-in-out (Figma toggle timing)"],
+    ["Import wizard", "step transitions as Move Stage; upload dropzone → success panel cross-fade 220ms; progress toast slides in from bottom-right 200ms; step-4 check draws in 320ms decelerate"],
+    ["Filter application", "table rows exit/enter with 120ms fade + 20ms stagger (capped); filter badge pops in with spring scale 0→1"],
+    ["Segmented view toggle (table ⇄ kanban)", "selected-segment background slides between segments 150ms ease-in-out; view cross-fade 200ms — no layout slide, views are structurally different"],
+    ["Maison AI FAB & sheet", "FAB idle: none (restraint); press: scale 0.94 50ms; sheet: spring pop from FAB origin, suggestions stagger in 40ms apart"],
+    ["Skeletons / loading", "data mutations are local-first so loading rarely shows; where it does (import parse), shimmer 1.2s linear loop"]
+  ],
+  "restraint": [
+    "No entrance animation on the initial page render — the app should feel already-running, not arriving.",
+    "No parallax, no scroll-triggered effects, no count-up animations on table numbers (data credibility beats spectacle).",
+    "Empty states appear with a single 150ms fade — no illustration bounces."
+  ]
+}

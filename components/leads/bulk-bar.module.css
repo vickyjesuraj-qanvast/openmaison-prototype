@@ -1,0 +1,29 @@
+.bar {
+  position: fixed; left: 50%; bottom: calc(32px + var(--bottom-dock, 0px)); z-index: 80; transition: bottom var(--motion-toggle);
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-primary-default);
+  border-radius: var(--om-radius-2);
+  box-shadow: var(--om-elevation-level-3);
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-3);
+}
+.bar[data-inset] { position: absolute; bottom: 24px; }
+.count {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-default);
+  color: var(--om-color-on-primary-default);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-s);
+}
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.link[data-danger] { color: var(--om-color-tertiary-red-default); }
+.link[data-danger]:hover { color: var(--om-color-on-tertiary-red-variant); }
+.divider { width: 1px; height: 20px; background: var(--om-color-surface-variant); }
+.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }

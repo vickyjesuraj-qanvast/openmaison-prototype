@@ -1,0 +1,32 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { NextConfig } from 'next'
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url))
+
+/**
+ * The OpenMaison design system is consumed straight from its sibling checkout
+ * (`link:../openmaison-design-system/...`), so its real path is outside this
+ * repo. Turbopack refuses to resolve outside its root, hence the widened root.
+ */
+const nextConfig: NextConfig = {
+  typescript: { ignoreBuildErrors: false },
+
+  transpilePackages: ['@openmaison/react', '@openmaison/icons'],
+
+  turbopack: {
+    root: path.resolve(rootDir, '..'),
+    /**
+     * Without this, `react` inside the linked design system resolves to the
+     * design system's OWN copy — a second React instance, which breaks hooks
+     * and every React Aria context the DS components rely on.
+     */
+    resolveAlias: {
+      react: './openmaison-prototype/node_modules/react',
+      'react-dom': './openmaison-prototype/node_modules/react-dom',
+      'react-aria-components': './openmaison-prototype/node_modules/react-aria-components',
+    },
+  },
+}
+
+export default nextConfig

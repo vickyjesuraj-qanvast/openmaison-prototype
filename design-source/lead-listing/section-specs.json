@@ -1,0 +1,1529 @@
+[
+ {
+  "section": "01 - Lead listing - search",
+  "purpose": "Shows the Leads listing page in its search state: the search bar is focused with a typed query, and because no leads match, the table area is replaced by a centered \"No results found\" empty state with a Clear All link.",
+  "flowNarrative": "This section is a single screen. The user is on the Leads listing page (Leads item active in the side nav, \"All Leads (99)\" view selected). They have clicked into the search bar \u2014 it shows the focused treatment (2px purple border) \u2014 and typed \"jes\", with a text caret visible after the query and an X affordance to clear it. The query matches no leads, so the content card that would hold the lead table instead shows a centered illustration, the heading \"No results found\", the helper line \"Check your spelling and try again.\", and a purple \"Clear All\" link to reset the search and return to the populated listing. All chrome (page header with Insights / Add Lead / kebab, view dropdown, filter icon button, table-vs-board segmented control, Maison AI floating button) remains unchanged around the empty state.",
+  "screens": [
+   {
+    "id": "780:95559",
+    "name": "36",
+    "purpose": "Lead listing page with an active search query that returns zero matches \u2014 the no-results empty state of the search flow.",
+    "uiState": "Search bar focused-and-filled (2px purple #5500ff border per interaction spec) containing the query \"jes\" with a visible text caret and an X clear icon; list area shows the no-results empty state. Left segment of the table/board segmented control is selected (light purple #eee5ff background). Leads item in the side nav is active (light purple rounded background). View dropdown still reads \"All Leads (99)\".",
+    "keyElements": [
+     "Left side-nav rail: purple logo mark at top; a search icon in a gray rounded square; five-plus nav icons below it (grid, briefcase-with-gear, people \u2014 active with light purple background, storefront, building, bank/columns); lower cluster of a red diamond icon on light background, dot-grid icon, chat icon, bell icon, gear icon; small avatar tile at the very bottom. (Inventory names these Side Nav / Item components Workspace, Catalog, Calendar, Reports, Community, Orders, Dashboard, but the crop does not label which icon is which.)",
+     "Page header: bold \"Leads\" title left; right-aligned outlined button with bar-chart icon and label \"Insights\", solid purple primary button \"+ Add Lead\", and an outlined icon button with a vertical three-dot (kebab) icon.",
+     "Toolbar row: left \u2014 outlined dropdown chip \"All Leads (99)\" with a down chevron; right \u2014 search bar (magnifier icon, query \"jes\", caret, X clear icon, 2px purple focus border), an outlined icon button with a filter/funnel-lines icon, and a two-segment segmented icon button (left segment: table/list icon, selected with light purple fill; right segment: kanban/board icon, unselected).",
+     "Content card (full content width, light border, white fill) containing a centered empty state: illustration of a person in a white top and dark trousers walking in front of a large dark circle with small orange shapes on the ground; heading \"No results found\" (confirmed text layer); subtext \"Check your spelling and try again.\" (confirmed text layer); purple link-style text \"Clear All\" below.",
+     "Floating circular button at bottom-right of the content area with an orange four-point sparkle icon (Maison AI component)."
+    ],
+    "interactions": [
+     "Search bar is in the active/focused variant (spec: rest/filled = 1px #ccc border, focused = 2px #5500ff); the X icon implies clearing the query.",
+     "\"Clear All\" is a Link text component (purple #5500ff, no underline; hover #4400cc per spec) \u2014 implies resetting the search that produced zero results.",
+     "\"All Leads (99)\" chevron implies a dropdown of lead views/segments opens.",
+     "Filter icon button implies filter controls open; outlined icon buttons gain bg rgba(0,0,0,.04) on hover per spec.",
+     "Segmented icon button implies switching between the table view (currently selected, #eee5ff bg / #4400cc icon, unchanged on hover) and the board/kanban view (unselected segment hovers with rgba(0,0,0,.04)).",
+     "\"+ Add Lead\" primary button implies starting lead creation; \"Insights\" outlined button implies opening an insights view; the kebab icon button implies a menu opens.",
+     "Side-nav items imply section navigation; rest items hover with bg rgba(0,0,0,.04), and the Leads item shows an active light purple background.",
+     "Per the extracted prototype wiring, no screen-to-screen navigation links exist \u2014 the only wired reactions are component-state changes (e.g., search focus), so none of these affordances are wired to other frames in Figma."
+    ],
+    "illegible": "The bottom-left avatar tile is too small to identify (a faint glyph on a beige square). The exact glyph of the purple logo mark cannot be read as letters with certainty. The side-nav icons cannot be individually matched to the inventory's item names (Workspace, Catalog, Calendar, Reports, Community, Orders, Dashboard) from the crop alone."
+   }
+  ],
+  "sharedComponents": [
+   "Side Nav rail with Logo, Side Nav / Item icons (inventory names: Workspace, Catalog, Calendar, Reports, Community, Orders, Dashboard), Badge, lower utility icons, and avatar tile",
+   "Page Header / Leads - L1: \"Leads\" title, outlined \"Insights\" button with bar-chart icon, primary \"+ Add Lead\" button, outlined kebab icon button",
+   "Listing toolbar: \"All Leads (99)\" dropdown chip, Search Bar (empty/filled/active variants per interaction spec), outlined filter icon button, Segmented Icon Button (table / kanban)",
+   "Link text component (purple #5500ff, hover #4400cc, no underline) \u2014 used here for \"Clear All\"",
+   "Maison AI floating sparkle button (bottom-right)",
+   "Content card container that hosts either the lead table or this empty state"
+  ],
+  "buildNotes": [
+   "Search bar focused state must render a 2px #5500ff border (rest/filled: 1px #ccc, radius 4) per /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md; the mock shows the focused variant with query text, caret, and an X clear icon.",
+   "Segmented control: selected segment bg #eee5ff with #4400cc icon (no hover change); unselected segment border #ccc with hover bg rgba(0,0,0,.04).",
+   "\"Clear All\" uses the Link text spec: #5500ff at rest, #4400cc on hover, never underlined.",
+   "Outlined buttons/icon buttons (Insights, kebab, filter): border #ccc, hover adds bg rgba(0,0,0,.04); side-nav items hover with bg rgba(0,0,0,.04), radius 8; active Leads item has a light purple rounded background.",
+   "The empty state lives inside the same full-width bordered card that holds the table in populated states \u2014 swap the table body for the centered illustration + text stack, keeping toolbar and header untouched.",
+   "Empty-state illustration: person walking before a large dark circle with small orange accents \u2014 export this asset from Figma rather than substituting a different illustration.",
+   "The view dropdown still reads \"All Leads (99)\" while search shows zero results \u2014 replicate this (count reflects the view total, not the search result count) unless the team decides otherwise.",
+   "No prototype navigation wiring exists in the Figma file; screen order comes from frame numbering, so flow transitions must be defined in the build, not copied from prototype links."
+  ],
+  "openQuestions": [
+   "Does \"Clear All\" clear only the search query, or also any active filters (its label suggests more than the single query shown)?",
+   "Should the \"All Leads (99)\" count stay at the view total during a zero-result search (as mocked), or update to the filtered count?",
+   "Is search executed live as the user types or on Enter? The static mock (query \"jes\" with caret) cannot answer this.",
+   "Should partial matches be highlighted or should there be a results-found search state? No populated search-results screen exists in this section to confirm."
+  ]
+ },
+ {
+  "section": "01 - Lead listing - deletion",
+  "purpose": "Covers the lead-deletion flow: a confirmation modal (with a deletion reason) shown when deleting a single lead, and the \"Deleted Leads\" folder view where soft-deleted leads live for 30 days and can be restored or permanently deleted.",
+  "flowNarrative": "The user initiates deletion of the lead \"Olivia Martinez\" from elsewhere in the module (the trigger screen is not part of this section). Screen 779:24663 shows the resulting confirmation modal over a dimmed backdrop: it names the lead and its current stage, asks for a deletion Reason via a dropdown (currently \"Spam\"), and warns that the lead will be permanently deleted in 30 days but remains visible to collaborators in the deleted folder. The user either cancels or confirms with the red Delete button. Screen 779:26316 is that deleted folder: a full-width \"Deleted Leads\" overlay (breadcrumb \"Leads /\") listing the soft-deleted lead in a table. An amber banner repeats the 30-day permanent-removal policy. The Olivia Martinez row is shown in a selected state (checked checkbox, lavender row highlight), which surfaces a floating selection bar at the bottom with a count of 1 and \"Restore\" / \"Delete Forever\" actions; the row itself also carries an inline \"Restore\" link and a red action cropped at the frame edge. \"Empty Trash\" in the header offers clearing the whole folder, and the X closes the view. A footer note explains deleted leads are hidden from the board and reports and that Restore returns a lead to its original status. Note: the prototype wiring spec confirms there is no screen-to-screen navigation in the file \u2014 the sequence is implied by screen numbering, not links.",
+  "screens": [
+   {
+    "id": "779:24663",
+    "name": "Lead delete modal",
+    "purpose": "Confirmation dialog for deleting a single lead, capturing a deletion reason and warning about the 30-day soft-delete policy.",
+    "uiState": "Modal open over a fully dimmed grey backdrop (no page content visible behind). Reason dropdown is in a filled/rest state showing \"Spam\"; no field is focused; no loading or error state shown.",
+    "keyElements": [
+     "Centered white modal card with rounded corners and drop shadow",
+     "Title \"Delete this lead?\" (bold) with an X close icon at top right",
+     "Subtitle line \"Olivia Martinez \u00b7 Current stage: Contacted\" in grey text",
+     "Outlined select field with floating label \"Reason\" cut into its top border, value \"Spam\", and a chevron-down at the right of the field",
+     "Body text: \"Olivia Martinez\" will be permanently deleted in 30 days. Until then, collaborators can view it in the deleted folder. (matches the inventory text layer verbatim)",
+     "Footer separated by a subtle divider with right-aligned buttons: \"Cancel\" (outlined, grey border) and \"Delete\" (filled red/danger)"
+    ],
+    "interactions": [
+     "X icon closes the modal without deleting",
+     "Chevron on the Reason field implies a dropdown of deletion reasons opens on click (options not visible in this crop)",
+     "\"Cancel\" (outlined button) dismisses; per the interaction-states spec, outlined h36 buttons gain bg rgba(0,0,0,.04) and #1a1a1a label on hover",
+     "\"Delete\" (filled red) confirms the deletion; the copy implies the lead then moves to the deleted folder for 30 days"
+    ],
+    "illegible": "Nothing in the crop is blurry. However the inventory lists a text layer \"Secondary Cell Data\" that does not appear anywhere as visible rendered text \u2014 it is presumably a hidden/placeholder layer inside a component instance (possibly the select or a cell component); its intended role cannot be determined from the image."
+   },
+   {
+    "id": "779:26316",
+    "name": "Lead deleted folder modal",
+    "purpose": "The \"Deleted Leads\" folder view where soft-deleted leads are listed for 30 days and can be restored, permanently deleted individually, or purged en masse via Empty Trash.",
+    "uiState": "Full-width white overlay/sheet over a dimmed backdrop. Exactly one row exists and it is in the SELECTED state: checkbox checked (purple), row background lavender, and the floating bulk-selection bar visible at bottom center showing count \"1\". The amber policy banner is shown (not yet dismissed).",
+    "keyElements": [
+     "Breadcrumb \"Leads /\" above the bold page title \"Deleted Leads\"",
+     "Header right: \"Empty Trash\" outlined button and an X close icon",
+     "Amber/light-orange banner: \"Deleted leads are permanently removed after 30 days.\" with its own dismiss X at the right (matches inventory text verbatim)",
+     "Table with a leading checkbox column and headers NAME, STAGE, SOURCE, BUDGET (S$), PROPERTY TYPE, CREATED, ARCHIVED, ACTIONS \u2014 every data header carries a small up/down sort-chevron icon pair",
+     "One row: checked purple checkbox; \"Olivia Martinez\" with secondary line \"9123 4567\"; Stage \"New\"; Source \"Instagram\"; Budget \"70,500\"; Property type \"HDB 4-Room\"; Created \"17 Jul '26\"; Archived \"17 Jul '26\"; Actions column with purple link \"Restore\" followed by a red link cropped at the frame edge (only \"De\u2026\" visible) \u2014 the inventory component \"Table / Row / Lead - Deleted\" confirms this is a dedicated deleted-row variant",
+     "Footer note under the table: \"Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.\" (matches inventory verbatim)",
+     "Floating selection bar at bottom center: purple count badge \"1\", purple link \"Restore\", red link \"Delete Forever\", a thin vertical divider, and an X to clear the selection (inventory confirms text \"1\" and components \"Link text\" / \"Vertical\")"
+    ],
+    "interactions": [
+     "Checkbox selects/deselects the row; selection surfaces the floating bulk-action bar with the selected count",
+     "Sort chevrons on each column header imply sortable columns",
+     "Row-level \"Restore\" link (and the bar's \"Restore\") returns the lead to its original status per the on-screen note; link text follows the spec: #5500ff at rest, #4400cc on hover, no underline",
+     "\"Delete Forever\" (red link in the floating bar) implies immediate permanent deletion of the selected lead(s)",
+     "\"Empty Trash\" (outlined button, hover per spec: + bg rgba(0,0,0,.04)) implies purging all deleted leads",
+     "Banner X dismisses the policy banner; floating-bar X clears the selection; header X closes the Deleted Leads view"
+    ],
+    "illegible": "The rightmost row action in the ACTIONS column is cut off by the crop \u2014 only \"De\" in red is readable, so its full label cannot be confirmed from this image (the floating bar separately shows \"Delete Forever\", but the row label itself is unverified). Anything to the right of that crop edge is not visible."
+   }
+  ],
+  "sharedComponents": [
+   "Modal/overlay surface: white rounded card over a dimmed grey backdrop, with an X close icon in the top-right (both screens)",
+   "Buttons component set: outlined neutral button (Cancel, Empty Trash) and filled red danger button (Delete) \u2014 outlined hover state per spec: bg rgba(0,0,0,.04), border #ccc, radius 4",
+   "Link text component: purple #5500ff links with no underline (Restore), hover #4400cc; a red variant is used for destructive links (Delete Forever)",
+   "Link Icon component (listed in both inventories): 20px icon hit-area, hover bg rgba(0,0,0,.08) radius 4 per spec \u2014 the X close icons match this pattern",
+   "Text Field / outlined select with floating label (Reason dropdown)",
+   "Table / Row / Lead - Deleted: table row variant with checkbox, two-line name cell (name + phone), data cells, and inline action links; purple checked checkbox and lavender selected-row background",
+   "Sortable table header cell with paired up/down chevrons",
+   "Floating bulk-selection bar: count badge + action links + vertical divider + dismiss X",
+   "Dismissible amber notice banner"
+  ],
+  "buildNotes": [
+   "Accent palette is consistent with the interaction-states spec: primary purple #5500ff (links, checkboxes, count badge) with #4400cc hover; destructive actions in red (filled Delete button, Delete Forever / row delete links).",
+   "The Reason field is a Material-style outlined select: label 'Reason' floats inside a gap in the top border; chevron-down right-aligned inside the field.",
+   "Selected table row uses a light lavender background with the purple checked checkbox; this matches the row-selected treatment seen elsewhere in the module and should reuse the same token.",
+   "The delete modal footer is visually separated from the body (subtle divider/elevation seam above the button row).",
+   "Deleted Leads is rendered as a large sheet/overlay on top of a dimmed app background \u2014 not a routed full page; it has its own close X and breadcrumb 'Leads /'.",
+   "Floating selection bar is centered near the bottom of the sheet, white with border and shadow, containing: purple square count badge ('1'), Restore link, Delete Forever link (red), thin vertical divider, X.",
+   "Per /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md there is no prototype navigation wiring between these screens \u2014 the delete-confirm \u2192 deleted-folder sequence is implied by screen numbering only, so the prototype must implement the transition itself.",
+   "Screen crops live at /private/tmp/claude-502/-Users-livspace-Documents-GitHub-openmaison-prototype/fef51327-e225-46a7-8ba2-223fff11fa2e/scratchpad/screens/779-24663.png and .../779-26316.png."
+  ],
+  "openQuestions": [
+   "The delete modal states 'Current stage: Contacted' for Olivia Martinez, but her row in Deleted Leads shows Stage 'New'. Is the deleted-folder Stage column meant to show the stage at deletion (making this a mock inconsistency), or something else?",
+   "The row-level red action in the ACTIONS column is cropped ('De\u2026'). Its full label needs confirmation from the source frame (the bulk bar uses 'Delete Forever', but the inline label may be shorter).",
+   "What options does the Reason dropdown contain besides 'Spam'? No open state is included in this section.",
+   "Is the Reason field required before Delete becomes actionable? No disabled/error state is shown.",
+   "What does the Deleted Leads view show when empty (after Restore or Empty Trash)? No empty state is provided in this section.",
+   "Do 'Empty Trash' and 'Delete Forever' get their own confirmation dialogs? None are included in this section.",
+   "The inventory lists a text layer 'Secondary Cell Data' in the delete modal that is not visibly rendered \u2014 is it an unused hidden layer of a component instance, or should some secondary text appear?"
+  ]
+ },
+ {
+  "section": "01 - Lead listing - tasks",
+  "purpose": "Task management from the lead listing table: a per-lead Tasks popover opened from the TASKS column cell that lists open tasks (with due-date/overdue states) and supports inline creation of a new task via an Add Task footer that swaps to a text field with Cancel/Save.",
+  "flowNarrative": "The user is on the Leads listing table (screen 05). Each lead row has a TASKS cell showing its latest task text; Farah Ahmad's cell is truncated (\"This is a sample task\u2026\") with an OVERDUE tag and a \"+2\" pill, and a pointing-hand cursor sits on it \u2014 clicking it opens the Tasks popover anchored below the cell. The popover (isolated in 780:78169, rest state) shows \"OPEN TASKS \u00b7 3\" with three task rows \u2014 an overdue one on a pink background (\"Assign a member\", General \u00b7 17 Jul '26 (Overdue)), one due today (\"Call home owner as soon as possible\", Call \u00b7 Due today), and one with no due date (\"Schedule initial meet\") carrying a purple \"Set Due Date\" link \u2014 plus an \"Add Task\" primary button in the footer. Pressing Add Task replaces the footer button with an inline task-entry area: 780:78278 shows its empty state \u2014 a text field with placeholder \"Describe your task\", a grey Cancel button, and a light-purple (visually de-emphasized, likely disabled) Save button. 780:78222 shows the same area while typing: the field is focused (2px purple border, floating purple label \"Describe your task\") containing \"This is a length\" with a text cursor, and Save is now solid purple. Screen 05 additionally shows the created-task outcome implied elsewhere in the table (the \"Sample Lead\" row's TASKS cell reads \"This is a sample task added by the user\") and, as a second composited state, the row overflow menu on the hovered Benjamin Han row (Edit button + kebab open with \"Delete\", with a separate \"Return Lead\" menu box below). Per design-source/context/interaction-states.md there is no prototype screen-to-screen wiring; sequence is carried by screen numbering.",
+  "screens": [
+   {
+    "id": "779:24696",
+    "name": "05",
+    "purpose": "Full Leads listing page providing context for the Tasks popover: shows where the popover anchors (a TASKS cell), the task summary presentation inside table cells, and a simultaneously-composited row overflow menu state.",
+    "uiState": "Tasks popover open, anchored under Farah Ahmad's TASKS cell (pointer cursor on the cell); at the same time the last row (Benjamin Han) is in hover state with its Edit button visible and its kebab menu open showing Delete, plus a separate Return Lead menu box; pointer cursor also shown under the kebab.",
+    "keyElements": [
+     "Left side nav: logo mark (purple C with orange spark), icon items top-to-bottom: search, dashboard grid, briefcase, people (active \u2014 purple tinted background), storefront, building, bank/columns icon; bottom cluster: pink diamond icon, dot-grid apps icon, chat bubble, bell, gear, avatar",
+     "Page header: 'Leads' title; right side: outlined 'Insights' button with bar-chart icon, primary purple 'Add Lead' button with plus icon, outlined kebab (vertical 3-dot) icon button",
+     "Toolbar row: 'All Leads (99)' dropdown chip with a small red dot and chevron; right side: 'Search' input with magnifier icon, filter icon button, segmented icon button (table view segment selected in purple, second board/kanban-style segment unselected)",
+     "Table header: NAME (with sort arrows and a column-settings/slider icon), STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, then a truncated column starting 'CREA' \u2014 all sortable (up/down chevrons)",
+     "Row 1 'Sample Lead / 9123 4567' with a purple left accent bar; STAGE 'New' with chevron; TASKS cell 'This is a sample task added by the user'; ASSIGNEES cell shows a purple 'Assign' link with person-add icon",
+     "Row 2 'Farah Ahmad / 9123 4567'; STAGE 'Contacted' with chevron; TASKS cell 'This is a sample task\u2026' (truncated) + red 'OVERDUE' tag + '+2' pill; ASSIGNEES: two avatar placeholders, a '+2' chip, and an outlined purple person-add icon button",
+     "Rows 3\u20136: Muthu Vinay, Gerald Tan, Vivien Lee, Benjamin Han (each '9123 4567', STAGE 'Contacted'); Benjamin Han row has grey hover background and a copy icon beside the phone number",
+     "All visible rows: SOURCE 'Instagram', BUDGET '70,500', PROPERTY TYPE 'HDB 4-Room', truncated date starting '17 Ju' in the cropped last column",
+     "Tasks popover: 'Tasks' heading + close X; section label 'OPEN TASKS \u00b7 3'; task row 1 'Assign a member' with meta 'General \u00b7 17 Jul '26 (Overdue)' (date+overdue in red) on a pink tinted background, leading radio circle, trailing chevron; task row 2 'Call home owner as soon as possible' with meta 'Call \u00b7 Due today' (Due today in orange); task row 3 'Schedule initial meet' with purple 'Set Due Date' link + calendar icon; footer: primary purple 'Add Task' button",
+     "Row overflow state on Benjamin Han row: outlined 'Edit' button, kebab icon button, open menu containing 'Delete'; a separate white menu box below reads 'Return Lead'",
+     "Floating circular action button bottom-right with orange spark icon (Maison AI per component inventory)"
+    ],
+    "interactions": [
+     "TASKS cell with pointer cursor implies clicking a task cell opens the Tasks popover anchored to it",
+     "Popover X closes it; each task row's trailing chevron implies drill-in to task detail; leading circle implies task completion toggle (radio-style per prototype wiring in interaction-states.md)",
+     "'Set Due Date' is a purple link (link-text hover per spec: #5500ff to #4400cc, no underline)",
+     "'Add Task' button implies starting inline task creation (see 780:78278 / 780:78222)",
+     "STAGE values have chevrons implying a stage-change dropdown; 'All Leads (99)' chevron implies a saved-view/filter dropdown",
+     "Row hover reveals Edit and kebab; kebab opens a menu with 'Delete'; 'Return Lead' appears as a further menu box",
+     "'Assign' link and person-add icon buttons imply assignee-picker affordances; '+2' avatar chip implies more assignees than displayed",
+     "Segmented icon button implies switching between table view (selected) and the alternate view; per spec unselected segment hovers with rgba(0,0,0,.04) bg, selected stays #eee5ff",
+     "Search bar focus state per spec: 2px #5500ff border; outlined buttons/icon buttons hover with rgba(0,0,0,.04) background",
+     "No screen-to-screen prototype navigation exists (interaction-states.md); all 158 non-hover reactions are component-state changes"
+    ],
+    "illegible": "Rightmost table column is cropped: header reads only 'CREA\u2026' and its values only '17 Ju\u2026' (full label/date not readable). ASSIGNEES chips behind the popover are partially occluded (only fragments of '2' chips and icon buttons visible). The side-nav bottom avatar content and exact icon glyph meanings are not readable beyond shapes."
+   },
+   {
+    "id": "780:78169",
+    "name": "Under Leads Listing -> Task creation flow / ModalComponent (rest)",
+    "purpose": "The Tasks popover component in its rest state: lists the lead's open tasks and offers an Add Task entry point.",
+    "uiState": "Default/rest \u2014 task list visible, footer shows only the 'Add Task' primary button; no input field.",
+    "keyElements": [
+     "Header: 'Tasks' (partially cropped at top of image) with close X at right",
+     "Section label 'OPEN TASKS \u00b7 3'",
+     "Task item 1: leading radio circle, 'Assign a member', meta 'General \u00b7 17 Jul '26 (Overdue)' with date and '(Overdue)' in red, pink tinted row background, trailing chevron",
+     "Task item 2: radio circle, 'Call home owner as soon as possible', meta 'Call \u00b7 Due today' with 'Due today' in orange, trailing chevron",
+     "Task item 3: radio circle, 'Schedule initial meet', purple 'Set Due Date' link with calendar icon, trailing chevron",
+     "Footer (separated by divider): primary purple 'Add Task' button, left-aligned"
+    ],
+    "interactions": [
+     "X implies close popover",
+     "Task-row chevrons imply drill-in to a task; leading circles imply completion toggle",
+     "'Set Due Date' link implies opening a date picker (affordance only; picker not shown in this section)",
+     "'Add Task' implies swapping the footer to the inline creation field seen in 780:78278"
+    ],
+    "illegible": "Top edge of the 'Tasks' heading is clipped by the crop; content behind the popover (page background) is not readable."
+   },
+   {
+    "id": "780:78278",
+    "name": "Under Leads Listing -> Task creation flow / ModalComponent (input empty)",
+    "purpose": "Tasks popover after Add Task is pressed: inline task-entry field shown empty, before typing.",
+    "uiState": "Near-duplicate of 780:78169 with the footer's Add Task button replaced by an empty text field + Cancel/Save; near-duplicate of 780:78222 differing only in field state (empty, unfocused, 1px grey border) and Save rendered in light purple (visually de-emphasized, reading as disabled).",
+    "keyElements": [
+     "Same header, 'OPEN TASKS \u00b7 3' label, and three task rows as 780:78169 (overdue pink row, due-today row, Set Due Date row)",
+     "Footer area: full-width text field with grey placeholder 'Describe your task', 1px grey border, rounded corners",
+     "Right-aligned buttons below the field: grey 'Cancel' and light-purple 'Save'"
+    ],
+    "interactions": [
+     "Focusing the field leads to the focused state in 780:78222 (per spec, focused input border is 2px #5500ff)",
+     "Cancel implies dismissing the inline entry (returning to the Add Task footer state); Save's washed-out purple implies it is not actionable while the field is empty (visual inference only)"
+    ],
+    "illegible": "Top edge of the 'Tasks' heading is clipped. Whether Save is truly disabled versus a lighter style cannot be confirmed from the image."
+   },
+   {
+    "id": "780:78222",
+    "name": "Under Leads Listing -> Task creation flow / ModalComponent (input focused, typing)",
+    "purpose": "Tasks popover during task entry: the description field is focused and contains typed text, with Save active.",
+    "uiState": "Near-duplicate of 780:78278 differing only in field state: focused (2px purple border, floating purple label 'Describe your task' breaking the top border) with typed text 'This is a length' and a text cursor; 'Save' is now solid purple (enabled).",
+    "keyElements": [
+     "Same header, 'OPEN TASKS \u00b7 3' label, and three task rows as 780:78169",
+     "Focused text field: 2px purple border, floating label 'Describe your task' in purple, value 'This is a length' with visible text caret",
+     "Right-aligned grey 'Cancel' and solid purple 'Save' buttons"
+    ],
+    "interactions": [
+     "Field focus styling matches the interaction-states.md focused-input spec (2px #5500ff border)",
+     "Save (now solid) implies committing the new task; Cancel implies discarding the entry \u2014 the post-save state is not shown in this section, though screen 05's 'Sample Lead' row displays 'This is a sample task added by the user' in its TASKS cell"
+    ],
+    "illegible": "Top edge of the 'Tasks' heading is clipped. The typed value ends mid-phrase at the caret ('This is a length'), so the intended full sample string is not determinable from the image."
+   }
+  ],
+  "sharedComponents": [
+   "Tasks popover/modal shell: 'Tasks' heading + close X, 'OPEN TASKS \u00b7 N' section label, scrollable task list, divider, footer slot (Add Task button OR inline text field + Cancel/Save) \u2014 identical across all four screens",
+   "Task list item: leading radio circle, title, meta line, trailing chevron; three visible variants: overdue (pink row background, red date + '(Overdue)'), due-today (orange 'Due today'), no-due-date (purple 'Set Due Date' link with calendar icon)",
+   "Text field with floating label ('Describe your task'): rest = 1px grey border + grey placeholder; focused = 2px #5500ff border + purple floating label (matches interaction-states.md focused-input spec)",
+   "Buttons: primary purple filled (Add Lead, Add Task, Save-enabled), light-purple filled (Save empty-field state), grey filled (Cancel), outlined with icon (Insights, Edit), outlined icon buttons (kebab, filter), segmented icon button (view switcher)",
+   "Lead table row: name + phone (copy icon on hover), STAGE dropdown chip, TASKS cell (text, optional OVERDUE tag + '+N' pill), ASSIGNEES member cell (avatars, '+N' chip, person-add icon button) or 'Assign' link, SOURCE/BUDGET/PROPERTY TYPE/date cells; hover = grey row background revealing Edit + kebab",
+   "Tag component: red 'OVERDUE' pill; count pill '+2'",
+   "Side nav (logo, icon items with active purple-tint state, bottom utility cluster) and Page Header / Leads - L1",
+   "Dropdown menu (row kebab: 'Delete'; separate 'Return Lead' box) \u2014 per Figma component 'Dropdown Menu / Leads'",
+   "Search bar with magnifier icon; Maison AI floating action button (orange spark, bottom-right)"
+  ],
+  "buildNotes": [
+   "Absolute paths: crops at /private/tmp/claude-502/-Users-livspace-Documents-GitHub-openmaison-prototype/fef51327-e225-46a7-8ba2-223fff11fa2e/scratchpad/screens/{779-24696,780-78169,780-78222,780-78278}.png; state spec at /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md",
+   "The three 780:* frames are the same ModalComponent in three footer states; build it as one component with footer variants (button / field-empty / field-focused-typing) rather than three screens",
+   "Screen 05 composites two independent open states (Tasks popover + row overflow menu); in the prototype these should be separately triggerable, not simultaneous by default \u2014 the composite is a documentation convenience, not observed runtime behavior",
+   "Apply interaction-states.md verbatim for hover/focus: buttons/icon buttons/nav items hover bg rgba(0,0,0,.04); link text #5500ff to #4400cc no underline; focused input border 2px #5500ff; selected segment bg #eee5ff unchanged on hover",
+   "interaction-states.md is definitive that no screen-to-screen prototype links exist \u2014 wire the flow in the prototype from the screen numbering/order given here",
+   "Overdue task row styling: tinted pink/red background with red '17 Jul '26 (Overdue)' meta; due-today uses orange meta text; replicate exactly, do not invent additional states",
+   "Popover anchors below the clicked TASKS cell (screen 05 shows it opening from Farah Ahmad's row, offset under the cell with the cursor on it)"
+  ],
+  "openQuestions": [
+   "Is the light-purple Save button in 780:78278 a true disabled state (non-clickable while the field is empty), or just a secondary emphasis? The crop alone cannot confirm.",
+   "In screen 05, 'Return Lead' sits in a separate white box below the 'Delete' menu \u2014 is it a second item of the same kebab dropdown (rendered detached) or a distinct menu/submenu, and what triggers it?",
+   "The rightmost table column is cropped at 'CREA\u2026' with values '17 Ju\u2026' \u2014 the full header label, value format, and any further columns to the right are not visible in this crop.",
+   "The typed value 'This is a length' in 780:78222 ends at the caret mid-phrase \u2014 is this the intended literal sample text, or a truncated capture of a longer string (e.g. matching 'This is a sample task added by the user')?",
+   "What does clicking the '+2' pill in the TASKS cell or a task row's trailing chevron open? The target surfaces (task detail, full task list) are not part of this section's screens.",
+   "Post-save behavior is not captured: no screen shows the popover after Save/Cancel (does the new task append to the list, does the field reset, does OPEN TASKS increment?)."
+  ]
+ },
+ {
+  "section": "01 - Lead listing - review imported leads",
+  "purpose": "Shows how a user working in the Leads listing is alerted to a batch of imported leads awaiting review, and how the full-screen review overlay handles the two review cases: a suspected duplicate (side-by-side field merge against the existing lead) and a clean new lead (single-column detail with Reject/Approve), plus batch approval and duplicate-only filtering.",
+  "flowNarrative": "The user starts on the Leads listing (screen 138): a standard table of leads with a peach banner docked at the bottom reading \"Review imported leads (4)\" with an orange \"1 DUPLICATE\" tag and a chevron-up icon button \u2014 the affordance to expand the review surface. Screen 139 shows that review surface as a full-viewport overlay titled \"Review imported leads (4)\": a left rail of four imported-lead cards (all \"Olivia Martinez\") where the first card, tagged DUPLICATE with a \"View & Merge\" link, is selected, and the main panel shows \"Merge with existing lead\" \u2014 a field-by-field comparison table (EXISTING vs NEW \u00b7 GMAIL columns with per-field radios, and a purple-tinted MERGED RESULT column) with footer actions Reject New / Keep Both / Merge into Existing. Screen 152 is the same overlay after the duplicate has been dealt with: the title now reads \"Review imported leads (3)\", the left rail holds three PENDING cards, and the selected card's main panel is the simpler \"New lead\" single-column detail (NEW \u00b7 12 AUG '26) with just Reject and Approve in the footer. In both overlay states, top-bar controls offer All / Gmail source chips, a \"Show only duplicates\" switch, and a green \"Approve All Clean (3)\" batch action. Note: per interaction-states.md there is no prototype wiring between screens \u2014 this sequence is carried by the screen numbering, and the banner chevron implying the overlay is an inference from the affordance, not a wired link.",
+  "screens": [
+   {
+    "id": "779:26186",
+    "name": "138",
+    "purpose": "Leads listing page (table view) with the collapsed 'Review imported leads' banner docked at the bottom \u2014 the entry point to the import-review flow.",
+    "uiState": "Default listing state; review banner collapsed at bottom of viewport; first table row ('Sample Lead') highlighted with bold name and a purple left accent bar; table-view segment selected in the view toggle.",
+    "keyElements": [
+     "Dark slate outer frame around a white app window; left side nav on white: purple logo mark top, then icon items (search in a grey rounded square, grid, briefcase, people \u2014 active with purple tint background, storefront, building, bank/institution), and a bottom cluster: red diamond icon in a rounded square, dot-grid, chat, bell, gear, and a grey avatar square",
+     "Page header: 'Leads' title left; right side has outlined 'Insights' button with bar-chart icon, purple primary '+ Add Lead' button, and an outlined kebab (vertical 3-dot) icon button",
+     "Toolbar row: 'All Leads (99)' outlined dropdown chip with a small red dot and chevron-down; right side: 'Search' input with magnifier icon, outlined filter icon button, and a two-segment icon toggle (table/list segment selected with purple tint, board/kanban segment unselected)",
+     "Table header: NAME (with sort arrows and a column-settings/slider icon at the column edge), STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, and a truncated final column beginning 'CRE\u2026' \u2014 most headers carry sort arrows",
+     "Row 1: 'Sample Lead' (bold, purple left accent bar) / '9123 4567'; stage 'New' with chevron; task field 'This is a sample task added by the user' in a bordered input-style cell; purple 'Assign' link with person-add icon; Instagram; 70,500; HDB 4-Room; truncated date",
+     "Rows 2-6: Farah Ahmad, Muthu Vinay, Gerald Tan, Vivien Lee, Benjamin Han \u2014 each '9123 4567'; stage 'Followed Up' with chevron; truncated task 'This is a sample task\u2026' with red 'OVERDUE' tag and a grey '+2' chip; two grey avatar placeholders, a '+2' chip, and a purple outlined person-add icon button; Instagram; 70,500; HDB 4-Room; truncated date (text inventory confirms '17 Jul '26')",
+     "Bottom banner (peach/amber background): 'Review imported leads (4)' bold, orange '1 DUPLICATE' tag, and a chevron-up icon button at the right edge; banner is cut off at the bottom of the crop",
+     "Floating circular button bottom-right with an orange spark/star glyph (component inventory names a 'Maison AI' component)"
+    ],
+    "interactions": [
+     "Column-header sort arrows imply sortable columns; the icon at the NAME column edge implies a column-settings control",
+     "'All Leads (99)' chevron implies a saved-view/filter dropdown; the red dot implies an unseen-change indicator (meaning not confirmable from the crop)",
+     "Stage cell chevron ('New', 'Followed Up') implies an inline stage-change menu",
+     "Task cells are rendered as bordered inputs, implying inline task editing; '+2' chip implies more tasks; 'Assign' link and person-add icon buttons imply an assignee picker",
+     "Segmented icon toggle implies switching table/kanban views; per interaction-states.md the selected segment is bg #eee5ff, icon #4400cc, unchanged on hover; unselected segment hovers to rgba(0,0,0,.04)",
+     "Banner chevron-up implies expanding the review surface (screen 139); no wired navigation exists per interaction-states.md",
+     "Hover behavior for side-nav items, outlined buttons, icon buttons, search focus (2px #5500ff border), and links follows the table in design-source/context/interaction-states.md"
+    ],
+    "illegible": "Rightmost table column is cropped: header reads 'CRE\u2026' (full word not visible) and all date values are cut to '17 J\u2026' (text inventory confirms '17 Jul '26'). The bottom banner is cut mid-height, and the inventory text '0 of 7 reviewed' is not visible anywhere in the crop \u2014 presumably in the cropped-off part of the banner, but unverifiable. Inventory texts 'Name', 'Cell Data', 'Secondary Cell Data' appear to be component placeholder layers, not visible page copy."
+   },
+   {
+    "id": "779:26221",
+    "name": "139",
+    "purpose": "Full-viewport 'Review imported leads' overlay with the duplicate lead selected, showing the field-by-field merge comparison against the existing lead.",
+    "uiState": "Duplicate-review state: 4 leads in queue; first left-rail card selected (purple border) and tagged DUPLICATE; main panel is the 'Merge with existing lead' comparison; 'Show only duplicates (1)' switch OFF; 'All' chip selected. Near-duplicate of screen 152, differing in queue count, the presence of the duplicate card, and the merge panel replacing the single-column 'New lead' detail.",
+    "keyElements": [
+     "Overlay header: 'Review imported leads (4)' left, outlined X close icon button right; overlay fills the app window (side nav not visible in the crop despite being in the component inventory)",
+     "Control bar: 'All' chip selected (purple text/border) and 'Gmail (7)' chip; toggle switch (off, grey) labeled 'Show only duplicates (1)'; green primary button 'Approve All Clean (3)' at right",
+     "Left rail (grey panel): 4 cards, all 'Olivia Martinez' / '1d ago' / '91234567 \u00b7 S$70,500 \u00b7 Gmail'. Card 1 selected with purple border, contains a bordered field 'Matches: Olivia M', an amber 'DUPLICATE' tag, and a purple 'View & Merge' link. Cards 2-4 each show a grey 'PENDING' tag with red 'Reject' and green 'Approve' text actions",
+     "Main panel title: 'Merge with existing lead'",
+     "Comparison table column headers: field-label column (blank header), 'EXISTING \u00b7 12 AUG '26', 'NEW \u00b7 GMAIL \u00b7 1D AGO', and 'MERGED RESULT' (purple caps label on a lavender column that stays tinted down the whole column, values in bold)",
+     "Full name row: radio selected 'Olivia Martinez' vs radio unselected 'Olivia M' \u2192 merged 'Olivia Martinez'",
+     "Phone row: radio selected '91234567' vs radio unselected '91234568' \u2192 merged '91234567 (91234568 kept as alt)'",
+     "Email row: amber row highlight and warning-triangle icon beside the 'Email' label; radio selected 'olivia.m@gmail.com' in EXISTING; NEW column shows amber text 'identical - matched on this' instead of a radio; merged 'olivia.m@gmail.com'",
+     "Budget (S$) row: radio selected '70,500' vs radio unselected '65,500' \u2192 merged '70,500'",
+     "Source / Property type / Address rows have no radios (values identical in both columns): 'Meta Ads', 'HDB 4-Room', '88 Tampines, Singapore 123456' (NEW column values rendered in lighter grey)",
+     "Footer: helper text 'Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.'; buttons 'Reject New' (red outlined), 'Keep Both' (neutral outlined), 'Merge into Existing' (purple primary)"
+    ],
+    "interactions": [
+     "Per-field radios imply choosing which side's value wins in the merged result; fields with identical values show no radio choice",
+     "'Show only duplicates (1)' switch implies filtering the left rail to duplicate cards only; switch on/off colors #5500ff / #999999 per interaction-states.md",
+     "'All' / 'Gmail (7)' chips imply filtering the queue by import source",
+     "'Approve All Clean (3)' implies batch-approving the three non-duplicate PENDING leads",
+     "Card-level 'Reject' / 'Approve' imply per-lead resolution from the rail; 'View & Merge' implies opening the merge panel for the duplicate; selecting a card implies loading it into the main panel",
+     "'Reject New' / 'Keep Both' / 'Merge into Existing' are the three duplicate resolutions; the helper text states merge is undoable for 30 days",
+     "X icon implies closing the overlay back to the listing"
+    ],
+    "illegible": "Inventory text '2 of 7 reviewed' and the 'Loader / Progress' component are not visible anywhere in this crop \u2014 their placement cannot be confirmed. The DUPLICATE card's 'Matches: Olivia M' field is rendered like a bordered input; whether it is editable or a static match indicator is not determinable from the image."
+   },
+   {
+    "id": "779:26272",
+    "name": "152",
+    "purpose": "The same review overlay after the duplicate is resolved: a clean (non-duplicate) imported lead is selected, showing the single-column 'New lead' detail with simple Reject/Approve.",
+    "uiState": "Clean-lead review state: queue count down to 3, all cards PENDING (no duplicate present), 'Show only duplicates' switch OFF and now without a count, selected card's panel is 'New lead' instead of the merge comparison. Near-duplicate of screen 139 differing only in these points plus the footer buttons (Reject / Approve instead of the three merge actions).",
+    "keyElements": [
+     "Overlay header: 'Review imported leads (3)' left, outlined X close icon button right",
+     "Control bar: 'All' chip selected, 'Gmail (3)' chip; toggle switch (off) labeled 'Show only duplicates' (no count); green primary 'Approve All Clean (3)' at right",
+     "Left rail: 3 identical cards 'Olivia Martinez' / '1d ago' / '91234567 \u00b7 S$70,500 \u00b7 Gmail', each with grey 'PENDING' tag and red 'Reject' / green 'Approve' text actions; first card selected with purple border",
+     "Main panel title: 'New lead'",
+     "Single-column detail table headed 'NEW \u00b7 12 AUG '26' with rows: Lead Name 'Olivia Martinez'; Phone '91234567'; Email 'olivia.m@gmail.com'; Budget (S$) '70,500'; Source 'Meta Ads'; Property type 'HDB 4-Room'; Address '88 Tampines, Singapore 123456'",
+     "Footer: 'Reject' (red outlined) and 'Approve' (green primary) buttons, right-aligned"
+    ],
+    "interactions": [
+     "Selecting a rail card implies loading its detail into the main panel; card-level Reject/Approve mirror the footer actions",
+     "'Approve All Clean (3)' implies batch-approving all three remaining pending leads",
+     "'Show only duplicates' switch present even with no duplicates left (no count shown), implying the control is persistent rather than conditional",
+     "'All' / 'Gmail (3)' chips imply source filtering; X closes the overlay"
+    ],
+    "illegible": "Nothing materially illegible in this crop."
+   }
+  ],
+  "sharedComponents": [
+   "Side Nav (logo, icon items with 36px hover bg rgba(0,0,0,.04), bottom cluster incl. Maison AI trigger and avatar) \u2014 visible on 138; listed in 139's inventory but hidden under the overlay",
+   "Review overlay chrome shared by 139 and 152: 'Review imported leads (n)' header + X close, All/Gmail filter chips, 'Show only duplicates' switch, green 'Approve All Clean (n)' button",
+   "Card / Desktop / Leads \u2014 the left-rail imported-lead card (name, relative time, phone \u00b7 budget \u00b7 source line, status tag, Reject/Approve or View & Merge actions; purple border when selected)",
+   "Detail/comparison table pattern with grey caps column headers ('EXISTING \u00b7 \u2026', 'NEW \u00b7 \u2026', 'MERGED RESULT') shared between the merge panel (139) and the single-column New lead panel (152)",
+   "Tags: OVERDUE (red, 138), DUPLICATE (amber, 138 banner + 139 card), PENDING (grey, 139/152), '+2' count chips (138)",
+   "Buttons: purple primary ('+ Add Lead', 'Merge into Existing'), green primary/success ('Approve All Clean', 'Approve'), red outlined danger ('Reject', 'Reject New'), neutral outlined ('Insights', 'Keep Both'), outlined icon buttons (kebab, filter, X, chevron-up)",
+   "Radio (selected purple / unselected) used per-field in the merge table; variants 513:44618/44621 per interaction-states.md",
+   "Switch (off state shown in 139/152; on #5500ff / off #999999 per interaction-states.md)",
+   "Search bar, segmented icon button (table/kanban), and lead table row variants (Default, Pending Review - Duplicate, Pending Review - New) named in the component inventories"
+  ],
+  "buildNotes": [
+   "Hover/active/focus behavior must follow /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md exactly: nav items and outlined/icon buttons hover to rgba(0,0,0,.04); links #5500ff \u2192 #4400cc with no underline; search focus = 2px #5500ff border; selected segment (#eee5ff bg, #4400cc icon) does not change on hover.",
+   "interaction-states.md is definitive that NO screen-to-screen prototype wiring exists \u2014 the 138 \u2192 139 \u2192 152 sequence comes from screen numbering; the banner chevron-up expanding into the overlay is an affordance-based inference the build must implement.",
+   "The review surface in 139/152 renders as a full-viewport overlay covering the side nav (dark frame visible around it), not a modal floating over the listing.",
+   "MERGED RESULT column in 139 is continuously tinted lavender with bold values and a purple caps header; the Email conflict row gets an amber row highlight, a warning triangle beside the label, and replaces the NEW radio with the amber text 'identical - matched on this'.",
+   "Fields with identical values across EXISTING/NEW (Source, Property type, Address) drop the radio affordance; the NEW column then renders in lighter grey.",
+   "Field label inconsistency between the two panels: 139's merge table uses 'Full name' while 152's detail uses 'Lead Name' \u2014 replicate as-is unless design says otherwise.",
+   "139 vs 152 chip/count deltas to reproduce: 'Gmail (7)' \u2192 'Gmail (3)', 'Show only duplicates (1)' \u2192 'Show only duplicates' (no count), header (4) \u2192 (3); 'Approve All Clean (3)' is unchanged in both.",
+   "Listing row states on 138: the 'Sample Lead' row carries a bold name and purple left accent bar (highlighted/new state) and its TASKS cell shows the full untruncated task with no OVERDUE tag, unlike rows 2-6.",
+   "The collapsed banner on 138 uses a peach background with an orange '1 DUPLICATE' tag; the text inventory also assigns it '0 of 7 reviewed', which sits in the cropped-off portion \u2014 confirm placement from the full frame before building."
+  ],
+  "openQuestions": [
+   "Count arithmetic is ambiguous: the banner/overlay says 4 (then 3) leads to review, the Gmail chip says 7 (then 3), inventory progress texts say '0 of 7' / '2 of 7 reviewed', and Approve All Clean says (3) in both overlay states \u2014 the relationship between the 7-total, the 4/3 queue, and the static (3) cannot be derived from the images.",
+   "Where do the '0 of 7 reviewed' (138) and '2 of 7 reviewed' + Loader/Progress (139) elements actually render? Neither is visible in its crop.",
+   "What is the full final column of the listing table on 138? Header is cropped to 'CRE\u2026' and dates to '17 J\u2026' (inventory gives '17 Jul '26' but not the header word), and any columns beyond the crop edge are unknown.",
+   "Is the 'Matches: Olivia M' box on the DUPLICATE card an editable input (it is styled like one) or a static match indicator?",
+   "After 'Approve All Clean' or resolving the last lead, what end/empty state does the overlay show? No screen in this section covers it.",
+   "Does the banner chevron-up open the full-screen overlay directly, or is there an intermediate expanded-banner state? No wiring exists to confirm."
+  ]
+ },
+ {
+  "section": "01 - Lead listing - import",
+  "purpose": "The lead-import flow: a \"Lead Import History\" page (empty and populated states) plus a 4-step \"Import Leads\" modal wizard \u2014 upload file, map columns to OpenMaison fields, review parsed rows, and a success confirmation.",
+  "flowNarrative": "The journey starts on the Lead Import History page in its empty state (780:93997, \"38\"): a first-time user sees the clipboard illustration, the explanation of what the page will do, and two calls to action \u2014 Download Template and Upload. Pressing Upload (header or empty-state body) is implied to open the Import Leads modal. Step 1 of 4 is shown twice as a near-duplicate pair: 779:26013 (\"134\") captures the mid-upload moment (dashed drop zone still visible, bottom-right \"Uploading 1 file\" toast with Import_Leads.csv spinning), and 779:26054 (\"136\") captures the completed upload (drop zone replaced by a green Success panel reporting 20 detected lines, with a Re-upload File link; the toast row now shows a green check). Next advances to Step 2 of 4 (779:26099): a mapping table pairing each source column with an OpenMaison field via dropdowns \u2014 one row is shown hovered with its dropdown menu open (Ignore / Lead Name / Lead Stage / Client Name / Client Email / Client Phone) and a pointing-hand cursor, and the Budget (S$) row shows the error state (red-bordered Select Field with a red \"Required\" label). Next advances to Step 3 of 4 (779:26133): a read-only preview table of the 13 parsed lead records, with Previous and a purple Import button. Import leads to Step 4 of 4 (779:26161): a centered document illustration with a green check and \"13 of 13 records imported successfully\", closed via the cropped purple footer button. Finally, 779:20147 (\"39\") shows the Lead Import History page populated with import rows (date, file name, total rows, rows imported, error count, and a \"Download Skipped Records\" link per row), with search, filter, and a segmented view toggle. Note: per interaction-states.md, no screen-to-screen prototype links exist in the file \u2014 this ordering is carried by the screen numbering, not by wiring.",
+  "screens": [
+   {
+    "id": "780:93997",
+    "name": "38",
+    "purpose": "Lead Import History page \u2014 empty state, shown before any import has been run.",
+    "uiState": "Empty state (no import rows). Near-duplicate of 779:20147, differing only in body content.",
+    "keyElements": [
+     "Dark left side nav: OpenMaison logo mark at top, then icon-only items (search, and a column of section icons; component names say Dashboard/Workspace/Catalog/Calendar/Reports/Community/Orders but no visible labels); one item highlighted purple (people icon); lower cluster: pink heart icon, dot-grid, chat, bell, settings, avatar",
+     "Page header: back arrow, breadcrumb 'Leads /' above the bold title 'Lead Import History'",
+     "Header right actions: outlined 'Download Template' button with download icon; purple primary 'Upload' button with upload icon",
+     "Centered empty-state illustration: two overlapping clipboards with orange clips",
+     "Heading 'Your imported files will appear here'",
+     "Line 'Once you import leads, this page will help you:' followed by three bullets: 'Avoid duplicate leads with import history', 'Quickly access previous import details', 'Download error reports to fix and re-import'",
+     "Below bullets, a second pair of buttons duplicating the header actions: outlined 'Download Template' and purple 'Upload'",
+     "Floating circular Maison AI button, bottom-right, white with orange sparkle icon"
+    ],
+    "interactions": [
+     "'Upload' (purple primary) \u2014 implied entry point to the Import Leads modal; no prototype link exists, ordering implied by numbering",
+     "'Download Template' (outlined) \u2014 implied file download; hover per spec: + bg rgba(0,0,0,.04), label/icon #1a1a1a",
+     "Back arrow implies navigation back to the Leads listing (breadcrumb 'Leads /')",
+     "Side-nav items: hover bg rgba(0,0,0,.04) radius 8 per interaction-states.md",
+     "Maison AI floating button \u2014 affordance only; behavior not shown in this section"
+    ],
+    "illegible": "Side-nav icons carry no text labels, so their meanings come only from component names in metadata. The avatar image at the bottom of the nav is too small to identify."
+   },
+   {
+    "id": "779:26013",
+    "name": "134",
+    "purpose": "Import Leads modal, Step 1 of 4 \u2014 file upload in progress.",
+    "uiState": "Step 1, mid-upload: drop zone still shown; bottom-right toast shows the file uploading with a spinner. Near-duplicate of 779:26054 which shows the completed state.",
+    "keyElements": [
+     "Large white modal over a dimmed page; header row: bold 'Import Leads' left, 'Step 1 of 4' and X close right",
+     "Left column: 'Tips on Importing' with bullet 'Easily import your leads into OpenMaison using this template' ('this template' underlined link)",
+     "'Important Reminders' with bullets: 'List only one lead per row', 'Every lead must have a lead Name', 'Avoid duplicate entries'",
+     "Below a divider: 'Download Leads Import Template' with download icon, and 'Lead Import History' with a clock/history icon",
+     "Right column: label 'Upload local file' above a large dashed-border drop zone: 'Drop your file or browse' ('browse' underlined) and 'Supports: CSV, XLS, XLSX'",
+     "Bottom-right upload toast: dark header bar 'Uploading 1 file' with chevron (collapse) and X; white body row with green 'CSV' file badge, filename 'Import_Leads.csv', text 'Uploading...' and a green circular progress spinner",
+     "Modal footer, right-aligned: outlined 'Cancel' and purple primary 'Next'"
+    ],
+    "interactions": [
+     "Drop zone accepts drag-and-drop; underlined 'browse' implies a file picker",
+     "'this template' and 'Download Leads Import Template' imply template download; 'Lead Import History' implies navigating to the history page; link hover per spec: #5500ff \u2192 #4400cc, no underline",
+     "Toast chevron implies collapsing the upload panel; X implies dismissing it",
+     "'Next' implies advancing to Step 2; 'Cancel' implies closing the flow; X closes the modal"
+    ],
+    "illegible": "Nothing material; the trailing characters after 'Uploading' in the toast are tiny (rendered here as 'Uploading...')."
+   },
+   {
+    "id": "779:26054",
+    "name": "136",
+    "purpose": "Import Leads modal, Step 1 of 4 \u2014 upload completed successfully.",
+    "uiState": "Step 1, upload complete: drop zone replaced by a green success panel; toast row shows a green check. Near-duplicate of 779:26013.",
+    "keyElements": [
+     "Same modal chrome as 134: 'Import Leads', 'Step 1 of 4', X close; identical left column (Tips on Importing, Important Reminders, Download Leads Import Template, Lead Import History)",
+     "Right column: 'Upload local file' label above a light-green panel: green check circle, 'Success!', body text 'Detected 20 line(s). Click \"Next\" to start mapping your file's column headers to our fields in OpenMaison.'",
+     "Inside the green panel: file/document icon, filename 'Import_Leads.csv', underlined link 'Re-upload File'",
+     "Bottom-right toast unchanged in chrome ('Uploading 1 file', chevron, X) but the row now reads 'filename.csv' with a green check (complete)",
+     "Footer: outlined 'Cancel', purple primary 'Next'"
+    ],
+    "interactions": [
+     "'Re-upload File' implies replacing the uploaded file and returning to the drop-zone state",
+     "'Next' implies advancing to Step 2 (mapping), as the success copy itself states",
+     "Toast chevron/X imply collapse/dismiss of the upload panel",
+     "Links hover #5500ff \u2192 #4400cc per interaction-states.md"
+    ],
+    "illegible": "The toast filename reads 'filename.csv' here versus 'Import_Leads.csv' in 134 and in this screen's own success panel \u2014 visible as-is, flagged under open questions."
+   },
+   {
+    "id": "779:26099",
+    "name": "ModalComponent (Step 2)",
+    "purpose": "Import Leads modal, Step 2 of 4 \u2014 map source-file columns to OpenMaison fields.",
+    "uiState": "Mapping table with one row hovered and its dropdown menu open (pointing-hand cursor shown), and one row in a required-field error state.",
+    "keyElements": [
+     "Modal header: 'Import Leads', 'Step 2 of 4', X close",
+     "Section heading 'Map your columns to OpenMaison Fields' with helper text 'Ensure your columns align with the correct OpenMaison fields, especially assigning one to \"Lead Name\". Only columns matched to a OpenMaison field name will be imported.'",
+     "Three-column table: COLUMN NAME, CONTENT REVIEW, SELECT OPENMAISON FIELD NAME",
+     "Rows (COLUMN NAME): Lead Name, Phone, Company / Property, Lead Name (second occurrence), Lead Source, Project Type, Location, Budget (S$), Lead Stage, Date Received, Notes",
+     "Every CONTENT REVIEW cell shows three stacked sample values: 'James Tan', 'Daniel James', 'Daniel James'",
+     "First row's dropdown is set to 'Lead Name'; all other rows show placeholder 'Select Field' with a chevron",
+     "Second 'Lead Name' row is highlighted (grey hover band) with its dropdown open; menu options top-to-bottom: 'Ignore', 'Lead Name', 'Lead Stage', 'Client Name', 'Client Email', 'Client Phone'; a pointing-hand cursor sits on the dropdown",
+     "'Budget (S$)' row: 'Select Field' dropdown with red border and red 'Required' text underneath (error state)",
+     "Footer, right-aligned: outlined 'Previous' and purple primary 'Next' (both partially clipped by the crop's bottom edge)"
+    ],
+    "interactions": [
+     "Each 'Select Field' chevron opens the field-mapping menu shown on the highlighted row",
+     "'Ignore' as the first menu option implies a column can be excluded from import",
+     "The red 'Required' state implies validation blocks proceeding until that mapping is set",
+     "'Previous' implies returning to Step 1; 'Next' implies advancing to Step 3; X closes the modal"
+    ],
+    "illegible": "The footer buttons are clipped at the bottom of the crop ('Previous' and 'Next' are still readable). Whether the open dropdown menu scrolls to more options beyond the six visible cannot be determined."
+   },
+   {
+    "id": "779:26133",
+    "name": "ModalComponent (Step 3)",
+    "purpose": "Import Leads modal, Step 3 of 4 \u2014 review the parsed records before importing.",
+    "uiState": "Read-only preview table of 13 rows; table extends past the right edge of the crop.",
+    "keyElements": [
+     "Modal header: 'Import Leads', 'Step 3 of 4', X close",
+     "Section heading 'Review your columns to OpenMaison Fields' with the same helper sentence as Step 2 ('Ensure your columns align with the correct OpenMaison fields... Only columns matched to a OpenMaison field name will be imported.')",
+     "Preview table columns (left to right, as visible): SL NO, LEAD NAME, LEAD PHONE NUMBER, LEAD SOURCE, PROPERTY TYPE, PROPERTY ADDRESS, LEAD EMAIL, then a truncated column beginning 'LEAD AD...'",
+     "13 data rows, e.g. row 1: James Tan / 91234567 / Referral / HDB 4-Room / Tampines, Singapore / demo@openmaison.com; row 2: Sarah Lee / 98765432 / Direct / Condo / Orchard, Singapore / sarah.lee@example.com; continuing through row 13: Nora Tan / 87654300 / Referral / Terrace / Bedok, Singapore / nora.tan@example.com",
+     "LEAD SOURCE values alternate between 'Referral' and 'Direct'; PROPERTY TYPE values include HDB 4-Room, Condo, Landed House, Apartment, Duplex, Penthouse, HDB 5-Room, Loft, Studio, Bungalow, Cluster House, Shophouse, Terrace",
+     "Footer, right-aligned: outlined 'Previous' and purple primary 'Import' (partially clipped by the crop)"
+    ],
+    "interactions": [
+     "'Previous' implies returning to the Step 2 mapping; 'Import' implies committing the import and advancing to Step 4",
+     "The table running past the modal's right edge implies horizontal overflow (a scrollable table), though no scrollbar is visible in the crop",
+     "X closes the modal"
+    ],
+    "illegible": "The rightmost column header is truncated at 'LEAD AD...' and its cell contents are cut off mid-word (e.g. 'Tampine', 'Orchard', 'Bukit Ti...'); the full column name and any further columns to the right are not visible. Footer buttons are clipped at the crop's bottom edge but readable."
+   },
+   {
+    "id": "779:26161",
+    "name": "ModalComponent (Step 4)",
+    "purpose": "Import Leads modal, Step 4 of 4 \u2014 import success confirmation.",
+    "uiState": "Terminal success state; crop is cut on the left edge and bottom edge.",
+    "keyElements": [
+     "Modal header: title visible as 'mport Leads' (left edge of the crop cuts the 'I'), 'Step 4 of 4' and X close at right",
+     "Centered illustration: a document/list graphic with a green circular check badge on its top-right corner",
+     "Centered text: '13 of 13 records imported successfully'",
+     "Bottom-right: a purple primary button whose label is cut off by the bottom edge of the crop"
+    ],
+    "interactions": [
+     "The purple footer button implies dismissing/completing the flow; its label is not readable so its exact action text cannot be confirmed",
+     "X implies closing the modal"
+    ],
+    "illegible": "The footer button's label is cropped at the bottom of the image and cannot be read. The modal title's first character is cut by the left crop edge."
+   },
+   {
+    "id": "779:20147",
+    "name": "39",
+    "purpose": "Lead Import History page \u2014 populated state, listing past imports with error links.",
+    "uiState": "Populated state (two history rows). Near-duplicate of 780:93997, differing only in body content plus the search/filter/view toolbar.",
+    "keyElements": [
+     "Identical shell to 780:93997: dark icon-only side nav with purple-highlighted people item, Maison AI floating button bottom-right",
+     "Page header: back arrow, breadcrumb 'Leads /', title 'Lead Import History'; right: outlined 'Download Template' and purple 'Upload'",
+     "Sub-header row: bold section label 'All Import History' on the left; on the right a 'Search' input with magnifier icon, a filter icon button, and a two-segment segmented icon button (left segment selected with light-purple fill, both segments show table/list-style glyphs)",
+     "Table header: DATE (with sort chevrons), FILE NAME, TOTAL ROWS, ROWS IMPORTED, ERROR COUNT, ERROR LOG",
+     "Two identical rows: '17 Jul, 26' / 'aug-leads.csv' / 243 / 233 / '5 errors detected across 10 skipped leads' / purple link 'Download Skipped Records'"
+    ],
+    "interactions": [
+     "DATE sort chevrons imply column sorting",
+     "'Download Skipped Records' link implies downloading an error report per import; link hover #5500ff \u2192 #4400cc per spec",
+     "Search bar: rest border 1px #ccc, focused border 2px #5500ff per interaction-states.md",
+     "Filter icon button implies opening filters; segmented control implies switching view (selected segment bg #eee5ff icon #4400cc, unselected hover bg rgba(0,0,0,.04) per spec) \u2014 the alternate view is not shown in this section",
+     "'Upload' implies re-opening the Import Leads modal; back arrow implies returning to Leads"
+    ],
+    "illegible": "The exact glyphs inside the two segmented-control segments are too small to distinguish precisely (both look like table/grid list variants). Side-nav icons are unlabeled, as on 780:93997."
+   }
+  ],
+  "sharedComponents": [
+   "Dark side nav: logo mark, icon-only items (component names: Dashboard, Workspace, Catalog, Calendar, Reports, Community, Orders), purple-highlight active state, lower cluster (heart, dot-grid, chat, bell, settings, avatar) \u2014 identical on 780:93997 and 779:20147",
+   "Page Header / Leads - L2: back arrow + 'Leads /' breadcrumb + page title, right-aligned outlined 'Download Template' and primary purple 'Upload' buttons",
+   "Import Leads modal chrome: bold title left, 'Step N of 4' + X close right, right-aligned footer buttons (Cancel/Next, Previous/Next, Previous/Import, and a cropped final button)",
+   "Upload toast panel: dark header 'Uploading 1 file' with chevron + X, white body row with green CSV badge, filename, status (spinner while uploading, green check when done) \u2014 appears in 779:26013 and 779:26054",
+   "Buttons per interaction-states.md: outlined h36 (border #ccc, hover + bg rgba(0,0,0,.04)) and purple primary; link text #5500ff hover #4400cc no underline",
+   "Search bar (rest 1px #ccc border, focused 2px #5500ff), filter icon button, segmented icon button (selected seg bg #eee5ff icon #4400cc)",
+   "Maison AI floating circular button (white, orange sparkle), bottom-right of both full pages",
+   "Table row components: 'Lead - Import History' (history page), 'Lead - Importing' (mapping rows, step 2), 'Lead - Importing Preview' (review rows, step 3)"
+  ],
+  "buildNotes": [
+   "Per /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md: the Figma file has NO screen-to-screen prototype links \u2014 the 38 \u2192 modal steps 1-4 \u2192 39 sequence is carried by frame numbering, so the prototype must wire this navigation itself.",
+   "779:26013 vs 779:26054 are the same Step 1 frame in two states (uploading vs success) \u2014 build as one screen with an upload-state machine: drop zone \u2192 uploading toast \u2192 green success panel with Re-upload File.",
+   "780:93997 vs 779:20147 are the same page in empty vs populated states; the populated state adds the All Import History toolbar (search, filter icon button, segmented view toggle) that is absent in the empty state.",
+   "Step 2 encodes three dropdown states in one frame: resolved value ('Lead Name'), placeholder ('Select Field'), open menu on a hovered row (options: Ignore, Lead Name, Lead Stage, Client Name, Client Email, Client Phone), and an error state (red border + red 'Required') on Budget (S$).",
+   "Step 3's preview table overflows the modal on the right \u2014 implement as a horizontally scrollable table container; visible columns: SL NO, LEAD NAME, LEAD PHONE NUMBER, LEAD SOURCE, PROPERTY TYPE, PROPERTY ADDRESS, LEAD EMAIL, plus at least one truncated 'LEAD AD...' column.",
+   "Record counts are internally consistent across steps 3-4 (13 rows previewed, '13 of 13 records imported successfully') but Step 1's success copy says 'Detected 20 line(s)' \u2014 copy that verbatim; do not reconcile without approval (per no-invented-design memory).",
+   "History rows in 779:20147 are two identical sample rows (17 Jul, 26 / aug-leads.csv / 243 / 233 / '5 errors detected across 10 skipped leads' / 'Download Skipped Records'); use these exact strings as seed data.",
+   "Hover/focus styling must follow interaction-states.md verbatim (outlined button hover + rgba(0,0,0,.04); link #5500ff \u2192 #4400cc no underline; search focus 2px #5500ff; segmented selected #eee5ff/#4400cc unchanged on hover)."
+  ],
+  "openQuestions": [
+   "What is the label of the final purple button on Step 4 (779:26161)? It is cropped out of the image and cannot be confirmed.",
+   "What is the full name and content of the truncated 'LEAD AD...' column in Step 3 (779:26133), and are there further columns beyond the crop's right edge?",
+   "In 779:26054 the upload toast row reads 'filename.csv' while the success panel (and 779:26013's toast) read 'Import_Leads.csv' \u2014 is the toast filename a placeholder oversight, and which should the prototype show?",
+   "Step 1's success copy says 'Detected 20 line(s)' but Steps 3-4 show exactly 13 records \u2014 intentional (7 rows skipped/invalid) or inconsistent sample copy?",
+   "Is 'Next' on Step 1 disabled until the upload succeeds? Both 134 and 136 show an identical-looking enabled purple Next.",
+   "What does the segmented icon button's second (unselected) segment on 779:20147 switch to? No alternate view of Import History appears in this section.",
+   "Step 2 shows two 'Lead Name' source columns and identical 'James Tan / Daniel James / Daniel James' content previews for every column \u2014 sample-data placeholders, or should content previews vary per column in the prototype?"
+  ]
+ },
+ {
+  "section": "01 - Lead listing - filters",
+  "purpose": "Documents the two filtering mechanisms on the Leads listing: (1) the quick stage-filter dropdown on the toolbar pill that narrows the table to one pipeline stage, and (2) the full \"Filters\" modal with a left tab rail (Sort, Property type, Source, Assignees, Date) whose selections are applied via a shared Clear All / Apply footer.",
+  "flowNarrative": "The user starts on the Leads table and clicks the stage pill in the toolbar (\"All Leads (99)\" with chevron), opening the stage dropdown (780:93492). The menu groups stages under ACTIVE (New, Contacted, Met, Quote Sent, Won) and INACTIVE (On Hold, Lost), each with a count of 99, plus a \"Manage Stages >\" link at the bottom. Choosing a stage produces the filtered view (780:94292), where the pill now reads \"On Hold (2)\" and the table shows exactly the two On Hold leads (Farah Ahmad, Muthu Vinay). Independently, the toolbar's filter icon-button implies opening the \"Filters\" modal. The modal opens on its first rail tab, Sort (779:24983), offering two radio options (Newest/Oldest at the top). The user can switch rail tabs: Property type (781:53980) shows a searchable checkbox list of 21 property types in divider-separated groups (HDB, BTO, Condo, Landed, Commercial, Others); Source (781:54190) shows a searchable checkbox list of 12 lead sources \u2014 and in this crop a small purple dot badge sits next to \"Property type\" in the rail, implying selections were made on that tab; Assignees (781:54363) shows a two-line avatar list of team members with checkboxes, \"Dane \u2014 Owner (you)\" checked; Date (781:54536) shows choice chips (Today, Last 7 days, Last 30 days, Custom \u2014 Custom selected) with \"From date\" / \"To date\" fields, each with a calendar icon. Every modal tab shares the same footer: outlined \"Clear All\" and primary \"Apply\". Note: per design-source/context/interaction-states.md, the Figma prototype contains no screen-to-screen navigation \u2014 this sequence is carried by screen numbering, and all wired reactions are component-state changes (search focus, radios, switches, filter-row icons).",
+  "screens": [
+   {
+    "id": "780:93492",
+    "name": "Stage filter dropdown",
+    "purpose": "Shows the stage quick-filter dropdown open over the Leads table, listing pipeline stages grouped by ACTIVE/INACTIVE with per-stage counts and a Manage Stages link.",
+    "uiState": "Dropdown open under the toolbar pill 'All Leads (99)'; pointing-hand cursor on the pill's chevron. Table behind is unfiltered (All Leads). Near-duplicate of 780:94292 which shows the closed/filtered result state.",
+    "keyElements": [
+     "Dark left side nav: purple logo mark at top; icon-only items (search, then a stack of module icons matching the inventory's Workspace/Catalog/Calendar/Reports/Community/Orders/Dashboard set); lower cluster with a red-diamond icon (Maison AI per inventory), grid, comment, bell, settings icons and an avatar at bottom",
+     "Page header: 'Leads' title left; right side has outlined 'Insights' button with bar-chart icon, purple primary '+ Add Lead' button, and a kebab (vertical-dots) icon button",
+     "Toolbar: stage pill 'All Leads (99)' with a small dot and chevron (dropdown trigger); right side has a search icon button, a filter icon button, and a two-segment segmented icon button (left segment selected \u2014 table view; right segment unselected)",
+     "Open dropdown menu: 'All Leads \u2014 99'; green-dot 'ACTIVE' group label; items New, Contacted, Met, Quote Sent, Won (each with count 99); orange-dot 'INACTIVE' group label; items On Hold, Lost (each 99); purple link 'Manage Stages >' at bottom",
+     "Table column headers visible right of the dropdown: STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, each with sort carets; leftmost column is covered by the open dropdown",
+     "Row 1: Stage 'New' with chevron; task cell 'This is a sample task added by the user'; purple 'Assign' link with person-plus icon in ASSIGNEES",
+     "Rows 2-5: Stage 'Contacted' with chevron; task 'This is a sample task\u2026' truncated with red 'OVERDUE' tag and '+2' tag; two placeholder avatars, '+2' chip, and a purple person-plus icon button; Source 'Instagram'; Budget '70,500'; Property type 'HDB 4-Room'; a cropped date column at the right edge",
+     "Floating red/orange spark icon at bottom-right corner (Maison AI affordance per component inventory)"
+    ],
+    "interactions": [
+     "Pill chevron toggles the stage dropdown (shown open here; cursor rendered on the trigger)",
+     "Each dropdown row is a selectable stage filter; counts preview result sizes",
+     "'Manage Stages >' is a purple link (link-text style: #5500ff, hover #4400cc per interaction-states.md) implying navigation to stage management",
+     "Column-header carets imply per-column sorting",
+     "Stage cell chevrons imply an inline stage-change menu per row",
+     "'Assign' link and person-plus icon buttons imply assignee pickers; icon button 24 primary hovers to bg rgba(0,0,0,.04) with #4400cc per spec",
+     "Toolbar search icon implies expanding to the search bar seen in 780:94292; filter icon implies opening the Filters modal; segmented button implies switching table/alternate view (unselected segment hover: bg rgba(0,0,0,.04))"
+    ],
+    "illegible": "Rightmost table column is cut off at the crop edge \u2014 header starts with 'C' and its values are clipped (the inventory's '17 Jul \u201826' matches the visible '17 J\u2026' fragments, but the header text is not readable). The leftmost table column (name column) is hidden behind the open dropdown. The inventory text 'Followed Up' could not be located anywhere visible in this crop."
+   },
+   {
+    "id": "780:94292",
+    "name": "Stage filtered view",
+    "purpose": "Shows the Leads table after applying the On Hold stage filter: the pill reflects the selection and count, and only matching rows remain.",
+    "uiState": "Dropdown closed; pill reads 'On Hold (2)' with chevron; table reduced to 2 rows. Toolbar search is expanded to a full search input (vs the icon-only search in 780:93492). Near-duplicate of 780:93492 \u2014 same page, filtered state.",
+    "keyElements": [
+     "Same dark side nav, 'Leads' header with outlined 'Insights', purple '+ Add Lead', and kebab icon button",
+     "Toolbar: pill 'On Hold (2)' with chevron; expanded search input with magnifier icon and 'Search' placeholder; filter icon button; segmented icon button (left/table segment selected)",
+     "Column headers: NAME (with sort carets and a small adjuster icon at the column's right edge), STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, plus a cropped column at the right edge",
+     "Row 1: 'Farah Ahmad' with secondary line '9123 4567'; Stage 'On Hold' with chevron; 'This is a sample task\u2026' with red 'OVERDUE' tag and '+2' tag; two avatars + '+2' chip + purple person-plus icon button; 'Instagram'; '70,500'; 'HDB 4-Room'; clipped date '17 J\u2026'",
+     "Row 2: 'Muthu Vinay' with secondary line '9123 4567'; all other cells identical to row 1",
+     "Floating spark icon bottom-right"
+    ],
+    "interactions": [
+     "Pill chevron reopens the stage dropdown to change the filter",
+     "Search input filters/searches leads (focused state: 2px #5500ff border per interaction-states.md; rest: 1px #ccc)",
+     "Filter icon button implies opening the Filters modal; segmented control implies view switching",
+     "Sort carets on headers; stage chevrons per row; person-plus icon buttons for adding assignees"
+    ],
+    "illegible": "Rightmost column header is clipped at the crop edge (reads 'CREA\u2026'-like fragment, not fully readable) and its date values are clipped to '17 J\u2026'. The inventory lists placeholder layer names ('Name', 'Secondary Cell Data') while the crop shows overridden values Farah Ahmad / Muthu Vinay / 9123 4567."
+   },
+   {
+    "id": "779:24983",
+    "name": "More filters / Filter - default view - sort",
+    "purpose": "The Filters modal in its default state, opened on the Sort tab with a sort-direction radio choice.",
+    "uiState": "Modal over a dark backdrop; rail tab 'Sort' selected (white background, others on gray rail); 'Newest at the top' radio selected. One of four near-duplicate modal screens differing only in the selected rail tab and right-pane content.",
+    "keyElements": [
+     "Modal header: 'Filters' title left, X close icon right",
+     "Left tab rail (gray) listing: Sort (selected), Property type, Source, Assignees, Date",
+     "Right pane: 'Sort by' label; radio 'Newest at the top' (selected, purple); radio 'Oldest at the top' (unselected)",
+     "Footer, right-aligned: outlined 'Clear All' button; purple primary 'Apply' button"
+    ],
+    "interactions": [
+     "X closes the modal",
+     "Rail items switch tabs (the other four screens show each tab's content)",
+     "Radios select a single sort order (radio state changes are wired as component CHANGE_TO reactions per interaction-states.md)",
+     "'Clear All' implies resetting filter selections; 'Apply' implies applying them (outlined button hover: bg rgba(0,0,0,.04) per spec)"
+    ],
+    "illegible": ""
+   },
+   {
+    "id": "781:53980",
+    "name": "More filters / Filter - all property types",
+    "purpose": "The Filters modal on the Property type tab, showing the complete searchable checkbox list of property types.",
+    "uiState": "'Property type' rail tab selected; all checkboxes unchecked; search empty. Modal is rendered taller than the other tabs to fit the full list. Near-duplicate of the other three modal screens.",
+    "keyElements": [
+     "Same modal shell: 'Filters' + X header; rail Sort / Property type (selected) / Source / Assignees / Date; footer 'Clear All' + 'Apply'",
+     "Right pane: search bar with magnifier icon and 'Search' placeholder",
+     "'Property types' section label",
+     "Checkbox rows (checkbox right-aligned, all unchecked), in divider-separated groups: HDB 2-Room, HDB 3-Room, HDB 4-Room, HDB 5-Room, HDB Executive | BTO 2-Room, BTO 3-Room, BTO 4-Room, BTO 5-Room | Executive Condo, Condo Studio / 1-bedder, Condo 2-bedder, Condo 3-bedder, Condo 4-bedder, Condo 5-bedder, Penthouse | Landed \u2014 Terrace, Landed \u2014 Semi-D, Landed \u2014 Bungalow | Commercial \u2014 Office, Commercial \u2014 Retail | Others"
+    ],
+    "interactions": [
+     "Search bar implies filtering the option list (focus state 2px #5500ff per spec)",
+     "Checkboxes imply multi-select of property types",
+     "Rail tabs switch panes; X closes; Clear All / Apply as on other tabs"
+    ],
+    "illegible": ""
+   },
+   {
+    "id": "781:54190",
+    "name": "More filters / Filter - all sources",
+    "purpose": "The Filters modal on the Source tab, listing all lead sources as a searchable checkbox list; the rail shows a badge indicating selections exist on the Property type tab.",
+    "uiState": "'Source' rail tab selected; all source checkboxes unchecked; a small purple dot badge appears to the right of 'Property type' in the rail (the inventory's Badge component), implying that tab holds active selections. Near-duplicate of the other modal screens.",
+    "keyElements": [
+     "Same modal shell: 'Filters' + X; rail Sort / Property type (with purple dot badge) / Source (selected) / Assignees / Date; footer 'Clear All' + 'Apply'",
+     "Right pane: search bar with 'Search' placeholder",
+     "'Sources' section label",
+     "Checkbox rows, all unchecked, checkbox right-aligned: Qanvast, Instagram, Referral, Walk-in, Facebook, Organic, Hangout, Website, Email, Google Ads, Meta Ads, Others"
+    ],
+    "interactions": [
+     "Search bar filters the source list",
+     "Checkboxes multi-select sources",
+     "Purple dot badge on a rail item signals that tab has selections without opening it",
+     "Rail tabs, X, Clear All, Apply as elsewhere"
+    ],
+    "illegible": ""
+   },
+   {
+    "id": "781:54363",
+    "name": "More filters / Filter - all assignees",
+    "purpose": "The Filters modal on the Assignees tab, listing team members as two-line avatar rows with checkboxes for filtering by assignee.",
+    "uiState": "'Assignees' rail tab selected; only the first row (Dane, 'Owner (you)') is checked (purple checkbox); no search bar on this tab, unlike Property type and Source. Near-duplicate of the other modal screens.",
+    "keyElements": [
+     "Same modal shell: 'Filters' + X; rail Sort / Property type / Source / Assignees (selected) / Date; footer 'Clear All' + 'Apply'",
+     "'Assignees' section label",
+     "Two-line rows with square avatar, name, role, and right-aligned checkbox: Dane / 'Owner (you)' \u2014 blue 'D' avatar, checked; James / Designer \u2014 photo avatar; Sarah / Designer \u2014 green 'S'; Michelle / Designer \u2014 orange 'M'; Germaine / Designer \u2014 gold 'G'; Alex / Designer \u2014 navy 'A'; Germaine / Designer \u2014 gold 'G' (name appears twice in the list)"
+    ],
+    "interactions": [
+     "Checkboxes multi-select assignees; current user is pre-checked in this state",
+     "Rail tabs, X, Clear All, Apply as elsewhere"
+    ],
+    "illegible": ""
+   },
+   {
+    "id": "781:54536",
+    "name": "More filters / Filter - date",
+    "purpose": "The Filters modal on the Date tab, offering preset date-range chips and a custom from/to date range.",
+    "uiState": "'Date' rail tab selected; 'Custom' chip selected (purple border/text), the three presets unselected; both date fields empty showing placeholders. Near-duplicate of the other modal screens.",
+    "keyElements": [
+     "Same modal shell: 'Filters' + X; rail Sort / Property type / Source / Assignees / Date (selected); footer 'Clear All' + 'Apply'",
+     "'Dates' section label",
+     "Choice-chip row: 'Today', 'Last 7 days', 'Last 30 days' (outlined, unselected) and 'Custom' (selected, purple)",
+     "Two side-by-side text fields with placeholders 'From date' and 'To date', each with a calendar icon at the field's right edge"
+    ],
+    "interactions": [
+     "Chips are single-choice presets; selecting Custom exposes/uses the from-to fields (fields are visible in this Custom-selected state; no crop shows a preset-selected state to confirm whether they hide)",
+     "Calendar icons in the fields imply a date-picker",
+     "Rail tabs, X, Clear All, Apply as elsewhere"
+    ],
+    "illegible": ""
+   }
+  ],
+  "sharedComponents": [
+   "Dark icon-only side nav with logo, module icons, lower utility icons and avatar (both full-page screens)",
+   "Page header 'Leads' with outlined Insights button, purple + Add Lead primary button, kebab icon button",
+   "Toolbar stage pill with count + chevron (dropdown trigger); filter icon button; segmented icon view toggle",
+   "Lead table row: name + secondary text, stage cell with chevron, task cell with OVERDUE tag and +N tag, assignee avatars + '+2' chip + person-plus icon button, source, budget, property type, date",
+   "Filters modal shell: 'Filters' title + X close, gray left tab rail (Sort, Property type, Source, Assignees, Date), footer with outlined 'Clear All' and primary 'Apply'",
+   "Search bar (toolbar and modal variants; rest 1px #ccc, focus 2px #5500ff per interaction-states.md)",
+   "Checkbox option row, checkbox right-aligned (one-line variant on Property type/Source; two-line avatar variant on Assignees)",
+   "Purple dot badge on rail tab indicating active selections",
+   "Radio button (Sort tab)",
+   "Choice chips + text fields with calendar icon (Date tab)",
+   "Floating bottom-right spark icon (Maison AI)"
+  ],
+  "buildNotes": [
+   "Per /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md the prototype has NO screen-to-screen navigation \u2014 all wired reactions are component-state changes (search focus, radios, switches, filter-row icons); implement navigation from flow order, and hover/active states from that file's table (e.g. outlined buttons/icon buttons hover bg rgba(0,0,0,.04); link text #5500ff hover #4400cc; segmented selected bg #eee5ff icon #4400cc, unchanged on hover; search focus border 2px #5500ff)",
+   "The Filters modal renders at different heights per tab in the mocks (tallest on Property type) \u2014 content-driven height, one shared shell with a swapped right pane",
+   "Stage dropdown groups: ACTIVE (green dot): New, Contacted, Met, Quote Sent, Won; INACTIVE (orange dot): On Hold, Lost; every count reads 99 (placeholder data); 'Manage Stages >' is a purple link row at the bottom",
+   "Filtered state changes the pill label to '<Stage> (count)' \u2014 'On Hold (2)' \u2014 and the toolbar search appears expanded in that crop",
+   "Checkboxes in all filter lists are right-aligned against the row edge; Property type list uses divider-separated groups (HDB / BTO / Condo / Landed / Commercial / Others)",
+   "Source tab demonstrates the rail badge pattern: a purple dot next to a rail tab that holds selections",
+   "Assignees rows are the Two Line list variant with 40px-ish square avatars (initial-letter fills in blue/green/orange/gold/navy, one photo); current user annotated 'Owner (you)' and pre-checked",
+   "Date tab: preset chips Today / Last 7 days / Last 30 days / Custom; the crop only shows the Custom-selected state with From/To fields and calendar icons",
+   "Table rows reuse the same placeholder cells across rows (Instagram / 70,500 / HDB 4-Room / 17 Jul '26, task 'This is a sample task\u2026' + OVERDUE + '+2')"
+  ],
+  "openQuestions": [
+   "The text inventory for 780:93492 includes 'Followed Up' but it is not visibly locatable in the crop (the open dropdown covers the first row's left side) \u2014 is it a task-chip label or a hidden stage label?",
+   "The rightmost table column is clipped in both full-page crops: header fragment reads 'C\u2026'/'CREA\u2026' with values '17 J\u2026' (inventory: 17 Jul '26) \u2014 the exact header text needs the full frame",
+   "Assignees tab lists 'Germaine / Designer' twice with identical avatars \u2014 intentional data or a mock artifact?",
+   "On the Source tab the purple dot badge sits next to 'Property type' even though no Property type selections are shown checked in its own crop \u2014 confirm the badge means 'tab has active selections' and whether it should ever show a count",
+   "The stage pill in 780:93492 shows a small dot between 'All Leads (99)' and the chevron \u2014 its meaning (active-filter indicator vs decoration) is not evident from the crop",
+   "Assignees tab has no search bar while Property type and Source do \u2014 intentional omission?",
+   "On the Date tab, do the From/To fields persist (disabled) when a preset chip is selected, or appear only for Custom? No crop shows a preset-selected state"
+  ]
+ },
+ {
+  "section": "01 - Lead listing - kanban view",
+  "purpose": "Kanban presentation of the Leads module: lead cards grouped into stage columns (New, Followed Up, Contacted, Met, plus off-crop Quote Sent/Won and the INACTIVE stages On Hold/Lost), with stage groups organised into collapsible vertical bands labelled ACTIVE / INACTIVE (and IMPORTED per text inventory). Covers the default board, a card overflow menu, a search no-results state, band expansion, and a stage-scoped filter view.",
+  "flowNarrative": "The user lands on the Leads page in kanban view (screen 40): the ACTIVE band is expanded showing New/Followed Up/Contacted/Met columns of lead cards, with the toolbar reading \"All Leads (99)\" and the kanban segment of the view toggle selected. From any card the user can open the kebab menu (screen \"All kanban board buckets / Board\"), which reveals a dropdown containing a red \"Delete\" action with a pointing-hand cursor shown over it. Typing into the search bar (screen 44, query \"jes\", search field in focused state with 2px purple border and a clear \"x\") filters cards per column; a column with no matches (Followed Up) shows an illustration, \"No results found\", \"Check your spelling and try again.\" and a purple \"Clear All\" link, while columns that still match keep their cards. Independently of search, the user can collapse the ACTIVE band to its green vertical rail and expand the INACTIVE band (screen 42), revealing cream-tinted On Hold and Lost columns next to the orange INACTIVE rail. Finally, choosing a specific stage in the leads dropdown \u2014 \"On Hold (2)\" (screen 41) \u2014 scopes the board down to just the INACTIVE rail and the single On Hold column.",
+  "screens": [
+   {
+    "id": "779:19733",
+    "name": "40",
+    "purpose": "Default kanban board for Leads with the ACTIVE stage band expanded.",
+    "uiState": "Resting/default. Kanban segment of the table/kanban segmented toggle is selected (purple tint). ACTIVE band expanded; search empty with placeholder \"Search\".",
+    "keyElements": [
+     "Collapsed icon-only side nav: logo at top, then icons for search and six nav items (component names: Dashboard, Orders, Workspace, Calendar, Catalog, Community, Reports \u2014 icon-to-name mapping not readable from icons alone); the people icon is highlighted with a purple tint. Bottom cluster: a red/pink diamond icon, dot-grid icon, chat icon, bell icon, settings gear, and an avatar tile.",
+     "Page header: \"Leads\" title left; right side has an outlined \"Insights\" button with a bar-chart icon, a solid purple \"+ Add Lead\" primary button, and an outlined kebab (vertical-dots) icon button.",
+     "Toolbar row: \"All Leads (99)\" dropdown with chevron on the left; on the right a search input (magnifier + \"Search\" placeholder), an outlined filter icon button, and a two-segment icon toggle (table view / kanban view) with the kanban segment selected on a light-purple background.",
+     "Green vertical band rail at the left of the board: a small square toggle icon at top of the rail and rotated text \"\u2022 ACTIVE\" (green dot + label).",
+     "Kanban columns on a light-green tinted surface, each with a tinted header: \"New 17\", \"Followed Up 17\", \"Contacted 17\", \"Met 17\" (Met column clipped by the right crop edge).",
+     "Lead card anatomy (repeated): bold name \"Olivia Martinez\", \"1d ago\" timestamp, kebab icon; secondary line \"91234567 \u00b7 S$70,500 \u00b7 Gmail\"; an outlined task row \"This is a sample t\u2026\" (truncated) with a red \"OVERDUE\" badge and a \"+2\" chip; divider; footer.",
+     "Card footer variants: first card in New shows a purple person-add icon + \"Assign\" link text (unassigned state); all other cards show a green square \"H\" initial chip plus an outlined purple person-add icon button (assigned state).",
+     "Visible card counts: New has 3 cards, Followed Up 2, Contacted 2, Met 1 (all identical Olivia Martinez mock data).",
+     "Floating circular Maison AI button with an orange sparkle icon at bottom-right."
+    ],
+    "interactions": [
+     "Segmented icon toggle switches between table and kanban views; per interaction-states.md the selected segment has bg #eee5ff / icon #4400cc and unselected segments get rgba(0,0,0,.04) on hover.",
+     "\"All Leads (99)\" chevron implies a dropdown of lead scopes/stages (screen 41 shows it changed to \"On Hold (2)\").",
+     "Search input focuses to a 2px #5500ff border (seen in screen 44); filter icon button and header buttons follow the outlined-button hover spec (add rgba(0,0,0,.04) bg).",
+     "Card kebab opens a dropdown menu (shown open in screen 779:24866).",
+     "\"Assign\" purple link text implies an assignment action; link text hovers to #4400cc per spec.",
+     "The small icon at the top of the ACTIVE rail implies collapsing/expanding the band (screens 42/41 show collapsed-band rails).",
+     "\"+2\" chip on the task row implies additional tasks beyond the one shown; no expansion behaviour is visible.",
+     "Side-nav items hover with rgba(0,0,0,.04) bg per spec; Maison AI floating button implies opening an AI assistant surface (nothing further shown)."
+    ],
+    "illegible": "The right side of the frame is cut off by the crop: inventory texts Quote Sent, Won, INACTIVE, On Hold, Lost, IMPORTED, Gmail, Zapier belong to columns/bands beyond the visible area and their layout cannot be described from this image. Side-nav icons carry no visible labels. The full task-row sentence is truncated (\"This is a sample t\u2026\"). The exact glyph on the band-rail toggle icon is too small to identify precisely."
+   },
+   {
+    "id": "779:24866",
+    "name": "All kanban board buckets / Board",
+    "purpose": "Board-only frame showing the lead-card overflow (kebab) menu open.",
+    "uiState": "Near-duplicate of screen 40's board area (no side nav or page header in this crop): identical columns and cards, but the kebab menu on the first card in New is open with a cursor graphic over it.",
+    "keyElements": [
+     "Green \"\u2022 ACTIVE\" vertical rail with toggle icon at the left edge of the board.",
+     "Columns \"New 17\", \"Followed Up 17\", \"Contacted 17\", \"Met 17\" (Met clipped at right edge); same Olivia Martinez cards as screen 40 (New 3 cards with \"Assign\" on the first, Followed Up 2, Contacted 2, Met 1).",
+     "Open dropdown menu anchored to the first card's kebab: a single visible item \"Delete\" in red text (text comes from the Dropdown Menu / Leads component instance; it is legible in the image though absent from the frame's own text inventory).",
+     "A pointing-hand cursor graphic (component \"pointinghand\") positioned over the kebab/menu area, indicating the click target."
+    ],
+    "interactions": [
+     "Card kebab opens the \"Dropdown Menu / Leads\" menu; the only visible action is a destructive \"Delete\".",
+     "All other affordances (Assign link, person-add icon button, band-rail toggle) match screen 40."
+    ],
+    "illegible": "Only \"Delete\" is visible in the open menu; whether the menu contains additional items below the crop/menu edge cannot be determined. Inventory texts Quote Sent, Won, INACTIVE, On Hold, Lost refer to off-crop columns not visible here. A dark strip at the top of the crop truncates any content above the column headers."
+   },
+   {
+    "id": "779:19854",
+    "name": "44",
+    "purpose": "Search-in-progress state showing a per-column no-results empty state.",
+    "uiState": "Near-duplicate of screen 40 with the search bar active: focused input (2px purple border) containing the query \"jes\" and a clear \"x\" icon; the Followed Up column shows an empty state while other columns still show matching cards.",
+    "keyElements": [
+     "Same side nav, page header (\"Leads\", Insights, + Add Lead, kebab), and toolbar as screen 40; \"All Leads (99)\" dropdown unchanged.",
+     "Search bar in focused/filled state: purple 2px border, typed text \"jes\", trailing clear (x) icon \u2014 matching the interaction-states.md focused search spec (border 2px #5500ff).",
+     "Followed Up column empty state: an illustration of a person figure beside a large dark circle, bold \"No results found\", supporting text \"Check your spelling and try again.\", and a purple \"Clear All\" link below (link visible in the image; rendered by the Link text component).",
+     "Other columns retain cards: New 3 cards (first with \"Assign\"), Contacted 2 cards, Met 1 card \u2014 same Olivia Martinez card content as screen 40.",
+     "Green \"\u2022 ACTIVE\" band rail and Maison AI floating button as in screen 40."
+    ],
+    "interactions": [
+     "Typing in the search filters cards within each kanban column; a column with zero matches shows the no-results empty state in place of cards.",
+     "\"Clear All\" link implies clearing the search query (link text hovers #5500ff \u2192 #4400cc per spec).",
+     "The \"x\" in the search field implies clearing the typed query.",
+     "All other affordances match screen 40."
+    ],
+    "illegible": "Inventory texts Quote Sent, Won, INACTIVE, On Hold, Lost, IMPORTED, Gmail, Zapier are beyond the right crop edge and not visible. It cannot be seen from this single crop whether every empty column would show the full illustration + Clear All treatment or only one does."
+   },
+   {
+    "id": "779:19996",
+    "name": "42",
+    "purpose": "INACTIVE stage band expanded while the ACTIVE band is collapsed to its rail.",
+    "uiState": "Band-toggle state: ACTIVE band collapsed to a green vertical rail (no ACTIVE columns visible); INACTIVE band expanded showing its orange rail plus On Hold and Lost columns on a cream/beige tint. Toolbar still reads \"All Leads (99)\".",
+    "keyElements": [
+     "Same side nav, page header, and toolbar as screen 40 (kanban segment selected, search empty).",
+     "Two adjacent vertical band rails at the left of the board: green rail with toggle icon and rotated \"\u2022 ACTIVE\"; orange rail with toggle icon and rotated \"\u2022 INACTIVE\".",
+     "Expanded INACTIVE columns with cream/orange-tinted headers: \"On Hold 17\" and \"Lost 17\", each containing one Olivia Martinez card (assigned-state footer: green \"H\" chip + person-add icon button).",
+     "Card content identical to screen 40: \"Olivia Martinez\", \"1d ago\", kebab, \"91234567 \u00b7 S$70,500 \u00b7 Gmail\", task row \"This is a sample t\u2026\" with OVERDUE and \"+2\".",
+     "Maison AI floating button bottom-right."
+    ],
+    "interactions": [
+     "The rail toggle icons imply expanding/collapsing each stage band: here ACTIVE reads as collapsed (rail only) and INACTIVE as expanded (rail + columns).",
+     "All card and toolbar affordances match screen 40."
+    ],
+    "illegible": "The exact toggle-icon glyphs on the rails are too small to identify. No IMPORTED band appears in this crop and it is not in this frame's text inventory. Whether empty area right of Lost holds anything is not visible (it appears blank)."
+   },
+   {
+    "id": "779:20043",
+    "name": "41",
+    "purpose": "Board scoped by the leads dropdown to a single stage: On Hold.",
+    "uiState": "Filter-scoped state: the toolbar dropdown reads \"On Hold (2)\" and the board shows only the orange INACTIVE rail plus one On Hold column; no ACTIVE rail or other columns are visible. Near-duplicate of screen 42 reduced to one bucket.",
+    "keyElements": [
+     "Same side nav and page header (\"Leads\", Insights, + Add Lead, kebab).",
+     "Toolbar: dropdown reads \"On Hold (2)\" with chevron; search empty; filter icon button; kanban segment selected.",
+     "Orange vertical rail with toggle icon and rotated \"\u2022 INACTIVE\".",
+     "Single cream-tinted column \"On Hold 17\" containing one Olivia Martinez card (same anatomy as elsewhere; assigned-state footer with green \"H\" chip + person-add icon button).",
+     "Maison AI floating button bottom-right."
+    ],
+    "interactions": [
+     "The dropdown value \"On Hold (2)\" implies the leads dropdown scopes the board to a chosen stage; the chevron implies reopening it to change scope.",
+     "Rail toggle and card affordances as in screens 40/42."
+    ],
+    "illegible": "The column header badge reads \"17\" while the dropdown reads \"(2)\" and one card is shown \u2014 mock-data inconsistency, so the real count source cannot be read from the image. Rail toggle glyph too small to identify."
+   }
+  ],
+  "sharedComponents": [
+   "Icon-only side nav rail: logo, search, six nav icons (Dashboard/Orders/Workspace/Calendar/Catalog/Community/Reports per component inventory; people icon highlighted purple for Leads), bottom cluster (red diamond, dot-grid, chat, bell, settings, avatar). Hover: rgba(0,0,0,.04) bg per interaction-states.md.",
+   "Page Header / Leads - L1: \"Leads\" title, outlined \"Insights\" button with bar-chart icon, solid purple \"+ Add Lead\" primary button, outlined kebab icon button.",
+   "Toolbar row: leads scope dropdown with chevron (\"All Leads (99)\" / \"On Hold (2)\"), search bar (rest: 1px #ccc border; focused: 2px #5500ff with clear x), outlined filter icon button, segmented table/kanban icon toggle (selected segment bg #eee5ff, icon #4400cc).",
+   "Stage band rail: narrow vertical strip per band with a small toggle icon at top and rotated dot+label text (green \"\u2022 ACTIVE\", orange \"\u2022 INACTIVE\"); band tint carries into its column surfaces (green for ACTIVE, cream for INACTIVE).",
+   "Kanban column: tinted header with stage name + count badge \"17\", card stack below.",
+   "Card / Desktop / Leads: name (\"Olivia Martinez\"), \"1d ago\", kebab; meta line \"91234567 \u00b7 S$70,500 \u00b7 Gmail\"; task row \"This is a sample t\u2026\" + red OVERDUE badge + \"+2\" chip; divider; footer either purple person-add icon + \"Assign\" link (unassigned) or green \"H\" initial chip + outlined purple person-add icon button (assigned).",
+   "Dropdown Menu / Leads: card kebab menu; visible item \"Delete\" in red.",
+   "No-results empty state (in-column): person illustration, \"No results found\", \"Check your spelling and try again.\", purple \"Clear All\" link text.",
+   "Maison AI floating action button: circular white button with orange sparkle icon, fixed bottom-right."
+  ],
+  "buildNotes": [
+   "Interaction states must follow /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md verbatim: outlined buttons/icon buttons add rgba(0,0,0,.04) bg on hover; 24px primary icon button (card person-add) hovers to border+icon #4400cc on rgba(0,0,0,.04); selected segmented segment (#eee5ff / #4400cc) is unchanged on hover; link text #5500ff hovers to #4400cc with no underline; search focus is a 2px #5500ff border.",
+   "The spec confirms there is no prototype screen-to-screen navigation; sequence is carried by screen numbering, so the prototype must wire these states itself (band toggle, search filtering, menu open, scope dropdown).",
+   "Stage bands are the structural novelty of this view: ACTIVE (green) contains New/Followed Up/Contacted/Met plus, per text inventory, Quote Sent and Won; INACTIVE (orange/cream) contains On Hold and Lost; an IMPORTED band with Gmail and Zapier appears in the text inventory of screens 40 and 44 but is never visible in any crop \u2014 do not invent its layout, source it from the Figma frame before building.",
+   "Search filtering is per-column: matching columns keep their cards, an empty column renders the in-column no-results state with a Clear All link (screen 44).",
+   "Card footer has two states (unassigned \"Assign\" link vs assigned \"H\" chip + person-add button); the mock data repeats one identical lead everywhere, so treat all content (Olivia Martinez, 91234567, S$70,500, Gmail, OVERDUE, +2, counts of 17/99/2) as placeholder mock data, not schema.",
+   "Column count badges (17) conflict with visible card counts and with the dropdown's \"(2)\" in screen 41 \u2014 pick a single source of truth (real counts) in the prototype rather than reproducing the inconsistency.",
+   "Screen 779:24866 is board-only and exists to document the kebab menu (Delete, red/destructive) plus the pointing-hand cursor; build it as the menu-open state of screen 40's board, not a separate page."
+  ],
+  "openQuestions": [
+   "IMPORTED band (Gmail / Zapier): present in the text inventory of screens 40 and 44 but off-crop in every image \u2014 what do its rail, tint, and columns look like, and do its cards differ from ACTIVE/INACTIVE cards?",
+   "Band collapse mechanics: is the whole rotated rail clickable or only the small toggle icon at its top, and can multiple bands be expanded simultaneously beyond what screen 42 shows (ACTIVE collapsed + INACTIVE expanded)?",
+   "Does the card kebab menu contain only \"Delete\", or are more items present outside the visible menu area in 779:24866?",
+   "In the search state (44), does every zero-match column show the full illustration + Clear All empty state, or only one designated column?",
+   "Which count is authoritative where mocks conflict: column badge \"17\" vs dropdown counts \"(99)\" / \"(2)\" vs actual card counts?",
+   "Screen numbering (40, 41, 42, 44) skips 43 \u2014 is there a missing kanban state frame elsewhere in the file, and is the numbered order the intended demo order?",
+   "Is drag-and-drop of cards between columns intended? No affordance in these static crops shows it either way, though the pointing-hand cursor component exists in 779:24866."
+  ]
+ },
+ {
+  "section": "01 - Lead - create and edit",
+  "purpose": "The lead create/edit flow: a centered modal form (collapsed and expanded variants) used both to create a new lead and to edit an existing one, plus the post-save confirmation state of the Leads listing page with a \"Successfully Updated\" snackbar.",
+  "flowNarrative": "The interaction-states spec confirms there is NO screen-to-screen prototype wiring; sequence is inferred from screen numbering and content. (1) 779:24634 \"Default view\": the Create New Lead modal opens in its collapsed state showing only the core fields (name, phone, source, property type, property address) with an \"Additional info\" disclosure collapsed (expand_more chevron). (2) 780:82282 \"Create - expanded view\": clicking \"Additional info\" expands the same modal (chevron flips to keyboard_arrow_up), revealing nine more fields (email, lead address, budget, start date, style, key collection, condition, area size + unit, notes); footer remains Cancel/Create. (3) 780:82576 \"Toast message\": after committing a save, the modal is gone and the full Leads listing page is shown with a dark \"Successfully Updated\" snackbar bottom-left; the table shows one lead row (\"Sample Lead\"). The wording \"Successfully Updated\" reads as a save/edit confirmation rather than a create confirmation. (4) 781:53641 \"Edit - expanded view\": the identical form reappears as \"Edit Lead\" with the same expanded field set and a \"Save\" primary button instead of \"Create\" \u2014 demonstrating create and edit share one form component differing only in heading and primary-button label.",
+  "screens": [
+   {
+    "id": "779:24634",
+    "name": "Default view",
+    "purpose": "Create New Lead modal in its default (collapsed) state \u2014 only core fields visible, Additional info section closed.",
+    "uiState": "Collapsed create variant. Near-duplicate of 780:82282 differing only in the Additional info section being collapsed (expand_more chevron, no extra fields) and the modal therefore much shorter. All fields shown pre-filled with sample values.",
+    "keyElements": [
+     "White modal card, rounded corners, centered over a plain gray backdrop; header row: bold title \"Create New Lead\" left, X close icon button right, divider below header",
+     "\"Lead full name*\" \u2014 notched-outline text field (label cut into top border), value \"Olivia Martinez\"",
+     "\"Lead phone number*\" \u2014 outlined field with static \"+65\" country-code prefix, vertical divider, then value \"91234567\"",
+     "Two-column row: \"Lead source*\" select showing \"Instagram\" with expand_more chevron; \"Property type\" select showing \"HDB 4-Room\" with expand_more chevron (Lead source carries an asterisk on THIS screen only)",
+     "\"Property address\" \u2014 full-width outlined field, value \"12 Marina Boulevard, Singapore 123456\"; gray helper text below: \"Client project address.\"",
+     "\"Additional info\" \u2014 bold section-toggle label with downward expand_more chevron, collapsed",
+     "Footer above a divider, right-aligned: \"Cancel\" outlined button and \"Create\" filled purple primary button"
+    ],
+    "interactions": [
+     "X icon button closes the modal (close affordance only; no destination wired per interaction spec)",
+     "expand_more chevrons on Lead source and Property type imply dropdown option menus open",
+     "\"Additional info\" with expand_more chevron implies clicking expands the section (the expanded state is screen 780:82282)",
+     "Cancel (outlined h36): hover adds bg rgba(0,0,0,.04) per interaction-states spec; Create is the filled primary action",
+     "Text fields are editable inputs; the +65 prefix shows no chevron, so no dropdown affordance is visible on it"
+    ],
+    "illegible": "Nothing illegible; note the backdrop is uniform gray in this crop, so whatever page sits behind the modal is not visible."
+   },
+   {
+    "id": "780:82282",
+    "name": "Create - expanded view",
+    "purpose": "Create New Lead modal with the Additional info section expanded, exposing the full optional field set.",
+    "uiState": "Expanded create variant. Near-duplicate of 779:24634 (same top fields/values) with Additional info open (keyboard_arrow_up chevron). Near-duplicate of 781:53641 differing ONLY in heading (\"Create New Lead\" vs \"Edit Lead\") and primary button label (\"Create\" vs \"Save\"). Note: \"Lead source\" has NO asterisk here, unlike 779:24634.",
+    "keyElements": [
+     "Header: \"Create New Lead\" + X close; same top five fields and values as 779:24634 (Olivia Martinez / +65 91234567 / Instagram / HDB 4-Room / 12 Marina Boulevard, Singapore 123456 with helper \"Client project address.\")",
+     "\"Additional info\" section toggle now with upward keyboard_arrow_up chevron",
+     "\"Lead email\" \u2014 full-width field, value \"demo@openmaison.com\"",
+     "\"Lead address\" \u2014 full-width field, value \"12 Marina Boulevard, Singapore\"",
+     "Two-column row: \"Estimated budget (S$)\" value \"70,000\"; \"Estimated start date\" showing the word \"Value\" with a trailing calendar icon",
+     "Two-column row: \"Style\" select \"Contemporary\" with chevron; \"Key collection\" select \"Collected\" with chevron",
+     "Two-column row: \"Condition\" select \"New\" with chevron; \"Area size\" value \"1200\" with an inset trailing unit select \"sq ft\" with its own chevron",
+     "\"Notes\" \u2014 multi-line text area showing \"Any notes goes here...\" with a drag-resize grip at its bottom-right corner; helper text below: \"You can view these notes under the Notes page in Leads Detail.\"",
+     "Footer: \"Cancel\" outlined + \"Create\" filled purple primary"
+    ],
+    "interactions": [
+     "keyboard_arrow_up on \"Additional info\" implies clicking collapses back to the 779:24634 state",
+     "Chevrons on Style, Key collection, Condition, and the sq ft unit imply dropdown menus; calendar icon on Estimated start date implies a date picker opens",
+     "Notes text area corner grip implies vertical resize",
+     "Cancel outlined-button hover: + bg rgba(0,0,0,.04) per spec; X closes the modal"
+    ],
+    "illegible": "Nothing illegible in this crop."
+   },
+   {
+    "id": "781:53641",
+    "name": "Edit - expanded view",
+    "purpose": "Edit Lead modal \u2014 the same expanded form pre-filled with the lead's existing data, committed with Save.",
+    "uiState": "Edit variant. Pixel-for-pixel near-duplicate of 780:82282; the only visible differences are the heading \"Edit Lead\" (vs \"Create New Lead\") and the primary button reading \"Save\" (vs \"Create\"). All field labels, values, helper texts, and layout are identical, including \"Lead source\" without an asterisk.",
+    "keyElements": [
+     "Header: bold \"Edit Lead\" left, X close icon right",
+     "Same core fields/values: Lead full name* \"Olivia Martinez\"; Lead phone number* \"+65 | 91234567\"; Lead source \"Instagram\"; Property type \"HDB 4-Room\"; Property address \"12 Marina Boulevard, Singapore 123456\" + helper \"Client project address.\"",
+     "\"Additional info\" expanded (keyboard_arrow_up) with the same nine fields and values as 780:82282: Lead email \"demo@openmaison.com\", Lead address \"12 Marina Boulevard, Singapore\", Estimated budget (S$) \"70,000\", Estimated start date \"Value\" + calendar icon, Style \"Contemporary\", Key collection \"Collected\", Condition \"New\", Area size \"1200\" + \"sq ft\" unit select, Notes \"Any notes goes here...\" with resize grip and helper \"You can view these notes under the Notes page in Leads Detail.\"",
+     "Footer: \"Cancel\" outlined button + \"Save\" filled purple primary button"
+    ],
+    "interactions": [
+     "Identical affordances to 780:82282: section collapse toggle, four dropdown selects plus unit select, date-picker icon, resizable notes area, X close",
+     "\"Save\" as primary implies committing edits; the \"Successfully Updated\" snackbar screen (780:82576) shows the matching post-save listing state, though no prototype link is wired"
+    ],
+    "illegible": "Nothing illegible in this crop."
+   },
+   {
+    "id": "780:82576",
+    "name": "Toast message",
+    "purpose": "Leads listing page immediately after a save, confirming the action with a \"Successfully Updated\" snackbar.",
+    "uiState": "Full-page listing state (no modal). Table view of the segmented toggle is selected. One lead row present. Dark snackbar visible bottom-left.",
+    "keyElements": [
+     "Collapsed icon-only side nav rail: colorful logo mark top, search icon, then a stack of nav icons (the inventory names them Workspace, Catalog, Calendar, Reports, Community, Orders, Dashboard); the people-glyph item is highlighted with a light-purple pill; lower group: red/pink diamond badge icon, apps-grid dots, comment, bell, settings gear",
+     "Page header: \"Leads\" title left; right side: outlined \"Insights\" button with bar-chart icon, filled purple \"+ Add Lead\" primary button, vertical-kebab icon button",
+     "Filter row: \"All Leads (99)\" chip with expand_more chevron; right side: search bar (magnifier icon + \"Search\" placeholder), filter icon button, segmented icon toggle \u2014 left table/list segment selected (light purple #eee5ff bg, purple icon), right kanban/board segment unselected",
+     "Table header: NAME (with sort chevrons and a column-settings icon at the cell's right edge), STAGE, TASKS (no sort chevrons), ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE \u2014 each except TASKS with sort chevrons; last column header truncated at crop edge (\"CREA...\")",
+     "One row: purple accent bar on the left edge; bold \"Sample Lead\" with gray \"9123 4567\" beneath; Stage \"New\" with chevron; Tasks: bordered field containing \"This is a sample task added by the user\"; Assignees: purple person-add icon + \"Assign\" link; Source \"Instagram\"; Budget \"70,500\"; Property type \"HDB 4-Room\"; last cell truncated (\"17 Ju...\")",
+     "Bottom-left: dark charcoal snackbar \"Successfully Updated\" in white with an X close icon (inventory: Snackbar/Default)",
+     "Bottom-right: circular white floating Maison AI button with an orange four-point sparkle icon"
+    ],
+    "interactions": [
+     "Snackbar X dismisses the toast",
+     "\"+ Add Lead\" implies opening the Create New Lead modal (779:24634); Insights and the kebab imply their own actions/menus (nothing further shown)",
+     "\"All Leads (99)\" chevron implies a saved-view/filter dropdown; Stage \"New\" chevron implies an inline stage-change menu; sort chevrons on column headers imply sorting; \"Assign\" is a link-styled action",
+     "Segmented toggle implies switching table/kanban view; per spec the selected segment (bg #eee5ff, icon #4400cc) is unchanged on hover, unselected segment hovers to bg rgba(0,0,0,.04)",
+     "Per interaction-states spec: side-nav items hover bg rgba(0,0,0,.04); outlined buttons/icon buttons hover + bg rgba(0,0,0,.04); links #5500ff hover to #4400cc (no underline); search bar focuses to a 2px #5500ff border"
+    ],
+    "illegible": "Right edge of the crop cuts off the last table column: header reads \"CREA...\" and the cell value \"17 Ju...\" \u2014 full text not readable. Side-nav icons are small; shapes are visible but per-icon identity beyond the inventory names is not certain. The snackbar's bottom edge is clipped by the crop."
+   }
+  ],
+  "sharedComponents": [
+   "Modal shell: white rounded card, header (bold title left + X close icon button right) with divider, body, divider, right-aligned footer button pair (outlined Cancel + filled purple primary) \u2014 shared by all three form screens",
+   "Notched-outline text field: label embedded in the top border, ~4px radius, gray helper text below (Text Field component)",
+   "Select field: same outline with trailing expand_more chevron (Lead source, Property type, Style, Key collection, Condition, sq ft unit)",
+   "Phone field: outline field with static +65 prefix and vertical divider",
+   "Text Area: notched outline, bottom-right resize grip, helper text (Notes)",
+   "\"Additional info\" collapsible section header: bold label + expand_more / keyboard_arrow_up chevron toggle",
+   "Buttons per interaction spec: outlined h36 (border #ccc, radius 4, hover + bg rgba(0,0,0,.04)) and filled purple primary (#5500ff family)",
+   "Listing-page components (from 780:82576 inventory): Side Nav + Side Nav/Item + Logo + Badge, Page Header / Leads - L1, Search Bar, Icon Buttons, Segmented Icon Button, Table / Row / Lead - Default, Snackbar/Default, Maison AI floating button"
+  ],
+  "buildNotes": [
+   "Create and Edit are one shared form component: 780:82282 and 781:53641 are otherwise identical \u2014 parameterize only the heading (Create New Lead / Edit Lead) and primary button label (Create / Save).",
+   "Collapsed vs expanded is a pure disclosure state: 779:24634 = same top five fields with Additional info closed (expand_more); expanding flips the chevron to keyboard_arrow_up and appends 9 fields (Lead email, Lead address, Estimated budget (S$), Estimated start date + calendar icon, Style, Key collection, Condition, Area size + sq ft unit select, Notes textarea).",
+   "Form layout: single-column full-width fields except four two-column rows (source/property type, budget/start date, style/key collection, condition/area size).",
+   "Required-field asterisks visible: Lead full name* and Lead phone number* on all three form screens; Lead source* only on 779:24634.",
+   "Helper texts (verbatim): \"Client project address.\" under Property address; \"You can view these notes under the Notes page in Leads Detail.\" under Notes.",
+   "Snackbar: dark charcoal bg, white text \"Successfully Updated\", X close, anchored bottom-left of the viewport.",
+   "Apply interaction-states.md verbatim: no prototype navigation exists (sequence from numbering); outlined buttons/icon buttons/nav items hover + bg rgba(0,0,0,.04); links #5500ff to #4400cc; segmented selected bg #eee5ff icon #4400cc (no hover change); search focus border 2px #5500ff.",
+   "Estimated start date renders the literal text \"Value\" with a trailing calendar icon in both expanded screens \u2014 reproduce as shown unless clarified (see open questions).",
+   "Absolute paths: crops at /private/tmp/claude-502/-Users-livspace-Documents-GitHub-openmaison-prototype/fef51327-e225-46a7-8ba2-223fff11fa2e/scratchpad/screens/{779-24634,781-53641,780-82282,780-82576}.png; interaction spec at /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md."
+  ],
+  "openQuestions": [
+   "Lead source is marked required (\"Lead source*\") on the collapsed Default view but has no asterisk on either expanded screen \u2014 which is correct?",
+   "Estimated start date shows the literal placeholder \"Value\" (a component-default string) rather than a date format \u2014 what is the intended placeholder/format?",
+   "The snackbar reads \"Successfully Updated\" \u2014 is the same wording used after Create, or is there an unshown create-success variant (e.g. different text)?",
+   "The listing row data (Sample Lead / 9123 4567 / 70,500) does not match the modal's sample data (Olivia Martinez / 91234567 / 70,000) \u2014 confirm the toast screen is a generic post-save state rather than the literal result of the shown form.",
+   "The last table column (header \"CREA...\", value \"17 Ju...\") is cut off by the crop \u2014 full header text and date format need the uncropped frame.",
+   "Does the purple left accent bar on the table row indicate the just-updated row, selection, or the default row style? Only one row is visible so this cannot be determined from the image."
+  ]
+ },
+ {
+  "section": "01 - Lead listing - table view",
+  "purpose": "The primary Leads workspace of OpenMaison 2.0: a table view listing sales leads with per-row stage, tasks, assignees, source, budget, property type and created date, plus the surrounding chrome (side nav, page header with Insights/Add Lead/more actions, filter toolbar, view switcher) and its contextual overlays \u2014 Add Lead menu, overflow menu, Assign Member popover, Customise-your-view column panel \u2014 and the first-run empty state.",
+  "flowNarrative": "A studio user first lands on the empty Leads page (780:94126): the table area shows only an illustration, \"Add your first lead\", and two CTAs \u2014 \"Import from File\" and \"+ Create New Lead\". Clicking the header's \"+ Add Lead\" button opens its contextual menu (780:79798) offering Create New Lead, Import from File, Link to Email, Link to Zapier, Connect to Ads. After the first lead exists, screen 01 (779:19690) shows the table with one row (\"Sample Lead\", stage New, an inline task field, an Assign link) inside the full chrome with the side nav expanded. Screen 02 (779:24429) is the working state: nav collapsed, six rows with stage dropdowns, truncated task text with OVERDUE tags and \"+2\" chips, avatar stacks with an add-assignee icon button, and the \"All Leads (99)\" chip now carrying a red dot. The row-anatomy crop (780:76390) documents the same rows at full column width through the CREATED column. From the populated table the user manages leads via three overlays: clicking a row's \"Assign\" link opens the Assign Member popover with a checkbox member list and Clear All / Assign actions (780:87916); the header's kebab button opens the utility menu \u2014 Lead Import History, Export all as\u2026, Deleted Leads, Leads Settings (780:79849); and the small settings icon at the right edge of the NAME header opens \"Customise your view\", where columns are toggled, reordered by drag, and pinned (3 max), with Reset to default / Save (780:80091).",
+  "screens": [
+   {
+    "id": "779:19690",
+    "name": "01",
+    "purpose": "Baseline table view with one lead row and the side nav fully expanded \u2014 establishes the page chrome and row anatomy.",
+    "uiState": "Side nav EXPANDED (only screen in this set with labels visible); table has a single row; 'All Leads (99)' chip has no red dot.",
+    "keyElements": [
+     "Expanded side nav: OpenMaison logo + wordmark, collapse icon, search field with '/' shortcut badge; items Dashboard, Projects, Leads (active \u2014 lavender pill + purple icon), Marketplace, Company, Qanvast",
+     "Side nav bottom group: Upgrade (red diamond icon, tinted row), Tools, Chat, Notifications, Settings, then avatar with 'Studio Name' / 'Owner Name' (matches texts inventory)",
+     "Page header: 'Leads' title; right side: outlined 'Insights' button with chart icon, purple primary '+ Add Lead', kebab (vertical-dots) icon button",
+     "Toolbar: 'All Leads (99)' dropdown chip with chevron; right: search input ('Search' placeholder), filter icon button, 2-segment icon toggle with the table segment selected (purple tint)",
+     "Table header row: NAME (sort arrows + a column-settings icon at the column's right edge), STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), and a further column cut by the crop edge",
+     "Lead row: purple left accent bar; 'Sample Lead' bold + '9123 4567' below; STAGE 'New' with chevron; TASKS cell is a bordered inline field reading 'This is a sample task added by the user'; ASSIGNEES shows a purple 'Assign' link with person-add icon; SOURCE 'Instagram'; BUDGET '70,500'",
+     "Maison AI floating circular button (orange spark) bottom-right"
+    ],
+    "interactions": [
+     "'All Leads (99)' chevron implies a saved-view/filter dropdown",
+     "'+ Add Lead' opens the add-lead menu (seen in 780:79798); kebab opens the more menu (seen in 780:79849)",
+     "Stage cell chevron implies a stage-select dropdown; 'Assign' link opens the Assign Member popover (seen in 780:87916)",
+     "NAME-header settings icon opens Customise your view (seen in 780:80091); sort arrows on headers imply column sorting",
+     "Segmented toggle switches table view to the alternate view; per interaction-states.md, unselected segment hovers to rgba(0,0,0,.04), selected stays #eee5ff",
+     "Search bar focus state per spec: 2px #5500ff border; side-nav item hover bg rgba(0,0,0,.04)"
+    ],
+    "illegible": "The right edge of the crop cuts off after BUDGET \u2014 a header starting with 'P' and a cell starting with 'H' are visible but unreadable (they match PROPERTY TYPE / 'HDB 4-Room' in other screens, but are not legible here)."
+   },
+   {
+    "id": "779:24429",
+    "name": "02",
+    "purpose": "The populated working state of the lead table with six rows showing overdue-task and multi-assignee treatments.",
+    "uiState": "Near-duplicate of 779:19690 differing in: side nav COLLAPSED to icons, six rows instead of one, and a red dot inside the 'All Leads (99)' chip before the chevron.",
+    "keyElements": [
+     "Collapsed side nav: logo mark only, then icon-only items (search, dashboard, projects, leads active with lavender pill, marketplace, company, Qanvast; bottom Upgrade, tools, chat, notifications, settings, avatar)",
+     "Same page header (Leads / Insights / + Add Lead / kebab) and toolbar (All Leads (99) with red dot, search input, filter icon, segmented toggle)",
+     "Headers now visible through PROPERTY TYPE plus a truncated 'CREA\u2026' column at the crop edge",
+     "Row 1: 'Sample Lead' / 9123 4567, stage 'New', full inline task field, purple 'Assign' link \u2014 identical to screen 01's row",
+     "Rows 2-6: Farah Ahmad, Muthu Vinay, Gerald Tan, Vivien Lee, Benjamin Han (all '9123 4567'); stage 'Contacted' with chevron; TASKS cell shows truncated 'This is a sample task\u2026' + red 'OVERDUE' tag + grey '+2' chip; ASSIGNEES shows two grey avatar placeholders, a '+2' chip, and a purple-bordered person-add icon button; Instagram / 70,500 / HDB 4-Room per row",
+     "Maison AI floating button bottom-right"
+    ],
+    "interactions": [
+     "Stage chevrons imply per-row stage dropdowns; '+2' chips imply more tasks/assignees than shown",
+     "Person-add icon button in ASSIGNEES implies opening the Assign Member popover for rows that already have assignees",
+     "Red dot on the 'All Leads (99)' chip is a visible indicator on the view/filter chip (meaning not stated in the mock)",
+     "Per interaction-states.md, the 24px primary icon button (border #5500ff) hovers to bg rgba(0,0,0,.04) with border/icon #4400cc"
+    ],
+    "illegible": "Rightmost column header truncated to 'CREA\u2026' and its cells to '17 Ju\u2026' at the crop edge (full value '17 Jul '26' is confirmed by 780:76390)."
+   },
+   {
+    "id": "780:76390",
+    "name": "01 - Full view of columns / Tables Row Example",
+    "purpose": "Component-level crop documenting the lead row at full column width \u2014 the source of truth for column order and complete cell contents.",
+    "uiState": "Table-only crop (no nav/header chrome); same row set as 779:24429 except the first row is named 'Olivia Martinez' instead of 'Sample Lead'.",
+    "keyElements": [
+     "Full header row: NAME (sort arrows + column-settings icon), STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, CREATED \u2014 all with sort arrows",
+     "Row 1: 'Olivia Martinez' / 9123 4567, purple left accent bar, stage 'New' with chevron, bordered inline task field 'This is a sample task added by the user', purple 'Assign' link with person-add icon",
+     "Rows 2 onward (Farah Ahmad, Muthu Vinay, Gerald Tan, Vivien Lee, Benjamin Han): 'Contacted' stage, truncated task + OVERDUE tag + '+2' chip, two avatar placeholders + '+2' + person-add icon button",
+     "SOURCE 'Instagram', BUDGET '70,500', PROPERTY TYPE 'HDB 4-Room', CREATED '17 Jul '26' on every row (matches texts inventory '17 Jul \u201826', '70,500')"
+    ],
+    "interactions": [
+     "Same affordances as the full screens: stage dropdown chevron, assign link/icon button, sortable headers, NAME-header settings icon"
+    ],
+    "illegible": "The last row (Benjamin Han) is cropped mid-row at the bottom; nothing to the right of CREATED is visible, so whether any column follows CREATED cannot be determined from this crop."
+   },
+   {
+    "id": "780:79798",
+    "name": "01 - Contextual Menus / Add lead contextual menu",
+    "purpose": "Shows the dropdown menu that opens from the '+ Add Lead' header button, listing the five lead-creation/ingestion entry points.",
+    "uiState": "Same base as screen 01 but with collapsed side nav, the Add Lead menu open under the button, and a pointing-hand cursor over '+ Add Lead'. Single 'Sample Lead' row; no red dot on the All Leads chip.",
+    "keyElements": [
+     "White dropdown anchored below '+ Add Lead', overlapping the toolbar's search/segmented area",
+     "Menu items top to bottom: 'Create New Lead', 'Import from File', 'Link to Email', 'Link to Zapier', 'Connect to Ads' (a slightly larger gap sits between 'Import from File' and 'Link to Email', though no drawn divider line is discernible)",
+     "Underlying page identical to screen 01's single-row table (Sample Lead / New / task field / Assign / Instagram / 70,500)"
+    ],
+    "interactions": [
+     "Each menu item is a plain text row implying selection triggers that creation/connection flow; 'Export all as\u2026'-style ellipsis is absent here \u2014 no items show submenus or chevrons",
+     "Cursor rendered on the button confirms the menu opens on clicking '+ Add Lead'"
+    ],
+    "illegible": "The menu covers the search bar and part of the segmented toggle; the table's rightmost column is cut at the crop edge ('17' visible under a truncated 'CR\u2026' header)."
+   },
+   {
+    "id": "780:79849",
+    "name": "01 - Contextual Menus / More contextual menu",
+    "purpose": "Shows the overflow (kebab) menu on the page header with list-level utilities.",
+    "uiState": "Same base as 779:24429 (collapsed nav, six rows, red dot on All Leads chip) but with the kebab menu open and pointing-hand cursor on the kebab button; rows 2-6 stages read 'Followed Up' here instead of 'Contacted'.",
+    "keyElements": [
+     "White dropdown anchored below the kebab icon button, covering the toolbar's right side",
+     "Menu items top to bottom: 'Lead Import History', 'Export all as\u2026', 'Deleted Leads', 'Leads Settings'",
+     "Table beneath matches screen 02's six-row layout: Sample Lead (New) plus five rows with 'Followed Up' stage (matches texts inventory 'Followed Up'), OVERDUE task tags, avatar stacks, Instagram, 70,500, HDB 4-Room"
+    ],
+    "interactions": [
+     "'Export all as\u2026' ellipsis implies a follow-on choice (e.g. a format picker) beyond this menu \u2014 nothing further is shown",
+     "'Lead Import History', 'Deleted Leads', 'Leads Settings' are plain rows implying navigation to those surfaces"
+    ],
+    "illegible": "Rightmost column header truncated to 'CREA\u2026' / cells to '17 Ju\u2026' at the crop edge; the search field and filter button are hidden behind the open menu."
+   },
+   {
+    "id": "780:87916",
+    "name": "01 - Contextual Menus / Assign member",
+    "purpose": "Shows the Assign Member popover opened from a row's 'Assign' link, with a checkbox list of studio members.",
+    "uiState": "Populated table variant with the first row's Assign cell in an active state (purple outlined box around the 'Assign' link, pointing-hand cursor) and the popover open below it. Toolbar's search is collapsed to a search icon button here. Rows 5 and 6 both read 'Vivien Lee' (Benjamin Han absent).",
+    "keyElements": [
+     "Popover header: 'Assign Member' with an X close button",
+     "Member list rows (avatar + name + role + trailing checkbox): 'Dane \u2014 Owner (you)' with purple 'D' avatar and a checked purple checkbox; 'James \u2014 Designer' (photo avatar, unchecked); 'Sarah \u2014 Designer' (green 'S' avatar, unchecked); 'Michelle \u2014 Designer' (orange 'M' avatar, unchecked)",
+     "Popover footer: outlined 'Clear All' button and purple primary 'Assign' button",
+     "Anchor cell: 'Assign' link + person-add icon inside a purple-bordered rectangle (active/open state of the cell)",
+     "Underlying table: Sample Lead (New) + rows Farah Ahmad, Muthu Vinay, Gerald Tan, Vivien Lee, Vivien Lee \u2014 'Contacted' stages, OVERDUE tags, avatar stacks"
+    ],
+    "interactions": [
+     "Checkboxes imply multi-select of members; 'Clear All' implies unchecking all; 'Assign' commits the selection; X closes the popover",
+     "The two-line member row (name + role) matches the 'Two Line' component in the inventory; texts 'Heading' / 'Filter Option Text' correspond to the popover title and row-text layers",
+     "Per interaction-states.md, link text hovers #5500ff to #4400cc with no underline"
+    ],
+    "illegible": "Rightmost CREATED column truncated at the crop edge ('CRE\u2026' / '17 Ju\u2026'); the segmented toggle's left segment is partially cut by the crop."
+   },
+   {
+    "id": "780:80091",
+    "name": "01 - Contextual Menus / Table customise your view",
+    "purpose": "Shows the column-management panel opened from the settings icon in the NAME header: toggle visibility, drag to reorder, and pin columns.",
+    "uiState": "Populated table with the 'Customise your view' panel overlaying columns STAGE-ASSIGNEES; pointing-hand cursor on the NAME-header settings icon. Red dot on All Leads chip; search collapsed to an icon button.",
+    "keyElements": [
+     "Panel header: 'Customise your view' with X close",
+     "Helper text: 'Toggle columns you want to see. Drag columns up or down to reorder them.'",
+     "Section label with pin icon: 'PINNED (3 COLUMNS MAX)' (texts inventory spells it 'Pinned (3 columns MAx)')",
+     "Column rows, each with a 6-dot drag handle, label, pin icon, and switch: Name (filled pin, switch on but rendered lighter purple than the others), Status (on), Tasks (on), Assignees (on), Source (on), Budget (on), Property Type (on), Created On (on), Address (off \u2014 grey switch)",
+     "Footer: outlined 'Reset to default' and purple primary 'Save' buttons",
+     "Note: the panel lists 'Status' where the table header reads 'STAGE', and includes an 'Address' column that is toggled off (explaining why it never appears in the table crops)"
+    ],
+    "interactions": [
+     "Drag handles imply drag-to-reorder; pin icons imply pinning up to 3 columns; switches toggle column visibility; Save commits, Reset to default reverts",
+     "The Name row's filled pin and lighter switch suggest a distinct state from the other rows (visibly different rendering; exact behaviour not stated in the mock)",
+     "Per interaction-states.md, switch on is #5500ff and off is #999999, full radius, 40x20/48x24 sizes"
+    ],
+    "illegible": "The panel covers the STAGE-ASSIGNEES cells of all rows; rightmost CREATED column truncated at the crop edge; the exact icon states of the small pins (filled vs outline) are hard to resolve at this resolution beyond Name's appearing filled."
+   },
+   {
+    "id": "780:94126",
+    "name": "No leads yet / 116",
+    "purpose": "First-run empty state of the Leads table view prompting the user to add or import their first lead.",
+    "uiState": "Same chrome as the populated screens (collapsed nav, full header and toolbar) but the table is replaced by a bordered empty-state panel; no red dot on the All Leads chip; chip still reads 'All Leads (99)'.",
+    "keyElements": [
+     "Bordered/rounded content panel filling the table area",
+     "Centered illustration: a person beside a document sheet with an orange '+' badge at its top-right corner",
+     "Heading 'Add your first lead' and subtext 'Manually add or import leads from other sources.' (both match texts inventory)",
+     "Two CTAs side by side: outlined 'Import from File' with a document icon, and purple primary '+ Create New Lead'",
+     "Toolbar unchanged: 'All Leads (99)' chip, search input, filter icon button, segmented toggle (table segment selected)",
+     "Maison AI floating button bottom-right"
+    ],
+    "interactions": [
+     "'Create New Lead' and 'Import from File' mirror the top two items of the Add Lead menu (780:79798), implying the same flows launch from the empty state",
+     "Header '+ Add Lead' and kebab remain available"
+    ],
+    "illegible": ""
+   }
+  ],
+  "sharedComponents": [
+   "Side Nav (two visual states: expanded with labels + search '/' shortcut in 779:19690; collapsed icon rail everywhere else) with active item as lavender pill + purple icon, bottom group Upgrade/Tools/Chat/Notifications/Settings/account",
+   "Page Header 'Leads - L1': title left; right cluster = outlined 'Insights' button with chart icon, purple primary '+ Add Lead', kebab icon button",
+   "Toolbar: 'All Leads (99)' dropdown chip (with/without red-dot indicator), search (full input in some screens, collapsed to icon button in 780:87916 and 780:80091), filter icon button, 2-segment icon view toggle with table segment selected",
+   "Table / Row / Lead - Default: name (bold) + phone secondary line, purple left accent bar on first row, stage text + chevron, task cell (bordered inline field when single/expanded, truncated text + OVERDUE Tag + '+2' chip otherwise), assignee cell ('Assign' link + person-add icon, or avatar stack + '+2' + 24px primary person-add icon button), Source, Budget, Property Type, Created",
+   "Sortable column headers with up/down sort arrows; NAME header carries the column-settings (customise view) icon",
+   "Tag component: red 'OVERDUE' pill and grey '+N' count chips",
+   "Dropdown Menu / Leads: plain white menu of text rows (Add Lead menu, kebab menu)",
+   "Popover panels with header + X close + footer button pair (Assign Member: Clear All/Assign; Customise view: Reset to default/Save)",
+   "Two-line member row (avatar + name + role + checkbox) in Assign Member",
+   "Switch, drag handle, and pin icon rows in Customise your view",
+   "Maison AI floating circular button (orange spark), bottom-right on every full screen",
+   "pointinghand cursor graphic marking the trigger element in each contextual-menu mock"
+  ],
+  "buildNotes": [
+   "Column order (from 780:76390, the only crop showing full width): NAME, STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, CREATED. An 'Address' column exists but ships toggled off per the customise panel.",
+   "Hover/active behaviour must follow /Users/livspace/Documents/GitHub/openmaison-prototype/design-source/context/interaction-states.md: side-nav item and outlined/icon buttons hover to bg rgba(0,0,0,.04); 24px primary icon button hovers border/icon #5500ff to #4400cc; selected segment stays #eee5ff; links #5500ff to #4400cc no underline; search focus = 2px #5500ff border; switch on #5500ff / off #999999. That file also confirms there is NO screen-to-screen prototype navigation \u2014 flow order comes from screen numbering.",
+   "The three contextual-menu screens are the same base page with an overlay added; build them as one page + three overlays (Add Lead menu, kebab menu, Assign popover) plus the customise panel, not four separate pages.",
+   "First row is a visually distinct 'new lead' state: purple left accent bar, stage 'New', expanded bordered task field, and 'Assign' link instead of avatar stack. Subsequent rows use the compact treatment (truncated task + OVERDUE + '+2', avatars + '+2' + add icon button).",
+   "Menu contents verbatim \u2014 Add Lead: Create New Lead / Import from File / Link to Email / Link to Zapier / Connect to Ads. Kebab: Lead Import History / Export all as\u2026 / Deleted Leads / Leads Settings.",
+   "Customise panel details: helper copy 'Toggle columns you want to see. Drag columns up or down to reorder them.', section 'PINNED (3 COLUMNS MAX)', Name row has a filled pin and a lighter-purple on-switch (reads as locked/non-toggleable), Address defaults off, footer 'Reset to default' / 'Save'.",
+   "Empty state copy verbatim: 'Add your first lead' / 'Manually add or import leads from other sources.', CTAs 'Import from File' (outlined, doc icon) and '+ Create New Lead' (primary).",
+   "The 'All Leads (99)' chip carries a small red dot in 779:24429, 780:79849, 780:87916, 780:80091 but not in 779:19690, 780:79798, 780:94126 \u2014 replicate per screen; its meaning is undocumented (see open questions).",
+   "Sample data repeats across rows (phone always '9123 4567', Instagram, 70,500, HDB 4-Room, 17 Jul '26) \u2014 safe to template one row model.",
+   "Maison AI floating button (orange spark, bottom-right) is present on every full-page screen including the empty state."
+  ],
+  "openQuestions": [
+   "Terminology conflict: the table header reads 'STAGE' but the customise-view panel lists the same column as 'Status' \u2014 which label is canonical for the build?",
+   "First-row name conflict: full screens use 'Sample Lead' while the row-example component (780:76390) uses 'Olivia Martinez' \u2014 which should the prototype seed data use?",
+   "Stage value inconsistency: rows 2-6 read 'Contacted' in 779:24429/780:76390/780:87916 but 'Followed Up' in 780:79849 \u2014 is either intentional to that screen, or just sample-data drift?",
+   "What does the red dot on the 'All Leads (99)' chip signify (active filter? unread/new leads?), and what toggles it \u2014 the mocks show it on some screens only, with no legend.",
+   "Empty state still shows 'All Leads (99)': should the count read 0 (or hide) when there are no leads, or is the chip static in the mock?",
+   "In 780:87916 rows 5 and 6 are both 'Vivien Lee' and Benjamin Han is missing \u2014 intentional data for that screen or a mock error?",
+   "Add Lead menu: is the slightly larger gap between 'Import from File' and 'Link to Email' a real divider/grouping, or just spacing? No divider line is discernible in the crop.",
+   "Customise panel 'Name' row: the filled pin and lighter-purple switch suggest it is pinned and cannot be hidden \u2014 is Name locked on, and can it be unpinned?",
+   "No crop shows anything to the right of CREATED \u2014 when 'Address' is toggled on, where does it insert and how does the table handle overflow (horizontal scroll is implied by the cut columns but not explicitly shown)?",
+   "The second segment of the view toggle (unselected icon) \u2014 which view it opens (kanban?) is not identifiable from these crops alone."
+  ]
+ },
+ {
+  "section": "01 - Lead change stage",
+  "purpose": "Documents the full \"change stage\" journey for a lead: opening the stage dropdown from the Leads listing table, then the \"Move stage\" modal with a per-stage right panel (New = assignees, Contacted = contact logs with Auto Fill, Met = meeting log, Quote Sent = quote attachment, Won = signed quote/contract + payment milestones), plus the lightweight On Hold and Lost dialogs.",
+  "flowNarrative": "The journey starts on the Leads listing (780:86452), where clicking a row's STAGE cell opens a dropdown listing the pipeline: an ACTIVE group (New, Contacted, Met, Quote Sent, Won) and an INACTIVE group (On Hold, Lost). The remaining screens are the \"Move stage\" modal for lead \"Olivia Martinez\", one variant per target stage. (Per the interaction-states spec, no prototype links wire these screens together \u2014 the sequence is carried by frame numbering, so the dropdown-to-modal transition is implied, not wired.) 780:86258 shows the modal with current stage New: a left rail of stage radios and a right panel titled \"New\" with an Assignees checklist (Dane \"Owner (you)\" checked). Selecting Contacted (780:89011) shows \"Moving to Contacted\" with a \"Log 1\" card: \"Contacted via\" chips (WhatsApp/Email/SMS/Call/Others), When + Outcome fields, \"Attach screenshots of your call attempts\", and Notes. Its \"Auto Fill\" action opens a nested upload dialog (780:89277) that accepts a conversation screenshot. 781:58292 shows the log after filling/Auto Fill: WhatsApp selected, When \"12/3/2025, 3:00PM\", Outcome \"Callback requested\", a \"Next step: Schedule a call\" block (Date & Time \"24/8/2025, 7:00PM\", Preferred mode WhatsApp), and an attached screenshot thumbnail labelled Q-101. A nested \"Suggested tasks\" dialog (780:89545) then offers an auto-added task and a suggestion to save. \"+ Add Log\" produces a second log (780:89798) with Log 1 collapsed and an empty Log 2 expanded. Moving to Met (780:90106, current stage now Contacted) asks Where (\"In person\") and Date & Time, plus meeting documents and notes. Moving to Quote Sent starts on a From System tab with no quotes and a \"Create Quote\" link (780:90353); with system quotes it becomes a selectable radio list of approved quotes (780:90575). The Upload tab offers a PDF dropzone (780:90809), an uploading state (780:91042), and an uploaded state with the file row plus a \"Quote amount (S$)\" field (780:91365). 780:91593 is the validation failure: Contacted and Met carry red error icons in the rail and a footer error reads \"Unable to move. Please update the missing stages.\" Moving to Won (780:91853) requires a client signed quote and signed contract (From System selections shown), a Payment milestone table (Deposit 10% / Commencement 30% / Mid-Project 30% / Completion 30%, Total row), a Project type field, and a \"Save & Convert to Project\" primary action; 780:91935 is the same screen with both attach sections on their Upload tabs and milestone percentages at \"0 %\". Finally, the inactive stages use a small centered dialog: On Hold (780:92955) asks Reason (\"Property delay\") and Duration (\"3 months\") with helper \"Next follow up date will be 22 Oct '26\" and \"Save & Move\"; Lost (780:93425) asks only Reason (\"Property too far\") with \"Save & Move\".",
+  "screens": [
+   {
+    "id": "780:86452",
+    "name": "Change stage dropdown",
+    "purpose": "Entry point: the Leads listing table with a row's stage dropdown open, showing all pipeline stages grouped by ACTIVE/INACTIVE.",
+    "uiState": "Stage dropdown open on the Benjamin Han row (stage cell has a purple focus border); a pointing-hand cursor sits on the closed dropdown trigger.",
+    "keyElements": [
+     "Dark left side nav with logo and icon items (Workspace, Catalog, Calendar, Reports, Community, Orders, Dashboard per component inventory; icons only, no labels visible)",
+     "Page header 'Leads' with an 'Insights' outlined button, a purple '+ Add Lead' primary button, and a kebab (vertical-dots) icon button",
+     "Filter chip 'All Leads (09)' with dropdown caret; right-side toolbar of icon buttons: search, filter, a segmented icon-button pair (view toggle, left segment selected/purple), and one more list-style icon",
+     "Table columns: NAME, STAGE, TASKS, ASSIGNEES, SOURCE, BUDGET (S$), PROPERTY TYPE, plus a further column clipped at the crop's right edge (metadata text '17 Jul \u201826' belongs to it)",
+     "Rows: Olivia Martinez, Farah Ahmad, Muthu Vinay, Gerald Tan, Vivien Lee, Benjamin Han \u2014 each with secondary phone text '0123 4567'",
+     "Olivia Martinez row: stage 'New \u25be', task 'This is a sample task added by the user', a purple 'Assign' link with icon; other rows: stage 'Contacted \u25be', truncated task text with an OVERDUE tag and a '+2' count, avatar stack with '+2' and an add-member icon",
+     "SOURCE 'Instagram', BUDGET '70,500', PROPERTY TYPE 'HDB 4-Room' on every row",
+     "Open dropdown menu: green-dot 'ACTIVE' group header with New, Contacted, Met, Quote Sent, Won; divider; orange-dot 'INACTIVE' group header with On Hold, Lost",
+     "Floating sparkle button bottom-right (component inventory names it 'Maison AI')"
+    ],
+    "interactions": [
+     "Each STAGE cell carries a chevron \u2014 clicking opens this stage menu (shown open, with the focused-cell purple border)",
+     "Choosing a stage from the menu is the implied trigger for the Move stage modal in the rest of this section (not wired in the prototype \u2014 the interaction-states spec confirms no screen-to-screen links exist)",
+     "'Assign' link and avatar '+' affordances imply assignee management; 'All Leads (09)' chip implies a saved-view/filter menu; segmented icon buttons imply a table/alternate view toggle",
+     "Hover behaviour per spec: outlined/icon buttons gain rgba(0,0,0,.04) bg; selected segmented segment stays #eee5ff; link text #5500ff to #4400cc"
+    ],
+    "illegible": "Rightmost table column is clipped by the crop (header begins with 'C\u2026'; its date values, e.g. metadata's '17 Jul \u201826', are cut off). Side-nav icons are too small to identify individually. Metadata text 'Followed Up' is not locatable in the visible crop."
+   },
+   {
+    "id": "780:86258",
+    "name": "Stage - new / Default view",
+    "purpose": "Move stage modal in its starting state for a lead currently in New: the New panel manages assignees.",
+    "uiState": "Base state \u2014 New selected in the left rail (filled radio, highlighted row), all other stages unvisited; only Dane checked in the assignee list.",
+    "keyElements": [
+     "Modal 'Move stage' over a dimmed backdrop; subtitle 'Olivia Martinez \u00b7 Current stage: New'; close X top-right",
+     "Left rail radio list: New (selected), Contacted, Met, Quote Sent, Won",
+     "Right panel heading 'New' with label 'Assignees'",
+     "Member rows with square initial avatars: Dane 'Owner (you)' (purple checkbox, checked), James / Sarah / Michelle / Germaine / Alex all 'Designer' (unchecked checkboxes)",
+     "Footer: 'Cancel' outlined button, 'Save' purple primary button"
+    ],
+    "interactions": [
+     "Left-rail radios imply switching the right panel to that stage's form",
+     "Checkboxes imply multi-select of assignees; Save commits, Cancel/X dismisses"
+    ],
+    "illegible": "Subtitle is small but reads 'Olivia Martinez \u00b7 Current stage: New'."
+   },
+   {
+    "id": "780:89011",
+    "name": "Stage - contacted / Default view (empty log)",
+    "purpose": "Moving to Contacted: capture one contact-attempt log.",
+    "uiState": "Contacted selected in rail (New now shows a green completed check); Log 1 expanded and empty.",
+    "keyElements": [
+     "Rail: New with green check, Contacted selected, Met / Quote Sent / Won pending",
+     "Panel heading 'Moving to Contacted' with '+ Add Log' purple link top-right",
+     "Card 'Log 1' with '\u2726 Auto Fill' action (red/orange sparkle icon) and a collapse chevron (metadata: keyboard_arrow_up)",
+     "'Contacted via' choice chips: WhatsApp, Email, SMS, Call, Others (none selected)",
+     "'When' field with calendar icon; 'Outcome' dropdown field",
+     "'Attach screenshots of your call attempts' with '\ud83d\udcce Attach Files' purple link",
+     "'Notes (optional)' textarea, placeholder 'Enter your notes'",
+     "Footer: Cancel / Save"
+    ],
+    "interactions": [
+     "'+ Add Log' implies appending another log card (seen in 780:89798)",
+     "'Auto Fill' implies the upload dialog in 780:89277; chevron implies collapsing the log card",
+     "Chips imply single/multi choice of channel; When implies a date-time picker; Outcome chevron implies a select menu; Attach Files implies a file picker"
+    ]
+   },
+   {
+    "id": "780:89277",
+    "name": "Stage - contacted / Auto Fill dialog",
+    "purpose": "Nested Auto Fill dialog for uploading a conversation screenshot that the system will parse.",
+    "uiState": "Near-duplicate of 780:89011 with a second-level 'Auto Fill' dialog stacked on the dimmed Move stage modal; dropzone empty.",
+    "keyElements": [
+     "Dialog 'Auto Fill' with close X",
+     "Dashed-border dropzone: 'Drop in the conversation or browse' (browse is an underlined link)",
+     "Helper copy: 'Upload a screenshot from any messaging app \u2014 we\u2019ll identify its channel, summarise the conversation, and suggest tasks.'",
+     "Buttons: 'Cancel' outlined, 'Upload' purple primary"
+    ],
+    "interactions": [
+     "Dropzone implies drag-and-drop; 'browse' link implies a file picker; Upload implies processing that yields the filled log (781:58292) and suggested tasks (780:89545)"
+    ]
+   },
+   {
+    "id": "781:58292",
+    "name": "Stage - contacted / Log filled",
+    "purpose": "Contacted log after Auto Fill / manual entry, including a scheduled next step and an attached screenshot.",
+    "uiState": "Near-duplicate of 780:89011 with Log 1 fully populated and an attachment present.",
+    "keyElements": [
+     "'Contacted via': WhatsApp chip selected (purple outline)",
+     "'When' = '12/3/2025, 3:00PM' (calendar icon); 'Outcome' = 'Callback requested'",
+     "New block 'Next step: Schedule a call' with 'Date & Time' = '24/8/2025, 7:00PM' and 'Preferred mode' = 'WhatsApp' dropdown",
+     "'Attach screenshots of your call attempts' now shows a screenshot thumbnail card with a red PDF icon (metadata: picture_as_pdf) and label 'Q-101', plus a small delete icon; 'Attach Files' link still present",
+     "'Notes (optional)' empty; footer Cancel / Save"
+    ],
+    "interactions": [
+     "The 'Next step' block appears with outcome 'Callback requested' \u2014 implying outcome-dependent follow-up fields",
+     "Delete icon on the attachment implies removal; Auto Fill chevron implies collapse"
+    ],
+    "illegible": "Thumbnail contents are a blurred chat screenshot; only the 'Q-101' tag is readable."
+   },
+   {
+    "id": "780:89798",
+    "name": "Stage - contacted / Two logs",
+    "purpose": "Contacted panel after '+ Add Log': multiple contact attempts as stacked log cards.",
+    "uiState": "Near-duplicate of 780:89011 \u2014 'Log 1' collapsed (expand_more chevron), 'Log 2' expanded and empty with its own Auto Fill.",
+    "keyElements": [
+     "'Log 1' header row collapsed with a down chevron",
+     "'Log 2' card expanded: Auto Fill, empty 'Contacted via' chips, empty When/Outcome, Attach Files, Notes textarea",
+     "Rail and footer identical to 780:89011"
+    ],
+    "interactions": [
+     "Chevrons imply expand/collapse per log card; '+ Add Log' implies further logs"
+    ]
+   },
+   {
+    "id": "780:89545",
+    "name": "Stage - contacted / Suggested tasks dialog",
+    "purpose": "Nested dialog surfacing tasks derived from the uploaded conversation (Auto Fill outcome).",
+    "uiState": "Second-level 'Suggested tasks' dialog over the filled Contacted modal (background matches 781:58292's filled Log 1).",
+    "keyElements": [
+     "Dialog 'Suggested tasks' with close X",
+     "Section 'Auto added': purple-highlighted row, checkbox checked \u2014 'Schedule a meeting with the client for Monday, 24 Aug \u201826 at 7PM'",
+     "Section 'Suggestions': unchecked row \u2014 'Prepare sample designs and floor plan illustrations for the client'",
+     "Buttons: 'Close' outlined, 'Save' purple primary"
+    ],
+    "interactions": [
+     "Checkboxes imply opting suggested tasks in/out before Save; Close dismisses without saving (label differs from the other dialogs' Cancel)"
+    ]
+   },
+   {
+    "id": "780:90106",
+    "name": "Stage - met / Default view",
+    "purpose": "Moving to Met: log the meeting's location and time and attach meeting documents.",
+    "uiState": "Current stage now Contacted (subtitle); New and Contacted show green checks, Met selected; Log 1 expanded with defaults.",
+    "keyElements": [
+     "Subtitle 'Olivia Martinez \u00b7 Current stage: Contacted'",
+     "Heading 'Moving to Met' with '+ Add Log'",
+     "Card 'Log 1' with Auto Fill and collapse chevron",
+     "'Where' dropdown = 'In person'; 'Date & Time' = '12/3/2025, 3:00PM' with calendar icon",
+     "'Attach meeting documents' with 'Attach Files' purple link",
+     "'Notes (optional)' textarea 'Enter your notes'; footer Cancel / Save"
+    ],
+    "interactions": [
+     "Where chevron implies a location-type select; same log/attach/notes affordances as Contacted"
+    ]
+   },
+   {
+    "id": "780:90353",
+    "name": "Stage - quote sent / From System empty",
+    "purpose": "Moving to Quote Sent: attach the approved quote, starting from the system-quotes tab with none available.",
+    "uiState": "From System tab active, empty state; rail shows New/Contacted/Met green-checked, Quote Sent selected; subtitle 'Current stage: Met'.",
+    "keyElements": [
+     "Heading 'Moving to Quote Sent'; section label 'Attach approved quote'",
+     "Tabs: 'From System' (active, purple underline) / 'Upload'",
+     "Empty state: 'No system generated quotes.' with purple link 'Create Quote \u203a'",
+     "'Attach meeting documents' + Attach Files; 'Attach render (optional)' + Attach Files",
+     "Footer Cancel / Save"
+    ],
+    "interactions": [
+     "Tab pair implies switching between picking a system quote and uploading a PDF",
+     "'Create Quote \u203a' implies navigating to quote creation (destination not shown in this section)"
+    ]
+   },
+   {
+    "id": "780:90575",
+    "name": "Stage - quote sent / From System with quotes",
+    "purpose": "Same Quote Sent screen when system-generated quotes exist: pick one.",
+    "uiState": "Near-duplicate of 780:90353 \u2014 From System tab now lists two selectable quotes, first selected.",
+    "keyElements": [
+     "Radio row (selected, purple outline): 'Whole-home renovation' \u2014 'OM-10001 \u00b7 S$ 70,500 \u00b7 Approved on 19 Aug' \u2014 'View' link",
+     "Radio row (unselected): 'Whole-home renovation-v1' \u2014 'OM-10001 \u00b7 S$ 70,500 \u00b7 Approved on 19 Aug' \u2014 'View' link",
+     "Attach meeting documents / Attach render (optional) sections; footer Cancel / Save"
+    ],
+    "interactions": [
+     "Radios imply single-select of one quote; 'View' links imply opening the quote"
+    ]
+   },
+   {
+    "id": "780:90809",
+    "name": "Stage - quote sent / Upload empty",
+    "purpose": "Quote Sent with the Upload tab active: drop a quote PDF.",
+    "uiState": "Near-duplicate of 780:90353 with 'Upload' tab active, dropzone empty; subtitle here reads 'Current stage: Met'.",
+    "keyElements": [
+     "Tabs with 'Upload' active (purple underline)",
+     "Dashed dropzone: 'Drop your file or browse' (browse underlined) with subtext 'Supports: PDF'",
+     "Attach meeting documents / Attach render (optional); footer Cancel / Save"
+    ],
+    "interactions": [
+     "Dropzone implies drag-and-drop; 'browse' implies file picker; leads to uploading state 780:91042"
+    ]
+   },
+   {
+    "id": "780:91042",
+    "name": "Stage - quote sent / Uploading",
+    "purpose": "Transient uploading state of the quote PDF.",
+    "uiState": "Near-duplicate of 780:90809 \u2014 dropzone replaced by 'Uploading\u2026' with subtext 'Please wait as your file is being uploaded' (metadata: upload-subtext).",
+    "keyElements": [
+     "Dashed panel: 'Uploading\u2026' + wait subtext",
+     "Rest of layout identical to 780:90809"
+    ],
+    "interactions": [
+     "Progress state only; no new affordances visible"
+    ],
+    "illegible": "Header subtitle is small; it appears to read 'Current stage: Contacted' (differs from 90353/90575's 'Met') but is at the edge of legibility."
+   },
+   {
+    "id": "780:91365",
+    "name": "Stage - quote sent / Upload complete",
+    "purpose": "Quote PDF uploaded: confirm the file and enter the quote amount.",
+    "uiState": "Near-duplicate of 780:90809 after upload \u2014 file row present and a Quote amount field added; subtitle 'Current stage: Contacted'.",
+    "keyElements": [
+     "Dropzone still shown above the uploaded file",
+     "File row (selected radio, purple outline): red 'PDF' icon + 'Whole-home renovation' + trash/delete icon",
+     "Text field 'Quote amount (S$)' = '70,500'",
+     "Attach meeting documents / Attach render (optional); footer Cancel / Save"
+    ],
+    "interactions": [
+     "Trash icon implies removing the uploaded file; amount field implies manual entry for uploaded (non-system) quotes"
+    ]
+   },
+   {
+    "id": "780:91593",
+    "name": "Stage - quote sent / Validation error",
+    "purpose": "Error state when moving to Quote Sent while intermediate stages are incomplete.",
+    "uiState": "Near-duplicate of 780:91365 with validation errors: Contacted and Met rail rows carry red error icons, and a red footer message appears.",
+    "keyElements": [
+     "Rail: New checked, Contacted and Met each with a red circular error icon at the row's right, Quote Sent selected, Won pending",
+     "Footer error strip: red icon + 'Unable to move. Please update the missing stages.'",
+     "Content identical to 780:91365 (uploaded 'Whole-home renovation' PDF, Quote amount 70,500)"
+    ],
+    "interactions": [
+     "Error icons on rail rows imply those stages need their forms completed before the move can save; clicking them presumably navigates to that stage's panel (rail rows are already the switcher)"
+    ]
+   },
+   {
+    "id": "780:91853",
+    "name": "Stage - met (Figma name) / Moving to Won \u2014 From System",
+    "purpose": "Moving to Won: attach the client-signed quote and contract, review payment milestones, and convert the lead to a project.",
+    "uiState": "From System tabs active on both attach sections, one item selected in each; all four prior stages green-checked, Won selected.",
+    "keyElements": [
+     "Heading 'Moving to Won'",
+     "Section 'Attach client signed quote' \u2014 tabs From System (active) / Upload; selected radio row 'Whole-home renovation' \u2014 'OM-10001 \u00b7 S$ 70,500 \u00b7 Signed on 19 Aug' with 'View' link",
+     "Section 'Attach client signed contract' \u2014 tabs From System (active) / Upload; selected radio row 'Contract_OliviaM_signed.pdf' \u2014 'Signed on 19 Aug' with 'View' link",
+     "Section 'Payment milestone' with purple 'Reset to default' link and a small green badge ('100%')",
+     "Milestone rows: 1 Deposit (Upon signing) 10 % \u2014 S$7,050; 2 Commencement (Works commence) 30 % \u2014 S$21,150; 3 Mid-Project (50% completion) 30 % \u2014 S$21,150; 4 Completion (Handover) 30 % \u2014 S$21,150; 'Total' row with amount",
+     "'Project type' dropdown field = 'Interior Quote File Name'",
+     "Footer: 'Cancel' / 'Save & Convert to Project' purple primary"
+    ],
+    "interactions": [
+     "Percentage fields are editable inputs; 'Reset to default' implies restoring the 10/30/30/30 split; badge appears to show the percentage sum",
+     "'Save & Convert to Project' implies stage save plus project conversion (destination not shown in this section)"
+    ],
+    "illegible": "The Total row amount is small (appears to be S$70,500 but the crop pixels are ambiguous). Header subtitle appears to read 'Current stage: Contacted' but is at the edge of legibility. Note: the Figma frame is named 'Stage - met' although the content is the Won flow."
+   },
+   {
+    "id": "780:91935",
+    "name": "Stage - met (Figma name) / Moving to Won \u2014 Upload",
+    "purpose": "Same Moving to Won screen with both attach sections on their Upload tabs.",
+    "uiState": "Near-duplicate of 780:91853 \u2014 Upload tabs active on quote and contract sections; milestone percentage inputs all show '0 %'.",
+    "keyElements": [
+     "'Attach client signed quote' Upload tab: dashed dropzone 'Drop your file or browse \u2014 Supports: PDF', uploaded file row (selected radio, red PDF icon) 'Whole-home renovation' with trash icon, and 'Quote amount (S$)' field = '70,500'",
+     "'Attach client signed contract' Upload tab: uploaded file row 'Contract_OliviaM_signed.pdf' (selected radio, red PDF icon, trash icon)",
+     "'Payment milestone' with Reset to default + small green badge; rows show '0 %' in each input while the amount column still shows S$7,050 / S$21,150 \u00d73 and a Total row",
+     "'Project type' = 'Interior Quote File Name'; footer 'Cancel' / 'Save & Convert to Project'"
+    ],
+    "interactions": [
+     "Same as 780:91853 plus dropzone/trash affordances for the uploaded files"
+    ],
+    "illegible": "The green badge's value and the Total row amount are too small to read with confidence; the interplay between the 0 % inputs and the still-populated amounts is not decipherable from the crop."
+   },
+   {
+    "id": "780:92955",
+    "name": "Stage - on hold / Default view",
+    "purpose": "Small dialog for moving a lead to the inactive On Hold stage with a reason and duration.",
+    "uiState": "Compact single-column dialog (no stage rail); fields pre-filled.",
+    "keyElements": [
+     "Dialog 'Move stage', subtitle 'Olivia Martinez \u00b7 Current stage: Contacted', close X",
+     "Heading 'Moving to On Hold'",
+     "'Reason' dropdown = 'Property delay'; 'Duration' dropdown = '3 months'",
+     "Helper text: 'Next follow up date will be 22 Oct \u201826'",
+     "Buttons: 'Cancel' outlined / 'Save & Move' purple primary"
+    ],
+    "interactions": [
+     "Dropdown chevrons imply select menus; helper text implies the follow-up date derives from the chosen duration"
+    ]
+   },
+   {
+    "id": "780:93425",
+    "name": "Stage - lost / Default view",
+    "purpose": "Small dialog for marking a lead Lost with a reason.",
+    "uiState": "Near-duplicate of 780:92955 but with only the Reason field (no Duration, no helper text).",
+    "keyElements": [
+     "Dialog 'Move stage', subtitle 'Olivia Martinez \u00b7 Current stage: Contacted', close X",
+     "Heading 'Moving to Lost'",
+     "'Reason' dropdown = 'Property too far'",
+     "Buttons: 'Cancel' / 'Save & Move'"
+    ],
+    "interactions": [
+     "Reason chevron implies a select menu of loss reasons; Save & Move commits"
+    ]
+   }
+  ],
+  "sharedComponents": [
+   "Move stage modal shell: title 'Move stage', subtitle '<lead name> \u00b7 Current stage: <stage>', close X, footer with outlined Cancel + purple primary (Save / Save & Move / Save & Convert to Project), dimmed backdrop",
+   "Left stage rail (active-stage modals only): rows for New/Contacted/Met/Quote Sent/Won with three states \u2014 green filled check (completed), selected radio on a white/highlighted row (current target), grey empty radio (pending); plus a red error-icon state in 780:91593",
+   "Log card: header 'Log N' + '\u2726 Auto Fill' (red sparkle icon) + expand/collapse chevron (keyboard_arrow_up / expand_more); '+ Add Log' link adds cards",
+   "Choice chips (Contacted via: WhatsApp/Email/SMS/Call/Others) with a purple-outline selected state",
+   "Text/dropdown fields with floating labels (When, Outcome, Date & Time, Preferred mode, Where, Quote amount (S$), Reason, Duration, Project type); calendar icon on date-time fields",
+   "'Attach Files' purple link with paperclip icon, used by every attach section",
+   "From System / Upload tab pair with purple underline on the active tab",
+   "Dashed dropzone ('Drop your file or browse' / 'Drop in the conversation or browse', 'Supports: PDF' subtext) with empty, uploading, and uploaded states",
+   "Uploaded-file row: radio + red PDF chip + filename + trash icon, purple outline when selected",
+   "System-record radio row: title + meta line (ID \u00b7 amount \u00b7 Approved/Signed on date) + 'View' link",
+   "Notes (optional) textarea with 'Enter your notes' placeholder",
+   "Nested second-level dialogs (Auto Fill, Suggested tasks) stacked above the modal",
+   "Leads listing furniture on 780:86452: side nav, page header buttons, filter chip, segmented icon toggle, lead table row (Tag/OVERDUE, member avatars), stage dropdown menu with ACTIVE/INACTIVE groups, Maison AI floating button"
+  ],
+  "buildNotes": [
+   "No prototype wiring exists between these screens (interaction-states.md: all reactions are component-state changes only) \u2014 the dropdown-to-modal and state-to-state transitions must be built from the frame sequence, not from Figma links.",
+   "Hover/active styling must follow interaction-states.md: outlined buttons/icon buttons/nav items gain rgba(0,0,0,.04) bg; links #5500ff \u2192 #4400cc with no underline; selected segmented segment #eee5ff with #4400cc icon; focused search border 2px #5500ff.",
+   "Primary purple (#5500ff family per the spec) is used for: primary buttons, selected radios/checkboxes/chips/file rows, active tab underline, links (Add Log, Attach Files, Create Quote, View, Reset to default, browse).",
+   "Stage rail is the in-modal navigator; completed stages render a green check, and 780:91593 shows the red error-icon + footer-strip pattern for incomplete prerequisite stages.",
+   "Contacted/Met use the repeatable Log card pattern; Quote Sent and Won use the From System vs Upload attach pattern; uploaded (non-system) quotes additionally require a manual 'Quote amount (S$)' input.",
+   "The Won flow's footer action is 'Save & Convert to Project' (not plain Save) and includes the payment-milestone editor with 'Reset to default' restoring the 10/30/30/30 split.",
+   "On Hold and Lost use a compact centered dialog without the stage rail; On Hold derives 'Next follow up date will be 22 Oct \u201826' from the Duration value shown.",
+   "Figma naming quirks to preserve mappings carefully: 780:91853 and 780:91935 are named 'Stage - met' but depict the Won flow; several distinct states share the name 'Stage - contacted / Default view' or 'Stage - quote sent / Default view'.",
+   "Sample data mixes date formats/years: '12/3/2025, 3:00PM', '24/8/2025, 7:00PM' vs '24 Aug \u201826', '22 Oct \u201826', '17 Jul \u201826', 'Approved/Signed on 19 Aug' \u2014 reproduce verbatim for pixel-perfection unless the design owner corrects them.",
+   "Nested dialogs (Auto Fill, Suggested tasks) stack a second scrim over the already-dimmed Move stage modal."
+  ],
+  "openQuestions": [
+   "Trigger for 780:91593's validation state: does the error appear on pressing Save, or immediately on selecting Quote Sent while Contacted/Met forms are empty? The images show only the resulting state.",
+   "The header's 'Current stage' value is inconsistent across the Quote Sent/Won sequence (Met on 780:90353/90575 vs Contacted on 780:90809/91042/91365 and apparently on the Won screens) \u2014 intentional alternate entry paths or a mock inconsistency?",
+   "Figma metadata lists the text 'Followed Up' on 780:86452, but the visible stage menu shows New/Contacted/Met/Quote Sent/Won/On Hold/Lost \u2014 where does 'Followed Up' belong (hidden layer, column value under the clipped right edge, or an unused stage)?",
+   "In 780:91935 every milestone percentage input reads '0 %' while the amounts stay at the 10/30/30/30 values and the Total is populated \u2014 is this a deliberate 'percentages cleared on upload path' state or stale mock data? The small green badge next to 'Reset to default' is unreadable in both Won crops.",
+   "Destinations of 'Create Quote \u203a' (780:90353) and of 'Save & Convert to Project' (Won flow) are not shown in this section \u2014 what do they navigate to in the prototype?",
+   "Does selecting a stage in the listing dropdown (780:86452) always open the Move stage modal, including for On Hold/Lost (which use the compact dialog), and does the modal always open on the clicked stage?",
+   "Contacted outcome 'Callback requested' shows a 'Next step: Schedule a call' block \u2014 do other Outcome values produce different (or no) next-step fields? No other outcome state is mocked in this section."
+  ]
+ }
+]

@@ -1,0 +1,202 @@
+/* Import Leads wizard — 1:1 from 779:26013 / 26054 / 26099 / 26133 / 26161 (1200×928). */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 48px 0; overflow-y: auto;
+}
+.panel {
+  position: relative;
+  width: 1200px; height: 928px; max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.heading {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.step { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-on-surface-secondary); display: inline-flex;
+  transition: color var(--motion-hover);
+}
+.close:hover { color: var(--om-color-on-surface-default); }
+.body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+.footer {
+  display: flex; gap: var(--om-spacing-3); align-items: center; justify-content: flex-end;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+  box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+.footer :global(button) { min-width: 91px; }
+
+/* ---- Step 1 ---- */
+.step1 {
+  display: flex; gap: 60px; align-items: flex-start;
+  padding: 80px 120px; height: 100%;
+}
+.tips { width: 303px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.tipBlock { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.tipTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.tipList { margin: 0; padding-left: 21px; list-style: disc; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.tipList li { margin: 0; }
+.inlineLink { text-decoration: underline; text-underline-position: from-font; cursor: pointer; color: inherit; background: none; border: 0; padding: 0; font: inherit; }
+.rule { height: 1px; width: 100%; background: var(--om-color-surface-variant); }
+.linkCol { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.link {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+  text-decoration: none;
+}
+.link:hover { color: var(--om-color-primary-default); }
+.uploadCol { width: 597px; flex-shrink: 0; align-self: stretch; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.uploadTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.dropzone {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border: var(--om-border-2) dashed var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  padding: 40px 0; text-align: center;
+  cursor: pointer;
+  transition: background var(--motion-toggle), border-color var(--motion-toggle);
+}
+.dropzone[data-over] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); }
+.dropMain { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.dropMain u { text-underline-position: from-font; }
+.dropSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.dropSuccess {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-6);
+  background: var(--om-color-tertiary-green-variant2);
+  border: var(--om-border-2) solid var(--om-color-tertiary-green-variant1);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-6) 120px; text-align: center;
+}
+.successGroup { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-1); width: 100%; }
+.successCheck { color: var(--om-color-tertiary-green-default); display: inline-flex; }
+.successTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.successSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.fileName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.reupload {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+  text-decoration: underline; text-underline-position: from-font;
+}
+.hiddenInput { display: none; }
+
+/* Upload toast (779:26040) — dark header, one file row. */
+.toast {
+  position: absolute; right: 16px; bottom: 20px; z-index: 5;
+  width: 360px; height: 200px;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-3);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.toast[data-collapsed] { height: auto; }
+.toastHead {
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4);
+  background: var(--om-color-on-surface-default);
+  color: var(--om-color-surface-default);
+}
+.toastTitle { flex: 1; font: var(--om-type-heading-h4); }
+.toastBtn { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+.toastRow {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3) var(--om-spacing-4);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.toastFile { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toastStatus { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.toastIcon { color: var(--om-color-tertiary-green-default); display: inline-flex; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ---- Steps 2 & 3 ---- */
+.stepBody { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); height: 100%; min-height: 0; }
+.stepTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.stepDesc { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin-top: var(--om-spacing-2); }
+.autoNote { display: inline-flex; align-items: center; gap: var(--om-spacing-1); margin-top: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-tertiary-green-default); }
+
+.mapTable {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  overflow: auto; flex: 1; min-height: 0; overscroll-behavior: contain; }
+.mapHead, .mapRow { display: flex; align-items: stretch; }
+.mapHead { position: sticky; top: 0; background: var(--om-color-surface-default); z-index: 1; transition: box-shadow var(--motion-toggle); }
+/* Stuck header casts the page header's level-1 shadow once the table has scrolled (user 2026-08-28). */
+.mapTable[data-scrolled='true'] .mapHead { box-shadow: var(--om-elevation-level-1); }
+.mapRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); transition: background var(--motion-hover); }
+.mapRow:hover { background: var(--om-color-surface-bg); }
+.mapCell { padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4); display: flex; align-items: center; min-width: 0; }
+.mapHead .mapCell { padding-top: var(--om-spacing-4); padding-bottom: var(--om-spacing-4); }
+.colName { width: 320px; flex-shrink: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--om-spacing-2); }
+.mapHead .colName { flex-direction: row; align-items: center; justify-content: flex-start; }   /* header label sits on the row text's left edge */
+.colNameText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.colReview { flex: 1; min-width: 200px; }
+.reviewList { display: flex; flex-direction: column; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.reviewList span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.colSelect { width: 320px; flex-shrink: 0; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.select {
+  width: 280px; height: 36px;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  padding: 0 var(--om-spacing-3);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  cursor: pointer; text-align: left;
+  transition: border-color var(--motion-hover);
+}
+.select span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.select:hover { border-color: var(--om-color-on-surface-secondary); }
+.required { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.chev { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
+.select[data-open] .chev { transform: rotate(180deg); }
+
+/* Same card frame as every other table (1px surface-variant, radius-2); the frame owns the outer edges. */
+.previewWrap { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.preview { display: grid; width: max-content; min-width: 100%; grid-template-rows: 48px; grid-auto-rows: 44px; }
+.pRow { display: contents; }
+.pCell:last-child { border-right: 0; }
+.pRow:last-child .pCell { border-bottom: 0; }
+.pCell {
+  display: flex; align-items: center;
+  padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4);
+  border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  white-space: nowrap;   /* never truncate imported data — the column widens instead */
+  background: var(--om-color-surface-default);
+}
+/* Header cells stick to the top of the scrolling preview and take the level-1 shadow once scrolled (user 2026-08-28). */
+.pHead .pCell { position: sticky; top: 0; z-index: 1; height: 48px; font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: 0; color: var(--om-color-on-surface-secondary); transition: box-shadow var(--motion-toggle); }
+.previewWrap[data-scrolled='true'] .pHead .pCell { box-shadow: var(--om-elevation-level-1); }
+
+/* ---- Step 4 ---- */
+.done { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
+.doneArt { width: 100px; height: 119px; }
+.doneTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }
+
+/* Lead routing (821:23969 / 821:24010): question subheading/m, cards 12/16 with the radio on the right, 12px apart;
+   selected = 2px primary border. */
+.destQuestion { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.destList { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+/* Lead routing option cards → the generic ChoiceCard (components/om/choice-card). */
+.doneSub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

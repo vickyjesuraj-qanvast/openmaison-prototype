@@ -1,0 +1,65 @@
+/* Ghost loader — bones on the page surface, one soft highlight sweeping the sheet. */
+.sheet { position: relative; overflow: hidden; }
+.sheet::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 38%, var(--om-color-surface-default) 50%, transparent 62%);
+  opacity: 0.85;
+  transform: translateX(-100%);
+  animation: sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: var(--sweep-delay, 0ms);
+  pointer-events: none;
+}
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.bone {
+  display: inline-block; flex-shrink: 0;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+}
+
+/* Mirrors PageHeader / imports header: px-24 py-16, border-b. */
+.header {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  box-shadow: var(--om-elevation-level-1);
+  min-height: 68px;
+}
+.header > :first-child { margin-right: auto; }
+.header .titleBlock { margin-right: auto; }
+.titleBlock { display: flex; flex-direction: column; gap: 6px; }
+.headerActions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* Mirrors LeadsToolbar / imports toolbar. */
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.toolbar > :first-child { margin-right: auto; }
+.toolbarRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* Mirrors the leads / imports tables: 56px head, 64px (44px) rows, same column widths. */
+.tableWrap {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  overflow: hidden;
+}
+.headRow, .row { display: flex; align-items: center; }
+.headRow { height: 56px; }
+.row { height: 64px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rowShort { height: 44px; }
+.col { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4); }
+.nameCol { flex-direction: column; align-items: flex-start; gap: 6px; }
+.avatars { display: inline-flex; }
+.avatars > :not(:first-child) { margin-left: -6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet::after { animation: none; opacity: 0; }
+}
+
+/* Mirrors the Settings page: 240px section rail, 720px panel, card-framed setting group. */
+.settingsRow { display: flex; gap: var(--om-spacing-6); align-items: flex-start; padding: var(--om-spacing-6); }
+.settingsNav { width: 240px; flex-shrink: 0; background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); padding: var(--om-spacing-2) 0; display: flex; flex-direction: column; }
+.settingsNavItem { display: flex; align-items: center; gap: var(--om-spacing-3); height: 52px; padding: 0 var(--om-spacing-4) 0 var(--om-spacing-6); }
+.settingsPanel { flex: 1; max-width: 720px; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.settingsHead { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.settingsCard { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }

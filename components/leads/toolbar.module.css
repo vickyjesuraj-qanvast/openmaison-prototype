@@ -1,0 +1,58 @@
+/* Toolbar row — "Section items": chip left, search/filter/toggle right, gap-16. */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); width: 100%; }
+.left { flex: 1; min-width: 0; display: flex; position: relative; }
+.right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
+
+/* "All Leads (99)" chip: h36, border ccc, r4, pl-16 pr-12, gap-8. */
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.chip:hover { background: var(--om-color-hover-04p); }
+.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
+/* Chevron points up while the menu is open (user 2026-08-28) — every menu trigger does this. */
+.chip[data-open] .chipChevron { transform: rotate(180deg); }
+
+/* Search — 280px trigger/input; focused = 2px primary border (spec). */
+.search {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  width: 280px; height: 36px;
+  padding: 0 var(--om-spacing-2);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  color: var(--om-color-on-surface-secondary);
+  transition: border-color var(--motion-toggle);
+}
+.search:focus-within {
+  border: var(--om-border-2) solid var(--om-color-primary-default);
+  padding: 0 calc(var(--om-spacing-2) - 1px);
+}
+.searchInput {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: none;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+}
+.searchInput::placeholder { color: var(--om-color-on-surface-secondary); font: var(--om-type-subheading-m); }
+.searchClear {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; color: var(--om-color-on-surface-secondary);
+}
+
+/* A2: active-filter count badge on the filter icon button. */
+.filterWrap { position: relative; display: inline-flex; }
+.filterBadge {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: var(--om-radius-full);
+  background: var(--om-color-primary-default); color: #fff;
+  font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--om-color-surface-default);
+  box-sizing: content-box;
+}

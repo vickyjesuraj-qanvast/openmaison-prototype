@@ -1,0 +1,33 @@
+/* Dark charcoal snackbar, bottom-left, per "Toast message" (780:82576). */
+.host {
+  position: fixed;
+  left: 84px;               /* clear of the 52px rail + page padding */
+  bottom: calc(24px + var(--bottom-dock, 0px)); transition: bottom var(--motion-toggle);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.bar {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--om-spacing-3);
+  background: var(--om-color-inverse-surface-default);
+  color: var(--om-color-on-inverse-surface-default);
+  font: var(--om-type-body-m);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-3) var(--om-spacing-4);
+  box-shadow: var(--om-elevation-level-3);
+}
+.action {
+  background: none; border: 0; cursor: pointer; padding: 0;
+  color: var(--om-color-inverse-surface-primary);
+  font: var(--om-type-subheading-m);
+}
+.close {
+  background: none; border: 0; cursor: pointer; padding: 0;
+  color: inherit; display: inline-flex; opacity: 0.8;
+}
+.close:hover { opacity: 1; }

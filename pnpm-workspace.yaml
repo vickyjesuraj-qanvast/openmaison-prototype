@@ -1,0 +1,7 @@
+# pnpm 11 blocks postinstall scripts by default; these are needed for
+# tsx (esbuild) and eslint's resolver to work.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - next@16.3.3

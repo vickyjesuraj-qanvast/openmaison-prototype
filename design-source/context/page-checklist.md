@@ -1,0 +1,61 @@
+# Page checklist — generic shell pieces every screen must ship
+
+Standing rule from the designer (2026-08-27): "whenever you build a screen remember these
+generic stuffs and never miss." Tick every line before a screen is reported as done.
+
+## Load & refresh
+- Every route ships a `loading.tsx` ghost (`LeadsSkeleton`, `ImportsSkeleton`, `SettingsSkeleton`) and wraps its view in `PageReveal`.
+- [ ] `loading.tsx` next to the route renders a skeleton from `components/shell/skeleton.tsx`
+      that mirrors the screen's own layout (header, toolbar, table/cards — same heights and
+      column widths as the real components, so the crossfade lands in place).
+- [ ] The page's client view is wrapped in `<PageReveal skeleton={<…Skeleton />}>`
+      (`components/shell/page-reveal.tsx`): min hold `GHOST_MIN_MS` then crossfade.
+- [ ] Verified with Playwright: ghost on hard load, on client navigation, on reload;
+      no ghost on `router.refresh()` / server-action revalidation.
+
+## Shell
+- [ ] Route lives under `app/leads/layout.tsx` (or an equivalent layout) so it inherits the
+      side rail (`AppRail`, two states), the snackbar host and the canvas frame.
+- [ ] `MaisonFab` present (raised when a bottom dock is shown); `--bottom-dock` respected by
+      bulk bar / snackbar / AI sheet; page content ends with `padding-bottom: var(--fab-clearance)`.
+- [ ] Every inert affordance answers with the coming-soon snackbar (`useComingSoon`).
+- [ ] The page's search input registers with `useSearchTarget` (`components/shell/search-focus.ts`)
+      so the rail search tile and the "/" key focus it.
+
+## Tooltips
+- [ ] Every icon-only control is wrapped in `<Tooltip label side>` (`components/om/tooltip.tsx`)
+      — label reuses the control's existing accessible name (no invented copy).
+- [ ] `disabled` passed while the control's own menu/popover is open or its label is visible.
+- [ ] Side: rail → `right`; FAB → `left`; everything else → `bottom` (auto-clamped to viewport).
+
+## Surfaces
+- [ ] Closing a multi-step flow or discarding edits asks first via the shared `ConfirmDialog` (`components/om/confirm-dialog.tsx`).
+- [ ] Modals / sheets / dialogs call `useScrollLock(open)` and their overlays contain overscroll; any table inside a scrolling surface has a sticky header.
+
+## Rows that can overflow
+- [ ] Horizontal chip / tab / pill rows use `ChipRail` (edge fades, chevron pagers, selected chip scrolls into view).
+
+## Fields
+- [ ] Any date field opens the shared `DatePicker` (`components/om/date-picker.tsx`, 789:84100) and still accepts typed d/m/yyyy.
+
+## Motion & states
+- [ ] Surfaces use `lib/motion` tokens; `prefers-reduced-motion` handled (globals collapse it).
+- [ ] Hover / focus-visible / active / disabled / empty / error / loading states designed and built.
+- [ ] Esc / outside-click layering follows the z-scale (menus 60 · popovers 70 · bulk bar 80 ·
+      FAB 90 · modals 100 · nested 110 · snackbar 120 · PortalMenu 130 · tooltip 140).
+
+## Verification
+- [ ] 1440×1024 Playwright pass against the Figma frame; screenshots banked in `design-source/verify/`.
+- [ ] Deviations / invented details logged in `design-source/REGISTER.md`.
+
+## Lessons carried from the listing polish (2026-08-27)
+- [ ] Body uses `overflow: clip`; sticky header keeps its top radius; bottom docks are in-flow sticky with a stuck-state strip behind them (never a fixed left offset, never a grey strip).
+- [ ] Tables: fluid `flex: W 0 Wpx` + inline min-width; pinned columns stack, only the last carries divider + shadow; no multi-select on listings; row hover turns the name primary; empty cells get a visible link affordance.
+- [ ] Date fields → shared DatePicker; icon-only controls → shared Tooltip; page ends with `--fab-clearance`.
+
+## Stage movement (Settings › Leads) — every stage-changing surface obeys it
+- Route every stage change through `requestStageChange` in `app/leads/workspace.tsx` — never call `moveStage`/`quickMoveStage` from a new surface directly.
+- Linear: only the next stage is offered (`blockedReason` → `aria-disabled` + tooltip in menus, `canDrop` dims kanban columns); the wizard opens with one stage editable, done stages editable, later stages locked.
+- Flexible: instant move + snackbar **Undo** (`undoStageMove` deletes the log); Won always opens its wizard step; On Hold / Lost always use their dialogs.
+- Any new selector of stages (bulk bar, lead details, journey) must reuse the same helpers so the two modes never drift.
+- Radio-as-card choices use `ChoiceCard`; page frame comes from `AppShell` — a new route gets `app/<route>/layout.tsx` rendering `<AppShell>` plus a skeleton.

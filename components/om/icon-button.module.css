@@ -1,0 +1,34 @@
+/* Icon Buttons — geometry from Figma set 1208:263 instances in the mocks. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--om-radius-1);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  background: transparent;
+  color: var(--om-color-on-surface-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
+}
+.btn[data-size='36'] { width: 36px; height: 36px; }
+.btn[data-size='24'] { width: 24px; height: 24px; }
+.btn:hover { background: var(--om-color-hover-04p); }
+
+/* Primary 24 (assignee person_add): border+icon primary; hover darkens to variant. */
+.btn[data-variant='primary'] {
+  border-color: var(--om-color-primary-default);
+  color: var(--om-color-primary-default);
+}
+.btn[data-variant='primary']:hover {
+  background: var(--om-color-hover-04p);
+  border-color: var(--om-color-on-primary-variant);
+  color: var(--om-color-on-primary-variant);
+}
+
+/* Selected (e.g. active toggle contexts): lavender per segmented spec. */
+.btn[data-selected='true'] {
+  background: var(--om-color-primary-variant);
+  color: var(--om-color-on-primary-variant);
+}
+.btn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

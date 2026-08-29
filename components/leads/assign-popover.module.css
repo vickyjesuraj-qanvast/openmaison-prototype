@@ -1,0 +1,32 @@
+.card {
+  position: absolute; z-index: 70;
+  width: 400px;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex; flex-direction: column;
+  max-height: 440px;
+}
+.head {
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-3) var(--om-spacing-6); }
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3) 0;
+  width: 100%;
+  border: 0; background: none; cursor: pointer; text-align: left;
+}
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.rowRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}

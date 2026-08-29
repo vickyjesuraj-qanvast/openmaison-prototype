@@ -1,0 +1,1469 @@
+{
+ "779:19690": {
+  "name": "01",
+  "section": "table-view",
+  "texts": [
+   "Title",
+   "Studio Name",
+   "Owner Name"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Search Bar",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Maison AI"
+  ],
+  "nodeCount": 60
+ },
+ "779:24429": {
+  "name": "02",
+  "section": "table-view",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI"
+  ],
+  "nodeCount": 207
+ },
+ "780:76390": {
+  "name": "01 - Full view of columns / Tables Row Example",
+  "section": "table-view",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826"
+  ],
+  "instances": [
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Icon Buttons"
+  ],
+  "nodeCount": 159
+ },
+ "780:79798": {
+  "name": "01 - Contextual Menus / Add lead contextual menu",
+  "section": "table-view",
+  "texts": [],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Maison AI",
+   "Dropdown Menu / Leads",
+   "Menu",
+   "Horizontal",
+   "pointinghand"
+  ],
+  "nodeCount": 61
+ },
+ "780:79849": {
+  "name": "01 - Contextual Menus / More contextual menu",
+  "section": "table-view",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI",
+   "Dropdown Menu / Leads",
+   "Menu",
+   "pointinghand"
+  ],
+  "nodeCount": 214
+ },
+ "780:87916": {
+  "name": "01 - Contextual Menus / Assign member",
+  "section": "table-view",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "Heading",
+   "Filter Option Text"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI",
+   "Link Icon",
+   "Two Line",
+   "pointinghand"
+  ],
+  "nodeCount": 237
+ },
+ "780:80091": {
+  "name": "01 - Contextual Menus / Table customise your view",
+  "section": "table-view",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "Header Title",
+   "Secondary text",
+   "Filter Option Text",
+   "Toggle columns you want to see. Drag columns up or down to reorder them.",
+   "Pinned (3 columns MAx)"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI",
+   "Divider",
+   "Switch States",
+   "Horizontal",
+   "pointinghand"
+  ],
+  "nodeCount": 298
+ },
+ "780:94126": {
+  "name": "No leads yet / 116",
+  "section": "table-view",
+  "texts": [
+   "Add your first lead",
+   "Manually add or import leads from other sources."
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Maison AI"
+  ],
+  "nodeCount": 58
+ },
+ "780:86452": {
+  "name": "Change stage dropdown",
+  "section": "change-stage",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "ACTIVE",
+   "INACTIVE"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Dropdown Menu / Leads",
+   "Menu",
+   "Horizontal",
+   "Maison AI",
+   "pointinghand"
+  ],
+  "nodeCount": 226
+ },
+ "780:86258": {
+  "name": "Stage - new / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Two Line",
+   "Buttons"
+  ],
+  "nodeCount": 72
+ },
+ "780:89011": {
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "keyboard_arrow_up"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Choice",
+   "Text Field",
+   "Horizontal",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 94
+ },
+ "780:89277": {
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Heading"
+  ],
+  "instances": [
+   "Link Icon",
+   "Buttons"
+  ],
+  "nodeCount": 15
+ },
+ "781:58292": {
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "keyboard_arrow_up",
+   "picture_as_pdf",
+   "Q-101"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Choice",
+   "Text Field",
+   "Horizontal",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 119
+ },
+ "780:89798": {
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "expand_more"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Choice",
+   "Text Field",
+   "Horizontal",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 99
+ },
+ "780:89545": {
+  "name": "Stage - contacted / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Heading",
+   "Lead pipeline title",
+   "Icon",
+   "Secondary Cell Data",
+   "Suggestions"
+  ],
+  "instances": [
+   "Link Icon",
+   "Horizontal",
+   "Buttons"
+  ],
+  "nodeCount": 22
+ },
+ "780:90106": {
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "keyboard_arrow_up"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Text Field",
+   "Horizontal",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 86
+ },
+ "780:90353": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "Link text",
+   "Horizontal",
+   "Buttons"
+  ],
+  "nodeCount": 81
+ },
+ "780:90575": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "Link text",
+   "Horizontal",
+   "Buttons"
+  ],
+  "nodeCount": 105
+ },
+ "780:90809": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "Horizontal",
+   "Link text",
+   "Buttons"
+  ],
+  "nodeCount": 83
+ },
+ "780:91042": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "upload-subtext"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "Horizontal",
+   "Link text",
+   "Buttons"
+  ],
+  "nodeCount": 83
+ },
+ "780:91365": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "File Format",
+   "Text Field",
+   "Horizontal",
+   "Link text",
+   "Buttons"
+  ],
+  "nodeCount": 97
+ },
+ "780:91593": {
+  "name": "Stage - quote sent / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Label text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "File Format",
+   "Text Field",
+   "Horizontal",
+   "Link text",
+   "Buttons"
+  ],
+  "nodeCount": 104
+ },
+ "780:91853": {
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "Link text",
+   "Field Text"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "File Format",
+   "Horizontal",
+   "Link text",
+   "Tag",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 157
+ },
+ "780:91935": {
+  "name": "Stage - met / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Icon",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "Field Text"
+  ],
+  "instances": [
+   "Link Icon",
+   "Tab Item",
+   "File Format",
+   "Text Field",
+   "Horizontal",
+   "Search Bar",
+   "Link text",
+   "Tag",
+   "Buttons"
+  ],
+  "nodeCount": 163
+ },
+ "780:92955": {
+  "name": "Stage - on hold / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 20
+ },
+ "780:93425": {
+  "name": "Stage - lost / Default view",
+  "section": "change-stage",
+  "texts": [
+   "Secondary Cell Data",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 19
+ },
+ "779:19733": {
+  "name": "40",
+  "section": "kanban",
+  "texts": [
+   "ACTIVE",
+   "New",
+   "17",
+   "Followed Up",
+   "Contacted",
+   "Met",
+   "Quote Sent",
+   "Won",
+   "INACTIVE",
+   "On Hold",
+   "Lost",
+   "IMPORTED",
+   "Gmail",
+   "Zapier"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Card / Desktop / Leads",
+   "Maison AI"
+  ],
+  "nodeCount": 152
+ },
+ "779:19854": {
+  "name": "44",
+  "section": "kanban",
+  "texts": [
+   "ACTIVE",
+   "New",
+   "17",
+   "Followed Up",
+   "No results found",
+   "Check your spelling and try again.",
+   "Contacted",
+   "Met",
+   "Quote Sent",
+   "Won",
+   "INACTIVE",
+   "On Hold",
+   "Lost",
+   "IMPORTED",
+   "Gmail",
+   "Zapier"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Card / Desktop / Leads",
+   "Link text",
+   "Maison AI"
+  ],
+  "nodeCount": 156
+ },
+ "779:19996": {
+  "name": "42",
+  "section": "kanban",
+  "texts": [
+   "ACTIVE",
+   "INACTIVE",
+   "On Hold",
+   "17",
+   "Lost"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Card / Desktop / Leads",
+   "Maison AI"
+  ],
+  "nodeCount": 78
+ },
+ "779:20043": {
+  "name": "41",
+  "section": "kanban",
+  "texts": [
+   "INACTIVE",
+   "On Hold",
+   "17"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Card / Desktop / Leads",
+   "Maison AI"
+  ],
+  "nodeCount": 64
+ },
+ "779:24866": {
+  "name": "All kanban board buckets / Board",
+  "section": "kanban",
+  "texts": [
+   "ACTIVE",
+   "New",
+   "17",
+   "Followed Up",
+   "Contacted",
+   "Met",
+   "Quote Sent",
+   "Won",
+   "INACTIVE",
+   "On Hold",
+   "Lost"
+  ],
+  "instances": [
+   "Card / Desktop / Leads",
+   "Dropdown Menu / Leads",
+   "Menu",
+   "pointinghand"
+  ],
+  "nodeCount": 84
+ },
+ "779:24634": {
+  "name": "Default view",
+  "section": "create-edit",
+  "texts": [
+   "Heading",
+   "Field Text",
+   "Label text",
+   "Helper Text",
+   "Lead pipeline title",
+   "expand_more"
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Vertical",
+   "Buttons"
+  ],
+  "nodeCount": 28
+ },
+ "781:53641": {
+  "name": "Edit - expanded view",
+  "section": "create-edit",
+  "texts": [
+   "Heading",
+   "Field Text",
+   "Label text",
+   "Helper Text",
+   "Lead pipeline title",
+   "keyboard_arrow_up",
+   "expand_more"
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Vertical",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 53
+ },
+ "780:82282": {
+  "name": "Create - expanded view",
+  "section": "create-edit",
+  "texts": [
+   "Heading",
+   "Field Text",
+   "Label text",
+   "Helper Text",
+   "Lead pipeline title",
+   "keyboard_arrow_up",
+   "expand_more"
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Vertical",
+   "Text Area",
+   "Buttons"
+  ],
+  "nodeCount": 53
+ },
+ "780:82576": {
+  "name": "Toast message",
+  "section": "create-edit",
+  "texts": [],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Maison AI",
+   "Snackbar/Default"
+  ],
+  "nodeCount": 53
+ },
+ "779:24696": {
+  "name": "05",
+  "section": "tasks",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "Heading",
+   "Filter Option Text",
+   "OPEN TASKS",
+   "3",
+   "Assign a member",
+   "General",
+   "(Overdue)",
+   "Call home owner as soon as possible",
+   "Call",
+   "Due today",
+   "Schedule initial meet"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI",
+   "Link Icon",
+   "Link text",
+   "pointinghand",
+   "Dropdown Menu / Leads",
+   "Menu"
+  ],
+  "nodeCount": 273
+ },
+ "780:78169": {
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "OPEN TASKS",
+   "Secondary Cell Data",
+   "3",
+   "Assign a member",
+   "General",
+   "17 Jul \u201826",
+   "(Overdue)",
+   "Call home owner as soon as possible",
+   "Call",
+   "Due today",
+   "Schedule initial meet"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Buttons"
+  ],
+  "nodeCount": 52
+ },
+ "780:78222": {
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "OPEN TASKS",
+   "Secondary Cell Data",
+   "3",
+   "Assign a member",
+   "General",
+   "17 Jul \u201826",
+   "(Overdue)",
+   "Call home owner as soon as possible",
+   "Call",
+   "Due today",
+   "Schedule initial meet"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 55
+ },
+ "780:78278": {
+  "name": "Under Leads Listing -> Task creation flow / ModalComponent",
+  "section": "tasks",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "OPEN TASKS",
+   "Secondary Cell Data",
+   "3",
+   "Assign a member",
+   "General",
+   "17 Jul \u201826",
+   "(Overdue)",
+   "Call home owner as soon as possible",
+   "Call",
+   "Due today",
+   "Schedule initial meet"
+  ],
+  "instances": [
+   "Link Icon",
+   "Link text",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 55
+ },
+ "779:24663": {
+  "name": "Lead delete modal",
+  "section": "deletion",
+  "texts": [
+   "Secondary Cell Data",
+   "\"Olivia Martinez\" will be permanently deleted in 30 days. Until then, collaborators can view it in the deleted folder."
+  ],
+  "instances": [
+   "Link Icon",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 19
+ },
+ "779:26316": {
+  "name": "Lead deleted folder modal",
+  "section": "deletion",
+  "texts": [
+   "Deleted leads are permanently removed after 30 days.",
+   "Icon",
+   "Note: Deleted leads are hidden from the board and reports. Use the Restore button to restore a lead to its original status.",
+   "1"
+  ],
+  "instances": [
+   "Buttons",
+   "Link Icon",
+   "Table / Row / Lead - Deleted",
+   "Link text",
+   "Vertical"
+  ],
+  "nodeCount": 33
+ },
+ "779:20147": {
+  "name": "39",
+  "section": "import",
+  "texts": [
+   "All Import History"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L2",
+   "Buttons",
+   "Search Bar",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Import History",
+   "Maison AI"
+  ],
+  "nodeCount": 55
+ },
+ "779:26013": {
+  "name": "134",
+  "section": "import",
+  "texts": [
+   "Heading",
+   "Lead pipeline title",
+   "Icon",
+   "Menu text"
+  ],
+  "instances": [
+   "Link Icon",
+   "Horizontal",
+   "Link text",
+   "File Format",
+   "Buttons"
+  ],
+  "nodeCount": 40
+ },
+ "779:26054": {
+  "name": "136",
+  "section": "import",
+  "texts": [
+   "Heading",
+   "Lead pipeline title",
+   "leading Icon",
+   "Icon",
+   "Menu text"
+  ],
+  "instances": [
+   "Link Icon",
+   "Horizontal",
+   "Link text",
+   "File Format",
+   "Buttons"
+  ],
+  "nodeCount": 44
+ },
+ "779:26099": {
+  "name": "ModalComponent",
+  "section": "import",
+  "texts": [
+   "Heading",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Table / Row / Lead - Importing",
+   "Menu",
+   "pointinghand",
+   "Buttons"
+  ],
+  "nodeCount": 33
+ },
+ "779:26133": {
+  "name": "ModalComponent",
+  "section": "import",
+  "texts": [
+   "Heading",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Table / Row / Lead - Importing Preview",
+   "Buttons"
+  ],
+  "nodeCount": 27
+ },
+ "779:26161": {
+  "name": "ModalComponent",
+  "section": "import",
+  "texts": [
+   "Heading",
+   "13 of 13 records imported successfully"
+  ],
+  "instances": [
+   "Link Icon",
+   "Buttons"
+  ],
+  "nodeCount": 12
+ },
+ "780:93997": {
+  "name": "38",
+  "section": "import",
+  "texts": [
+   "Your imported files will appear here",
+   "Once you import leads, this page will help you:",
+   "Avoid duplicate leads with import history Quickly access previous import details Download error reports to fix and re-import"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L2",
+   "Buttons",
+   "Maison AI"
+  ],
+  "nodeCount": 56
+ },
+ "779:26186": {
+  "name": "138",
+  "section": "review-import",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "Review imported leads (4)",
+   "0 of 7 reviewed"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI"
+  ],
+  "nodeCount": 216
+ },
+ "779:26221": {
+  "name": "139",
+  "section": "review-import",
+  "texts": [
+   "Review imported leads (4)",
+   "2 of 7 reviewed",
+   "Show only duplicates (1)",
+   "Merge with existing lead",
+   "Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days."
+  ],
+  "instances": [
+   "Side Nav",
+   "Loader / Progress",
+   "Icon Buttons",
+   "Choice",
+   "Vertical",
+   "Switch States",
+   "Buttons",
+   "Card / Desktop / Leads",
+   "Table / Row / Lead - Pending Review - Duplicate"
+  ],
+  "nodeCount": 50
+ },
+ "779:26272": {
+  "name": "152",
+  "section": "review-import",
+  "texts": [
+   "Review imported leads (3)",
+   "Show only duplicates",
+   "New lead"
+  ],
+  "instances": [
+   "Side Nav",
+   "Icon Buttons",
+   "Choice",
+   "Vertical",
+   "Switch States",
+   "Buttons",
+   "Card / Desktop / Leads",
+   "Table / Row / Lead - Pending Review - New"
+  ],
+  "nodeCount": 43
+ },
+ "780:93492": {
+  "name": "Stage filter dropdown",
+  "section": "filters",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826",
+   "ACTIVE",
+   "INACTIVE"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI",
+   "Dropdown Menu / Leads",
+   "Menu",
+   "Horizontal",
+   "Link text",
+   "pointinghand"
+  ],
+  "nodeCount": 200
+ },
+ "780:94292": {
+  "name": "Stage filtered view",
+  "section": "filters",
+  "texts": [
+   "Name",
+   "Secondary Cell Data",
+   "Followed Up",
+   "This is a sample task added by the user",
+   "Instagram",
+   "70,500",
+   "Cell Data",
+   "17 Jul \u201826"
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Table / Row / Lead - Default",
+   "Tag",
+   ".Table / Cell / Member",
+   "Generic",
+   "Maison AI"
+  ],
+  "nodeCount": 113
+ },
+ "779:24983": {
+  "name": "More filters / Filter - default view - sort",
+  "section": "filters",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "Lead pipeline title",
+   "Sort Option Text"
+  ],
+  "instances": [
+   "Link Icon",
+   "Radio Button",
+   "Buttons"
+  ],
+  "nodeCount": 30
+ },
+ "781:53980": {
+  "name": "More filters / Filter - all property types",
+  "section": "filters",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Search Bar",
+   "One Line",
+   "Horizontal",
+   "Buttons"
+  ],
+  "nodeCount": 57
+ },
+ "781:54190": {
+  "name": "More filters / Filter - all sources",
+  "section": "filters",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Badge",
+   "Search Bar",
+   "One Line",
+   "Buttons"
+  ],
+  "nodeCount": 38
+ },
+ "781:54363": {
+  "name": "More filters / Filter - all assignees",
+  "section": "filters",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Two Line",
+   "Buttons"
+  ],
+  "nodeCount": 31
+ },
+ "781:54536": {
+  "name": "More filters / Filter - date",
+  "section": "filters",
+  "texts": [
+   "Heading",
+   "Filter Option Text",
+   "Lead pipeline title"
+  ],
+  "instances": [
+   "Link Icon",
+   "Choice",
+   "Text Field",
+   "Buttons"
+  ],
+  "nodeCount": 32
+ },
+ "780:95559": {
+  "name": "36",
+  "section": "search",
+  "texts": [
+   "No results found",
+   "Check your spelling and try again."
+  ],
+  "instances": [
+   "Side Nav",
+   "Logo",
+   "Badge",
+   "Side Nav / Item",
+   "Workspace",
+   "Catalog",
+   "Calendar",
+   "Reports",
+   "Community",
+   "Orders",
+   "Dashboard",
+   "Page Header / Leads - L1",
+   "Buttons",
+   "Icon Buttons",
+   "Search Bar",
+   "Segmented Icon Button",
+   "Link text",
+   "Maison AI"
+  ],
+  "nodeCount": 56
+ }
+}

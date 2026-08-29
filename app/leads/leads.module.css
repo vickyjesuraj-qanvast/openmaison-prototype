@@ -1,0 +1,24 @@
+/* Page frame (.page/.main) lives in components/shell/app-shell.module.css. */
+.body {
+  flex: 1;
+  min-width: 0;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  overflow: clip;   /* clips the rounded corners without creating a scroll container, so the sticky header / banner track the viewport */
+  display: flex;
+  flex-direction: column;
+}
+.content {
+  flex: 1;
+  min-height: 0;
+  padding: var(--om-spacing-6);
+  padding-bottom: var(--fab-clearance);   /* table ends above the FAB (user 2026-08-27) */
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-spacing-6);
+}
+
+/* Kanban view (779:19733): the body is bound to the viewport, the page never scrolls; the board fills the body
+   down to the 24px container padding and each column scrolls its own cards under a fixed column header. */
+.body[data-view='kanban'] { height: calc(100dvh - 16px); }
+.body[data-view='kanban'] .content { min-height: 0; overflow: hidden; padding-bottom: var(--om-spacing-6); }

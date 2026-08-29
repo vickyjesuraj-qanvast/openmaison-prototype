@@ -1,0 +1,13 @@
+.groupTitle {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  padding: var(--om-spacing-3);
+  font: var(--om-type-caption-xs);
+  text-transform: uppercase;
+}
+.groupTitle[data-tone='green'] { color: var(--om-color-tertiary-green-default); }
+.groupTitle[data-tone='orange'] { color: var(--om-color-tertiary-yellow-default); }
+.dot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
+.dot[data-tone='green'] { background: var(--om-color-tertiary-green-default); }
+.dot[data-tone='orange'] { background: var(--om-color-tertiary-yellow-default); }
+/* 780:86452: groups separated by a 1px surface-variant rule with 4px above and below. */
+.rule { height: 1px; margin: var(--om-spacing-1) 0; background: var(--om-color-surface-variant); }

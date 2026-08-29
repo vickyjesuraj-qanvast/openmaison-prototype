@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" fill="none">
+  <!-- Demo Studio mark: an isometric room/cube (interiors, space) on a charcoal tile with the DS primary accent face. -->
+  <rect width="72" height="72" rx="16" fill="#1A1A1A"/>
+  <path d="M36 15 L54 25 L36 35 L18 25 Z" fill="#FFFFFF"/>
+  <path d="M18 25 L36 35 L36 57 L18 47 Z" fill="#FFFFFF" fill-opacity="0.55"/>
+  <path d="M36 35 L54 25 L54 47 L36 57 Z" fill="#5500FF"/>
+</svg>

@@ -1,0 +1,70 @@
+/* Lead Import History — 1:1 from 780:93997 (empty) and 779:20147 (populated). */
+.header {
+  position: sticky; top: var(--om-spacing-2); z-index: 20;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  background: transparent;   /* painted by ::after (rounded) */
+  border-radius: var(--om-radius-2) var(--om-radius-2) 0 0;
+  box-shadow: var(--om-elevation-level-1);   /* same header treatment as Leads (799:23251) */
+}
+/* While stuck, the 8px canvas gutter above the header is part of the body's box. Two plates behind the content:
+   ::before paints the canvas over the gutter + the corner cut-outs, ::after is the white header plate with the body's
+   top radius — so the header keeps rounded corners when it is stuck instead of turning square. */
+.header::before {
+  content: ''; position: absolute; left: 0; right: 0; top: calc(-1 * var(--om-spacing-2)); bottom: 0; z-index: -1;
+  background: var(--om-color-surface-bg); pointer-events: none;
+}
+.header::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: var(--om-color-surface-default); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; pointer-events: none;
+}
+.back { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); }
+.titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+.empty {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--om-spacing-6); padding: var(--om-spacing-6);
+}
+.emptyArt { width: 180px; height: 180px; }
+.emptyText { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); color: var(--om-color-on-surface-default); }
+.emptyTitle { font: var(--om-type-subheading-xl); }
+.emptyBody { display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-m); }
+.emptyBody ul { margin: 0; padding-left: 21px; list-style: disc; }
+.emptyBtns { display: flex; gap: var(--om-spacing-3); }
+
+.content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); }
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.sectionTitle { flex: 1; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.toolRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+.tableWrap {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  overflow-x: auto;
+}
+.table { display: flex; flex-direction: column; width: 100%; min-width: 1316px; }   /* 141+285+118+142+396+234 (779:20147); columns grow pro rata beyond that */
+.headRow, .row { display: flex; align-items: stretch; }
+.headRow { height: 56px; }
+.row { height: 44px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hCell, .cell {
+  flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1);
+  padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4);
+  overflow: hidden; white-space: nowrap;
+}
+.hCell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.hSort { display: inline-flex; align-items: center; gap: var(--om-spacing-1); border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; text-transform: inherit; }
+.hSort[data-sorted] { color: var(--om-color-primary-default); }
+.cell { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.cell span { overflow: hidden; text-overflow: ellipsis; }
+.fileName { font: var(--om-type-subtitle-m); }
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-primary-default);
+  text-decoration: none;
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.noMatch { padding: var(--om-spacing-6); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

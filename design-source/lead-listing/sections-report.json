@@ -1,0 +1,663 @@
+{
+ "01 - Lead listing - table view": {
+  "id": "780:75984",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:19690",
+    "name": "01",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 60,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:24429",
+    "name": "02",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 207,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "sub",
+    "id": "780:76389",
+    "name": "01 - Full view of columns",
+    "w": "1610",
+    "h": "640",
+    "screens": [
+     {
+      "id": "780:76390",
+      "name": "Tables Row Example",
+      "w": "1410",
+      "h": "440",
+      "nodes": 159
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:79797",
+    "name": "01 - Contextual Menus",
+    "w": "6080",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:79798",
+      "name": "Add lead contextual menu",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 61
+     },
+     {
+      "id": "780:79849",
+      "name": "More contextual menu",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 214
+     },
+     {
+      "id": "780:87916",
+      "name": "Assign member",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 237
+     },
+     {
+      "id": "780:80091",
+      "name": "Table customise your view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 298
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:94291",
+    "name": "No leads yet",
+    "w": "1640",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:94126",
+      "name": "116",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 58
+     }
+    ]
+   }
+  ]
+ },
+ "01 - Lead change stage": {
+  "id": "780:83579",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "780:86452",
+    "name": "Change stage dropdown",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 226,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "sub",
+    "id": "780:90104",
+    "name": "Stage - new",
+    "w": "1640",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:86258",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 72
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:90105",
+    "name": "Stage - contacted",
+    "w": "7560",
+    "h": "1368",
+    "screens": [
+     {
+      "id": "780:89011",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 94
+     },
+     {
+      "id": "780:89277",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 15
+     },
+     {
+      "id": "781:58292",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1168",
+      "nodes": 119
+     },
+     {
+      "id": "780:89798",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 99
+     },
+     {
+      "id": "780:89545",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1168",
+      "nodes": 22
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:90352",
+    "name": "Stage - met",
+    "w": "1640",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:90106",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 86
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:91851",
+    "name": "Stage - quote sent",
+    "w": "9040",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:90353",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 81
+     },
+     {
+      "id": "780:90575",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 105
+     },
+     {
+      "id": "780:90809",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 83
+     },
+     {
+      "id": "780:91042",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 83
+     },
+     {
+      "id": "780:91365",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 97
+     },
+     {
+      "id": "780:91593",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 104
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:91852",
+    "name": "Stage - met",
+    "w": "3120",
+    "h": "1616",
+    "screens": [
+     {
+      "id": "780:91853",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1245",
+      "nodes": 157
+     },
+     {
+      "id": "780:91935",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1416",
+      "nodes": 163
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:92954",
+    "name": "Stage - on hold",
+    "w": "1640",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:92955",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 20
+     }
+    ]
+   },
+   {
+    "kind": "sub",
+    "id": "780:93424",
+    "name": "Stage - lost",
+    "w": "1640",
+    "h": "1224",
+    "screens": [
+     {
+      "id": "780:93425",
+      "name": "Default view",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 19
+     }
+    ]
+   }
+  ]
+ },
+ "01 - Lead listing - kanban view": {
+  "id": "780:82779",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:19733",
+    "name": "40",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 152,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:19854",
+    "name": "44",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 156,
+    "x": "4540",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:19996",
+    "name": "42",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 78,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:20043",
+    "name": "41",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 64,
+    "x": "3060",
+    "y": "100"
+   },
+   {
+    "kind": "sub",
+    "id": "780:82778",
+    "name": "All kanban board buckets",
+    "w": "2888",
+    "h": "1032",
+    "screens": [
+     {
+      "id": "779:24866",
+      "name": "Board",
+      "w": "1316",
+      "h": "832",
+      "nodes": 84
+     }
+    ]
+   }
+  ]
+ },
+ "01 - Lead - create and edit": {
+  "id": "780:82281",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:24634",
+    "name": "Default view",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 28,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "781:53641",
+    "name": "Edit - expanded view",
+    "w": "1440",
+    "h": "1128",
+    "nodes": 53,
+    "x": "3060",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "780:82282",
+    "name": "Create - expanded view",
+    "w": "1440",
+    "h": "1128",
+    "nodes": 53,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "780:82576",
+    "name": "Toast message",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 53,
+    "x": "4540",
+    "y": "100"
+   }
+  ]
+ },
+ "01 - Lead listing - tasks": {
+  "id": "780:78167",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:24696",
+    "name": "05",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 273,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "sub",
+    "id": "780:78168",
+    "name": "Under Leads Listing -> Task creation flow",
+    "w": "1410",
+    "h": "613",
+    "screens": [
+     {
+      "id": "780:78169",
+      "name": "ModalComponent",
+      "w": "400",
+      "h": "400",
+      "nodes": 52
+     },
+     {
+      "id": "780:78222",
+      "name": "ModalComponent",
+      "w": "400",
+      "h": "420",
+      "nodes": 55
+     },
+     {
+      "id": "780:78278",
+      "name": "ModalComponent",
+      "w": "400",
+      "h": "420",
+      "nodes": 55
+     }
+    ]
+   }
+  ]
+ },
+ "01 - Lead listing - deletion": {
+  "id": "780:83576",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:24663",
+    "name": "Lead delete modal",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 19,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26316",
+    "name": "Lead deleted folder modal",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 33,
+    "x": "1580",
+    "y": "100"
+   }
+  ]
+ },
+ "01 - Lead listing - import": {
+  "id": "780:83577",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:20147",
+    "name": "39",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 55,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26013",
+    "name": "134",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 40,
+    "x": "3060",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26054",
+    "name": "136",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 44,
+    "x": "4540",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26099",
+    "name": "ModalComponent",
+    "w": "1200",
+    "h": "1338",
+    "nodes": 33,
+    "x": "6020",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26133",
+    "name": "ModalComponent",
+    "w": "1200",
+    "h": "1338",
+    "nodes": 27,
+    "x": "7260",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26161",
+    "name": "ModalComponent",
+    "w": "1200",
+    "h": "800",
+    "nodes": 12,
+    "x": "8500",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "780:93997",
+    "name": "38",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 56,
+    "x": "100",
+    "y": "100"
+   }
+  ]
+ },
+ "01 - Lead listing - review imported leads": {
+  "id": "780:83578",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "779:26186",
+    "name": "138",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 216,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26221",
+    "name": "139",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 50,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "779:26272",
+    "name": "152",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 43,
+    "x": "3060",
+    "y": "100"
+   }
+  ]
+ },
+ "01- Lead listing - filters": {
+  "id": "779:24982",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "780:93492",
+    "name": "Stage filter dropdown",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 200,
+    "x": "100",
+    "y": "100"
+   },
+   {
+    "kind": "screen",
+    "id": "780:94292",
+    "name": "Stage filtered view",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 113,
+    "x": "1580",
+    "y": "100"
+   },
+   {
+    "kind": "sub",
+    "id": "780:94580",
+    "name": "More filters",
+    "w": "7560",
+    "h": "1620",
+    "screens": [
+     {
+      "id": "779:24983",
+      "name": "Filter - default view - sort",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 30
+     },
+     {
+      "id": "781:53980",
+      "name": "Filter - all property types",
+      "w": "1440",
+      "h": "1420",
+      "nodes": 57
+     },
+     {
+      "id": "781:54190",
+      "name": "Filter - all sources",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 38
+     },
+     {
+      "id": "781:54363",
+      "name": "Filter - all assignees",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 31
+     },
+     {
+      "id": "781:54536",
+      "name": "Filter - date",
+      "w": "1440",
+      "h": "1024",
+      "nodes": 32
+     }
+    ]
+   }
+  ]
+ },
+ "01 - Lead listing - search": {
+  "id": "780:94581",
+  "entries": [
+   {
+    "kind": "screen",
+    "id": "780:95559",
+    "name": "36",
+    "w": "1440",
+    "h": "1024",
+    "nodes": 56,
+    "x": "100",
+    "y": "100"
+   }
+  ]
+ }
+}

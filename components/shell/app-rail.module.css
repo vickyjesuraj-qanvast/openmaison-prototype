@@ -1,0 +1,138 @@
+/*
+ * Side navigation — two states (designer brief 2026-08-27, revised):
+ *   collapsed 52px rail, item tooltips (789:83369); hovering the rail turns the
+ *             logo tile into left_panel_open (795:22541) — click to expand
+ *   expanded  216px rail in the layout (779:19690); left_panel_close collapses
+ * The rail is locked to the viewport (sticky, 100dvh − 16px) so the bottom
+ * items never scroll away.
+ */
+.wrap {
+  position: sticky; top: var(--om-spacing-2);
+  align-self: flex-start;
+  height: calc(100dvh - 16px);
+  width: 52px; flex-shrink: 0;
+  transition: width var(--motion-modal, 0.2s) ease;
+  z-index: 70;
+}
+.wrap[data-pinned] { width: 216px; }
+
+.panel {
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 52px;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-2);
+  overflow: hidden;
+  transition: width var(--motion-modal, 0.2s) ease, box-shadow var(--motion-modal, 0.2s) ease;
+}
+.panel[data-expanded] { width: 216px; }
+
+.top { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.logoRow { position: relative; height: 36px; padding: 0; margin: var(--om-spacing-2) 0 var(--om-spacing-5); }
+/* Expanded header (lockup + collapse) and collapsed header (logo tile) are stacked and crossfade on the toggle timing,
+   in step with the width transition — neither pops in. */
+.headerExpanded, .headerCollapsed { position: absolute; left: 0; top: 0; height: 36px; display: flex; align-items: center; transition: opacity var(--motion-toggle); }
+.headerExpanded { right: 0; opacity: 0; pointer-events: none; }
+.headerCollapsed { opacity: 1; }
+.logoRow[data-expanded] .headerExpanded { opacity: 1; pointer-events: auto; }
+.logoRow[data-expanded] .headerCollapsed { opacity: 0; pointer-events: none; }
+.logoTile {
+  position: relative;
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 4px; cursor: pointer;
+  border-radius: var(--om-radius-2);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-toggle), color var(--motion-toggle);
+}
+/* Hover state (795:22541): the tile becomes a primary/default 36px pill (radius 8) with a white left_panel_open glyph.
+   Reveal is a crossfade on the DS toggle timing: the mark scales out while the glyph slides in from the left. */
+.logoTile[data-icon] { background: var(--om-color-primary-default); color: var(--om-color-on-primary-default, var(--om-color-surface-default)); }
+.logo {
+  width: 28px; height: 28px; display: block;
+  transition: opacity var(--motion-toggle), transform var(--motion-toggle);
+}
+.logoTile[data-icon] .logo { opacity: 0; transform: scale(0.8); }
+.expandGlyph {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateX(-6px) scale(0.9);
+  transition: opacity var(--motion-toggle), transform var(--motion-toggle);
+  pointer-events: none;
+}
+.logoTile[data-icon] .expandGlyph { opacity: 1; transform: none; }
+/* Full logo (780:75727): 28px mark + wordmark at its natural 110×18, inside the 36px tile height; collapse icon sits in the remaining 36px. */
+.lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding-left: 4px; height: 36px; }
+.wordmark { width: 110px; height: 18px; display: block; }
+.pinBtn {
+  position: absolute; right: 0; top: 0;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 6px; cursor: pointer;
+  border-radius: var(--om-radius-2);
+  color: var(--om-color-on-surface-disabled, #999);
+  transition: background-color var(--motion-hover), color var(--motion-hover);
+}
+.pinBtn:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+
+.searchBlock { padding-bottom: var(--om-spacing-3); position: relative; }
+.searchTile {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  border: 0; padding: 6px; cursor: pointer;
+  border-radius: var(--om-radius-2);
+  background: var(--om-color-hover-04p);
+  color: var(--om-color-on-surface-secondary);
+  white-space: nowrap; overflow: hidden;
+  transition: width var(--motion-modal, 0.2s) ease;
+}
+.panel[data-expanded] .searchTile { width: 200px; padding: var(--om-spacing-2); background: var(--om-color-surface-bg); }
+.searchLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); opacity: 0; transition: opacity var(--motion-toggle); }
+.panel[data-expanded] .searchLabel { opacity: 1; }
+.kbd {
+  position: absolute; right: var(--om-spacing-2); top: 8px;
+  width: 20px; height: 20px;
+  display: none; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1); background: var(--om-color-surface-default);
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary);
+  pointer-events: none;
+}
+.panel[data-expanded] .kbd { display: inline-flex; }
+
+.items { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.item {
+  text-decoration: none;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 0; background: transparent; padding: 6px; cursor: pointer;
+  border-radius: var(--om-radius-2);
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden;
+  transition: background-color var(--motion-hover), width var(--motion-modal, 0.2s) ease;
+}
+.panel[data-expanded] .item { width: 200px; }
+.item:hover { background: var(--om-color-hover-04p); }
+.item[data-active='true'] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.label { font: var(--om-type-subtitle-m); color: inherit; opacity: 0; transition: opacity var(--motion-toggle); }
+.panel[data-expanded] .label { opacity: 1; }
+
+.bottom { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.upgrade { background: linear-gradient(90deg, rgba(214, 97, 66, 0.1), rgba(189, 58, 95, 0.1)); }
+.upgradeGlyph {
+  background: linear-gradient(180deg, #b42c69, #eb802b);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.avatarRow { padding: var(--om-spacing-5) 0 var(--om-spacing-2); display: flex; align-items: center; gap: var(--om-spacing-2); white-space: nowrap; overflow: hidden; }
+.avatar {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--om-radius-2);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  object-fit: cover; display: block; cursor: pointer;
+}
+.studio { display: flex; flex-direction: column; min-width: 0; opacity: 0; transition: opacity var(--motion-toggle); }
+.panel[data-expanded] .studio { opacity: 1; }
+.studioName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.studioOwner { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+.item:focus-visible, .avatar:focus-visible, .logoTile:focus-visible, .pinBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

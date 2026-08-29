@@ -1,0 +1,22 @@
+.surface {
+  position: absolute;
+  z-index: 60;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  box-shadow: var(--om-elevation-level-3);
+  min-width: 180px;
+  padding: var(--om-spacing-2) 0;
+}
+.item {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  width: 100%;
+  padding: var(--om-spacing-2) var(--om-spacing-4);
+  background: none; border: 0; cursor: pointer; text-align: left;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.item:hover { background: var(--om-color-hover-04p); }
+.item[data-tone='danger'] { color: var(--om-color-tertiary-red-default); }
+.divider { height: 1px; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }

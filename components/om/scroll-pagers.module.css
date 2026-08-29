@@ -1,0 +1,21 @@
+/* Edge pagers — shared by ChipRail and the kanban board. */
+.fade { position: absolute; top: 0; bottom: 0; width: 56px; pointer-events: none; z-index: 1; opacity: 0; transition: opacity var(--motion-toggle); }
+.fadeLeft { left: 0; background: linear-gradient(to right, var(--om-color-surface-default), transparent); }
+.fadeRight { right: 0; background: linear-gradient(to left, var(--om-color-surface-default), transparent); }
+.fade[data-on] { opacity: 1; }
+.arrow {
+  position: absolute; top: 50%; translate: 0 -50%; z-index: 5;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-full);
+  background: var(--om-color-surface-default);
+  color: var(--om-color-on-surface-secondary);
+  box-shadow: var(--om-elevation-level-1);
+  cursor: pointer; padding: 0;
+  transition: background-color var(--motion-hover), color var(--motion-hover);
+}
+.arrow:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.arrowLeft { left: 0; }
+.arrowRight { right: 0; }
+.arrow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

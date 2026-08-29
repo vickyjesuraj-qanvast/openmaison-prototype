@@ -1,0 +1,21 @@
+/* Tooltip — 789:83369. Inverse surface bubble, body-s label, 24×4 marker. */
+.anchor { display: contents; }
+.tip {
+  position: fixed; z-index: 140;
+  display: flex; align-items: center;
+  pointer-events: none;
+}
+/* Centring lives in `translate` (not `transform`) so the motion transform can't override it. */
+.tip[data-side='right'] { translate: 0 -50%; flex-direction: row; }
+.tip[data-side='left'] { translate: -100% -50%; flex-direction: row-reverse; }
+.tip[data-side='bottom'] { translate: -50% 0; flex-direction: column; }
+.tip[data-side='top'] { translate: -50% -100%; flex-direction: column-reverse; }
+.marker { display: block; flex-shrink: 0; fill: var(--om-color-inverse-surface-default, #333); }
+.bubble {
+  background: var(--om-color-inverse-surface-default, #333);
+  color: var(--om-color-on-inverse-surface-default, #f3f3f4);
+  font: var(--om-type-body-s);
+  padding: 4px 8px;
+  border-radius: var(--om-radius-1);
+  white-space: nowrap;
+}

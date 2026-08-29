@@ -1,0 +1,148 @@
+/* Kanban board — 1:1 from the Board component (779:24866). */
+.boardWrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
+.board {
+  display: flex; gap: var(--om-spacing-2); align-items: stretch;
+  flex: 1; min-height: 0; min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--om-spacing-2);
+  scroll-snap-type: x proximity;   /* pagers land on column edges */
+}
+.rail {
+  scroll-snap-align: start;   /* position 0 is a snap point, so the board never nudges on load */
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--om-spacing-2);
+  padding: var(--om-spacing-4) var(--om-spacing-1);
+  border-radius: var(--om-radius-2);
+  border: 0; cursor: pointer; flex-shrink: 0;
+  transition: filter var(--motion-hover);
+}
+.rail:hover { filter: brightness(0.97); }
+.rail[data-tone='green'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-on-tertiary-green-variant); }
+.rail[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-on-tertiary-yellow-variant); }
+/* Label reads bottom-to-top (book-spine up) with the dot at the reading start
+   (bottom) — per 779:19872/779:19951: icon 20, 8 gap, label group centred. */
+.railLabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  font: var(--om-type-heading-h5);
+  letter-spacing: 0.02em;
+}
+.railDot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
+.rail[data-tone='green'] .railDot { background: var(--om-color-tertiary-green-default); }
+.rail[data-tone='yellow'] .railDot { background: var(--om-color-tertiary-yellow-default); }
+
+.column {
+  width: 320px; flex-shrink: 0; min-height: 0;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column;
+  border-radius: var(--om-radius-2);
+  overflow: hidden;
+  transition: box-shadow var(--motion-toggle), opacity var(--motion-toggle);
+}
+.column[data-drop='blocked'] { opacity: 0.45 !important; }   /* linear movement: out of reach for the lifted card. !important: the column's entrance animation leaves an inline opacity */
+.column[data-tone='green'] { background: var(--om-color-tertiary-green-variant2); }
+.column[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-variant2); }
+.column[data-drop='true'] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+/* Column header (779:19733 Frame 114412): 52px, level-1 elevation, sits above the scrolling cards. */
+.colHead {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  padding: var(--om-spacing-4);
+  position: relative; z-index: 1;
+  box-shadow: var(--om-elevation-level-1);
+}
+.colName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.colCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.colBody {
+  flex: 1; min-height: 0;   /* the column is as tall as the board; the cards scroll inside it */
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4);
+  overflow-y: auto;
+}
+
+.card {
+  width: 288px;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-4);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  position: relative;
+}
+.card:active { cursor: grabbing; }
+.card { touch-action: none; }
+/* Lifted: the real card stays in its slot as a dim placeholder while its ghost is out. */
+.card[data-lifted] { opacity: 0.35 !important; }   /* !important: motion writes an inline opacity on layoutId cards */
+/* The ghost (a fixed clone following the pointer): lifted look; dimmed while it holds a drop awaiting the stage flow. */
+.ghost { box-shadow: var(--om-elevation-level-3) !important; opacity: 1 !important; transition: opacity var(--motion-toggle); will-change: transform; }
+.ghost[data-pending] { opacity: 0.55 !important; }
+/* While any card is dragging: no text selection, grabbing cursor everywhere. */
+:global(html[data-dragging]) { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+:global(html[data-dragging]) * { cursor: grabbing !important; }
+.cardHead { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; }
+.cardName {
+  flex: 1; min-width: 0;
+  font: var(--om-type-heading-h4);
+  font-size: 16px;
+  color: var(--om-color-on-surface-default);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* C2: the card name is already bold — the hit falls back to colour. */
+.cardName mark { color: var(--om-color-primary-default); }
+.cardMetaRight { display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
+.cardAgo { font: var(--om-type-body-s); }
+.cardKebab { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+.cardMeta {
+  display: flex; flex-wrap: wrap; gap: var(--om-spacing-1);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
+  width: 100%;
+}
+.cardTask {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  width: 100%;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-2);
+  background: var(--om-color-surface-default);
+  cursor: pointer; text-align: left; font: inherit; color: inherit;
+  transition: background-color var(--motion-hover), border-color var(--motion-hover);
+}
+.cardTask:hover { background: var(--om-color-hover-04p); }
+.cardTask:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.cardTaskText { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cardDivider { height: 1px; width: 100%; background: var(--om-color-surface-variant); }
+.cardFoot { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; }
+.assignLink {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-primary-default);
+  font: var(--om-type-subheading-m);
+}
+.assignLink:hover { color: var(--om-color-on-primary-variant); }
+
+/* B3: drop hint in empty columns while a drag is live (and softly at rest). */
+.dropHint {
+  border: 1px dashed var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-6);
+  text-align: center;
+  font: var(--om-type-body-s);
+  color: var(--om-color-on-surface-secondary);
+  transition: border-color var(--motion-toggle), color var(--motion-toggle);
+}
+.column[data-drop='true'] .dropHint { border-color: var(--om-color-primary-default); color: var(--om-color-primary-default); }
+
+/* Per-column no-results (screen 44 — 779:19895). */
+.noResults {
+  display: flex; flex-direction: column; align-items: center;
+  width: 225px; margin: 0 auto;
+  padding-top: 40px;
+  text-align: center;
+}
+.noResultsArt { width: 120px; height: 120px; margin-bottom: var(--om-spacing-6); }
+.noResultsTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); margin-bottom: var(--om-spacing-3); }
+.noResultsSub { font: var(--om-type-body-m); margin-bottom: var(--om-spacing-3); }
+.noResultsSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.clearLink { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
+.clearLink:hover { color: var(--om-color-on-primary-variant); }
