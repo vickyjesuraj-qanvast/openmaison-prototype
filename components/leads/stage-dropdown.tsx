@@ -46,8 +46,8 @@ export function StageDropdown({
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('mousedown', onDown) }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
   }, [open, onClose])
 
   return (

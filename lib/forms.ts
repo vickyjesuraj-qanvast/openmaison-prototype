@@ -14,6 +14,7 @@ export const MSG = {
   choose: 'Choose an option',
   milestones: 'Milestones must add up to 100%',
   assignee: 'Assign at least one member',
+  dateRange: 'From date must be on or before To date',
 } as const
 
 export type FieldErrors<K extends string = string> = Partial<Record<K, string>>

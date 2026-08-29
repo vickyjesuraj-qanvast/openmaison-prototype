@@ -29,7 +29,9 @@ export function Dropdown({
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
     }
     // Anything outside the menu closes it (user 2026-08-29: the wrapper is sometimes a whole toolbar row) —
-    // except the open trigger itself, whose own click toggles the menu (no close-then-reopen).
+    // except the open trigger itself (aria-haspopup + aria-expanded="true"), whose own click toggles the menu
+    // (no close-then-reopen). Listened in the capture phase: DS Buttons (React Aria) stop pointerdown propagation
+    // at React's root, so a bubble-phase document listener would never see presses on them.
     const onDown = (e: MouseEvent) => {
       const t = e.target as Element | null
       if (!t || ref.current?.contains(t)) return
@@ -37,8 +39,8 @@ export function Dropdown({
       onClose()
     }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('mousedown', onDown) }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose])
 
   return (

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from './icon'
+import { Tooltip } from './tooltip'
 import { snackbarRise } from '@/lib/motion'
 import styles from './snackbar.module.css'
 
@@ -68,9 +69,11 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
                   {s.actionLabel}
                 </button>
               ) : null}
-              <button type="button" className={styles.close} aria-label="Dismiss" onClick={() => dismiss(s.id)}>
-                <Icon name="close" size={24} weight={300} />
-              </button>
+              <Tooltip label="Dismiss" side="top">
+                <button type="button" className={styles.close} aria-label="Dismiss" onClick={() => dismiss(s.id)}>
+                  <Icon name="close" size={24} weight={300} />
+                </button>
+              </Tooltip>
             </motion.div>
           ))}
         </AnimatePresence>

@@ -36,11 +36,11 @@ export function AnchoredMenu({
     }
     document.addEventListener('keydown', onKey)
     // defer so the opening click doesn't immediately close it
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
     return () => {
       document.removeEventListener('keydown', onKey)
       clearTimeout(t)
-      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('pointerdown', onDown)
     }
   }, [open, onClose])
 

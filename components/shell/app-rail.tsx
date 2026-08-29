@@ -38,7 +38,7 @@ export function AppRail() {
   const onEnter = () => setRailHover(true)
   const onLeave = () => setRailHover(false)
   const togglePin = () => { setExpanded((e) => !e); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
-  // Fixed overlays (review banner strip) follow the rail width through this variable.
+  // Fixed overlays (review banner strip, snackbar host) follow the rail width through this variable.
   useEffect(() => {
     document.documentElement.style.setProperty('--rail-w', expanded ? '216px' : '52px')
     return () => { document.documentElement.style.removeProperty('--rail-w') }
@@ -51,7 +51,12 @@ export function AppRail() {
     const className = extra ? `${styles.item} ${extra}` : styles.item
     const inner = (
       <>
-        <Icon name={it.icon} size={24} weight={300} fill={!!it.fill} className={it.icon === 'diamond' ? styles.upgradeGlyph : undefined} />
+        {it.icon === 'diamond' ? (
+          /* The turn lives on a wrapper: a transformed element loses its background-clip: text in WebKit, which showed the gradient box turning (user 2026-08-29: "only the icon should spin") */
+          <span className={styles.gemTurn}><Icon name="diamond" size={24} weight={300} fill className={styles.upgradeGlyph} /></span>
+        ) : (
+          <Icon name={it.icon} size={24} weight={300} fill={!!it.fill} />
+        )}
         <span className={styles.label}>{it.label}</span>
       </>
     )

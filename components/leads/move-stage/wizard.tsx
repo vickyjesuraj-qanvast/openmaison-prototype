@@ -57,7 +57,9 @@ export function MoveStageWizard({
   const [showErrors, setShowErrors] = useState(false)
   // Day-granular today for the date pickers — read once, never Date.now() in render output.
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
-  const [autoFillOpen, setAutoFillOpen] = useState(false)
+  // Auto Fill targets the log whose button was pressed (index into logs / meetings); null = dialog closed.
+  const [autoFillFor, setAutoFillFor] = useState<number | null>(null)
+  const autoFillOpen = autoFillFor !== null
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set([SUGGESTED]))
   const [autoAddedTask, setAutoAddedTask] = useState('')
@@ -101,10 +103,9 @@ export function MoveStageWizard({
   }
   const isDone = (i: number) => i <= fromIdx
   const railIcon = (state: RailState, done: boolean) => done ? 'check_circle' : state === 'locked' ? 'lock' : 'circle'
-  const lockReason = (i: number) => {
-    const gate = i === fromIdx + 1 ? targetStage : STAGES[i - 1]
-    return mode === 'linear' ? `Complete ${gate} first` : `Available once the lead reaches ${STAGES[i - 1]}`
-  }
+  // Same phrase as the listing's blockedReason (workspace.tsx): the lead's next stage is the gate.
+  const lockReason = (i: number) =>
+    mode === 'linear' ? `Complete ${STAGES[fromIdx + 1]} first` : `Available once the lead reaches ${STAGES[i - 1]}`
 
   const goTo = (stage: Stage, i: number) => {
     setDir(i > activeIdx ? 1 : -1)
@@ -114,18 +115,20 @@ export function MoveStageWizard({
   }
 
   const handleAutoFillUpload = () => {
+    const target = autoFillFor
+    if (target === null) return
     // Clock read lives in the event handler (render stays pure).
     setAutoAddedTask(`Schedule a meeting with the client for ${displayDateTime(new Date(Date.now() + 12 * 86400000))}`)
     if (active === 'Met') {
-      // Scripted: the site photo fills the first meeting log.
-      setData((d) => ({ ...d, meetings: d.meetings.map((m, i) => i === 0 ? { ...m, where: m.where || 'In person', when: m.when || '1/9/2026, 10:40 AM', files: m.files.length ? m.files : ['Site-photos.pdf'] } : m) }))
-      setAutoFillOpen(false)
+      // Scripted: the site photo fills the meeting log whose Auto Fill was pressed.
+      setData((d) => ({ ...d, meetings: d.meetings.map((m, i) => i === target ? { ...m, where: m.where || 'In person', when: m.when || '1/9/2026, 10:40 AM', files: m.files.length ? m.files : ['Site-photos.pdf'] } : m) }))
+      setAutoFillFor(null)
       return
     }
-    // Scripted magic moment: fills Log 1 with the mock's values, then suggests tasks.
+    // Scripted magic moment: fills the pressed log with the mock's values; Save then suggests tasks (REG-148).
     setData((d) => ({
       ...d,
-      logs: d.logs.map((l, i) => i === 0 ? {
+      logs: d.logs.map((l, i) => i === target ? {
         ...l,
         channel: 'WhatsApp',
         when: '12/8/2026, 3:00 PM',
@@ -135,14 +138,22 @@ export function MoveStageWizard({
         files: l.files.length ? l.files : ['Q-101'],
       } : l),
     }))
-    setAutoFillOpen(false)
+    setAutoFillFor(null)
   }
 
   const save = () => {
     const errs = validateStage(active, data)
-    if (Object.keys(validateStage(active, data)).length) { setShowErrors(true)
-      if (active === 'Contacted') setData((d) => ({ ...d, logs: d.logs.map((l, i) => l.collapsed && Object.keys(errs).some((k) => k.startsWith(`logs.${i}.`)) ? { ...l, collapsed: false } : l) }))   // never hide an error inside a collapsed log
-      return }
+    if (Object.keys(errs).length) {
+      setShowErrors(true)
+      // Never hide an error inside a collapsed log (REG-124) — for both log-list stages.
+      if (logKey) {
+        const errored = (i: number) => Object.keys(errs).some((k) => k.startsWith(`${logKey}.${i}.`))
+        setData((d) => logKey === 'logs'
+          ? { ...d, logs: d.logs.map((l, i) => l.collapsed && errored(i) ? { ...l, collapsed: false } : l) }
+          : { ...d, meetings: d.meetings.map((m, i) => m.collapsed && errored(i) ? { ...m, collapsed: false } : m) })
+      }
+      return
+    }
     if (editing) { onUpdate({ stage: active, data }); return }
     if (active === 'Contacted') {
       // Journey (user 2026-08-29): fields (manual or Auto Fill) → Save → Suggested tasks → Save there completes the stage.
@@ -184,8 +195,8 @@ export function MoveStageWizard({
   const panel = () => {
     switch (active) {
       case 'New': return <NewPanel team={team} data={data} update={update} />
-      case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={() => setAutoFillOpen(true)} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
-      case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={() => setAutoFillOpen(true)} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
+      case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
+      case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} />
       case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} />
       default: return null
@@ -271,7 +282,7 @@ export function MoveStageWizard({
           </div>
         </motion.div>
 
-        <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillOpen(false)} onUpload={handleAutoFillUpload} />
+        <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillFor(null)} onUpload={handleAutoFillUpload} />
         <SuggestedTasksDialog
           open={suggestOpen}
           onClose={() => finishWithTasks([])}   /* Cancel / ✕: the stage details are already valid — complete the move without tasks */

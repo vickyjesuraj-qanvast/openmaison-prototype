@@ -12,6 +12,8 @@ import { DateField } from '@/components/om/date-field'
 import type { Member } from '@/lib/db/schema'
 import styles from './filters-modal.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { MSG } from '@/lib/forms'
+import { Tooltip } from '@/components/om/tooltip'
 
 type Tab = 'sort' | 'propertyTypes' | 'sources' | 'assignees' | 'date'
 const TABS: { key: Tab; label: string }[] = [
@@ -63,7 +65,7 @@ export function FiltersModal({
   const fromD = parseDMY(draft.from), toD = parseDMY(draft.to)
   const rangeBad = custom && !!fromD && !!toD && fromD.getTime() > toD.getTime()
   const dateInvalid = rangeBad
-  const rangeError = rangeBad ? 'From date must be on or before To date' : undefined
+  const rangeError = rangeBad ? MSG.dateRange : undefined
 
   const searchBox = (
     <label className={styles.search}>
@@ -80,9 +82,11 @@ export function FiltersModal({
           <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Filters">
             <div className={styles.heading}>
               <span className={styles.title}>Filters</span>
-              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
+              <Tooltip label="Close">
+                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                  <Icon name="close" size={24} family="outlined" />
+                </button>
+              </Tooltip>
             </div>
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">

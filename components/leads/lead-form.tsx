@@ -11,10 +11,11 @@ import menuStyles from '@/components/leads/menus.module.css'
 import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
 import { modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
-import { parseInputDate } from '@/lib/format'
+import { parseInputDate, groupDigits } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { Tooltip } from '@/components/om/tooltip'
 
 /* Only 'Contemporary' / 'Collected' / 'New' are mock-visible; the rest are
    invented so a one-option select doesn't look broken (REG — needs design sign-off). */
@@ -42,11 +43,6 @@ export type LeadFormData = {
 }
 
 type LeadFormErrors = FieldErrors<'name' | 'phone' | 'email' | 'budget' | 'startDate'>
-
-const groupDigits = (raw: string) => {
-  const d = raw.replace(/\D/g, '')
-  return d ? Number(d).toLocaleString('en-SG') : ''
-}
 
 const emptyForm = (): LeadFormData => ({
   name: '', phone: '', source: '', propertyType: '', propertyAddress: '',
@@ -93,9 +89,9 @@ function PhoneField({ value, onChange, error, inputRef }: {
   return (
     <TextField
       label="Lead phone number*" value={value} error={error} inputRef={inputRef}
-      type="tel" inputMode="tel" maxLength={8} trailingIcon={null}
+      type="tel" inputMode="tel" numeric="digits" maxLength={8} trailingIcon={null}
       leading={<span className={styles.prefix}>+65<span className={styles.divider} /></span>}
-      onChange={(v) => onChange(v.replace(/\D/g, '').slice(0, 8))}
+      onChange={(v) => onChange(v.slice(0, 8))}
     />
   )
 }
@@ -109,8 +105,8 @@ function AreaField({
   return (
     <>
       <TextField
-        label="Area size" value={value} inputMode="numeric" maxLength={6} trailingIcon={null} boxRef={box}
-        onChange={(v) => onChange(v.replace(/\D/g, '').slice(0, 6))}
+        label="Area size" value={value} numeric="digits" maxLength={6} trailingIcon={null} boxRef={box}
+        onChange={(v) => onChange(v.slice(0, 6))}
         trailing={
           <span className={styles.unitSlot}>
             <span className={styles.divider} />
@@ -220,9 +216,11 @@ export function LeadFormModal({
                       aria-label={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}>
             <div className={styles.heading}>
               <span className={styles.title}>{form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}</span>
-              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
+              <Tooltip label="Close">
+                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                  <Icon name="close" size={24} family="outlined" />
+                </button>
+              </Tooltip>
             </div>
 
             <div className={styles.body}>
@@ -264,8 +262,8 @@ export function LeadFormModal({
                                    type="email" inputMode="email" error={errors.email} inputRef={emailRef} />
                         <TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} />
                         <div className={styles.fieldRow}>
-                          <TextField label="Estimated budget (S$)" value={data.budget} inputMode="numeric"
-                                     onChange={(v) => set('budget')(groupDigits(v))} trailingIcon={null}
+                          <TextField label="Estimated budget (S$)" value={data.budget} numeric="amount"
+                                     onChange={set('budget')} trailingIcon={null}
                                      error={errors.budget} inputRef={budgetRef} />
                           <div className={styles.fieldWrap}>
                             <DateField label="Estimated start date" value={data.startDate}

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
+import { Tooltip } from '@/components/om/tooltip'
 import { anchoredSurface } from '@/lib/motion'
 import type { Member } from '@/lib/db/schema'
 import styles from './assign-popover.module.css'
@@ -15,6 +16,7 @@ export function AssignPopover({
   team,
   value,
   onClose,
+  anchor = null,
   onApply,
   requireOne = false,
   position,
@@ -22,6 +24,7 @@ export function AssignPopover({
   open: boolean
   team: Member[]
   value: string[]
+  anchor?: HTMLElement | null
   onClose: () => void
   onApply: (memberIds: string[]) => void
   /** Past New a lead must keep an owner (user 2026-08-29): saving with nobody assigned is blocked with a message. */
@@ -40,11 +43,15 @@ export function AssignPopover({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (anchor && anchor.contains(t)) return          // the trigger's own click toggles (REG-136)
+      if (ref.current && !ref.current.contains(t)) onClose()
+    }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('mousedown', onDown) }
-  }, [open, onClose])
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
+  }, [open, onClose, anchor])
 
   const toggle = (id: string) =>
     setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
@@ -63,9 +70,11 @@ export function AssignPopover({
         >
           <div className={styles.head}>
             <h2 className={styles.title}>Assign Member</h2>
-            <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-              <Icon name="close" size={24} family="outlined" />
-            </button>
+            <Tooltip label="Close">
+              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                <Icon name="close" size={24} family="outlined" />
+              </button>
+            </Tooltip>
           </div>
           <div className={styles.body}>
             {team.map((m) => (

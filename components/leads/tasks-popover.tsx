@@ -5,12 +5,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
-import { FieldError } from '@/components/leads/move-stage/fields'
-import { MSG } from '@/lib/forms'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
-import { displayDate, isDueToday, isOverdue, parseInputDate } from '@/lib/format'
+import { displayDate, isDueToday, isOverdue } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
-import { toDMY } from '@/lib/leads/filters'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { LeadTask } from '@/lib/db/schema'
 import styles from './tasks-popover.module.css'
@@ -27,11 +24,9 @@ function TaskRow({
   onOpen: () => void
   onSetDue: (task: LeadTask, due: Date) => Promise<boolean>
 }) {
-  const [editingDue, setEditingDue] = useState(false)
+  // Dates are never typed (REG-119): the "Set Due Date" link is the read-only trigger for the Material picker.
   const [pickerOpen, setPickerOpen] = useState(false)
-  const dueRef = useRef<HTMLInputElement>(null)
-  const [dueText, setDueText] = useState('')
-  const [dueError, setDueError] = useState(false)
+  const dueRef = useRef<HTMLButtonElement>(null)
   // Optimistic due date: shown immediately, replaced by the server value.
   const [pendingDue, setPendingDue] = useState<Date | null>(null)
   const committing = useRef(false)
@@ -44,16 +39,10 @@ function TaskRow({
     if (committing.current) return
     committing.current = true
     setPickerOpen(false)
-    setEditingDue(false)
     setPendingDue(d)
     const ok = await onSetDue(task, d)
     committing.current = false
     if (!ok) setPendingDue(null)
-  }
-  const commitDue = async () => {
-    const d = parseInputDate(dueText)
-    if (!d) { setDueError(true); return }
-    await commitDate(d)
   }
 
   return (
@@ -83,40 +72,18 @@ function TaskRow({
               <span>{displayDate(due)}</span>
             )}
           </span>
-        ) : editingDue ? (
-          <span className={styles.dueEdit}>
-            <input
-              ref={dueRef}
-              className={styles.dueInput}
-              data-error={dueError || undefined}
-              aria-label="Due date (d/m/yyyy)"
-              placeholder="d/m/yyyy"
-              value={dueText}
-              autoFocus
-              onFocus={() => setPickerOpen(true)}
-              onClick={() => setPickerOpen(true)}
-              onChange={(e) => { setDueText(e.target.value); setDueError(false) }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') { e.preventDefault(); void commitDue() }
-                if (e.key === 'ArrowDown' && pickerOpen) { e.preventDefault(); focusDatePicker() }   // keyboard: hand focus to the calendar
-                if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); e.stopPropagation(); setEditingDue(false) }   // the picker consumes its own Esc first
-              }}
-              onBlur={(e) => {
-                if ((e.relatedTarget as HTMLElement | null)?.closest('#om-date-picker')) return   // focus moved into the calendar
-                if (dueText.trim()) void commitDue(); else setEditingDue(false)
-              }}
-            />
-            {dueError ? <FieldError message={MSG.date} /> : null}
-          </span>
         ) : (
-          <button type="button" className={styles.setDue} onClick={() => { setDueText(''); setDueError(false); setEditingDue(true); setPickerOpen(true) }}>
+          <button ref={dueRef} type="button" className={styles.setDue}
+                  aria-haspopup="dialog" aria-expanded={pickerOpen}
+                  onClick={() => setPickerOpen((o) => !o)}
+                  onKeyDown={(e) => { if (e.key === 'ArrowDown' && pickerOpen) { e.preventDefault(); focusDatePicker() } /* keyboard: hand focus to the calendar */ }}>
             <Icon name="calendar_add_on" size={16} />
             Set Due Date
           </button>
         )}
-        {/* Material date picker (789:84100) anchored to the due field; mounted once so open→closed animates. Picking a day commits it. */}
-        <DatePicker open={editingDue && pickerOpen} anchorRef={dueRef} value={due} today={new Date(now)} label="Due date"
-                    onSelect={(d) => { setDueText(toDMY(d)); void commitDate(d) }} onClose={() => setPickerOpen(false)} />
+        {/* Material date picker (789:84100) anchored to the link; mounted once so open→closed animates. Picking a day is the only way to set a date — it commits at once. */}
+        <DatePicker open={pickerOpen} anchorRef={dueRef} value={due} today={new Date(now)} label="Due date"
+                    onSelect={(d) => { void commitDate(d) }} onClose={() => setPickerOpen(false)} />
       </span>
       <button type="button" className={`${styles.chev} ${styles.chevBtn}`} aria-label={`Open "${task.title}"`} onClick={onOpen}>
         <Icon name="keyboard_arrow_right" size={20} />
@@ -126,11 +93,13 @@ function TaskRow({
 }
 
 export function TasksPopover({
-  lead, pos, now, onClose, onAddTask, onCompleteTask, onSetDue, onOpenTask,
+  lead, pos, anchor = null, now, onClose, onAddTask, onCompleteTask, onSetDue, onOpenTask,
 }: {
   lead: LeadRow | null
   pos: TasksPos | null
   now: number
+  /** The task box / Add task link that opened it — a press there toggles instead of close-then-reopen (REG-136). */
+  anchor?: HTMLElement | null
   onClose: () => void
   /** Each mutation resolves true on success, false on failure (caller shows the snackbar). */
   onAddTask: (lead: LeadRow, title: string) => Promise<boolean>
@@ -165,25 +134,20 @@ export function TasksPopover({
       if (adding) { setAdding(false); setDraft('') } else onClose()
     }
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+      const t = e.target as Node
+      if (anchor && anchor.contains(t)) return          // the trigger's own click toggles (REG-136)
+      if (t instanceof Element && t.closest('#om-date-picker')) return   // the due-date picker portals to body — a press inside it is not outside
+      if (ref.current && !ref.current.contains(t)) onClose()
     }
-    // Anchored at click-time coordinates: any scroll/resize detaches it, so close.
-    const onScroll = (e: Event) => {
-      if (ref.current && e.target instanceof Node && ref.current.contains(e.target)) return
-      onClose()
-    }
+    // Scrolling does not close it: the workspace follow effect keeps it on its cell (REG-129).
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
-    document.addEventListener('scroll', onScroll, true)
-    window.addEventListener('resize', onClose)
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
     return () => {
       document.removeEventListener('keydown', onKey)
       clearTimeout(t)
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('scroll', onScroll, true)
-      window.removeEventListener('resize', onClose)
+      document.removeEventListener('pointerdown', onDown)
     }
-  }, [open, adding, onClose])
+  }, [open, adding, onClose, anchor])
 
   const save = async () => {
     if (!lead || !draft.trim() || savingRef.current) return

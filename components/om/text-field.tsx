@@ -6,6 +6,7 @@ import { PortalMenu } from './portal-menu'
 import { useReadOnly } from './read-only'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './text-field.module.css'
+import { digitsOnly, groupDigits } from '@/lib/format'
 
 export type TextFieldProps = {
   label: string
@@ -35,12 +36,19 @@ export type TextFieldProps = {
   onKeyDown?: (e: KeyboardEvent<HTMLElement>) => void
   type?: 'text' | 'email' | 'tel' | 'search'
   inputMode?: 'text' | 'numeric' | 'decimal' | 'email' | 'tel'
+  /**
+   * Numeric-only field: every keystroke and paste is filtered before it reaches `onChange` —
+   * 'digits' keeps 0-9 (phone, area, %), 'amount' keeps digits and groups thousands ("70,500").
+   * Junk never shows in the box; validation only has to check emptiness / length.
+   */
+  numeric?: 'digits' | 'amount'
   maxLength?: number
   autoComplete?: string
   name?: string
   /** The box element, for anchoring pickers / menus. */
   boxRef?: RefObject<HTMLDivElement | null>
   inputRef?: RefObject<HTMLInputElement | null>
+  autoFocus?: boolean
   className?: string
 }
 
@@ -52,7 +60,7 @@ export type TextFieldProps = {
 export function TextField({
   label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
-  type = 'text', inputMode, maxLength, autoComplete, name, boxRef, inputRef, className,
+  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className,
 }: TextFieldProps) {
   const id = useId()
   const readOnlyScope = useReadOnly()
@@ -117,11 +125,11 @@ export function TextField({
         {leading ? <span className={styles.leading}>{leading}</span> : null}
         {mode === 'text' ? (
           <input
-            id={id} ref={inputRef} className={styles.control} name={name}
-            value={value} placeholder={placeholder} type={type} inputMode={inputMode} maxLength={maxLength} autoComplete={autoComplete}
+            id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
+            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
             disabled={disabled} required={required}
             aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
-            onChange={(e) => onChange?.(e.target.value)}
+            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
             onFocus={() => { setFocused(true); onFocus?.() }}
             onBlur={() => { setFocused(false); onBlur?.() }}
             onKeyDown={onKeyDown}

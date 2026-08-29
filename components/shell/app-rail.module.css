@@ -123,7 +123,20 @@
 .upgradeGlyph {
   background: linear-gradient(180deg, #b42c69, #eb802b);
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  display: inline-flex;
 }
+/* Upgrade is the paid ingress (user 2026-08-29): the gem turns once on its axis every 8s — a glint, not a spinner.
+   The transform sits on this wrapper, never on the gradient-clipped glyph (WebKit drops background-clip: text on a transformed element). */
+.gemTurn {
+  display: inline-flex; width: 24px; height: 24px; flex-shrink: 0;
+  animation: gemTurn 8s infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes gemTurn {
+  0%, 76% { transform: perspective(120px) rotateY(0deg); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+  100% { transform: perspective(120px) rotateY(360deg); }
+}
+@media (prefers-reduced-motion: reduce) { .gemTurn { animation: none; } }
 .avatarRow { padding: var(--om-spacing-5) 0 var(--om-spacing-2); display: flex; align-items: center; gap: var(--om-spacing-2); white-space: nowrap; overflow: hidden; }
 .avatar {
   width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--om-radius-2);

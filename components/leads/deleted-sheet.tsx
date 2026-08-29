@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
 import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 import { modalPanel, overlayFade } from '@/lib/motion'
@@ -125,9 +126,11 @@ export function DeletedLeadsSheet({
                         isDisabled={deleted.length === 0}>
                   Empty Trash
                 </Button>
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
+                <Tooltip label="Close">
+                  <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                    <Icon name="close" size={24} family="outlined" />
+                  </button>
+                </Tooltip>
               </div>
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
@@ -140,7 +143,13 @@ export function DeletedLeadsSheet({
                   </div>
                 ) : null}
 
-                <div className={styles.tableWrap}>
+                {/* One scroller for both axes: data-scrolled = sideways (frozen-column shadow, REG-144),
+                    data-scrolled-y = down (sticky header's level-1 shadow, as the import wizard's tables). */}
+                <div className={styles.tableWrap}
+                     onScroll={(e) => {
+                       e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)
+                       e.currentTarget.toggleAttribute('data-scrolled-y', e.currentTarget.scrollTop > 0)
+                     }}>
                   <div className={styles.table} role="table" aria-label="Deleted leads">
                     <div className={styles.headRow} role="row">
                       <span className={styles.selCell}>
@@ -174,7 +183,7 @@ export function DeletedLeadsSheet({
                         <div className={`${styles.cell} ${styles.pin}`} style={{ width: 176 }}>
                           <span className={styles.twoLine}>
                             <span className={styles.name}>{l.name}</span>
-                            <span className={styles.phone}>{l.phone.replace(/^(\d{4})(\d{4})$/, '$1 $2')}</span>
+                            <span className={styles.phone}>{l.phone}</span>
                           </span>
                         </div>
                         <div className={styles.cell} style={{ width: 146 }}><span className={styles.plain}>{l.stage}</span></div>

@@ -10,7 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
-import { isOverdue, moneySGD, relativeTime } from '@/lib/format'
+import { displayDate, isOverdue, moneySGD, relativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
 import { highlightMatch } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -27,14 +27,16 @@ export type PendingDrop = { leadId: string; stage: Stage } | null
 const COLUMN_STEP = 328    // column 320 + 8 gap — pagers move by whole columns
 const EDGE_ZONE = 72       // px from a scroll edge where auto-scroll kicks in
 const MAX_SCROLL_STEP = 18 // px per frame at the very edge
+const MENU_CLEARANCE = 100 // px of column body needed below the card kebab for its menu to open downwards
 
 function KanbanCard({
-  lead, now, query, onKebabDelete, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
+  lead, now, query, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
 }: {
   lead: LeadRow
   now: number
   query: string
   onKebabDelete: (lead: LeadRow) => void
+  onKebabReturn: (lead: LeadRow) => void
   onAssign: (lead: LeadRow, anchor: HTMLElement) => void
   onDragToStage: (lead: LeadRow, stage: Stage) => void
   /** Linear stage movement: columns this lead may not be dropped in are dimmed while it is lifted, and a drop there springs back. */
@@ -48,6 +50,7 @@ function KanbanCard({
   pendingDrop: PendingDrop
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuSide, setMenuSide] = useState<'down' | 'up'>('down')   // measured on open: the column body clips a menu below its bottom edge
   const [lifted, setLifted] = useState(false)   // the card's slot placeholder while its ghost is out
   const cardEl = useRef<HTMLDivElement>(null)
   const firstTask = lead.tasks[0]
@@ -207,6 +210,7 @@ function KanbanCard({
       onLostPointerCapture={onPointerCancel}
       onClickCapture={(e) => { if (dragged.current) { dragged.current = false; e.preventDefault(); e.stopPropagation() } }}
     >
+      <div className={styles.cardData}>
       <div className={styles.cardHead}>
         <span className={styles.cardName} role="link" tabIndex={0}
               onClick={() => onNameClick(lead)}
@@ -219,14 +223,29 @@ function KanbanCard({
           <span style={{ position: 'relative', display: 'inline-flex' }}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <button type="button" className={styles.cardKebab} aria-label={`More actions for ${lead.name}`}
-                      onClick={() => setMenuOpen((o) => !o)}>
+                      aria-haspopup="menu" aria-expanded={menuOpen}
+                      onClick={(e) => {
+                        // Same as the table's last rows: flip the menu above the trigger when the scrolling column body
+                        // would clip it below (cards near the bottom edge) — as long as there is more room above.
+                        const col = cardEl.current?.closest<HTMLElement>('[data-col-body]')
+                        if (col) {
+                          const k = e.currentTarget.getBoundingClientRect(), c = col.getBoundingClientRect()
+                          const below = c.bottom - k.bottom, above = k.top - c.top
+                          setMenuSide(below < MENU_CLEARANCE && above > below ? 'up' : 'down')
+                        }
+                        setMenuOpen((o) => !o)
+                      }}>
                 <Icon name="more_vert" size={20} weight={300} />
               </button>
             </Tooltip>
-            <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right">
+            <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide}>
               <DropdownItem onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>
                 <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
               </DropdownItem>
+              {lead.source === 'Qanvast' ? (
+                /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads */
+                <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>Return Lead</DropdownItem>
+              ) : null}
             </Dropdown>
           </span>
         </span>
@@ -235,6 +254,8 @@ function KanbanCard({
         <span>{lead.phone}</span><span>·</span>
         <span>{moneySGD(lead.budgetMinor)}</span><span>·</span>
         <span>{lead.source}</span>
+        {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {displayDate(new Date(lead.onHoldFollowUp))}</span></> : null}
+      </div>
       </div>
       {firstTask ? (
         <button type="button" className={styles.cardTask} aria-label={`Tasks for ${lead.name}`} data-drag-ok
@@ -243,7 +264,14 @@ function KanbanCard({
           {overdue ? <Tag color="red" appearance="outlined">Overdue</Tag> : null}
           {extra > 0 ? <Tag appearance="outlined">{`+${extra}`}</Tag> : null}
         </button>
-      ) : null}
+      ) : (
+        /* Same affordance as the table's TASKS cell (REG-44 → REG-90): a task-less lead can still receive tasks from the board */
+        <button type="button" className={styles.assignLink} aria-label={`Add a task for ${lead.name}`}
+                onClick={(e) => onTaskClick(lead, e.currentTarget)}>
+          <Icon name="add" size={20} />
+          Add task
+        </button>
+      )}
       <div className={styles.cardDivider} />
       <div className={styles.cardFoot}>
         {lead.assignees.length === 0 ? (
@@ -268,7 +296,7 @@ function KanbanCard({
 }
 
 export function KanbanBoard({
-  rows, query, now, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked,
+  rows, query, now, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked,
 }: {
   rows: LeadRow[]
   query: string
@@ -279,6 +307,7 @@ export function KanbanBoard({
   filtering?: boolean
   onClearSearch: () => void
   onKebabDelete: (lead: LeadRow) => void
+  onKebabReturn: (lead: LeadRow) => void
   onAssign: (lead: LeadRow, anchor: HTMLElement) => void
   onDragToStage: (lead: LeadRow, stage: Stage) => void
   /** Linear stage movement: columns this lead may not be dropped in are dimmed while it is lifted, and a drop there springs back. */
@@ -334,7 +363,7 @@ export function KanbanBoard({
                     <AnimatePresence mode="popLayout">
                       {leads.map((lead) => (
                         <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef}
-                                    onKebabDelete={onKebabDelete} onAssign={onAssign}
+                                    onKebabDelete={onKebabDelete} onKebabReturn={onKebabReturn} onAssign={onAssign}
                                     onDragToStage={onDragToStage} onNameClick={onNameClick} onTaskClick={onTaskClick} pendingDrop={pendingDrop}
                                     canDrop={canDrop} onDropBlocked={onDropBlocked} />
                       ))}

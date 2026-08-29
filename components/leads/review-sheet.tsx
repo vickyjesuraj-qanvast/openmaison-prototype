@@ -10,6 +10,7 @@ import type { ReviewRow } from '@/lib/leads/queries'
 import styles from './review-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { ChipRail } from '@/components/om/chip-rail'
+import { Tooltip } from '@/components/om/tooltip'
 
 type Pick = 'existing' | 'new'
 /** Rows of the merge / detail table, in mock order. */
@@ -105,9 +106,11 @@ export function ReviewSheet({
               <div className={styles.titleGroup}>
                 <span className={styles.title}>Review imported leads ({rows.length})</span>
               </div>
-              <button type="button" className={styles.closeBtn} aria-label="Close review" onClick={onClose} disabled={busy}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
+              <Tooltip label="Close review" disabled={busy}>
+                <button type="button" className={styles.closeBtn} aria-label="Close review" onClick={onClose} disabled={busy}>
+                  <Icon name="close" size={24} family="outlined" />
+                </button>
+              </Tooltip>
             </div>
 
             <div className={styles.toolbar}>
@@ -139,13 +142,15 @@ export function ReviewSheet({
                     <div key={r.row.id} role="listitem" className={styles.card} data-selected={sel || undefined}
                          onClick={() => setSelectedId(r.row.id)} tabIndex={0}
                          onKeyDown={(e) => { if (e.key === 'Enter') setSelectedId(r.row.id) }}>
-                      <div className={styles.cardHead}>
-                        <span className={styles.cardName}>{r.data['Lead Name']}</span>
-                        <span className={styles.cardAgo}>{relativeTime(r.receivedAt, new Date(now))}</span>
+                      <div className={styles.cardData}>
+                        <div className={styles.cardHead}>
+                          <span className={styles.cardName}>{r.data['Lead Name']}</span>
+                          <span className={styles.cardAgo}>{relativeTime(r.receivedAt, new Date(now))}</span>
+                        </div>
+                        <span className={styles.cardMeta}>
+                          {[r.data['Lead Phone Number'], r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}
+                        </span>
                       </div>
-                      <span className={styles.cardMeta}>
-                        {[r.data['Lead Phone Number'], r.data['Estimated Budget (S$)'] ? `S$${fmtBudget(r.data['Estimated Budget (S$)'] ?? '')}` : '', r.data['Lead Source']].filter(Boolean).join(' · ')}
-                      </span>
                       {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : r.twin ? `${r.twin.data['Lead Name'] || 'a row'} (${r.twin.sameFile ? 'in this file' : 'in the queue'})` : 'another lead in this file'}</span> : null}
                       <div className={styles.cardFoot}>
                         <span className={styles.tag} data-tone={isDup ? 'duplicate' : 'pending'}>{isDup ? 'Duplicate' : 'Pending'}</span>

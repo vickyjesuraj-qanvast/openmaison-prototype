@@ -42,12 +42,21 @@ export type WizardData = {
   projectType: string
 }
 
+/** The system's own files (780:91468 / 780:92744) — first in every From System list and selected by default (user 2026-08-29). */
+export const SYSTEM_QUOTE = 'Whole-home renovation'
+export const SYSTEM_CONTRACT = 'Contract_OliviaM_signed.pdf'
+
 export const DEFAULT_MILESTONES = [
   { name: 'Deposit', meta: 'Upon signing', pct: 10 },
   { name: 'Commencement', meta: 'Works commence', pct: 30 },
   { name: 'Mid-Project', meta: '50% completion', pct: 30 },
   { name: 'Completion', meta: 'Handover', pct: 30 },
 ]
+
+/** The split recorded in the system for a system-issued quote (780:92744 default rows). */
+export function defaultMilestones(): WizardData['milestones'] {
+  return DEFAULT_MILESTONES.map((m) => ({ ...m }))
+}
 
 /** Upload flow (780:92744): a signed quote we didn't issue carries no payment split — every milestone starts at 0%. */
 export function zeroMilestones(): WizardData['milestones'] {
@@ -78,10 +87,10 @@ export function emptyWizardData(assignees: string[]): WizardData {
     assignees,
     logs: [emptyLog()],
     meetings: [emptyMeeting()],
-    quoteTab: 'system', quoteSelected: null, quoteUploaded: null, quoteAmount: '',
-    wonQuoteTab: 'system', wonQuote: null, wonQuoteUploaded: null, wonQuoteAmount: '',
-    wonContractTab: 'system', wonContract: null, wonContractUploaded: null,
-    milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })),
+    quoteTab: 'system', quoteSelected: SYSTEM_QUOTE, quoteUploaded: null, quoteAmount: '',
+    wonQuoteTab: 'system', wonQuote: SYSTEM_QUOTE, wonQuoteUploaded: null, wonQuoteAmount: '',
+    wonContractTab: 'system', wonContract: SYSTEM_CONTRACT, wonContractUploaded: null,
+    milestones: defaultMilestones(),
     projectType: 'Whole-home renovation',
   }
 }

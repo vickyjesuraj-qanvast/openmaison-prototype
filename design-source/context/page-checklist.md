@@ -39,13 +39,24 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 
 ## Fields
 - Every text input is `TextField` (`components/om/text-field.tsx`) — never a raw `<input>` with a label. Label inside when empty, floats on focus/value; five DS states (empty / active / filled / error / disabled — 836:23125, 836:23276).
+- **Numbers are filtered as typed**, never only validated: any field that holds digits (amounts, phone, area, %, counts) uses `TextField numeric="digits"` or `numeric="amount"` (thousands grouping) — letters and symbols must never appear in the box (REG-150).
 - Dates are `DateField`; dates with time are `DateTimeField` — read-only triggers over the Material picker. No free-typed dates anywhere.
 - Every field except notes validates: required + format, computed by a pure `validate(...)`, shown inline only after the first submit attempt, re-computed live so errors clear as fixed. Messages come from `lib/forms.ts` `MSG` — add to that vocabulary, don't inline strings.
 - Non-text controls (chip groups, attach rows, tables) show `<FieldError/>` under the control; chip groups pass `error` to `ChoiceChips`.
 - Selects: `TextField mode="select"` (chevron flips while open). Pickers/menus portal through `PortalMenu` / the date picker layer (z 130).
 - Anything already saved opens **read-only** (`ReadOnlyScope` — DS disabled state, action links hidden) with an explicit Edit; keep the title row / Edit link *outside* the scope or it disables itself.
+- Attached files render with `FileTile` (781:58405) everywhere — preview + filled pdf icon + name + delete; never a bare name row (REG-151).
 - File uploads use `Dropzone` (`move-stage/fields.tsx`): a real file chooser (any file accepted), an "Uploading..." state, then the mock's file as a selected row *below* the dropzone (780:91468). Amounts a file can't tell us (Quote amount) are asked only in the upload flow.
 - Anchored popovers on scrolling pages store their anchor element and re-position on capture-phase `scroll` (see `workspace.tsx` follow effect); menus/pickers inside modals close on scroll instead.
+
+## Parity sweep (run before calling any surface done)
+- Table ↔ kanban: menus, empty-state links (Assign / Add task), unseen band, hover name → primary, stage gating, popover anchoring.
+- Move stage: Contacted ↔ Met (log lists), Quote Sent ↔ Won (upload flow), read-only hides every delete/attach affordance, tooltips on icon-only controls.
+- Every table: frozen-column edge rule (REG-144) + sticky head; every modal: header standard + close tooltip; every fixed bottom element: follows `--rail-w`.
+- Every trigger toggles its own menu/popover; every inert affordance answers coming soon; validation copy only from `MSG`.
+
+## Lead menus
+- A lead's actions are the same wherever the lead appears (table row, kanban card, details page): Delete · Return Lead (Qanvast only, REG-139). Adding or gating an item in one surface means doing it in all of them — grep every `More actions for` menu.
 
 ## Motion & states
 - [ ] Surfaces use `lib/motion` tokens; `prefers-reduced-motion` handled (globals collapse it).

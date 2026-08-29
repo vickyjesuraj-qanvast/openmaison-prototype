@@ -57,9 +57,11 @@ export function LeadsToolbar({
             aria-label="Search leads"
           />
           {query ? (
-            <button type="button" className={styles.searchClear} aria-label="Clear search" onClick={() => onQueryChange('')}>
-              <Icon name="close" size={18} />
-            </button>
+            <Tooltip label="Clear search">
+              <button type="button" className={styles.searchClear} aria-label="Clear search" onClick={() => onQueryChange('')}>
+                <Icon name="close" size={18} />
+              </button>
+            </Tooltip>
           ) : null}
         </label>
         <span className={styles.filterWrap}>

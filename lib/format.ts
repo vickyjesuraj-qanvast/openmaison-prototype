@@ -37,6 +37,17 @@ export function relativeTime(d: Date, now = new Date()): string {
 }
 
 /** Table budget cell shows bare grouped number ("70,500"); S$ prefix where the mock has it. */
+/** Keep digits only — what a numeric field accepts from typing or paste. */
+export function digitsOnly(raw: string): string {
+  return raw.replace(/\D/g, '')
+}
+
+/** Digits grouped in thousands ("70500" → "70,500"); anything else is dropped. */
+export function groupDigits(raw: string): string {
+  const d = digitsOnly(raw)
+  return d ? Number(d).toLocaleString('en-SG') : ''
+}
+
 export function money(minor: number): string {
   return new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 }).format(minor / 100)
 }

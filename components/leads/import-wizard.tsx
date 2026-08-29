@@ -16,6 +16,7 @@ import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
+import { Tooltip } from '@/components/om/tooltip'
 
 export const TEMPLATE_HREF = '/templates/leads-import-template.csv'
 
@@ -199,9 +200,11 @@ export function ImportWizard({
             <div className={styles.heading}>
               <span className={styles.title}>Import Leads</span>
               <span className={styles.step}>Step {step} of 4</span>
-              <button type="button" className={styles.close} aria-label="Close" onClick={close} disabled={busy}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
+              <Tooltip label="Close" disabled={busy}>
+                <button type="button" className={styles.close} aria-label="Close" onClick={close} disabled={busy}>
+                  <Icon name="close" size={24} family="outlined" />
+                </button>
+              </Tooltip>
             </div>
 
             <div className={styles.body}>
@@ -364,11 +367,15 @@ export function ImportWizard({
                               transition={{ duration: duration.snackbar, ease: ease.decelerate }} role="status">
                     <div className={styles.toastHead}>
                       <span className={styles.toastTitle}>Uploading 1 file</span>
-                      <button type="button" className={styles.toastBtn} aria-label={toastCollapsed ? 'Expand' : 'Collapse'} aria-expanded={!toastCollapsed}
-                              onClick={() => setToastCollapsed((c) => !c)}>
-                        <Icon name={toastCollapsed ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={24} />
-                      </button>
-                      <button type="button" className={styles.toastBtn} aria-label="Dismiss upload status" onClick={() => setToast(null)}><Icon name="close" size={24} /></button>
+                      <Tooltip label={toastCollapsed ? 'Expand' : 'Collapse'} side="top">
+                        <button type="button" className={styles.toastBtn} aria-label={toastCollapsed ? 'Expand' : 'Collapse'} aria-expanded={!toastCollapsed}
+                                onClick={() => setToastCollapsed((c) => !c)}>
+                          <Icon name={toastCollapsed ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={24} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label="Dismiss upload status" side="top">
+                        <button type="button" className={styles.toastBtn} aria-label="Dismiss upload status" onClick={() => setToast(null)}><Icon name="close" size={24} /></button>
+                      </Tooltip>
                     </div>
                     {toastCollapsed ? null : (
                     <div className={styles.toastRow}>

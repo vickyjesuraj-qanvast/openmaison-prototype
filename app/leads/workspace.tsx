@@ -187,6 +187,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   // Tasks popover anchored under a task box — table cell or kanban card (user 2026-08-29).
   const openTasks = (row: LeadRow, anchor: HTMLElement) => {
+    if (tasksFor?.id === row.id) { setTasksFor(null); return }   // pressing the open popover's own trigger closes it
     const t = Date.now()
     setNowTick(t)
     setAssign(null); setStageMenu(null)
@@ -245,7 +246,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   Insights
                 </Button>
                 <div ref={addRef} style={{ position: 'relative' }}>
-                  <Button iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)}>
+                  <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
                     Add Lead
                   </Button>
                   <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right">
@@ -259,7 +260,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 </div>
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
-                    <IconButton icon="more_vert" label="More options" onClick={() => setKebabOpen((o) => !o)} />
+                    <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
                   </Tooltip>
                   <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
                     <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
@@ -301,7 +302,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 stageScope={stageScope}
                 filtering={activeFilterCount(filters) > 0 || (stageScope !== null && filtered.length === 0)}
                 onKebabDelete={(lead) => { setDeleteReason('Spam'); setDeleting([lead.id]) }}
-                onAssign={(row, anchor) => setAssign({ id: row.id, ...anchorRect(anchor) })}
+                onKebabReturn={() => comingSoon()}
+                onAssign={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
                 pendingDrop={pendingDrop}
                 onDragToStage={(lead, stage) => {
                   setPendingDrop({ leadId: lead.id, stage })
@@ -329,7 +331,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 }}
                 onTaskClick={openTasks}
                 now={nowTick}
-                onAssignClick={(row, anchor) => setAssign({ id: row.id, ...anchorRect(anchor) })}
+                onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
                 onTuneClick={(anchor) => setCustomise(anchorRect(anchor))}
                 query={query}
                 filterSort={filters.sort}
@@ -452,6 +454,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         open={!!assign}
         team={team}
         value={assignValue}
+        anchor={assign?.el}
         onClose={() => setAssign(null)}
         onApply={applyAssign}
         requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
@@ -467,6 +470,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       <TasksPopover
         lead={effectiveRows.find((r) => r.id === tasksFor?.id) ?? null}
         pos={tasksFor}
+        anchor={tasksFor?.el}
         now={nowTick}
         onClose={() => setTasksFor(null)}
         onAddTask={async (lead, title) => {

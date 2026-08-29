@@ -59,13 +59,13 @@ export function PortalMenu({
       if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return
       onClose()
     }
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
     document.addEventListener('keydown', onKey, true)   // capture: an open menu owns Esc before any dialog / picker host
     document.addEventListener('scroll', onScroll, true)
     window.addEventListener('resize', onClose)
     return () => {
       clearTimeout(t)
-      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('keydown', onKey, true)
       document.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onClose)

@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Checkbox } from '@/components/ds'
-import { ReadOnlyScope } from '@/components/om/read-only'
+import { ReadOnlyScope, useReadOnly } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
+import { useComingSoon } from '@/components/om/snackbar'
 import { Avatar } from '@/components/om/avatar'
 import { CONTACT_CHANNELS } from '@/lib/leads/enums'
 import { money } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
-import { amountMinor, DEFAULT_MILESTONES, zeroMilestones } from '@/lib/leads/stage-data'
+import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 
@@ -71,13 +73,17 @@ function LogShell({
           </button>
         ) : null}
         {!collapsed && !readOnly && onDelete ? (
-          <button type="button" className={styles.logChevron} aria-label={`Delete log ${index + 1}`} onClick={onDelete}>
-            <Icon name="delete" size={24} weight={300} />
-          </button>
+          <Tooltip label="Delete log">
+            <button type="button" className={styles.logChevron} aria-label={`Delete log ${index + 1}`} onClick={onDelete}>
+              <Icon name="delete" size={24} weight={300} />
+            </button>
+          </Tooltip>
         ) : null}
-        <button type="button" className={styles.logChevron} aria-label={collapsed ? 'Expand log' : 'Collapse log'} onClick={onToggle}>
-          <Icon name={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={24} />
-        </button>
+        <Tooltip label={collapsed ? 'Expand log' : 'Collapse log'}>
+          <button type="button" className={styles.logChevron} aria-label={collapsed ? 'Expand log' : 'Collapse log'} onClick={onToggle}>
+            <Icon name={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={24} />
+          </button>
+        </Tooltip>
       </div>
       {!collapsed ? (
         <ReadOnlyScope readOnly={readOnly}>
@@ -131,7 +137,7 @@ function LogCard({
         {log.files.length ? (
           <div style={{ display: 'flex', gap: 12 }}>
             {log.files.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f} image
+              <FileTile key={`${f}-${i}`} name={f}
                         onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
             ))}
           </div>
@@ -150,7 +156,9 @@ function LogCard({
 export function ContactedPanel({
   data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
 }: {
-  data: WizardData; update: (patch: Partial<WizardData>) => void; onAutoFill: () => void
+  data: WizardData; update: (patch: Partial<WizardData>) => void
+  /** Auto Fill fills the log whose button was pressed. */
+  onAutoFill: (i: number) => void
   /** Per-log read-only (completed stage): which logs are locked, and how a log unlocks. */
   onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
   onDeleteLog?: (i: number) => void
@@ -164,7 +172,7 @@ export function ContactedPanel({
         <LogCard key={i} index={i} log={log} errors={errors} today={today}
                  readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                  onDelete={onDeleteLog && data.logs.length > 1 ? () => onDeleteLog(i) : undefined}
-                 onChange={(p) => setLog(i, p)} onAutoFill={onAutoFill} />
+                 onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
       ))}
     </>
   )
@@ -218,7 +226,8 @@ function MeetingCard({
 export function MetPanel({
   data, update, onAutoFill, onEditLog, onDeleteLog, lockedLog, errors, today,
 }: {
-  data: WizardData; update: (patch: Partial<WizardData>) => void; onAutoFill: () => void
+  data: WizardData; update: (patch: Partial<WizardData>) => void
+  onAutoFill: (i: number) => void
   onEditLog?: (i: number) => void; lockedLog?: (i: number) => boolean
   onDeleteLog?: (i: number) => void
   errors: StageErrors; today: Date
@@ -231,7 +240,7 @@ export function MetPanel({
         <MeetingCard key={i} index={i} log={m} errors={errors} today={today}
                      readOnly={!!lockedLog?.(i)} onEdit={onEditLog ? () => onEditLog(i) : undefined}
                      onDelete={onDeleteLog && data.meetings.length > 1 ? () => onDeleteLog(i) : undefined}
-                     onChange={(p) => setLog(i, p)} onAutoFill={onAutoFill} />
+                     onChange={(p) => setLog(i, p)} onAutoFill={() => onAutoFill(i)} />
       ))}
     </>
   )
@@ -261,6 +270,8 @@ export function AttachTabs({
   uploaded: string | null; uploading?: boolean; onUpload: () => void; onRemoveUpload: () => void
   quotes: { name: string; meta: string[] }[]
 }) {
+  const ro = useReadOnly()          // read-only stage: the uploaded file keeps its row but loses its delete (REG-126)
+  const comingSoon = useComingSoon()
   return (
     <div className={styles.tabCard}>
       <div className={styles.tabBar} role="tablist">
@@ -286,13 +297,14 @@ export function AttachTabs({
                   {q.meta.map((m, i) => <span key={i}>{i > 0 ? '· ' : ''}{m}</span>)}
                 </span>
               </span>
-              <LinkButton>View</LinkButton>
+              {/* Inert in the prototype; stop the click so the row is not re-selected */}
+              <LinkButton onClick={(e) => { e.stopPropagation(); comingSoon() }}>View</LinkButton>
             </button>
           ))
         ) : (
           <>
             {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row */}
-            <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" uploading={uploading} onPick={onUpload} />
+            <Dropzone title={<>Drop your file or <b>browse</b></>} helper="Supports: PDF" accept=".pdf,application/pdf" uploading={uploading} onPick={onUpload} />
             {uploaded ? (
               <div className={styles.quoteRow} data-selected="true" data-file-row="true">
                 <span className={styles.quoteRadio}>
@@ -301,9 +313,13 @@ export function AttachTabs({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className={styles.pdfBadge} src="/figma-assets/file-pdf.svg" alt="PDF" width={24} height={24} />
                 <span className={styles.quoteName} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploaded}</span>
-                <button type="button" className={styles.logChevron} aria-label="Remove file" onClick={onRemoveUpload}>
-                  <Icon name="delete" size={20} weight={300} />
-                </button>
+                {ro ? null : (
+                  <Tooltip label="Remove file">
+                    <button type="button" className={styles.logChevron} aria-label="Remove file" onClick={onRemoveUpload}>
+                      <Icon name="delete" size={20} weight={300} />
+                    </button>
+                  </Tooltip>
+                )}
               </div>
             ) : null}
           </>
@@ -320,10 +336,11 @@ export function QuoteSentPanel({
   const [meetingFiles, setMeetingFiles] = useState<string[]>([])
   const [renderFiles, setRenderFiles] = useState<string[]>([])
   const quotes = [
-    { name: 'Whole-home renovation', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
-    { name: 'Whole-home renovation-v1', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
+    { name: SYSTEM_QUOTE, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
+    { name: `${SYSTEM_QUOTE}-v1`, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
   ]
   const upload = useUploadSim()
+  const [justUploaded, setJustUploaded] = useState(false)   // focus Quote amount once the file lands (user 2026-08-29)
   return (
     <>
       <div className={styles.stack12}>
@@ -332,7 +349,7 @@ export function QuoteSentPanel({
           tab={data.quoteTab} onTab={(t) => update({ quoteTab: t })}
           selected={data.quoteSelected} onSelect={(n) => update({ quoteSelected: n })}
           uploaded={data.quoteUploaded} uploading={upload.uploading}
-          onUpload={() => upload.start(() => update({ quoteUploaded: 'Whole-home renovation' }))}   // 780:91468: the mock's file, whatever was picked
+          onUpload={() => upload.start(() => { update({ quoteUploaded: SYSTEM_QUOTE }); setJustUploaded(true) })}   // 780:91468: the mock's file, whatever was picked
           onRemoveUpload={() => update({ quoteUploaded: null })}
           quotes={quotes}
         />
@@ -340,7 +357,7 @@ export function QuoteSentPanel({
       </div>
       {/* Upload flow only — a system quote already knows its amount */}
       {data.quoteTab === 'upload' && data.quoteUploaded ? (
-        <TextField label="Quote amount (S$)" value={data.quoteAmount} placeholder="70,500" inputMode="numeric"
+        <TextField label="Quote amount (S$)" value={data.quoteAmount} placeholder="70,500" numeric="amount" autoFocus={justUploaded}
                    onChange={(v) => update({ quoteAmount: v })} error={errors.quoteAmount} />
       ) : null}
       <Divider />
@@ -362,7 +379,7 @@ export function QuoteSentPanel({
         {renderFiles.length ? (
           <div style={{ display: 'flex', gap: 12 }}>
             {renderFiles.map((f, i) => (
-              <FileTile key={`${f}-${i}`} name={f} image onDelete={() => setRenderFiles((fs) => fs.filter((_, j) => j !== i))} />
+              <FileTile key={`${f}-${i}`} name={f} onDelete={() => setRenderFiles((fs) => fs.filter((_, j) => j !== i))} />
             ))}
           </div>
         ) : null}
@@ -374,10 +391,11 @@ export function QuoteSentPanel({
 export function WonPanel({
   data, update, errors, leadBudgetMinor,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
-  const quotes = [{ name: 'Whole-home renovation', meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Signed on 19 Aug'] }]
-  const contracts = [{ name: 'Contract_OliviaM_signed.pdf', meta: ['Signed on 19 Aug'] }]
+  const quotes = [{ name: SYSTEM_QUOTE, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Signed on 19 Aug'] }]
+  const contracts = [{ name: SYSTEM_CONTRACT, meta: ['Signed on 19 Aug'] }]
   const quoteUpload = useUploadSim()
   const contractUpload = useUploadSim()
+  const [justUploaded, setJustUploaded] = useState(false)
   const uploadedQuote = data.wonQuoteTab === 'upload'
   // The split is computed on the signed quote's amount: the system quote's, or the amount typed for an upload (780:92744 total).
   const basisMinor = uploadedQuote ? amountMinor(data.wonQuoteAmount) : leadBudgetMinor
@@ -388,19 +406,21 @@ export function WonPanel({
     <>
       <div className={styles.stack12}>
         <SectionRow label="Attach client signed quote" />
+        {/* The split follows the signed quote's source (user 2026-08-29): a system quote carries the recorded
+            10/30/30/30; an uploaded one carries nothing we can trust, so every milestone drops to 0%. */}
         <AttachTabs
-          tab={data.wonQuoteTab} onTab={(t) => update({ wonQuoteTab: t })}
-          selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n })}
+          tab={data.wonQuoteTab}
+          onTab={(t) => update({ wonQuoteTab: t, milestones: t === 'system' ? defaultMilestones() : data.wonQuoteUploaded ? zeroMilestones() : data.milestones })}
+          selected={data.wonQuote} onSelect={(n) => update({ wonQuote: n, milestones: defaultMilestones() })}
           uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
-          // An uploaded signed quote carries no payment split we can trust — every milestone drops to 0% (user 2026-08-29)
-          onUpload={() => quoteUpload.start(() => update({ wonQuoteUploaded: 'Whole-home renovation', milestones: zeroMilestones() }))}
-          onRemoveUpload={() => update({ wonQuoteUploaded: null, wonQuoteAmount: '', milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })) })}
+          onUpload={() => quoteUpload.start(() => { update({ wonQuoteUploaded: SYSTEM_QUOTE, milestones: zeroMilestones() }); setJustUploaded(true) })}
+          onRemoveUpload={() => update({ wonQuoteUploaded: null, wonQuoteAmount: '', milestones: defaultMilestones() })}
           quotes={quotes}
         />
         <FieldError message={errors.wonQuote} />
       </div>
       {uploadedQuote && data.wonQuoteUploaded ? (
-        <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" inputMode="numeric"
+        <TextField label="Quote amount (S$)" value={data.wonQuoteAmount} placeholder="70,500" numeric="amount" autoFocus={justUploaded}
                    onChange={(v) => update({ wonQuoteAmount: v })} error={errors.wonQuoteAmount} />
       ) : null}
       <Divider />
@@ -410,7 +430,7 @@ export function WonPanel({
           tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
           selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
           uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
-          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: 'Contract_OliviaM_signed.pdf' }))}
+          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: SYSTEM_CONTRACT }))}
           onRemoveUpload={() => update({ wonContractUploaded: null })}
           quotes={contracts}
         />
@@ -420,7 +440,7 @@ export function WonPanel({
       <div className={styles.stack12}>
         <div className={styles.rowBetween ?? ''} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
           <span className={styles.sectionLabel} style={{ flex: 1 }}>Payment milestone</span>
-          <LinkButton onClick={() => update({ milestones: DEFAULT_MILESTONES.map((m) => ({ ...m })) })}>Reset to default</LinkButton>
+          <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
           <span style={{
             background: 'var(--om-color-tertiary-green-variant2)',
             boxShadow: 'inset 0 0 0 1px var(--om-color-tertiary-green-variant1)',

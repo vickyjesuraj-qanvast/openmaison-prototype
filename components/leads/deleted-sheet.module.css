@@ -52,18 +52,24 @@
 .banner span { flex: 1; }
 .bannerClose { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
 
+/* The table is its own scroller on both axes (height to content, capped by the panel) so the
+   head row can stick to its top and the frozen columns to its left edge. */
 .tableWrap {
   width: 100%;
   border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);
-  overflow-x: auto;
-  flex-shrink: 0;
+  overflow: auto; overscroll-behavior: contain;
+  flex: 0 1 auto; min-height: 0;
 }
 .table { display: flex; flex-direction: column; width: max-content; min-width: 100%; }
 .headRow, .row { display: flex; align-items: stretch; background: var(--om-color-surface-default); }
+/* Sticky header: casts the level-1 shadow once the table has scrolled down (same as the import wizard's tables). */
+.headRow { position: sticky; top: 0; z-index: 3; transition: box-shadow var(--motion-toggle); }
+.tableWrap[data-scrolled-y] .headRow { box-shadow: var(--om-elevation-level-1); }
 .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); height: 64px; }
 .row[data-selected] { background: var(--om-color-primary-variant); }
-/* Selection + pinned name column stay fixed while the row h-scrolls (designer rule: 2px border = pinned). */
+/* Selection + pinned name column stay fixed while the row h-scrolls. Frozen-column edge rule (REG-144):
+   the last frozen column shows a 1px inner edge at rest and its shadow only while scrolled sideways. */
 .selCell {
   display: flex; align-items: center;
   padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4);
@@ -77,7 +83,12 @@
   flex-shrink: 0; overflow: hidden; white-space: nowrap;
 }
 .cell { gap: var(--om-spacing-3); padding-top: var(--om-spacing-3); padding-bottom: var(--om-spacing-3); }
-.pin { border-right: var(--om-border-2) solid var(--om-color-surface-variant); }
+.pin {
+  border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+  clip-path: inset(0 -6px 0 0);   /* the shadow only falls to the right */
+  transition: box-shadow var(--motion-toggle);
+}
+.tableWrap[data-scrolled] .pin { box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06); }
 .hCell { color: var(--om-color-on-surface-secondary); }
 .hSort {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);

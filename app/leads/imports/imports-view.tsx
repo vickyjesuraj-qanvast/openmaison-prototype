@@ -115,9 +115,11 @@ function View({ imports }: { imports: ImportBatch[] }) {
                     <input ref={searchRef} className={toolbarStyles.searchInput} placeholder="Search" value={query}
                            onChange={(e) => setQuery(e.target.value)} aria-label="Search imports" />
                     {query ? (
-                      <button type="button" className={toolbarStyles.searchClear} aria-label="Clear search" onClick={() => setQuery('')}>
-                        <Icon name="close" size={18} />
-                      </button>
+                      <Tooltip label="Clear search">
+                        <button type="button" className={toolbarStyles.searchClear} aria-label="Clear search" onClick={() => setQuery('')}>
+                          <Icon name="close" size={18} />
+                        </button>
+                      </Tooltip>
                     ) : null}
                   </label>
                   <Tooltip label="Filters"><IconButton icon="filter_list" label="Filter imports" onClick={comingSoon} /></Tooltip>

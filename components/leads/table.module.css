@@ -74,12 +74,11 @@
 
 .nameCell { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--om-spacing-1); }
 .name {
-  font: var(--om-type-subtitle-m);
+  font: var(--om-type-heading-h5);   /* 779:24446: 14 bold / 20 */
   cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
   transition: color var(--motion-hover);
 }
-.row[data-highlight='true'] .name { font: var(--om-type-heading-h5); }
 /* Row hover turns the name primary (user 2026-08-27) — not just hovering the name itself. */
 .row:hover .name, .name:hover { color: var(--om-color-primary-default); }
 .phone { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
@@ -171,29 +170,32 @@
 .rowActionsInner {
   position: absolute; right: 0; top: 50%;
   transform: translateY(-50%);
-  display: flex; gap: var(--om-spacing-2); align-items: center;
+  display: flex; gap: var(--om-spacing-3); align-items: center;   /* 606:75167: 12px between the hover buttons */
 }
+/* Hover actions (606:75167): DS primary outlined button + primary outlined icon button, white fill, level-1 shadow. */
 .rowEdit {
   height: 36px; padding: 0 var(--om-spacing-4);
   background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border: var(--om-border-1) solid var(--om-color-primary-default);
   border-radius: var(--om-radius-1);
-  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary);
+  box-shadow: var(--om-elevation-level-1);
+  font: var(--om-type-subheading-m); color: var(--om-color-primary-default);
   cursor: pointer;
-  transition: background var(--motion-hover);
+  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.rowEdit:hover { background: var(--om-color-surface-bg); }
+.rowEdit:hover { background: var(--om-color-hover-04p); border-color: var(--om-color-on-primary-variant); color: var(--om-color-on-primary-variant); }
 .rowKebab {
   width: 36px; height: 36px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border: var(--om-border-1) solid var(--om-color-primary-default);
   border-radius: var(--om-radius-1);
-  color: var(--om-color-on-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+  color: var(--om-color-primary-default);
   cursor: pointer;
-  transition: background var(--motion-hover);
+  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.rowKebab:hover { background: var(--om-color-surface-bg); }
+.rowKebab:hover, .rowKebab[aria-expanded='true'] { background: var(--om-color-hover-04p); border-color: var(--om-color-on-primary-variant); color: var(--om-color-on-primary-variant); }
 
 /* Copy-phone affordance in the hovered name cell (779:24696). */
 .phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }

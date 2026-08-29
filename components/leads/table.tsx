@@ -180,7 +180,11 @@ export function LeadsTable({
               {highlightMatch(row.name, query)}
             </span>
             <span className={styles.phoneRow}>
-              <span className={styles.phone}>{row.phone.replace(/^(\d{4})(\d{4})$/, '$1 $2')}</span>
+              <span className={styles.phone}>
+                {row.phone}
+                {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) */}
+                {row.stage === 'On Hold' && row.onHoldFollowUp ? ` · On hold till: ${displayDate(new Date(row.onHoldFollowUp))}` : null}
+              </span>
               <Tooltip label="Copy phone number">
                 <button type="button" className={styles.copyBtn} aria-label={`Copy ${row.name}'s phone number`}
                         onClick={() => onCopyPhone(row)}>
@@ -321,6 +325,7 @@ export function LeadsTable({
                   <span style={{ position: 'relative', display: 'inline-flex' }}>
                     <Tooltip label="More actions" disabled={menuRow === row.id}>
                       <button type="button" className={styles.rowKebab} aria-label={`More actions for ${row.name}`}
+                              aria-haspopup="menu" aria-expanded={menuRow === row.id}
                               onClick={() => setMenuRow((m) => (m === row.id ? null : row.id))}>
                         <Icon name="more_vert" size={20} weight={300} />
                       </button>

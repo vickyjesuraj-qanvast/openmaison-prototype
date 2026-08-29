@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Reorder } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { anchoredSurface } from '@/lib/motion'
 import { DEFAULT_COLUMNS, type ColumnConfig, type ColumnKey } from './table'
 import styles from './customise-view.module.css'
@@ -47,8 +48,8 @@ export function CustomiseView({
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('mousedown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('mousedown', onDown) }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
   }, [open, onClose])
 
   const pinnedCount = draft.filter((c) => c.pinned).length
@@ -69,9 +70,11 @@ export function CustomiseView({
         >
           <div className={styles.head}>
             <h2 className={styles.title}>Customise your view</h2>
-            <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-              <Icon name="close" size={24} family="outlined" />
-            </button>
+            <Tooltip label="Close">
+              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                <Icon name="close" size={24} family="outlined" />
+              </button>
+            </Tooltip>
           </div>
           <div className={styles.body}>
             <p className={styles.desc}>Toggle columns you want to see. Drag columns up or down to reorder them.</p>

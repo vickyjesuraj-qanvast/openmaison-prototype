@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { useReadOnly } from '@/components/om/read-only'
 import styles from './fields.module.css'
 
@@ -44,7 +45,9 @@ export function SectionRow({ label, action }: { label: string; action?: ReactNod
   )
 }
 
-export function LinkButton({ icon, children, onClick }: { icon?: string; children: ReactNode; onClick?: () => void }) {
+export function LinkButton({ icon, children, onClick }: {
+  icon?: string; children: ReactNode; onClick?: (e: MouseEvent<HTMLButtonElement>) => void
+}) {
   const ro = useReadOnly()
   if (ro) return null   // read-only stage: no Attach / Add / Reset affordances
   return (
@@ -59,21 +62,26 @@ export function Divider() {
   return <div className={styles.divider} />
 }
 
-export function FileTile({ name, image, onDelete }: { name: string; image?: boolean; onDelete: () => void }) {
+/**
+ * Attached-file tile (781:58405): 146w, 4px pad, a 138×105 preview, then picture_as_pdf (filled, red) · name · delete.
+ * Every attached file — call screenshots, meeting documents, site photos, renders — uses this one tile; the preview is
+ * the mock's own image since the prototype never reads the real file.
+ */
+export function FileTile({ name, onDelete }: { name: string; onDelete: () => void }) {
   const ro = useReadOnly()
   return (
     <div className={styles.tile}>
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={styles.tileImg} src="/figma-assets/chat-screenshot-thumb.png" alt="" />
-      ) : null}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className={styles.tileImg} src="/figma-assets/chat-screenshot-thumb.png" alt="" />
       <div className={styles.tileRow}>
-        <span className={styles.tilePdf}><Icon name="picture_as_pdf" size={20} /></span>
+        <span className={styles.tilePdf}><Icon name="picture_as_pdf" size={20} fill /></span>
         <span className={styles.tileName}>{name}</span>
         {ro ? null : (
-          <button type="button" className={styles.tileDel} aria-label={`Remove ${name}`} onClick={onDelete}>
-            <Icon name="delete" size={24} weight={300} />
-          </button>
+          <Tooltip label="Remove file">
+            <button type="button" className={styles.tileDel} aria-label={`Remove ${name}`} onClick={onDelete}>
+              <Icon name="delete" size={24} weight={300} />
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>
@@ -96,8 +104,9 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
 /**
  * Upload target (780:90940 · 780:91263). Any file the user picks or drops is accepted — the prototype then
  * shows the mock's own file (the panels decide which) after the "Uploading..." state.
+ * `accept` is unset by default (Auto Fill takes a screenshot from any app); the quote / contract dropzones pass PDF.
  */
-export function Dropzone({ title, helper, onPick, uploading, accept = '.pdf,application/pdf' }: {
+export function Dropzone({ title, helper, onPick, uploading, accept }: {
   title: ReactNode; helper: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
 }) {
   const [over, setOver] = useState(false)
