@@ -34,7 +34,7 @@
 .tab:hover { background: var(--om-color-hover-04p); }
 .tab[data-active] { background: var(--om-color-surface-default); }
 .tab span:first-child { flex: 1; }
-.tabDot { width: 6px; height: 6px; border-radius: 50%; background: var(--om-color-primary-default); }
+.tabDot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); }
 
 .content { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); overflow-y: auto; overscroll-behavior: contain; }
 .search {
@@ -71,7 +71,7 @@
   cursor: pointer; white-space: nowrap;
   transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.chip:hover { background: var(--om-color-surface-bg); }
+.chip:hover { background: var(--om-color-hover-04p); }   /* outlined-control hover (interaction-states.md), as the Move stage window's ChoiceChips */
 .chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
 .dateRow { display: flex; gap: var(--om-spacing-4); }
 .dateRow > * { flex: 1; min-width: 0; }

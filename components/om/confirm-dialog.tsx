@@ -1,8 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ds'
-import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
-import styles from '@/components/leads/move-stage/wizard.module.css'
+import { DangerButton, Dialog, DialogMessage } from './dialog'
 
 /**
  * Generic confirmation alert — same shell and tone as the delete alerts (779:24663):
@@ -29,7 +28,7 @@ export function ConfirmDialog({
               <Button variant="secondary" appearance="outlined" onPress={onCancel}>{cancelLabel}</Button>
               {tone === 'danger' ? <DangerButton onClick={onConfirm}>{confirmLabel}</DangerButton> : <Button onPress={onConfirm}>{confirmLabel}</Button>}
             </>}>
-      {message ? <span className={styles.helper}>{message}</span> : null}
+      {message ? <DialogMessage>{message}</DialogMessage> : null}
     </Dialog>
   )
 }

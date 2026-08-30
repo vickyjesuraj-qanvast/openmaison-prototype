@@ -1,0 +1,58 @@
+# Lead Overview — spec dump batch 1 (Figma JCGkMBFLjeOyXYiEkOxFMO, read 2026-08-29)
+# legend: depth|type|id|name|x,y,w,h|layout(dir gap pad primaryAlign/counterAlign primarySizing/counterSizing)|sizingH/V|fills|strokes weight align|radius|effects|opacity|text"…" size/style/lineHeight/letterSpacing align|instance{set:props}
+# Coordinates are relative to the dumped root. Colours: #1a1a1a on-surface · #666666 secondary · #e5e5e5 surface-variant/divider · #cccccc border · #f2f2f2 surface-bg · #5500ff primary.
+
+## Page Header / Leads - L2 (858:24783) — 1364×72, V p16/24, bottom stroke 1px #e5e5e5
+0|INST|858:24783|Page Header / Leads - L2|0,0,1364,72|V g0 p16/24/16/24|#ffffff|#e5e5e5 w0/0/1/0 INSIDE
+1|FRAM|page-title|24,16,1316,40|H g12 MIN/CENTER
+2|TEXT|icon arrow_back|24,24,24,24|24/Light #1a1a1a
+2|FRAM|Frame 114390|60,16,894,40|V g0 (FILL/HUG)
+3|TEXT|"Leads / "|60,16,894,16|12/Regular/16 #666666 (FILL width)
+3|FRAM|Frame 114429|60,32,894,24|H g12 MIN/CENTER
+4|FRAM|Frame 114436|60,32,148,24|H g8
+5|TEXT|"Olivia Martinez"|60,32,148,24|20/Bold/24 #1a1a1a
+4|SLOT|Slot 2|220,34,333,20|H g8 MIN/CENTER   ← meta chips, 8 apart, vertically centred on the 24px title line
+5|INST|Tag Outlined Default Leading Icon|220,34,80,20|H g4 p4/8/4/4|fill #f2f2f2|stroke #cccccc w1 INSIDE|r4
+6|TEXT|icon "call"|224,38,12,12|12/Regular #666666
+6|TEXT|"9123 4567"|240,38,52,12|10/Medium/12 #666666
+5|INST|Tag "money_bag" "S$ 70.5K"|308,34,71,20|same
+5|INST|Tag "home" "HDB 4-Room"|387,34,94,20|same
+5|INST|Tag Outlined Green (no icon)|489,34,64,20|H g4 p4/8/4/8|fill #edf5ee|stroke #daecde w1|r4
+6|TEXT|"Qanvast"|497,38,48,12|10/Medium/12 #387e47
+   (page 2 adds) Tag Outlined Yellow|561,34,124,20|p4/8/4/8|fill #fef5ea|stroke #fcecd5 w1|r4 → "Return Processing" 10/Medium/12 #c17e22
+2|SLOT|Slot|966,18,374,36|H g12 MAX/CENTER  ← right actions
+3|INST|Buttons Secondary/36/Outlined trailing icon|966,18,134,36|H g8 p8/12/8/16|stroke #cccccc w1|r4
+4|TEXT|"Stage: New"|982,26,78,20|14/Semi Bold/20 #666666
+4|TEXT|icon keyboard_arrow_down|1068,26,20,20|20/Regular #666666
+3|INST|Buttons Primary/36/Filled leading icon|1112,18,180,36|H g8 p8/16/8/12|fill #5500ff|r4
+4|TEXT|icon lock|1124,26,20,20|20/Regular #ffffff
+4|TEXT|"Convert to Project"|1152,26,124,20|14/Semi Bold/20 #ffffff
+3|INST|Icon Buttons Secondary/36/Outlined|1304,18,36,36|p8|stroke #cccccc w1|r4
+4|TEXT|icon more_vert|1312,26,20,20|20/Regular #666666
+
+## Page Tabs / Leads (858:24784) — 1364×44, H p0/24, white, shadow DS 0,1/3 #000@10 + 0,1/2 #000@6 (= level-1)
+1|FRAM|Frame 114371|24,0,1316,44|H g24 MIN/CENTER
+2|INST|Tab Item Selected|24,0,65,44|V g8 p12/0/0/0 (text 20 + gap 8 + ink 4)
+4|TEXT|"Overview"|24,12,65,20|14/Semi Bold/20 #5500ff
+3|FRAM|Active Tab Indicator|24,40,65,4|fill #5500ff|r2/2/0/0
+2|INST|Tab Item Enabled|113,0,48,44|H g4 p12/0/12/0
+3|TEXT|"Tasks"|14/Semi Bold/20 #666666
+   … Quotes 185w50 · Contracts 259w68 · Files 351w48 · Notes 423w48 · Meetings 495w64 · Questionnaire 583w96 · Activity 703w53 (all 24 apart)
+
+## Create quick links — collapsed (858:25094) — 72×1099, V g24 p24, left stroke 1px #e5e5e5
+1|FRAM|page-title|24,24,24,429|V g24
+2|TEXT|icon left_panel_close|26,24,20,20|20/Light #666666
+2|INST|Horizontal divider|24,68,24,1|#e5e5e5
+2|FRAM|Frame 114394|24,93,24,360|V g24
+3|TEXT icons 24/Light #1a1a1a at y 93,141,189,237,285,333,381,429: task_alt · docs · call_log · sticky_note_2 · event · wand_shine · scan · deployed_code
+
+## Create quick links — expanded (858:26317) — 140×1099, V g12 p24, white, left stroke 1px #e5e5e5
+1|FRAM|page-title|24,24,92,20|H
+2|TEXT|"Create"|24,24,72,20|14/Semi Bold/20 #1a1a1a (FILL)
+2|TEXT|icon left_panel_open|96,24,20,20|20/Light #666666
+1|FRAM|Shortcut Item|24,56,92,772|V g12
+2|FRAM|Shortcuts tile|24,56,92,80|V g8 p16/8/16/8 CENTER/CENTER|fill #f2f2f2|r8
+3|TEXT|icon task_alt|58,72,24,24|24/Light #1a1a1a
+3|TEXT|"Task"|32,104,76,16|12/Medium/16 #1a1a1a CENTER (FILL width)
+   tiles (y): Task 56 · Quote 148 (docs) · Call Log 240 (call_log) · Note 332 (sticky_note_2) · Meeting 424 (event) · AI Visualiser 516 h96 (wand_shine, label wraps to 2 lines/32) · Quote X-Ray 624 h96 (scan) · 3D Space Planner 732 h96 (deployed_code)
+   When expanded the card grid columns are 396 wide (frame 157) instead of 430 (frame 155).

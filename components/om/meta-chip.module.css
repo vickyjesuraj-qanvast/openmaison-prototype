@@ -1,0 +1,23 @@
+/* Meta chip — the DS "Tag Outlined" at 20px (858:24783 Slot 2): H g4, p4/8/4/4 with a leading icon (4/8/4/8 without),
+   r4, 1px inside stroke, icon 12 Regular, text caption-xs (10/500/12), single line. Spec: design-source/context/lead-overview/01-*.txt. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 20px;
+  padding: var(--om-spacing-1) var(--om-spacing-2);
+  border-radius: var(--om-radius-1);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border);   /* INSIDE stroke, like the DS Tag */
+  background: var(--om-color-surface-bg);
+  color: var(--om-color-on-surface-secondary);
+  font: var(--om-type-caption-xs);
+  text-transform: uppercase;   /* the DS Tag uppercases (styles.css ._tag_): "HDB 4-ROOM", "QANVAST", "RETURN PROCESSING" in every mock */
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.chip[data-icon] { padding-left: var(--om-spacing-1); }
+.icon { display: inline-flex; width: 12px; height: 12px; align-items: center; justify-content: center; }
+.text { line-height: 12px; }
+
+/* Colour variants (Tag Outlined Green / Yellow / Red): fill variant2 · stroke variant1 · text on-variant. */
+.chip[data-color='green'] { background: var(--om-color-tertiary-green-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-green-variant1); color: var(--om-color-on-tertiary-green-variant); }
+.chip[data-color='yellow'] { background: var(--om-color-tertiary-yellow-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-yellow-variant1); color: var(--om-color-on-tertiary-yellow-variant); }
+.chip[data-color='red'] { background: var(--om-color-tertiary-red-variant2); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-red-variant1); color: var(--om-color-on-tertiary-red-variant); }

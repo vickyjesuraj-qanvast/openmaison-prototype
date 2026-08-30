@@ -27,12 +27,15 @@ export function CustomiseView({
   onClose,
   onSave,
   position,
+  anchor = null,
 }: {
   open: boolean
   columns: ColumnConfig[]
   onClose: () => void
   onSave: (cols: ColumnConfig[]) => void
   position: { top: number; left: number } | null
+  /** The gear that opened it — a press there toggles instead of close-then-reopen (REG-153). */
+  anchor?: HTMLElement | null
 }) {
   const [draft, setDraft] = useState<ColumnConfig[]>(() => normalise(columns))
   const [wasOpen, setWasOpen] = useState(open)
@@ -46,11 +49,15 @@ export function CustomiseView({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (anchor && anchor.contains(t)) return          // the gear's own click toggles (REG-153)
+      if (ref.current && !ref.current.contains(t)) onClose()
+    }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
-  }, [open, onClose])
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
+  }, [open, onClose, anchor])
 
   const pinnedCount = draft.filter((c) => c.pinned).length
   const setCol = (key: string, patch: Partial<ColumnConfig>) =>
@@ -90,18 +97,23 @@ export function CustomiseView({
                   <span className={styles.drag} aria-hidden={col.key === LOCKED || undefined}><Icon name="drag_indicator" size={24} /></span>
                   <span className={styles.label}>{col.label}</span>
                   {/* At the 3-column cap only the pinned rows keep their pin (user 2026-08-28). */}
-                  {col.pinned || pinnedCount < MAX_PINNED ? (
-                  <button
-                    type="button"
-                    className={styles.pinBtn}
-                    data-pinned={col.pinned || undefined}
-                    disabled={col.key === LOCKED}
-                    aria-label={col.key === LOCKED ? `${col.label} is always pinned` : col.pinned ? `Unpin ${col.label}` : `Pin ${col.label}`}
-                    onClick={() => setCol(col.key, !col.pinned && pinnedCount < MAX_PINNED ? { pinned: true, visible: true } : { pinned: false })}
-                  >
-                    <Icon name="push_pin" size={16} fill={col.pinned} />
-                  </button>
-                  ) : <span className={styles.pinSlot} aria-hidden />}
+                  {col.pinned || pinnedCount < MAX_PINNED ? (() => {
+                    const pinLabel = col.key === LOCKED ? `${col.label} is always pinned` : col.pinned ? `Unpin ${col.label}` : `Pin ${col.label}`
+                    return (
+                      <Tooltip label={pinLabel}>
+                        <button
+                          type="button"
+                          className={styles.pinBtn}
+                          data-pinned={col.pinned || undefined}
+                          disabled={col.key === LOCKED}
+                          aria-label={pinLabel}
+                          onClick={() => setCol(col.key, !col.pinned && pinnedCount < MAX_PINNED ? { pinned: true, visible: true } : { pinned: false })}
+                        >
+                          <Icon name="push_pin" size={16} fill={col.pinned} />
+                        </button>
+                      </Tooltip>
+                    )
+                  })() : <span className={styles.pinSlot} aria-hidden />}
                   <span className={styles.spacer} />
                   <Switch
                     isSelected={col.visible}

@@ -1,0 +1,38 @@
+# Qanvast – Lead Return (section 931:48236). Frames: 175 Qanvast lead overview 931:48237 · menus 931:49039 (Qanvast: Invite to Portal · Return Lead · Copy Link · Delete, 200×154) / 931:49047 (others: Invite to Portal · Copy Link · Delete, 200×118) · 204 wizard step 1 931:48813 · 205 reason form 931:48882 · 206 filled 931:48930 · 207 terms 931:49009 · 203 after return 931:48553 · 176 details (processing) 931:49048 · 178 details (approved + refund) 931:49138 · 179 Invite to Portal 931:48844 · 208 Qanvast Ops › Leads 931:49232 · 209 status dropdown + hover 931:49435 · 174 lead from Qanvast Ops 931:49680
+# Format: depth|type|name|x,y,w,h (relative to the modal)|layout|fill|stroke|text size/style colour
+
+## Return Lead wizard — ModalComponent 800 wide (l-modal), r12
+1|FRAM|Heading|0,0,800,84|H g16 p20/24|bottom rule #e5e5e5   [V g4] "Return Lead" 20/Bold #1a1a1a · "Olivia Martinez · Received on 19 Feb 2025" 12/Regular #666666 (lead name · Received on = the lead's created date, displayDate) · info 24 #666666 (coming soon) · close 24
+1|FRAM|modal-body|0,84,800,516|V g24 p24 → H g24: form column 468 + tips box 260
+### Step 1 (204): form = Text Field 48 select "Select a reason" (expand_more)
+3|FRAM|tips-section|516,108,260,236|V g16 p16|fill #edeef7   "Tips to improve conversion" 14/Semi Bold #1a1a1a · list V g8 of 12/Regular #1a1a1a items: "Contact within 2 hours" · "Send an introductory message indicating your name and the firm you are representing." · "Showcase past portfolios via social media or company website" · "Be open to request for a Zoom meeting or phone call first for brief taking" · Link "View all" (coming soon)
+1|FRAM|Footer|0,532,800,68|H g12 p16/24|top rule   "Cancel" secondary outlined 80×36 · "Submit" primary filled 120×36 (right)   — Submit is what step 1 shows before a reason is chosen; with "Lead not contactable" the button reads "Next"
+### Step 1 with reason "Lead not contactable" (205 / 206): form-items V g36
+ Text Field 48 select value "Lead not contactable" (label "Select a reason" floats)
+ Text Field 48 "Date and time of first outreach" (trailing event → date-time picker; filled "12/3/2025, 3:00PM")
+ [V g10] "Number of attempts made" 12/Regular #666666 · row H g10 of five Buttons 86×48: "1" · "2" · "3" · "4" · "+5" (16/Semi Bold; selected = the Choice chip selected look — invented, the mock shows +5 chosen)
+ [V g10] "Attach images/screenshots of all your attempts" 12/Regular #666666 · tiles grid V g12 (the Notes attachment tile 150×158 — the mock shows one "Q-101") · Buttons Primary Outlined 468×36 leading attach_file "Attach Files" (full width)
+ [V g4] Text Area 96 "Comments (optional)" placeholder "Any notes goes here..." · "0/500" 12/Regular #666666 counter (right? mock left at x24)
+ Footer: Cancel · "Next" 120×36
+### Step 2 (207): body card 752×380 (p24, stroke #e5e5e5 r8?) → inner V g16 p32/0/24/0 centred: "Term of service" 20/Semi Bold #1a1a1a · "Qanvast reserves the right of final decision on the return of leads and return of credits. By clicking “Confirm”, you agree to our lead return terms." 14/Regular #1a1a1a (centred, p0/20, 60 tall = 3 lines)
+ Footer: "Back" secondary outlined 66×36 · "Confirm" primary filled 120×36
+
+## After Confirm (203): snackbar "Lead returned successfully" + Undo (#ccb2ff); header chips … · "Return Processing" (yellow meta chip); stage pill "Status: Lost" (built as "Stage: Lost"); LEAD RETURNED card (built, 858:25188); RECENT ACTIVITY "Lead returned"; MY WORK gains "Respond to Qanvast team" (Due today)
+
+## Return details — ModalComponent 620×934 (r12), title = the lead name (176 / 178)
+1|FRAM|Heading|0,0,620,64|H g16 p20/24|bottom rule   "David Koh" 20/Bold · tags H g8: "Return Processing" (Tag Outlined Yellow 10/Medium #c17e22, fill #fef5ea stroke #fcecd5) — approved: "Return Approved" (Green, fill #edf5ee stroke #daecde) + "Refund Processing" (Yellow) · info 24 · close 24
+1|FRAM|modal-body|0,64,620,870|V g20 p24
+ (178 only) appeal banner 572×72 H g8 p16 fill #fef5ea stroke #fcecd5 r8: "Submit an appeal within 7 days with more supporting documents/information here." 14 ("here" = link, coming soon)
+2|FRAM|reply card|24,88,572,262|V g24 p24|fill #ffffff|stroke #e5e5e5|r8
+ Two Line: Avatar 40 (Qanvast image — /figma-assets/qanvast-avatar.png) + "Qanvast" 14/Regular · "Business Team" 12/Regular #666666
+ rows V g12, each H g16: label 200 wide 14/Regular #666666 · value 306 wide 14/Regular #1a1a1a — Replied on "1 Aug 2025, 6:30PM" · Status "Return Rejected" · Reason "Homeowner did not shortlist ID to proceed" · Additional remarks (3 lines)
+2|FRAM|return card|24,370,572,735|V g24 p24|stroke #e5e5e5|r8
+ Two Line: Avatar 40 "D" (member colour) + "Dane" 14 · "Owner (you)" 12 #666666
+ rows: Returned on "28 Aug 2025, 4:30PM" · Reason "No response from lead" · Date and time of first outreach "14 Feb 2025, 2:00PM" · Number of attempts made "3"
+ Horizontal rule · "Other Info" 16/Bold · [V g4] "Comments" 14 secondary + text 14 · [V g4] "Attachments" 14 secondary + tiles H g12 wrap, 134×158 (p4, image 134-8, caption "Q-101" 14/Semi Bold)
+# the reply card only exists once Qanvast has replied (processing = return card only)
+
+## Invite to Portal (179) — ModalComponent 400×585, r12 — for EVERY lead (kebab item)
+ Heading 64: "Invite to Portal" 20/Bold + close
+ body V g24 p24: "Invite a homeowner to track their project." 14/Semi Bold · Text Field 48 "Homeowner name" (prefilled lead name) · Text Field 48 "Phone number" with a "+65 ▾" prefix + rule + digits ("91234567") · helper 12 #666666 "WhatsApp opens with a ready-to-send message containing their portal login link." · rule · grey box 352×74 (p8/12, fill #f2f2f2 stroke #e5e5e5 r4): "Show chat history" 14/Semi Bold + "Homeowner can see messages from before they joined" 12 #666666 + DS Switch 40×20 (On) · grey box 352×58: "Portal link" 14/Semi Bold + "http://openmaison.ai/my/portalexample/login" 12 #666666 + "Copy" primary outlined 68×36
+ Footer 68: "Cancel" 80×36 · "Send via WhatsApp" primary filled 165×36

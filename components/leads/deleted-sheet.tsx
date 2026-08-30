@@ -137,9 +137,11 @@ export function DeletedLeadsSheet({
                 {bannerOpen ? (
                   <div className={styles.banner} role="status">
                     <span>Deleted leads are permanently removed after 30 days.</span>
-                    <button type="button" className={styles.bannerClose} aria-label="Dismiss" onClick={() => setBannerOpen(false)}>
-                      <Icon name="close" size={20} />
-                    </button>
+                    <Tooltip label="Dismiss">
+                      <button type="button" className={styles.bannerClose} aria-label="Dismiss" onClick={() => setBannerOpen(false)}>
+                        <Icon name="close" size={20} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ) : null}
 

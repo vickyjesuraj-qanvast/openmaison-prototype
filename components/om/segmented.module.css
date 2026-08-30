@@ -6,7 +6,7 @@
   background: transparent;
   color: var(--om-color-on-surface-secondary);
   cursor: pointer; padding: 0;
-  transition: background-color var(--motion-toggle), color var(--motion-toggle);
+  transition: background-color var(--motion-hover), color var(--motion-hover);   /* hover tint = the 50ms micro-motion */
 }
 /* Each segment sits inside a display:contents tooltip wrapper — key off the group's children. */
 .group > :not(:first-child) .seg { margin-left: -1px; }
@@ -16,6 +16,7 @@
   background: var(--om-color-primary-variant);
   color: var(--om-color-on-primary-variant);
   position: relative; z-index: 1;
+  transition: background-color var(--motion-toggle), color var(--motion-toggle);   /* the selected-state swap = the 150ms toggle */
 }
 .seg:not([aria-pressed='true']):hover { background: var(--om-color-hover-04p); }
 .seg:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; z-index: 2; }

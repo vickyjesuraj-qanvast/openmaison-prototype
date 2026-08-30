@@ -10,6 +10,15 @@ is the audit trail. Screens proven in the build are banked as screenshots in `ve
 | Surface | Node | Notes |
 |---|---|---|
 | Leads listing · table (expanded rail) | 779:19690 | default columns, pinned Lead Name, 64px rows |
+| **Lead Details · Overview** | 858:24770 (155 New · 157 quick links expanded · 156 Lost + returned) · cards 858:24094 | specs dumped to `context/lead-overview/`; L2 header 858:24783, tabs 858:24784, info column 858:24787, brief 858:24867, quick links 858:25094 / 858:26317 |
+| **Lead Details · Tasks** | 902:36216 (listing 902:26362 · add 902:26575 · menus 902:26783 · panel + tags 902:27260 · delete 902:27734 · attach 902:28019 · comments 902:28516 · filters 902:28959 · templates 902:29194 · export 902:29289 · other member 902:29303) | specs dumped to `context/lead-tasks/` |
+| **Lead Details · Quotes** | 910:36240 (listing 910:36241 → empty 910:36242 · listing 910:36298 · filters 910:36338; contextual menus 910:36615 → 910:36616 · 910:36681) | specs dumped to `context/lead-quotes/` |
+| **Lead Details · Contracts** | 931:38609 (empty 931:38610 · listing 931:38666 — no menus / filters / dialogs mocked; the Quotes tab's are reused) | spec dumped to `context/lead-contracts/` |
+| **Lead Details · Files** | 931:39056 (empty 931:40314 · list 931:40141 · grid 931:39057 · menus 931:40007 · folder 931:39703 · select + bulk 931:39447 / 931:39576 · viewer 931:39831 · comments 931:39891 · info 931:39953 · viewer kebab 931:39860 · rename 931:39178 / 931:39434 · create folder 931:39191 · trash 931:39204 · move 931:39216 / 931:39282 / 931:39332 / 931:39384 · deleted 931:40208) | specs dumped to `context/lead-files/` |
+| **Lead Details · Notes** | 931:44865 (empty / new note 931:44866 · menus 931:44936 · note editing 931:45013 · note view 931:45491 · contact log new 931:45124 · filled 931:45231 · view 931:45383 · Auto Fill 931:45344 · Add tasks 931:45360) | specs dumped to `context/lead-notes/` |
+| **Lead Details · Questionnaire** | 931:46769 (empty 931:46770 · Ask the client 931:46853 · listing 931:46954 · Question Types 931:47053) | specs dumped to `context/lead-questionnaire/` |
+| **Lead Details · Activity** | 931:47975 (one frame 931:47976 — feed of day groups) | spec dumped to `context/lead-activity/` |
+| **Qanvast – Lead Return** | 931:48236 (menus 931:49039 / 931:49047 · wizard 931:48813 / 931:48882 / 931:48930 / 931:49009 · after 931:48553 · details 931:49048 / 931:49138 · Invite to Portal 931:48844 · Qanvast Ops › Leads 931:49232 / 931:49435 / 931:49680) | specs dumped to `context/lead-return/` |
 | Row hover actions | 606:75167 | Edit (primary outlined) + kebab (primary outlined icon button), 12px apart, level-1 shadow |
 | Leads listing · kanban | 779:19733 | viewport-bound board, column head level-1 |
 | Page header | 799:23251 | sticky, level-1 shadow, 24/16 |
@@ -80,6 +89,21 @@ DS library components (OpenMaison Components): Text Field set key `35b2a7b3a07d5
 Validation (`lib/forms.ts`): "This field is required" · "Choose a date and time" · "Enter a valid date (d/m/yyyy)" · "Enter a valid email address" · "Enter an 8-digit phone number" · "Enter an amount" · "Enter a number" · "Attach at least one file" · "Choose an option" · "Milestones must add up to 100%" · "Assign at least one member".
 Stage flow: "Complete {Stage} first" · "Assign a member first" · "{Stage} is already completed — stages don't move back" · "Resume at {Stage}?" · "{Stage} details" · "Save changes" · "Other reason" · "Moved to {Stage}" + Undo.
 Settings: page copy under Leads › Stage movement (`lib/settings/types.ts`). Reset: "Reset prototype to base" / "Reset the prototype?".
+
+## 5b · Lead Details (phase 2)
+
+- Frame: L2 header 72 (back · "Leads /" crumb · name 20/700 · 20px meta chips · Stage pill · Convert to Project · kebab) · tabs 44 (24 gap, 4px ink) · row: info column 360 (24 padding, sections with 1px rules, keys 120 / values fill, rows 36 apart) · centre fluid (24 padding, 24 gap) · Create quick links 72 ↔ 140.
+- Cards ("Filter content"): stroke inside the box, r8, head 48 (12/600 caption title, meta, arrow_outward), body per card (see `context/lead-overview/04-*` and `05-*`); empty states 32 padding with the undraw illustrations under `public/figma-assets/empty-*.svg`.
+- Maison AI brief: 884×176 gradient card + pager row; briefs scripted per stage (REG-169).
+
+- **Tasks tab**: table 56/48 with columns 56 · 582 · 160 · 137 · 118 · 191, unseen band + bold title on top, hover Edit + kebab; `Drawer` (components/om/drawer.tsx) for the Task / Comments panels (400w, 64 head, sticky footer); tags = DS Tag outlined default (uppercase via CSS); status OPEN blue / COMPLETED green; Attach files xl 1200×928 with the files library; Filters / templates / export / delete dialogs at 600 · 400.
+- **Quotes tab**: table 56/64 with columns 40 · 319 · 128 · 120 · 120 · 120 · 120 · 120 · 157; two-line title cell (title 14/700 + "OM-10001 · Private" 12/400), inline status menu (five statuses), Due picker, hover View + kebab; empty state card 1244×784; Filters 600×600 (Sort · Date chips + custom range · Status · Due). No quote editor — "View" and the share / export items answer coming soon.
+- **Contracts tab**: table 48/68 with columns 557 · 128 · 120 · 142 · 140 · 157, one-line title 14/500, no selection column, no title rule; status Draft · Sent to Client · Signed; the Quotes tab's menus, hover actions, filters (Sort · Date · Status) and delete dialog with "contract" copy.
+- **Files tab**: grid (299 folder cards / 299×262 tiles, day groups, group checkboxes, selected = primary-variant) or list (56/60 table, 7 columns); breadcrumb row inside a folder; Create/Rename dialogs 400×228, trash confirm 400×216, Move dialog 600×600 (browse + drill-in + inline New Folder), Deleted Files 1200×928 sheet; viewer page with contained image, zoom bar 130×50, 48px prev/next, 400px Comments / Information panels.
+- **Notes tab**: one card — list 360 (chips + New ▾, 100px items with the selected band) + pane 884 (68px format toolbar, editor p24, 182px Attachments column); note editor Title 20/700 + body 16/400; contact log = the Move stage log fields + a read-only view; Auto Fill 600×348 → Add tasks 600×385.
+- **Questionnaire tab**: 740px question cards (head 52 + grey answer block p24) beside a 480×136 summary card; five answer inputs (text area, digits, yes/no select, multi-select checkbox menu, date picker); Ask the client dialog 400×302.
+- **Activity tab**: derived feed — day groups (rule + centred date chip) of 54px rows with glyph, sentence, "See …" link, actor and time; no toolbar.
+- **Lead return**: 800 wizard (form 468 + tips 260, attempts 86×48 buttons, terms step), 620 details modal (tags, appeal banner, reply + return cards), 400 Invite to Portal; Qanvast Ops › Leads page (table 240 · 132 · 138 · 158 · 115 · fluid with return tags; grouped status dropdown).
 
 ## 6 · Designed later (invented placeholders in the build)
 

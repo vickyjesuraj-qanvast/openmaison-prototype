@@ -1,0 +1,34 @@
+/*
+ * Lead Details › Questionnaire — summary card (931:47025): 480×136, fill #fff, stroke #e5e5e5 w1 inside, r8.
+ * Head 48 (H g8 p20/20/12/20) "QUESTIONNAIRE SUMMARY" 12/Semi Bold #666666; body 88 (V g8 p8/20/20/20) copied from
+ * components/leads/detail/questionnaire-card.module.css. Spec: design-source/context/lead-questionnaire/01-listing-empty-dialog.txt.
+ */
+.card {
+  display: flex; flex-direction: column;
+  width: 480px; height: 136px; flex-shrink: 0;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+}
+
+/* Head 48: p20/20/12/20 → 20 + 16 + 12. */
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); height: 48px; padding: var(--om-spacing-5) var(--om-spacing-5) var(--om-spacing-3); }
+/* 12/Semi Bold/16 secondary, uppercase — components/leads/detail/card.module.css .title. */
+.title { font: var(--om-type-caption-s); font-weight: 600; line-height: 16px; text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Body: V g8, 8/20/20/20 → group V g8 (the overview card's body). */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+
+/* "Total questions answered" (fills, subheading-m) · "7 / 11" (body-m secondary), on one baseline. */
+.row { display: flex; align-items: baseline; gap: var(--om-spacing-2); }
+.label { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Progress: 440×8 track, surface-variant, r999; primary bar r999 (answered / total). */
+.track { width: 100%; height: 8px; background: var(--om-color-surface-variant); border-radius: var(--om-radius-full); overflow: hidden; }
+.bar { height: 100%; background: var(--om-color-primary-default); border-radius: var(--om-radius-full); }
+
+/* Legend (16 tall): "Client answered: n" left · "Studio answered: n" right, 12/Medium secondary. */
+.legend { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.legend span:last-child { flex: 1; text-align: right; }

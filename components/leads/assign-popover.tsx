@@ -49,8 +49,8 @@ export function AssignPopover({
       if (ref.current && !ref.current.contains(t)) onClose()
     }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose, anchor])
 
   const toggle = (id: string) =>
@@ -64,7 +64,7 @@ export function AssignPopover({
           className={styles.card}
           variants={anchoredSurface}
           initial="initial" animate="animate" exit="exit"
-          style={{ top: position.top, left: position.left, transformOrigin: 'top left', position: 'fixed' }}
+          style={{ top: position.top, left: position.left, transformOrigin: 'top left' }}
           role="dialog"
           aria-label="Assign Member"
         >

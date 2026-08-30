@@ -1,0 +1,128 @@
+/* Deleted Files modal — 931:40211 (1200×928 xl). Shell classes copied from components/leads/deleted-sheet.module.css
+   (Deleted Leads 779:26316); table measured in design-source/context/lead-files/04-dialogs-move-deleted.txt. */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 48px 0; overflow-y: auto;
+}
+.panel {
+  position: relative;
+  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+/* Heading 80: H g16 p20/24, bottom rule + shadow 0 1 3 #000@10, 0 1 2 #000@6 */
+.heading {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  box-shadow: var(--om-elevation-level-1);   /* = the spec's 0 1 3 @10 + 0 1 2 @6 exactly */
+  position: relative; z-index: 1;
+  flex-shrink: 0;
+}
+.titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-on-surface-secondary); display: inline-flex;
+  transition: color var(--motion-hover);
+}
+.close:hover { color: var(--om-color-on-surface-default); }
+
+/* modal-body "Filter content" V g24 p24 */
+.body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+/* Reserve the floating bar's band so the last row stays reachable while a selection exists. */
+.body[data-bulk] { padding-bottom: 96px; }
+
+/* Table 1152: fill #fff, 1px #e5e5e5 inside (Figma inside stroke → inset shadow), r8 — one grid, subgrid rows (REG-180).
+   Selection 40 · Title 210 · Owner 152 · Updated 116 · File type 119 · File size 114 · File Location 149 · Actions 252 */
+.card {
+  display: grid;
+  grid-template-columns: 40px 210px 152px 116px 119px 114px 149px 252px;
+  align-content: start;
+  width: 100%; flex-shrink: 0;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  overflow: hidden;
+}
+/* Head 56 — labels 12/Medium #666666 (the Files list head, 931:40167) */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }
+.colSel { grid-column: 1; padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }   /* 16 + the 24 checkbox = 40 */
+.colTitle { grid-column: 2; }
+.colOwner { grid-column: 3; }
+.colUpdated { grid-column: 4; }
+.colType { grid-column: 5; }
+.colSize { grid-column: 6; }
+.colLocation { grid-column: 7; }
+.colActions { grid-column: 8; }
+
+/* Rows 60 — selected fill #eee5ff */
+.row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 60px; transition: background-color var(--motion-hover); }
+.row[data-selected] { background: var(--om-color-primary-variant); }
+/* Cells p12/24/12/16, contents centred (the mock's 60-tall cell), top rule between rows */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.cell.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
+.cell.colTitle { gap: var(--om-spacing-3); }        /* Two line H g12: thumb 48×36 + name 14/Medium */
+.cell.colOwner { gap: var(--om-spacing-3); }        /* Avatar 24 + name, H g12 — the list's Owner cell (files-table.module.css, spec 01 "Cell / One line") */
+.cell.colLocation { gap: var(--om-spacing-1); }     /* H g4: folder 20/Light + parent name */
+.cell.colActions { gap: var(--om-spacing-6); }      /* H g24: Restore · Delete Forever */
+
+/* 48×36 thumb: image cover, or the #f2f2f2 box with the kind's glyph (folder / picture_as_pdf) — the Files list's thumb (files-table.module.css .thumb, spec 01 "fill #f2f2f2 r2") */
+.thumb {
+  width: 48px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-0-5);
+  color: var(--om-color-on-surface-secondary);
+  overflow: hidden;
+}
+.thumbImg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plain { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.locIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+
+/* Link text 14/Semi Bold: Restore #5500ff · Delete Forever #db382a */
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  white-space: nowrap;
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.link:disabled { opacity: 0.5; cursor: default; }
+.link[data-danger] { color: var(--om-color-tertiary-red-default); }
+.link[data-danger]:hover { color: var(--om-color-on-tertiary-red-variant); }
+.emptyRow {
+  grid-column: 1 / -1;
+  padding: var(--om-spacing-6);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
+  text-align: center;
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.confirmText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }

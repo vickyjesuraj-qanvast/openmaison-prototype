@@ -1,0 +1,86 @@
+/* Move dialog — 931:39219 (600×600 = the tasks filters modal shell, components/leads/tasks/tasks-filters-modal.module.css).
+   Measurements: design-source/context/lead-files/04-dialogs-move-deleted.txt. */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 48px 0; overflow-y: auto;
+}
+.panel {
+  width: var(--om-modal-m); height: 600px; max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* Heading 122: V g16 p20/24, bottom rule #e5e5e5 — title row 24 + location row 42 */
+.heading {
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.title { flex: 1; min-width: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; transition: color var(--motion-hover); }
+.close:hover { color: var(--om-color-on-surface-default); }
+/* Location row H g12: "Current location: " 14/Regular + chip 42 tall (H g8 p8, fill #fff, stroke #cccccc w1, r4) */
+.location { display: flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; }
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-2);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  min-width: 0;
+}
+.chipIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.chipName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* modal-body V g20 p12/12/24/12 */
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-6); }
+
+/* Inside a folder (931:39285): arrow_back 24/Light @24 · [V] "All Files / " 12 secondary + name 20/Bold @56; rows start 16 below (y=190) */
+.folderHead { display: flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-3); flex-shrink: 0; margin-bottom: -4px; }   /* body gap 20 − 4 = the mock's 16 */
+.back { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-default); display: inline-flex; }
+.folderText { display: flex; flex-direction: column; min-width: 0; }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.folderTitle { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* list V g0 r4 — its own scroller */
+.list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; border-radius: var(--om-radius-1); }
+/* folder row 576×40: H g8 p8/12, fill #fff, r4; hover (931:39249) fill #f2f2f2 + the "Move" button */
+.folderRow {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 40px; padding: var(--om-spacing-2) var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-1);
+  cursor: pointer; flex-shrink: 0;
+  transition: background var(--motion-hover);
+}
+.folderRow:hover, .folderRow:focus-within { background: var(--om-color-surface-bg); }   /* #f2f2f2 */
+.folderRow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.rowIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.rowName { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowMove { display: inline-flex; opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
+.folderRow:hover .rowMove, .folderRow:focus-within .rowMove { opacity: 1; pointer-events: auto; }
+/* file row 576×36: H g8 p8/12 — thumb 24×18 (fill #f2f2f2 r2) + name 14/Semi Bold; listed for orientation, not selectable */
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: var(--om-spacing-2) var(--om-spacing-3); flex-shrink: 0; }
+.thumb { width: 24px; height: 18px; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-bg); object-fit: cover; display: block; flex-shrink: 0; }
+
+/* New Folder (931:39335): "Create Folder" 20/Bold @24 + the Text Field 48 "Name" @24 (552 wide) 24 below — the body pads 12,
+   so the block adds the other 12 (the same compensation as .folderHead). */
+.create { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: 0 var(--om-spacing-3); flex-shrink: 0; }
+.createTitle { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+
+/* Footer 68: H g12 p16/24, top rule, shadow 0 25 50 #000@25 (the mock's value; only its upward blur shows inside the clipped panel) */
+.footer {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.footerRight { margin-left: auto; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }

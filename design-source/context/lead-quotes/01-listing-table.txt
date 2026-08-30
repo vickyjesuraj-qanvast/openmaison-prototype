@@ -1,0 +1,59 @@
+# Lead Details › Quotes — listing (section 910:36241 "04 - Quotes listing")
+# Frames: 108 empty state 910:36242 · 109 listing 910:36298 · nested "04 - Quotes filter" 910:36338 (four Filters modals 910:36380/36448/36518/36585)
+# Centre "Section container" 910:36313: 1292×892, V g24 p24 (same frame as Tasks 902:26378).
+# Format: depth|type|id|name|x,y,w,h (relative to the container)|layout|fill|stroke|radius|effects|text size/style colour|instance{set:props}
+
+## Toolbar row (910:36314 "Section items" 1244×36, H g16)
+1|FRAM|910:36314|Section items|24,24,1244,36|H g16
+3|TEXT|910:36316|All Quotes|24,30,708,24|"All Quotes" 16/Bold #1a1a1a
+2|FRAM|910:36317|actions|748,24,520,36|H g12
+3|INST|910:36318|Buttons|748,24,132,36|H g8 p8/12/8/16|stroke #5500ff w1|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined,Trailing Icon=Yes}
+4|TEXT|Button Text|764,32,76,20|"New Quote" 14/Semi Bold #5500ff
+4|TEXT|Trailing Icon|848,32,20,20|"keyboard_arrow_down" 20 #5500ff
+3|INST|910:36319|Search Bar|892,24,280,36|H g8 p8|fill #ffffff|stroke #cccccc w1|r4|I{Search Bar:State=Empty,Size=36px,Style=Outlined}  "search" 20 #666666 · "Search" 14/Semi Bold #666666
+3|INST|910:36320|Icon Buttons|1184,24,36,36|stroke #cccccc w1|r4|I{Icon Buttons:Type=Secondary,Size=36,Style=Outlined}  "filter_list" 20 #666666
+3|INST|910:36321|Icon Buttons|1232,24,36,36|stroke #cccccc w1|r4|I{Icon Buttons:Type=Secondary,Size=36,Style=Outlined}  "more_vert" 20 #666666
+
+## Table (910:36322) 1244×120 — fill #ffffff, stroke #e5e5e5 w1 (inside), r8; head 56 + row 64. No bottom bar in the mock.
+2|INST|910:36323|Table / Row / Quotes - Listing|24,84,1244,56|I{Type=HD,State=Default}
+3|FRAM|Table / Header / Selection|24,84,40,56|H g8 p16/0/16/16  "check_box_outline_blank" 24/Light #666666
+3|FRAM|Header Title + Icon|64,84,319,56|H g4 p16/24/16/16|stroke #e5e5e5 w0/2/0/0   "Title" 12/Medium #666666 + "unfold_more" 16 #666666
+3|FRAM|Header|383,84,128,56|H g4 p16/24/16/16   "Status" 12/Medium #666666 + unfold_more 16
+3|FRAM|Header|511,84,120,56   "Total" 12/Medium + unfold_more
+3|FRAM|Header|631,84,120,56   "Due" 12/Medium + unfold_more
+3|FRAM|Header|751,84,120,56   "Created" 12/Medium + unfold_more
+3|FRAM|Header|871,84,120,56   "Sent" 12/Medium + unfold_more
+3|FRAM|Header|991,84,120,56   "Updated" 12/Medium + unfold_more
+3|FRAM|Header|1111,84,157,56   "Approval Date" 12/Medium + unfold_more
+# Column widths: 40 · 319 · 128 · 120 · 120 · 120 · 120 · 120 · 157 = 1244 (Title fluid at other widths)
+
+2|INST|910:36324|Table / Row / Quotes - Listing|24,140,1244,64|I{Type=RW,State=Default}
+3|FRAM|Cell / Selection|24,140,40,64|H g12 p12/0/12/16|stroke #e5e5e5 w1/0/0/0   "check_box_outline_blank" 24/Light #666666 @40,160
+3|FRAM|Cell / Two line|64,140,319,64|H g12 p12/24/12/16|stroke #e5e5e5 w1/2/0/0
+4|FRAM|Cell Data|80,152,279,40|V g4
+5|TEXT|Name|80,152,279,20|"Olivia Martinez" 14/Bold #1a1a1a
+5|FRAM|Frame 114460|80,176,119,16|H g8
+6|TEXT|Secondary|80,176,59,16|"OM-10001" 12/Regular #666666
+6|TEXT|Secondary|147,176,4,16|"·" 12/Regular #666666
+6|TEXT|Secondary|159,176,40,16|"Private" 12/Regular #666666      (frame 200 hover row: "Shared")
+3|FRAM|Cell / One line|383,140,128,64|H g12 p12/24/12/16|stroke #e5e5e5 w1/0/0/0
+4|FRAM|CellDataGroup|399,162,58,20|H g4
+5|TEXT|Draft|399,162,34,20|"Draft" 14/Regular #1a1a1a          (frame 200 hover row: "Approved")
+5|TEXT|icon|437,162,20,20|"keyboard_arrow_down" 20/Regular #1a1a1a
+3|FRAM|Cell / One line|511,140,120,64   "S$70,000" 14/Regular #1a1a1a @527,162
+3|FRAM|Cell / One line|631,140,120,64
+4|INST|Icon Buttons|647,160,24,24|p2|stroke #5500ff w1|r4|I{Icon Buttons:Type=Primary,Size=24,Style=Outlined}  "calendar_add_on" 20 #5500ff
+3|FRAM|Cell / One line|751,140,120,64   "17 Jul ‘26" 14/Regular #1a1a1a @767,162     (Created)
+3|FRAM|Cell / One line|871,140,120,64   "-" 14/Regular #1a1a1a @887,162              (Sent)
+3|FRAM|Cell / One line|991,140,120,64   "17 Jul ‘26" 14/Regular #1a1a1a @1007,162    (Updated)
+3|FRAM|Cell / One line|1111,140,157,64  "17 Jul ‘26" 14/Regular #1a1a1a @1127,162    (Approval Date)
+
+## Empty state (frame 108, 910:36266) — card 1244×784 fill #ffffff stroke #e5e5e5 r8, content centred
+3|FRAM|910:36268|undraw_no-data_ig65 1|556,318,180,176   (illustration: #f2f2f2 / #3f3d56 / #f59e0b / #e6e6e6 / #ffffff)
+3|FRAM|910:36279|texts|502,518,288,56|V g12
+4|TEXT|910:36280|"Create your first quote" 20/Semi Bold #1a1a1a
+4|TEXT|910:36281|"Create quotes and share it with your clients" 14/Regular #1a1a1a
+3|FRAM|910:36282|buttons|512,598,268,36|H g12
+4|INST|910:36283|Buttons|123×36|stroke #cccccc|r4|I{Buttons:Type=Secondary,Height=36,Style=Outlined}  "From Scratch" 14/Semi Bold #666666
+4|INST|910:36284|Buttons|133×36|fill #5500ff|r4|I{Buttons:Type=Primary,Height=36,Style=Filled}  "From Template" 14/Semi Bold #ffffff
+# illustration → title gap 24; title → subtitle 12; texts → buttons 24

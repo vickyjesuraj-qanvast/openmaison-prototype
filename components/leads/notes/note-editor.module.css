@@ -1,0 +1,52 @@
+/* Lead Details › Notes — note editor (931:44866 empty · 931:45013 editing · 931:45491 view).
+   Spec: design-source/context/lead-notes/01-layout-list-editor.txt "Pane › Body / editor column / footer".
+   Editor column: V p24 g24 — "Title" 20/Bold + "Write a note..." 16/Regular, 24 apart; footer 68 (H g12 p16/24,
+   top rule #e5e5e5, right-aligned) only while the draft is dirty. Column width comes from the host (884 / 702). */
+
+/* The column fills the pane body; the fields scroll, the footer stays at the foot (frame 80: 703×68 at the column's bottom). */
+.editor { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+.fields {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+}
+
+/* "Title" 20/Bold — ink when typed, secondary as the placeholder (931:44866); a bare input, no box (the mock draws none). */
+.title {
+  width: 100%; display: block;
+  border: 0; background: none; outline: 0; padding: 0; margin: 0;
+  font: var(--om-type-heading-h3);
+  color: var(--om-color-on-surface-default);
+}
+.title::placeholder { color: var(--om-color-on-surface-secondary); }
+
+/* "Write a note..." 16/Regular — components/leads/move-stage/fields.module.css `.notes` restyled: no border, no box,
+   no fixed height. Auto-grow = the hidden-mirror trick: the wrapper is a one-cell grid, its ::after repeats the text
+   (data-value) in the same font, the textarea sits on top of it, so the cell — and the textarea — is as tall as the
+   text. Pure CSS from a data attribute: no effect, no setState, works in every engine (field-sizing is Chromium-only). */
+.grow { display: grid; width: 100%; }
+.grow::after {
+  content: attr(data-value) ' ';
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  font: var(--om-type-body-l);
+  padding: 0; border: 0;
+}
+.body {
+  grid-area: 1 / 1;
+  width: 100%; min-height: 24px; resize: none; overflow: hidden;
+  border: 0; background: none; outline: 0; padding: 0; margin: 0;
+  font: var(--om-type-body-l);
+  color: var(--om-color-on-surface-default);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.body::placeholder { color: var(--om-color-on-surface-secondary); }
+
+/* Footer (frame 80): 68 tall = 16 + 36 buttons + 16; top rule; Cancel · Save right-aligned, 12 apart. */
+.footer {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}

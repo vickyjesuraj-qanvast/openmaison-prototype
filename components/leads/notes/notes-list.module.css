@@ -1,0 +1,96 @@
+/*
+ * Lead Details › Notes — list column (931:44882 · spec design-source/context/lead-notes/01-layout-list-editor.txt).
+ * Column 360 wide with the right rule #e5e5e5; head 360×68 (931:44884, H g8 p16, bottom rule); items 360×100
+ * ("Table / Cell / Two line", H g12 p16/24/16/24, bottom rule). Selected item: fill #eee5ff + 4px primary band at the
+ * left edge. Chip geometry: 36 tall, p10/12 (icon variant p10/12/10/8, icon 16 + gap 4) — the look is the move-stage
+ * ChoiceChips' (fields.module.css .chip) at the Notes sizes.
+ */
+.column {
+  width: 360px; flex: 1 0 auto; min-height: 0;   /* fills the card height so the right rule runs the full 844 (931:44883) */
+  display: flex; flex-direction: column;
+  box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant);   /* the right rule is inside the 360 (Figma inside stroke) so the items stay 360 wide */
+}
+
+/* Head 360×68: H g8 p16, bottom rule; chips left, New ▾ right-aligned (x 281 → 16 from the card's right edge). */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 68px; flex-shrink: 0;
+  padding: var(--om-spacing-4);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1; min-width: 0; }   /* 931:44884 "chips" H g8 */
+/* Choice chip 36 tall: p10/12 → the 36 height carries the vertical 10s; stroke #ccc r4; "All" 12/Semi Bold #1a1a1a.
+   The stroke is an inset box-shadow, not a border — Figma strokes sit INSIDE the padding (the DS Chip's own convention,
+   @openmaison/react chip.module.css), so "All" measures the mock's 39 (12 + 15 + 12), not 41. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 36px; padding: 0 var(--om-spacing-3);
+  border: 0;
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent;
+  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default);
+  cursor: pointer; white-space: nowrap;
+  transition: background-color var(--motion-toggle), box-shadow var(--motion-toggle), color var(--motion-toggle);
+}
+.chip[data-icon] { padding-left: var(--om-spacing-2); }   /* Leading Item=Icon: p10/12/10/8 */
+.chipIcon { flex-shrink: 0; }                              /* sticky_note_2 / list_alt 16 — inherits the chip colour (selected: #4400cc, frame 82) */
+.chip[data-selected] { background: var(--om-color-primary-variant); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }   /* Selected=Yes: fill #eee5ff stroke #5500ff text #4400cc */
+.chip:not([data-selected]):hover { background: var(--om-color-hover-04p); }   /* hover not mocked — the ChoiceChips' hover-04p */
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Menu anchors (New ▾ · item kebab) — the Dropdown positions itself against these. */
+.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
+/* Chevron points up while the menu is open — every menu trigger does this (contracts-toolbar.module.css .chev). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+/* Items scroll under the fixed head (776 = 844 − 68). */
+.items { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* Item 360×100 (Table / Cell / Two line): H g12 p16/24/16/24, bottom rule #e5e5e5. */
+.item {
+  position: relative;
+  height: 100px; flex-shrink: 0;
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  transition: background-color var(--motion-hover);
+}
+.item:hover { background: var(--om-color-surface-bg); }                  /* hover not mocked — the mocked table-row hover #f2f2f2 (tasks frame 195 / quotes 200; the item is a Table / Cell / Two line) */
+.item[data-selected] { background: var(--om-color-primary-variant); }    /* selected: fill #eee5ff */
+/* 4px primary band at the left edge, full height (selected item). */
+.item[data-selected]::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--om-color-primary-default);
+}
+/* The select area: leading icon 20 (x 24, y 16) + Cell Data 280 wide (V g8), as one bare button; the kebab sits beside it. */
+.itemMain {
+  width: 100%; height: 100%;
+  display: flex; align-items: flex-start; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border: 0; background: none; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+}
+.itemMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.itemIcon { color: var(--om-color-on-surface-default); flex-shrink: 0; }   /* sticky_note_2 / list_alt 20/Regular #1a1a1a */
+.cellData { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }   /* 931:44884 Cell Data V g8 */
+.titleBlock { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }         /* title block V g4 */
+/* Title row H g4: title 256 + more_vert 20 → the right 24 is reserved for the absolutely placed kebab. */
+.titleRow { display: flex; align-items: center; min-width: 0; padding-right: calc(20px + var(--om-spacing-1)); }
+.title { min-width: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Bold #1a1a1a */
+.secondary { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Regular #1a1a1a */
+.date { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "17 Jul ‘26・12:34 PM" 12/Regular #666666 */
+
+/* Kebab anchor: the title row's right end — top = item padding 16, right = item padding 24. */
+.kebabWrap { position: absolute; top: var(--om-spacing-4); right: var(--om-spacing-6); display: inline-flex; }
+/* Kebab: bare more_vert 20/Light #666666 — components/leads/files/files-grid.module.css .kebab at 20. */
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover { background: var(--om-color-hover-08p); }
+.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Menu Delete #db382a — every kebab's destructive item (files-grid.module.css .danger; the Figma menu 931:45488 paints it red). */
+.danger { color: var(--om-color-tertiary-red-default); }

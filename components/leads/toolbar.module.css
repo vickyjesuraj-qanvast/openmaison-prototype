@@ -5,7 +5,7 @@
 
 /* "All Leads (99)" chip: h36, border ccc, r4, pl-16 pr-12, gap-8. */
 .chip {
-  display: inline-flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
   height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1);
@@ -51,7 +51,7 @@
   position: absolute; top: -6px; right: -6px;
   min-width: 16px; height: 16px; padding: 0 4px;
   border-radius: var(--om-radius-full);
-  background: var(--om-color-primary-default); color: #fff;
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
   font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
   border: 2px solid var(--om-color-surface-default);
   box-sizing: content-box;

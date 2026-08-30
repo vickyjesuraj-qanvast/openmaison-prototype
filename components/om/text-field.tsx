@@ -119,7 +119,8 @@ export function TextField({
   return (
     <div className={className ? `${styles.field} ${className}` : styles.field}
          data-kind={mode} data-floated={floated || undefined} data-active={(focused || open) || undefined}
-         data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}>
+         data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}
+         data-trail={(icon || trailing) ? '' : undefined}>
       <div ref={setBox} className={styles.box}
            onMouseDown={(e) => { if (mode !== 'text') { e.preventDefault(); (e.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus(); activate() } }}>
         {leading ? <span className={styles.leading}>{leading}</span> : null}

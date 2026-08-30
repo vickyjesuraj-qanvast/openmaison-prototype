@@ -1,0 +1,2 @@
+/* Quotes tab body (910:36313 "Section container" — the same frame as Tasks 902:26378): the centre already pads 24; toolbar and table stack 24 apart. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }

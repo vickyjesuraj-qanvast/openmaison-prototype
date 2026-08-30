@@ -1,0 +1,49 @@
+/*
+ * Lead Details › Notes — pane toolbar (931:44905 884×68, H g16 p16/24, bottom rule #e5e5e5; spec design-source/context/
+ * lead-notes/01-layout-list-editor.txt). Bare 24px icon buttons (components/om/drawer.module.css .iconBtn), 1×36 rules,
+ * the AI chip 47×28 (p4 g2: 17×17 gradient square + chevron 20).
+ */
+.toolbar {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 68px; flex-shrink: 0; width: 100%;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+
+/* Bare 24px icon button — copied from components/om/drawer.module.css .iconBtn (secondary glyph, hover-08p wash). */
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.iconBtn:hover { background: var(--om-color-hover-08p); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Rule 1×36 #e5e5e5 between the groups. */
+.rule { width: 1px; height: 36px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+
+/* AI chip anchor — the Dropdown (140 wide, "Refine") positions itself against this. */
+.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
+/* AI chip 47×28: p4 g2 → square 17 + chevron 20; no fill / stroke in the mock, so it takes the icon button's hover wash and r4. */
+.aiChip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-0-5);
+  height: 28px; padding: var(--om-spacing-1);
+  border: 0; background: none; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);   /* keyboard_arrow_down 20 #666666 */
+  transition: background-color var(--motion-hover);
+}
+.aiChip:hover { background: var(--om-color-hover-08p); }
+.aiChip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* 17×17 gradient rounded square, r8.68 (≥ half of 17 → the full radius). No token holds the Maison AI tints: the gradient
+   is the one painted in public/figma-assets/maison-ai-fab.svg (paint0_linear, horizontal) — #AB2576 → #DF4D2A @44.7% →
+   #EE8E2B — and identically in brief-sparkle.svg (the 17×17 sparkle of components/leads/detail/ai-brief.tsx). */
+.aiSquare {
+  width: 17px; height: 17px; flex-shrink: 0;
+  border-radius: var(--om-radius-full);
+  background: linear-gradient(90deg, #ab2576 0%, #df4d2a 44.72%, #ee8e2b 100%);
+}
+/* Chevron points up while the menu is open — every menu trigger does this (contracts-toolbar.module.css .chev). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }

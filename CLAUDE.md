@@ -1,6 +1,6 @@
 # OpenMaison 2.0 prototype — working context
 
-Hi-fi, pixel-faithful Next.js prototype of OpenMaison's **Leads** module (interior-design studios in Singapore), pitched to clients in live demos. Owner: Vicky (product designer). Phase 1 = lead listing + imports + stage movement (done, polished). Phase 2 = Lead Details / lead journey (not started; waits for Figma).
+Hi-fi, pixel-faithful Next.js prototype of OpenMaison's **Leads** module (interior-design studios in Singapore), pitched to clients in live demos. Owner: Vicky (product designer). Phase 1 = lead listing + imports + stage movement (done, polished). Phase 2 = Lead Details: **Overview built** (`/leads/[id]`, REG-165…169, specs in `design-source/context/lead-overview/`); **Tasks tab built** (`/leads/[id]/tasks`, REG-170…173, specs in `design-source/context/lead-tasks/`); **Quotes tab built** (`/leads/[id]/quotes`, REG-174…176, specs in `design-source/context/lead-quotes/`); **Contracts tab built** (`/leads/[id]/contracts`, REG-177…179, spec in `design-source/context/lead-contracts/`); **Files tab built** (`/leads/[id]/files` + viewer `/leads/[id]/files/[fileId]`, REG-181…183, specs in `design-source/context/lead-files/`); **Notes tab built** (`/leads/[id]/notes`, REG-184…186, specs in `design-source/context/lead-notes/`); **Questionnaire tab built** (`/leads/[id]/questionnaire`, REG-187…189, specs in `design-source/context/lead-questionnaire/`); **Activity tab built** (`/leads/[id]/activity`, REG-190…191, derived feed, spec in `design-source/context/lead-activity/`); **Qanvast lead return + Invite to Portal + Qanvast Ops › Leads built** (REG-192…193, specs in `design-source/context/lead-return/`); Meetings waits for mocks.
 
 Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/react` (tokens as `--om-*` CSS variables) — sibling repo.
 
@@ -37,12 +37,36 @@ Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/re
 
 ## Map
 
+- `app/leads/[id]/` — Lead Details: `overview.tsx` hosts the page state (stage pill → `lib/leads/stage-policy.ts`, dialogs, popovers), `[tab]/` frames for the other tabs. `components/leads/detail/` — cards, info column, quick links, AI brief; `components/shell/page-header-l2.tsx`, `components/om/tabs.tsx`, `components/om/meta-chip.tsx`. Data: `lib/leads/detail.ts` (`fetchLeadDetail`), tables `quotes` / `lead_files` / `lead_questionnaires` / `lead_returns`, seed `scripts/seed-overview.ts`.
+- `components/leads/tasks/` — Tasks tab: `lead-tasks.tsx` orchestrator (table, toolbar, bulk bar, task / comments panels, tag picker, manage tags, attach files, filters, templates, delete); data `lib/leads/tasks.ts` + `lib/leads/task-filters.ts`, actions `app/leads/tasks-actions.ts`, seed `scripts/seed-tasks.ts`; `components/om/drawer.tsx` is the generic side panel. `scripts/restore-baseline.ts` puts local.db back to the base state from the terminal.
+- `components/leads/quotes/` — Quotes tab: `lead-quotes.tsx` orchestrator (toolbar, table or empty state, bulk bar, due picker, filters, delete); data `lib/leads/quotes.ts` + `lib/leads/quote-filters.ts`, actions `app/leads/quotes-actions.ts`.
+- `components/leads/contracts/` — Contracts tab: the Quotes tab's twins (`lead-contracts.tsx` orchestrator, table, toolbar, empty, filters, delete); data `lib/leads/contracts.ts` + `lib/leads/contract-filters.ts`, actions `app/leads/contracts-actions.ts`, seed `scripts/seed-contracts.ts`.
+- `components/leads/files/` — Files tab: `lead-files.tsx` orchestrator (grid / list, folders via `?folder=`, selection + bulk bar, upload toast, name / trash / move dialogs, Deleted Files sheet), `file-viewer.tsx` + comments / info panels for `app/leads/[id]/files/[fileId]/`; data `lib/leads/files.ts` + `lib/leads/file-model.ts`, actions `app/leads/files-actions.ts`, seed `scripts/seed-files.ts`.
+- `components/leads/notes/` — Notes tab: `lead-notes.tsx` orchestrator (list + drafts, note / contact-log editors, attachments, Auto Fill → Add tasks, delete); data `lib/leads/notes.ts` + `lib/leads/note-model.ts`, actions `app/leads/notes-actions.ts`, seed `scripts/seed-notes.ts`. Contact-log vocabulary (`OUTCOMES`, `NEXT_STEP_BY_OUTCOME`, `CONTACT_MODES`) lives in `lib/leads/enums.ts`, shared with the Move stage window.
+- `components/leads/questionnaire/` — Questionnaire tab: `lead-questionnaire.tsx` orchestrator, question / add / summary cards, Ask the client dialog; data `lib/leads/questions.ts` + `lib/leads/question-model.ts` (also feeds the Overview card's counts), actions `app/leads/questions-actions.ts`, seed `scripts/seed-questions.ts`.
+- `components/leads/activity/` — Activity tab: `lead-activity.tsx` (day groups of rows); `lib/leads/activity.ts` derives the feed from every lead table (no event log) — add a branch there when a new record type appears.
+- `components/leads/return/` — Return Lead wizard, return details modal, Invite to Portal; `components/qanvast/` + `app/qanvast-ops/` — Qanvast Ops › Leads; data `lib/leads/returns.ts` (+ `returnTags`), `lib/leads/qanvast.ts`, actions `app/leads/return-actions.ts` (returnLead / undoReturn), seed `scripts/seed-returns.ts`.
 - `app/leads/` — listing (`workspace.tsx` owns all listing state, stage-policy helpers `requestStageChange` / `blockedReason` / `journeyIdx`), imports, actions. `app/settings/` — Account setup (only Leads › Stage movement is live).
 - `components/leads/` — table, kanban, toolbar, filters, lead form, import wizard, review sheet, tasks/assign popovers, move-stage wizard + panels + dialogs.
 - `components/om/` — DS-faithful primitives (text field, date picker/fields, portal menu, tooltip, snackbar, choice card, confirm dialog, read-only scope, chip rail, scroll pagers). `components/shell/` — rail, shell, header, skeletons, FAB.
 - `lib/leads/` — enums, queries (`LeadRow` incl. `stageData`, `resumeStage`), stage data + validation, filters, view prefs. `lib/settings/`, `lib/forms.ts` (MSG), `lib/format.ts` (strict date parsers), `lib/db/baseline.ts`.
 - `design-source/` — **`DESIGN.md` (the design counterpart of this file: mock index with node ids, DS specs, interaction rules, copy vocabulary)**, `REGISTER.md` (decisions, REG-1…), `context/page-checklist.md`, `verify/` (banked screenshots), mock notes.
 - Ideation artifacts (claude.ai): stage-movement rethink page, stage-flow playground, stamp-card playground — the "stamp card" (one box per stage) is the direction the user liked; not built.
+
+## Icons (self-hosted subset)
+
+Icons are the Material Symbols variable font, **self-hosted and subsetted** (REG-207): `public/fonts/material-symbols-{rounded,outlined}.subset.woff2`, declared in `app/globals.css`, preloaded in `app/layout.tsx`. `public/fonts/ICONS.txt` lists every icon name inside.
+
+**Using an icon name that is not in that list renders the literal word.** After adding one, re-subset:
+
+```bash
+# 1. download the full fonts from the Google CSS API (see the URL in git history of app/layout.tsx)
+# 2. resolve each name through the font's ligature table (names like `people_alt` are aliases → glyph `group`)
+# 3. subset:  python3 -m fontTools.subset <full>.woff2 --glyphs=<resolved glyphs + .fill variants> \
+#      --text=abcdefghijklmnopqrstuvwxyz_0123456789 --layout-features=liga,calt,rlig --no-layout-closure \
+#      --flavor=woff2 --output-file=<out>.woff2 --no-hinting --desubroutinize --notdef-outline
+# 4. verify: every `.msr`/`.mso` span must be as wide as its font-size (a missing glyph renders the whole word)
+```
 
 ## Verification recipe
 

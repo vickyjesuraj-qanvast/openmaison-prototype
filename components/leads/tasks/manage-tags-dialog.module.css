@@ -1,0 +1,41 @@
+/* Manage Tags dialog (902:27709) — 400×600, heading 64 p20/24 "Manage Tags" + close with a bottom rule, body V g20 p24, no footer.
+   Spec: design-source/context/lead-tasks/03-panel-tags.txt. Shell = components/leads/move-stage/dialogs.tsx Dialog at
+   `size="modal"` (the 64px head, body p24, level-5 — T7); it has no "no footer" mode, so the .host wrapper only fixes the
+   height, the body's V g20 (the modal body gaps 24) and hides the empty footer (head · body · foot are the dialog's three
+   children); nothing in the shell is edited. */
+.host [role='dialog'] { height: 600px; max-height: calc(100vh - 96px); }   /* the mock fixes 600 (as the Filters modal); viewport-capped */
+.host [role='dialog'] > div:nth-child(2) { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; gap: var(--om-spacing-5); }
+.host [role='dialog'] > div:last-child { display: none; }
+
+/* Row H g8, 20 tall: name 14/Regular fills · delete 20/Light #666666 · edit 20/Light #666666 (28 apart = 20 + g8). */
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); height: 20px; }
+.name {
+  flex: 1; min-width: 0;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Bare 20px icon controls — hover = "Link icon 20px" row of context/interaction-states.md (bg rgba(0,0,0,.08), r4), as
+   components/leads/detail/info-column.module.css .iconBtn. Focus ring as om/icon-button. */
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover);
+}
+.iconBtn:hover { background: var(--om-color-hover-08p); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Editing row H g12: Text Field 48 Filled (284 wide) + [done · close] icon buttons 24, H g8 (56 wide). */
+.editRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.editRow > .editField { flex: 0 0 284px; width: 284px; }
+.editRow label:empty { display: none; }   /* the mock's field carries no label — hide the DS field's empty floated label notch */
+.editActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+/* Icon Buttons Primary/24/Filled (done): om/icon-button only ships the outlined primary — filled = primary fill, white icon
+   (the DS primary filled button's colours); hover = primary-hover, as the DS button. */
+.doneBtn { background: var(--om-color-primary-default); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
+.doneBtn:hover { background: var(--om-color-primary-hover); border-color: var(--om-color-primary-hover); color: var(--om-color-on-primary-default); }
+
+.rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }

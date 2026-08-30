@@ -1,0 +1,144 @@
+/*
+ * File viewer (931:39831 frames 92–95). Spec: design-source/context/lead-files/03-viewer-panels.txt.
+ * Page body = the Lead Details frame (app/leads/[id]/overview.module.css .body): white, r8, fills the shell column.
+ */
+.body {
+  flex: 1;
+  min-width: 0;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  overflow: clip;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page Header / Leads - L2 (931:39835) 1424×56, p16/24, bottom rule surface-variant (inside). The sticky + rounded-top
+   plates are copied 1:1 from components/shell/page-header-l2.module.css; only the height (56, no crumb line) differs. */
+.header {
+  position: sticky; top: var(--om-spacing-2); z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--om-spacing-3);                                    /* arrow @24 (ends 48) → title @60 */
+  height: 56px;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  background: transparent;                                     /* painted by ::after (rounded) */
+  border-radius: var(--om-radius-2) var(--om-radius-2) 0 0;
+  flex-shrink: 0;
+}
+.header::before {
+  content: ''; position: absolute; left: 0; right: 0; top: calc(-1 * var(--om-spacing-2)); bottom: 0; z-index: -1;
+  background: var(--om-color-surface-bg); pointer-events: none;
+}
+.header::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: var(--om-color-surface-default); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; pointer-events: none;
+  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+}
+/* arrow_back 24/Light on-surface — a routed link (page-header-l2 .back). */
+.back {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex-shrink: 0;
+  color: var(--om-color-on-surface-default);
+  text-decoration: none;
+  border-radius: var(--om-radius-1);
+}
+/* "Generic file name" 20/Bold on-surface, fills the row, ellipsised. */
+.title {
+  flex: 1; min-width: 0; margin: 0;
+  font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px;
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* actions (931:39847) 168×24, H g24: comment · download · info · more_vert — bare 24px icons, secondary. */
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-6); flex-shrink: 0; }
+.anchor { position: relative; display: inline-flex; }
+/* Bare 24px icon button — the drawer head's icon button (components/om/drawer.module.css .iconBtn), hover 08p. */
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover), color var(--motion-hover);
+}
+.iconBtn:hover, .iconBtn[aria-expanded='true'] { background: var(--om-color-hover-08p); }
+/* The icon whose panel is open reads on-surface (the mock shows no pressed state — the drawer head's crumb-icon rule). */
+.iconBtn[aria-pressed='true'] { color: var(--om-color-on-surface-default); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.danger { color: var(--om-color-tertiary-red-default); }
+
+/* Section container (931:39853): fills the viewport under the header (shell gutters 8+8, header 56); H → canvas + panel.
+   `flex: none` + a fixed height: the shell column is only min-height: 100dvh, so a `flex: 1` stage (basis 0%) would size to
+   its content and a tall image would grow the page instead of being contained (max-height: 100% needs a definite height). */
+.stage {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: calc(100dvh - 16px - 56px);
+}
+/* Image area: V p100/120, the image contained + centred (1184 = 1424 − 240). With a panel (931:39912): p24/100. */
+.canvas {
+  flex: 1; min-width: 0;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--om-spacing-25) var(--om-spacing-30);
+  overflow: hidden;                                            /* a zoomed image is clipped by the padded area */
+  transition: padding var(--motion-toggle);
+}
+.canvas[data-panel] { padding: var(--om-spacing-6) var(--om-spacing-25); }
+.image {
+  display: block;
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+  transition: transform var(--motion-toggle);
+}
+
+/* prev / next (931:39859) 48×48 p12, white, stroke surface-variant, r4, the level-3 shadow (0 10 15 @10 + 0 4 6 @5). */
+.nav {
+  position: absolute; top: 50%; translate: 0 -50%;
+  width: 48px; height: 48px; padding: var(--om-spacing-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-3);
+  color: var(--om-color-on-surface-default);
+  cursor: pointer;
+  transition: background-color var(--motion-hover);
+}
+.nav[data-side='prev'] { left: var(--om-spacing-4); }
+.nav[data-side='next'] { right: var(--om-spacing-4); }
+.nav:hover { background: var(--om-color-hover-04p); }
+.nav:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Zoom bar (931:39855) 130×50: H g16 p12, white, stroke surface-variant, r8, level-3 shadow; bottom centre, inset 22. */
+.zoomBar {
+  position: absolute; left: 50%; bottom: 22px; translate: -50% 0;
+  box-sizing: border-box; width: 130px; height: 50px;
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  box-shadow: var(--om-elevation-level-3);
+}
+/* remove · arrows_output · add, 24 each: on-surface when the step is available, disabled (#999999) when not. */
+.zoomBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1);
+  transition: color var(--motion-hover);
+}
+.zoomBtn[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
+.zoomBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Side panel (931:39912): 400 wide, white, left rule surface-variant; the panel component fills it head / body / footer.
+   Layered above the fixed Maison FAB (maison-fab.module.css z-index 90) the way the Drawer twin is (drawer.module.css
+   z-index 100), so the FAB never covers the Comments composer. */
+.panel {
+  position: relative; z-index: 91;
+  width: 400px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  min-height: 0;
+  background: var(--om-color-surface-default);
+  box-shadow: inset var(--om-border-1) 0 0 var(--om-color-surface-variant);
+}

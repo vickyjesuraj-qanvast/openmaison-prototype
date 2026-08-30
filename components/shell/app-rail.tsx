@@ -21,7 +21,7 @@ const TOP_ITEMS = [
   { icon: 'people_alt', label: 'Leads', href: '/leads', fill: true },
   { icon: 'storefront', label: 'Marketplace' },
   { icon: 'domain', label: 'Company' },
-  { icon: 'account_balance', label: 'Qanvast Ops' },
+  { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
 ]
 const BOTTOM_ITEMS = [
   { icon: 'apps', label: 'Tools' },

@@ -14,6 +14,7 @@
   display: flex; flex-direction: column;
   overflow: hidden;
   max-height: calc(100vh - 96px);
+  outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
 }
 .head {
   display: flex; align-items: flex-start; gap: var(--om-spacing-4);
@@ -24,7 +25,7 @@
 .headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 .subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); }
-.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); width: 100%; }   /* panel title · Add Log / Edit */
 
 .body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
 .rail { width: 240px; flex-shrink: 0; background: var(--om-color-surface-bg); display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
@@ -39,16 +40,17 @@
 }
 .railItem[data-state='active'] { background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); }
 .railItem[data-state='done'] { color: var(--om-color-on-surface-default); }
-.railItem:hover { background: color-mix(in srgb, black 3%, var(--om-color-surface-bg)); }
+.railItem:hover { background: var(--om-color-hover-04p); }   /* side-nav hover (interaction-states.md) */
 .railItem[data-state='active']:hover { background: var(--om-color-surface-default); }
 /* Locked = a later stage in linear movement (user 2026-08-29): disabled colour, no hover, the tooltip says what unlocks it. */
 .railItem[data-state='locked'] { color: var(--om-color-on-surface-disabled); cursor: default; }
 .railItem[data-state='locked']:hover { background: transparent; }
+.railItem:focus-visible { outline-offset: -2px; }   /* the rail clips; keep the global ring inside the row */
 .railIcon { display: inline-flex; flex-shrink: 0; }
 .railIcon[data-kind='done'] { color: var(--om-color-tertiary-green-default); }
 .railIcon[data-kind='todo'] { color: var(--om-color-on-surface-disabled); }
 .railIcon[data-kind='locked'] { color: var(--om-color-on-surface-disabled); }
-.railIcon[data-kind='active'] { color: var(--om-color-on-surface-secondary); }
+.railIcon[data-kind='active'] { color: var(--om-color-on-surface-disabled); }   /* 780:92788 / 92789: the open stage's circle stays on-surface/disabled */
 .railIcon[data-kind='error'] { color: var(--om-color-tertiary-red-default); }
 .railIcon[data-kind='warn'] { color: var(--om-color-tertiary-yellow-default); }
 .railLabel { flex: 1; min-width: 0; }
@@ -66,7 +68,7 @@
   display: flex; align-items: center; gap: var(--om-spacing-3);
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);   /* the modal footer shadow (lead form / Filters / Import wizard, mock 780:92903); no elevation token carries it */
   flex-shrink: 0;
 }
 .footError {
@@ -77,6 +79,12 @@
 }
 .footSpacer { flex: 1; }
 .footBtns { display: flex; gap: var(--om-spacing-3); }
+
+/* New: assignee rows (avatar 40 · name / role · disabled check). */
+.memberRow { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) 0; width: 100%; text-align: left; }
+.memberText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.memberName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.memberRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* Log card */
 .logCard {
@@ -92,18 +100,11 @@
 }
 .logCard[data-collapsed='true'] .logHead { border-bottom: 0; }
 .logTitle { flex: 1; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
-.autoFill {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  border: 0; background: none; padding: 0; cursor: pointer;
-  color: var(--om-color-primary-default);
-  font: var(--om-type-subheading-m);
-}
-.autoFill img { width: 17px; height: 17px; }
-.logChevron { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
 .logBody { padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-8); }
 .fieldPair { display: flex; gap: var(--om-spacing-4); width: 100%; }
 .stack12 { display: flex; flex-direction: column; gap: var(--om-spacing-3); width: 100%; }
 .stack24 { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
+.tiles { display: flex; gap: var(--om-spacing-3); }   /* attached-file tiles, 12 apart */
 
 /* Quote tabs + rows */
 .tabCard { width: 512px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); overflow: hidden; }
@@ -118,7 +119,8 @@
 }
 .tab[aria-selected='true'] { color: var(--om-color-primary-default); }
 .tab:not([aria-selected='true']) { padding-bottom: var(--om-spacing-3); }
-.tabInk { height: 4px; width: 100%; border-radius: 2px 2px 0 0; background: var(--om-color-primary-default); }
+.tab:focus-visible { outline-offset: -2px; }   /* the tab card clips; keep the ring inside */
+.tabInk { height: 4px; width: 100%; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; background: var(--om-color-primary-default); }
 .tabBody { padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .quoteRow {
   display: flex; align-items: center; gap: var(--om-spacing-3);
@@ -134,6 +136,7 @@
 .quoteRow[data-selected='true'] .quoteRadio { color: var(--om-color-primary-default); }
 .quoteText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .quoteName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.fileName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* the uploaded file row's name */
 .quoteMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); flex-wrap: wrap; }
 .quoteRow[data-file-row='true'] { cursor: default; padding: var(--om-spacing-3); }   /* 780:91468: 52 tall = 2px border + 12 + 24 icon */
 .pdfBadge { width: 24px; height: 24px; flex-shrink: 0; display: block; }   /* DS File Format / pdf (780:91468) */
@@ -143,46 +146,30 @@
 .msRow { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); }
 .msRow + .msRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .msIndex { width: 16px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.msText { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .msName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .msMeta { flex: 1; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* DS Text Field 36 (780:92861, text-right): 1px border → active 2px primary (border + inset, as components/om/text-field) → error red. */
 .msPct {
   width: 100px; height: 36px;
   display: flex; align-items: center; gap: var(--om-spacing-1);
   padding: 0 16px;
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1);
+  transition: border-color var(--motion-toggle), box-shadow var(--motion-toggle);
 }
-.msPct input { width: 100%; border: 0; outline: 0; background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.msPct:focus-within { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.msPct[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.msPct[data-error]:focus-within { box-shadow: inset 0 0 0 1px var(--om-color-tertiary-red-default); }
+.msPct input { width: 100%; border: 0; outline: 0; background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: right; }
+.msPct input:disabled { color: var(--om-color-on-surface-disabled); }   /* read-only stage (836:23276) */
 .msPct span { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .msAmt { width: 80px; text-align: right; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
-.msTotal { background: var(--om-color-surface-bg); font: var(--om-type-subheading-m); }
-.msTotal .msAmt { font: var(--om-type-subheading-m); }
+.msTotal { background: var(--om-color-surface-bg); font: var(--om-type-heading-h5); }   /* 780:92895: "Total" and the amount in Inter Bold 14/20 (REG-161) */
+.msTotalLabel { flex: 1; }
+.msTotal .msAmt { width: auto; font: var(--om-type-heading-h5); }
 
-/* Compact + nested dialogs */
-.dialogOverlay {
-  position: fixed; inset: 0; z-index: 110;
-  background: var(--om-color-overlay-20p);
-  display: flex; align-items: center; justify-content: center;
-}
-.dialog {
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  box-shadow: var(--om-elevation-level-5);
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.dialogHead { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); }
-.dialogBody { padding: 0 var(--om-spacing-6) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-.dialogFoot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-/* Standard dialog (821:23969): radius-1 + border + level-3, 56px heading with divider, 24px body. */
-.dialog[data-size='standard'] { border-radius: var(--om-radius-3); border: var(--om-border-1) solid var(--om-color-surface-variant); box-shadow: var(--om-elevation-level-3); }   /* 12px = the standard modal radius (designer, 2026-08-28) */
-.dialog[data-size='standard'] .dialogHead { align-items: center; padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
-.dialog[data-size='standard'] .dialogBody { padding: var(--om-spacing-6); }
-/* form (784:113420): s-modal with one field — 72px heading (24 all round, no divider), 12/24 body, 84px footer (24, gap 8). */
-.dialog[data-size='form'] { border-radius: var(--om-radius-3); box-shadow: var(--om-elevation-level-5); }
-.dialog[data-size='form'] .dialogHead { align-items: center; padding: var(--om-spacing-6); }
-.dialog[data-size='form'] .dialogBody { padding: var(--om-spacing-3) var(--om-spacing-6); }
-.dialog[data-size='form'] .dialogFoot { padding: var(--om-spacing-6); gap: var(--om-spacing-2); border-top: 0; }
+/* Suggested tasks rows (the dialog shell itself is components/om/dialog). */
 .helper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .taskRow {
   display: flex; align-items: center; gap: var(--om-spacing-3);
@@ -194,14 +181,15 @@
   width: 100%;
   background: none; cursor: pointer; text-align: left;
 }
-.taskRow[data-auto='true'] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-variant); }
+.taskText { flex: 1; min-width: 0; }
+/* Auto-added row (931:45360, the one measured mock): #eee5ff fill inside the same surface-variant stroke, check_box 24/Light primary — both variants. */
+.taskRow[data-auto='true'] { background: var(--om-color-primary-variant); cursor: default; }
 .groupLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-
-.dangerButton {
-  height: 36px; padding: 0 var(--om-spacing-4); border: 0; border-radius: var(--om-radius-1);
-  background: var(--om-color-tertiary-red-default); color: #fff;
-  font: var(--om-type-subheading-m); cursor: pointer;
-  transition: filter var(--motion-hover), opacity var(--motion-hover);
-}
-.dangerButton:hover { filter: brightness(0.92); }
-.dangerButton:disabled { opacity: 0.5; cursor: default; }
+/* Notes › Add tasks (931:45360, spec 02): label 14/Semi Bold ink over its row, 12 apart (see SuggestedTasksDialog); row 552×46
+   (H g8 p12/16, stroke #e5e5e5 r4 — the auto row keeps the #eee5ff fill with the same #e5e5e5 stroke; the box leads the text).
+   The mock's row is 46 tall with a 24 glyph, so the vertical padding resolves to 11 inside the 1px stroke — the row is
+   fixed at 46 and centres its content rather than stacking the spec's p12 (which would make 48). */
+.taskGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.groupLabel[data-variant='notes'] { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.taskRow[data-variant='notes'] { height: 46px; padding: 0 var(--om-spacing-4); gap: var(--om-spacing-2); }
+.taskCheck { display: inline-flex; flex-shrink: 0; color: var(--om-color-primary-default); }   /* check_box 24/Light #5500ff */

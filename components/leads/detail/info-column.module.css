@@ -1,0 +1,99 @@
+/* Lead info column (858:24787 / 858:25136) — spec: design-source/context/lead-overview/02-left-column.txt.
+   360 wide · V g24 p24 · right stroke 1px surface-variant. Dividers are 1px surface-variant rules in the flow. */
+.column {
+  flex: 0 0 360px; width: 360px; min-width: 360px;
+  align-self: stretch; min-height: 100%;
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+  border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+  min-width: 0;
+}
+.rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+
+/* Identity block (858:24788): name row 32 tall · 4 · contact rows 20 tall, 4 apart. */
+.identity { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.nameRow { display: flex; align-items: center; justify-content: space-between; height: 32px; }
+.name {
+  flex: 1; min-width: 0; margin: 0;
+  font: var(--om-type-heading-h2);   /* 24 / Bold / 32 */
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.contact { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.contactRow { display: flex; align-items: center; gap: var(--om-spacing-2); height: 20px; }
+.contactText {
+  min-width: 0;
+  font: var(--om-type-body-m);   /* 14 / Regular / 20 */
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* ENDING truncation (phone / address per spec; email kept single-line the same way) */
+}
+.whatsapp { display: block; width: 14px; height: 14px; }
+
+/* Bare icon controls (edit · copy · WhatsApp · directions · chevron · more_vert): 20 box (16 for the copy icons), on-surface.
+   Hover = "Link icon 20px" row of context/interaction-states.md: bg rgba(0,0,0,.08), radius 4. */
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.iconBtn[data-size='16'] { width: 16px; height: 16px; }
+.iconBtn:hover { background: var(--om-color-hover-08p); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }   /* as om/icon-button */
+
+/* Section pattern: V g16 · head H g12 (title fills · link · chevron) 20 tall · body = key/value list. */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.sectionHead { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
+.sectionTitle {
+  flex: 1; min-width: 0; margin: 0;
+  font: var(--om-type-subheading-m);   /* 14 / Semi Bold / 20 */
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Head link "Add" (858:25155): 14 / Semi Bold / 20 primary; hover = Link text row of interaction-states.md (#4400cc). */
+.headLink {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  white-space: nowrap;
+  transition: color var(--motion-hover);
+}
+.headLink:hover { color: var(--om-color-on-primary-variant); }
+.sectionBody { display: flex; flex-direction: column; }
+
+/* Key/value list: keys 120 FIXED · values FILL · H g12 (g16 in Property info) · V g16 · rows 20 tall. */
+.kv {
+  display: grid; grid-template-columns: 120px minmax(0, 1fr);
+  column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-4);
+  align-items: start;
+  margin: 0;
+}
+.kv[data-gap='16'] { column-gap: var(--om-spacing-4); }
+.key {
+  height: 20px;
+  font: var(--om-type-body-m);   /* 14 / Regular / 20 */
+  color: var(--om-color-on-surface-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.value { margin: 0; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.text { display: block; height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* ENDING, single line */
+
+/* "Assign Member ›" / "Add ›" (CellDataGroup link): 14 / Semi Bold / 20 primary + 20 arrow, H g4. Hover as .headLink. */
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 20px;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  white-space: nowrap;
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+
+/* Assignees (858:25155): one 20px row per member — avatar 20 · name fills · more_vert 20, H g8; rows 16 apart. */
+.assignees { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.assignee { display: flex; align-items: center; gap: var(--om-spacing-2); height: 20px; }
+.assigneeName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Mock avatar "Generic" 20×20 r4, initial 14 / Medium / 20 = om/avatar size 20. */

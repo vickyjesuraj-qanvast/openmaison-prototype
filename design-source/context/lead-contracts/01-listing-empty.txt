@@ -1,0 +1,42 @@
+# Lead Details › Contracts (section 931:38609 "Contracts", 3120×1224) — two frames only: 111 empty state 931:38610 · 112 listing 931:38666.
+# No menus, hover states, filters or dialogs are mocked for Contracts — every one of those is copied from the Quotes tab (910-36240) and logged.
+# Centre "Section container" 931:38681: 1292×892, V g24 p24 (same frame as Tasks / Quotes).
+# Format: depth|type|id|name|x,y,w,h (relative to the container)|layout|fill|stroke|radius|text size/style colour|instance{set:props}
+
+## Toolbar row (931:38682 "Section items" 1244×36, H g16)
+3|TEXT|931:38684|All Contracts|24,30,690,24|"All Contracts" 16/Bold #1a1a1a
+3|INST|931:38686|Buttons|730,24,150,36|H g8 p8/12/8/16|stroke #5500ff w1|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined,Trailing Icon=Yes}  "New Contract" 14/Semi Bold #5500ff + "keyboard_arrow_down" 20
+3|INST|931:38687|Search Bar|892,24,280,36|fill #ffffff|stroke #cccccc w1|r4  "search" 20 #666666 · "Search" 14/Semi Bold #666666
+3|INST|931:38688|Icon Buttons|1184,24,36,36|stroke #cccccc w1|r4|I{Icon Buttons:Type=Secondary,Size=36,Style=Outlined}  "filter_list" 20 #666666
+3|INST|931:38689|Icon Buttons|1232,24,36,36|stroke #cccccc w1|r4  "more_vert" 20 #666666
+
+## Table (931:38690) 1244×116 — fill #ffffff, stroke #e5e5e5 w1 (inside), r8; **head 48 + row 68**; NO selection column, no bottom bar.
+2|INST|931:38691|Table / Row / Contracts|24,84,1234,48|I{Table / Row / Contract:Type=HD,State=Default}      (the head instance is 1234 wide — a mock quirk; the row is 1244)
+3|FRAM|Header Title + Icon|24,84,557,48|H g4 p16/24/16/16   "Title" 12/Medium #666666 + "unfold_more" 16 #666666      (no right rule on the Title head)
+3|FRAM|Header|581,84,128,48   "Status" 12/Medium + unfold_more
+3|FRAM|Header|709,84,120,48   "Created"
+3|FRAM|Header|829,84,142,48   "Signed Copy"
+3|FRAM|Header|971,84,140,48   "Sent"
+3|FRAM|Header|1111,84,147,48  "Updated"                                                                     (row cell below is 157: 1111 + 157 = 1268 = the table's right edge)
+# Column widths (row): 557 (fluid) · 128 · 120 · 142 · 140 · 157 = 1244
+
+2|INST|931:38692|Table / Row / Contracts|24,132,1244,68|I{Type=RW,State=Default}
+3|FRAM|Cell / Two line|24,132,557,68|H g12 p24/24/24/16|stroke #e5e5e5 w1/0/0/0
+4|TEXT|Name|40,156,517,20|"General Contract Agreement" 14/Medium #1a1a1a          (ONE line only — the "Two line" cell carries no secondary text; 14/Medium = subtitle-m, not the quotes' Bold)
+3|FRAM|Cell / One line|581,132,128,68|H g12 p12/24/12/16|stroke #e5e5e5 w1/0/0/0
+4|FRAM|CellDataGroup|597,156,58,20|H g4    "Draft" 14/Regular #1a1a1a + "keyboard_arrow_down" 20/Regular #1a1a1a
+3|FRAM|Cell / One line|709,132,120,68     "17 Jul ‘26" 14/Regular #1a1a1a @725,156        (Created)
+3|FRAM|Cell / One line|829,132,142,68     "-" 14/Regular #1a1a1a @845,156                  (Signed Copy)
+3|FRAM|Cell / One line|971,132,140,68     "17 Jul ‘26" 14/Regular #1a1a1a @987,156        (Sent — the mock shows a date on a Draft)
+3|FRAM|Cell / One line|1111,132,157,68    "17 Jul ‘26" 14/Regular #1a1a1a @1127,156       (Updated)
+# Title column: no right rule in the head; the row's Two-line cell has stroke w1/0/0/0 (top only) → no frozen-column divider in this table.
+
+## Empty state (frame 111, 931:38634) — card 1244×784 fill #ffffff stroke #e5e5e5 r8, content centred (identical to Quotes 910:36266)
+3|FRAM|931:38636|undraw_no-data_ig65 1|556,318,180,176   (the same illustration as Quotes → /figma-assets/empty-quotes.svg)
+3|FRAM|931:38647|texts|494,518,305,56|V g12
+4|TEXT|931:38648|"Create your first contract" 20/Semi Bold #1a1a1a
+4|TEXT|931:38649|"Create contracts and share it with your clients" 14/Regular #1a1a1a
+3|FRAM|931:38650|buttons|512,598,268,36|H g12
+4|INST|931:38651|Buttons|123×36|stroke #cccccc|r4|I{Type=Secondary,Style=Outlined}  "From Scratch" 14/Semi Bold #666666
+4|INST|931:38652|Buttons|133×36|fill #5500ff|r4|I{Type=Primary,Style=Filled}  "From Template" 14/Semi Bold #ffffff
+# illustration → title 24; title → subtitle 12; texts → buttons 24

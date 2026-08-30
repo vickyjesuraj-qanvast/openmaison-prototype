@@ -6,7 +6,6 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--om-spacing-3); text-align: center;
 }
-.art { width: 120px; height: 120px; margin-bottom: var(--om-spacing-6); }
 .title { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .clear { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); margin-top: var(--om-spacing-1); }

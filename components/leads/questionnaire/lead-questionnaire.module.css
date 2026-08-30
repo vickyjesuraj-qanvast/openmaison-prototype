@@ -1,0 +1,24 @@
+/* Lead Details › Questionnaire (section 931-46769: 201 empty 931:46770 · 202 listing 931:46954; spec
+   design-source/context/lead-questionnaire/01-listing-empty-dialog.txt). The centre "Section container" (1292×892, V g24 p24)
+   already pads 24 (the same frame as Tasks / Quotes / Contracts — copied from components/leads/quotes/lead-quotes.module.css). */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+
+/* Toolbar (931:46977 "Section items" 1244×36, H g16): "All Questions" 16/Bold (heading-h4) fills · "Ask Client" primary outlined
+   36 — copied from components/leads/files/files-toolbar.module.css (.bar / .title). */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.anchor { position: relative; display: inline-flex; flex-shrink: 0; }   /* the Tooltip's measured child around the DS Button (overview.module.css .anchor) */
+/* The Tooltip listens on its wrapper, and a disabled DS Button is a native `disabled` button that swallows the pointer
+   (the wizard rail's note, move-stage/wizard.tsx) — so while Ask Client is locked the pointer falls through to the wrapper
+   and "Add a question first" can show (REG-75). The DS keeps its 50% disabled look; nothing else changes. */
+.anchor > :disabled, .anchor > [data-disabled] { pointer-events: none; }
+
+/* Listing (931:46983) — H g24: questions column 740 (V g24) + summary card 480 (top right of the column, 931:47025). */
+.layout { display: flex; align-items: flex-start; gap: var(--om-spacing-6); min-width: 0; }
+.questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 0 0 740px; width: 740px; min-width: 0; }
+.summary { flex: 0 0 480px; width: 480px; }
+
+/* "+ Add Question" under the last card (invented, REG-188) — the Tasks table's bottom bar (902:26450,
+   components/leads/tasks/tasks-table.module.css .foot: p16/24) without its top rule: here the link sits in the open column,
+   not inside a table card, so there is nothing to rule off. */
+.foot { display: flex; align-items: center; padding: var(--om-spacing-4) var(--om-spacing-6); }

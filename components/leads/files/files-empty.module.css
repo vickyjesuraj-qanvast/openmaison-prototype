@@ -1,0 +1,21 @@
+/*
+ * Lead Details › Files — empty state (frame 87, 931:40340 · spec design-source/context/lead-files/01-toolbar-empty-list.txt
+ * "Empty state"): card 1244×784 fill #fff stroke #e5e5e5 (inside) r8, content centred both ways (V g24).
+ * Illustration 180×155 → 24 → texts (V g12) → 24 → buttons (H g12).
+ * Copied from components/leads/contracts/contracts-empty.module.css (identical geometry).
+ */
+.card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%; height: 784px;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+}
+.inner { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); }   /* illustration → texts 24 · texts → buttons 24 */
+.art { display: block; max-width: 100%; }
+.texts { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }   /* 931:40352 V g12 */
+/* "Add your first files" 20/Semi Bold — heading-h3 is 700 in the tokens, so the weight is overridden exactly as
+   components/leads/detail/card.module.css .emptyTitle does. */
+.title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
+.body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }   /* 14/Regular #1a1a1a */
+.buttons { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }   /* 931:40355 H g12 */

@@ -1,0 +1,65 @@
+/* MY WORK card (858:24989 · 858:24505 · 858:24171). Spec: design-source/context/lead-overview/05-*.txt. */
+
+/* Head meta "· Wed, 26 Aug": dot + date, body-s secondary, 4 apart (the Card head paints the colour/type). */
+.headMeta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+
+/* Group label row: H g4, 12/20/0/20 (8 top for the first group → 28 tall, else 32); subheading-m in the group's tone. */
+.groupLabel {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  width: 100%;
+  padding: var(--om-spacing-3) var(--om-spacing-5) 0;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+  text-align: left;
+}
+/* 858:24989 vs 858:24505: the Overdue label sits 8 below the head (28 tall); Due today / Upcoming labels sit 12 below whatever precedes them (32 tall) — the padding follows the group, not its position. */
+.groupLabel[data-tone='red'] { padding-top: var(--om-spacing-2); }
+.groupLabel[data-tone='red'] { color: var(--om-color-tertiary-red-default); }          /* #db382a */
+.groupLabel[data-tone='yellow'] { color: var(--om-color-on-tertiary-yellow-variant); }  /* #c17e22 */
+.groupText { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+/* The Upcoming label is a toggle button: same geometry, bare. */
+button.groupLabel { border: 0; background: none; cursor: pointer; font: var(--om-type-subheading-m); }
+/* Collapsed Upcoming (858:24989): 52px row, 12/20/20/20, chevron on the right. */
+.collapsed { padding: var(--om-spacing-3) var(--om-spacing-5) var(--om-spacing-5); }
+.toggleIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); transition: background-color var(--motion-hover); }
+button.groupLabel:hover .toggleIcon { background: var(--om-color-hover-08p); }   /* "Link icon 20px" hover (interaction-states.md) */
+
+/* List: V g0, 0/12/12/12. With a rule after it the bottom pad is 11 so rows + pad + rule = the mock's 124 (rule at y199 inside the list). */
+.list { display: flex; flex-direction: column; padding: 0 var(--om-spacing-3) var(--om-spacing-3); }
+.list[data-ruled] { padding-bottom: 11px; }
+
+/* Task row: 56 tall, H g8 p8, r4; rows touch. */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 56px; padding: var(--om-spacing-2);
+  border-radius: var(--om-radius-1);
+}
+.radio {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; flex-shrink: 0;
+  color: var(--om-color-on-surface-secondary);
+  transition: color var(--motion-hover);
+}
+.radio:hover { color: var(--om-color-primary-default); }   /* as the tasks popover's radio */
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.title {
+  font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Meta: kind · due — subtitle-s (12/500/16) secondary; the dot is body-s (12/400). */
+.meta {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary);
+  white-space: nowrap; overflow: hidden;
+}
+.dot { font: var(--om-type-body-s); }
+.meta [data-tone='red'] { color: var(--om-color-tertiary-red-default); }           /* #db382a */
+.meta [data-tone='yellow'] { color: var(--om-color-on-tertiary-yellow-variant); }  /* #c17e22 */
+.chev {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; flex-shrink: 0;
+  color: var(--om-color-on-surface-secondary);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.chev:hover { background: var(--om-color-hover-08p); }   /* "Link icon 20px" hover (interaction-states.md) */

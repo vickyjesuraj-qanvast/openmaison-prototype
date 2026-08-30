@@ -1,0 +1,36 @@
+/* Kanban ghost — mirrors app/leads/leads.module.css .content (kanban) + kanban/board.module.css geometry. */
+.content {
+  flex: 1; min-height: 0; overflow: hidden;
+  padding: var(--om-spacing-6);
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+}
+/* Body (100dvh − 16) − header 68 − padding 24 − toolbar 36 − gap 24 − padding 24. */
+.board { display: flex; gap: var(--om-spacing-2); height: calc(100dvh - 192px); overflow: hidden; }
+.band { display: flex; gap: var(--om-spacing-2); min-height: 0; }
+/* Collapsible band rail: icon 20 + 4px side padding. */
+.rail { width: 28px; flex-shrink: 0; border-radius: var(--om-radius-2); }
+.rail[data-tone='green'], .column[data-tone='green'] { background: var(--om-color-tertiary-green-variant2); }
+.rail[data-tone='yellow'], .column[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-variant2); }
+.column {
+  width: 320px; flex-shrink: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  border-radius: var(--om-radius-2);
+  overflow: hidden;
+}
+.colHead {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  height: 52px; padding: var(--om-spacing-4);
+  position: relative; z-index: 1;
+  box-shadow: var(--om-elevation-level-1);
+}
+.colBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-4); }
+.card {
+  width: 288px;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-4);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+  box-shadow: var(--om-elevation-level-1);
+}
+.cardHead { display: flex; align-items: center; justify-content: space-between; }
+.divider { height: 1px; width: 100%; background: var(--om-color-surface-variant); }

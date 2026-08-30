@@ -7,7 +7,7 @@ import { client } from '@/lib/db'
  * into fixtures/baseline.json. `restoreBaseline()` puts the database back to it — the demo's
  * "reset to original" behind the Maison AI FAB. Order matters for foreign keys: parents first.
  */
-export const BASELINE_TABLES = ['users', 'organizations', 'memberships', 'members', 'leads', 'lead_assignees', 'lead_tasks', 'stage_logs', 'imports', 'import_rows', 'settings'] as const
+export const BASELINE_TABLES = ['users', 'organizations', 'memberships', 'members', 'leads', 'lead_assignees', 'lead_tasks', 'stage_logs', 'imports', 'import_rows', 'settings', 'quotes', 'contracts', 'lead_files', 'lead_questionnaires', 'lead_returns', 'tags', 'task_tags', 'task_assignees', 'task_comments', 'task_attachments', 'task_templates', 'template_tasks', 'file_comments', 'lead_notes', 'note_attachments', 'questions', 'return_attachments'] as const
 export const BASELINE_FILE = path.join(process.cwd(), 'fixtures', 'baseline.json')
 
 export type Baseline = Record<string, Record<string, unknown>[]>

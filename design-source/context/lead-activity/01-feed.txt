@@ -1,0 +1,13 @@
+# Lead Details › Activity (section 931:47975, one frame 114 931:47976). Centre "Section container" 931:47991: 1292×892, V g80 p40 — NO toolbar.
+# Format: depth|type|id|name|x,y,w,h (relative to the container)|layout|fill|stroke|text size/style colour
+
+## Day group (931:47992) 1212 wide, V g24
+2|FRAM|931:47993|rule row|40,40,1212,1|H   Horizontal rule 1212×1 #e5e5e5
+3|FRAM|931:47995|date chip|576,31,140,20|H|fill #ffffff   — centred on the rule (chip 140×20, white, overlapping the rule by 9 above / 10 below)
+4|TEXT|931:47996|"Wed, 12 Aug ‘26" 12/Regular #666666 (92 wide, centred in the chip)   = displayDateLong
+2|FRAM|931:47997|rows|40,65,1212,120|V g12
+3|FRAM|931:47998|row|40,65,1212,54|H g16 p16/24/16/24|fill #ffffff|stroke #e5e5e5 w1 (inside)   (no radius on the row)
+4|FRAM|931:47999|text group|65,82,921,20|H g8   icon 20/Light #1a1a1a ("ballot" for task events) + "You updated the due date for the task "Customer asked to call back on 29th of Jul" to "08/05/2026"." 14/Regular #1a1a1a (fills, 868 wide)
+4|FRAM|931:48002|meta|1002,82,225,20|H g12   "See Task" 14/Medium #1a1a1a (link) · "·" 14/Regular #666666 · "James" 14/Regular #666666 (actor; "System" on the second row) · "·" · "08:59 PM" 14/Regular #666666 (displayTime, zero-padded hour)
+# rows 12 apart; day groups 80 apart; the first rule sits 40 from the container's top edge
+# The mock repeats one sentence (a task due-date update) with actors James / System; other event kinds carry no mock — sentences, icons and link labels are invented (REG-191)

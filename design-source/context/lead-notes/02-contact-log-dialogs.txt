@@ -1,0 +1,24 @@
+# Lead Details › Notes — contact log editor (frames 162 empty · 165 filled · 163 view) and the dialogs (164 · 166)
+
+## Contact log editor block (931:45231 "Frame 114552" 654 wide, V g24) — inside the 702 editor column (p24)
+1|FRAM|title row|654×20|H   "Contact log" 14/Semi Bold #1a1a1a (fills) · Link text "Auto Fill" 14/Semi Bold #5500ff (right)
+1|FRAM|options|654×56|V g8   "Contacted via" 12/Regular #666666 · chips row H g12: Choice 32 tall (p8/12) WhatsApp · Email · SMS · Call · Others (selected: fill #eee5ff stroke #5500ff text #4400cc)   = move-stage ChoiceChips
+1|FRAM|row|654×48|H g16   Text Field 48 "When" (trailing event 16 → date-time picker; value "12/3/2025, 3:00PM") · Text Field 48 "Outcome" select (expand_more; value "Connected")
+1|FRAM|next step|654×92|V g24 (only when the outcome has a next step)   "Next step: Schedule a meeting" 14/Semi Bold · row H g16: "Date & Time" 48 (value "24/8/2026, 7:00PM") · "Preferred mode" 48 select (value "In person")
+1|INST|Horizontal rule 654×1 #e5e5e5
+1|TEXT|"Write a note..." 16/Regular #666666   (the body placeholder — the same free text as a note, below the fields)
+# footer (frame 165): Cancel · Save as the note editor; Attachments column present when files are attached
+# outcomes seen: "Connected" (→ Next step: Schedule a meeting), "Callback requested" (frame 163; the move-stage window's next step: Schedule a call); modes seen: "In person" + the contact channels
+
+## Contact log view (931:45383 "Frame 114552" 654×281, V g24)
+1|FRAM|title row   "Contact log" 14/Semi Bold · Link text "Edit" 14/Semi Bold #5500ff (right)
+1|FRAM|rows|654×164|H g24 → labels column 104 wide (V g16, 14/Regular #666666): Contacted via · Date & Time · Outcome · Next follow-up · Preferred mode; values column 526 (V g16, 14/Regular #1a1a1a): WhatsApp · 17 Jul ‘26, 3:00PM · Callback requested · 17 Jul ‘26, 3:00PM · In person   (rows 20 tall, 16 apart; Next follow-up / Preferred mode only when the outcome has a next step)
+1|INST|Horizontal rule
+1|TEXT|"Write a note..." 16/Regular #666666 (the body, placeholder when empty)
+# no footer in view mode; Edit → the editor above
+
+## Auto Fill (164, 931:45344) — ModalComponent 600×348, r12: Heading 64 (p20/24, "Auto Fill" 20/Bold + close, bottom rule) · body p24: dropzone 552×168 (fill #f2f2f2, stroke #cccccc w2 dashed?, r4, p40): "Drop in the conversation or browse" 14 (browse bold) + "Upload a screenshot from any messaging app — we'll identify the channel, summarise the conversation, and suggest tasks." 12/Regular #666666 (237 wide, centred) · Footer 68 (p16/24, top rule): Cancel 80×36 · Upload 81×36
+# = components/leads/move-stage/dialogs.tsx AutoFillDialog at width 600 (it is 400 in the Move stage window)
+
+## Add tasks (166, 931:45360) — ModalComponent 600×385, r12: Heading 64 "Add tasks" + close · body V g24 p24: "Auto added" 14/Semi Bold → row 552×46 (H g8 p12/16, fill #eee5ff, stroke #e5e5e5, r4): check_box 24/Light #5500ff + "Schedule a meeting with the client for Monday, 24 Aug ‘26 at 7PM" 14/Regular · rule · "Suggestions" 14/Semi Bold → row 552×46 (stroke #e5e5e5 r4): check_box_outline_blank 24 #666666 + "Prepare sample designs and floor plan illustrations for the client" · Footer 68: Cancel 80×36 · Save 65×36
+# = SuggestedTasksDialog (move-stage/dialogs.tsx) with title "Add tasks", width 600, leading checkboxes as the mock draws them here

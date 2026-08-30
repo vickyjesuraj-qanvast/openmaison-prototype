@@ -12,7 +12,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url))
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
 
-  transpilePackages: ['@openmaison/react', '@openmaison/icons'],
+  transpilePackages: ['@openmaison/react'],   // @openmaison/icons is unused: the prototype renders Material Symbols (audit 2026-08-30)
 
   turbopack: {
     root: path.resolve(rootDir, '..'),

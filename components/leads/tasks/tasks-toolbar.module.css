@@ -1,0 +1,31 @@
+/*
+ * Lead Details › Tasks toolbar — "Section items" 1244×36, H g16 (902:26378, spec 01-listing-table.txt).
+ * Left: "All Tasks" 16/Bold (heading-h4 = 16/700/24) fills. Right: actions H g12.
+ */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* Menu anchors (Add Task button · header kebab) — the Dropdown positions itself against these. */
+.menuWrap { position: relative; display: inline-flex; }
+/* Chevron points up while the menu is open — every menu trigger does this (listing toolbar rule, user 2026-08-28). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+/* Search Bar 36 Outlined — 280 wide in the mock; the DS component is fluid so the width is set here. */
+.search { width: 280px; }
+
+/* Active-filter count badge — the listing toolbar's pattern (components/leads/toolbar.module.css), copied verbatim. */
+.filterWrap { position: relative; display: inline-flex; }
+.filterBadge {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: var(--om-radius-full);
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
+  font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--om-color-surface-default);
+  box-sizing: content-box;
+}
+
+/* Menu item tones — "Dropdown Menu / Tasks": danger items #db382a. */
+.danger { color: var(--om-color-tertiary-red-default); }

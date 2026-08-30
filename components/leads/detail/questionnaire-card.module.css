@@ -1,0 +1,18 @@
+/* QUESTIONNAIRE card (858:25077 · empty 858:24219). Spec: design-source/context/lead-overview/05-*.txt. */
+
+/* Body: V g8, 8/20/20/20 → group V g8. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+
+/* "Total questions answered" (fills, subheading-m) · "7 / 11" (body-m secondary), on one baseline. */
+.row { display: flex; align-items: baseline; gap: var(--om-spacing-2); }
+.label { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Progress: 8px track, surface-variant, r999; primary bar r999. */
+.track { width: 100%; height: 8px; background: var(--om-color-surface-variant); border-radius: var(--om-radius-full); overflow: hidden; }
+.bar { height: 100%; background: var(--om-color-primary-default); border-radius: var(--om-radius-full); }
+
+/* Legend (16 tall): "Client answered: n" left · "Studio answered: n" right, subtitle-s secondary. */
+.legend { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.legend span:last-child { flex: 1; text-align: right; }

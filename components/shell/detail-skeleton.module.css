@@ -1,0 +1,23 @@
+/* Bones follow the Lead Details frame (858:24772): 72px header, 44px tabs, 360 · fluid · 72 row. */
+.header { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); height: 72px; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.titleCol { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 44px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
+.row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 44px); }
+.info { width: 360px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.rule { height: 1px; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
+.centre { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.grid { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.tools { width: 72px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+/* Wide tab frame (tasks / quotes / contracts / files …): toolbar row, then a table — 48px head, 56px rows (the tabs' shared geometry). */
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.toolbar > :first-child { margin-right: auto; }
+.toolbarRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.tableWrap { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.headRow, .tableRow { display: flex; align-items: center; }
+.headRow { height: 48px; }
+.tableRow { height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tableWrap .col { flex-direction: row; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-4); }

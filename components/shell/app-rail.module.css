@@ -119,6 +119,8 @@
 .panel[data-expanded] .label { opacity: 1; }
 
 .bottom { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+/* No token — the Upgrade gradients are the mock's literals (779:19690: coral → raspberry at 10%, and the gem's #b42c69 → #eb802b);
+   logged with the other literal exceptions in REGISTER.md (audit 2026-08-30). */
 .upgrade { background: linear-gradient(90deg, rgba(214, 97, 66, 0.1), rgba(189, 58, 95, 0.1)); }
 .upgradeGlyph {
   background: linear-gradient(180deg, #b42c69, #eb802b);

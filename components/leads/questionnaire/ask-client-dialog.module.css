@@ -1,0 +1,22 @@
+/* Ask the client (931:46937, 400×302; spec design-source/context/lead-questionnaire/01-listing-empty-dialog.txt "Ask the client").
+   The shell (64 head · body p24 g24 · footer 68) is the shared Dialog at size="modal" (move-stage/wizard.module.css); this
+   file holds the body — helper 14/Semi Bold #1a1a1a (352 wide, 2 lines) + the portal box — and the footer's shadow. */
+
+/* Footer (spec 01: "shadow 0 25 50 #000@25", the Move dialog / Drawer footer) — the shared shell only draws the top rule, so
+   the shadow is added on the dialog's third child (head · body · foot) from this host, scoped to this dialog (the Notes
+   Auto Fill / Add tasks specs record no shadow). Token level-5 is the nearest elevation (audit 2026-08-30). */
+.host [role='dialog'] > div:last-child { position: relative; z-index: 1; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-5); }
+.helper { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+/* Portal box 352×58: H g12 p8/12, fill #f2f2f2 (surface-bg), stroke #e5e5e5 w1 (inside — the plan's rule), r4. */
+.portal {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  height: 58px; padding: var(--om-spacing-2) var(--om-spacing-3);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-bg);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+}
+/* [V g4] "Portal link" 14/Semi Bold #1a1a1a · the URL 12/Regular #666666, 246 wide with ellipsis. */
+.portalText { display: flex; flex-direction: column; gap: var(--om-spacing-1); flex: 1; min-width: 0; }
+.portalLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.portalUrl { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

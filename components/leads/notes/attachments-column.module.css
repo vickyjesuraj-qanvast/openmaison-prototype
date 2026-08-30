@@ -1,0 +1,63 @@
+/*
+ * Lead Details › Notes — Attachments column (931:45548 182×776, V g12 p16, left rule #e5e5e5; spec design-source/context/
+ * lead-notes/01-layout-list-editor.txt). Tile 150×158: V p4, fill #f2f2f2, r4 → image 142×108 r2 + caption 142×42
+ * (H g8 p8). Copied from components/leads/files/files-grid.module.css (.tile/.tileMain/.tileImg/.tileBox/.caption/
+ * .kindIcon/.tileName/.kebab/.tileMenuWrap) at the Notes sizes.
+ */
+.column {
+  width: 182px; flex-shrink: 0; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4);
+  border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+  overflow-y: auto;
+}
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }   /* "Attachments" 14/Semi Bold #1a1a1a */
+
+/* ---- Tile 150×158: V p4, fill #f2f2f2 r4 → image 142×108 r2 + caption 142×42 ---- */
+.tile {
+  position: relative;
+  width: 150px; height: 158px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.tile:hover { background: var(--om-color-hover-04p); }   /* hover not mocked — the files grid tile's hover-04p */
+/* The open area: image + caption as one bare button; the caption's right padding reserves the kebab's 24 + 8. */
+.tileMain {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.tileMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tileImg { display: block; width: 142px; height: 108px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 142×108 r2 */
+.tileBox {
+  width: 142px; height: 108px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-0-5);
+}
+.tileBoxIcon { color: var(--om-color-on-surface-secondary); }
+/* Caption 142×42: H g8 p8 — the right 8 becomes 8 + 24 + 8 so the absolutely placed kebab keeps its 8 gap. */
+.caption {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 42px; width: 100%; min-width: 0;
+  padding: var(--om-spacing-2) calc(var(--om-spacing-2) + 24px + var(--om-spacing-2)) var(--om-spacing-2) var(--om-spacing-2);
+}
+.kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* picture_as_pdf / image 20/Regular #db382a */
+.tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* "Q-101" 14/Semi Bold */
+
+/* Kebab anchor at the caption's right, measured from the tile's outer edge: right = 4 + 8 → 12; bottom = 4 + (42 − 24) / 2 → 13. */
+.tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 13px; display: inline-flex; }
+/* Kebab: bare more_vert 24/Light #666666 — files-grid.module.css .kebab. */
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover { background: var(--om-color-hover-08p); }
+.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

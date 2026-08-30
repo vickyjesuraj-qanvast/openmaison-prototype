@@ -1,0 +1,42 @@
+/* Side panel (902:27363): 400 wide, full viewport height at the right edge, white, shadow 0 20px 25px #000@10 + 0 6px 10px #000@15. */
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  z-index: 100;
+  display: flex; flex-direction: column;
+  background: var(--om-color-surface-default);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.10), 0 6px 10px rgba(0, 0, 0, 0.15);   /* mock values; no --om-elevation token carries this pair */
+  outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
+}
+
+/* Head 64 (p20/24, title 20/700, H g16 to the actions); with a crumb: 80 tall, back arrow 12 from "Task / " + title. Bottom rule + level-1 shadow.
+   Spec: 03-panel-tags.txt "Heading H g16", 04-comments-attach.txt "page-title H g12". */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  min-height: 64px;
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  box-shadow: var(--om-elevation-level-1);
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+.titles { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-4); }
+/* Back arrow (crumb variant): on-surface ink, and 12 (not 16) to the titles. Head icons are the bare 24 IconButton (hover-08p, radius 4). */
+.head[data-crumb] .back { color: var(--om-color-on-surface-default); margin-right: calc(-1 * var(--om-spacing-1)); }
+
+/* Body scrolls; 24 padding, 24 gap between blocks (rules sit in the flow). */
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+
+/* Footer 68 (p16/24), top rule, shadow 0 25px 50px #000@25 (mock). */
+.footer {
+  flex-shrink: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+  position: relative; z-index: 1;
+}

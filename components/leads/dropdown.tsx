@@ -38,9 +38,9 @@ export function Dropdown({
       if (t.closest('[aria-haspopup][aria-expanded="true"]')) return
       onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', onKey, true)   // capture: the open menu owns Esc before its host (Drawer / dialog) — as PortalMenu / TagPicker do (REG-4, REG-124)
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
+    return () => { document.removeEventListener('keydown', onKey, true); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose])
 
   return (
@@ -66,9 +66,9 @@ export function Dropdown({
   )
 }
 
-export function DropdownItem({ children, onSelect }: { children: ReactNode; onSelect: () => void }) {
+export function DropdownItem({ children, onSelect, tone }: { children: ReactNode; onSelect: () => void; /** Destructive item (Delete) — red text, as om/menu's `tone`. */ tone?: 'danger' }) {
   return (
-    <button type="button" role="menuitem" className={styles.item} onClick={onSelect}>
+    <button type="button" role="menuitem" className={styles.item} data-tone={tone} onClick={onSelect}>
       {children}
     </button>
   )

@@ -1,22 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Checkbox } from '@/components/ds'
+import { Checkbox, Tag } from '@/components/ds'
 import { ReadOnlyScope, useReadOnly } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Avatar } from '@/components/om/avatar'
-import { CONTACT_CHANNELS } from '@/lib/leads/enums'
-import { money } from '@/lib/format'
+import { CONTACT_CHANNELS, CONTACT_MODES, NEXT_STEP_BY_OUTCOME, OUTCOMES } from '@/lib/leads/enums'
+import { moneySGD } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
 import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
+import fieldStyles from './fields.module.css'
 
-const OUTCOMES = ['Callback requested', 'Meeting scheduled', 'No response']
-const NEXT_STEP_BY_OUTCOME: Record<string, string> = { 'Callback requested': 'Schedule a call' }
+// OUTCOMES / NEXT_STEP_BY_OUTCOME / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186).
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
@@ -28,12 +29,11 @@ export function NewPanel({
       <div className={styles.stack12}>
         <SectionRow label="Assignees" />
         {team.map((m) => (
-          <div key={m.id}
-               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', width: '100%', textAlign: 'left' }}>
+          <div key={m.id} className={styles.memberRow}>
             <Avatar name={m.name} color={m.color} size={40} />
-            <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ font: 'var(--om-type-body-m)', color: 'var(--om-color-on-surface-default)' }}>{m.name}</span>
-              <span style={{ font: 'var(--om-type-body-s)', color: 'var(--om-color-on-surface-secondary)' }}>{m.isYou ? `${m.role} (you)` : m.role}</span>
+            <span className={styles.memberText}>
+              <span className={styles.memberName}>{m.name}</span>
+              <span className={styles.memberRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
             </span>
             <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled aria-label={`Assigned: ${m.name}`} />
           </div>
@@ -60,29 +60,20 @@ function LogShell({
       <div className={styles.logHead}>
         <span className={styles.logTitle}>Log {index + 1}</span>
         {!collapsed && !readOnly ? (
-          <button type="button" className={styles.autoFill} onClick={onAutoFill}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/figma-assets/sparkle.svg" alt="" />
-            Auto Fill
-          </button>
+          // eslint-disable-next-line @next/next/no-img-element
+          <LinkButton leading={<img src="/figma-assets/sparkle.svg" alt="" />} onClick={onAutoFill}>Auto Fill</LinkButton>
         ) : null}
         {!collapsed && readOnly && onEdit ? (
-          <button type="button" className={styles.autoFill} onClick={onEdit}>
-            <Icon name="edit" size={20} />
-            Edit
-          </button>
+          <LinkButton icon="edit" onClick={onEdit}>Edit</LinkButton>
         ) : null}
         {!collapsed && !readOnly && onDelete ? (
           <Tooltip label="Delete log">
-            <button type="button" className={styles.logChevron} aria-label={`Delete log ${index + 1}`} onClick={onDelete}>
-              <Icon name="delete" size={24} weight={300} />
-            </button>
+            <IconButton icon="delete" label={`Delete log ${index + 1}`} size={24} variant="bare" iconSize={24} iconWeight={300} onClick={onDelete} />
           </Tooltip>
         ) : null}
         <Tooltip label={collapsed ? 'Expand log' : 'Collapse log'}>
-          <button type="button" className={styles.logChevron} aria-label={collapsed ? 'Expand log' : 'Collapse log'} onClick={onToggle}>
-            <Icon name={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} size={24} />
-          </button>
+          <IconButton icon={collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} label={collapsed ? 'Expand log' : 'Collapse log'}
+                      size={24} variant="bare" iconSize={24} onClick={onToggle} />
         </Tooltip>
       </div>
       {!collapsed ? (
@@ -121,11 +112,11 @@ function LogCard({
       </div>
       {nextStep ? (
         <div className={styles.stack24}>
-          <span className={styles.sectionLabel}>Next step: {nextStep}</span>
+          <span className={fieldStyles.sectionLabel}>Next step: {nextStep}</span>
           <div className={styles.fieldPair}>
             <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
                            onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
-            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_CHANNELS]}
+            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
                        onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
           </div>
         </div>
@@ -135,7 +126,7 @@ function LogCard({
         <SectionRow label="Attach screenshots of your call attempts"
                     action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
         {log.files.length ? (
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className={styles.tiles}>
             {log.files.map((f, i) => (
               <FileTile key={`${f}-${i}`} name={f}
                         onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
@@ -146,7 +137,7 @@ function LogCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <span className={styles.sectionLabel}>Notes (optional)</span>
+        <span className={fieldStyles.sectionLabel}>Notes (optional)</span>
         <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>
@@ -206,7 +197,7 @@ function MeetingCard({
         <SectionRow label="Attach meeting documents"
                     action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
         {log.files.length ? (
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className={styles.tiles}>
             {log.files.map((f, i) => (
               <FileTile key={`${f}-${i}`} name={f} onDelete={() => onChange({ files: log.files.filter((_, j) => j !== i) })} />
             ))}
@@ -216,7 +207,7 @@ function MeetingCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <span className={styles.sectionLabel}>Notes (optional)</span>
+        <span className={fieldStyles.sectionLabel}>Notes (optional)</span>
         <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>
@@ -312,12 +303,10 @@ export function AttachTabs({
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className={styles.pdfBadge} src="/figma-assets/file-pdf.svg" alt="PDF" width={24} height={24} />
-                <span className={styles.quoteName} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploaded}</span>
+                <span className={`${styles.quoteName} ${styles.fileName}`}>{uploaded}</span>
                 {ro ? null : (
                   <Tooltip label="Remove file">
-                    <button type="button" className={styles.logChevron} aria-label="Remove file" onClick={onRemoveUpload}>
-                      <Icon name="delete" size={20} weight={300} />
-                    </button>
+                    <IconButton icon="delete" label="Remove file" size={24} variant="bare" iconSize={20} iconWeight={300} onClick={onRemoveUpload} />
                   </Tooltip>
                 )}
               </div>
@@ -336,8 +325,8 @@ export function QuoteSentPanel({
   const [meetingFiles, setMeetingFiles] = useState<string[]>([])
   const [renderFiles, setRenderFiles] = useState<string[]>([])
   const quotes = [
-    { name: SYSTEM_QUOTE, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
-    { name: `${SYSTEM_QUOTE}-v1`, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Approved on 19 Aug'] },
+    { name: SYSTEM_QUOTE, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Approved on 19 Aug'] },
+    { name: `${SYSTEM_QUOTE}-v1`, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Approved on 19 Aug'] },
   ]
   const upload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)   // focus Quote amount once the file lands (user 2026-08-29)
@@ -365,7 +354,7 @@ export function QuoteSentPanel({
         <SectionRow label="Attach meeting documents"
                     action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
         {meetingFiles.length ? (
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className={styles.tiles}>
             {meetingFiles.map((f, i) => (
               <FileTile key={`${f}-${i}`} name={f} onDelete={() => setMeetingFiles((fs) => fs.filter((_, j) => j !== i))} />
             ))}
@@ -377,7 +366,7 @@ export function QuoteSentPanel({
         <SectionRow label="Attach render (optional)"
                     action={<LinkButton icon="attach_file" onClick={() => setRenderFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
         {renderFiles.length ? (
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className={styles.tiles}>
             {renderFiles.map((f, i) => (
               <FileTile key={`${f}-${i}`} name={f} onDelete={() => setRenderFiles((fs) => fs.filter((_, j) => j !== i))} />
             ))}
@@ -391,7 +380,7 @@ export function QuoteSentPanel({
 export function WonPanel({
   data, update, errors, leadBudgetMinor,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
-  const quotes = [{ name: SYSTEM_QUOTE, meta: ['OM-10001', `S$ ${money(leadBudgetMinor)}`, 'Signed on 19 Aug'] }]
+  const quotes = [{ name: SYSTEM_QUOTE, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Signed on 19 Aug'] }]
   const contracts = [{ name: SYSTEM_CONTRACT, meta: ['Signed on 19 Aug'] }]
   const quoteUpload = useUploadSim()
   const contractUpload = useUploadSim()
@@ -438,40 +427,37 @@ export function WonPanel({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <div className={styles.rowBetween ?? ''} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-          <span className={styles.sectionLabel} style={{ flex: 1 }}>Payment milestone</span>
-          <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
-          <span style={{
-            background: 'var(--om-color-tertiary-green-variant2)',
-            boxShadow: 'inset 0 0 0 1px var(--om-color-tertiary-green-variant1)',
-            color: 'var(--om-color-on-tertiary-green-variant)',
-            font: 'var(--om-type-caption-xs)', textTransform: 'uppercase',
-            padding: '4px 8px', borderRadius: 4,
-          }}>{totalPct}%</span>
-        </div>
+        {/* 780:92850 / 92852: "Payment milestone" · Reset to default · the DS green outlined Tag with the split's total */}
+        <SectionRow label="Payment milestone"
+                    action={
+                      <span className={fieldStyles.rowActions}>
+                        <LinkButton onClick={() => update({ milestones: defaultMilestones() })}>Reset to default</LinkButton>
+                        <Tag color="green" appearance="outlined">{`${totalPct}%`}</Tag>
+                      </span>
+                    } />
         <div className={styles.msCard}>
           {data.milestones.map((m, i) => {
             const amtMinor = Math.round((basisMinor * (m.pct || 0)) / 100)
             return (
               <div key={m.name} className={styles.msRow}>
                 <span className={styles.msIndex}>{i + 1}</span>
-                <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className={styles.msText}>
                   <span className={styles.msName}>{m.name}</span>
                   <span className={styles.msMeta}>{m.meta}</span>
                 </span>
-                <span className={styles.msPct}>
-                  <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`}
+                <span className={styles.msPct} data-error={errors.milestones ? '' : undefined}>
+                  <input value={String(m.pct)} inputMode="numeric" aria-label={`${m.name} percentage`} aria-invalid={errors.milestones ? true : undefined}
                          onChange={(e) => setPct(i, Math.max(0, Math.min(100, Number(e.target.value.replace(/\D/g, '')) || 0)))} />
                   <span>%</span>
                 </span>
-                <span className={styles.msAmt}>S${money(amtMinor)}</span>
+                <span className={styles.msAmt}>{moneySGD(amtMinor)}</span>
               </div>
             )
           })}
           <div className={`${styles.msRow} ${styles.msTotal}`}>
             <span className={styles.msIndex} />
-            <span style={{ flex: 1 }}>Total</span>
-            <span className={styles.msAmt} style={{ width: 'auto' }}>S${money(basisMinor)}</span>
+            <span className={styles.msTotalLabel}>Total</span>
+            <span className={styles.msAmt}>{moneySGD(basisMinor)}</span>
           </div>
         </div>
         <FieldError message={errors.milestones} />

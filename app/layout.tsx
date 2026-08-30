@@ -21,18 +21,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${notoSerif.variable}`}>
       <head>
         {/*
-          Icons render as the Material Symbols VARIABLE FONT, exactly as the
-          mocks do (Rounded: Light 300 nav / Regular 400 UI, FILL axis for
-          active states; Outlined for the search/close glyphs the mocks use).
-          Deviation log #1: the DS ships SVG icons at weight 400 only, which
-          cannot express the Light 300 nav icons.
+          Icons render as the Material Symbols VARIABLE FONT, exactly as the mocks do (Rounded: Light 300 nav /
+          Regular 400 UI, FILL axis for active states; Outlined for the search/close glyphs the mocks use).
+          Deviation log #1: the DS ships SVG icons at weight 400 only, which cannot express the Light 300 nav icons.
+          The font is self-hosted and subsetted in app/globals.css (audit 2026-08-30) — no external stylesheet, so the
+          page no longer render-blocks on fonts.googleapis.com. Preloading the Rounded subset keeps icons from
+          arriving a frame late.
         */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,0&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block"
-        />
+        <link rel="preload" href="/fonts/material-symbols-rounded.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body>
         {children}

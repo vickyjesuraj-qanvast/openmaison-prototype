@@ -1,0 +1,15 @@
+# Lead Details › Quotes — contextual menus (section 910:36615 "04 - Quotes contextual menu"; frames 199 910:36616 · 200 910:36681)
+
+## Hover row (910:36644 / 910:36709, Type=RW State=Hover) — fill #f2f2f2; actions float at the right edge
+1|FRAM|Hover button|1106,14,114,36|H g12|D:0,1/3/#000000@10 D:0,1/2/#000000@6   (elevation level-1)
+2|INST|Buttons|1106,14,66,36|fill #ffffff|stroke #5500ff w1|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined}  "View" 14/Semi Bold #5500ff
+2|INST|Icon Buttons|1184,14,36,36|fill #ffffff|stroke #5500ff w1|r4|I{Icon Buttons:Type=Primary,Size=36,Style=Outlined}  "more_vert" 20 #5500ff
+# right inset 24 (1244 − 1220), vertical centre of the 64 row; same pattern as the leads table (REG-163) with "View" instead of "Edit"
+# frame 200 hover row data: "Olivia Martinez" · "OM-10001 · Shared" · Status "Approved ▾" · S$70,000 · calendar_add_on · 17 Jul ‘26 · - · 17 Jul ‘26 · 17 Jul ‘26
+
+## Menus — all "Dropdown Menu / Quotes" 200 wide, V p4/0, fill #ffffff, stroke #e5e5e5 w1, r4, shadow 0 10 15 #000@10 + 0 4 6 #000@5; items 36 tall, text 14/Regular #1a1a1a @13,13
+910:36664 (frame 199 @749,184 — under "New Quote")            200×154: From Blank · From Template · Import from File · Create with AI
+910:36673 (frame 199 @451,456 — under the Status cell "Draft")  200×190: Draft · Sent for Approval · Approved · Sent to Client · Signed
+910:36680 (frame 199 @452,666 — under a Status cell)           200×154: Draft · Approved · Sent to Client · Signed        (Sent for Approval absent → the menu lists the OTHER statuses; the current one is omitted)
+910:36723 (frame 200 @1112,442 — row kebab)                    200×226: Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete(#db382a)
+910:36729 (frame 200 @1136,184 — header kebab)                 200×118: Manage Templates · Quotes Settings · Deleted Quotes

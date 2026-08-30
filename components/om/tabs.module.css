@@ -1,0 +1,24 @@
+/* Page Tabs / Leads (858:24784) — 1364×44, H p0/24, white, level-1 shadow; items 24 apart.
+   Tab Item Enabled: H p12/0/12/0, 14/600/20 secondary. Tab Item Selected: V g8 p12/0/0/0 primary, text 20 + gap 8 + ink 4 = 44.
+   Geometry mirrors the DS Tab Item already built in move-stage/wizard.module.css (.tab / .tabInk); that one has no hover, so neither has this. */
+.tabs {
+  display: flex; align-items: center; gap: var(--om-spacing-6);
+  height: 44px;
+  padding: 0 var(--om-spacing-6);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+  position: relative; z-index: 1;   /* the shadow paints over the content below, as the kanban column head does */
+  overflow-x: auto;
+}
+.tab {
+  display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-3) 0;
+  flex-shrink: 0;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tab[aria-selected='true'] { color: var(--om-color-primary-default); padding-bottom: 0; }
+.tab:focus-visible { outline-offset: -2px; }   /* the 44px row scrolls (overflow-x) and clips an outset ring; keep it inside, as text fields do */
+.ink { height: 4px; width: 100%; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; background: var(--om-color-primary-default); }

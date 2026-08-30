@@ -32,6 +32,9 @@
 .titleBlock { display: flex; flex-direction: column; gap: 6px; }
 .headerActions { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
+/* Mirrors the om Tabs row (components/om/tabs.module.css .tabs: 44px, H g24 p0/24, level-1 shadow) — detail-skeleton.module.css .tabs. */
+.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 44px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
+
 /* Mirrors LeadsToolbar / imports toolbar. */
 .toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
 .toolbar > :first-child { margin-right: auto; }

@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { snackbarRise } from '@/lib/motion'
 import styles from './bulk-bar.module.css'
 
@@ -39,9 +40,11 @@ export function BulkBar({
             </span>
           ))}
           <span className={styles.divider} />
-          <button type="button" className={styles.close} aria-label="Clear selection" onClick={onClear}>
-            <Icon name="close" size={20} />
-          </button>
+          <Tooltip label="Clear selection">
+            <button type="button" className={styles.close} aria-label="Clear selection" onClick={onClear}>
+              <Icon name="close" size={20} />
+            </button>
+          </Tooltip>
         </motion.div>
       ) : null}
     </AnimatePresence>

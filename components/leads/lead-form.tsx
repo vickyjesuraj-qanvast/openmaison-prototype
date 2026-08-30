@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button } from '@/components/ds'
+import { Button, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
@@ -279,8 +279,9 @@ export function LeadFormModal({
                           <AreaField value={data.areaSize} unit={data.areaUnit} onChange={set('areaSize')} onUnitChange={set('areaUnit')} />
                         </div>
                         <div className={styles.fieldWrap}>
-                          <textarea className={styles.notes} placeholder="Notes" value={data.notes}
-                                    onChange={(e) => set('notes')(e.target.value)} />
+                          {/* Notes = the DS TextArea (page-checklist › Fields: never a raw input) at the mock's 96px — lead-form.module.css .notes */}
+                          <TextArea aria-label="Notes" placeholder="Notes" value={data.notes}
+                                    onChange={(v: string) => set('notes')(v)} className={styles.notes} />
                           <span className={styles.helper}>You can view these notes under the Notes page in Leads Detail.</span>
                         </div>
                       </div>

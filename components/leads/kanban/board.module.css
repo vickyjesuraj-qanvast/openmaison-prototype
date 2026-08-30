@@ -66,9 +66,16 @@
   border-radius: var(--om-radius-2);
   padding: var(--om-spacing-4);
   display: flex; flex-direction: column; gap: var(--om-spacing-3);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--om-elevation-level-1);
   cursor: grab;
   position: relative;
+}
+/* Unseen lead (REG-131 → kanban, REG-194): the table row's 4px primary band on the card's left edge, following the card's radius. */
+.card[data-unseen]::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--om-color-primary-default);
+  border-radius: var(--om-radius-2) 0 0 var(--om-radius-2);
 }
 .card:active { cursor: grabbing; }
 .card { touch-action: none; }
@@ -85,7 +92,6 @@
 .cardName {
   flex: 1; min-width: 0;
   font: var(--om-type-heading-h4);
-  font-size: 16px;
   color: var(--om-color-on-surface-default);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -123,6 +129,15 @@
   font: var(--om-type-subheading-m);
 }
 .assignLink:hover { color: var(--om-color-on-primary-variant); }
+/* "+n" overflow box — the table's (table.module.css .plusBox), REG-195. */
+.plusBox {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+}
 
 /* B3: drop hint in empty columns while a drag is live (and softly at rest). */
 .dropHint {
@@ -143,9 +158,7 @@
   padding-top: 40px;
   text-align: center;
 }
-.noResultsArt { width: 120px; height: 120px; margin-bottom: var(--om-spacing-6); }
 .noResultsTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); margin-bottom: var(--om-spacing-3); }
-.noResultsSub { font: var(--om-type-body-m); margin-bottom: var(--om-spacing-3); }
-.noResultsSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.noResultsSub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); }   /* same block as the table's (search-empty.module.css .sub, REG-146) */
 .clearLink { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
 .clearLink:hover { color: var(--om-color-on-primary-variant); }

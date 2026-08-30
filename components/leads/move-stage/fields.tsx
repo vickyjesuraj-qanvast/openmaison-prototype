@@ -2,6 +2,7 @@
 
 import { useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useReadOnly } from '@/components/om/read-only'
 import styles from './fields.module.css'
@@ -15,7 +16,7 @@ export function ChoiceChips({
 }: { options: readonly string[]; value: string | null; onChange: (v: string) => void; label: string; error?: string }) {
   const ro = useReadOnly()
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }} data-error={error || undefined}>
+    <div className={styles.chipGroup} data-error={error || undefined}>
       <span className={styles.mutedLabel} data-error={error || undefined}>{label}</span>
       <div className={styles.chips} role="radiogroup" aria-label={label} aria-invalid={!!error || undefined} aria-disabled={ro || undefined}>
         {options.map((o) => (
@@ -45,14 +46,15 @@ export function SectionRow({ label, action }: { label: string; action?: ReactNod
   )
 }
 
-export function LinkButton({ icon, children, onClick }: {
-  icon?: string; children: ReactNode; onClick?: (e: MouseEvent<HTMLButtonElement>) => void
+/** DS Link text (780:92851): 14 Semi Bold primary, optional 20px leading icon (or any `leading` glyph — the 17px sparkle), H g4; hover on-primary-variant. */
+export function LinkButton({ icon, leading, children, onClick }: {
+  icon?: string; leading?: ReactNode; children: ReactNode; onClick?: (e: MouseEvent<HTMLButtonElement>) => void
 }) {
   const ro = useReadOnly()
   if (ro) return null   // read-only stage: no Attach / Add / Reset affordances
   return (
     <button type="button" className={styles.link} onClick={onClick}>
-      {icon ? <Icon name={icon} size={20} /> : null}
+      {leading ?? (icon ? <Icon name={icon} size={20} /> : null)}
       {children}
     </button>
   )
@@ -78,9 +80,7 @@ export function FileTile({ name, onDelete }: { name: string; onDelete: () => voi
         <span className={styles.tileName}>{name}</span>
         {ro ? null : (
           <Tooltip label="Remove file">
-            <button type="button" className={styles.tileDel} aria-label={`Remove ${name}`} onClick={onDelete}>
-              <Icon name="delete" size={24} weight={300} />
-            </button>
+            <IconButton icon="delete" label={`Remove ${name}`} size={24} variant="bare" iconSize={24} iconWeight={300} onClick={onDelete} />
           </Tooltip>
         )}
       </div>
@@ -102,12 +102,16 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
 }
 
 /**
- * Upload target (780:90940 · 780:91263). Any file the user picks or drops is accepted — the prototype then
+ * Upload target (780:90940 · 780:91263 · 780:92744 / 780:92808): 2px dashed on-surface/border, p40, 14 Semi Bold title with
+ * "browse" underlined in the same ink, 12 helper. Any file the user picks or drops is accepted — the prototype then
  * shows the mock's own file (the panels decide which) after the "Uploading..." state.
  * `accept` is unset by default (Auto Fill takes a screenshot from any app); the quote / contract dropzones pass PDF.
+ * `variant="notes"` = Notes › Auto Fill (931:45344, spec 02): 552×168, the helper 237 wide and centred.
+ * Keyboard: the box is a real tab stop; Enter / Space open the file picker (audit 2026-08-30).
  */
-export function Dropzone({ title, helper, onPick, uploading, accept }: {
+export function Dropzone({ title, helper, onPick, uploading, accept, variant }: {
   title: ReactNode; helper: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
+  variant?: 'notes'
 }) {
   const [over, setOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -115,7 +119,7 @@ export function Dropzone({ title, helper, onPick, uploading, accept }: {
   if (ro) return null
   if (uploading) {
     return (
-      <div className={styles.dropzone} data-uploading="true" role="status" aria-live="polite">
+      <div className={styles.dropzone} data-uploading="true" data-variant={variant} role="status" aria-live="polite">
         <span className={styles.dropTitle}>Uploading...</span>
         <span className={styles.dropHelper}>Please wait as your file is being uploaded!</span>
       </div>
@@ -124,12 +128,15 @@ export function Dropzone({ title, helper, onPick, uploading, accept }: {
   return (
     <div
       className={styles.dropzone}
+      data-variant={variant}
       data-over={over || undefined}
       onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() } }}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); onPick(e.dataTransfer.files[0]) }}
       role="button"
+      tabIndex={0}
       aria-label="Upload file"
     >
       <span className={styles.dropTitle}>{title}</span>

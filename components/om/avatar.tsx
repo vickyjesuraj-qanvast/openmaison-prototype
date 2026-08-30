@@ -5,6 +5,8 @@ import styles from './avatar.module.css'
  * assignees" (781:54363). `color: 'photo'` renders the committed photo asset.
  * R2 in the register: replaces the mocks' grey placeholder silhouettes with
  * real member identities everywhere.
+ * Sizes: 20 (Avatar Generic 20 r4, 14/Medium initial — Lead Details info column, LEAD RETURNED, task rows),
+ * 24 (listing), 36 (task assignees / comments, r4, 14/Medium), 40 (assign popover / Move stage New).
  */
 export function Avatar({
   name,
@@ -13,7 +15,7 @@ export function Avatar({
 }: {
   name: string
   color: string
-  size?: 24 | 40
+  size?: 20 | 24 | 36 | 40
 }) {
   if (color === 'photo') {
     return (

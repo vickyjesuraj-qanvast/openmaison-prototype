@@ -1,0 +1,33 @@
+/* Lead Details › Notes — contact log editor (931:45124 empty · 931:45231 filled · 931:45383 view).
+   Spec: design-source/context/lead-notes/02-contact-log-dialogs.txt. Block "Frame 114552" 654 wide (the 702 column
+   minus p24), V g24: title row 20 tall · "Contacted via" chips · row g16 When + Outcome · next step (V g24) ·
+   rule · body. View: title row · label/value rows (labels 104, rows 20 tall, 16 apart) · rule · body.
+   Column shell (p24 g24 + footer 68) = note-editor.module.css. */
+
+.editor { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+.fields {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+}
+
+/* Title row 654×20: "Contact log" 14/Semi Bold fills · Link text "Auto Fill" / "Edit" at the right (DS Link). */
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); width: 100%; min-height: 20px; }
+.blockTitle { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+/* Row H g16 (When + Outcome · Date & Time + Preferred mode) = move-stage/wizard.module.css `.fieldPair`. */
+.fieldPair { display: flex; gap: var(--om-spacing-4); width: 100%; }
+/* Next step 654×92, V g24: "Next step: …" 14/Semi Bold (= move-stage `.sectionLabel`) + the field pair. */
+.nextStep { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
+.sectionLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+/* View rows (931:45383): H g24 → labels column 104 (V g16, 14/Regular secondary) · values column fills (V g16, 14/Regular ink); rows 20 tall. */
+.rows { display: flex; gap: var(--om-spacing-6); width: 100%; }
+.labels { flex: 0 0 104px; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.values { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.label { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); min-height: 20px; }
+.value { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* View body: the note text 16/Regular ink, or "Write a note..." 16/Regular secondary when empty (the mock's placeholder). */
+.viewBody { margin: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+.viewBody[data-empty] { color: var(--om-color-on-surface-secondary); }

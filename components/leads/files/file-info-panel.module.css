@@ -1,0 +1,27 @@
+/*
+ * Viewer › Information panel (frame 94, 931:39953). Spec: design-source/context/lead-files/03-viewer-panels.txt.
+ * Head 64 (931:39921) is the same head as the Comments panel (file-comments-panel.module.css).
+ */
+.panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 64px; flex-shrink: 0;
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; color: var(--om-color-on-surface-default); }
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.close:hover { background: var(--om-color-hover-08p); }
+.close:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Information body (931:39990) V g24 p24 → block V g16 of rows H g12: label 120 wide secondary · value 219 wide on-surface, 20 tall. */
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.block { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
+.label { width: 120px; flex-shrink: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.value { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

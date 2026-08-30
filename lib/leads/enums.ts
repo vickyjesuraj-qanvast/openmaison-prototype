@@ -42,6 +42,11 @@ export const TEAM = [
 
 /** Contact channels — Move Stage "Contacted via" chips (781:58292). */
 export const CONTACT_CHANNELS = ['WhatsApp', 'Email', 'SMS', 'Call', 'Others'] as const
+/** Contact-log outcomes and the next step each one asks for (Move stage window 780:9xxxx · Notes 931:45231 "Connected → Schedule a meeting", 931:45383 "Callback requested"). */
+export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled', 'No response'] as const
+export const NEXT_STEP_BY_OUTCOME: Record<string, string> = { Connected: 'Schedule a meeting', 'Callback requested': 'Schedule a call' }
+/** "Preferred mode" options — the channels plus "In person" (Notes 931:45231). */
+export const CONTACT_MODES = [...CONTACT_CHANNELS, 'In person'] as const
 
 /** Only style/condition/key-collection values visible anywhere in the mocks. */
 export const STYLES_SEEN = ['Contemporary'] as const

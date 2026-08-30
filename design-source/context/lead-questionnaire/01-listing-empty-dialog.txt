@@ -1,0 +1,29 @@
+# Lead Details › Questionnaire (section 931:46769, 4662×2330) — frames: 201 empty 931:46770 · 177 Ask the client 931:46853 · 202 listing 931:46954; sub-section "Question Types" 931:47053 (five 720-wide cards, see 02)
+# Centre "Section container" (1292×892, V g24 p24). Format: depth|type|id|name|x,y,w,h (relative to the container)|layout|fill|stroke|radius|text size/style colour|instance{set:props}
+
+## Toolbar (931:46977 "Section items" 1244×36, H g16)
+3|TEXT|931:46979|All Questions|24,30,1127,24|"All Questions" 16/Bold #1a1a1a
+4|INST|931:46982|Buttons|1167,24,101,36|p8/16|stroke #5500ff w1|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined}  "Ask Client" 14/Semi Bold #5500ff   (frame 201: State=Disabled while there are no questions)
+
+## Empty state (frame 201, 931:46792) — card 1244×784 fill #ffffff stroke #e5e5e5 r8, content centred V g24
+3|FRAM|931:46794|undraw_question-answered|556,329,180,154   (→ /figma-assets/empty-questionnaire.svg, the overview card's asset 140×120 viewBox, rendered 180 wide)
+3|FRAM|931:46835|texts|446,507,400,56|V g12   "Create your first question" 20/Semi Bold #1a1a1a · "Create and share your questions to clarify the client’s scope." 14/Regular #1a1a1a
+4|INST|931:46839|Buttons|584,587,125,36|fill #5500ff|r4|I{Type=Primary,Style=Filled}  "Add Question" 14/Semi Bold #ffffff
+
+## Listing (frame 202, 931:46983) — H g24: questions column 740 (V g24) + summary card 480
+### Question card (740 wide, stroke #e5e5e5 w1 inside, r4). Head row (931:46985) 52–54 tall: H g16 p16/24 — "Q: " 14/Medium #1a1a1a + question 14/Regular #1a1a1a (fills) + trailing slot
+ a. unanswered (931:46985, 54 tall):  trailing = Link text "Answer" 14/Semi Bold #5500ff
+ b. answering (931:46990, 190 tall):  head 52 then the answer block 931:46995 (fill #f2f2f2, V g16 p24): the type's input (spec 02; here Text Field 36 "Enter your answer" 690 wide) + row H g12 right-aligned: "Cancel" secondary outlined 80×36 · "Save" primary filled 65×36
+ c. answered by the studio (931:47000, 122 tall): head with Tag Outlined Default "By Studio" (10/Medium #666666, p4/8, fill #f2f2f2 stroke #cccccc r4, 20 tall) at the right; answer block 931:47006 (fill #f2f2f2, H g16 p24, 68 tall): "A: " 14/Medium + answer 14/Regular (fills) · "1d ago" 14/Regular #666666 (relativeTime) · edit 20/Regular #666666 (→ answering again)
+ d. answered by the client (931:47012, 122 tall): Tag "By Client"; the answer block has the "1d ago" but NO edit icon
+### Summary card (931:47025) 480×136, fill #ffffff stroke #e5e5e5 w1 r8 — top right of the questions column
+4|FRAM|head|788,84,480,48|H g8 p20/20/12/20   "QUESTIONNAIRE SUMMARY" 12/Semi Bold #666666
+4|FRAM|body|788,132,480,88|V g8 p8/20/20/20 → V g8: row H g8 "Total questions answered" 14/Semi Bold #1a1a1a (fills) · "7 / 11" 14/Regular #666666; track 440×8 r999 #e5e5e5 with the primary fill 122 (= 7/11 · 440 ≈ 280? the mock draws 122 — build: answered / total); legend H: "Client answered: 0" 12/Medium #666666 (108 wide) · "Studio answered: 7" 12/Medium #666666
+# = the overview QUESTIONNAIRE card's body (components/leads/detail/questionnaire-card.tsx) in a 480 card with the 12/600 uppercase head
+
+## Ask the client (frame 177, 931:46937) — ModalComponent 400×302, r12
+1|FRAM|Heading|0,0,400,64|H g16 p20/24|bottom rule   "Ask the client" 20/Bold + close 24
+1|FRAM|body|0,64,400,170|V g24 p24
+2|TEXT|"We’ll notify “Olivia Martinez” in their portal and they can answer your questions there." 14/Semi Bold #1a1a1a (352 wide, 2 lines)
+2|FRAM|portal box|24,152,352,58|H g12 p8/12|fill #f2f2f2|stroke #e5e5e5 w1|r4   [V g4] "Portal link" 14/Semi Bold #1a1a1a · "http://openmaison.ai/my/portalexample/login" 12/Regular #666666 (246 wide, ellipsis) · "Copy" primary outlined 68×36
+1|FRAM|Footer|0,234,400,68|H g12 p16/24|top rule|shadow 0 25 50 #000@25   "Cancel" secondary outlined 80×36 · "Send Notification" primary filled 150×36 (right-aligned)

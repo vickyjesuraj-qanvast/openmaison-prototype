@@ -1,0 +1,61 @@
+# Lead Details › Files (section 931:39056 "Files", 13480×5720) — 20 frames:
+#  87 empty 931:40314 · 90 list view 931:40141 · 85 grid view 931:39057 · 89 menus 931:40007 · 91 folder open 931:39703 · 96/97 multi-select + bulk bar 931:39447 / 931:39576
+#  92 viewer 931:39831 · 93 viewer + Comments 931:39891 · 94 viewer + Information 931:39953 · 95 viewer kebab 931:39860
+#  98 Rename Folder 931:39178 · 99 Rename File 931:39434 · 103 Create Folder 931:39191 · 105 Move to Trash 931:39204 · 100/101/106/107 Move dialog 931:39216 / 931:39282 / 931:39332 / 931:39384 · 104 Deleted Files 931:40208
+# Centre "Section container" (1292×892, V g24 p24) — the same frame as Tasks / Quotes / Contracts.
+# Format: depth|type|id|name|x,y,w,h (relative to the container)|layout|fill|stroke|radius|text size/style colour|instance{set:props}
+
+## Toolbar row (931:40157 "Section items" 1244×36, H g16) — identical in frames 85 / 87 / 90
+3|TEXT|931:40159|All Files|24,30,643,24|"All Files" 16/Bold #1a1a1a
+3|INST|931:40161|Buttons|683,24,114,36|H g8 p8/12/8/16|stroke #5500ff w1|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined,Trailing Icon=Yes}  "New File" 14/Semi Bold #5500ff + keyboard_arrow_down 20
+3|FRAM|931:40162|right group|809,24,459,36|H g12
+4|INST|931:40163|Search Bar|809,24,280,36|fill #ffffff|stroke #cccccc w1|r4   "search" 20 · "Search" 14/Semi Bold #666666
+4|INST|931:40164|Icon Buttons|1101,24,36,36|stroke #cccccc w1|r4|I{Type=Secondary,Size=36,Style=Outlined}  "filter_list" 20 #666666      (no Files filter mock → coming soon)
+4|INST|931:40165|Segmented Icon Button|1149,24,71,36|H g-1|I{Segmented Icon Button:Size=36}
+5|INST|Start|1149,24,36,36|p8|stroke #cccccc w1|Selected=True in frames 87/90 (fill #eee5ff)   "view_list" 20 (#4400cc when selected, #666666 otherwise)
+5|INST|End|1184,24,36,36|p8|stroke #cccccc w1|Selected=True in frame 85 (fill #eee5ff)        "view_kanban" 20   → grid view
+4|INST|931:40166|Icon Buttons|1232,24,36,36|stroke #cccccc w1|r4  "more_vert" 20 #666666
+
+## Folder open (frame 91, 931:39719) — the title becomes a breadcrumb row (H g12): arrow_back 24/Light #1a1a1a · [H g4] "All Files" 16/Regular #666666 · "/" 16/Regular #666666 · "Generic file name" 16/Bold #1a1a1a · more_vert 20/Light #666666 (folder menu: Move · Rename · Delete, 200×118 at 339,176)
+# the rest of the toolbar is unchanged; the content shows the folder's own Folders group + date groups
+
+## Menus (frame 89, "Dropdown Menu" 200 wide, items 36, text 14/Regular #1a1a1a, Delete #db382a)
+931:40128 @668,184 (under New File)      200×118: From Local Files · From Company Files · From Google Drive
+931:40130 @359,286 (folder card kebab)   200×154: Open · Move · Rename · Delete
+931:40131 @360,634 (file tile kebab)     200×226: Open · Move · Duplicate · Download · Rename · Delete
+931:40139 @1136,184 (header kebab)       200×46:  Deleted Files
+frame 95 (viewer kebab, 931:39889 @1208,48) 200×154: Move · Duplicate · Rename · Delete
+
+## Empty state (frame 87, 931:40340) — card 1244×784 fill #ffffff stroke #e5e5e5 r8, content centred (V g24)
+3|FRAM|931:40342|undraw_photos_09tf 1|556,329,180,155     (→ /figma-assets/empty-files.svg, the overview FILES card's illustration)
+3|FRAM|931:40352|texts|492,508,309,56|V g12
+4|TEXT|"Add your first files" 20/Semi Bold #1a1a1a
+4|TEXT|"Create folders and upload files from your local." 14/Regular #1a1a1a
+3|FRAM|931:40355|buttons|496,588,300,36|H g12
+4|INST|931:40356|Buttons|148×36|p8/16/8/12|stroke #cccccc|I{Type=Secondary,Style=Outlined,Leading Icon=Yes}  create_new_folder 20 + "Create Folder" 14/Semi Bold #666666
+4|INST|931:40357|Buttons|140×36|p8/16/8/12|fill #5500ff|I{Type=Primary,Style=Filled,Leading Icon=Yes}       upload 20 + "Upload Files" 14/Semi Bold #ffffff
+
+## List view (frame 90, table 931:40167) 1244 — fill #ffffff stroke #e5e5e5 w1 (inside) r8; head 56 · rows 60
+2|INST|931:40168|Table / Row / Files - List|24,84,1244,56|I{Type=HD}
+3|FRAM|Header / Selection|24,84,40,56|H g8 p16/0/16/16   check_box_outline_blank 24/Light #666666
+3|FRAM|Header|64,84,420,56|H g4 p16/24/16/16   "Title" 12/Medium #666666 + unfold_more 16      (no right rule on the Title head)
+3|FRAM|Header|484,84,240,56   "Owner"
+3|FRAM|Header|724,84,116,56   "Updated"
+3|FRAM|Header|840,84,119,56   "File type"
+3|FRAM|Header|959,84,114,56   "File size"
+3|FRAM|Header|1073,84,195,56  "Attached to"
+# Columns: 40 · 420 (fluid) · 240 · 116 · 119 · 114 · 195 = 1244
+
+2|INST|931:40181|Row|24,140,1244,60|I{Type=RW,State=Default - Photo}
+3|FRAM|Cell / Selection|24,140,40,60|H g12 p12/0/12/16|stroke #e5e5e5 w1/0/0/0   check_box_outline_blank 24/Light
+3|FRAM|Cell / Two line|64,140,420,60|H g12 p12/24/12/16|stroke #e5e5e5 w1/0/0/0     (top rule only — no right rule)
+4|FRAM|thumb|80,152,48,36|fill #f2f2f2|r2   image fill (cover)                      (folder row: "folder" 24/Regular #666666 centred in the box)
+4|TEXT|Name|140,160,274,20|"Living room" 14/Medium #1a1a1a
+4|FRAM|comment chip|426,158,34,24|H g4 p4|fill #f2f2f2|r4   comment 16/Light #1a1a1a + "1" 12/Medium #1a1a1a   (only when the file has comments)
+3|FRAM|Cell / One line|484,140,240,60|H g12 p12/24/12/16   Avatar Generic 24 (fill #387e47, "J" 14/Medium #fff) + "James" 14/Regular #1a1a1a   (Owner)
+3|FRAM|Cell|724,140,116,60   "17 Jul ‘26" 14/Regular          (Updated)
+3|FRAM|Cell|840,140,119,60   "JPEG" 14/Regular                (File type — folder rows: "Folder", frame 104)
+3|FRAM|Cell|959,140,114,60   "711 KB" 14/Regular              (File size — folder rows: "--", frame 104)
+3|FRAM|Cell|1073,140,195,60  Tag Outlined Default 42×20 (p4/8, fill #f2f2f2, stroke #cccccc, r4) "Task" 10/Medium #666666   (Attached to)
+2|INST|931:40194|Row|24,200,1244,60|I{State=Default - Folder}  "Kitchen" — same cells (the mock repeats JPEG / 711 KB / Task as placeholders)
+# No hover state is mocked for list rows or tiles.

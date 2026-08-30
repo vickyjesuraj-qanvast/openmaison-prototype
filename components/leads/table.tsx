@@ -3,13 +3,14 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { highlightMatch } from '@/components/leads/highlight'
-import { Checkbox, Tag } from '@/components/ds'
+import { Button, Checkbox, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
 import { displayDate, isOverdue, money } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
+import { canReturnLead } from '@/lib/leads/stage-policy'
 import styles from './table.module.css'
 
 export type ColumnKey =
@@ -72,6 +73,7 @@ export function LeadsTable({
   onTaskClick,
   onAssignClick,
   onTuneClick,
+  tuneOpen = false,
   onEditRow,
   onDeleteRow,
   onReturnRow,
@@ -97,6 +99,8 @@ export function LeadsTable({
   onTaskClick: (row: LeadRow, anchor: HTMLElement) => void
   onAssignClick: (row: LeadRow, anchor: HTMLElement) => void
   onTuneClick: (anchor: HTMLElement) => void
+  /** The Customise-your-view popover is open — the gear reports it (aria-expanded) so a second press toggles it closed (REG-153). */
+  tuneOpen?: boolean
   onEditRow: (row: LeadRow) => void
   onDeleteRow: (row: LeadRow) => void
   onReturnRow: (row: LeadRow) => void
@@ -298,7 +302,8 @@ export function LeadsTable({
                 {i === 0 ? (
                   <span className={styles.hTools}>
                     <Tooltip label="Customise your view">
-                      <button type="button" className={styles.hTune} aria-label="Customise your view" onClick={(e) => onTuneClick(e.currentTarget)}>
+                      <button type="button" className={styles.hTune} aria-label="Customise your view"
+                              aria-haspopup="dialog" aria-expanded={tuneOpen} onClick={(e) => onTuneClick(e.currentTarget)}>
                         <Icon name="tune" size={16} />
                       </button>
                     </Tooltip>
@@ -321,22 +326,23 @@ export function LeadsTable({
               ))}
               <span className={styles.rowActions} data-open={menuRow === row.id || undefined}>
                 <span className={styles.rowActionsInner}>
-                  <button type="button" className={styles.rowEdit} onClick={() => onEditRow(row)}>Edit</button>
-                  <span style={{ position: 'relative', display: 'inline-flex' }}>
-                    <Tooltip label="More actions" disabled={menuRow === row.id}>
-                      <button type="button" className={styles.rowKebab} aria-label={`More actions for ${row.name}`}
-                              aria-haspopup="menu" aria-expanded={menuRow === row.id}
-                              onClick={() => setMenuRow((m) => (m === row.id ? null : row.id))}>
-                        <Icon name="more_vert" size={20} weight={300} />
-                      </button>
-                    </Tooltip>
+                  {/* 606:75167 / REG-163: the DS primary outlined Button + om primary IconButton, as the Lead Details tables build them. */}
+                  <span className={styles.float}>
+                    <Button variant="primary" appearance="outlined" onPress={() => onEditRow(row)}>Edit</Button>
+                  </span>
+                  <span className={styles.menuWrap}>
+                    <span className={styles.float}>
+                      <Tooltip label="More actions" disabled={menuRow === row.id}>
+                        <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
+                                    aria-haspopup="menu" aria-expanded={menuRow === row.id}
+                                    onClick={() => setMenuRow((m) => (m === row.id ? null : row.id))} />
+                      </Tooltip>
+                    </span>
                     <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right"
                               side={sorted.length >= 3 && rowIdx >= sorted.length - 2 ? 'up' : 'down'}>
-                      <DropdownItem onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>
-                        <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
-                      </DropdownItem>
-                      {row.source === 'Qanvast' ? (
-                        /* Return Lead exists only for Qanvast-sourced leads (user 2026-08-29); its own return flow comes later */
+                      <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem>
+                      {canReturnLead(row) ? (
+                        /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
                         <DropdownItem onSelect={() => { setMenuRow(null); onReturnRow(row) }}>Return Lead</DropdownItem>
                       ) : null}
                     </Dropdown>

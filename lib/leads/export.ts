@@ -1,5 +1,5 @@
 import type { LeadRow } from '@/lib/leads/queries'
-import { inputDate, money } from '@/lib/format'
+import { displayDate, inputDate, money } from '@/lib/format'
 
 /**
  * "Export all as…" (784:113420 pattern): the listing's leads as a real file the browser downloads.
@@ -28,19 +28,33 @@ export function exportFileName(format: ExportFormat, now: Date): string {
 }
 
 export function buildExport(rows: LeadRow[], format: ExportFormat): Blob {
-  const head = COLUMNS.map((c) => c.label)
-  const body = rows.map((r) => COLUMNS.map((c) => c.value(r)))
+  return buildTable('OpenMaison — Leads', COLUMNS.map((c) => c.label), rows.map((r) => COLUMNS.map((c) => c.value(r))), format)
+}
+
+/** Any head + body as CSV / XLS / XLSX / PDF — shared by the leads and tasks exports (Export Tasks 902:29293). */
+export function buildTable(title: string, head: string[], body: string[][], format: ExportFormat): Blob {
   switch (format) {
     case 'CSV': return new Blob(['﻿' + [head, ...body].map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' })
     case 'XLS': return new Blob([htmlTable(head, body)], { type: 'application/vnd.ms-excel' })
     case 'XLSX': return new Blob([xlsx(head, body).buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    case 'PDF': return new Blob([pdf('OpenMaison — Leads', head, body).buffer as ArrayBuffer], { type: 'application/pdf' })
+    case 'PDF': return new Blob([pdf(title, head, body).buffer as ArrayBuffer], { type: 'application/pdf' })
   }
 }
 
 export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date): string {
-  const name = exportFileName(format, now)
-  const url = URL.createObjectURL(buildExport(rows, format))
+  return downloadBlob(buildExport(rows, format), exportFileName(format, now))
+}
+
+/** Export Tasks (902:29293): the lead's tasks as a table. */
+export function downloadTasks(tasks: { title: string; assignees: { name: string }[]; dueAt: Date | null; done: boolean; tags: { name: string }[]; createdAt: Date }[], format: ExportFormat, now: Date): string {
+  const head = ['Title', 'Assignees', 'Due date', 'Status', 'Tags', 'Created']
+  const body = tasks.map((t) => [t.title, t.assignees.map((m) => m.name).join(', '), t.dueAt ? displayDate(t.dueAt) : '', t.done ? 'Completed' : 'Open', t.tags.map((g) => g.name).join(', '), displayDate(t.createdAt)])
+  return downloadBlob(buildTable('OpenMaison — Tasks', head, body, format), `openmaison-tasks-${now.toISOString().slice(0, 10)}.${format.toLowerCase()}`)
+}
+
+/** Hands the browser a Blob to save under `name` — shared with the Files tab's Download (931:40131). */
+export function downloadBlob(blob: Blob, name: string): string {
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
   return name

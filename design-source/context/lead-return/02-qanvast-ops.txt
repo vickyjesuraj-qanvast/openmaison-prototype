@@ -1,0 +1,9 @@
+# Qanvast Ops › Leads (208 931:49232 · 209 931:49435 · 174 931:49680) — a new page behind the rail's "Qanvast Ops" item (account_balance)
+## Page header (Page Header / Leads, 1200×68 p16/24): "Qanvast Ops" 20/Bold · right: "Insights" secondary outlined leading bar_chart_4_bars 110×36 · "Add Lead" primary filled leading add 121×36 · kebab 36
+## Tabs (Page Tabs): Leads (selected) · Credits · Reviews · Hangouts   (Credits / Reviews / Hangouts → coming soon)
+## Toolbar (y 144): "All Leads (99)" ▾ pill (151×36; menu 209) … right: "Request Leads" secondary outlined 133×36 · filter 36 · kebab 36
+## Table 1152 wide, head 56 / rows 64: Name 240 (Two line: "Jasmine Lee" 14/Bold + "9123 4567" 12 secondary; head has the tune 16 icon = customise) · Credits 132 ("200") · Budget (S$) 138 ("70,500") · Property type 158 · created 115 ("17 Jul ‘26") · Status 369 (Tag Outlined 20 tall 10/Medium: stage "Contacted" / "On Hold" / "Active" Default grey; "Return Processing" Yellow; "Return Approved" Green + "Refund Processing" Yellow — two tags H g8)
+ rows: Jasmine Lee Contacted · David Koh Return Processing · Farah Isa Return Approved + Refund Processing · Germaine Tan On Hold · Gavin See On Hold · Ahmad Daud Active · Emily Han Return Processing
+ row hover (209): "View Lead" primary outlined 103×36 floating at the right (the listing's hover-action pattern) → the lead detail
+## "All Leads" dropdown (209, 931:49435) 200×613 — Dropdown Menu / Leads "Lead Status": "All Leads" 99 · group title "ACTIVE" 10/Medium #469e59 (36 tall p12) → New · Contacted · Met · Quote Sent · Won (each with a 12 secondary count) · "INACTIVE" #f19e2b → On Hold · Lost · "Lead Return" #4e58b4 → Return Processing · Return Approved · Return Rejected · Refund Processing · Refund Credited
+## 174: the lead detail opened from here — L2 crumb reads "Qanvast Ops / Leads" (back → /qanvast-ops); everything else = the Qanvast lead overview (chips Qanvast · Return Processing)

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
 import { displayDate, isDueToday, isOverdue } from '@/lib/format'
@@ -21,7 +22,7 @@ function TaskRow({
   now: number
   completing: boolean
   onComplete: (task: LeadTask) => void
-  onOpen: () => void
+  onOpen: (task: LeadTask) => void
   onSetDue: (task: LeadTask, due: Date) => Promise<boolean>
 }) {
   // Dates are never typed (REG-119): the "Set Due Date" link is the read-only trigger for the Material picker.
@@ -53,11 +54,13 @@ function TaskRow({
       initial={false}
       exit={{ opacity: 0, height: 0, transition: { duration: duration.step, ease: ease.standard } }}
     >
-      <button type="button" className={styles.radio} data-done={completing || undefined}
-              aria-label={`Complete "${task.title}"`} disabled={completing}
-              onClick={() => onComplete(task)}>
-        <Icon name={completing ? 'check_circle' : 'radio_button_unchecked'} size={20} weight={300} fill={completing} />
-      </button>
+      <Tooltip label={`Complete "${task.title}"`} disabled={completing}>
+        <button type="button" className={styles.radio} data-done={completing || undefined}
+                aria-label={`Complete "${task.title}"`} disabled={completing}
+                onClick={() => onComplete(task)}>
+          <Icon name={completing ? 'check_circle' : 'radio_button_unchecked'} size={20} weight={300} fill={completing} />
+        </button>
+      </Tooltip>
       <span className={styles.rowMain}>
         <span className={styles.rowTitle}>{task.title}</span>
         {due ? (
@@ -85,9 +88,11 @@ function TaskRow({
         <DatePicker open={pickerOpen} anchorRef={dueRef} value={due} today={new Date(now)} label="Due date"
                     onSelect={(d) => { void commitDate(d) }} onClose={() => setPickerOpen(false)} />
       </span>
-      <button type="button" className={`${styles.chev} ${styles.chevBtn}`} aria-label={`Open "${task.title}"`} onClick={onOpen}>
-        <Icon name="keyboard_arrow_right" size={20} />
-      </button>
+      <Tooltip label={`Open "${task.title}"`}>
+        <button type="button" className={`${styles.chev} ${styles.chevBtn}`} aria-label={`Open "${task.title}"`} onClick={() => onOpen(task)}>
+          <Icon name="keyboard_arrow_right" size={20} />
+        </button>
+      </Tooltip>
     </motion.div>
   )
 }
@@ -105,7 +110,7 @@ export function TasksPopover({
   onAddTask: (lead: LeadRow, title: string) => Promise<boolean>
   onCompleteTask: (lead: LeadRow, task: LeadTask) => Promise<boolean>
   onSetDue: (lead: LeadRow, task: LeadTask, due: Date) => Promise<boolean>
-  onOpenTask: () => void
+  onOpenTask: (task: LeadTask) => void
 }) {
   const open = lead !== null && pos !== null
   const ref = useRef<HTMLDivElement>(null)
@@ -141,11 +146,11 @@ export function TasksPopover({
     }
     // Scrolling does not close it: the workspace follow effect keeps it on its cell (REG-129).
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
     return () => {
       document.removeEventListener('keydown', onKey)
       clearTimeout(t)
-      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('pointerdown', onDown, true)
     }
   }, [open, adding, onClose, anchor])
 
@@ -182,9 +187,11 @@ export function TasksPopover({
         >
           <div className={styles.head}>
             <span className={styles.title}>Tasks</span>
-            <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-              <Icon name="close" size={24} family="outlined" />
-            </button>
+            <Tooltip label="Close">
+              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
+                <Icon name="close" size={24} family="outlined" />
+              </button>
+            </Tooltip>
           </div>
           <div className={styles.body}>
             <span className={styles.sectionLabel}>Open Tasks <span data-dot>·</span> <span>{openCount}</span></span>

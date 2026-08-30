@@ -1,0 +1,8 @@
+/* Bones follow the viewer frame (file-viewer.module.css): header 56 p16/24 with a bottom rule; stage = the viewport under
+   the header (shell gutters 8+8); canvas p100/120 with the zoom bar 22 up from the bottom, centred. */
+.header { display: flex; align-items: center; gap: var(--om-spacing-3); height: 56px; padding: var(--om-spacing-4) var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.actions { margin-left: auto; display: flex; align-items: center; gap: var(--om-spacing-6); }
+.stage { display: flex; height: calc(100dvh - 16px - 56px); }
+.canvas { flex: 1; min-width: 0; position: relative; padding: var(--om-spacing-25) var(--om-spacing-30); display: flex; }
+.image { flex: 1; min-height: 0; }
+.zoom { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; }

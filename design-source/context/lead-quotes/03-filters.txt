@@ -1,0 +1,24 @@
+# Lead Details › Quotes › Filters (nested section 910:36338 "04 - Quotes filter") — four 600×600 modals, the listing FiltersModal shell
+# Rail (left, 160 wide): Sort · Date · Status · Due.  Right pane "Filter content" 440×536, V g16 p24, fill #ffffff.
+
+## 910:36380 — Sort
+2|TEXT|"Sort by" 14/Semi Bold #1a1a1a
+3|FRAM|Sort Option|24,52,392,44|H g8 p12/0/12/0   Radio 24 (Selected=True #5500ff) + "Newest at the top" 14/Regular #1a1a1a
+3|FRAM|Sort Option|24,96,392,44                    Radio 24 (Selected=False #666666) + "Oldest at the top"
+
+## 910:36448 — Date  (title "Dates", V g16)
+3|FRAM|chips|24,60,392,32|H g12
+4|INST|Choice|80×32|H g4 p8/12/8/12|stroke #cccccc|I{Choice:Selected=No}  "Today" 12/Semi Bold #1a1a1a
+4|INST|Choice|90×32   "Last 7 days"
+4|INST|Choice|99×32   "Last 30 days"
+4|INST|Choice|70×32|fill #eee5ff|stroke #5500ff|I{Choice:Selected=Yes}  "Custom" 12/Semi Bold #4400cc
+3|FRAM|fields|24,104,392,36|H g16
+4|INST|Text Field|188×36|I{Text Field:Height=36px,State=Empty,Trailing Icon=Yes}  "From date" 14/Regular #666666 + trailing icon 20
+4|INST|Text Field|228,104,188,36   "To date"
+# chips row → fields gap 12; the custom fields show only when "Custom" is selected (the mock shows the Custom state)
+
+## 910:36518 — Status  (V g8, rows 44 "One Line" Trailing Item=Icon: text 14/Regular @24 + Checkbox 20 at the right edge)
+Draft · Sent for Approval · Approved · Sent to Client · Signed   (all Deselected in the mock)
+
+## 910:36585 — Due  (V g8, rows 44, Radio 24)
+All (Selected) · Overdue · Upcoming

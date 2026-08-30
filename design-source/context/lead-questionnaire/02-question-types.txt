@@ -1,0 +1,7 @@
+# Question Types (sub-section 931:47053) — the answer block per type, inside the 720-wide card (build: 740, the listing's width); every block = fill #f2f2f2, V g16 p24; head as in 01
+Number (931:47097, 138 tall):      Text Field 36 Empty "Number" (Trailing Icon=No) — numeric="digits" (REG-150)
+Text (931:47090, 154 tall):        Text Area 52 Active (stroke #5500ff w2, p12/16/8/7) "Enter your answer" 14 — a multi-line TextField (check components/om/text-field.tsx for a `multiline` / textarea mode; else the DS TextArea)
+MultiSelect (931:47054, 190 tall): Text Field 36 select "Multi select" (expand_more 16) → menu 931:47484-style list (fill #fff stroke #e5e5e5 r4, p8/0, items 36 tall H g8 p8/12/8/8): check_box 20/Light #5500ff (on) / check_box_outline_blank 20 #666666 + label 14/Regular — options from the question ("Generic · Focus · Tag 1 · Tag 2" are the mock's placeholders); the field shows the chosen options joined by ", "
+SingleSelect (931:47069, 190 tall): Text Field 36 select "Single select (yes/no)" → items radio_button_checked 20/Light #5500ff / radio_button_unchecked 20 #666666 + "Yes" / "No"
+Date (931:47082, 138 tall):        Text Field 36 select "Date" (trailing event) → the Material date picker (components/om/date-field.tsx DateField, picker only — REG-119)
+# Cancel · Save row (H g12, right) under the input in every block (the Number / Text / Date cards crop it in the sub-section; the listing card 931:46995 shows it)

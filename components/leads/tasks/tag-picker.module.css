@@ -1,0 +1,78 @@
+/* Add Tag dropdown (902:27363 frame 65 "Frame 114521", picked state frame 54) — spec: design-source/context/lead-tasks/03-panel-tags.txt.
+   The search field (Text Field 48, trailing keyboard_arrow_down) sits in the panel 12 under the Tags head and the 352×207
+   list hangs directly beneath it. Absolute against the host's positioned head row, so it overlays the sections below. */
+.picker {
+  position: absolute; left: 0; right: 0; top: 100%;
+  margin-top: var(--om-spacing-3);
+  z-index: 5;
+  display: flex; flex-direction: column;
+  transform-origin: top left;
+}
+/* Fixed placement (table cell): no head to hang under, above the table and its popovers (AssignPopover .card sits at 70). */
+.picker[data-fixed] { right: auto; margin-top: 0; z-index: 70; }
+
+/* Search field — the box of components/om/text-field.module.css (.box: 48, 1px on-surface/border, r4, p0/12/0/16, g8) without the
+   floating label: the mock's field is a bare placeholder "Search for any tags, hit enter to add" 14/Regular #666666 with the
+   chevron 16 #666666. Active = the DS 2px primary stroke (1px border + 1px inset), as the text field. Picked tags (frame 54)
+   sit inside the box as Tag Outlined Default chips with a trailing close, wrapping before the input. */
+.field {
+  position: relative;
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2);
+  min-height: 48px; width: 100%;
+  padding: var(--om-spacing-1) 12px var(--om-spacing-1) 16px;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  cursor: text;
+  transition: border-color var(--motion-toggle), box-shadow var(--motion-toggle);
+}
+.field[data-active] { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.input {
+  flex: 1; min-width: 96px; height: 38px;
+  border: 0; outline: 0; background: none; padding: 0; margin: 0;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.input::placeholder { color: var(--om-color-on-surface-secondary); }
+.chevron { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; margin-left: auto; }
+/* "Generic ×" chip: a press on it un-picks the tag (the mock shows the close glyph; no hover state drawn). */
+.chip { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; border-radius: var(--om-radius-1); }
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* List (24,709,352,207): V p8/0, fill #fff, 1px #e5e5e5, r4, level-3 — the 200w Dropdown surface of menus.module.css at 352. */
+.list {
+  margin-top: -1px;   /* the mock's list starts 1px above the field's bottom edge (709 vs 710) */
+  display: flex; flex-direction: column;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  padding: var(--om-spacing-2) 0;
+  box-shadow: var(--om-elevation-level-3);
+}
+.rows { display: flex; flex-direction: column; max-height: 288px; overflow-y: auto; }   /* 8 rows before scrolling — the mock lists four; cap invented */
+/* Menu row 350×36, p8/12/8/8, g8: check_box_outline_blank 20/Regular #666666 + name 14/Regular #1a1a1a. Hover as menus.module.css .item. */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; width: 100%;
+  padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-2);
+  border: 0; background: none; cursor: pointer; text-align: left;
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-hover-04p); }
+.rowName { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.check { color: var(--om-color-on-surface-secondary); display: inline-flex; flex-shrink: 0; }
+.row[aria-checked='true'] .check { color: var(--om-color-primary-default); }   /* checked = check_box 20 #5500ff (frame 54) */
+.rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+/* Footer 350×44 p12 → Link text "Manage Tags" 14/Semi Bold #5500ff; hover = Link text row of interaction-states.md. */
+.foot { height: 44px; padding: var(--om-spacing-3); display: flex; align-items: center; }
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  white-space: nowrap;
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }

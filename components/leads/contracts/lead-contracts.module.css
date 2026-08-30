@@ -1,0 +1,4 @@
+/* Contracts tab body (931:38681 "Section container" 1292×892, V g24 p24 — the same frame as Tasks / Quotes,
+   spec design-source/context/lead-contracts/01-listing-empty.txt): the centre already pads 24; toolbar and table stack 24 apart.
+   Copied from components/leads/quotes/lead-quotes.module.css. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }

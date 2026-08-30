@@ -1,0 +1,17 @@
+/* RECENT ACTIVITY body (858:24970): V g0 p0/20/12/20 — rows 36 apart, no gap. */
+.body {
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0 var(--om-spacing-5) var(--om-spacing-3);
+  min-width: 0;
+}
+/* Row 390×36: H g8 p8/0, centred, radius 4 (not interactive in the mock). */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: var(--om-spacing-2) 0;
+  border-radius: var(--om-radius-1);
+  min-width: 0;
+}
+/* Date: fixed 120, 14/Regular/20 secondary ("Today" · "Tue, 25 Aug ’26"). */
+.date { flex: 0 0 120px; width: 120px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Event: fills, 14/Regular/20 on-surface, single line with ellipsis. */
+.text { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

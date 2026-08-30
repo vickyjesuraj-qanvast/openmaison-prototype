@@ -1,0 +1,137 @@
+/* Return details — ModalComponent 620×934 r12 (931:49048 processing · 931:49138 approved + refund; spec design-source/
+   context/lead-return/01-wizard-details.txt "Return details"). Overlay / panel / heading copied from
+   components/leads/tasks/tasks-filters-modal.module.css at 620 wide, height to content (viewport-capped: the body scrolls).
+   Tile classes copied from components/leads/notes/attachments-column.module.css at 134 wide, no kebab. */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 48px 0; overflow-y: auto;
+}
+/* 620 is the mock's width — between the m (600) and l (800) modal tokens, so it is a literal. */
+.panel {
+  width: 620px; max-width: calc(100vw - 96px); max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* Heading 64: H g16 p20/24, name 20/Bold · tags H g8 · info 24 · close 24, bottom rule */
+.heading {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.titleWrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-4); }
+.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tags { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: var(--om-color-on-surface-secondary); transition: color var(--motion-hover);
+}
+.iconBtn:hover { color: var(--om-color-on-surface-default); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Body 870 in the mock: V g20 p24, scrolls when the content outgrows the viewport */
+.body {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--om-spacing-5);
+  padding: var(--om-spacing-6);
+}
+
+/* Appeal banner (178 only) 572×72: H g8 p16, fill #fef5ea (yellow variant2), stroke #fcecd5 (variant1), r8 — the
+   LEAD RETURNED card's banner colours (components/leads/detail/returned-card.module.css). */
+.banner {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  min-height: 72px; padding: var(--om-spacing-4);
+  background: var(--om-color-tertiary-yellow-variant2);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-yellow-variant1);
+  border-radius: var(--om-radius-2);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  flex-shrink: 0;
+}
+.bannerText { flex: 1; min-width: 0; }
+.here { font: inherit; }   /* the DS Link at the sentence's 14/Regular (the DS allows overriding `font` inline) */
+
+/* Cards 572 wide: V g24 p24, fill #fff, stroke #e5e5e5 (inside), r8 */
+.card {
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  flex-shrink: 0;
+}
+
+/* Two Line: Avatar 40 + [V g4] name 14/Regular · sub 12/Regular #666666 — the tasks filters' rowTwo without the checkbox */
+.twoLine { display: flex; align-items: center; gap: var(--om-spacing-3); }
+/* Same corner as the return card's om Avatar 40 (components/om/avatar.module.css [data-size='40'] → radius-2): the spec calls both "Avatar 40". */
+.qanvastAvatar { width: 40px; height: 40px; border-radius: var(--om-radius-2); object-fit: cover; flex-shrink: 0; }
+.twoLineText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.twoLineName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.twoLineSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Rows V g12; each H g16: label 200 wide 14/Regular #666666 · value 306 wide 14/Regular #1a1a1a (wraps: remarks = 3 lines) */
+.rows { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.row { display: flex; align-items: flex-start; gap: var(--om-spacing-4); }
+.rowLabel { width: 200px; flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.rowValue { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+.rule { height: var(--om-border-1); background: var(--om-color-surface-variant); flex-shrink: 0; }
+.otherInfo { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }   /* "Other Info" 16/Bold */
+
+/* [V g4] "Comments" / "Attachments" 14 secondary + text 14 ink / tiles H g12 wrap */
+.block { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.blockLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.blockText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+.tiles { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+
+/* ---- Tile 134×158: V p4, fill #f2f2f2 r4 → image 126×108 r2 + caption 126×42 (H g8 p8) — the Notes tile at 134 wide; the
+   mock's trash glyph sits at the caption's right in the Notes tile's control slot (attachments-column.module.css .tileMenuWrap) ---- */
+.tile {
+  position: relative;
+  width: 134px; height: 158px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.tile:hover { background: var(--om-color-hover-04p); }   /* hover not mocked — the files grid tile's hover-04p */
+/* The open area: image + caption as one bare button; the caption's right padding reserves the control's 24 + 8. */
+.tileMain {
+  display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.tileMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Control anchor at the caption's right, measured from the tile's outer edge: right = 4 + 8 → 12; bottom = 4 + (42 − 24) / 2 → 13. */
+.tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 13px; display: inline-flex; }
+/* Bare delete 24/Light #666666 — the Notes tile's kebab treatment (hover 08p, r4). */
+.tileDelete {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.tileDelete:hover { background: var(--om-color-hover-08p); }
+.tileDelete:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tileImg { display: block; width: 126px; height: 108px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }
+.tileBox {
+  width: 126px; height: 108px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-0-5);
+}
+.tileBoxIcon { color: var(--om-color-on-surface-secondary); }
+.caption {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 42px; width: 100%; min-width: 0;
+  padding: var(--om-spacing-2) calc(var(--om-spacing-2) + 24px + var(--om-spacing-2)) var(--om-spacing-2) var(--om-spacing-2);   /* the right 8 becomes 8 + 24 + 8 for the delete control */
+}
+.kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* picture_as_pdf / image 20/Regular #db382a */
+.tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* "Q-101" 14/Semi Bold */

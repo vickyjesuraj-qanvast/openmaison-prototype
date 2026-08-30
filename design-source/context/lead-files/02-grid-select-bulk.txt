@@ -1,0 +1,36 @@
+# Lead Details › Files — grid view (frame 85, 931:39083 "Frame 114502" 1244×438, V g40) + selection (frames 96/97) + bulk bar
+
+## Folders group (931:39084, V g16)
+3|FRAM|931:39085|group head|24,84,1244,24|H g8   check_box_outline_blank 24/Light #666666 · "Folders" 14/Semi Bold #1a1a1a
+3|FRAM|931:39088|cards row|24,124,1244,56|H g16   (4 × 299 + 3 × 16 = 1244; more wrap)
+4|FRAM|931:39089|Folder card|24,124,299,56|fill #f2f2f2|r4
+5|FRAM|inner|H g8 p12/12/12/12
+6|TEXT|folder 24/Regular #666666
+6|FRAM|texts|68,136,211,32|V g0
+7|TEXT|"Generic file name" 14/Semi Bold #1a1a1a
+7|TEXT|"17 items" 10/Regular #666666
+6|TEXT|more_vert 24/Light #666666          (kebab → Open · Move · Rename · Delete)
+# selected folder card (frame 97): fill #eee5ff
+
+## Date group (931:39120, V g16) — one per calendar day, newest first
+3|FRAM|931:39121|group head|24,220,1244,24|H g8   check_box_outline_blank 24/Light · "Friday, 17 Jul ‘26" 14/Semi Bold #1a1a1a    (full weekday + displayDate)
+3|FRAM|931:39124|tiles row|24,260,1244,262|H g16
+4|FRAM|931:39125|Tile|24,260,299,262|V g0 p4/4/4/4|fill #f2f2f2|r4
+5|RECT|image|28,264,291,200|fill img (cover)|r2
+5|FRAM|caption|28,464,291,54|H g8 p16/8/12/8
+6|FRAM|name group|36,480,199,26|H g8
+7|TEXT|kind icon|20×20|"image" 20/Regular #db382a   (pdf: "picture_as_pdf" 20/Regular #db382a)
+7|TEXT|"Living Room" 14/Semi Bold #1a1a1a
+6|FRAM|comment chip|243,480,36,26|H g4 p4|fill #f2f2f2|stroke #e5e5e5 w1|r4   comment 16/Light #1a1a1a + "1" 12/Medium      (only when the file has comments)
+6|TEXT|more_vert 24/Light #666666          (kebab → Open · Move · Duplicate · Download · Rename · Delete)
+# selected tile (frame 96, 931:39447): fill #eee5ff (the whole tile) — no checkbox on the tile; a tile toggles on click of its body
+# group head checkbox: check_box 24/Light #5500ff when every item in the group is selected; indeterminate_check_box #5500ff when some (frame 97); click selects / clears the group
+
+## Bulk bar (frame 96, 931:39568) — 417×50, H g24 p12/24/12/12, fill #ffffff, stroke #5500ff w1, r8, shadow 0 10 15 #000@10 + 0 4 6 #000@5, floating bottom-centre
+1|FRAM|count box|13,13,24,24|fill #5500ff|r4   "4" 14/Semi Bold #ffffff
+1|INST|Link text|"Move to Folder" 14/Semi Bold #5500ff
+1|INST|Link text|"Duplicate" 14/Semi Bold #5500ff
+1|INST|Link text|"Delete" 14/Semi Bold #db382a
+1|INST|Vertical rule|1×24 #e5e5e5
+1|TEXT|close 24/Regular #666666
+# = components/leads/bulk-bar.tsx (listing pattern) with these three actions

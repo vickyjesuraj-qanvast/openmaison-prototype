@@ -1,0 +1,208 @@
+'use client'
+
+import { useMemo, useRef, useState } from 'react'
+import { Button, Link, Tag, TextArea } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
+import { TextField } from '@/components/om/text-field'
+import { DateField } from '@/components/om/date-field'
+import { Tooltip } from '@/components/om/tooltip'
+import { Dropdown } from '@/components/leads/dropdown'
+import menuStyles from '@/components/leads/menus.module.css'
+import type { Question } from '@/lib/db/schema'
+import { QUESTION_TYPE_LABELS, answerText, parseMulti, parseOptions, validateAnswer } from '@/lib/leads/question-model'
+import { relativeTime } from '@/lib/format'
+import styles from './question-card.module.css'
+
+/**
+ * Lead Details › Questionnaire — question card (931:46985 unanswered · 931:46990 answering · 931:47000 answered by the
+ * studio · 931:47012 answered by the client; inputs per type from the Question Types sub-section 931:47053).
+ * Specs: design-source/context/lead-questionnaire/01-listing-empty-dialog.txt "Question card" · 02-question-types.txt.
+ * Head H g16 p16/24: "Q: " 14/Medium + question 14/Regular (fills) + trailing "Answer" link (open) / "By Studio" ·
+ * "By Client" outlined tag (answered). `mode === 'answer'` shows the grey block (V g16 p24) with the type's input and
+ * Cancel · Save (the Notes editor footer's buttons, components/leads/notes/note-editor.tsx EditorFooter); the answered
+ * view is the grey block H g16 p24 with "A: " + the answer · relativeTime · edit 20 (studio answers only).
+ * Save validates through `validateAnswer` — the error shows after the first Save and clears live.
+ * Single / Multi select open their own option menus (02: radio_button_* / check_box_* 20 rows) — see `OptionMenuField`.
+ * The inputs are the app's 48px `TextField` / `DateField` where 02 draws "Text Field 36" (REG-189, as REG-176).
+ */
+export function QuestionCard({
+  question, now, mode, onAnswer, onCancel, onSave, saving,
+}: {
+  question: Question
+  /** Server "now" (ms) for the "1d ago" stamp — never Date.now() in render. */
+  now: number
+  mode: 'view' | 'answer'
+  onAnswer: () => void
+  onCancel: () => void
+  onSave: (value: string | string[]) => void
+  saving?: boolean
+}) {
+  const [draft, setDraft] = useState<string | string[]>(() => seedDraft(question))
+  const [submitted, setSubmitted] = useState(false)
+  const [wasMode, setWasMode] = useState(mode)
+  // Entering answer mode re-seeds the draft from the stored answer (pre-filled edit) — render-phase adjust pattern
+  // (as components/leads/quotes/quotes-filters-modal.tsx), no effect.
+  if (mode !== wasMode) {
+    setWasMode(mode)
+    if (mode === 'answer') { setDraft(seedDraft(question)); setSubmitted(false) }
+  }
+  const today = useMemo(() => new Date(now), [now])
+
+  const answered = question.answeredBy !== null && question.answeredAt !== null
+  const error = submitted ? validateAnswer(question.type, draft) : undefined
+  const change = (v: string | string[]) => setDraft(v)
+  const save = () => {
+    setSubmitted(true)
+    if (!validateAnswer(question.type, draft)) onSave(draft)
+  }
+  const state = mode === 'answer' ? 'answering' : question.answeredBy === 'client' ? 'client' : question.answeredBy === 'studio' ? 'studio' : 'open'
+
+  return (
+    <div className={styles.card} data-testid="question-card" data-state={state}>
+      <div className={styles.head}>
+        <p className={styles.q}><span className={styles.qLabel}>Q: </span>{question.text}</p>
+        {mode === 'view' && !answered ? <Link variant="primary" onPress={onAnswer}>Answer</Link> : null}
+        {answered ? <Tag appearance="outlined" className={styles.tag}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
+      </div>
+
+      {mode === 'answer' ? (
+        <div className={styles.block}>
+          <AnswerInput question={question} value={draft} onChange={change} error={error} today={today} />
+          {/* Cancel · Save row (931:46995): H g12 right — the Notes EditorFooter's buttons without its rule / padding. */}
+          <div className={styles.actions}>
+            <Button variant="secondary" appearance="outlined" onPress={onCancel} isDisabled={saving}>Cancel</Button>
+            <Button onPress={save} isDisabled={saving}>Save</Button>
+          </div>
+        </div>
+      ) : answered ? (
+        <div className={styles.answer}>
+          <p className={styles.a}><span className={styles.aLabel}>A: </span>{answerText(question)}</p>
+          <span className={styles.when}>{question.answeredAt ? relativeTime(question.answeredAt, today) : ''}</span>
+          {question.answeredBy === 'studio' ? (
+            <Tooltip label="Edit answer">
+              {/* Bare 20 icon button — components/leads/detail/info-column.tsx `.iconBtn` in the secondary colour (931:47006 edit 20/Regular #666666). */}
+              <button type="button" className={styles.iconBtn} aria-label="Edit answer" onClick={onAnswer}>
+                <Icon name="edit" size={20} />
+              </button>
+            </Tooltip>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** The stored answer as the input's value: multi = the picked options, everything else the raw string (date = d/m/yyyy). */
+function seedDraft(q: Question): string | string[] {
+  return q.type === 'multi' ? parseMulti(q.answer) : (q.answer ?? '')
+}
+
+/** The type's input (02-question-types.txt). Labels are the Question Types names verbatim. */
+function AnswerInput({ question, value, onChange, error, today }: {
+  question: Question
+  value: string | string[]
+  onChange: (v: string | string[]) => void
+  error: string | undefined
+  today: Date
+}) {
+  const str = typeof value === 'string' ? value : ''
+  const list = Array.isArray(value) ? value : []
+  switch (question.type) {
+    case 'number':
+      return <TextField label={QUESTION_TYPE_LABELS.number} value={str} numeric="digits" onChange={onChange} error={error} />
+    case 'single': {
+      // The question's own options; a seeded single-select without any falls back to the type's "(yes/no)" pair (02: "Yes" / "No").
+      const opts = parseOptions(question)
+      return <SingleSelect label={QUESTION_TYPE_LABELS.single} options={opts.length ? opts : ['Yes', 'No']} value={str} onChange={onChange} error={error} />
+    }
+    case 'multi':
+      return <MultiSelect label={QUESTION_TYPE_LABELS.multi} options={parseOptions(question)} value={list} onChange={onChange} error={error} />
+    case 'date':
+      return <DateField label={QUESTION_TYPE_LABELS.date} value={str} onChange={onChange} today={today} error={error} />
+    default:
+      // components/om/text-field.tsx has no multiline mode, so the Text answer is the DS TextArea (52 tall per 931:47090,
+      // see question-card.module.css .textArea); it carries its own error line (DS FieldError) in the TextField's style.
+      return (
+        <TextArea aria-label="Answer" placeholder="Enter your answer" value={str} onChange={onChange}
+                  isInvalid={!!error} errorMessage={error} className={styles.textArea} />
+      )
+  }
+}
+
+/**
+ * Option menu field (931:47054 Multi select · 931:47069 Single select): a select-styled trigger (TextField mode="trigger",
+ * expand_more) opening a Dropdown of icon + label rows in the 931:47484-style list — `DropdownItem` is hard-wired to
+ * role="menuitem" with no checked state, so the rows are plain role="menuitemcheckbox" / "menuitemradio" buttons in the
+ * menu's own `.item` style. The Dropdown only closes on presses outside it, so the multi menu stays open while toggling
+ * (REG-189); the single menu closes itself on a pick, as a select does. The plan (00-build-plan.md) had the single select
+ * on `TextField mode="select"`, whose rows carry no glyph — the measured spec 02 draws radio_button_checked 20/Light
+ * primary (on) / radio_button_unchecked 20 secondary, so it takes this menu (review fix, REG-187).
+ * The wrapper carries aria-haspopup / aria-expanded so a press anywhere on the trigger box (chevron, padding — outside
+ * the field's inner button) counts as the trigger for the Dropdown's outside-press rule and toggles instead of
+ * closing-then-reopening (REG-153).
+ */
+function OptionMenuField({ label, options, display, error, role, icons, isOn, onPick, closeOnPick }: {
+  label: string
+  options: string[]
+  /** What the field shows (the picks joined by ", " / the picked option). */
+  display: string
+  error: string | undefined
+  role: 'menuitemcheckbox' | 'menuitemradio'
+  /** Row glyphs: [on, off] — check_box / check_box_outline_blank · radio_button_checked / radio_button_unchecked (20). */
+  icons: [string, string]
+  isOn: (o: string) => boolean
+  onPick: (o: string) => void
+  closeOnPick: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [width, setWidth] = useState<number | null>(null)
+  const box = useRef<HTMLDivElement | null>(null)
+  return (
+    <div className={styles.multi} aria-haspopup="listbox" aria-expanded={open}>
+      <TextField label={label} mode="trigger" trailingIcon="expand_more" value={display} boxRef={box} open={open} error={error}
+                 onOpen={() => { setWidth(box.current?.offsetWidth ?? null); setOpen((o) => !o) }} />
+      {/* The menu is as wide as the field (measured on open — the Dropdown takes a number). */}
+      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={width ?? 200}>
+        {options.map((o) => {
+          const on = isOn(o)
+          return (
+            <button key={o} type="button" role={role} aria-checked={on} className={`${menuStyles.item} ${styles.option}`}
+                    onClick={() => { onPick(o); if (closeOnPick) setOpen(false) }}>
+              <span className={styles.check}><Icon name={on ? icons[0] : icons[1]} size={20} weight={on ? 300 : 400} /></span>
+              <span className={styles.optionLabel}>{o}</span>
+            </button>
+          )
+        })}
+      </Dropdown>
+    </div>
+  )
+}
+
+/** Multi select (931:47054): check_box 20/Light primary (on) · check_box_outline_blank 20 secondary; the field shows the picks joined by ", " in the options' order. */
+function MultiSelect({ label, options, value, onChange, error }: {
+  label: string
+  options: string[]
+  value: string[]
+  onChange: (v: string[]) => void
+  error: string | undefined
+}) {
+  const toggle = (o: string) => onChange(value.includes(o) ? value.filter((v) => v !== o) : options.filter((x) => x === o || value.includes(x)))
+  return (
+    <OptionMenuField label={label} options={options} display={value.join(', ')} error={error} role="menuitemcheckbox"
+                     icons={['check_box', 'check_box_outline_blank']} isOn={(o) => value.includes(o)} onPick={toggle} closeOnPick={false} />
+  )
+}
+
+/** Single select (931:47069): radio_button_checked 20/Light primary (on) · radio_button_unchecked 20 secondary + "Yes" / "No"; a pick closes the menu. */
+function SingleSelect({ label, options, value, onChange, error }: {
+  label: string
+  options: string[]
+  value: string
+  onChange: (v: string) => void
+  error: string | undefined
+}) {
+  return (
+    <OptionMenuField label={label} options={options} display={value} error={error} role="menuitemradio"
+                     icons={['radio_button_checked', 'radio_button_unchecked']} isOn={(o) => o === value} onPick={onChange} closeOnPick />
+  )
+}

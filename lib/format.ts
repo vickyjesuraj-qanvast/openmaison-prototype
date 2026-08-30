@@ -11,6 +11,64 @@ export function displayDate(d: Date): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ’${String(d.getFullYear()).slice(2)}`
 }
 
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+/** Activity rows (858:24970): "Tue, 25 Aug ’26". */
+export function displayDateLong(d: Date): string {
+  return `${DAYS[d.getDay()]}, ${displayDate(d)}`
+}
+
+/** My work card head (858:24989): "Wed, 26 Aug". */
+export function displayDayMonth(d: Date): string {
+  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`
+}
+
+const LONG_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+/** Files grid group head (931:39123): "Friday, 17 Jul ’26". */
+export function displayDateWeekday(d: Date): string {
+  return `${LONG_DAYS[d.getDay()]}, ${displayDate(d)}`
+}
+
+/** File size as the mock types it (931:40181 "711 KB"): whole KB below 1 MB, one decimal MB above. */
+export function fileSize(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined) return '--'
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`
+}
+
+/** Activity rows (931:48007): "08:59 PM" — zero-padded hour, space before the meridiem. */
+export function displayTime(d: Date): string {
+  let h = d.getHours()
+  const am = h < 12 ? 'AM' : 'PM'
+  h = h % 12 || 12
+  return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
+}
+
+/** Notes list (931:44902): "17 Jul ’26・12:34 PM" — a katakana middle dot between date and time. */
+export function displayDateTimeDot(d: Date): string {
+  let h = d.getHours()
+  const am = h < 12 ? 'AM' : 'PM'
+  h = h % 12 || 12
+  return `${displayDate(d)}・${h}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
+}
+
+/** Lead returned card (858:24095): "28 Aug ’26, 4:30PM" — no space before the meridiem, as the mock types it. */
+export function displayDateTimeTight(d: Date): string {
+  let h = d.getHours()
+  const am = h < 12 ? 'AM' : 'PM'
+  h = h % 12 || 12
+  return `${displayDate(d)}, ${h}:${String(d.getMinutes()).padStart(2, '0')}${am}`
+}
+
+/** Header meta chip (858:24783): "S$ 70.5K" — one decimal, trailing zero dropped; below S$1K the full number. */
+export function moneyCompact(minor: number): string {
+  const n = minor / 100
+  if (n >= 1_000_000) return `S$ ${trimZero((n / 1_000_000).toFixed(1))}M`
+  if (n >= 1_000) return `S$ ${trimZero((n / 1_000).toFixed(1))}K`
+  return `S$ ${money(minor)}`
+}
+const trimZero = (s: string) => s.replace(/\.0$/, '')
+
 export function displayDateTime(d: Date): string {
   let h = d.getHours()
   const am = h < 12 ? 'AM' : 'PM'

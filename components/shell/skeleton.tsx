@@ -99,6 +99,68 @@ export function LeadsSkeleton() {
   )
 }
 
+/* Qanvast Ops › Leads bones — the Status column shows one or two 20px tags (931:49232 rows: Contacted · Return Processing · Approved + Refund …). */
+const QV_NAME_W = [88, 76, 72, 100, 76, 92, 80]
+const QV_TAG_W = [[74], [118], [112, 118], [62], [62], [50], [118]]
+
+/**
+ * Qanvast Ops › Leads (931:49232, spec design-source/context/lead-return/02-qanvast-ops.txt): header (title · Insights 110 ·
+ * Add Lead 121 · kebab 36) · the 44px tab row (Leads · Credits · Reviews · Hangouts) · toolbar (pill 151 · Request Leads 133 ·
+ * filter 36 · kebab 36) · table head 56 / rows 64 on the page's own tracks 240 · 132 · 138 · 158 · 115 · fluid — so the
+ * PageReveal crossfade lands in place (design-source/context/page-checklist.md). Text bones are sized to the mock's runs.
+ */
+export function QanvastSkeleton() {
+  return (
+    <GhostSheet label="Loading Qanvast leads">
+      <div className={styles.header}>
+        <Bone w={120} h={28} />
+        <div className={styles.headerActions}>
+          <Bone w={110} h={36} r="var(--om-radius-1)" />
+          <Bone w={121} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+        </div>
+      </div>
+      <div className={styles.tabs}>
+        {[41, 49, 54, 65].map((w, i) => <Bone key={i} w={w} h={20} />)}
+      </div>
+      <div className={pageStyles.content}>
+        <div className={styles.toolbar}>
+          <Bone w={151} h={36} r="var(--om-radius-1)" />
+          <div className={styles.toolbarRight}>
+            <Bone w={133} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />
+            <Bone w={36} h={36} r="var(--om-radius-1)" />
+          </div>
+        </div>
+        <div className={styles.tableWrap}>
+          <div className={styles.headRow}>
+            <span className={styles.col} style={{ flex: '240 0 240px' }}><Bone w={36} h={12} /></span>
+            <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={40} h={12} /></span>
+            <span className={styles.col} style={{ flex: '138 0 138px' }}><Bone w={64} h={12} /></span>
+            <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={72} h={12} /></span>
+            <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={48} h={12} /></span>
+            <span className={styles.col} style={{ flex: '1 0 369px' }}><Bone w={40} h={12} /></span>
+          </div>
+          {QV_NAME_W.map((w, i) => (
+            <div key={i} className={styles.row}>
+              <span className={`${styles.col} ${styles.nameCol}`} style={{ flex: '240 0 240px' }}>
+                <Bone w={w} h={14} /><Bone w={64} h={10} />
+              </span>
+              <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={28} h={14} /></span>
+              <span className={styles.col} style={{ flex: '138 0 138px' }}><Bone w={48} h={14} /></span>
+              <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={76} h={14} /></span>
+              <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={64} h={14} /></span>
+              <span className={styles.col} style={{ flex: '1 0 369px', gap: 'var(--om-spacing-2)' }}>
+                {(QV_TAG_W[i] ?? [74]).map((tw, j) => <Bone key={j} w={tw} h={20} r="var(--om-radius-1)" />)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </GhostSheet>
+  )
+}
+
 /** Lead Import History (779:20147): back + crumb/title, two buttons, section toolbar, 44px rows. */
 export function ImportsSkeleton() {
   return (

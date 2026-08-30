@@ -36,6 +36,7 @@ export function LeadsToolbar({
 }) {
   const searchRef = useRef<HTMLInputElement>(null)
   useSearchTarget(searchRef)
+  const filterLabel = filterCount ? `Filters (${filterCount} active)` : 'Filters'   // one accessible name for the control and its tooltip (page-checklist › Tooltips)
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
@@ -65,8 +66,8 @@ export function LeadsToolbar({
           ) : null}
         </label>
         <span className={styles.filterWrap}>
-          <Tooltip label="Filters">
-            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilterClick} selected={filterCount > 0} />
+          <Tooltip label={filterLabel}>
+            <IconButton icon="filter_list" label={filterLabel} onClick={onFilterClick} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>

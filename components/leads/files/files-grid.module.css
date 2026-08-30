@@ -1,0 +1,107 @@
+/*
+ * Lead Details › Files — grid view (frame 85, 931:39083 1244 wide V g40 · spec design-source/context/lead-files/
+ * 02-grid-select-bulk.txt). Groups V g16: head 24 (checkbox + 14/Semi Bold) + a wrapping row of 299-wide items 16 apart
+ * (4 × 299 + 3 × 16 = 1244). Folder card 299×56 · tile 299×262. Selected fill #eee5ff (frames 96/97).
+ * Copied from components/leads/tasks/attach-files-modal.module.css (.groups/.group/.groupHead/.row/.folder/.tile) with
+ * the Files tab's sizes; the tile hover is the overview file tile's (components/leads/detail/files-card.module.css).
+ */
+.groups { display: flex; flex-direction: column; gap: var(--om-spacing-10); width: 100%; }   /* V g40 */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }                    /* V g16 */
+/* Group head (931:39085 / 931:39121): checkbox 24 + "Folders" / "Friday, 17 Jul ‘26" 14/Semi Bold, 8 apart. */
+.groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
+.groupTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* Items row (931:39088 / 931:39124): 299-wide items 16 apart, wrapping. */
+.row { display: flex; flex-wrap: wrap; gap: var(--om-spacing-4); }
+
+/* ---- Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 ---- */
+.folder {
+  position: relative;
+  width: 299px; height: 56px;
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-3);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.folder:hover { background: var(--om-color-hover-04p); }                 /* hover not mocked — the overview file tile's hover-04p */
+.folder[data-selected] { background: var(--om-color-primary-variant); }  /* frame 97: fill #eee5ff */
+/* The open / select area — a bare button carrying the icon + texts (the kebab sits beside it, never inside). */
+.folderMain {
+  flex: 1; min-width: 0; height: 100%;
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.folderMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.folderIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* folder 24/Regular #666666 */
+.folderTexts { flex: 1; min-width: 0; display: flex; flex-direction: column; }  /* V g0, 211×32 */
+.folderName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Semi Bold */
+.folderCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "17 items" 10/Regular #666666 */
+
+/* Kebab: bare more_vert 24/Light secondary (931:39089 / 931:39125) — the attach-files modal's .folderKebab at 24. */
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover { background: var(--om-color-hover-08p); }
+.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
+
+/* ---- Tile 299×262 (931:39125): V p4, fill #f2f2f2 r4 → image 291×200 r2 + caption 291×54 ---- */
+.tile {
+  position: relative;
+  width: 299px; height: 262px;
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.tile:hover { background: var(--om-color-hover-04p); }                   /* hover not mocked — the overview file tile's hover-04p */
+.tile[data-selected] { background: var(--om-color-primary-variant); }    /* frame 96: the whole tile fills #eee5ff */
+/* The open / select area: image + caption as one bare button; the caption's right padding reserves the kebab's 24 + 8. */
+.tileMain {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.tileMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tileImg { display: block; width: 291px; height: 200px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 291×200 r2 */
+.tileBox {
+  width: 291px; height: 200px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-0-5);
+}
+.tileBoxIcon { color: var(--om-color-on-surface-secondary); }
+/* Caption 291×54: H g8 p16/8/12/8 — the right 8 becomes 8 + 24 + 8 so the absolutely placed kebab keeps its 8 gap. */
+.caption {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 54px; width: 100%; min-width: 0;
+  padding: var(--om-spacing-4) calc(var(--om-spacing-2) + 24px + var(--om-spacing-2)) var(--om-spacing-3) var(--om-spacing-2);
+}
+.nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }   /* H g8, 199 wide */
+.kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* image / picture_as_pdf 20/Regular #db382a */
+.tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Semi Bold */
+/* Comment chip 36×26: H g4 p4, fill #f2f2f2, stroke #e5e5e5 w1, r4 → comment 16/Light + count 12/Medium. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 26px; padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  flex-shrink: 0;
+  min-width: 36px; justify-content: center;   /* 931:39131: the chip is 36 wide with a one-digit count */
+}
+.chipCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); }   /* "1" 12/Medium #1a1a1a */
+/* Kebab anchor at the caption's right, measured from the tile's outer edge: x = 4 + 291 − 8 − 24 → right 12;
+   y = tile padding 4 + caption bottom 12 + (26 − 24) / 2 → bottom 17 (centred on the 26px name / chip line, y 481..505). */
+.tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 17px; display: inline-flex; }
+
+.danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */

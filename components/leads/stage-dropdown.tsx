@@ -44,10 +44,14 @@ export function StageDropdown({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (t instanceof Element && t.closest('[aria-haspopup][aria-expanded="true"]')) return   // the open trigger toggles (REG-153)
+      if (ref.current && !ref.current.contains(t)) onClose()
+    }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS buttons stop propagation
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose])
 
   return (

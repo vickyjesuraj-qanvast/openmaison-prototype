@@ -1,0 +1,49 @@
+# Lead Overview — spec dump batch 5: My work · Quotes · Questionnaire · Lead returned (430 wide, white, 1px #e5e5e5, r8)
+
+## MY WORK (858:24989 full; 858:24505 due-today only; 858:24171 empty)
+head|H g8 p20/20/12/20 → group H g4: "MY WORK" 12/Semi Bold/16 #666666 · "·" 12/Regular · "Wed, 26 Aug" 12/Regular (FILL) · "2 tasks need attention" 12/Regular #666666 (HUG, right) · arrow_outward 16 #5500ff
+group label row (Overdue)|0,48,430,28|H g4 p8/20/0/20 MIN/CENTER → "Overdue" 14/Semi Bold/20 #db382a · "·" 14/Semi Bold #db382a · "2" 14/Semi Bold #db382a
+list|0,76,430,124|V g0 p0/12/12/12
+  task row|12,y,406,56|H g8 p8/8/8/8 MIN/CENTER|r4 (56 tall, rows touch)
+    3|TEXT|icon radio_button_unchecked|20,y+18,20,20|20/Light #666666
+    3|FRAM|text group|48,y+8,334,40|V g4 CENTER (FILL)
+    4|TEXT|title|48,·,334,20|14/Medium/20 #1a1a1a ENDING (FILL)
+    4|FRAM|meta|48,·,334,16|H g4 MIN/CENTER → kind 12/Medium/16 #666666 ("General" / "Call") · "·" 12/Regular #666666 · due 12/Medium/16 coloured: overdue "17 Jul ‘26" + "(7d overdue)" #db382a · due today "Due today" #c17e22
+    3|TEXT|icon keyboard_arrow_right|390,y+18,20,20|20/Regular #666666
+  divider Horizontal|20,199,390,1|#e5e5e5 (inside the list, after the last row; 12px inset from the card edge = 20)
+group label row (Due today)|0,200,430,32|H g4 p12/20/0/20 → "Due today" · "·" · "2" 14/Semi Bold/20 #c17e22
+list rows (Call · Due today) then divider 20,355
+collapsed group|0,356,430,52|H g4 p12/20/20/20 MIN/CENTER → "Upcoming" · "·" · "7" 14/Semi Bold/20 #1a1a1a (FILL group) + icon keyboard_arrow_down 20/Regular #666666 at 390
+Card heights: full 408 · due-today only 204 (head 48 + label 32 + two rows 112 + 12 pad) · empty 379
+
+## MY WORK empty (858:24171) body|0,48,430,331|V g20 p32 CENTER → inner V g24 CENTER: illustration 140×107 (undraw_add-document) · text group V g12: "Add your first task" 20/Semi Bold/24 #1a1a1a CENTER + "Stay organised — track, prioritise, and complete everything from one place." 14/Regular/20 #1a1a1a CENTER (2 lines, 366 wide) · Buttons Primary/36/Filled leading icon add (p8/16/8/12, g8) "Create New Task" 171×36
+
+## QUOTES (858:25057) — head H g12, title FILL, arrow_outward
+body|0,48,430,100|V g20 p8/20/20/20
+2|FRAM|group|20,56,390,72|V g8
+3|FRAM|amount row|20,56,390,32|H g8 MIN/MAX (bottom-aligned) → inner H g8 BASELINE: "S$ 70,500" 24/Bold/32 #1a1a1a · "OM-10001" 14/Regular/20 #666666 · "·" · "Private" 14/Regular/20 #666666; right: Tag Outlined Default (fill #f2f2f2, stroke #cccccc, r4, p4/8) "Draft" 10/Medium/12 #666666 at 360,68 (50×20)
+3|FRAM|progress track|20,96,390,8|fill #e5e5e5|r999 → fill bar 122×8 #5500ff r999 (≈ 1/3 = Draft)
+3|FRAM|labels|20,112,390,16|H → "Draft" 12/Medium/16 #5500ff LEFT (FILL 182) · "Sent" 12/Medium #666666 CENTER (HUG) · "Approved" 12/Medium #666666 RIGHT (FILL 182)
+(The listing screenshot also shows "99% of budget is within range" — not present in this node dump; do NOT render it.)
+
+## QUOTES empty (858:24272) body|V g16 p32 CENTER → V g24: illustration 140×137 (undraw_no-data) · "Create your first quote" 20/Semi Bold/24 + "Create quotes and share it with your clients" 14/Regular/20 (CENTER) · buttons H g12: Secondary/36/Outlined "From Scratch" 123×36 (stroke #cccccc, p8/16) + Primary/36/Filled "From Template" 133×36
+
+## QUESTIONNAIRE (858:25077) — head H g12: "QUESTIONNAIRE" (FILL) · Link text "Ask Client" 12/Semi Bold/16 #5500ff · arrow_outward
+body|0,48,430,88|V g8 p8/20/20/20 → group V g8:
+3|row|20,56,390,20|H BASELINE → "Total questions answered" 14/Semi Bold/20 #1a1a1a (FILL) · "7 / 11" 14/Regular/20 #666666
+3|track|20,84,390,8|#e5e5e5 r999 → bar 122×8 #5500ff
+3|labels|20,100,390,16|H → "Client answered: 0" 12/Medium/16 #666666 · "Studio answered: 7" 12/Medium/16 #666666 RIGHT (FILL)
+
+## QUESTIONNAIRE empty (858:24219) body|V g20 p32 CENTER → V g24: illustration 140×120 (undraw_question-answered) · "Create your first question" 20/Semi Bold/24 + "Create and share your questions to clarify the client’s scope." 14/Regular/20 CENTER (2 lines) · Primary/36/Filled "Add Question" 125×36 (p8/16)
+
+## LEAD RETURNED — processing (858:25188, 244 tall) · rejected + appeal (858:24095, 372) · approved (858:24144)
+head H g12: "LEAD RETURNED" (FILL) · arrow_outward
+body|V g12 p0/20/20/20 (processing) · p8/20/20/20 (rejected, because the appeal banner comes first)
+appeal banner (rejected only)|20,56,390,72|H g16 p16 MIN/CENTER|fill #fef5ea|stroke #fcecd5 w1|r8 → TEXT 14/20 #1a1a1a MIXED Regular "Submit an appeal within " + Bold "7 days" + Regular " with more supporting documents/information here." (FILL, 2 lines) · icon chevron_right 24/Regular #666666
+KV rows|20,y,390,36|H g8 p8/0/8/0 MIN/CENTER (36 apart) → key TEXT 14/Regular/20 #666666 FIXED 120 · value FILL
+  processing: Return status → Tag Outlined Yellow (fill #fef5ea, stroke #fcecd5, r4, p4/8) "Return Processing" 10/Medium/12 #c17e22 · Returned by → Avatar Generic 20 r4 #387e47 "D" + "David Lee" 14/Regular #1a1a1a (H g8) · Returned on → "28 Aug ‘26, 4:30PM" · Reason → "No response from lead"
+  rejected: Return status → Tag Outlined Red (fill #fbebea, stroke #f8d7d4) "Return REJECTED" 10/Medium #af2d22 · Replied by → Profile Image 20×20 r4 (img: Qanvast logo, asset) + "Qanvast - Business Team" · Replied on → "28 Aug ‘26, 4:30PM" · Status → "Return Rejected" · Reason → "Homeowner did not shortlist ID to proceed"
+  approved (from the board dump): Return status → two tags "RETURN APPROVED" (green) + "RETURN CREDITED" (green) · Replied by → Qanvast - Business Team · Replied on → 28 Aug ‘26, 4:30PM · Refund status → Credited · Credit amount → 240
+footer link row|20,y,390,20|H g12 → Link text "View Details" 12/Semi Bold/16 #5500ff + keyboard_arrow_right 20 #5500ff (H g4)
+
+## FILES empty (858:24296) body|V g16 p32 CENTER → V g24 (HUG 309): illustration 140×120 (undraw_photos) · "Add your first files" 20/Semi Bold/24 + "Create folders and upload files from your local." 14/Regular/20 · buttons H g12: Secondary/36/Outlined leading icon create_new_folder "Create Folder" 148×36 (p8/16/8/12 g8) + Primary/36/Filled leading icon upload "Upload Files" 140×36

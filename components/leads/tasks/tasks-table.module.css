@@ -1,0 +1,201 @@
+/*
+ * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt / 02-rows-menus-bulk.txt.
+ * Container: fill #fff, 1px surface-variant, r8, hugs rows. Head 56 · rows 48 · bottom bar 53.
+ * Columns 56 · 582 · 160 · 137 · 118 · 191 (= 1244): Title fills, the others are fixed.
+ * The card deliberately does NOT clip (no overflow hidden): the row kebab menu (200×190) must be able to
+ * hang below a short table. Row fills only touch the middle rows, so the rounded corners stay clean.
+ */
+.card {
+  display: flex; flex-direction: column;
+  width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (902:26387) */
+  border-radius: var(--om-radius-2);
+}
+
+/* ---- Head row 1244×56 ---- */
+.head { display: flex; height: 56px; }
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium — sentence case as the mock types it */
+/* Sort is inert (coming soon) — the head keeps the listing's sort-button look (components/leads/table.module.css .hSort). */
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+
+/* ---- Columns (flex basis = mock width) ---- */
+.colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
+.head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
+.colTitle { flex: 1 1 582px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.colMember { flex: 0 0 160px; }
+.colDue { flex: 0 0 137px; }
+.colStatus { flex: 0 0 118px; }
+.colTags { flex: 0 0 191px; }
+
+/* ---- Rows 1244×48 ---- */
+.row { display: flex; height: 48px; position: relative; transition: background-color var(--motion-hover); }
+.row:hover { background: var(--om-color-surface-bg); }                    /* frame 195: hover fill #f2f2f2 */
+.row[data-selected] { background: var(--om-color-primary-variant); }     /* frame 192: selected fill #eee5ff */
+/* Unseen task (Type=RW-New): 4px primary band at the row's left edge — the listing's unseen band (REG-131 applied to tasks). */
+.row[data-unseen]::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--om-color-primary-default); z-index: 1;
+}
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.cell.colSel { padding: var(--om-spacing-3) var(--om-spacing-4); }                                                    /* p12/16 (declared after .cell so it wins the cascade) */
+.cell.colTitle { gap: var(--om-spacing-3); }                                                               /* H g12 */
+.cell.colMember { gap: var(--om-spacing-2); }                                                              /* H g8 */
+.cell.colDue { padding: var(--om-spacing-3) var(--om-spacing-8) var(--om-spacing-3) var(--om-spacing-4); } /* p12/32/12/16 */
+.cell.colTags { gap: var(--om-spacing-1); }                                                                /* H g4 */
+/* Status / Tags cells: the spec lists no padding — the neighbouring cells' p12/24/12/16 is used (see .cell). */
+/* While a row is being renamed its other cells stay inert so no popover opens mid-edit (spec silent; kept to the field). */
+.cell[data-inert] { pointer-events: none; }
+
+/* Status glyph: radio_button_unchecked 24/Light secondary (open) · check_circle 24/Light #469e59 (completed). */
+.glyph {
+  display: inline-flex; flex-shrink: 0;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-on-surface-secondary);
+  border-radius: var(--om-radius-1);
+  transition: color var(--motion-hover);
+}
+.glyph[data-done] { color: var(--om-color-tertiary-green-default); }
+.glyph:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* The rest of the title cell (name + count chips) is one button → opens the task; anchor = the cell. */
+.titleBtn {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+}
+.titleBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; border-radius: var(--om-radius-1); }
+.title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
+.title[data-unseen] { font: var(--om-type-heading-h5); }   /* RW-New: name 14/Bold */
+.chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }   /* H g8 */
+/* Count chip 34×24: p4 g4, fill #f2f2f2, r4 → icon 16/Light on-surface + count 12/Medium. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 24px; padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-caption-s);
+  color: var(--om-color-on-surface-default);
+}
+
+/* Member cell: Avatar Generic 24 r4 — #cccccc placeholder when unassigned. om/avatar has no placeholder mode, so the
+   box is drawn here; the silhouette glyph (person 16, white) is not measured in the spec. */
+.ghostAvatar {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-on-surface-border);
+  color: var(--om-color-on-primary-default);
+}
+.memberStack { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+/* More than two assignees: the listing's "+n" box (components/leads/table.module.css .plusBox) — the mock shows at most two. */
+.plusBox {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+}
+
+/* Due cell: "17 Jul ’26" 14/Regular, underlined (Link text style in the render); #db382a when overdue. */
+.dueBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  text-decoration: underline; white-space: nowrap;
+  border-radius: var(--om-radius-1);
+}
+.dueBtn[data-overdue] { color: var(--om-color-tertiary-red-default); }
+.dueBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Tags cell: the whole cell is a button → tag picker. */
+.tagsBtn {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  width: 100%; height: 100%; min-width: 0;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.tagsBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* "Link text Primary leading icon add" (add 20 + 14/Semi Bold #5500ff) rendered as a span inside the cell button —
+   the DS Link can't nest in a button; geometry copied from the DS link (gap 4, subheading-m). */
+.link {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 20px; white-space: nowrap;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  transition: color var(--motion-hover);
+}
+.tagsBtn:hover .link { color: var(--om-color-on-primary-variant); }   /* link hover = the token every other link uses (UI-18) */
+.link[data-inert] { pointer-events: none; }
+
+/* ---- Inline add / rename (frame 194 "Type=RW-New, State=Input") ---- */
+/* The whole Title cell is the active field: 2px primary ring inside the cell, no status glyph. */
+.cell[data-editing] { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.editInput {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: none; padding: 0; margin: 0;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  caret-color: var(--om-color-on-surface-default);
+}
+.editActions { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }   /* H g4 */
+/* Icon Buttons Primary/24/Filled (done): fill #5500ff, icon #fff — om/icon-button has no filled variant, so it is
+   restyled here (element + attribute beats the primitive's .btn[data-variant] rule). */
+button.doneFilled[data-variant='primary'] {
+  background: var(--om-color-primary-default);
+  border-color: var(--om-color-primary-default);
+  color: var(--om-color-on-primary-default);
+}
+button.doneFilled[data-variant='primary']:hover {
+  background: var(--om-color-primary-hover);
+  border-color: var(--om-color-primary-hover);
+  color: var(--om-color-on-primary-default);
+}
+/* Inert affordances of the add row (member · due · tags) — drawn as in the mock, not pressable while adding. */
+.inert { pointer-events: none; }
+
+/* ---- Row hover actions (frame 195 → 606:75167, REG-163): Edit + kebab at 1113,6 → right 24, top 6; H g12; level-1 shadow. ---- */
+.actions {
+  position: absolute; right: var(--om-spacing-6); top: 6px;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
+.float {
+  display: inline-flex;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+}
+.menuWrap { position: relative; display: inline-flex; }
+.danger { color: var(--om-color-tertiary-red-default); }
+
+/* ---- Bottom bar 902:26450 — 53 tall: 1px top rule + p16/24; "Add Task" link 20 tall. ---- */
+.foot {
+  display: flex; align-items: center;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}

@@ -1,0 +1,49 @@
+/* LEAD STAGES card body (858:24890): V g0 p0/12/12/12 — five 36px rows, no gap.
+   Parked variants (858:24646 Lost / 858:24709 On Hold): V g4 → rows group · 1px rule · parked row. */
+.body {
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0 var(--om-spacing-3) var(--om-spacing-3);
+  min-width: 0;
+}
+.body[data-parked] { gap: var(--om-spacing-1); }
+.group { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+
+/* Stage row: 406×36, H g8 p8, radius 4; a button that opens the Move stage window at that stage. */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: var(--om-spacing-2);
+  border: 0; border-radius: var(--om-radius-1); background: none;
+  width: 100%; min-width: 0; text-align: left; cursor: pointer;
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+/* Hover is not in the spec dump; copied from the DS menu item (the DS menu item: hover-04p).
+   The current row keeps its primary-variant fill, like a selected segmented button (interaction-states.md). */
+.row:hover { background: var(--om-color-hover-04p); }
+.row[data-state='current'], .row[data-state='current']:hover { background: var(--om-color-primary-variant); }
+
+/* Leading icon 20: current radio_button_checked Regular primary · done check_circle Light green (#469e59 =
+   tertiary-green-default) · future radio_button_unchecked Light secondary · Lost cancel Light red (#db382a) ·
+   On Hold timelapse Regular yellow (#f19e2b). */
+.icon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.row[data-state='current'] .icon { color: var(--om-color-primary-default); }
+.row[data-state='done'] .icon { color: var(--om-color-tertiary-green-default); }
+.row[data-state='lost'] .icon { color: var(--om-color-tertiary-red-default); }
+.row[data-state='hold'] .icon { color: var(--om-color-tertiary-yellow-default); }
+
+/* Label group (334×20, H g4): name group fills, meta hugs on the right. */
+.label { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-1); }
+.nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* On Hold only: "till 27 Oct ’26" 12/Medium/16 secondary, 8 after the name. */
+.till { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Meta (H g4): current → "current" primary · "·" · "2 days"; done → "2 days" Regular; future → "--" Medium.
+   The Lost / On Hold variants type the future "--" in Regular. */
+.meta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); white-space: nowrap; flex-shrink: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.current { color: var(--om-color-primary-default); }
+.dot { font: var(--om-type-body-s); }
+.row[data-state='done'] .meta, .row[data-state='lost'] .meta, .row[data-state='hold'] .meta { font: var(--om-type-body-s); }
+.body[data-parked] .row[data-state='future'] .meta { font: var(--om-type-body-s); }
+
+.chevron { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }

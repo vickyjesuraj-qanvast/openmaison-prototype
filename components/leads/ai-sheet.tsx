@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
-import { spring } from '@/lib/motion'
+import { duration, spring } from '@/lib/motion'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { resetPrototype } from '@/app/leads/actions'
 import styles from './ai-sheet.module.css'
@@ -19,11 +19,14 @@ export function AiSheet({
   suggestions,
   onSelect,
   onClose,
+  anchorRef,
 }: {
   open: boolean
   suggestions: string[]
   onSelect: (s: string) => void
   onClose: () => void
+  /** The FAB that opens it — a press there toggles instead of close-then-reopen (REG-153). */
+  anchorRef?: RefObject<HTMLElement | null>
 }) {
   const ref = useRef<HTMLDivElement>(null)
   // Prototype-only: put everything back to the base state (user 2026-08-29) — leads, imports, tasks, settings and browser prefs.
@@ -40,11 +43,15 @@ export function AiSheet({
   useEffect(() => {
     if (!open || confirmReset) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose() }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      if (anchorRef?.current?.contains(t)) return   // the FAB's own press toggles (REG-153)
+      if (ref.current && !ref.current.contains(t)) onClose()
+    }
     document.addEventListener('keydown', onKey)
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown) }
-  }, [open, onClose, confirmReset])
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
+    return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
+  }, [open, onClose, confirmReset, anchorRef])
 
   return (
     <AnimatePresence>
@@ -56,7 +63,7 @@ export function AiSheet({
           aria-label="Maison AI suggestions"
           initial={{ opacity: 0, scale: 0.9, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0, transition: spring.settle }}
-          exit={{ opacity: 0, scale: 0.95, y: 6, transition: { duration: 0.15 } }}
+          exit={{ opacity: 0, scale: 0.95, y: 6, transition: { duration: duration.toggle } }}
           style={{ transformOrigin: 'bottom right' }}
         >
           <div className={styles.head}>
@@ -71,7 +78,7 @@ export function AiSheet({
                 className={styles.suggestion}
                 onClick={() => onSelect(s)}
                 initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 0.04 * i, duration: 0.18 } }}
+                animate={{ opacity: 1, y: 0, transition: { delay: 0.04 * i, duration: duration.menu } }}
               >
                 {s}
               </motion.button>

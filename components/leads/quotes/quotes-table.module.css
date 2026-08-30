@@ -1,0 +1,117 @@
+/*
+ * Lead Details › Quotes table (910:36322) — specs design-source/context/lead-quotes/01-listing-table.txt /
+ * 02-rows-menus.txt. Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. No bottom bar.
+ * Columns 40 · 319 · 128 · 120 · 120 · 120 · 120 · 120 · 157 (= 1244): Title fills, the others are fixed.
+ * The card deliberately does NOT clip (no overflow hidden): the row kebab menu (200×226) and the status menu
+ * (200×190) must be able to hang below a short table — copied from tasks-table.module.css.
+ */
+.card {
+  display: grid;
+  /* One shared track for head + rows (REG-180): Selection 40 · Title fluid (absorbs what Status needs) · Status 128 at rest,
+     grows to its widest content ("Sent for Approval") for every row at once · Total 120 · Due 120 · Created 120 · Sent 120 ·
+     Updated 120 · Approval Date 157 (spec 01). */
+  grid-template-columns: 40px minmax(0, 1fr) minmax(128px, max-content) 120px 120px 120px 120px 120px 157px;
+  width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (910:36322) */
+  border-radius: var(--om-radius-2);
+}
+
+/* ---- Head row 1244×56 (910:36323) ---- */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium #666666 */
+/* Sort is inert (coming soon) — the head keeps the tasks table's sort-button look (tasks-table.module.css .hSort). */
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+
+/* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
+/* Selection 40: p12/0/12/16 (head p16/0/16/16) — 16 + the 24 checkbox = 40; the spec lists no right rule on it. */
+.colSel { grid-column: 1; padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
+.head .colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }
+.colTitle { grid-column: 2; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+/* 128 at rest (mock); "Sent for Approval" (never shown in a mock cell) needs ~138, so the TRACK grows to its content and the fluid Title absorbs it (REG-176, head + rows together REG-180). */
+.colStatus { grid-column: 3; }
+.colTotal { grid-column: 4; }
+.colDue { grid-column: 5; }
+.colCreated { grid-column: 6; }
+.colSent { grid-column: 7; }
+.colUpdated { grid-column: 8; }
+.colApproval { grid-column: 9; }
+
+/* ---- Rows 1244×64 (910:36324) ---- */
+.row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }   /* same tracks as the head — no per-row drift (REG-180) */
+.row:hover { background: var(--om-color-surface-bg); }                    /* frame 200 hover row: fill #f2f2f2 */
+.row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff — tasks frame 192 (build plan) */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.cell.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }   /* p12/0/12/16 (declared after .cell so it wins the cascade) */
+.cell.colTitle { gap: var(--om-spacing-3); }                                                /* H g12 */
+
+/* Title cell "Cell / Two line": Cell Data V g4 — Name 14/Bold + "OM-10001 · Private" 12/Regular secondary (H g8). */
+.titleData { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; flex: 1; }
+.title { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Status cell: CellDataGroup H g4 — "Draft" 14/Regular + keyboard_arrow_down 20 → the status menu (910:36673). */
+.statusWrap { position: relative; display: inline-flex; }
+.statusBtn {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  white-space: nowrap;
+  border-radius: var(--om-radius-1);
+}
+.statusBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Chevron points up while the menu is open — every menu trigger does this (tasks-toolbar.module.css .chev). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+/* Current status marked as stage-dropdown.module.css marks the lead's stage: "current" 12px secondary meta (836:23422 pattern). */
+.itemText { flex: 1; min-width: 0; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Due cell: "17 Jul ’26" 14/Regular, underlined; #db382a when overdue — tasks-table.module.css .dueBtn verbatim. */
+.dueBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  text-decoration: underline; white-space: nowrap;
+  border-radius: var(--om-radius-1);
+}
+.dueBtn[data-overdue] { color: var(--om-color-tertiary-red-default); }
+.dueBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* ---- Row hover actions (910:36644 / 910:36709 "Hover button" @1106,14): View + kebab, H g12, level-1 shadow, right 24. ----
+   Copied from tasks-table.module.css .actions/.float/.menuWrap; only `top` changes: 64 − 36 = 28 → 14 (the mock's y). */
+.actions {
+  position: absolute; right: var(--om-spacing-6); top: 14px;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
+.float {
+  display: inline-flex;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+}
+.menuWrap { position: relative; display: inline-flex; }
+.danger { color: var(--om-color-tertiary-red-default); }   /* 910:36723 Delete #db382a */

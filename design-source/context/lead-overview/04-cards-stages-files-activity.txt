@@ -1,0 +1,39 @@
+# Lead Overview — spec dump batch 4: Lead stages · Files · Recent activity cards (all 430 wide, white, 1px #e5e5e5, r8)
+
+## LEAD STAGES (858:24890 New-current; 858:24646 Lost; 858:24709 On Hold) — head H g8 p20/20/12/20; title FILL + "N days in pipeline" 12/Regular #666666 + arrow_outward
+body|0,48,430,192|V g0 p0/12/12/12   (Lost/On Hold variant: V g4 p0/12/12/12, height 237)
+row|12,y,406,36|H g8 p8/8/8/8 MIN/CENTER|r4   (rows are 36 apart, no gap)
+  current row: fill #eee5ff (primary-variant), icon radio_button_checked 20/Regular #5500ff
+  done row: icon check_circle 20/Light #469e59 (green)
+  future row: icon radio_button_unchecked 20/Light #666666
+  3|FRAM|label group|48,y+8,334,20|H g4 CENTER/CENTER (FILL)
+  4|FRAM|48,·,238|H SPACE_BETWEEN → TEXT stage name 14/Medium/20 #1a1a1a ENDING (FILL)
+  4|FRAM|meta|290,·,92,16|H g4 MIN/CENTER (HUG)
+     current: "current" 12/Medium/16 #5500ff · "·" 12/Regular #666666 · "2 days" 12/Medium/16 #666666
+     done: "2 days" 12/Regular/16 #666666 (right-aligned in the row, x344)
+     future: "--" 12/Medium/16 #666666 (x370) — the Lost/On Hold variants use 12/Regular
+  3|TEXT|icon keyboard_arrow_right|390,y+8,20,20|20/Regular #666666
+rows: New y48 · Contacted 84 · Met 120 · Quote Sent 156 · Won 192
+Lost / On Hold variants: the five stage rows sit in a V g0 group (12,48,406,180), then divider Horizontal 12,232,406,1 #e5e5e5, then the parked row at y237:
+  Lost: icon cancel 20/Light #db382a · "Lost" 14/Medium/20 · "2 days" 12/Regular #666666 (x344) · chevron
+  On Hold: icon timelapse 20/Regular #f19e2b · label group H g8 → "On Hold" 14/Medium/20 #1a1a1a + "untill 27 Oct ‘26" 12/Medium/16 #666666 (x110)  ← build copy: "till 27 Oct ’26" (mock typo; M3) · "2 days" 12/Regular (x344) · chevron
+
+## FILES · 13 (858:24943) / FILES · 2 (858:24125) — head H g12: "FILES" 12/Semi Bold + "·" + count 12/Regular (FILL) + arrow_outward
+body|0,48,430,120|V g12 p8/20/20/20
+2|FRAM|tiles row|20,56,390,92|H g8
+  folder tile|20,56,92,92|V p4|fill #f2f2f2|r4
+    4|FRAM|thumb|24,60,84,64|fill #e5e5e5 → icon folder 24/Regular #666666 centred (54,80)
+    4|FRAM|caption row|24,124,84,20|H p4/0/4/0 CENTER → "Kitchen" 10/Regular/12 #666666 (FILL, ENDING)
+  file tile|120,56,92,92|V p4|fill #f2f2f2|r4
+    4|RECT|image|124,60,84,64|img fill|r2   (asset: floor-plan thumbnail, exported from 858:24958)
+    4|FRAM|caption row|124,124,84,20|H g4 p4/0/4/0 CENTER → icon "image" 12/Regular #db382a + "Q-101" 10/Regular/12 #666666 (FILL, ENDING)
+  second file tile at 220
+  overflow tile|320,56,90,92|V p4|fill #f2f2f2|r4 → inner 82×84 with "+10" 12/Semi Bold/16 #666666 centred
+FILES · 2 shows folder + one file tile only.
+
+## RECENT ACTIVITY (858:24970) — head H g8, title FILL + arrow_outward
+body|0,48,430,156|V g0 p0/20/12/20
+row|20,y,390,36|H g8 p8/0/8/0 MIN/CENTER|r4   (36 apart)
+  3|TEXT|date|20,y+8,120,20|14/Regular/20 #666666 FIXED 120 ENDING  ("Today" · "Tue, 25 Aug ‘26")
+  3|TEXT|event|148,y+8,262,20|14/Regular/20 #1a1a1a FILL ENDING (single line, ellipsis)
+rows y48 · 84 · 120 · 156: "Task due date updated" · "Quote created" · "You updated the due date for the task "Customer asked to call back on…"" · "Lead created from Instagram"

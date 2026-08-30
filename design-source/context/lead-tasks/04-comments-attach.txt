@@ -1,0 +1,47 @@
+# Lead Details › Tasks — spec dump batch 4: Comments panel and Attach files modal (read 2026-08-29)
+
+## Comments panel (frame 73, 902:28619) — 400×1024 right side panel, fill #fff (same panel as the Task panel; the Task panel is measured in 03-panel.txt)
+1|FRAM|Heading|0,0,400,80|H g16 p20/24/20/24|fill #fff|stroke #e5e5e5 w0/0/1/0 (bottom rule)
+2|FRAM|page-title|24,20,312,40|H g12
+3|TEXT|icon arrow_back|24,28,24,24|24/Light #1a1a1a  (back → Task panel)
+3|FRAM|title col|60,20,276,40|V
+4|TEXT|"Task / "|60,20,276,16|12/Regular #666666
+4|TEXT|"Comments"|60,36,108,24|20/Bold #1a1a1a
+2|INST|Link Icon close|352,28,24,24|24/Regular #666666
+1|FRAM|body|0,80,400,944|V g24 p24
+2|FRAM|thread|24,104,352,164|V g20
+3|TEXT|"2 Comments"|24,104,352,16|12/Regular #1a1a1a
+3|FRAM|Two Line (comment)|24,140,352,64|H g12
+4|INST|Avatar Generic 36 r4 (photo for James; initial "H" 14/Medium on #387e47 for You)
+4|FRAM|text col|72,140,300,64|V g4
+5|FRAM|meta row|72,140,300,20|H g4 → name 14/Semi Bold? ("James") + "2 days ago" 12 secondary (measured from the screenshot; the dump collapsed the row) + trailing kebab Link Icon 20 at x352
+5|TEXT|comment text|72,164,300,40|14/Regular #1a1a1a ("Client asked for the walnut laminate finish, please change the material.")
+3|FRAM|second comment|24,224,352,44 → "You" · "2 days ago" · "Got it, thanks! 👍"
+1|FRAM|Footer|0,912,400,112|V g12 p16/24/16/24|fill #fff|stroke #e5e5e5 w1/0/0/0 (top rule)
+2|FRAM|composer|24,928,352,80|H g12
+3|INST|Avatar Generic 36 ("H" #387e47)
+3|FRAM|col|72,928,304,80|V g8
+4|INST|Text Field 36px Active|72,928,304,36|stroke #5500ff w2|r4 → placeholder "Chat with your team here" (14 body-m); Empty state = 1px #cccccc
+4|FRAM|row|72,972,304,36|H → "Clients can’t see these comments" 10/Regular #666666 (left, vertically centred) + Buttons Primary/36/Filled "Submit" 80×36 (right)
+Edit state (frame 75): the comment's text is replaced by a Text Field 36px Active (304 wide) with the text, then a row with "Cancel" (secondary outlined 36? — from the screenshot: small outlined "Cancel" + primary "Save", right-aligned, 8 apart, 24 tall row)
+
+## Attach files modal (frame 57, 902:28220) — ModalComponent 1200×928 (xl, fixed 928 like the import wizard), fill #fff, r10 (build: --om-radius-3 12 per the modal standard)
+1|FRAM|Heading|0,0,1200,64|H p20/24|stroke #e5e5e5 w0/0/1/0 → "Attach files" 20/Bold + Link Icon close 24
+1|FRAM|body "Filter content"|0,64,1200,864|V g24 p24
+2|FRAM|upload block|24,88,1152,176|V g12
+3|TEXT|"Upload from your local files"|16/Semi Bold #1a1a1a   (frame 64 empty state says "Upload local files")
+3|FRAM|dropzone|24,124,1152,140|V p40/0|fill #f2f2f2|stroke #cccccc w2 (dashed in the render)|r4 → "Drop your file or browse" 14 (browse bold+underlined primary) + "Supports: JPEG, PNG, PDF" 12/Regular #666666
+2|INST|Horizontal rule|24,288,1152,1|#e5e5e5
+2|FRAM|Your files block|24,313,1152,354|V g16
+3|FRAM|bar|24,313,1152,36|H g12 → "Your files" 16/Semi Bold (FILL) · Search Bar 240×36 · Filter chip "File Type" 93×36 (stroke #cccccc, trailing chevron) · Icon Buttons 36 (sort? icon per screenshot) · Segmented Icon Button 36 (grid / list, 71 wide)
+3|FRAM|groups|24,365,1152,302|V g40
+4|FRAM|group|V g16 → header row H g8: check_box_outline_blank 24/Light #666666 + "Friday, 17 Jul ‘26" 14/Semi Bold #1a1a1a; then tiles row H g16: tile 276×262, V p4, fill #f2f2f2, r4 (image 268×~200 + caption row with a checkbox + name "Living Room" + kind chip) — frame 57 shows 4 tiles across (276×4 + 16×3 = 1152)
+   Frame 56/58 also show a "Folders" group first (folder cards 276 wide: folder icon + "Generic file name" + kebab) above the date group.
+1|FRAM|Footer|0,860,1200,68|H g12 p16/24|stroke #e5e5e5 w1/0/0/0 → Cancel (secondary outlined 80×36) · Attach 1 File / Attach 2 Files (primary filled 115×36)
+Empty state (frame 64): "Your files" with an illustration + "No files yet" / "Uploaded files will appear here." centred (dump pending)
+
+## Uploading toast (902:28261) — 360×200, fill #fff, stroke #e5e5e5 w1, r4, anchored bottom-right of the modal (824,652 in the 1200 modal)
+1|FRAM|Heading|1,1,358,56|H g16 p16|fill #1a1a1a → "Uploading 2 files" 16/Bold #fff (FILL) · keyboard_arrow_down 24 #fff · close 24 #fff
+1|FRAM|row|1,57,358,64|H g12 p12/16 → thumb 40×40 (img, stroke #e5e5e5, r4) · "filename.jpg" 14/Medium #1a1a1a (FILL) · check_circle 20/Regular #469e59
+1|INST|rule|#e5e5e5
+1|FRAM|row failed|1,122,358,64 → thumb · "filename.jpg" · "Failed" 12/Regular #db382a · refresh 20 #db382a

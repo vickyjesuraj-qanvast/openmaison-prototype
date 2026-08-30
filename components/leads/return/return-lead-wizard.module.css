@@ -1,0 +1,169 @@
+/*
+ * Return Lead wizard — ModalComponent 800 wide (l-modal), r12 (931:48813 step 1 · 931:48882 reason form · 931:48930 filled
+ * · 931:49009 terms). Spec: design-source/context/lead-return/01-wizard-details.txt; plan 00-build-plan.md.
+ * Shell (.overlay/.panel/.footer/.iconBtn) copied from components/leads/tasks/tasks-filters-modal.module.css, the two-line
+ * head from components/leads/move-stage/wizard.module.css (.head/.headText/.title/.subtitle); the attachment tiles from
+ * components/leads/notes/attachments-column.module.css (150×158); the attempts buttons wear the Choice chip selected look
+ * (components/leads/move-stage/fields.module.css .chip[data-selected]) at 86×48 / 16 Semi Bold.
+ */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: var(--om-spacing-12) 0; overflow-y: auto;
+}
+/* Height follows the content, viewport-capped (48 margin top and bottom). */
+.panel {
+  width: var(--om-modal-l); max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* Heading 84: H g16 p20/24, bottom rule #e5e5e5 — 20 + (24 title + 4 + 16 subtitle) + 20 = 84. */
+.head {
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }   /* V g4 */
+.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }                  /* "Return Lead" 20/Bold #1a1a1a */
+.subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }                 /* "Olivia Martinez · Received on 19 Feb 2025" 12/Regular #666666 */
+/* info 24 #666666 · close 24 — the filters modal's bare .close */
+.iconBtn { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; transition: color var(--motion-hover); }
+.iconBtn:hover { color: var(--om-color-on-surface-default); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+
+/* Step host between the head and the footer: the current body fills it; an exiting body (AnimatePresence popLayout) is
+   lifted out of the flow inside it, so the ±16px step slide never resizes the panel (audit 2026-08-30, WIZARD-STEP-MOTION). */
+.steps { flex: 1; min-height: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+/* modal-body 800×516: V g24 p24 → H g24: form column 468 + tips box 260 (468 + 24 + 260 = 752). Scrolls when taller than the cap. */
+.body { flex: 1; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain; padding: var(--om-spacing-6); }
+.columns { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
+.form { width: 468px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-9); }   /* form-items V g36 */
+
+/* tips-section 260×236: V g16 p16, fill #edeef7 = --om-color-tertiary-blue-variant2 (tertiary-blue-l10 #edeef7 — exact).
+   The mock lists no radius; r8 = the house rule for cards (CLAUDE.md "Radii: 8 cards"). */
+.tips {
+  width: 260px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4);
+  background: var(--om-color-tertiary-blue-variant2);
+  border-radius: var(--om-radius-2);
+}
+.tipsTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }   /* "Tips to improve conversion" 14/Semi Bold #1a1a1a */
+/* list V g8 of 12/Regular #1a1a1a items — the spec names no bullet glyph, so the rows are plain text */
+.tipsList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.tipsLink { align-self: flex-start; }
+
+/* [V g10] label 12/Regular #666666 + content — 10 = spacing-2 + spacing-0-5 (no --om-spacing-2-5 token). */
+.group { display: flex; flex-direction: column; gap: calc(var(--om-spacing-2) + var(--om-spacing-0-5)); }
+.groupLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* The attempts row + its error (the Text Field's red 12/16 message, 4 below — components/om/text-field.module.css .support). */
+.attemptsWrap { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.error { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+
+/* row H g10 of five Buttons 86×48 "1" · "2" · "3" · "4" · "+5" — 5 × 86 + 4 × 10 = 470 > 468, so each flexes to the column
+   (85.6 wide) rather than spilling 2px past it. Rest = the Choice chip at rest (inside stroke on-surface/border, r4);
+   selected = the Choice chip selected look — primary-variant fill + primary inside stroke + on-primary-variant text (invented,
+   the mock shows +5 chosen). 16/Semi Bold = subheading-l. */
+.attempts { display: flex; gap: calc(var(--om-spacing-2) + var(--om-spacing-0-5)); }
+.attempt {
+  flex: 1 1 86px; min-width: 0; height: 48px;
+  border: 0; background: transparent;
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default);
+  cursor: pointer;
+  transition: background-color var(--motion-toggle), box-shadow var(--motion-toggle), color var(--motion-toggle);
+}
+.attempt:not([data-selected]):hover { background: var(--om-color-hover-04p); }
+.attempt[data-selected] {
+  background: var(--om-color-primary-variant);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default);
+  color: var(--om-color-on-primary-variant);
+}
+.attempt:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* tiles grid g12 — the mock shows one tile; several wrap in the 468 column, 12 apart both ways */
+.tiles { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+/* Buttons Primary Outlined 468×36 "Attach Files" — full width of the column (task-panel.module.css .fullWidth) */
+.fullWidth { width: 100%; }
+
+/* ---- Tile 150×158: V p4, fill #f2f2f2 r4 → image 142×108 r2 + caption 142×42 (H g8 p8) — attachments-column.module.css ---- */
+.tile {
+  position: relative;
+  width: 150px; height: 158px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.tile:hover { background: var(--om-color-hover-04p); }   /* hover not mocked — the files grid tile's hover-04p */
+/* The tile face (no click target here — the wizard has nowhere to open a file); the caption's right padding reserves the kebab's 24 + 8. */
+.tileMain {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.tileImg { display: block; width: 142px; height: 108px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 142×108 r2 */
+.tileBox {
+  width: 142px; height: 108px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-0-5);
+}
+.tileBoxIcon { color: var(--om-color-on-surface-secondary); }
+/* Caption 142×42: H g8 p8 — the right 8 becomes 8 + 24 + 8 so the absolutely placed kebab keeps its 8 gap. */
+.caption {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 42px; width: 100%; min-width: 0;
+  padding: var(--om-spacing-2) calc(var(--om-spacing-2) + 24px + var(--om-spacing-2)) var(--om-spacing-2) var(--om-spacing-2);
+}
+.kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* picture_as_pdf / image 20/Regular #db382a */
+.tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* "Q-101" 14/Semi Bold */
+/* Kebab anchor at the caption's right, measured from the tile's outer edge: right = 4 + 8 → 12; bottom = 4 + (42 − 24) / 2 → 13. */
+.tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 13px; display: inline-flex; }
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover { background: var(--om-color-hover-08p); }
+.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* [V g4] Text Area 96 "Comments (optional)" + "0/500" 12/Regular #666666 counter (the mock's counter sits at the column's left, x24) */
+.comments { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.textArea textarea { min-block-size: 96px; }   /* question-card.module.css .textArea at the mock's 96 */
+.counter { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Step 2 (207): card 752×380 — p24, stroke #e5e5e5 as an inside stroke so 380 stays 380, r8 → inner V g16 p32/0/24/0 centred */
+.terms {
+  min-height: 380px;
+  padding: var(--om-spacing-6);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+}
+.termsInner {
+  display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-8) 0 var(--om-spacing-6);
+  text-align: center;
+}
+.termsTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }   /* "Term of service" 20/Semi Bold #1a1a1a */
+.termsText { margin: 0; padding: 0 var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }   /* 14/Regular centred, p0/20 (60 tall = 3 lines) */
+
+/* Footer 68 (H g12 p16/24, top rule): Cancel 80×36 · Submit / Next / Confirm 120×36 right; Back 66×36 = its natural width */
+.footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+  box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+.wide { min-inline-size: 120px; }   /* the mock's 120 for Submit / Next / Confirm (their natural width is narrower) */

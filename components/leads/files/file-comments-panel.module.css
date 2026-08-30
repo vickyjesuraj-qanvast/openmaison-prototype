@@ -1,0 +1,90 @@
+/*
+ * Viewer › Comments panel (frame 93, 931:39891). Spec: design-source/context/lead-files/03-viewer-panels.txt.
+ * Fills the viewer's 400px column: head 64 · body (scrolls) · footer 88.
+ */
+.panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* Panel head (931:39921) 399×64, H g16 p20/24, bottom rule surface-variant: title 20/Bold + close 24 secondary. */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 64px; flex-shrink: 0;
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; color: var(--om-color-on-surface-default); }
+/* close 24/Regular #666666 (Link Icon) — the drawer head's icon button (components/om/drawer.module.css .iconBtn). */
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.close:hover { background: var(--om-color-hover-08p); }
+.close:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Comments body (931:39928) V g24 p24; scrolls between head and footer. */
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+
+/* Empty state: centred both ways; illustration 180×180 → 24 → texts (V g12). */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-6); text-align: center; }
+.art { display: block; width: 180px; height: 180px; }
+.texts { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
+/* "Add your first comment" 20/Semi Bold — heading-h3 is 700 in the tokens; weight overridden as components/leads/detail/card.module.css .emptyTitle does. */
+.emptyTitle { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); }
+.emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }   /* "Your comments will show up here." 14/Regular */
+
+/* ── thread: copied from components/leads/tasks/comments-panel.module.css (902:28619) ── */
+.thread { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.count { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+/* Comment = "Two Line": H g12 → avatar 36 + text column (V g4). */
+.comment { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
+.textCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; kebab 20 at the right edge. */
+.meta { display: flex; align-items: center; gap: var(--om-spacing-1); height: 20px; }
+.author { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.time { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.kebabWrap { margin-left: auto; position: relative; display: inline-flex; }
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover, .kebab[aria-expanded='true'] { background: var(--om-color-hover-08p); }
+.danger { color: var(--om-color-tertiary-red-default); }
+/* Comment text 14/Regular on-surface, wraps. */
+.commentBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; white-space: pre-wrap; }
+/* Edit state: the field then a 24px row, Cancel · Save right-aligned 8 apart. */
+.editBlock { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.editRow { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-2); height: 24px; }
+
+/* The mock draws "Text Field 36px"; the prototype's one TextField is the 48px Material field (REG-121) and the tabs keep it
+   where the mocks draw 36 (REG-176 / REG-189) — the composer runs 12px taller than the mock (audit 2026-08-30, UI-13), as
+   the Tasks comments panel. The edit field carries no label: the empty floated label is hidden. */
+.field label:empty { display: none; }
+
+/* Footer (931:39946) 400×88 at the mock = 16 + 36 + 8 + 12 + 16 → 100 with the 48 field: V g12 p16/24, top rule. */
+.footer {
+  flex-shrink: 0;
+  min-height: 88px;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+}
+/* Two Line: H g12 → avatar 36 + column V g8 (field 36 · caption row 12). */
+.composer { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex: 1; min-width: 0; }
+.composerCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.privacy { display: block; height: 12px; font: var(--om-type-body-xs); line-height: 12px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Avatar Generic 36 r4 (fill = the member's tint, initial 14/Medium) — components/om/avatar.module.css at 36. */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: var(--om-radius-1);
+  color: #fff;   /* avatar.module.css uses the same literal for the initial */
+  font: var(--om-type-subtitle-m);
+  overflow: hidden;
+  background: var(--om-color-surface-variant);
+}
+.avatarPhoto { width: 100%; height: 100%; object-fit: cover; }

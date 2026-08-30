@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
-    "@openmaison/icons": "link:../openmaison-design-system/packages/icons",
     "@openmaison/react": "link:../openmaison-design-system/packages/react",
     "@openmaison/tokens": "link:../openmaison-design-system/packages/tokens",
     "drizzle-orm": "^0.45.2",
@@ -35,7 +34,7 @@
     "react": "^19.2.8",
     "react-aria-components": "^1.8.0",
     "react-dom": "^19.2.8",
-    "zod": "^4.4.3"
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^26.3.0",
@@ -47,7 +46,6 @@
     "eslint-config-next": "^16.3.3",
     "eslint-config-prettier": "^10.1.8",
     "playwright": "^1.62.1",
-    "pngjs": "^7.0.0",
     "prettier": "^3.9.6",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3"

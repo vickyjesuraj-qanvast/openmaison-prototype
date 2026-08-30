@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { importRows, imports, leadAssignees, leadTasks, leads, members, stageLogs } from '@/lib/db/schema'
+import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs } from '@/lib/db/schema'
 import type { ImportBatch, ImportRow, Lead, LeadTask, Member } from '@/lib/db/schema'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { mergeStageData, type WizardData } from '@/lib/leads/stage-data'
@@ -14,16 +14,19 @@ export type LeadRow = Lead & {
   stageData: Partial<WizardData>
   /** For On Hold / Lost leads: the active stage they left from, so linear movement resumes there. */
   resumeStage: Stage | null
+  /** Qanvast lead return (931:48236): the latest return's status, so the listing menus gate "Return Lead" like the overview does. */
+  returnStatus: 'processing' | 'rejected' | 'approved' | null
 }
 
 /** Full listing payload — 18 rows; joins resolved in memory. */
 export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
-  const [allLeads, allTasks, links, team, logs] = await Promise.all([
+  const [allLeads, allTasks, links, team, logs, rets] = await Promise.all([
     db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
     db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees),
     db.select().from(members),
     db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
+    db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
@@ -36,6 +39,8 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     const list = logsByLead.get(log.leadId)
     if (list) list.push(log); else logsByLead.set(log.leadId, [log])
   }
+  const latestReturn = new Map<string, LeadRow['returnStatus']>()
+  for (const r of rets) latestReturn.set(r.leadId, r.status === 'processing' || r.status === 'rejected' || r.status === 'approved' ? r.status : null)
   const isActive = (s: string): s is (typeof STAGES)[number] => (STAGES as readonly string[]).includes(s)
   const resumeStageOf = (l: Lead): Stage | null => {
     if (isActive(l.stage)) return null
@@ -52,6 +57,7 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     onHoldFollowUp: l.stage === 'On Hold' ? (holdFollowUps.get(l.id) ?? null) : null,
     stageData: mergeStageData(logsByLead.get(l.id) ?? []),
     resumeStage: resumeStageOf(l),
+    returnStatus: latestReturn.get(l.id) ?? null,
   }))
   return { rows, team, now: Date.now() }
 }

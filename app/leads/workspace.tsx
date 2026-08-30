@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { KanbanSkeleton } from '@/components/leads/kanban/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { PageHeader } from '@/components/shell/page-header'
 import { MaisonFab } from '@/components/shell/maison-fab'
@@ -35,14 +36,17 @@ import { ReviewBanner } from '@/components/leads/review-banner'
 import { ReviewSheet } from '@/components/leads/review-sheet'
 import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
+import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
+import { fetchLeadFilesForReturn, returnLead, undoReturn, type ReturnInput } from './return-actions'
 import { displayDate } from '@/lib/format'
 import { STAGES, type Stage } from '@/lib/leads/enums'
+import { blockedReason, detailHref, isActiveStage, isCompletedFor, journeyIdx } from '@/lib/leads/stage-policy'
 import type { StageMovement } from '@/lib/settings/types'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { addTask, approveImportRows, assignMembers, completeTask, createLead, deleteForever, deleteLeads, emptyTrash, importLeads, markLeadSeen, mergeImportRow, moveStage, quickMoveStage, rejectImportRows, restoreLeads, setTaskDue, undoStageMove, updateLead, updateStageDetails } from './actions'
 import type { LeadRow, ReviewRow } from '@/lib/leads/queries'
-import type { Lead, Member } from '@/lib/db/schema'
+import type { Lead, LeadFile, Member } from '@/lib/db/schema'
 import styles from './leads.module.css'
 
 type Anchored = { id: string; el: HTMLElement; top: number; left: number } | null
@@ -76,6 +80,12 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [assign, setAssign] = useState<Anchored>(null)
   const [customise, setCustomise] = useState<{ el: HTMLElement; top: number; left: number } | null>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
+  // An optimistic assignee set is released once the refreshed row carries it (render-phase adjust, like pendingDrop below); a failed action drops its entry in applyAssign.
+  const settledAssignees = Object.keys(optimisticAssignees).filter((id) => {
+    const r = rows.find((x) => x.id === id), o = optimisticAssignees[id]
+    return !!r && !!o && r.assignees.length === o.length && r.assignees.every((m) => o.includes(m.id))
+  })
+  if (settledAssignees.length > 0) setOptimisticAssignees((o) => { const n = { ...o }; for (const id of settledAssignees) delete n[id]; return n })
   const [stageMenu, setStageMenu] = useState<Anchored>(null)
   const [wizard, setWizard] = useState<{ leadId: string; target: Stage } | null>(null)
   const [onHold, setOnHold] = useState<string | null>(null)   // leadId
@@ -106,29 +116,31 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [leadForm, setLeadForm] = useState<{ mode: 'create' } | { mode: 'edit'; lead: LeadRow } | null>(null)
   const [tasksFor, setTasksFor] = useState<({ id: string; el: HTMLElement } & TasksPos) | null>(null)
   const addRef = useRef<HTMLDivElement>(null)
+  const fabRef = useRef<HTMLDivElement>(null)   // the Maison AI FAB — the sheet exempts it from outside presses so the FAB toggles (REG-153)
+  /* Return Lead from a row / kanban kebab (Qanvast leads only, REG-139) → the same wizard as the overview (931:48813, spec design-source/context/lead-return/).
+     The listing has no files in memory, so they are fetched when the menu item is pressed. */
+  const [returning, setReturning] = useState<{ leadId: string; files: LeadFile[] } | null>(null)
+  const openReturn = async (lead: LeadRow) => {
+    setAssign(null); setStageMenu(null); setTasksFor(null)
+    let files: LeadFile[] = []
+    try { files = await fetchLeadFilesForReturn(lead.id) } catch { files = [] }
+    setReturning({ leadId: lead.id, files })
+  }
 
   /* ---- Stage movement policy (Settings › Leads, user 2026-08-29) ----
      linear: one stage at a time through the Move stage window; later stages are locked, earlier ones are a confirm away.
      flexible: instant moves with Undo; only Won (it creates the project) opens the window. On Hold / Lost keep their dialogs. */
-  const isActiveStage = (s: string): s is (typeof STAGES)[number] => (STAGES as readonly string[]).includes(s)
-  /** Where a lead's journey continues from — On Hold / Lost leads resume at the stage they left. */
-  const journeyIdx = (lead: LeadRow) => STAGES.indexOf((isActiveStage(lead.stage) ? lead.stage : lead.resumeStage ?? '') as (typeof STAGES)[number])
-  /** Linear movement: why `stage` can't be chosen for `lead` right now (null = allowed). Doubles as the tooltip / snackbar copy. */
-  const blockedReason = (lead: LeadRow, stage: Stage): string | null => {
-    // New is not complete without an owner: nothing moves past New until at least one member is assigned (user 2026-08-29), in both policies.
-    if (isActiveStage(stage) && stage !== 'New' && lead.assignees.length === 0) return 'Assign a member first'
-    if (!isActiveStage(lead.stage)) return null   // a parked lead may resume at any stage (with a confirm)
-    if (stageMovement !== 'linear' || !isActiveStage(stage)) return null
-    const from = journeyIdx(lead)
-    if (STAGES.indexOf(stage) <= from + 1) return null
-    return `Complete ${STAGES[from + 1]} first`
+  // The pure rules (isActiveStage · journeyIdx · blockedReason · isCompletedFor) live in lib/leads/stage-policy, shared with the Lead Details pages.
+  const fail = (what: string) => snackbar({ message: `Couldn’t ${what} — please try again` })
+  /** Every stage-move action runs through here: a failure gets the module's snackbar and releases a held kanban drop
+      (on success the render-phase adjust above releases it once the refreshed rows agree, so the card never springs back first). */
+  const run = async (what: string, fn: () => Promise<unknown>) => {
+    try { await fn() } catch { fail(what); setPendingDrop(null) }
   }
-  /** A stage the lead has already passed (never a drop target — REG-132). */
-  const isCompletedFor = (lead: LeadRow, stage: Stage) => isActiveStage(lead.stage) && isActiveStage(stage) && STAGES.indexOf(stage) <= journeyIdx(lead)
-  const quickMove = async (lead: LeadRow, stage: Stage) => {
+  const quickMove = (lead: LeadRow, stage: Stage) => run('move the lead', async () => {
     const { logId } = await quickMoveStage({ leadId: lead.id, fromStage: lead.stage, toStage: stage })
-    snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void undoStageMove({ leadId: lead.id, logId, toStage: lead.stage }) } })
-  }
+    snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoStageMove({ leadId: lead.id, logId, toStage: lead.stage })) } })
+  })
   /** Every stage change — table dropdown or kanban drop — comes through here. */
   const requestStageChange = (lead: LeadRow, stage: Stage) => {
     if (lead.stage === stage) { setPendingDrop(null); return }
@@ -142,7 +154,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     if (stageMovement === 'linear') {
       if (to === from + 1) { setWizard({ leadId: lead.id, target: stage }); return }
       setPendingDrop(null)
-      snackbar({ message: blockedReason(lead, stage) ?? `Complete ${STAGES[from + 1]} first` })
+      snackbar({ message: blockedReason(lead, stage, stageMovement) ?? `Complete ${STAGES[from + 1]} first` })
       return
     }
     if (stage === 'Won') { setWizard({ leadId: lead.id, target: stage }); return }
@@ -213,8 +225,14 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const leadId = assign.id
     setOptimisticAssignees((o) => ({ ...o, [leadId]: memberIds }))
     setAssign(null)
-    await assignMembers(leadId, memberIds)
-    snackbar({ message: 'Assignees updated' })
+    try {
+      await assignMembers(leadId, memberIds)
+      snackbar({ message: 'Assignees updated' })
+    } catch {
+      // Back to the server's assignees — the optimistic set must not outlive a failed action.
+      setOptimisticAssignees((o) => { const n = { ...o }; delete n[leadId]; return n })
+      fail('update the assignees')
+    }
   }
 
   const assignValue = assign
@@ -235,7 +253,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   }, [newest])
 
   return (
-    <PageReveal skeleton={<LeadsSkeleton />}>
+    <PageReveal skeleton={view === 'kanban' ? <KanbanSkeleton /> : <LeadsSkeleton />}>
         <div className={styles.body} style={{ position: 'relative' }} data-view={view}>
           <PageHeader
             title="Leads"
@@ -298,24 +316,25 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 rows={filtered}
                 query={query}
                 now={nowTick}
+                unseenIds={unseenIds}
                 onClearSearch={clearAll}
                 stageScope={stageScope}
                 filtering={activeFilterCount(filters) > 0 || (stageScope !== null && filtered.length === 0)}
                 onKebabDelete={(lead) => { setDeleteReason('Spam'); setDeleting([lead.id]) }}
-                onKebabReturn={() => comingSoon()}
+                onKebabReturn={(lead) => { void openReturn(lead) }}
                 onAssign={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
                 pendingDrop={pendingDrop}
                 onDragToStage={(lead, stage) => {
                   setPendingDrop({ leadId: lead.id, stage })
                   requestStageChange(lead, stage)
                 }}
-                canDrop={(lead, stage) => !blockedReason(lead, stage) && !isCompletedFor(lead, stage)}
+                canDrop={(lead, stage) => !blockedReason(lead, stage, stageMovement) && !isCompletedFor(lead, stage)}
                 onDropBlocked={(lead, stage) => {
                   // Backward drops are simply not allowed (user 2026-08-29): the card springs back with the reason.
                   if (isCompletedFor(lead, stage)) { snackbar({ message: `${stage} is already completed — stages don’t move back` }); return }
-                  snackbar({ message: blockedReason(lead, stage) ?? '' })
+                  snackbar({ message: blockedReason(lead, stage, stageMovement) ?? '' })
                 }}
-                onNameClick={(lead) => { markSeen(lead); snackbar({ message: 'Lead Details — coming in the next build' }) }}
+                onNameClick={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
                 onTaskClick={openTasks}
               />
             ) : (
@@ -324,7 +343,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 columns={columns}
                 unseenIds={unseenIds}
                 onRowSeen={markSeen}
-                onNameClick={() => snackbar({ message: 'Lead Details — coming in the next build' })}
+                onNameClick={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
                 openStageId={stageMenu?.id ?? null}
                 onStageClick={(row, anchor) => {
                   setStageMenu({ id: row.id, el: anchor, ...stagePos(anchor) })
@@ -332,12 +351,13 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onTaskClick={openTasks}
                 now={nowTick}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
-                onTuneClick={(anchor) => setCustomise(anchorRect(anchor))}
+                onTuneClick={(anchor) => setCustomise((c) => (c ? null : anchorRect(anchor)))}   // the gear toggles its popover (REG-153)
+                tuneOpen={!!customise}
                 query={query}
                 filterSort={filters.sort}
                 onEditRow={(row) => setLeadForm({ mode: 'edit', lead: row })}
                 onDeleteRow={(row) => { setDeleteReason('Spam'); setDeleting([row.id]) }}
-                onReturnRow={() => comingSoon()}
+                onReturnRow={(row) => { void openReturn(row) }}
                 onCopyPhone={async (row) => {
                   try {
                     await navigator.clipboard.writeText(`+65 ${row.phone}`)
@@ -364,7 +384,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onClose={() => setStageMenu(null)}
         blocked={(stage) => {
           const row = rows.find((r) => r.id === stageMenu?.id)
-          return row ? blockedReason(row, stage) : null
+          return row ? blockedReason(row, stage, stageMovement) : null
         }}
         current={rows.find((r) => r.id === stageMenu?.id)?.stage as Stage | undefined ?? null}
         doneThrough={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? journeyIdx(row) : -1 })()}
@@ -402,52 +422,79 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             targetStage={wizard.target}
             mode={stageMovement}
             onClose={() => { setWizard(null); setPendingDrop(null) }}
-            onUpdate={async ({ stage, data }) => {
+            onUpdate={({ stage, data }) => {
               setWizard(null); setPendingDrop(null)
-              await updateStageDetails({ leadId: lead.id, stage, data })
-              snackbar({ message: `${stage} details updated` })
+              void run('update the details', async () => {
+                await updateStageDetails({ leadId: lead.id, stage, data })
+                snackbar({ message: `${stage} details updated` })
+              })
             }}
-            onSave={async ({ toStage, data, tasks }) => {
+            onSave={({ toStage, data, tasks }) => {
               setWizard(null)
-              await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
-              if (toStage === 'Won') {
-                snackbar({ message: `Project created for ${lead.name} · OM-10001`, actionLabel: 'View', onAction: comingSoon })
-              } else {
-                snackbar({ message: `Moved to ${toStage}` })
-              }
+              void run('move the lead', async () => {
+                await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
+                if (toStage === 'Won') {
+                  snackbar({ message: `Project created for ${lead.name} · OM-10001`, actionLabel: 'View', onAction: comingSoon })
+                } else {
+                  snackbar({ message: `Moved to ${toStage}` })
+                }
+              })
             }}
           />
         )
       })() : null}
+      {(() => {
+        const lead = returning ? rows.find((r) => r.id === returning.leadId) : undefined
+        if (!returning || !lead) return null
+        return (
+          <ReturnLeadWizard
+            open
+            lead={{ id: lead.id, name: lead.name, createdAt: lead.createdAt }}
+            files={returning.files}
+            now={nowTick}
+            onClose={() => setReturning(null)}
+            onConfirm={async (input: ReturnInput) => {
+              // 931:49009 → 931:48553: the same snackbar + Undo as the overview; Undo lives as long as the snackbar (user 2026-08-30).
+              const { returnId } = await returnLead(lead.id, input)
+              snackbar({ message: 'Lead returned successfully', actionLabel: 'Undo', onAction: () => { void undoReturn(returnId).then(() => router.refresh()) } })
+              router.refresh()
+            }}
+          />
+        )
+      })()}
       <OnHoldDialog
         open={!!onHold}
         onClose={() => { setOnHold(null); setPendingDrop(null) }}
         reason={holdReason} setReason={setHoldReason}
         duration={holdDuration} setDuration={setHoldDuration}
         followUp={holdFollowUp}
-        onSave={async (otherReason) => {
+        onSave={(otherReason) => {
           const lead = rows.find((r) => r.id === onHold)
           setOnHold(null)
           if (!lead) { setPendingDrop(null); return }
           const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
-          await moveStage({
-            leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
-            payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
-            tasks: [],
+          void run('move the lead', async () => {
+            await moveStage({
+              leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
+              payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
+              tasks: [],
+            })
+            snackbar({ message: 'Moved to On Hold' })
           })
-          snackbar({ message: 'Moved to On Hold' })
         }}
       />
       <LostDialog
         open={!!lost}
         onClose={() => { setLost(null); setPendingDrop(null) }}
         reason={lostReason} setReason={setLostReason}
-        onSave={async (otherReason) => {
+        onSave={(otherReason) => {
           const lead = rows.find((r) => r.id === lost)
           setLost(null)
           if (!lead) { setPendingDrop(null); return }
-          await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: otherReason ? `Others: ${otherReason}` : lostReason }, tasks: [] })
-          snackbar({ message: 'Moved to Lost' })
+          void run('move the lead', async () => {
+            await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: otherReason ? `Others: ${otherReason}` : lostReason }, tasks: [] })
+            snackbar({ message: 'Moved to Lost' })
+          })
         }}
       />
       <AssignPopover
@@ -466,6 +513,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onClose={() => setCustomise(null)}
         onSave={(cols) => { setColumns(cols); setCustomise(null) }}
         position={customise}
+        anchor={customise?.el}
       />
       <TasksPopover
         lead={effectiveRows.find((r) => r.id === tasksFor?.id) ?? null}
@@ -485,7 +533,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           try { await setTaskDue(task.id, due); return true }
           catch { snackbar({ message: 'Couldn’t set the due date — please try again' }); return false }
         }}
-        onOpenTask={() => snackbar({ message: 'Task Details — coming in the next build' })}
+        onOpenTask={(task) => router.push(`${detailHref(task.leadId, 'tasks')}?open=${task.id}`)}   // the task panel on Lead Details › Tasks, as the Overview's popover (REG-173)
       />
       <LeadFormModal
         now={nowTick}
@@ -611,8 +659,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         suggestions={aiSuggestions}
         onSelect={() => { setAiOpen(false); comingSoon() }}
         onClose={() => setAiOpen(false)}
+        anchorRef={fabRef}
       />
-      <MaisonFab onPress={() => setAiOpen((o) => !o)} raised={docked} />
+      <div ref={fabRef} style={{ display: 'contents' }}>
+        <MaisonFab onPress={() => setAiOpen((o) => !o)} raised={docked} />
+      </div>
     </PageReveal>
   )
 }

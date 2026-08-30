@@ -1,0 +1,9 @@
+/* Tasks tab body (902:26378 "Section container"): the frame's centre already pads 24; toolbar, table and bottom bar stack 24 apart. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+
+/* Host of the fixed popovers (Assign Member · Add Tag from a table cell): a zero-size box out of the flow, so it neither
+   adds a flex gap nor moves the popovers (fixed elements ignore a positioned ancestor without a transform). While the
+   task panel (Drawer, z 100) is open it becomes a stacking context above the panel, so the popovers (z 70 inside it)
+   paint over the panel instead of under it — page-checklist z-scale: a popover raised from a surface sits above it (T1). */
+.popovers { position: absolute; top: 0; left: 0; width: 0; height: 0; }
+.popovers[data-raised] { z-index: 110; }

@@ -18,7 +18,7 @@
   display: flex; align-items: center; gap: var(--om-spacing-4);
   padding: var(--om-spacing-5) var(--om-spacing-6);
   border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 1px 1.5px rgba(0, 0, 0, 0.1); /* mock: heading drop-shadow */
+  box-shadow: var(--om-elevation-level-1);   /* the mock's heading drop-shadow = level-1 (DESIGN.md §2; Deleted Files' twin sheet) */
   position: relative; z-index: 1;
   flex-shrink: 0;
 }
@@ -66,7 +66,8 @@
 /* Sticky header: casts the level-1 shadow once the table has scrolled down (same as the import wizard's tables). */
 .headRow { position: sticky; top: 0; z-index: 3; transition: box-shadow var(--motion-toggle); }
 .tableWrap[data-scrolled-y] .headRow { box-shadow: var(--om-elevation-level-1); }
-.row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); height: 64px; }
+.row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); height: 64px; transition: background-color var(--motion-hover); }
+.row:hover { background: var(--om-color-surface-bg); }   /* row hover as every other table (frame 195), audit 2026-08-30 */
 .row[data-selected] { background: var(--om-color-primary-variant); }
 /* Selection + pinned name column stay fixed while the row h-scrolls. Frozen-column edge rule (REG-144):
    the last frozen column shows a 1px inner edge at rest and its shadow only while scrolled sideways. */

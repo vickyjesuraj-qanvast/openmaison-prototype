@@ -1,0 +1,180 @@
+/* Attach files modal (902:28220) — 1200×928 xl modal; shell copied from the import wizard (components/leads/import-wizard.module.css). */
+.overlay {
+  overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: safe center; justify-content: center;
+  padding: 48px 0; overflow-y: auto;
+}
+.panel {
+  position: relative;
+  width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3);   /* mock r10 → the modal standard's 12 (REG-107) */
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* Heading 64: H p20/24, 20/Bold title, bare 24px close, 1px bottom rule (779:26016). */
+.heading {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-on-surface-secondary); display: inline-flex;
+  transition: color var(--motion-hover);
+}
+.close:hover { color: var(--om-color-on-surface-default); }
+
+/* Body "Filter content": V g24 p24; scrolls when the groups outgrow the fixed 928. */
+.body {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: var(--om-spacing-6);
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+}
+.rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+.blockTitle { font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+
+/* Upload block: V g12 → title + dropzone 140 tall (p40/0, fill #f2f2f2, 2px dashed #cccccc, r4). The shared Dropzone
+   (move-stage/fields) is 1px dashed with 24 padding and takes no className, so its box is re-measured from the wrapper. */
+.uploadBlock { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.dropWrap { display: flex; }
+.dropWrap > [role='button'] {
+  min-height: 140px; padding: var(--om-spacing-10) 0;
+  border-width: var(--om-border-2);
+  justify-content: center;
+}
+
+/* "Your files" block: V g16 → bar (H g12) + groups (V g40). */
+.filesBlock { display: flex; flex-direction: column; gap: var(--om-spacing-4); flex: 1; min-height: 0; }
+.bar { display: flex; align-items: center; gap: var(--om-spacing-3); height: 36px; }
+.bar > .blockTitle { flex: 1; min-width: 0; }
+.search { width: 240px; flex-shrink: 0; }
+
+/* "File Type" chip 93×36: 1px #cccccc, r4, text + chevron — the listing toolbar's chip (components/leads/toolbar.module.css). */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+  white-space: nowrap;
+  transition: background-color var(--motion-hover);
+}
+.chip:hover { background: var(--om-color-hover-04p); }
+.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; }
+
+.groups { display: flex; flex-direction: column; gap: var(--om-spacing-10); }
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* Group header: checkbox 24 + "Friday, 17 Jul ’26" / "Folders" 14/Semi Bold, 8 apart. */
+.groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
+.groupTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* Tiles row: 276-wide items 16 apart — four across at 1152 (276×4 + 16×3); more wrap to the next line. */
+.row { display: flex; flex-wrap: wrap; gap: var(--om-spacing-4); }
+
+/* Folder card 276 wide: H p12/16 → folder 24 + name 14/Medium + kebab. Fill / radius not in the dump: the file tile's
+   surface-bg r4 (nearest existing, components/leads/detail/files-card.module.css). */
+.folder {
+  width: 276px; display: flex; align-items: center; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-3) var(--om-spacing-4);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+}
+.folderIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.folderName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Kebab: bare more_vert 24/Light secondary — the Files grid's folder card (files-grid.module.css .kebab, lead-files/02 line 12);
+   the attach-files spec is silent on it, so the measured sibling wins (audit 2026-08-30, UI-25). */
+.folderKebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.folderKebab:hover { background: var(--om-color-hover-08p); }
+
+/* Tile 276×262: V p4, fill #f2f2f2, r4 → image (fills the height above the caption, r2) + caption row (H g8 p8). */
+.tile {
+  width: 276px; height: 262px;
+  display: flex; flex-direction: column;
+  padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  cursor: pointer;
+  transition: background-color var(--motion-hover);
+}
+.tile:hover { background: var(--om-color-hover-04p); }   /* hover copied from the overview file tile (files-card.module.css) */
+.tileImg { display: block; width: 100%; flex: 1; min-height: 0; object-fit: cover; border-radius: var(--om-radius-0-5); }
+.tileBox {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-variant);
+  border-radius: var(--om-radius-0-5);
+}
+.tileBoxIcon { color: var(--om-color-on-surface-secondary); }
+.caption { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2); min-width: 0; cursor: default; }
+.tileName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+/* Kind chip: the overview file tile's caption glyph (image 12/Regular red) + the kind, 10/Regular/12 secondary. */
+.kind { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.kindIcon { color: var(--om-color-tertiary-red-default); }
+
+/* Empty state (frame 64) — components/leads/detail/card.module.css CardEmpty, centred in the block, no actions. */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--om-spacing-8); }
+.emptyInner { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); width: 100%; }
+.emptyArt { display: block; max-width: 100%; }
+.emptyText { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); width: 100%; }
+.emptyTitle { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
+.emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }
+
+/* Footer 68: H g12 p16/24, top rule, right-aligned buttons. */
+.footer {
+  display: flex; gap: var(--om-spacing-3); align-items: center; justify-content: flex-end;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+  flex-shrink: 0;
+}
+
+/* Uploading toast (902:28261): 360×200, white, 1px #e5e5e5, r4, at right 16 / bottom 76 of the modal. */
+.toast {
+  position: absolute; right: 16px; bottom: 76px; z-index: 5;
+  width: 360px; height: 200px;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-3);   /* not in the dump; the import wizard's toast casts level-3 */
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.toast[data-collapsed] { height: auto; }
+/* Head 56: H g16 p16, fill #1a1a1a, "Uploading 2 files" 16/Bold white + keyboard_arrow_down 24 + close 24. */
+.toastHead {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 56px; padding: var(--om-spacing-4);
+  background: var(--om-color-on-surface-default);
+  color: var(--om-color-surface-default);
+  flex-shrink: 0;
+}
+.toastTitle { flex: 1; min-width: 0; font: var(--om-type-heading-h4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toastBtn { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+/* Row 64: H g12 p12/16 → thumb 40 (1px #e5e5e5, r4) · name 14/Medium (fill) · check_circle 20 green; rows divided by 1px #e5e5e5. */
+.toastRow {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  height: 64px; padding: var(--om-spacing-3) var(--om-spacing-4);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.toastThumb { width: 40px; height: 40px; object-fit: cover; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); flex-shrink: 0; }
+.toastFile { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toastStatus { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* "Uploading..." while in flight — the import wizard's row */
+.toastIcon { color: var(--om-color-tertiary-green-default); display: inline-flex; }
+/* Failed row: "Failed" 12/Regular #db382a + refresh 20 #db382a (kept for completeness — the demo never fails an upload). */
+.toastFailed { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.toastRetry { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-tertiary-red-default); display: inline-flex; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

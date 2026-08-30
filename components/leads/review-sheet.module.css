@@ -1,7 +1,7 @@
 /* Review imported leads — full-page takeover, 1:1 from 779:26221 / 779:26272. */
 .overlay {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--om-color-overlay-60p);
   display: flex; align-items: center; justify-content: center;
   padding: var(--om-modal-xxl-margin);   /* xxl: 48px on every side (designer, 2026-08-29) */
 }
@@ -46,19 +46,20 @@
   cursor: pointer; white-space: nowrap;
   transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.chip:hover { background: var(--om-color-surface-bg); }
+.chip:hover { background: var(--om-color-hover-04p); }   /* outlined-control hover (interaction-states.md), as the Move stage window's ChoiceChips */
 .chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
 .vdivider { width: 1px; height: 36px; background: var(--om-color-surface-variant); }
 .toggleLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 .spacer { flex: 1; }
-.greenBtn {
-  height: 36px; padding: 0 var(--om-spacing-4); border: 0; border-radius: var(--om-radius-1);
-  background: var(--om-color-tertiary-green-default); color: #fff;
-  font: var(--om-type-subheading-m); cursor: pointer;
-  transition: filter var(--motion-hover), opacity var(--motion-hover);
-}
-.greenBtn:hover { filter: brightness(0.94); }
-.greenBtn:disabled { opacity: 0.5; cursor: default; }
+/* The mock's tones the DS Button has no variant for (779:26221 / 26272): green Approve (filled) and red-outlined Reject. Colour-only
+   overrides on the DS Button — geometry, hover fill, focus ring and disabled opacity stay the DS's; the doubled class outranks the
+   DS's [data-variant][data-appearance] rules whatever the sheet order. Hover darkens to the tone's d80, as primary → primary-hover. */
+.toneGreen.toneGreen[data-variant][data-appearance] { background: var(--om-color-tertiary-green-default); color: var(--om-color-on-tertiary-green-default); }
+.toneGreen.toneGreen[data-variant][data-appearance][data-hovered],
+.toneGreen.toneGreen[data-variant][data-appearance][data-pressed] { background: var(--om-color-on-tertiary-green-variant); }
+.toneRed.toneRed[data-variant][data-appearance] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-red-default); color: var(--om-color-tertiary-red-default); }
+.toneRed.toneRed[data-variant][data-appearance][data-hovered],
+.toneRed.toneRed[data-variant][data-appearance][data-pressed] { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-tertiary-red-variant); color: var(--om-color-on-tertiary-red-variant); }
 
 .body {
   flex: 1; min-height: 0;
@@ -79,7 +80,7 @@
   background: var(--om-color-surface-default);
   border: var(--om-border-2) solid transparent;
   border-radius: var(--om-radius-2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--om-elevation-level-1);
   padding: var(--om-spacing-3);
   display: flex; flex-direction: column; gap: var(--om-spacing-2);
   cursor: pointer;
@@ -102,7 +103,7 @@
 .tag {
   display: inline-flex; align-items: center;
   padding: var(--om-spacing-1) var(--om-spacing-2);
-  border-radius: 4px;
+  border-radius: var(--om-radius-1);
   font: var(--om-type-caption-xs); text-transform: uppercase; white-space: nowrap;
 }
 .tag[data-tone='pending'] { border: var(--om-border-1) solid var(--om-color-on-surface-border); color: var(--om-color-on-surface-secondary); }
@@ -153,30 +154,11 @@
   flex-shrink: 0;
 }
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.outlineBtn {
-  height: 36px; padding: 0 var(--om-spacing-4); border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  color: var(--om-color-on-surface-secondary);
-  font: var(--om-type-subheading-m); cursor: pointer;
-  transition: background var(--motion-hover);
-}
-.outlineBtn:hover { background: var(--om-color-surface-bg); }
-.outlineBtn[data-tone='red'] { border-color: var(--om-color-tertiary-red-default); color: var(--om-color-tertiary-red-default); }
-.outlineBtn:disabled { opacity: 0.5; cursor: default; }
-.primaryBtn {
-  height: 36px; padding: 0 var(--om-spacing-4); border: 0; border-radius: var(--om-radius-1);
-  background: var(--om-color-primary-default); color: #fff;
-  font: var(--om-type-subheading-m); cursor: pointer;
-  transition: background var(--motion-hover);
-}
-.primaryBtn:hover { background: var(--om-color-on-primary-variant); }
-.primaryBtn:disabled { opacity: 0.5; cursor: default; }
 .emptyDetail { flex: 1; display: flex; align-items: center; justify-content: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
 /* Merge footer: the note wraps to two lines so the buttons never squeeze (user 2026-08-29). */
 .footer .note { max-width: none; }
-.footer :global(button), .footer .outlineBtn { white-space: nowrap; flex-shrink: 0; }
+.footer :global(button) { white-space: nowrap; flex-shrink: 0; }
 
 /* Frozen label (left) and merged result (right) — Existing / New scroll between them (user 2026-08-29: single-line rows, first column frozen).
    Header cells share one style — the merged column's value weight must not leak into its heading. */

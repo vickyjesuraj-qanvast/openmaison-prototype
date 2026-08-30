@@ -1,0 +1,49 @@
+# Lead Overview — spec dump batch 2: lead-info column (858:24787, frame 155) and its page-2 state (858:25136, frame 156)
+# legend: depth|type|id|name|x,y,w,h|layout(dir gap pad primaryAlign/counterAlign)|sizingH/V|fills|strokes weight|radius|text"…" size/style/lineHeight align truncation
+
+## Column — 360×1099, V g24 p24, right stroke 1px #e5e5e5 (w0/1/0/0). Sections are separated by 1px #e5e5e5 dividers (Horizontal, 312 wide) sitting in the 24px gap flow (section · divider · section).
+1|FRAM|858:24788|identity block|24,24,312,104|V g16 → inner V g4
+3|FRAM|name row|24,24,312,32|H SPACE_BETWEEN/CENTER
+4|TEXT|"Olivia Martinez"|24,24,292,32|24/Bold/32 #1a1a1a (FILL)
+4|TEXT|icon edit|316,30,20,20|20/Light #1a1a1a
+3|FRAM|contact rows|24,60,312,68|V g4
+4|FRAM|phone row|24,60,312,20|H g8 MIN/CENTER
+5|TEXT|"9123 4567"|24,60,71,20|14/Regular/20 #1a1a1a ENDING   ← build: eight unbroken digits (REG-162)
+5|TEXT|icon content_copy|103,62,16,16|16/Light #1a1a1a
+5|FRAM|WhatsApp slot|127,62,16,16 → INST WhatsApp Shape=Default Color=Grey 14×14 at 128,63 (asset: whatsapp-grey.svg)
+4|FRAM|email row|24,84,312,20|H g8
+5|TEXT|"demo@demomail.com"|24,84,147,20|14/Regular/20 #1a1a1a
+5|TEXT|icon content_copy|179,86,16,16|16/Light
+4|FRAM|address row|24,108,312,20|H g8
+5|TEXT|"12 Marina Boulevard, Singapore"|24,108,209,20|14/Regular/20 #1a1a1a ENDING
+5|TEXT|icon directions|241,108,20,20|20/Light #1a1a1a
+1|INST|divider|24,152,312,1|#e5e5e5
+
+## Section pattern (Collaborators / Lead info / Property info / Other info): V g16
+2|FRAM|section head|312×20|H g12 MIN/CENTER
+3|TEXT|title|FILL,20|14/Semi Bold/20 #1a1a1a   ("Collaborators", "Lead info", "Property info", "Other info")
+3|TEXT|icon keyboard_arrow_up (expanded) / keyboard_arrow_down (collapsed)|316,y,20,20|20/Light #1a1a1a
+2|FRAM|body|H g12 (Collaborators / Lead info / Other info) or H g16 (Property info)
+3|FRAM|keys column|120 wide FIXED|V g16 → each key TEXT 14/Regular/20 #666666, 120×20  (rows are therefore 36px apart: 20 + 16)
+3|FRAM|values column|FILL (180 wide; 176 in Property info because of g16)|V g16 → each value TEXT 14/Regular/20 #1a1a1a ENDING (single line)
+
+### Collaborators (858:24806) 24,177,312,92
+keys: Owner (y213) · Assignees (y249)
+values: "You" · CellDataGroup → Link text "Assign Member" 14/Semi Bold/20 #5500ff + trailing keyboard_arrow_right 20 #5500ff (H g4)
+page 2 (858:25155): head gains Link text "Add" 14/Semi Bold #5500ff at 276,177 before the chevron (title width shrinks to 240); Assignees value = Avatar "Generic" 20×20 r4 #387e47 with initial "D" 14/Medium/20 #ffffff + "David Lee" 14/Regular/20 #1a1a1a (FILL) + icon more_vert 20/Light #1a1a1a at 316 (H g8)
+divider 24,293
+
+### Lead info (858:24819) 24,318,312,164
+keys: Stage · Source · "Budget (S$) " · Created (y354/390/426/462)
+values: New · Instagram · 70,500 · "17 Jul, 26"   ← build: displayDate "17 Jul ’26" (M2)
+divider 24,506
+
+### Property info (858:24835) 24,531,312,236 — body H g16, keys 120, values 176
+keys: Type · Condition · Style · Area size (sq ft) · Key collection · Property address (y567…747, 36 apart)
+values: HDB 4-Room · New · Modern · 1,200 · Collected · [row H SPACE_BETWEEN] CellDataGroup → Link text "Add" 14/Semi Bold #5500ff + keyboard_arrow_right 20 #5500ff (H g4), 52×20
+divider 24,791
+
+### Other info (858:24857) 24,816,312,56
+keys: Notes · values: "--"
+
+## Page 2 collapsed sections (858:25171/25176/25181): only the head row (20 tall) with keyboard_arrow_down; dividers keep the 24 rhythm (head at 318, divider 362, head 387, divider 431, head 456).

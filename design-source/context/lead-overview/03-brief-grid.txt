@@ -1,0 +1,34 @@
+# Lead Overview — spec dump batch 3: Maison AI brief (858:24867) and the centre / card grid (858:24866, 858:24888)
+
+## Centre column (858:24866) — 932 wide (fluid: 1364 − 360 − 72), V g24 p24; children FILL width (884 at 1440)
+1|brief block|24,24,884,208
+1|card grid|24,256,884,740
+
+## Maison AI brief block (858:24867) — V g8: card 884×176 + pager row 884×24
+1|FRAM|Filter content card|0,0,884,176|V|fill glinear(#f8f2ff@0 → #fff2ef@100, transform 1,0,0;0,0.29,0.35 ≈ diagonal top-left → bottom-right)|stroke #e5e5e5 w1|r8
+2|FRAM|head|0,0,884,52|H g12 p20/20/12/20 CENTER/CENTER
+3|FRAM|eyebrow group|20,22,671,17|H g8 MIN/CENTER (FILL)
+4|VECT|sparkle "Rectangle 26"|20,22,17,17|glinear(#ab2576@0,#df4d2a@45,#ee8e2b@100) r8.68 — build: existing /figma-assets/sparkle.svg at 17×17
+4|TEXT|"MAISON AI BRIEF"|45,22,101,16|12/Semi Bold/16 #666666
+3|INST|Tag Filled Yellow|703,20,161,20|H p4/8/4/8|fill #f19e2b|r4
+4|TEXT|"Fresh lead · respond fast"|711,24,145,12|10/Medium/12 #ffffff
+2|FRAM|body|0,52,884,124|V g20 p8/20/20/20
+3|TEXT|brief|20,60,844,40|14/20 #1a1a1a, MIXED: Regular "New inquiry from Instagram — HDB 4-Room, S$70.5K budget, keys collected. No contact yet. " + Bold "Call or WhatsApp within 24h:" + Regular " leads contacted same-day reach Met 3.1× more often."
+3|FRAM|actions|20,120,390,36|H g12
+4|INST|Buttons Primary/36/Outlined|20,120,176,36|p8/16|stroke #5500ff w1|r4 → "Draft intro WhatsApp" 14/Semi Bold/20 #5500ff
+4|INST|Buttons Primary/36/Outlined|208,120,202,36 → "Auto-schedule first meet"
+1|FRAM|pager row|0,184,884,24|H g8 MIN/CENTER
+2|FRAM|dots|0,194,820,4|H g4 (FILL) → 4 dots 4×4 r999: active #666666, others #cccccc (8px pitch)
+2|INST|Icon Buttons 24 Filled (white)|828,184,24,24|p2|fill #ffffff|stroke #e5e5e5 w1|r4 → keyboard_arrow_left 20/Regular #1a1a1a
+2|INST|Icon Buttons 24|860,184,24,24 → keyboard_arrow_right
+
+## Card grid (858:24888) — H g24; two columns V g24, each FILL (430 at 1440 with the quick-links strip collapsed; 396 when expanded)
+Every card = "Filter content": FILL width, V, fill #ffffff, stroke #e5e5e5 w1, r8, height hugs content.
+Column 1: Lead stages (240) · Files (168) · Recent activity (204)   Column 2: My work (408) · Quotes (148) · Questionnaire (136)
+Page 2 (returned Lost lead): Column 1: Lead returned (244) · Lead stages (285, with Lost row) · Files · Recent activity; Column 2: My work (204, due today only) · Quotes · Questionnaire.
+
+## Card head ("Filter Option") — 430×48, H g8 (g12 on Files/Quotes/Questionnaire/Lead returned) p20/20/12/20 CENTER/CENTER
+- title TEXT 12/Semi Bold/16 #666666 uppercase (as typed: "LEAD STAGES", "MY WORK", "FILES", "QUOTES", "QUESTIONNAIRE", "RECENT ACTIVITY", "LEAD RETURNED")
+- optional meta TEXT 12/Regular/16 #666666 after the title: "2 days in pipeline" (right-aligned, HUG, after a FILL title) · "· Wed, 26 Aug" then "2 tasks need attention" (right) · "· 13" (count after a dot)
+- optional link: Questionnaire has Link text "Ask Client" 12/Semi Bold/16 #5500ff before the arrow
+- icon arrow_outward 16/Regular #5500ff at x394 (right edge − 20 − 16)

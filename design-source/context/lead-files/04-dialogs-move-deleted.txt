@@ -1,0 +1,40 @@
+# Lead Details › Files — dialogs
+
+## Rename Folder (98, 931:39181) · Rename File (99, 931:39437) · Create Folder (103, 931:39194) — ModalComponent 400×228, r12
+1|FRAM|Heading|0,0,400,72|H g16 p24   "Rename Folder" / "Rename File" / "Create Folder" 20/Bold #1a1a1a + close 24 (Link Icon)
+1|FRAM|modal-body|0,72,400,72|V p12/24
+2|INST|Text Field|24,84,352,48|I{Height=48px,State=Filled}   label "Name" (12/Regular #666666 floating), value "Generic file name" / "Living Room" / "Generic folder name"
+1|FRAM|modal-bottom|0,144,400,84|H g8 p24 (right-aligned)   "Cancel" secondary outlined 80×36 · "Save" primary filled 65×36
+# = the wizard Dialog `size="form"` shell (72 head, body p12/24, 84 footer) — the tasks Save-as-Template / Delete dialogs use it
+
+## Move to Trash Folder? (105, 931:39207) — 400×216
+1|FRAM|Heading|0,0,400,72|p24   "Move to Trash Folder?" 20/Bold + close
+1|FRAM|modal-body|0,72,400,60|p0/24   "You sure you want to move "Living Room" to the Trash Folder and remove all project attachments (chat messages, invoices, etc.)?" 14/Regular #1a1a1a (3 lines = 60)
+1|FRAM|modal-bottom|0,132,400,84|p24   "No" secondary outlined 51×36 · "Yes" filled #db382a 57×36
+# name in quotes = the item's name; for a folder the same copy with the folder name; multi: the tasks/quotes plural pattern is NOT mocked — use `"<name>" and n more`? No — keep the mock sentence with the first item's name when one item, and "these n items" when several (invented, logged)
+
+## Move dialog (100, 931:39219) — ModalComponent 600×600, r12
+1|FRAM|Heading|0,0,600,122|V g16 p20/24|bottom rule #e5e5e5
+2|FRAM|title row|H g16   "Move “Living room”" 20/Bold (frame 107: "Move 2 items") + close 24
+2|FRAM|location row|24,60,552,42|H g12   "Current location: " 14/Regular #1a1a1a + chip 169×42 (fill #ffffff, stroke #cccccc w1, r4; H g8 p8: folder 24 #666666 + "Generic file name" 14/Semi Bold)   — at the root the chip reads "All Files"? not mocked → chip shows the current folder name, or "All Files" at the root (invented)
+1|FRAM|modal-body|0,122,600,478|V g20 p12/12/24/12
+2|FRAM|list|12,134,576,304|V g4 → inner V g0 r4
+3|FRAM|folder row|576×40|H g8 p8/12/8/12|fill #ffffff|r4   folder 24 #666666 · name 14/Semi Bold · keyboard_arrow_right 24/Light #666666 (drills in)
+3|FRAM|folder row (hover, 931:39249)|fill #f2f2f2   + "Move" button 62×24 (Buttons Primary Height=24 Filled, p2/12) before the chevron — pressing it moves here
+3|FRAM|file row|576×36|H g8 p8/12/8/12   thumb 24×18 (fill #f2f2f2 r2, image) · name 14/Semi Bold   (files are listed for orientation, not selectable)
+1|FRAM|Footer|0,532,600,68|H g12 p16/24|top rule|shadow 0 25 50 #000@25
+2|INST|"New Folder" Buttons Primary Outlined 133×36 leading create_new_folder 20   (left)
+2|FRAM|right|H g12   "Cancel" secondary outlined 80×36 · "Move" primary filled 70×36 — Disabled until a destination is chosen (frame 100), Enabled inside a folder (frame 101)
+
+## Move — inside a folder (101, 931:39285): the list is replaced by a folder head — arrow_back 24/Light #1a1a1a @24,126 · [V] "All Files / " 12/Regular #666666 @56,118 · "Folder 3" 20/Bold #1a1a1a @56,134 — then that folder's file rows (36 tall) from y=190; Move enabled (destination = the open folder)
+## Move — New Folder (106, 931:39335): below the list, "Create Folder" 20/Bold @24,428 + Text Field 48 "Name" @24,476 (value "Folder 4"); footer right: "Cancel" 80×36 · "Create" 78×36 (the New Folder button is hidden while creating)
+
+## Deleted Files (104, 931:40211) — ModalComponent 1200×928 (xl), r12
+1|FRAM|Heading|0,0,1200,80|H g16 p20/24|bottom rule + shadow 0 1 3 #000@10, 0 1 2 #000@6   [V] "Files / " 12/Regular #666666 · "Deleted Files" 20/Bold   ·   Slot: "Empty Trash" secondary outlined 117×36   ·   close 24
+1|FRAM|modal-body → "Filter content" 1200×848, V g24 p24
+3|FRAM|Table|24,104,1152,·|fill #ffffff stroke #e5e5e5 r8 — head 56, rows 60
+   head: Selection 40 (indeterminate_check_box #5500ff when some rows are selected) · Title 210 · Owner 152 · Updated 116 · File type 119 · File size 114 · File Location 149 · Actions 252  (= 1152)
+   row (selected fill #eee5ff): check_box 24/Light #5500ff · [Two line p12/24/12/16] thumb 48×36 + "Living room" 14/Medium · Avatar 24 + "James" 14/Regular · "17 Jul ‘26" · "JPEG" ("Folder") · "711 Kb" ("--") · [H g4] folder 20/Light #666666 + "Generic fil..." 14/Regular (location, ellipsis) · [H g24] Link text "Restore" 14/Semi Bold #5500ff · "Delete Forever" 14/Semi Bold #db382a
+   one-line cells here are p24/24/24/16 (60 = 24 + 20 + 16? the mock's cell is 60 tall with 24/24 padding — the text is centred; build: p12/24/12/16 + centre)
+1|FRAM|bulk bar|433,854,335,50 (inside the modal, bottom centre)   count box "1" · "Restore" · "Delete Forever" (#db382a) · rule · close   — = the Deleted Leads sheet's bar (components/leads/deleted-sheet.tsx)
+# Restore puts the item back where it was; Delete Forever / Empty Trash confirm (the Deleted Leads sheet's confirm dialogs, with "file" copy — invented)

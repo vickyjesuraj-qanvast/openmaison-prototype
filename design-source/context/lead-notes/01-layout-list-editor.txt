@@ -1,0 +1,31 @@
+# Lead Details › Notes (section 931:44865 "Notes", 13480×1224) — 9 frames:
+#  79 empty / new note 931:44866 · 84 New menu + AI menu 931:44936 · 80 note editing 931:45013 · 82 note view 931:45491
+#  162 new contact log 931:45124 · 165 contact log filled 931:45231 · 163 contact log view 931:45383 · 164 Auto Fill 931:45344 · 166 Add tasks 931:45360
+# Centre "Section container" (1292×892, V g24 p24). Format: depth|type|name|x,y,w,h (relative to the container)|layout|fill|stroke|radius|text size/style colour|instance{set:props}
+
+## Card (931:44882) 1244×844 — stroke #e5e5e5 w1 (inside), r4, H: list column 360 (right rule #e5e5e5) + pane 884
+### List head (931:44884) 360×68, H g8 p16, bottom rule
+4|FRAM|chips|40,40,233,36|H g8
+5|INST|Choice|39×36|p10/12/10/12|Selected=Yes: fill #eee5ff stroke #5500ff, text #4400cc   "All" 12/Semi Bold
+5|INST|Choice|75×36|p10/12/10/8|Leading Item=Icon   sticky_note_2 16 + "Notes" 12/Semi Bold #1a1a1a (selected in frame 82: icon + text #4400cc)
+5|INST|Choice|87×36|p10/12/10/8|Leading Item=Icon   list_alt 16 + "Contact" 12/Semi Bold
+5|INST|Buttons|281,40,87,36|H g8 p8/12/8/16|stroke #5500ff|r4|I{Buttons:Type=Primary,Height=36,Style=Outlined,Trailing Icon=Yes}   "New" 14/Semi Bold #5500ff + keyboard_arrow_down 20   (right-aligned; menu 931:45009 140×82: Note · Contact Log)
+### List item (Table / Cell / Two line) 360×100, H g12 p16/24/16/24, bottom rule #e5e5e5; selected: fill #eee5ff + 4px primary band at the left edge (x 25 → 4 wide, full height)
+1|TEXT|Leading Icon|24,16,20,20|"sticky_note_2" 20/Regular #1a1a1a   (contact log items: "list_alt" 20/Regular)
+1|FRAM|Cell Data|56,16,280,68|V g8
+2|FRAM|title block|V g4
+3|FRAM|title row|H g4|  "Customer has 10 cats" 14/Bold #1a1a1a (256 wide) · more_vert 20/Light #666666 (kebab → menu 931:45488 140×82: Edit · Delete)
+3|TEXT|"Design and build cat-friendly features" 14/Regular #1a1a1a          (secondary = the note's first line; "No notes yet" when empty)
+2|TEXT|"17 Jul ‘26・12:34 PM" 12/Regular #666666                                 (created date-time with a katakana middle dot "・")
+# frame 79 (new note draft): title row reads "New" 14/Bold, secondary "No notes yet"; frame 165 (contact log): title "Contact log", secondary "No notes yet" while unsaved, the outcome ("Callback requested", frame 163) once saved
+# order: creation order (the note sits above the newer contact log in frames 162/165)
+
+## Pane (931:44903) 884×844, V: toolbar 68 + body 776
+### Toolbar (931:44905) H g16 p16/24, bottom rule: format_bold 24/Regular · format_italic 24/Light · format_underlined 24/Light · rule 1×36 #e5e5e5 · format_list_bulleted 24/Light · format_list_numbered 24/Light · rule · attach_file_add 24/Light · rule · AI chip 47×28 (p4 g2: 17×17 gradient rounded square r8.68 + keyboard_arrow_down 20 #666666; menu 931:45010 140×46: "Refine")
+# text-format buttons and Refine answer coming soon; attach_file_add opens the files library (the Tasks Attach files modal)
+### Body (931:44918) H: editor column + Attachments column
+# editor column: 884 wide when nothing is attached (frame 79), 702 when the Attachments column shows (frames 80/82/162/163/165); V p24, g24
+# note (frame 79 empty): "Title" 20/Bold #666666 (placeholder) · "Write a note..." 16/Regular #666666 (placeholder), 24 apart
+# note (frame 80 editing): "Customer has 10 cats" 20/Bold #1a1a1a · "Design and build cat-friendly features" 16/Regular #1a1a1a
+# footer (frame 80, inside the editor column: 703×68, H g12 p16/24, top rule #e5e5e5, right-aligned): "Cancel" secondary outlined 80×36 · "Save" primary filled 65×36 — shown while editing; frame 82 (view) has no footer
+### Attachments column (931:45548) 182×776, V g12 p16, left rule #e5e5e5: "Attachments" 14/Semi Bold #1a1a1a; tiles 150×158 (V p4, fill #f2f2f2, r4): image 142×108 (cover, r2) + caption 142×42 (H g8 p8): [H g8] kind icon 20/Regular #db382a (picture_as_pdf / image) + "Q-101" 14/Semi Bold #1a1a1a · more_vert 24/Light #666666 (kebab → Remove — no menu mocked, invented); tiles 12 apart

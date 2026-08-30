@@ -1,0 +1,64 @@
+/*
+ * Lead Details › Questionnaire — question card (931:46985 open · 931:46990 answering · 931:47000 studio · 931:47012 client).
+ * Specs: design-source/context/lead-questionnaire/01-listing-empty-dialog.txt "Question card" · 02-question-types.txt.
+ * Card: fills the 740 questions column, fill #fff, stroke #e5e5e5 w1 inside, r4. Head 52 (H g16 p16/24); the answer
+ * block is fill #f2f2f2 — answering V g16 p24 · answered H g16 p24 (68 tall).
+ */
+
+/* The inside stroke is painted by ::after so it stays visible over the grey block (Figma draws a frame's stroke above
+   its children); no overflow clipping — the multi-select menu hangs below the card. */
+.card { position: relative; display: flex; flex-direction: column; width: 100%; background: var(--om-color-surface-default); border-radius: var(--om-radius-1);   border: var(--om-border-1) solid var(--om-color-surface-variant);   /* 931:46985 / 931:47000: the frame's stroke counts in its height (54 = 1 + 52 + 1, 122 = 1 + 52 + 68 + 1), so a real border, not an inset shadow */
+}
+/* (the inside stroke moved onto the card border — see .card) */
+
+/* Head (931:46985): H g16 p16/24 → 16 + 20 + 16 = 52. */
+.head { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-6); min-height: 52px; }
+.q { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* question 14/Regular #1a1a1a */
+.qLabel { font: var(--om-type-subtitle-m); }   /* "Q: " 14/Medium */
+
+/* Answer block while answering (931:46995): fill #f2f2f2, V g16 p24; the card's bottom corners. */
+.block {
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-6);
+  background: var(--om-color-surface-bg);
+  border-radius: 0 0 var(--om-radius-1) var(--om-radius-1);
+}
+/* Cancel · Save (H g12, right-aligned) — the Notes EditorFooter row without its top rule / padding. */
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3); }
+
+/* Text answer (931:47090): the DS TextArea at the mock's 52 (12 top + 20 line + 8 text pad + 12 grip strip = the DS paddings). */
+.textArea textarea { min-block-size: 52px; }
+
+/* Option menu host (Multi 931:47054 · Single 931:47069): the Dropdown positions itself under the field. */
+.multi { position: relative; }
+/* Menu row (931:47484-style): 36 tall H g8 p8/12/8/8 — the menu's .item with the mock's 8 left. */
+.option { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-2); }
+.check { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }   /* check_box_outline_blank / radio_button_unchecked 20 #666666 */
+.option[aria-checked='true'] .check { color: var(--om-color-primary-default); }                 /* check_box / radio_button_checked 20/Light #5500ff */
+.optionLabel { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Answered block (931:47006): fill #f2f2f2, H g16 p24 → 24 + 20 + 24 = 68. */
+.answer {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-6); min-height: 68px;
+  background: var(--om-color-surface-bg);
+  border-radius: 0 0 var(--om-radius-1) var(--om-radius-1);
+}
+.a { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }   /* answer 14/Regular */
+.aLabel { font: var(--om-type-subtitle-m); }   /* "A: " 14/Medium */
+.when { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "1d ago" 14/Regular #666666 */
+
+/* Bare 20 icon button — components/leads/detail/info-column.module.css .iconBtn, glyph in the secondary colour (edit 20/Regular #666666). */
+.iconBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover);
+}
+.iconBtn:hover { background: var(--om-color-hover-08p); }
+.iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* The DS Tag uppercases; the spec types "By Studio" / "By Client" as-is (10/Medium) — components/leads/detail/quote-card.module.css .tag precedent (UI-04). */
+.tag { text-transform: none; }

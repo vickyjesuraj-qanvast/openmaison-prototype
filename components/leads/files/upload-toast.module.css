@@ -1,0 +1,40 @@
+/* Uploading toast (902:28261): 360×200, white, 1px #e5e5e5, r4 — the .toast* classes of
+   components/leads/tasks/attach-files-modal.module.css, fixed to the viewport here. It docks above the Maison FAB band
+   (FAB: right 24 / bottom 24 / 48 tall, components/shell/maison-fab.module.css) with a 16 gap, honours `--bottom-dock`
+   like every fixed bottom element (bulk bar, snackbar) and sits one step above the FAB's z 90 so the two never tie
+   (audit 2026-08-30, UPLOAD-TOAST-DOCK); still below every modal overlay (100). */
+.toast {
+  position: fixed; right: var(--om-spacing-6); bottom: calc(var(--om-spacing-6) + 48px + var(--om-spacing-4) + var(--bottom-dock, 0px)); z-index: 91;
+  transition: bottom var(--motion-toggle);
+  width: 360px; height: 200px;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-3);   /* not in the dump; the import wizard's toast casts level-3 */
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.toast[data-collapsed] { height: auto; }
+/* Head 56: H g16 p16, fill #1a1a1a, "Uploading 1 file" 16/Bold white + keyboard_arrow_down 24 + close 24. */
+.toastHead {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 56px; padding: var(--om-spacing-4);
+  background: var(--om-color-on-surface-default);
+  color: var(--om-color-surface-default);
+  flex-shrink: 0;
+}
+.toastTitle { flex: 1; min-width: 0; font: var(--om-type-heading-h4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toastBtn { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+/* Row 64: H g12 p12/16 → thumb 40 (1px #e5e5e5, r4) · name 14/Medium (fill) · check_circle 20 green; rows divided by 1px #e5e5e5. */
+.toastRow {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  height: 64px; padding: var(--om-spacing-3) var(--om-spacing-4);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  flex-shrink: 0;
+}
+.toastThumb { width: 40px; height: 40px; object-fit: cover; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); flex-shrink: 0; }
+.toastFile { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toastStatus { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* "Uploading..." while in flight — the import wizard's row */
+.toastIcon { color: var(--om-color-tertiary-green-default); display: inline-flex; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

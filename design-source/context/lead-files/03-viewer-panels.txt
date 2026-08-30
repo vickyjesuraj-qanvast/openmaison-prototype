@@ -1,0 +1,17 @@
+# Lead Details › Files — file viewer (frames 92 / 93 / 94 / 95). A full page: the L2 page header carries the file name; the lead frame (tabs, info column) is gone.
+
+## Page header (931:39835 "Page Header / Leads - L2" 1424×56, p16/24, bottom rule #e5e5e5)
+2|TEXT|arrow_back 24/Light #1a1a1a @24,16
+2|TEXT|"Generic file name" 20/Bold #1a1a1a @60,16
+2|FRAM|931:39847|actions|1232,16,168,24|H g24   comment 24/Regular #666666 · download 24 · info 24 · more_vert 24   (kebab → Move · Duplicate · Rename · Delete; frame 95 menu @1208,48)
+
+## Body (931:39853 "Section container" 1424×952, V g24 p100/120/100/120)
+1|RECT|image|120,81,1184,791|fill img — the image is contained inside the padded area (1184 = 1424 − 240), vertically centred
+1|FRAM|931:39855|zoom bar|647,880,130,50|H g16 p12|fill #ffffff|stroke #e5e5e5 w1|r8|shadow 0 10 15 #000@10 + 0 4 6 #000@5 — centred at the bottom (bottom inset 22): remove 24 #999999 · arrows_output 24 #999999 · add 24 #1a1a1a
+1|INST|931:39859|next|1360,452,48,48|p12|fill #ffffff|stroke #e5e5e5 w1|r4|same shadow|I{Icon Buttons:Size=48}  keyboard_arrow_right 24 #1a1a1a — right edge (inset 16), vertically centred; a matching keyboard_arrow_left at the left edge when there is a previous file (only the right one is mocked)
+
+## With a side panel (frames 93 / 94, 931:39912 "Container" H): section 1024 wide (p24/100) with the image 824×550 at 100,201 (contained, centred) + panel 400 wide (fill #ffffff, left rule #e5e5e5)
+### Panel head (931:39921) 399×64, H g16 p20/24, bottom rule: title 20/Bold ("Comments" / "Information") + close 24/Regular #666666 (Link Icon)
+### Comments body (931:39928) V g24 p24 — empty state centred: undraw_empty-mailbox 180×180 (→ the tasks comments empty illustration if one exists, else /figma-assets/empty-comments.svg — check), "Add your first comment" 20/Semi Bold, "Your comments will show up here." 14/Regular (V g12; illustration → texts 24)
+### Comments footer (931:39946) 400×88, V g12 p16/24, top rule: Two Line H g12 — Avatar Generic 36 (fill #387e47) + [V g8] Text Field 36 Empty "Chat with your team here" + caption row 12 tall "Clients can’t see these comments" (12/Regular secondary — the tasks comments footer, 902:28619)
+### Information body (931:39990) V g24 p24 → block V g16: two columns H g12 — labels 120 wide (V g16): Owner · Uploaded · Modified · File type · File size · Location (14/Regular #666666); values 219 wide (V g16): "You" · "17 Jul ‘26" · "17 Jul ‘26" · "JPEG" · "711 Kb" · "Files" (14/Regular #1a1a1a). Rows 20 tall, 16 apart. Location = "Files" at the root, else the folder name.

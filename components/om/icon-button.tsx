@@ -11,6 +11,8 @@ export function IconButton({
   variant = 'secondary',
   selected = false,
   iconSize,
+  iconWeight,
+  iconFamily,
   className,
   type = 'button',
   ...rest
@@ -19,9 +21,12 @@ export function IconButton({
   /** Accessible name — required: these buttons are icon-only. */
   label: string
   size?: 36 | 24
-  variant?: 'secondary' | 'primary'
+  /** bare = the "Link icon" of interaction-states.md: no border, 8% wash on hover, radius 4 — every modal / drawer / row icon (close X, chevrons, deletes). */
+  variant?: 'secondary' | 'primary' | 'bare'
   selected?: boolean
   iconSize?: number
+  iconWeight?: 300 | 400
+  iconFamily?: 'rounded' | 'outlined'
 }) {
   return (
     <button
@@ -29,11 +34,11 @@ export function IconButton({
       type={type}
       aria-label={label}
       data-size={size}
-      data-variant={variant === 'primary' ? 'primary' : undefined}
+      data-variant={variant === 'secondary' ? undefined : variant}
       data-selected={selected || undefined}
       className={className ? `${styles.btn} ${className}` : styles.btn}
     >
-      <Icon name={icon} size={iconSize ?? 20} />
+      <Icon name={icon} size={iconSize ?? 20} weight={iconWeight} family={iconFamily} />
     </button>
   )
 }

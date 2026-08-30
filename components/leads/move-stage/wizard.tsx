@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { modalPanel, overlayFade, ease, spring } from '@/lib/motion'
+import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { displayDateTime } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -13,9 +14,11 @@ import type { Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
 import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel } from './panels'
 import { AutoFillDialog, SuggestedTasksDialog } from './dialogs'
+import { LinkButton } from './fields'
 import { emptyLog, emptyMeeting, emptyWizardData, validateStage, type StageErrors, type WizardData } from './types'
 import styles from './wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ReadOnlyScope } from '@/components/om/read-only'
 
 const SUGGESTED = 'Prepare sample designs and floor plan illustrations for the client'
@@ -42,6 +45,11 @@ export function MoveStageWizard({
   onUpdate: (payload: { stage: Stage; data: WizardData }) => void
 }) {
   useScrollLock(true)   // the page never scrolls behind this surface
+  // R3: Esc closes the window when it is the topmost surface (an inner dialog / menu / picker owns Esc while open); focus
+  // moves in on open and returns to the opener on close (components/om/surface.ts).
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEscapeLayer(true, panelRef, onClose)
+  useDialogFocus(true, panelRef)
   // On Hold / Lost leads resume from the stage they left; a lead with no history starts before New.
   const fromIdx = STAGES.indexOf((STAGES as readonly string[]).includes(lead.stage) ? lead.stage as (typeof STAGES)[number] : lead.resumeStage as (typeof STAGES)[number])
   const [active, setActive] = useState<Stage>(targetStage)
@@ -63,15 +71,6 @@ export function MoveStageWizard({
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set([SUGGESTED]))
   const [autoAddedTask, setAutoAddedTask] = useState('')
-
-  // R3: Esc closes the wizard — unless an inner dialog is open (it owns Esc then).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented && !autoFillOpen && !suggestOpen) onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose, autoFillOpen, suggestOpen])
 
   const update = (patch: Partial<WizardData>) => setData((d) => ({ ...d, ...patch }))
   // Errors only surface after the first Save attempt, then re-compute live so each clears as the user fixes it.
@@ -168,27 +167,23 @@ export function MoveStageWizard({
 
   const panelTitle = editing ? `${active} details` : `Moving to ${active}`
   const editLink = stageLocked && active !== 'New' ? (
-    <button type="button" className={styles.autoFill} onClick={() => unlock('stage')}>
-      <Icon name="edit" size={20} />
-      Edit
-    </button>
+    <LinkButton icon="edit" onClick={() => unlock('stage')}>Edit</LinkButton>
   ) : null
   // Title row lives outside the read-only scope so Edit (and Add Log) stay clickable while the fields are disabled.
   const head = active === 'New' ? null : (
-    <div className={styles.rowBetween ?? ''} style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+    <div className={styles.titleRow}>
       <p className={styles.panelTitle}>{panelTitle}</p>
       {logKey ? (
-        <button type="button" className={styles.autoFill}
-                onClick={() => {
-                  // The new log opens for capture; existing logs keep their own lock (user 2026-08-29).
-                  unlock(`${logKey}.${logKey === 'logs' ? data.logs.length : data.meetings.length}`)
-                  setData((d) => logKey === 'logs'
-                    ? { ...d, logs: [...d.logs.map((l) => ({ ...l, collapsed: true })), emptyLog()] }
-                    : { ...d, meetings: [...d.meetings.map((x) => ({ ...x, collapsed: true })), emptyMeeting()] })
-                }}>
-          <Icon name="add" size={20} />
+        <LinkButton icon="add"
+                    onClick={() => {
+                      // The new log opens for capture; existing logs keep their own lock (user 2026-08-29).
+                      unlock(`${logKey}.${logKey === 'logs' ? data.logs.length : data.meetings.length}`)
+                      setData((d) => logKey === 'logs'
+                        ? { ...d, logs: [...d.logs.map((l) => ({ ...l, collapsed: true })), emptyLog()] }
+                        : { ...d, meetings: [...d.meetings.map((x) => ({ ...x, collapsed: true })), emptyMeeting()] })
+                    }}>
           Add Log
-        </button>
+        </LinkButton>
       ) : editLink}
     </div>
   )
@@ -207,8 +202,8 @@ export function MoveStageWizard({
     <AnimatePresence>
       <motion.div key="ov" className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                   onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-        <motion.div className={styles.modal} variants={modalPanel} initial="initial" animate="animate" exit="exit"
-                    role="dialog" aria-label="Move stage">
+        <motion.div ref={panelRef} className={styles.modal} variants={modalPanel} initial="initial" animate="animate" exit="exit"
+                    role="dialog" aria-modal="true" aria-label="Move stage" tabIndex={-1}>
           <div className={styles.head}>
             <div className={styles.headText}>
               <span className={styles.title}>Move stage</span>
@@ -216,9 +211,9 @@ export function MoveStageWizard({
                 <span>{lead.name}</span><span>·</span><span>Current stage: {lead.stage}</span>
               </span>
             </div>
-            <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-              <Icon name="close" size={24} family="outlined" />
-            </button>
+            <Tooltip label="Close">
+              <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={onClose} />
+            </Tooltip>
           </div>
           <div className={styles.body}>
             <div className={styles.rail} role="tablist" aria-label="Stages">
@@ -253,8 +248,8 @@ export function MoveStageWizard({
                   className={styles.panel}
                   style={{ height: '100%' }}
                   initial={{ opacity: 0, x: dir * 16 }}
-                  animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: ease.decelerate } }}
-                  exit={{ opacity: 0, x: dir * -16, transition: { duration: 0.15, ease: ease.standard } }}
+                  animate={{ opacity: 1, x: 0, transition: { duration: duration.step, ease: ease.decelerate } }}
+                  exit={{ opacity: 0, x: dir * -16, transition: { duration: duration.modalExit, ease: ease.standard } }}
                 >
                   {head}
                   <ReadOnlyScope readOnly={stageLocked}>{panel()}</ReadOnlyScope>
@@ -266,7 +261,8 @@ export function MoveStageWizard({
             {showErrors && Object.keys(errors).length ? (
               <motion.span className={styles.footError}
                            initial={{ x: 0 }}
-                           animate={{ x: [0, -4, 4, -4, 0], transition: { duration: 0.28 } }}>
+                           animate={{ x: [0, -4, 4, -4, 0], transition: { duration: duration.sheet } }}   /* the 280ms shake — no dedicated shake token in lib/motion yet */
+              >
                 <Icon name="error" size={16} />
                 {editing ? 'Unable to save. Please fill in the required fields.' : 'Unable to move. Please fill in the required fields.'}
               </motion.span>

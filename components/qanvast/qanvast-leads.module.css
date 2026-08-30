@@ -1,0 +1,133 @@
+/*
+ * Qanvast Ops › Leads (208 931:49232 · 209 931:49435) — spec design-source/context/lead-return/02-qanvast-ops.txt.
+ * Page frame (.body / .content) comes from app/leads/leads.module.css (the listing twin) — only the pieces the listing
+ * does not already ship live here: the toolbar pill (copied from components/leads/toolbar.module.css), the grouped
+ * dropdown titles (copied from components/leads/stage-dropdown.module.css, + the mock's third "Lead Return" tone) and
+ * the table (copied from components/leads/contracts/contracts-table.module.css — one grid, subgrid head / rows).
+ */
+
+/* ---- Toolbar (y 144): pill left · Request Leads · search · filter right — components/leads/toolbar.module.css .bar/.left/.right ---- */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); width: 100%; }
+.left { flex: 1; min-width: 0; display: flex; position: relative; }
+.right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
+
+/* "All Leads (99)" pill 151×36 (spec 02): h36, border ccc, r4, pl-16 pr-12, gap-8 — toolbar.module.css .chip verbatim. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.chip:hover { background: var(--om-color-hover-04p); }
+.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
+/* Chevron points up while the menu is open — every menu trigger does this (REG-153). */
+.chip[data-open] .chipChevron { transform: rotate(180deg); }
+
+/* ---- "All Leads" dropdown 200 wide (931:49435): group title 10/Medium uppercase ("ACTIVE" · "INACTIVE" · "LEAD RETURN" — the
+   Figma render uppercases the third title too), 36 tall p12 — stage-dropdown.module.css .groupTitle/.dot verbatim. ---- */
+.groupTitle {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  padding: var(--om-spacing-3);
+  font: var(--om-type-caption-xs);
+  text-transform: uppercase;
+}
+.groupTitle[data-tone='green'] { color: var(--om-color-tertiary-green-default); }    /* ACTIVE #469e59 */
+.groupTitle[data-tone='yellow'] { color: var(--om-color-tertiary-yellow-default); }  /* INACTIVE #f19e2b */
+.groupTitle[data-tone='blue'] { color: var(--om-color-tertiary-blue-default); }      /* Lead Return #4e58b4 */
+.dot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
+.dot[data-tone='green'] { background: var(--om-color-tertiary-green-default); }
+.dot[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-default); }
+.dot[data-tone='blue'] { background: var(--om-color-tertiary-blue-default); }
+/* Groups are separated by the stage dropdown's rule (780:86452, stage-dropdown.module.css .rule): 1px surface-variant with 4px above and
+   below — three of them take the 200-wide menu to the mock's 613 tall (4 + 36 + 3×36 + 12×36 + 3×9 + 4 + 2 = 613). */
+.rule { height: 1px; margin: var(--om-spacing-1) 0; background: var(--om-color-surface-variant); }
+
+/* ---- Table 1152 wide at the mock (931:49232): fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. ---- */
+.card {
+  display: grid;
+  /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock — Status is the
+     fluid track so the table fills the page content width (the contracts "Title fills" rule, applied to the last column). */
+  grid-template-columns: 240px 132px 138px 158px 115px minmax(369px, 1fr);
+  width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay full width */
+  border-radius: var(--om-radius-2);
+}
+
+/* ---- Head row ×56 ---- */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* "NAME" 12/Medium #666666 uppercase — the Leads listing head (table.module.css .hLabel) and the DS TableColumn */
+/* Sort is inert (coming soon) — the contracts / quotes table's sort-button look; unfold_more 16 on every head. */
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+/* Name head: the tune 16 icon at the right = Customise view — components/leads/table.module.css .hTools/.hTune verbatim. */
+.hTools { margin-left: auto; display: inline-flex; }
+.hTune { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+.hTune:hover { color: var(--om-color-on-surface-default); }
+
+/* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
+.colName { grid-column: 1; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the mock's full-height rule after Name (x 494) — the frozen-column edge (REG-144, quotes-table.module.css .colTitle) */
+.colCredits { grid-column: 2; }
+.colBudget { grid-column: 3; }
+.colType { grid-column: 4; }
+.colCreated { grid-column: 5; }
+.colStatus { grid-column: 6; }
+
+/* ---- Rows ×64 ---- */
+.row {
+  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180) */
+  height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-surface-bg); }   /* hover row fill #f2f2f2 — the quotes / contracts hover row (209 shows the hover button only) */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Name "Cell / Two line": V g4 — "Jasmine Lee" 14/Bold + "9123 4567" 12/Regular secondary (quotes-table.module.css .titleData/.title/.sub). */
+.nameData { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; flex: 1; }
+.name { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phone { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+
+/* Status: DS Tag outlined 20 tall, two tags H g8 (spec 02). */
+.tags { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+
+/* ---- Row hover actions (209): "View Lead" secondary outlined 103×36 floating at the right — and, on a returned row, "Lead Return
+   Updates" before it, 12 apart (two 36 outlined buttons, #ccc stroke / ink text at the Figma render) — quotes-table.module.css
+   .actions/.float, right 24, top (64 − 36) / 2 = 14. ---- */
+.actions {
+  position: absolute; right: var(--om-spacing-6); top: 14px;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .actions, .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* White fill + level-1 shadow live on a wrapper so the DS button keeps its own hover state. */
+.float {
+  display: inline-flex;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+}

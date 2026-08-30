@@ -10,7 +10,7 @@
   position: relative;
   display: flex; align-items: center; gap: var(--om-spacing-2);
   height: 48px; width: 100%;
-  padding: 0 12px 0 16px;
+  padding: 0 16px;   /* text-mode box (780:92826): 16 both sides; the trailing-icon / select box is pr-12 (780:92902) */
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1);
   background: var(--om-color-surface-default);
@@ -18,6 +18,7 @@
   transition: border-color var(--motion-toggle), box-shadow var(--motion-toggle);
 }
 .field[data-kind='select'] .box, .field[data-kind='trigger'] .box { cursor: pointer; }
+.field[data-trail] .box { padding-right: 12px; }
 .field[data-active] .box { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }   /* 1px border + 1px inset = the DS 2px active stroke, no layout shift */
 .field[data-error] .box { border-color: var(--om-color-tertiary-red-default); box-shadow: none; }
 .field[data-error][data-active] .box { box-shadow: inset 0 0 0 1px var(--om-color-tertiary-red-default); }

@@ -125,10 +125,10 @@ export function ReviewSheet({
               <span className={styles.vdivider} />
               <Switch size="sm" isSelected={effectiveDupOnly} onChange={setDupOnly} aria-label="Show only duplicates" />
               <span className={styles.toggleLabel}>Show only duplicates ({duplicates.length})</span>
-              <button type="button" className={styles.greenBtn} disabled={clean.length === 0 || busy}
-                      onClick={() => { void run(() => onApprove(clean.map((r) => r.row.id))) }}>
+              <Button className={styles.toneGreen} isDisabled={clean.length === 0 || busy}
+                      onPress={() => { void run(() => onApprove(clean.map((r) => r.row.id))) }}>
                 Approve All Clean ({clean.length})
-              </button>
+              </Button>
             </div>
 
             <div className={styles.body}>
@@ -200,9 +200,11 @@ export function ReviewSheet({
                               </div>
                               <div className={`${styles.td} ${styles.cCol}`}>
                                 {f.radio ? (
-                                  <button type="button" className={styles.radioBtn} data-on={pick === 'existing' || undefined} aria-label={`Keep existing ${f.label}`} onClick={() => setPick(f.label, 'existing')}>
-                                    <Icon name={pick === 'existing' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />
-                                  </button>
+                                  <Tooltip label={`Keep existing ${f.label}`}>
+                                    <button type="button" className={styles.radioBtn} data-on={pick === 'existing' || undefined} aria-label={`Keep existing ${f.label}`} onClick={() => setPick(f.label, 'existing')}>
+                                      <Icon name={pick === 'existing' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />
+                                    </button>
+                                  </Tooltip>
                                 ) : null}
                                 <span className={styles.cValue}>{ex || '—'}</span>
                               </div>
@@ -212,9 +214,11 @@ export function ReviewSheet({
                                 ) : (
                                   <>
                                     {f.radio && nw ? (
-                                      <button type="button" className={styles.radioBtn} data-on={pick === 'new' || undefined} aria-label={`Use new ${f.label}`} onClick={() => setPick(f.label, 'new')}>
-                                        <Icon name={pick === 'new' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />
-                                      </button>
+                                      <Tooltip label={`Use new ${f.label}`}>
+                                        <button type="button" className={styles.radioBtn} data-on={pick === 'new' || undefined} aria-label={`Use new ${f.label}`} onClick={() => setPick(f.label, 'new')}>
+                                          <Icon name={pick === 'new' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />
+                                        </button>
+                                      </Tooltip>
                                     ) : null}
                                     <span className={styles.cValue} style={!f.radio ? { color: 'var(--om-color-on-surface-secondary)' } : undefined}>{nw || '—'}</span>
                                   </>
@@ -231,7 +235,7 @@ export function ReviewSheet({
                     <div className={styles.footer}>
                       <span className={styles.note}>Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.</span>
                       <span className={styles.spacer} />
-                      <button type="button" className={styles.outlineBtn} data-tone="red" disabled={busy} onClick={() => { void run(() => onReject([selected.row.id])) }}>Reject New</button>
+                      <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject New</Button>
                       <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
                       <Button isDisabled={busy}
                               onPress={() => {
@@ -273,7 +277,7 @@ export function ReviewSheet({
                     </div>
                     <div className={styles.footer}>
                       <span className={styles.spacer} />
-                      <button type="button" className={styles.outlineBtn} data-tone="red" disabled={busy} onClick={() => { void run(() => onReject([selected.row.id])) }}>Reject</button>
+                      <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
                       <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
                     </div>
                   </>
@@ -297,8 +301,8 @@ export function ReviewSheet({
                     </div>
                     <div className={styles.footer}>
                       <span className={styles.spacer} />
-                      <button type="button" className={styles.outlineBtn} data-tone="red" disabled={busy} onClick={() => { void run(() => onReject([selected.row.id])) }}>Reject</button>
-                      <button type="button" className={styles.greenBtn} disabled={busy} onClick={() => { void run(() => onApprove([selected.row.id])) }}>Approve</button>
+                      <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
+                      <Button className={styles.toneGreen} isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Approve</Button>
                     </div>
                   </>
                 )}

@@ -1,0 +1,32 @@
+/* Lead Details › Activity feed (931:47991, spec design-source/context/lead-activity/01-feed.txt): the centre already pads 24,
+   the mock's container pads 40 and stacks day groups 80 apart — so the tab adds 16 and keeps the 80. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-20); padding: var(--om-spacing-4); min-width: 0; flex: 1; }   /* 80 = the mock's g80 */
+
+/* Day group: rule with the centred date chip, then rows 12 apart, 24 below the rule. */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.ruleRow { position: relative; height: 1px; background: var(--om-color-surface-variant); }
+.dateChip {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 140px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-default);
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary);
+  white-space: nowrap;
+}
+.rows { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+
+/* Row 1212×54: H g16 p16/24, white, 1px surface-variant stroke (no radius in the mock). The stroke is a real border so it
+   occupies layout like the mock's inside stroke: 1 + 16 + 20 + 16 + 1 = 54 tall, content 25 from the sides. */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.textGroup { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
+.icon { color: var(--om-color-on-surface-default); flex-shrink: 0; display: inline-flex; }
+.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* "See Task" 14/Medium ink, underlined as in the mock render (931:48003) — no hover colour: the mock records none. */
+.link { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); text-decoration: underline; text-underline-offset: 2px; }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }

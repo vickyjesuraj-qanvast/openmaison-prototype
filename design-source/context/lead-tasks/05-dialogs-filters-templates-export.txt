@@ -1,0 +1,30 @@
+# Lead Details › Tasks — spec dump batch 5: Filters modal, templates, export, delete dialogs (read 2026-08-29)
+
+## Filters modal (902:28963 …) — ModalComponent 600×600 = the listing's FiltersModal shell: Heading 64 (p20/24, "Filters" 20/Bold, close 24, bottom rule), body H: left rail 160 wide fill #f2f2f2 with 52px options (p16/16/16/24, 14/Semi Bold; the active one has fill #fff), right pane "Filter content" 440 wide V g16 p24; Footer 68 (p16/24, top rule) → "Clear All" secondary outlined 89×36 + "Apply" primary 72×36 right-aligned.
+Rail order: Sort · Assignees · Creators · Status · Tags · Date  (frame 60 shows Sort · Assignees · Status · Tags · Date · Creators — the six-pane frames 184–189 use the order above; "Tags" carries a dot when a filter is applied — "Filter Option with Dot")
+Panes (pane title 14/Semi Bold, then a list):
+- Sort: "Sort by" + Sort Options 44 tall (p12/0): Radio Button 24 + label 14/Regular — Due date (selected) · Newest at the top · Oldest at the top
+- Assignees / Creators: "Assignees" / "Creators" + member rows (Avatar 36 + name 14/Regular + role 12 secondary "Owner (you)" / "Designer" + Checkbox right) — same rows as the listing's Assignees pane; Dane (you) · James · Sarah · Michelle · Germaine · Alex
+- Status: "Status" + checkbox rows Open · Completed
+- Tags: "Tags" + checkbox rows for each tag (Generic · Focus · Tag 1 · Tag 2)
+- Date: "Dates " + two Text Field 36px with trailing icon (From 184×36 · To 188×36 side by side, 16 apart) — build: DateField (picker only, REG-119)
+
+## Choose Template (902:29198) — 600×600, r12: Heading 64 "Choose Template" + close; body V g24 p24: Search Bar 36 Filled (fill #f2f2f2, "Search"); "My templates" 14/Semi Bold; template row 552×66 H p12/16 stroke #e5e5e5 r4 → "Template 1" 14/Semi Bold + "Number of tasks: 1" 12/Regular #666666 (V g4) + radio_button_unchecked 24/Light #666666 right; Footer 68: "Manage Templates" secondary outlined 161×36 left · Cancel 80×36 + "Select" primary 75×36 right
+## Save as Template — new (902:29220) — 400×495, r12: Heading 64 "Save as Template" + close; body V g24 p24:
+  radio row H g24: Radio Button 20 "New Template" (selected) · "Existing Template"
+  Text Field 48 filled: label "Task template name", value "Leads Template"
+  info banner 352×58 H g8 p8/12 fill #f2f2f2 stroke #e5e5e5 r4: info 20 #666666 · "Attachments, and comments will not be saved in the template." 14/Regular (2 lines) · close 20 #666666
+  rule #e5e5e5
+  "Task details to keep in this template" 14/Semi Bold; rows 24 tall (12 apart): "Team Members" 14/Regular + Switch 24 On (48×24 fill #5500ff r32) · "Task Description" + Switch On
+  Footer 68: Cancel 80×36 · Save primary 65×36
+## Save as Template — existing (902:29256): the field becomes a select Text Field 48 "Choose template" → "Leads Template" with expand_more 16
+
+## Export Tasks (902:29293) — 400×228 = the Export Leads dialog (REG-145): Heading 72 p24 "Export Tasks" + close; body p12/24 → Text Field 48 select "Choose file format" = CSV (trailing chevron); bottom 84 p24 → Cancel 80×36 · Export 77×36
+
+## Delete Task (902:27738) / Delete all Tasks (902:27750) — 400×196 compact dialog: Heading 72 p24 (title 20/Bold + close 24); body p0/24 → "Are you sure you want to delete this task from this project? This action cannot be undone." / "Are you sure you want to delete all tasks in this project? This action cannot be undone." 14/Regular (2 lines, 40 tall); bottom 84 p24 → "No" secondary outlined 51×36 · "Yes" filled #db382a 57×36
+
+## Filters panes — measured ("Filter content" 440×536, V g16 p24; pane title 14/Semi Bold; list starts 8 below the title)
+- Assignees / Creators: "Two Line" rows 392×64 (p12/0, H g12): Avatar Generic 40 r4 (photo or initial 14/Medium on the member colour) + name 14/Regular #1a1a1a over role 12/Regular #666666 ("Owner (you)" / "Designer") + Checkbox 20 right (selected = #5500ff filled check_box; deselected = outline #666666). Rows touch (64 apart).
+- Status: "Choice" chips 32 tall (p8/12, stroke #cccccc, r4, 12/Semi Bold #1a1a1a): "Open" 80×32 · "Completed" 88×32, 12 apart (= the listing's ChoiceChips)
+- Tags: "One Line" rows 392×44 (p12/0): label 14/Regular + Checkbox 20 right — Focus · Tag 1 · Tag 2 (+ Generic)
+- Date: "Dates " title; two Text Field 36 with trailing calendar icon side by side (188 wide each, 16 apart) — build: DateField pair From / To

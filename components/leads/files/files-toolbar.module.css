@@ -1,0 +1,44 @@
+/*
+ * Lead Details › Files toolbar — "Section items" 1244×36, H g16 (931:40157, spec design-source/context/lead-files/
+ * 01-toolbar-empty-list.txt "Toolbar row"). Left: "All Files" 16/Bold (heading-h4 = 16/700/24) fills. Right: actions H g12
+ * (New File 114×36 · Search 280 · filter_list 36 · segmented 71 · more_vert 36).
+ * Copied from components/leads/contracts/contracts-toolbar.module.css — the geometry is identical; the breadcrumb row
+ * (frame 91, 931:39719) is added for an open folder.
+ */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
+
+/* Breadcrumb row (931:39719, H g12): arrow_back 24/Light ink · crumb (H g4) · more_vert 20/Light secondary. */
+.crumbRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }
+.back {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.back:hover { background: var(--om-color-hover-08p); }
+.back:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.crumb { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
+.crumbRoot { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "All Files" · "/" 16/Regular #666666 */
+.crumbTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }   /* folder name 16/Bold */
+/* Folder kebab: bare more_vert 20/Light secondary (931:39719) — the attach-files modal's .folderKebab, copied. */
+.folderKebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.folderKebab:hover { background: var(--om-color-hover-08p); }
+.folderKebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Menu anchors (New File button · folder kebab · header kebab) — the Dropdown positions itself against these. */
+.menuWrap { position: relative; display: inline-flex; }
+/* Chevron points up while the menu is open — every menu trigger does this (listing toolbar rule, user 2026-08-28). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+/* Search Bar 36 Outlined (931:40163) — 280 wide in the mock; the DS component is fluid so the width is set here. */
+.search { width: 280px; }
+
+.danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */

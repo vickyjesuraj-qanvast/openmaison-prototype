@@ -1,0 +1,108 @@
+/*
+ * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
+ * 01-listing-empty.txt. Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 48 · rows 68. No bottom bar,
+ * no selection column. Columns 557 · 128 · 120 · 142 · 140 · 157 (= 1244): Title fills, the others are fixed.
+ * Copied from components/leads/quotes/quotes-table.module.css (the Quotes twin) — the card deliberately does NOT clip
+ * (no overflow hidden): the row kebab menu and the status menu must be able to hang below a short table.
+ * Layout departs from the twin in one way (REG-180): the card is ONE grid and the head / rows are subgrids, so the six
+ * columns are a single shared track. The twin's per-row flex let a "Sent to Client" Status cell grow on its own row
+ * while the head and Draft / Signed rows stayed at 128, shifting Created · Signed Copy · Sent · Updated on that row.
+ */
+.card {
+  display: grid;
+  /* Title fluid (absorbs what Status needs, the quotes rule) · Status 128 at rest, grows to its widest content
+     ("Sent to Client") for EVERY row at once · Created 120 · Signed Copy 142 · Sent 140 · Updated 157 (spec 01). */
+  grid-template-columns: minmax(0, 1fr) minmax(128px, max-content) 120px 142px 140px 157px;
+  width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke #e5e5e5: rows stay 1244 wide (931:38690) */
+  border-radius: var(--om-radius-2);
+}
+
+/* ---- Head row 1244×48 (931:38691) ---- */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 48px; }   /* shares the card's tracks */
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium #666666 */
+/* Sort is inert (coming soon) — the head keeps the quotes / tasks table's sort-button look. */
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+
+/* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
+/* Title 557 fluid — NO right rule: the head has none and the row cell's stroke is w1/0/0/0 (top only), spec 01. */
+.colTitle { grid-column: 1; }
+/* 128 at rest (mock); "Sent to Client" needs more, so the TRACK grows to its content and the fluid Title absorbs it —
+   the quotes .colStatus intent (REG-176), applied to head and rows together (REG-180). */
+.colStatus { grid-column: 2; }
+.colCreated { grid-column: 3; }
+.colSignedCopy { grid-column: 4; }
+.colSent { grid-column: 5; }
+.colUpdated { grid-column: 6; }
+
+/* ---- Rows 1244×68 (931:38692) ---- */
+.row {
+  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift */
+  height: 68px; position: relative;                                      /* relative: the absolute .actions hang off the row */
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-surface-bg); }   /* hover row fill #f2f2f2 — the Quotes hover row copied (not mocked for Contracts) */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+/* Title cell "Cell / Two line" p24/24/24/16 H g12 — declared after .cell so it wins the cascade. */
+.cell.colTitle { gap: var(--om-spacing-3); padding: calc(var(--om-spacing-6) - var(--om-border-1)) var(--om-spacing-6) var(--om-spacing-6) var(--om-spacing-4); }   /* p24/24/24/16 — the 1px top rule is a CSS border (Figma's is inside), so 23 + 1 lands the title at y+24 in the 68 row */
+/* ONE line: "General Contract Agreement" 14/Medium #1a1a1a = subtitle-m (not the quotes' Bold; no secondary line). */
+.title { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Signed Copy: the file name 14/Regular ink, truncated to the 142 column. */
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Status cell: CellDataGroup H g4 — "Draft" 14/Regular + keyboard_arrow_down 20 → the status menu (quotes 910:36673 pattern). */
+.statusWrap { position: relative; display: inline-flex; }
+.statusBtn {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+  white-space: nowrap;
+  border-radius: var(--om-radius-1);
+}
+.statusBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Chevron points up while the menu is open — every menu trigger does this (tasks-toolbar.module.css .chev). */
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+/* Current status marked as stage-dropdown.module.css marks the lead's stage: "current" 12px secondary meta (836:23422 pattern). */
+.itemText { flex: 1; min-width: 0; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* ---- Row hover actions (Quotes "Hover button" 910:36644 / 910:36709 copied): View + kebab, H g12, level-1 shadow, right 24. ----
+   Only `top` changes from the quotes twin: (68 − 36) / 2 = 16. */
+.actions {
+  position: absolute; right: var(--om-spacing-6); top: 16px;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
+.float {
+  display: inline-flex;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+}
+.menuWrap { position: relative; display: inline-flex; }
+.danger { color: var(--om-color-tertiary-red-default); }   /* quotes 910:36723 Delete #db382a */

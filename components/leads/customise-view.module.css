@@ -4,7 +4,7 @@
   background: var(--om-color-surface-default);
   border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-1);
-  box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--om-elevation-level-3);
   display: flex; flex-direction: column;
   max-height: 756px;
 }

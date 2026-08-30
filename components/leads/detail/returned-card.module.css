@@ -1,0 +1,44 @@
+/* LEAD RETURNED card (858:25188 · 858:24095 · 858:24144). Spec: design-source/context/lead-overview/05-*.txt. */
+
+/* Body: V g12, 0/20/20/20; 8 on top when the appeal banner leads. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-5) var(--om-spacing-5); }
+.body[data-banner] { padding-top: var(--om-spacing-2); }
+
+/* Appeal banner (858:24095): H g16 p16, yellow variant2 fill, 1px variant1 INSIDE stroke (390×72 — the inset shadow keeps the
+   mock height, as the Return details modal's twin and every card do, REG-165), r8; the whole banner is the button. */
+.banner {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  width: 100%;
+  min-height: 72px;
+  padding: var(--om-spacing-4);
+  background: var(--om-color-tertiary-yellow-variant2);                                   /* #fef5ea */
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-tertiary-yellow-variant1);    /* #fcecd5 */
+  border: 0;
+  border-radius: var(--om-radius-2);
+  cursor: pointer; text-align: left;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+}
+.bannerText { flex: 1; min-width: 0; }
+.bannerText b { font-weight: var(--om-font-weight-bold); }
+.bannerIcon { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+
+/* KV rows: 36 tall (8/0 padding), 36 apart (no gap between rows), key fixed 120 · value fills, both body-m. */
+.kv { display: flex; flex-direction: column; margin: 0; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: var(--om-spacing-2) 0; }
+.key { width: 120px; flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.val { flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* ENDING, single line — as info-column .text */
+.chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }   /* approved: two tags 8 apart */
+
+/* Qanvast reply identity: 20×20 r4 image. */
+.logo { width: 20px; height: 20px; border-radius: var(--om-radius-1); object-fit: cover; flex-shrink: 0; display: block; }
+
+/* Footer (20 tall): "View Details" link text (subheading-s primary) + keyboard_arrow_right 20, 4 apart. */
+.footer { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
+.view {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-s); color: var(--om-color-primary-default);
+  transition: color var(--motion-hover);
+}
+.view:hover { color: var(--om-color-on-primary-variant); }   /* Link text hover #4400cc (interaction-states.md) */

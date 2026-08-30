@@ -9,6 +9,7 @@
   color: var(--om-color-on-surface-secondary);
   cursor: pointer;
   padding: 0;
+  flex-shrink: 0;
   transition: background-color var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
 .btn[data-size='36'] { width: 36px; height: 36px; }
@@ -25,6 +26,10 @@
   border-color: var(--om-color-on-primary-variant);
   color: var(--om-color-on-primary-variant);
 }
+
+/* Bare "Link icon" (interaction-states.md: plain at rest → bg rgba(0,0,0,.08), radius 4): modal / drawer close X, row chevrons, deletes. */
+.btn[data-variant='bare'] { border: 0; }
+.btn[data-variant='bare']:hover { background: var(--om-color-hover-08p); }
 
 /* Selected (e.g. active toggle contexts): lavender per segmented spec. */
 .btn[data-selected='true'] {

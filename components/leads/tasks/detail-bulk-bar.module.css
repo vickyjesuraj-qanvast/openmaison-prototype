@@ -1,0 +1,47 @@
+/*
+ * Lead Details bulk bar (902:26567, spec lead-tasks/03-panel-tags.txt; the Files bar 931:39568 in lead-files/02 measures the
+ * same H g24 p12/24/12/12, 1×24 rule, count 14/Semi Bold) — 50 tall: fill #fff, 1px primary, r8, level-3. Position = the
+ * listing bar's (bottom 32 + the review-banner dock) — the specs only say "floating bottom-centre".
+ */
+.bar {
+  position: fixed; left: 50%; bottom: calc(32px + var(--bottom-dock, 0px)); z-index: 80; transition: bottom var(--motion-toggle);
+  display: flex; align-items: center; gap: var(--om-spacing-6);
+  height: 50px;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-3);
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-primary-default);
+  border-radius: var(--om-radius-2);
+  box-shadow: var(--om-elevation-level-3);
+}
+/* Inside a modal panel (the Deleted Files sheet): absolute at bottom 24 — components/leads/bulk-bar.module.css [data-inset]. */
+.bar[data-inset] { position: absolute; bottom: var(--om-spacing-6); }
+/* Count box 24×24 fill #5500ff r4, "1" 14/Semi Bold #fff. */
+.count {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-default);
+  color: var(--om-color-on-primary-default);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m);
+}
+/* Link text 14/Semi Bold — primary; Delete / Delete All #db382a. Hover = the link hover token every other link uses (UI-18). */
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-primary-default);
+  white-space: nowrap;
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+.link[data-danger] { color: var(--om-color-tertiary-red-default); }
+.link[data-danger]:hover { color: var(--om-color-on-tertiary-red-variant); }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* Vertical rule 1×24 #e5e5e5. */
+.rule { width: 1px; height: 24px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+/* close 24 #666666. */
+.close {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; color: var(--om-color-on-surface-secondary);
+  border-radius: var(--om-radius-1);
+}
+.close:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

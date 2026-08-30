@@ -1,0 +1,2 @@
+/* Files tab body (931:40157 "Section container" 1292×892, V g24 p24 — the same frame as Tasks / Quotes / Contracts; copy of quotes/lead-quotes.module.css): the centre already pads 24; toolbar and content stack 24 apart. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }

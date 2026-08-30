@@ -1,0 +1,51 @@
+/* Comments panel (902:28619) — body: "2 Comments" 12/Regular on-surface, then comment rows 20 apart (V g20). */
+.thread { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.count { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+
+/* Comment = "Two Line": H g12 → avatar 36 + text column (V g4). */
+.comment { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
+.textCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+
+/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; kebab 20 at the right edge. */
+.meta { display: flex; align-items: center; gap: var(--om-spacing-1); height: 20px; }
+.author { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.time { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.kebabWrap { margin-left: auto; position: relative; display: inline-flex; }
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover, .kebab[aria-expanded='true'] { background: var(--om-color-hover-08p); }   /* hover copied from the drawer's head icon buttons (components/om/drawer.module.css) */
+.danger { color: var(--om-color-tertiary-red-default); }
+
+/* Comment text 14/Regular on-surface, wraps. */
+.body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* Edit state (frame 75): the field then a 24px row, Cancel · Save right-aligned 8 apart. */
+.editBlock { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.editRow { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-2); height: 24px; }
+
+/* The mock draws "Text Field 36px"; the prototype's one TextField is the 48px Material field (REG-121) and the tabs keep
+   it where the mocks draw 36 (Filters dates REG-176, Questionnaire answers REG-189) — so the composer / edit field runs
+   12px taller than the mock (audit 2026-08-30, UI-13). The edit field carries no label: the empty floated label is hidden. */
+.field label:empty { display: none; }
+
+/* Footer (124 = 16 + 48 + 8 + 36 + 16): composer H g12 → avatar 36 + column V g8. Fills the drawer's footer row. */
+.composer { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex: 1; min-width: 0; }
+.composerCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.composerRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 36px; }
+.privacy { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+
+/* Avatar 36 r4 — components/om/avatar.module.css at 36, initial 14/Medium (spec: "H" 14/Medium on #387e47). */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: var(--om-radius-1);
+  color: #fff;   /* avatar.module.css uses the same literal for the initial */
+  font: var(--om-type-subtitle-m);
+  overflow: hidden;
+  background: var(--om-color-surface-variant);
+}
+.avatarPhoto { width: 100%; height: 100%; object-fit: cover; }

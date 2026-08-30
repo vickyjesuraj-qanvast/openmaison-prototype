@@ -1,0 +1,46 @@
+# Lead Details › Tasks — spec dump batch 1: listing (902:26362, frame 191 "Section container" 902:26378 · 1292×892), read 2026-08-29
+# legend: depth|type|id|name|x,y,w,h|layout(dir gap pad)|fill|stroke weight|radius|text size/style colour|instance{set:props}
+# Frame index (section 902:36216): listing 902:26362 (191 default · 192 selection + bulk bar) · add 902:26575 (193 Add Task menu 902:26678 · 194 inline new row) · contextual 902:26783 (195 row hover Edit + kebab 902:26904 · 196 Assign Member · 197 header kebab 902:27154 · 198 due-date Calendar) · details + tags 902:27260 (53 panel · 65 Add Tag dropdown · 54 tag picked · 61 Manage Tags 902:27709 400×600) · delete 902:27734 (160 panel kebab · 63 Delete Task 902:27738 400×196 · 159 bulk Delete All · 55 Delete all Tasks 902:27750) · attach 902:28019 (64 empty · 56 one file + uploading toast 902:28261 360×200 · 57 grid · 58 · 59 attached in panel) · comments 902:28516 (73 · 74 comment kebab 902:28804 · 75 edit) · filters 902:28959 (60 Sort · 184 Assignees · 185 Creators · 186 Status · 187 Tags · 188 Date · 189; modal 600×600) · templates 902:29194 (70 Choose Template 600×600 · 71 Save as Template new 400×495 · 115 existing) · export 902:29289 (76, 400×228) · other member 902:29303 (190)
+
+## Section container 902:26378 — 1292×892, V g24 p24 (the centre column of the details frame, no info column on this tab)
+1|FRAM|Section items (toolbar)|24,24,1244,36|H g16
+2|TEXT|"All Tasks"|24,30,721,24|16/Bold #1a1a1a (FILL)
+2|FRAM|actions|761,24,507,36|H g12
+3|INST|Buttons Primary/36/Outlined trailing icon|761,24,119,36|p8/12/8/16 g8|stroke #5500ff w1|r4 → "Add Task" 14/Semi Bold #5500ff + keyboard_arrow_down 20 #5500ff
+3|INST|Search Bar 36 Outlined|892,24,280,36|p8 g8|fill #fff|stroke #cccccc w1|r4 → search 20 #666666 + "Search" 14/Semi Bold #666666 (placeholder)
+3|INST|Icon Buttons Secondary/36/Outlined|1184,24,36,36 → filter_list 20 #666666
+3|INST|Icon Buttons Secondary/36/Outlined|1232,24,36,36 → more_vert 20 #666666
+
+## Table 902:26387 — 24,84,1244,248 (hugs rows), V, fill #fff, stroke #e5e5e5 w1, r8
+### Head row "Table / Row / Task Type=HD" 1244×56
+3|Selection head|24,84,56,56|p16|stroke #e5e5e5 w0/1/0/0 → check_box_outline_blank 24/Light #666666
+3|Title head|80,84,582,56|p16/24/16/16 g4|stroke #e5e5e5 w0/2/0/0 (2px right rule — the frozen-column divider of this table) → "Title" 12/Medium #666666 + unfold_more 16
+3|Assignees head|662,84,160,56 → "Assignees" + unfold_more
+3|Due date head|822,84,137,56 → "Due date" + unfold_more
+3|Status head|959,84,118,56 → "Status" + unfold_more
+3|Tags head|1077,84,191,56 → "Tags" (no sort icon)
+Column widths: 56 · 582 · 160 · 137 · 118 · 191 = 1244
+
+### Row "Type=RW-New" (new / unseen task) 1244×48 — 4px primary band at x24 (Frame 114443 4×48 #5500ff)
+3|Selection cell|24,140,56,48|p12/16|stroke #e5e5e5 w1/1/0/0 → checkbox 24/Light
+3|Title cell|80,140,582,48|H g12 p12/24/12/16|stroke w1/2/0/0 → radio_button_unchecked 24/Light #666666 + name "This is a length of a task title entered by the owner/admin/designer" 14/Bold #1a1a1a (FILL, single line)
+3|Member cell|662,140,160,48|p12/24/12/16 → Avatar Generic 24 r4 (#cccccc placeholder when unassigned) + Icon Buttons Primary/24/Outlined person_add (stroke #5500ff, p2)
+3|Due cell|822,140,137,48|p12/24/12/16 → Icon Buttons Primary/24/Outlined calendar_add_on (empty due date)
+3|Status cell|959,140,118,48 → Tag Outlined Blue "OPEN" (fill #edeef7, stroke #dcdef0, 44×20, 10/500)
+3|Tags cell|1077,140,191,48 → Link text Primary "+ Add Tags" (add 20 + 14/Semi Bold #5500ff)
+
+### Row "Type=RW" (seen task) 1244×48
+3|Title cell → radio_button_unchecked (open) or check_circle 24/Light #469e59 (completed) + name 14/Regular #1a1a1a (FILL, ellipsis) + count chips (H g8): comment chip 34×24 p4 g4 fill #f2f2f2 r4 → comment 16/Light #1a1a1a + "1" 12/Medium; attachment chip → attach_file 16 + "1"
+3|Member cell → Avatar Generic 24 r4 (#387e47 "H" when assigned) + person_add 24 primary outlined
+3|Due cell|p12/32/12/16 → "17 Jul ‘26" 14/Regular — #db382a when overdue (open task past due), #1a1a1a otherwise; underlined in the render (Link text style)
+3|Status cell → Tag Outlined Green "COMPLETED" (fill #edf5ee, stroke #daecde, 78×20) or Blue "OPEN"
+3|Tags cell|H g4 → Tag Outlined Default (fill #f2f2f2, stroke #cccccc) "GENERAL" 63×20 · "FOCUS" 51×20 · "+2" 29×20
+Rows are 48 apart (y140 · 188 · 236 · 284). Selected row (frame 192): fill primary-variant lavender, checkbox checked; bulk bar 1 · Save as Template · Duplicate · Delete (red) · ✕ floats bottom-centre.
+
+## Bottom bar 902:26450 — 0,839,1292,53, H p16/24, fill #fff, stroke #e5e5e5 w1/0/0/0 (top rule)
+2|INST|Link text Primary leading icon add|24,856,87,20 → add 20 #5500ff + "Add Task" 14/Semi Bold #5500ff
+
+## Row hover (frame 195): Edit (secondary outlined 36 — the row hover actions of 606:75167 apply) + kebab → Dropdown Menu / Tasks 200 wide, 36px items: Mark as Completed · Rename · Save as Template · Duplicate · Delete (red)
+## Header kebab (frame 197): Save all as Template · Manage Templates · Export all as… · Delete all (red)
+## Add Task button menu (frame 193): Create New Task · Use Template
+## Inline add (frame 194): a new row at the top with the primary band, a text field ("This is a length|"), ✕ and a primary ✓ (24px) at the field's right

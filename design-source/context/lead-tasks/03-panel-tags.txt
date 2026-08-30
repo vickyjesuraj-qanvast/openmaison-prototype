@@ -1,0 +1,31 @@
+# Lead Details › Tasks — spec dump batch 3: Task side panel (frame 53, 902:27363), Add Tag dropdown (frame 65), Manage Tags dialog (902:27709), bulk bar (902:26567)
+
+## Task panel — 400×1024 at x1040 (right edge of the 1440 frame), fill #fff, shadow 0,20/25 #000@10 + 0,6/10 #000@15 (≈ level-4/5); overlays the page, the table stays put
+1|FRAM|Heading|0,0,400,64|H g16 p20/24/20/24|fill #fff|stroke #e5e5e5 w0/0/1/0|shadow level-1
+2|TEXT|"Task"|24,20,192,24|20/Bold #1a1a1a (FILL)
+2|INST|Link Icon ×4 at x232/272/312/352 (24×24, 16 apart): comment · attach_file · more_vert · close — 24/Regular #666666
+1|FRAM|body|0,64,400,960|V g24 p24  (scrolls; the footer stays)
+2|FRAM|KV block|24,88,352,56|H g12 → keys col 120 (V g16): "Creator" · "Created on" 14/Regular #666666; values col 220: Avatar Generic 20 r4 (#387e47 initial) + "David Lee" 14/Regular #1a1a1a (H g8) · "17 Jul ‘26" 14/Regular #1a1a1a
+2|FRAM|fields|24,168,352,296|V g36
+3|INST|Text Area 64 Filled|24,168,352,64|stroke #cccccc w1|r4|p12/16/8/7 → label "Task name" (12 secondary floated) + value 14/Regular (2 lines)
+3|INST|Text Field 48 Filled trailing icon|24,268,352,48|stroke #cccccc|r4 → label "Due date" 12/Regular #666666 floated + "17/07/2026" 14/Regular + trailing "event" 16 #666666   ← build: DateField (picker only, REG-119); value shown as the input format d/m/yyyy per the DS field
+3|INST|Text Area 112 Filled|24,352,352,112 → label "Description" + value 14/Regular (up to 4 lines); resize glyph 8×8 bottom-right
+2|INST|Horizontal rule|24,488,352,1|#e5e5e5   (24 above / 24 below → sections 25 apart from the rule)
+2|FRAM|Assignees|24,513,352,68|V g12 → "Assignees" 14/Semi Bold #1a1a1a; row H g8: Avatar Generic 36 r4 (#387e47 "H" 14/Medium #fff) … + Icon Buttons Primary/36/Outlined person_add (stroke #5500ff, icon 20 #5500ff)
+2|INST|rule|24,605
+2|FRAM|Tags|24,630,352,80|V g12 → head H g12: "Tags" 14/Semi Bold (FILL) + Link text Primary "+ Add Tag" (80×20, add 20 + 14/Semi Bold #5500ff) right; then (frame 65, dropdown open) Text Field 48 Empty trailing icon: placeholder "Search for any tags, hit enter to add" 14/Regular #666666 + keyboard_arrow_down 16 #666666
+   Add Tag dropdown (frame 65, Frame 114521)|24,709,352,207|V p8/0|fill #fff|stroke #e5e5e5 w1|r4|shadow level-3 → Menu rows 350×36 p8/12/8/8 g8: check_box_outline_blank 20/Regular #666666 + "Generic" / "Focus" / "Tag 1" / "Tag 2" 14/Regular #1a1a1a; rule; footer 350×44 p12 → Link text "Manage Tags" 14/Semi Bold #5500ff
+   Picked state (frame 54): the field shows the tag as a chip ("Generic ×" — Tag Outlined Default with a trailing close) and the list row is checked (check_box 20 #5500ff)
+   Tags block with tags set (frame 63 / 190): chips "FOCUS" "GENERAL" … Tag Outlined Default 20px wrapping in a 352-wide box (frame 190 shows them inside a 1px #e5e5e5 r4 box p8) — build: Tag chips wrap, gap 8
+2|INST|rule|24,734
+2|FRAM|Attachments|24,759,352,68|V g12 → "Attachments" 14/Semi Bold; Buttons Secondary/36/Outlined leading icon attach_file "Attach Files" full width 352×36 (p8/16/8/12 g8, stroke #cccccc, text #666666). With attachments (frame 59 / 190): tiles like the Move-stage FileTile (thumbnail + name) — spec silent on exact tile size → reuse components/leads/move-stage/fields.tsx FileTile (REG-151) and say so.
+1|FRAM|Footer|0,956,400,68|H g12 p16/24|fill #fff|stroke #e5e5e5 w1/0/0/0|shadow 0,25/50 #000@25 → Buttons Primary/36/Filled leading icon radio_button_unchecked "Mark as Completed" full width 352×36 (p8/16/8/12 g8)
+Panel kebab (frame 160, screenshot): 200-wide Dropdown Menu → "Save to Template" · "Delete" (red)   — note the mock says "Save to Template" here and "Save as Template" in the row menu; build: "Save as Template" everywhere (one phrase), logged.
+Other member (frame 190): Creator = James (photo avatar), tags box shows six chips; everything else identical.
+
+## Manage Tags dialog (902:27709) — 400×600, r10 (build r12 per modal standard), Heading 64 p20/24 "Manage Tags" + close, bottom rule; body V g20 p24:
+  editing row H g12: Text Field 48 Filled "Generic" (284 wide) + Icon Buttons Primary/24/Filled done + Icon Buttons Secondary/24/Outlined close (H g8, 56 wide)
+  rule; row H g8 20 tall: "Focus" 14/Regular (FILL) + delete 20/Light #666666 + edit 20/Light #666666 (28 apart); rule; "Tag 1"; rule; "Tag 2"
+  (no footer; ✕ closes)
+
+## Bulk bar (902:26567) — 435×50, H g24 p12/24/12/12, fill #fff, stroke #5500ff w1, r8, shadow level-3: count box 24×24 fill #5500ff r4 with "1" 14/Semi Bold #fff · Link text "Save as Template" · "Duplicate" · "Delete" (#db382a) 14/Semi Bold · Vertical rule 1×24 #e5e5e5 · close 24 #666666 — (the listing's bulk-bar component; reuse components/leads/bulk-bar.tsx if its geometry matches, else restyle to these numbers)

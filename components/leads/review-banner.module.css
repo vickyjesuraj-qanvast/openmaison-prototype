@@ -37,9 +37,9 @@
 .tag {
   display: inline-flex; align-items: center;
   padding: var(--om-spacing-1) var(--om-spacing-2);
-  border-radius: 4px;
+  border-radius: var(--om-radius-1);
   background: var(--om-color-tertiary-yellow-default);
-  color: #fff;
+  color: var(--om-color-on-tertiary-yellow-default);
   font: var(--om-type-caption-xs); text-transform: uppercase; white-space: nowrap;
 }
 .spacer { flex: 1; }

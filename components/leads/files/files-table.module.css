@@ -1,0 +1,117 @@
+/*
+ * Lead Details › Files — list view (frame 90, table 931:40167 · spec design-source/context/lead-files/
+ * 01-toolbar-empty-list.txt "List view"). Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 60.
+ * Columns 40 · 420 (fluid) · 240 · 116 · 119 · 114 · 195 (= 1244): Selection and the five data columns are fixed, Title fills.
+ * Copied from components/leads/contracts/contracts-table.module.css (REG-180): the card is ONE grid and the head / rows
+ * are subgrids, so the seven columns are a single shared track. The card deliberately does NOT clip (no overflow hidden):
+ * the row kebab menu must be able to hang below a short table.
+ */
+.card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 240px 116px 119px 114px 195px;
+  width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke #e5e5e5: rows stay 1244 wide (931:40167) */
+  border-radius: var(--om-radius-2);
+}
+
+/* ---- Head row 1244×56 (931:40168) ---- */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
+.hCell {
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* "Header" H g4 p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hCell.colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }   /* "Header / Selection" H g8 p16/0/16/16 */
+.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium #666666 */
+/* Sort is inert (coming soon) — the head keeps the quotes / contracts table's sort-button look. */
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+
+/* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
+.colSel { grid-column: 1; }
+/* Title 420 fluid — NO right rule: the head has none and the row cell's stroke is w1/0/0/0 (top only), spec 01. */
+.colTitle { grid-column: 2; }
+.colOwner { grid-column: 3; }
+.colUpdated { grid-column: 4; }
+.colType { grid-column: 5; }
+.colSize { grid-column: 6; }
+.colAttached { grid-column: 7; }
+
+/* ---- Rows 1244×60 (931:40181 / 931:40194) ---- */
+.row {
+  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift */
+  height: 60px; position: relative;                                      /* relative: the absolute .actions hang off the row */
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-surface-bg); }                    /* hover not mocked — the Quotes / Tasks hover row #f2f2f2 */
+.row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff (frames 96/97, frame 104 rows) */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+.cell.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }   /* "Cell / Selection" H g12 p12/0/12/16 */
+/* Title cell "Cell / Two line" H g12 p12/24/12/16 (931:40181) — declared after .cell so it wins the cascade. */
+.cell.colTitle { gap: var(--om-spacing-3); }
+.cell.colOwner { gap: var(--om-spacing-3); }   /* Avatar 24 + name, H g12 */
+
+/* Thumb 48×36: fill #f2f2f2 r2 — image cover, or the folder icon 24/Regular #666666 centred. */
+.thumb {
+  width: 48px; height: 36px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-0-5);
+  overflow: hidden;
+}
+.thumbImg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.thumbIcon { color: var(--om-color-on-surface-secondary); }
+/* Name "Living room" 14/Medium #1a1a1a (subtitle-m) — a bare button that opens the folder / file. */
+.name {
+  flex: 1; min-width: 0;
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border-radius: var(--om-radius-1);
+}
+.row:hover .name, .name:hover { color: var(--om-color-primary-default); }   /* hover not mocked — the listing's lead-name affordance (table.module.css: row hover → name primary) */
+.name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Comment chip 34×24 (931:40181): H g4 p4, fill #f2f2f2, r4 → comment 16/Light + "1" 12/Medium. */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 24px; padding: var(--om-spacing-1);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  flex-shrink: 0;
+}
+.chipCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); }
+/* Owner name 14/Regular ink, truncated to the 240 column. */
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Row hover kebab (Quotes "Hover button" 910:36709 copied, kebab only): level-1 shadow, right 24, top (60 − 36) / 2 = 12. ---- */
+.actions {
+  position: absolute; right: var(--om-spacing-6); top: 12px;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* White fill + level-1 shadow live on a wrapper so the om icon button keeps its own hover state. */
+.float {
+  display: inline-flex;
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-1);
+}
+.menuWrap { position: relative; display: inline-flex; }

@@ -88,16 +88,6 @@ svg {
   border: 0;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
 /*
  * next/font self-hosts Inter and Noto Serif under generated family names, so
  * the two DS font-family tokens are re-pointed at those CSS variables. This is
@@ -125,6 +115,24 @@ svg {
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
+/* Self-hosted subsets (audit 2026-08-30, PERF-ICON-FONT): the Google stylesheet render-blocked every page and served the
+   FULL Material Symbols Rounded (3.08 MB) + Outlined (1.07 MB). public/fonts/*.subset.woff2 carry only the ~135 icon
+   names this prototype uses (69 KB + 26 KB), keep the FILL / wght / opsz axes, and are same-origin so no DNS/TLS hop.
+   Regenerate with fontTools when a new icon name appears — public/fonts/ICONS.txt lists what is inside. */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;   /* icons are glyphs, not text: never show a fallback letter */
+  src: url('/fonts/material-symbols-rounded.subset.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('/fonts/material-symbols-outlined.subset.woff2') format('woff2');
+}
 .msr { font-family: 'Material Symbols Rounded'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .mso { font-family: 'Material Symbols Outlined'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .msr[data-weight='300'] { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
@@ -137,10 +145,13 @@ svg {
   --motion-toggle: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* prefers-reduced-motion: every CSS transition collapses to an 80ms fade (lib/motion.ts contract). Motion-driven surfaces
+   need `<MotionConfig reducedMotion="user">` at the shell to follow suit (audit 2026-08-30, REDUCED-MOTION-JS). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 80ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

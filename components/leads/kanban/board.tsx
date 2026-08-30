@@ -14,6 +14,7 @@ import { displayDate, isOverdue, moneySGD, relativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
 import { highlightMatch } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
+import { canReturnLead } from '@/lib/leads/stage-policy'
 import styles from './board.module.css'
 
 type Band = { tone: 'green' | 'yellow'; label: string; stages: readonly Stage[] }
@@ -30,11 +31,13 @@ const MAX_SCROLL_STEP = 18 // px per frame at the very edge
 const MENU_CLEARANCE = 100 // px of column body needed below the card kebab for its menu to open downwards
 
 function KanbanCard({
-  lead, now, query, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
+  lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
 }: {
   lead: LeadRow
   now: number
   query: string
+  /** A new lead nobody has seen yet (REG-131): the table row's 4px primary band on the card's left edge (parity sweep, REG-194). */
+  unseen?: boolean
   onKebabDelete: (lead: LeadRow) => void
   onKebabReturn: (lead: LeadRow) => void
   onAssign: (lead: LeadRow, anchor: HTMLElement) => void
@@ -202,6 +205,7 @@ function KanbanCard({
       layoutId={lead.id}
       className={styles.card}
       data-lifted={lifted || undefined}
+      data-unseen={unseen || undefined}
       transition={spring.settle}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -239,11 +243,9 @@ function KanbanCard({
               </button>
             </Tooltip>
             <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide}>
-              <DropdownItem onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>
-                <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
-              </DropdownItem>
-              {lead.source === 'Qanvast' ? (
-                /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads */
+              <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem>
+              {canReturnLead(lead) ? (
+                /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */
                 <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>Return Lead</DropdownItem>
               ) : null}
             </Dropdown>
@@ -284,6 +286,8 @@ function KanbanCard({
             {lead.assignees.slice(0, 2).map((m) => (
               <Avatar key={m.id} name={m.name} color={m.color} size={24} />
             ))}
+            {/* Third and later assignees: the table's "+n" box (table.tsx / REG-195). */}
+            {lead.assignees.length > 2 ? <span className={styles.plusBox}>+{lead.assignees.length - 2}</span> : null}
             <Tooltip label="Assign members">
               <IconButton icon="person_add" label={`Assign members to ${lead.name}`} size={24} variant="primary"
                           onClick={(e) => onAssign(lead, e.currentTarget)} />
@@ -296,11 +300,13 @@ function KanbanCard({
 }
 
 export function KanbanBoard({
-  rows, query, now, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked,
+  rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked,
 }: {
   rows: LeadRow[]
   query: string
   now: number
+  /** Leads nobody has opened or clicked yet — their cards carry the primary band (REG-131, REG-194). */
+  unseenIds?: Set<string>
   /** Pill scope (780:20043): only this stage's column and its band render. */
   stageScope?: Stage | null
   /** Filters modal has active groups: empty columns show the no-results block, not the drop hint. */
@@ -362,7 +368,7 @@ export function KanbanBoard({
                   <motion.div className={styles.colBody} data-col-body layoutScroll>
                     <AnimatePresence mode="popLayout">
                       {leads.map((lead) => (
-                        <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef}
+                        <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef} unseen={unseenIds?.has(lead.id)}
                                     onKebabDelete={onKebabDelete} onKebabReturn={onKebabReturn} onAssign={onAssign}
                                     onDragToStage={onDragToStage} onNameClick={onNameClick} onTaskClick={onTaskClick} pendingDrop={pendingDrop}
                                     canDrop={canDrop} onDropBlocked={onDropBlocked} />

@@ -64,7 +64,8 @@
   overflow: hidden;
   transition: background-color var(--motion-hover);
 }
-.row:hover .cell { background: color-mix(in srgb, black 4%, var(--om-color-surface-default)); }
+/* Row hover = surface-bg, the fill the Lead Details tables draw from frame 195 (audit 2026-08-30; was REG-10's 4% tint, mocked nowhere). */
+.row:hover .cell { background: var(--om-color-surface-bg); }
 
 /* Unseen lead (user 2026-08-29: a new lead nobody has opened or clicked yet): 4px primary bar + bold name — mock row 1. */
 .row[data-highlight='true'] .accent {
@@ -172,30 +173,15 @@
   transform: translateY(-50%);
   display: flex; gap: var(--om-spacing-3); align-items: center;   /* 606:75167: 12px between the hover buttons */
 }
-/* Hover actions (606:75167): DS primary outlined button + primary outlined icon button, white fill, level-1 shadow. */
-.rowEdit {
-  height: 36px; padding: 0 var(--om-spacing-4);
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-primary-default);
+/* Hover actions (606:75167, REG-163): the DS primary outlined Button + the om primary IconButton — the same pair the Lead Details
+   tables build (tasks-table.module.css .float). White fill + level-1 shadow live on a wrapper so each control keeps its own hover state. */
+.float {
+  display: inline-flex;
   border-radius: var(--om-radius-1);
-  box-shadow: var(--om-elevation-level-1);
-  font: var(--om-type-subheading-m); color: var(--om-color-primary-default);
-  cursor: pointer;
-  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
-}
-.rowEdit:hover { background: var(--om-color-hover-04p); border-color: var(--om-color-on-primary-variant); color: var(--om-color-on-primary-variant); }
-.rowKebab {
-  width: 36px; height: 36px;
-  display: inline-flex; align-items: center; justify-content: center;
   background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-primary-default);
-  border-radius: var(--om-radius-1);
   box-shadow: var(--om-elevation-level-1);
-  color: var(--om-color-primary-default);
-  cursor: pointer;
-  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.rowKebab:hover, .rowKebab[aria-expanded='true'] { background: var(--om-color-hover-04p); border-color: var(--om-color-on-primary-variant); color: var(--om-color-on-primary-variant); }
+.menuWrap { position: relative; display: inline-flex; }
 
 /* Copy-phone affordance in the hovered name cell (779:24696). */
 .phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
@@ -209,12 +195,5 @@
 .row:hover .copyBtn, .copyBtn:focus-visible { opacity: 1; }
 .copyBtn:hover { color: var(--om-color-on-surface-default); }
 
-/* (unused since REG-90 — kept for reference) Invisible click target for the empty tasks cell (REG-44). */
-.taskEmptyTarget {
-  width: 100%; height: 36px;
-  border: 0; background: none; padding: 0; cursor: pointer;
-  border-radius: var(--om-radius-1);
-}
-
-/* C2 fallback where the name is already bold (highlight row). */
-.row[data-highlight] .name mark { color: var(--om-color-primary-default); }
+/* C2 (REG-69/71): every name is bold since REG-161, so the search hit falls back to colour on every row — as the kanban card does (board.module.css .cardName mark). */
+.name mark { color: var(--om-color-primary-default); }
