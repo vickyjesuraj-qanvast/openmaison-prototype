@@ -31,7 +31,14 @@ import { downloadTasks } from '@/lib/leads/export'
 import styles from './lead-tasks.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
-const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) } }
+/* Anchored popovers are fixed-position: the clamp keeps the surface on screen, so it must reserve THAT popover's own
+   footprint (+20 margin) — not one size for both. 400×440 gives back the listing's 420/460 (assign-popover.module.css
+   .card); the tag picker is 352 and only as tall as its rows, so it no longer floats up to 200px off its cell on a
+   short window. */
+const anchorRect = (el: HTMLElement, w: number, h: number) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - h - 20), left: Math.min(r.left, window.innerWidth - w - 20) } }
+const assignPos = (el: HTMLElement) => anchorRect(el, 400, 440)
+/** Tag picker (tag-picker.module.css): 352 wide · 48 field + the list (8/8 padding, 36 per row capped at 288) + 1 rule + 44 foot. */
+const tagsPos = (el: HTMLElement, tagCount: number) => anchorRect(el, 352, 48 + 16 + Math.min(tagCount * 36, 288) + 1 + 44)
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
 /** tasks-actions that only `revalidatePath('/leads')` (tags, templates) — the tab must refresh itself after them (use-run.ts). */
@@ -88,20 +95,21 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const [exportOpen, setExportOpen] = useState(false)
 
   const startAdd = () => { setRenaming(null); setAdding(true) }
-  // Create quick links › Task (858:26317) starts the inline add row on this tab.
-  useCreateIntent({ event: CREATE_EVENTS.tasks, onIntent: startAdd })
+  // Create quick links › Task (858:26317) starts the inline add row: in place on this tab, or on landing from
+  // another tab with `?new=1` (the landing the Quotes / Notes / Questionnaire tabs already accept).
+  useCreateIntent({ event: CREATE_EVENTS.tasks, landing: { href: `/leads/${leadId}/tasks` }, onIntent: startAdd })
   // Anchored popovers follow their trigger while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(assign || tagsFor)
   useEffect(() => {
     if (!anyAnchored) return
     const follow = () => {
-      setAssign((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
-      setTagsFor((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
+      setAssign((s) => (s ? (offscreen(s.el) ? null : { ...s, ...assignPos(s.el) }) : s))
+      setTagsFor((s) => (s ? (offscreen(s.el) ? null : { ...s, ...tagsPos(s.el, tags.length) }) : s))
     }
     document.addEventListener('scroll', follow, true)
     window.addEventListener('resize', follow)
     return () => { document.removeEventListener('scroll', follow, true); window.removeEventListener('resize', follow) }
-  }, [anyAnchored])
+  }, [anyAnchored, tags.length])
 
   const open = (task: TaskRow) => {
     if (unseen.has(task.id)) { setSeenLocally((s) => new Set(s).add(task.id)); void markTaskSeen(task.id) }
@@ -109,8 +117,8 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   }
   // One flip per task at a time — a double click cannot toggle it twice (RACE-05).
   const toggleDone = (task: TaskRow) => run(task.done ? 'reopen the task' : 'complete the task', () => updateTask(task.id, { done: !task.done }), task.done ? undefined : 'Task completed', { guard: `done:${task.id}` })
-  const openAssign = (task: TaskRow, anchor: HTMLElement) => setAssign((a) => (a?.el === anchor ? null : { taskId: task.id, ...anchorRect(anchor) }))
-  const openTags = (task: TaskRow, anchor: HTMLElement) => setTagsFor((a) => (a?.el === anchor ? null : { taskId: task.id, ...anchorRect(anchor) }))
+  const openAssign = (task: TaskRow, anchor: HTMLElement) => setAssign((a) => (a?.el === anchor ? null : { taskId: task.id, ...assignPos(anchor) }))
+  const openTags = (task: TaskRow, anchor: HTMLElement) => setTagsFor((a) => (a?.el === anchor ? null : { taskId: task.id, ...tagsPos(anchor, tags.length) }))
   const openDue = (task: TaskRow, anchor: HTMLElement) => { dueAnchor.current = anchor; setDueFor((d) => (d?.el === anchor ? null : { taskId: task.id, el: anchor })) }
   const rowMenu = (task: TaskRow, action: 'complete' | 'rename' | 'template' | 'duplicate' | 'delete') => {
     if (action === 'complete') void toggleDone(task)
@@ -127,12 +135,16 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const tagsTask = tagsFor ? tasks.find((t) => t.id === tagsFor.taskId) : null
   const dueTask = dueFor ? tasks.find((t) => t.id === dueFor.taskId) : null
   const attachTask = attachFor ? tasks.find((t) => t.id === attachFor) : null
-  // Bulk bar (902:26567 / frames 192 · 159): everything selected → the single "Delete All" action.
-  const bulkActions = selected.size === visible.length
-    ? [{ label: 'Delete All', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: true }) }]
+  // Bulk bar (902:26567 / frames 192 · 159): everything selected → the single "Delete All" action. "Everything" is the
+  // lead's whole task list — the same `tasks` the toolbar's Delete all uses; measured against `visible` it also fired
+  // inside a search or filter, where ticking the one matching row promised a project-wide delete that never happened.
+  const allTasks = selectedIds.length === tasks.length
+  const bulkActions = allTasks
+    ? [{ label: 'Delete All', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: allTasks }) }]
     : [
         { label: 'Save as Template', onClick: () => setSaveTemplateFor(selectedIds) },
-        { label: 'Duplicate', onClick: () => { setSelected(new Set()); void run('duplicate the tasks', () => duplicateTasks(selectedIds), `${selectedIds.length} tasks duplicated`) } },
+        // The noun follows the count, as the attach snackbar below already does — one ticked row read "1 tasks duplicated".
+        { label: 'Duplicate', onClick: () => { setSelected(new Set()); void run('duplicate the tasks', () => duplicateTasks(selectedIds), `${selectedIds.length === 1 ? '1 task' : `${selectedIds.length} tasks`} duplicated`) } },
         { label: 'Delete', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: false }) },
       ]
 
@@ -167,6 +179,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           onRenameSubmit={(id, title) => { setRenaming(null); if (title.trim()) void run('rename the task', () => updateTask(id, { title: title.trim() })) }}
           onRenameCancel={() => setRenaming(null)}
           onOpen={(task) => open(task)}
+          onOpenComments={(task) => { setOpenId(task.id); setPanelView('comments') }}
           onToggleDone={(task) => { void toggleDone(task) }}
           onAssign={openAssign}
           onDue={openDue}

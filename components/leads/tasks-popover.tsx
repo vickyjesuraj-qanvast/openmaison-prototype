@@ -123,7 +123,9 @@ export function TasksPopover({
 
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setAdding(false); setDraft(''); setSaving(false); setCompleting(new Set()) }
+    // A lead with no tasks shows "+ Add task" in the cell, so opening the popover IS the add intent — start composing
+    // instead of making the user press Add Task again inside it (user 2026-08-31). With tasks, the list comes first.
+    if (open) { setAdding(lead !== null && lead.tasks.length === 0); setDraft(''); setSaving(false); setCompleting(new Set()) }
   }
 
   useEffect(() => {
@@ -212,7 +214,8 @@ export function TasksPopover({
           {adding ? (
             <div className={styles.addArea}
                  onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
-              <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} />
+              {/* The composer always opens focused — it only exists because the user asked to write something. */}
+              <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
               <div className={styles.addBtns}>
                 <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
                 <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>

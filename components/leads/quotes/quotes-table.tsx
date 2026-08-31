@@ -10,7 +10,8 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import type { Quote } from '@/lib/db/schema'
 import { displayDate, money } from '@/lib/format'
-import { QUOTE_STATUSES, isQuoteOverdue, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { isQuoteOverdue, quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
+import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-table.module.css'
 
 /** Row kebab (910:36723): Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. */
@@ -20,6 +21,8 @@ export type QuotesTableProps = {
   quotes: Quote[]
   /** Clock captured by the caller (purity rule) — overdue = not Signed + due before today. */
   now: number
+  /** Settings › Leads › Quote approval — decides which statuses the row menu can offer. */
+  approval: QuoteApproval
   selected: Set<string>
   onSelect: (ids: Set<string>) => void
   onStatus: (quote: Quote, status: QuoteStatus) => void
@@ -28,7 +31,8 @@ export type QuotesTableProps = {
   onRowMenu: (quote: Quote, action: QuoteRowAction) => void
 }
 
-/* Column order + head copy — exactly as the mock types it (910:36323, spec 01). Every head carries unfold_more 16. */
+/* Column order + head copy — exactly as the mock types it (910:36323, spec 01). Every head carries unfold_more 16.
+   Approval Date is part of the approval lifecycle, so it is dropped with it (see `showApproval` below). */
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle },
   { key: 'status', label: 'Status', col: styles.colStatus },
@@ -40,16 +44,39 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'approval', label: 'Approval Date', col: styles.colApproval },
 ]
 
+/* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
+   ~560px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
+   Same shape as the kanban card kebab (components/leads/kanban/board.tsx), with the clipping edge found by walking up. */
+const MENU_H = 6 * 36 + 8 + 2   /* menus.module.css: the six items at 36 + the list's 4px padding + its 1px border = 226 */
+const MENU_GAP = 4              /* the Dropdown hangs at calc(100% + 4px) */
+function menuSideFor(trigger: HTMLElement): 'up' | 'down' {
+  let top = 0, bottom = window.innerHeight
+  for (let n = trigger.parentElement; n; n = n.parentElement) {
+    if (getComputedStyle(n).overflowY === 'visible') continue   /* only a clipping ancestor (the lead body) can cut the menu off */
+    const r = n.getBoundingClientRect()
+    top = Math.max(top, r.top); bottom = Math.min(bottom, r.bottom)
+  }
+  const k = trigger.getBoundingClientRect(), need = MENU_H + MENU_GAP
+  return bottom - k.bottom < need && k.top - top >= need ? 'up' : 'down'
+}
+
 /**
  * Lead Details › Quotes table (910:36322) — specs design-source/context/lead-quotes/01-listing-table.txt +
  * 02-rows-menus.txt. Head 56 · rows 64; columns 40 · 319 · 128 · 120 · 120 · 120 · 120 · 120 · 157 (Title fills).
  * Structure copied from components/leads/tasks/tasks-table.tsx: every icon-only control carries a Tooltip (REG-75);
  * sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function QuotesTable({ quotes, now, selected, onSelect, onStatus, onDue, onView, onRowMenu }: QuotesTableProps) {
+export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu }: QuotesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
   const [statusRow, setStatusRow] = useState<string | null>(null)
+  const statuses = quoteStatuses(approval)
+  /* The head list follows the studio's lifecycle like the status menu does (REG-214): a studio that does not review
+     quotes internally has no approval date to show, and the column headed one for every row. A quote approved before
+     the setting was switched off keeps its date visible — the same courtesy the row menu pays a retired status. */
+  const showApproval = statuses.includes('Approved') || quotes.some((q) => q.approvedAt)
+  const heads = showApproval ? HEADS : HEADS.filter((h) => h.key !== 'approval')
 
   const allSelected = quotes.length > 0 && quotes.every((q) => selected.has(q.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(quotes.map((q) => q.id)))
@@ -60,13 +87,13 @@ export function QuotesTable({ quotes, now, selected, onSelect, onStatus, onDue, 
   }
 
   return (
-    <div className={styles.card} role="table" aria-label="Quotes">
+    <div className={styles.card} role="table" aria-label="Quotes" data-no-approval={showApproval ? undefined : ''}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
           <Checkbox isSelected={allSelected} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
         </div>
-        {HEADS.map((h) => (
+        {heads.map((h) => (
           <div key={h.key} className={`${styles.hCell} ${h.col ?? ''}`} role="columnheader">
             {/* Sort is inert in this prototype — the head answers coming soon. */}
             <button type="button" className={styles.hSort} onClick={comingSoon}>
@@ -77,21 +104,26 @@ export function QuotesTable({ quotes, now, selected, onSelect, onStatus, onDue, 
         ))}
       </div>
 
-      {quotes.map((quote, idx) => (
+      {quotes.map((quote) => (
         <QuoteRowView
           key={quote.id}
           quote={quote}
           now={now}
           selected={selected.has(quote.id)}
           onToggleSelect={() => toggleOne(quote.id)}
+          statuses={statuses}
+          showApproval={showApproval}
           statusOpen={statusRow === quote.id}
           onStatusToggle={() => setStatusRow((s) => (s === quote.id ? null : quote.id))}
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === quote.id}
-          onMenuToggle={() => setMenuRow((m) => (m === quote.id ? null : quote.id))}
+          onMenuToggle={(trigger) => {
+            if (menuRow !== quote.id) setMenuSide(menuSideFor(trigger))   /* measure the room below the kebab before it opens */
+            setMenuRow((m) => (m === quote.id ? null : quote.id))
+          }}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up on the last two rows of a 3+ row table — the leads / tasks table rule (build plan). */
-          menuSide={quotes.length >= 3 && idx >= quotes.length - 2 ? 'up' : 'down'}
+          /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
+          menuSide={menuSide}
           onStatus={onStatus} onDue={onDue} onView={onView} onRowMenu={onRowMenu}
         />
       ))}
@@ -102,7 +134,7 @@ export function QuotesTable({ quotes, now, selected, onSelect, onStatus, onDue, 
 /* ---------------------------------------------------------------------------------------------- */
 
 function QuoteRowView({
-  quote, now, selected, onToggleSelect,
+  quote, now, selected, onToggleSelect, statuses, showApproval,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
   onStatus, onDue, onView, onRowMenu,
@@ -111,11 +143,13 @@ function QuoteRowView({
   now: number
   selected: boolean
   onToggleSelect: () => void
+  statuses: readonly QuoteStatus[]
+  showApproval: boolean
   statusOpen: boolean
   onStatusToggle: () => void
   onStatusClose: () => void
   menuOpen: boolean
-  onMenuToggle: () => void
+  onMenuToggle: (trigger: HTMLElement) => void
   onMenuClose: () => void
   menuSide: 'up' | 'down'
   onStatus: (quote: Quote, status: QuoteStatus) => void
@@ -161,7 +195,10 @@ function QuoteRowView({
           <Dropdown open={statusOpen} onClose={onStatusClose} align="left">
             {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
                 aria-current + the "current" meta — DropdownItem takes no attributes. */}
-            {QUOTE_STATUSES.map((s) => {
+            {/* The studio's lifecycle, not the full five: a studio that does not review quotes internally can never
+                set "Sent for Approval" or "Approved" (Settings › Leads › Quote approval, user 2026-08-30). Same list the
+                Overview widget draws its track from. A quote already holding a retired status still shows it above. */}
+            {statuses.map((s) => {
               const isCurrent = s === quote.status
               return (
                 <button
@@ -201,7 +238,7 @@ function QuoteRowView({
       <div className={`${styles.cell} ${styles.colCreated}`} role="cell">{displayDate(quote.createdAt)}</div>
       <div className={`${styles.cell} ${styles.colSent}`} role="cell">{quote.sentAt ? displayDate(quote.sentAt) : '-'}</div>
       <div className={`${styles.cell} ${styles.colUpdated}`} role="cell">{displayDate(quote.updatedAt ?? quote.createdAt)}</div>
-      <div className={`${styles.cell} ${styles.colApproval}`} role="cell">{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div>
+      {showApproval ? <div className={`${styles.cell} ${styles.colApproval}`} role="cell">{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div> : null}
 
       {/* Row hover actions (910:36644 / 910:36709 "Hover button"): View + kebab, level-1 shadow, right 24 — tasks pattern with "View". */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
@@ -212,7 +249,7 @@ function QuoteRowView({
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <IconButton icon="more_vert" label={`More actions for ${quote.title}`} variant="primary"
-                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
+                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
           <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide}>

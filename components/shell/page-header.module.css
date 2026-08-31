@@ -1,5 +1,8 @@
-/* Page Header / Leads - L1 (799:23251) — px-24 py-16, elevation level-1, title heading/h3.
-   Sticks to the top of the viewport once the page scrolls (user request 2026-08-27). */
+/* Page Header / Leads - L1 (799:23251) — px-24 py-16, title heading/h3.
+   Sticks to the top of the viewport once the page scrolls (user request 2026-08-27).
+   Edge treatment is the L2 header's, not the mock's level-1 drop shadow: one page header should not sit on a shadow
+   while the next sits on a hairline (user 2026-08-30 — "primary and secondary header … consistent as it is in the
+   leads details view"). Both now draw the 1px inside bottom stroke on their plate. */
 .header {
   position: sticky; top: var(--om-spacing-2); z-index: 20;
   display: flex;
@@ -8,7 +11,6 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   background: transparent;   /* painted by ::after (rounded) */
   border-radius: var(--om-radius-2) var(--om-radius-2) 0 0;
-  box-shadow: var(--om-elevation-level-1);
 }
 /* While stuck, the 8px canvas gutter above the header is part of the body's box. Two plates behind the content:
    ::before paints the canvas over the gutter + the corner cut-outs, ::after is the white header plate with the body's
@@ -20,6 +22,7 @@
 .header::after {
   content: ''; position: absolute; inset: 0; z-index: -1;
   background: var(--om-color-surface-default); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; pointer-events: none;
+  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);   /* the 1px INSIDE bottom stroke, as page-header-l2.module.css */
 }
 .title {
   flex: 1;

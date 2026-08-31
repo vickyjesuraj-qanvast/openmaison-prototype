@@ -191,7 +191,10 @@ export function ReviewSheet({
                           const nw = newValue(selected, f)
                           const matched = matchedLabel(selected) === f.label
                           const pick: Pick = nw ? pickOf(f.label) : 'existing'
-                          const merged = f.radio ? (pick === 'new' ? nw : ex) : (ex || nw)
+                          // Merged result mirrors mergeImportRow (app/leads/actions.ts): only the radio fields are sent
+                          // as picks, so Source / Property type / Address always keep the existing value. `ex || nw`
+                          // promised the imported one whenever the lead had none — an address the merge never writes.
+                          const merged = f.radio ? (pick === 'new' ? nw : ex) : ex
                           const showAlt = f.label === 'Phone' && ex && nw && ex !== nw
                           return (
                             <div key={f.label} className={styles.tr} role="row" data-matched={matched || undefined}>

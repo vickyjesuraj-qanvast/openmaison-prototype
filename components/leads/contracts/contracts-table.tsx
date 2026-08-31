@@ -34,6 +34,22 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'updated', label: 'Updated', col: styles.colUpdated },
 ]
 
+/* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
+   ~550px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
+   Same helper as the quotes twin (components/leads/quotes/quotes-table.tsx), after the kanban card kebab. */
+const MENU_H = 6 * 36 + 8 + 2   /* menus.module.css: the six items at 36 + the list's 4px padding + its 1px border = 226 */
+const MENU_GAP = 4              /* the Dropdown hangs at calc(100% + 4px) */
+function menuSideFor(trigger: HTMLElement): 'up' | 'down' {
+  let top = 0, bottom = window.innerHeight
+  for (let n = trigger.parentElement; n; n = n.parentElement) {
+    if (getComputedStyle(n).overflowY === 'visible') continue   /* only a clipping ancestor (the lead body) can cut the menu off */
+    const r = n.getBoundingClientRect()
+    top = Math.max(top, r.top); bottom = Math.min(bottom, r.bottom)
+  }
+  const k = trigger.getBoundingClientRect(), need = MENU_H + MENU_GAP
+  return bottom - k.bottom < need && k.top - top >= need ? 'up' : 'down'
+}
+
 /**
  * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
  * 01-listing-empty.txt + 00-build-plan.md. Head 48 · rows 68; columns 557 (fluid) · 128 · 120 · 142 · 140 · 157 (= 1244).
@@ -43,6 +59,7 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
 export function ContractsTable({ contracts, onStatus, onView, onRowMenu }: ContractsTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
   const [statusRow, setStatusRow] = useState<string | null>(null)
 
   return (
@@ -60,7 +77,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu }: Contr
         ))}
       </div>
 
-      {contracts.map((contract, idx) => (
+      {contracts.map((contract) => (
         <ContractRowView
           key={contract.id}
           contract={contract}
@@ -68,10 +85,13 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu }: Contr
           onStatusToggle={() => setStatusRow((s) => (s === contract.id ? null : contract.id))}
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === contract.id}
-          onMenuToggle={() => setMenuRow((m) => (m === contract.id ? null : contract.id))}
+          onMenuToggle={(trigger) => {
+            if (menuRow !== contract.id) setMenuSide(menuSideFor(trigger))   /* measure the room below the kebab before it opens */
+            setMenuRow((m) => (m === contract.id ? null : contract.id))
+          }}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up on the last two rows of a 3+ row table — the leads / tasks / quotes table rule (build plan). */
-          menuSide={contracts.length >= 3 && idx >= contracts.length - 2 ? 'up' : 'down'}
+          /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
+          menuSide={menuSide}
           onStatus={onStatus} onView={onView} onRowMenu={onRowMenu}
         />
       ))}
@@ -92,7 +112,7 @@ function ContractRowView({
   onStatusToggle: () => void
   onStatusClose: () => void
   menuOpen: boolean
-  onMenuToggle: () => void
+  onMenuToggle: (trigger: HTMLElement) => void
   onMenuClose: () => void
   menuSide: 'up' | 'down'
   onStatus: (contract: Contract, status: ContractStatus) => void
@@ -161,7 +181,7 @@ function ContractRowView({
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <IconButton icon="more_vert" label={`More actions for ${contract.title}`} variant="primary"
-                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
+                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
           <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide}>

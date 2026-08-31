@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Button, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
+import { AssigneeField } from './assignee-field'
 import { DateField } from '@/components/om/date-field'
 import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
@@ -12,6 +13,7 @@ import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
 import { modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
 import { parseInputDate, groupDigits } from '@/lib/format'
+import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -40,14 +42,25 @@ export type LeadFormData = {
   areaSize: string
   areaUnit: string
   notes: string
+  /** Member ids (REG-231). Many-to-many, like `lead_assignees` — never a single id. */
+  assignees: string[]
 }
 
-type LeadFormErrors = FieldErrors<'name' | 'phone' | 'email' | 'budget' | 'startDate'>
+type LeadFormErrors = FieldErrors<'name' | 'phone' | 'email' | 'budget' | 'startDate' | 'assignees'>
+
+/** A field the modal can be opened ON — the info column's "Add" links name the row the user actually pressed. */
+export type LeadFormField = keyof LeadFormData
+/** What the host holds while the modal is open: which mode, and optionally the field it was opened on. */
+export type LeadFormOpen = ({ mode: 'create' } | { mode: 'edit'; lead: LeadRow }) & { focus?: LeadFormField }
+/** Fields that live behind "Additional info": opening on one of them has to expand that section first. */
+const IN_MORE: ReadonlySet<LeadFormField> = new Set<LeadFormField>([
+  'email', 'leadAddress', 'budget', 'startDate', 'style', 'keyCollection', 'condition', 'areaSize', 'areaUnit', 'notes',
+])
 
 const emptyForm = (): LeadFormData => ({
   name: '', phone: '', source: '', propertyType: '', propertyAddress: '',
   email: '', leadAddress: '', budget: '', startDate: '', style: '',
-  keyCollection: '', condition: '', areaSize: '', areaUnit: 'sq ft', notes: '',
+  keyCollection: '', condition: '', areaSize: '', areaUnit: 'sq ft', notes: '', assignees: [],
 })
 
 const fromLead = (lead: LeadRow): LeadFormData => ({
@@ -68,11 +81,17 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
   areaSize: lead.areaSqft ? String(lead.areaSqft) : '',
   areaUnit: 'sq ft',
   notes: lead.notes ?? '',
+  assignees: lead.assignees.map((m) => m.id),   // the only place edit mode learns the lead's current owners
 })
 
-/** Pure validation — required fields are exactly the mock's starred ones (Lead name*, Lead phone number*). */
-export function validateLeadForm(data: LeadFormData): LeadFormErrors {
+/**
+ * Pure validation — required fields are exactly the mock's starred ones (Lead name*, Lead phone number*).
+ * `requireAssignee` closes the door REG-130 already guards elsewhere: past New a lead must keep an owner, which the
+ * Assign popover enforces (`requireOne`). Without it the form would be a second way to clear the last one.
+ */
+export function validateLeadForm(data: LeadFormData, requireAssignee = false): LeadFormErrors {
   const errors: LeadFormErrors = {}
+  if (requireAssignee && data.assignees.length === 0) errors.assignees = MSG.assignee
   if (!data.name.trim()) errors.name = MSG.required
   if (data.phone.replace(/\D/g, '').length !== 8) errors.phone = MSG.phone
   if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) errors.email = MSG.email
@@ -131,9 +150,12 @@ function AreaField({
 }
 
 export function LeadFormModal({
-  form, onClose, onSubmit, now,
+  form, team, onClose, onSubmit, now,
 }: {
-  form: { mode: 'create' } | { mode: 'edit'; lead: LeadRow } | null
+  /** The studio's members, for the Assign member field (REG-231). */
+  team: Member[]
+  /** `focus` opens the modal on that field — the user pressed "Add" on one row, not "Edit lead" (user 2026-08-31). */
+  form: LeadFormOpen | null
   onClose: () => void
   /** Return false when the save failed (the modal stays open for retry). */
   onSubmit: (mode: 'create' | 'edit', data: LeadFormData, leadId?: string) => boolean | Promise<boolean>
@@ -152,6 +174,7 @@ export function LeadFormModal({
   const phoneRef = useRef<HTMLInputElement | null>(null)
   const emailRef = useRef<HTMLInputElement | null>(null)
   const budgetRef = useRef<HTMLInputElement | null>(null)
+  const assigneeRef = useRef<HTMLInputElement | null>(null)
   const [mountedAt] = useState(() => Date.now())
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
 
@@ -160,7 +183,7 @@ export function LeadFormModal({
     setWasOpen(open)
     if (open && form) {
       setData(form.mode === 'edit' ? fromLead(form.lead) : emptyForm())
-      setExpanded(form.mode === 'edit')
+      setExpanded(form.mode === 'edit' || (form.focus ? IN_MORE.has(form.focus) : false))
       setSubmitted(false)
       setSubmitting(false)
     }
@@ -169,6 +192,28 @@ export function LeadFormModal({
   useEffect(() => {
     if (open) submittingRef.current = false
   }, [open])
+
+  /*
+   * Open ON a field. Pressing "Add" beside Property address means "let me fill that", not "here are fifteen fields,
+   * find it" — so the modal scrolls that row into view and puts the caret in it. A new lead has no such target, so it
+   * opens on its first field for the same reason (user 2026-08-31). Two frames: one for the modal's entrance, one for
+   * "Additional info" to finish expanding when the target lives inside it.
+   */
+  const focusTarget: LeadFormField | null = form ? form.focus ?? (form.mode === 'create' ? 'name' : null) : null
+  useEffect(() => {
+    if (!open || !focusTarget) return
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        const host = document.querySelector(`[role="dialog"] [data-field="${focusTarget}"]`)
+        if (!host) return
+        const el = host.querySelector<HTMLElement>('input:not([type="hidden"]), textarea')
+        host.scrollIntoView({ block: 'center' })
+        el?.focus()
+      })
+    })
+    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner) }
+  }, [open, focusTarget])
 
   useEffect(() => {
     if (!open) return
@@ -181,16 +226,18 @@ export function LeadFormModal({
     setData((d) => ({ ...d, [k]: v }))
 
   // Errors are shown only after the first submit attempt, then re-computed live so each clears as it is fixed.
-  const errors: LeadFormErrors = submitted ? validateLeadForm(data) : {}
+  // Past New, the lead must keep an owner — the same gate the Assign popover applies (REG-130).
+  const requireAssignee = !!form && form.mode === 'edit' && form.lead.stage !== 'New'
+  const errors: LeadFormErrors = submitted ? validateLeadForm(data, requireAssignee) : {}
 
   const submit = async () => {
     if (!form || submittingRef.current) return
-    const errs = validateLeadForm(data)
+    const errs = validateLeadForm(data, requireAssignee)
     setSubmitted(true)
     if (hasErrors(errs)) {
       // A hidden error must become visible, or the button reads as a no-op.
       if (errs.email || errs.budget || errs.startDate) setExpanded(true)
-      const first = errs.name ? nameRef : errs.phone ? phoneRef : errs.email ? emailRef : errs.budget ? budgetRef : null
+      const first = errs.name ? nameRef : errs.phone ? phoneRef : errs.assignees ? assigneeRef : errs.email ? emailRef : errs.budget ? budgetRef : null
       if (first === emailRef || first === budgetRef) requestAnimationFrame(() => first.current?.focus())   // the section may be expanding this very tick — focus once it has mounted
       else first?.current?.focus()
       return
@@ -225,20 +272,23 @@ export function LeadFormModal({
 
             <div className={styles.body}>
               <div className={styles.section}>
-                <div className={styles.fieldWrap}>
+                <div className={styles.fieldWrap} data-field="name">
                   <TextField label="Lead name*" value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef} />
                 </div>
-                <div className={styles.fieldWrap}>
+                <div className={styles.fieldWrap} data-field="phone">
                   <PhoneField value={data.phone} onChange={set('phone')} error={errors.phone} inputRef={phoneRef} />
                 </div>
-                <div className={styles.fieldRow}>
+                <div className={styles.fieldRow} data-field="source">
                   <TextField label="Lead source" mode="select" value={data.source} options={SOURCES} onChange={set('source')} />
                   <TextField label="Property type" mode="select" value={data.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
                 </div>
-                <div className={styles.fieldWrap}>
+                <div className={styles.fieldWrap} data-field="propertyAddress">
                   <TextField label="Property address" value={data.propertyAddress} onChange={set('propertyAddress')} trailingIcon={null} />
                   <span className={styles.helper}>Client project address.</span>
                 </div>
+                {/* Assign member (REG-231) — after Property address, per the request. Carries its own data-field. */}
+                <AssigneeField team={team} value={data.assignees} onChange={set('assignees')}
+                               error={errors.assignees} inputRef={assigneeRef} />
               </div>
 
               <div className={styles.section}>
@@ -258,10 +308,10 @@ export function LeadFormModal({
                       style={{ width: '100%' }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--om-spacing-6)', width: '100%' }}>
-                        <TextField label="Lead email" value={data.email} onChange={set('email')} trailingIcon={null}
-                                   type="email" inputMode="email" error={errors.email} inputRef={emailRef} />
-                        <TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} />
-                        <div className={styles.fieldRow}>
+                        <div className={styles.fieldWrap} data-field="email"><TextField label="Lead email" value={data.email} onChange={set('email')} trailingIcon={null}
+                                   type="email" inputMode="email" error={errors.email} inputRef={emailRef} /></div>
+                        <div className={styles.fieldWrap} data-field="leadAddress"><TextField label="Lead address" value={data.leadAddress} onChange={set('leadAddress')} trailingIcon={null} /></div>
+                        <div className={styles.fieldRow} data-field="budget">
                           <TextField label="Estimated budget (S$)" value={data.budget} numeric="amount"
                                      onChange={set('budget')} trailingIcon={null}
                                      error={errors.budget} inputRef={budgetRef} />
@@ -278,11 +328,14 @@ export function LeadFormModal({
                           <TextField label="Condition" mode="select" value={data.condition} options={CONDITION_OPTIONS} onChange={set('condition')} />
                           <AreaField value={data.areaSize} unit={data.areaUnit} onChange={set('areaSize')} onUnitChange={set('areaUnit')} />
                         </div>
-                        <div className={styles.fieldWrap}>
-                          {/* Notes = the DS TextArea (page-checklist › Fields: never a raw input) at the mock's 96px — lead-form.module.css .notes */}
-                          <TextArea aria-label="Notes" placeholder="Notes" value={data.notes}
+                        <div className={styles.fieldWrap} data-field="notes">
+                          {/* "Remarks" (user 2026-08-31): the mock types "Notes", which collided with the Notes tab —
+                              a different record entirely (lead_notes). The DS TextArea at the mock's 96px
+                              (page-checklist › Fields: never a raw input) — lead-form.module.css .notes.
+                              The helper used to say these appear on the Notes page; they do not, and never did. */}
+                          <TextArea aria-label="Remarks" placeholder="Remarks" value={data.notes}
                                     onChange={(v: string) => set('notes')(v)} className={styles.notes} />
-                          <span className={styles.helper}>You can view these notes under the Notes page in Leads Detail.</span>
+                          <span className={styles.helper}>Shown under Other info on the lead’s Overview.</span>
                         </div>
                       </div>
                     </motion.div>

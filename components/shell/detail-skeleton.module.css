@@ -11,6 +11,12 @@
 .grid { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
 .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .tools { width: 72px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* The quick-links strip has two widths, not one (quick-links.module.css: 72 collapsed 858:25094 · 140 expanded 858:26317,
+   remembered per browser in `om.detail.quickLinks`), so the ghost takes its width from the strip the page is actually
+   rendering instead of from the collapsed mock — otherwise the bones overhang the real cards by 68px through the whole
+   crossfade for anyone who has the strip open. Collapsed stays the default: `loading.tsx` has no page under it, and the
+   server always renders the strip collapsed. */
+body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140px; gap: var(--om-spacing-3); }
 
 /* Wide tab frame (tasks / quotes / contracts / files …): toolbar row, then a table — 48px head, 56px rows (the tabs' shared geometry). */
 .toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }

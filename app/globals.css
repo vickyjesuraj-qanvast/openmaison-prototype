@@ -139,6 +139,22 @@ svg {
 .msr[data-fill='1'] { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .msr[data-weight='300'][data-fill='1'] { font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
 
+/*
+ * Checkbox glyph size (user 2026-08-30). The DS checkbox draws its square edge-to-edge in a 24px box, so beside the
+ * mocks — which use the Material Symbols `check_box_outline_blank` at 24, an 18px square inside a 24px em box — it read
+ * a third too heavy in every table and list. The control keeps its 24px hit area and alignment; only the drawn glyph
+ * comes down to the mocks' optical size (18 + 3 + 3 = 24).
+ */
+label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; margin: 3px; }
+
+/*
+ * The DS SearchBar already draws the focus state the mocks specify — a 2px primary stroke INSIDE its own box, the
+ * same single border the listing's hand-rolled search paints (components/leads/toolbar.module.css .search:focus-within).
+ * The global ring above then added a SECOND 2px outline 2px outside it, so every tab's search focused as a double
+ * rectangle while the listing's focused as one (user 2026-08-30). The bar keeps the indicator; the input drops it.
+ */
+[class*='searchBar'] input:focus-visible { outline: none; }
+
 /* Micro-motion (Figma: 50ms ease-out) applied by primitives via this token. */
 :root {
   --motion-hover: 50ms ease-out;

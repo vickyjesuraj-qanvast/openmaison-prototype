@@ -82,7 +82,13 @@
 }
 /* Row hover turns the name primary (user 2026-08-27) — not just hovering the name itself. */
 .row:hover .name, .name:hover { color: var(--om-color-primary-default); }
-.phone { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* The value is data-length: an On Hold row appends " · On hold till: 31 Oct '26" (table.tsx), ~210px of content in the
+   200px name cell at the column's 240px floor — it wrapped to a second line and the 64px row sliced name and phone.
+   One line, ellipsised; the full date stays on the stage cell's title. The mock's phone-only value is ~58px, untouched. */
+.phone {
+  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 .stageBtn {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);

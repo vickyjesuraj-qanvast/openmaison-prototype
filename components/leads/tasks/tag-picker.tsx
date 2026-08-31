@@ -90,11 +90,9 @@ export function TagPicker({
                     style={position ? { position: 'fixed', top: position.top, left: position.left, width: 352 } : undefined}
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit">
           <div className={styles.field} data-active={focused || undefined} onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); inputRef.current?.focus() } }}>
-            {picked.map((t) => (
-              <button key={t.id} type="button" className={styles.chip} aria-label={`Remove ${t.name}`} onClick={() => toggle(t.id)}>
-                <TagChip appearance="outlined" iconEnd={<Icon name="close" size={12} />}>{t.name}</TagChip>
-              </button>
-            ))}
+            {/* The input holds the top line and the picked tags flow beneath it, so the field grows downwards instead
+                of squeezing the input further right with every tag added (user 2026-08-30). */}
+            <div className={styles.fieldTop}>
             <input
               ref={inputRef} className={styles.input} type="text" autoFocus
               placeholder="Search for any tags, hit enter to add" aria-label="Search for any tags, hit enter to add"
@@ -105,6 +103,16 @@ export function TagPicker({
               onKeyDown={onInputKey}
             />
             <span className={styles.chevron} aria-hidden><Icon name="keyboard_arrow_down" size={16} /></span>
+            </div>
+            {picked.length > 0 ? (
+              <div className={styles.picked}>
+                {picked.map((t) => (
+                  <button key={t.id} type="button" className={styles.chip} aria-label={`Remove ${t.name}`} onClick={() => toggle(t.id)}>
+                    <TagChip appearance="outlined" iconEnd={<Icon name="close" size={12} />}>{t.name}</TagChip>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className={styles.list}>
             <div className={styles.rows} role="group" aria-label="Tags">

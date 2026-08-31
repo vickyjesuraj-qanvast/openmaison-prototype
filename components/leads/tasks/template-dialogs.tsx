@@ -119,12 +119,22 @@ export function SaveTemplateDialog({
   const [keepDescription, setKeepDescription] = useState(true)
   const [banner, setBanner] = useState(true)
   const [wasOpen, setWasOpen] = useState(false)
+  const [seeded, setSeeded] = useState<string | null>(null)   // the template the switches below were read from
   // Render-phase adjust: the dialog stays mounted between uses — never carry a draft over.
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setMode('new'); setName(''); setExisting(''); setKeepMembers(true); setKeepDescription(true); setBanner(true) }
+    if (open) { setMode('new'); setName(''); setExisting(''); setKeepMembers(true); setKeepDescription(true); setSeeded(null); setBanner(true) }
   }
   const target = templates.find((t) => t.name === existing)
+  /* Render-phase adjust: an existing template's two switches belong to that record (keep_members / keep_description), so
+     they open on its stored values — seeded true they showed "on" over a template saved with one off, and Save wrote the
+     true straight back over it. New Template has no record yet and keeps the mock's both-on. */
+  const seed = mode === 'existing' ? target ?? null : null
+  if ((seed?.id ?? null) !== seeded) {
+    setSeeded(seed?.id ?? null)
+    setKeepMembers(seed ? seed.keepMembers : true)
+    setKeepDescription(seed ? seed.keepDescription : true)
+  }
   const canSave = mode === 'new' ? name.trim() !== '' : !!target
   const save = () => {
     if (!canSave) return

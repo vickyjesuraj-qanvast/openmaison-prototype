@@ -41,6 +41,7 @@
 /* Attachment tile (146w, from 781:58292) */
 .tile {
   width: 146px;
+  flex: 0 0 auto;   /* the drawn width is the tile's own: a full row wraps rather than shrinking every tile below 146 */
   background: var(--om-color-surface-bg);
   border-radius: var(--om-radius-1);
   padding: var(--om-spacing-1);

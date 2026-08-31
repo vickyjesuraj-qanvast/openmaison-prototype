@@ -13,7 +13,11 @@ const ME = 'dane'   // the signed-in member (members.is_you) — the prototype h
 
 export async function createTask(leadId: string, title: string, opts?: { description?: string | null; kind?: string; dueAt?: Date | null; assignees?: string[]; tagIds?: string[] }): Promise<string> {
   const id = randomUUID(); const now = new Date()
-  await db.insert(leadTasks).values({ id, leadId, title, kind: opts?.kind ?? 'General', dueAt: opts?.dueAt ?? null, done: false, createdAt: now, creatorId: ME, description: opts?.description ?? null, seenAt: now, updatedAt: now })
+  // A task lands UNSEEN (seenAt null): that is what makes it the first row whatever the sort, and what draws the
+  // mock's RW-New treatment on it — the primary band + bold title of 902:26362 frame 191. It stops being new the
+  // moment someone opens it. Stamping it seen on creation put a brand-new task at the BOTTOM of a due-date sort
+  // (user 2026-08-30: "the new added task should be the first row always").
+  await db.insert(leadTasks).values({ id, leadId, title, kind: opts?.kind ?? 'General', dueAt: opts?.dueAt ?? null, done: false, createdAt: now, creatorId: ME, description: opts?.description ?? null, seenAt: null, updatedAt: now })
   if (opts?.assignees?.length) await db.insert(taskAssignees).values(opts.assignees.map((memberId) => ({ taskId: id, memberId })))
   if (opts?.tagIds?.length) await db.insert(taskTags).values(opts.tagIds.map((tagId) => ({ taskId: id, tagId })))
   touch(leadId); return id
@@ -59,7 +63,7 @@ export async function duplicateTasks(taskIds: string[]): Promise<void> {
   const now = new Date()
   for (const r of rows) {
     const id = randomUUID()
-    await db.insert(leadTasks).values({ id, leadId: r.leadId, title: r.title, kind: r.kind, dueAt: r.dueAt, done: false, createdAt: now, creatorId: ME, description: r.description, seenAt: now, updatedAt: now })
+    await db.insert(leadTasks).values({ id, leadId: r.leadId, title: r.title, kind: r.kind, dueAt: r.dueAt, done: false, createdAt: now, creatorId: ME, description: r.description, seenAt: null, updatedAt: now })
     const a = links.filter((l) => l.taskId === r.id); if (a.length) await db.insert(taskAssignees).values(a.map((l) => ({ taskId: id, memberId: l.memberId })))
     const g = tagLinks.filter((l) => l.taskId === r.id); if (g.length) await db.insert(taskTags).values(g.map((l) => ({ taskId: id, tagId: l.tagId })))
   }
@@ -142,7 +146,7 @@ export async function applyTemplate(leadId: string, templateId: string): Promise
   const rows = await db.select().from(templateTasks).where(eq(templateTasks.templateId, templateId)).orderBy(templateTasks.sortOrder)
   const now = new Date()
   for (const r of rows) {
-    await db.insert(leadTasks).values({ id: randomUUID(), leadId, title: r.title, kind: r.kind, dueAt: null, done: false, createdAt: now, creatorId: ME, description: r.description, seenAt: now, updatedAt: now })
+    await db.insert(leadTasks).values({ id: randomUUID(), leadId, title: r.title, kind: r.kind, dueAt: null, done: false, createdAt: now, creatorId: ME, description: r.description, seenAt: null, updatedAt: now })
   }
   touch(leadId); return rows.length
 }

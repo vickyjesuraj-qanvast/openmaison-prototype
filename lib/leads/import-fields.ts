@@ -9,7 +9,9 @@ export const IGNORE = 'Ignore' as const
 export type Mapping = (ImportField | typeof IGNORE | null)[]
 
 /** Step-3 preview columns (widths from 779:26144). The mock's 4th header reads
- *  "LEAD STAGE" over source values — audit item resolved as LEAD SOURCE. */
+ *  "LEAD STAGE" over source values — audit item resolved as LEAD SOURCE.
+ *  Label/width/order lookup only — step 3 draws the ones the file's mapping used, so the
+ *  import template (all 15 headers auto-map) still draws all 14 and a 7-column file draws 7. */
 export const PREVIEW_COLUMNS: { field: ImportField; label: string; width: number }[] = [
   { field: 'Lead Name', label: 'Lead Name', width: 120 },
   { field: 'Lead Phone Number', label: 'Lead Phone Number', width: 171 },

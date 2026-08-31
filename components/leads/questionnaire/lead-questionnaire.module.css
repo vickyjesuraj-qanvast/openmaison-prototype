@@ -13,9 +13,12 @@
    and "Add a question first" can show (REG-75). The DS keeps its 50% disabled look; nothing else changes. */
 .anchor > :disabled, .anchor > [data-disabled] { pointer-events: none; }
 
-/* Listing (931:46983) — H g24: questions column 740 (V g24) + summary card 480 (top right of the column, 931:47025). */
+/* Listing (931:46983) — H g24: questions column (V g24) + summary card 480 (top right of the column, 931:47025).
+   Only the 480 is a design width: the questions column takes the rest of the row, so the mock's 740 is what is left of the
+   1244 centre (1244 − 24 − 480) and the row still fills when the centre is narrower or wider (rail pinned, quick links
+   expanded, bigger viewports). Before the first question is saved there is no summary and the column has the row to itself. */
 .layout { display: flex; align-items: flex-start; gap: var(--om-spacing-6); min-width: 0; }
-.questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 0 0 740px; width: 740px; min-width: 0; }
+.questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 1 1 auto; min-width: 0; }
 .summary { flex: 0 0 480px; width: 480px; }
 
 /* "+ Add Question" under the last card (invented, REG-188) — the Tasks table's bottom bar (902:26450,

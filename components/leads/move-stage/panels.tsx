@@ -377,11 +377,25 @@ export function QuoteSentPanel({
   )
 }
 
+/** The signed contract is named after the client: the mock's "Contract_OliviaM_signed.pdf" (780:92744) is the lead it
+ *  was drawn for, Olivia Martinez — so the file name spells out *this* lead instead of hers on all 36. Falls back to
+ *  the mock's own name for a lead with no usable name. */
+function signedContractName(leadName: string): string {
+  const words = leadName.split(/\s+/).map((w) => w.replace(/[^A-Za-z]/g, '')).filter(Boolean)
+  const first = words[0] ?? ''
+  const lastInitial = words.length > 1 ? (words[words.length - 1] ?? '').slice(0, 1) : ''
+  return first ? `Contract_${first}${lastInitial}_signed.pdf` : SYSTEM_CONTRACT
+}
+
 export function WonPanel({
-  data, update, errors, leadBudgetMinor,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
+  data, update, errors, leadBudgetMinor, leadName,
+}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string }) {
   const quotes = [{ name: SYSTEM_QUOTE, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Signed on 19 Aug'] }]
-  const contracts = [{ name: SYSTEM_CONTRACT, meta: ['Signed on 19 Aug'] }]
+  const contractName = signedContractName(leadName)
+  const contracts = [{ name: contractName, meta: ['Signed on 19 Aug'] }]
+  // The pre-selection emptyWizardData stores is the mock's own file name (REG-149: a From System list opens selected),
+  // so read that default as "the system contract" — the row this lead's name produces is the one that starts checked.
+  const selectedContract = data.wonContract === SYSTEM_CONTRACT ? contractName : data.wonContract
   const quoteUpload = useUploadSim()
   const contractUpload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)
@@ -417,9 +431,9 @@ export function WonPanel({
         <SectionRow label="Attach client signed contract" />
         <AttachTabs
           tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
-          selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
+          selected={selectedContract} onSelect={(n) => update({ wonContract: n })}
           uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
-          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: SYSTEM_CONTRACT }))}
+          onUpload={() => contractUpload.start(() => update({ wonContractUploaded: contractName }))}
           onRemoveUpload={() => update({ wonContractUploaded: null })}
           quotes={contracts}
         />

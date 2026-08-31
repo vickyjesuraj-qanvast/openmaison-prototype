@@ -7,8 +7,8 @@ import { fetchReturnDetail, type ReturnDetail } from '@/lib/leads/returns'
 import { STAGES } from '@/lib/leads/enums'
 import { fetchLeadRows, type LeadRow } from '@/lib/leads/queries'
 import { isWizardPayload } from '@/lib/leads/stage-data'
-import { fetchStageMovement } from '@/lib/settings/queries'
-import type { StageMovement } from '@/lib/settings/types'
+import { fetchQuoteApproval, fetchStageMovement } from '@/lib/settings/queries'
+import type { QuoteApproval, StageMovement } from '@/lib/settings/types'
 
 /* Lead Details › Overview (858-24770) — everything the page reads, derived on the server so the client never touches Date.now(). */
 
@@ -22,6 +22,8 @@ export type LeadDetail = {
   team: Member[]
   now: number
   stageMovement: StageMovement
+  /** Settings › Leads › Quote approval — the studio's quote lifecycle (user 2026-08-30). Rides with the lead so every tab has it. */
+  quoteApproval: QuoteApproval
   daysInPipeline: number
   timeline: StageStep[]
   parked: ParkedStep | null
@@ -37,9 +39,10 @@ const isActive = (s: string): s is ActiveStage => (STAGES as readonly string[]).
 const daysBetween = (from: number, to: number) => Math.max(0, Math.floor((to - from) / DAY))
 
 async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
-  const [{ rows, team, now }, stageMovement, logs, quoteRows, files, qRows, retRows] = await Promise.all([
+  const [{ rows, team, now }, stageMovement, quoteApproval, logs, quoteRows, files, qRows, retRows] = await Promise.all([
     fetchLeadRows(),
     fetchStageMovement(),
+    fetchQuoteApproval(),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select().from(quotes).where(and(eq(quotes.leadId, id), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),   // archived / deleted quotes leave the card (Quotes tab, REG-175)
     db.select().from(leadFiles).where(and(eq(leadFiles.leadId, id), isNull(leadFiles.deletedAt))).orderBy(asc(leadFiles.createdAt)),   // trashed files leave the card (Files tab)
@@ -81,7 +84,9 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
   const quote = quoteRows.at(-1) ?? null
   const activity: ActivityItem[] = [{ at: lead.createdAt, text: `Lead created from ${lead.source}` }]
   for (const log of logs) {
-    const text = isWizardPayload(log.payload) && log.toStage === 'Contacted' ? 'Updated contact log'
+    // "Updated contact log" is a correction (fromStage === toStage, written by updateStageDetails) — the same test the
+    // Activity tab makes. Without it a real New → Contacted move read as an edit here and the move itself never showed.
+    const text = isWizardPayload(log.payload) && log.fromStage === log.toStage && log.toStage === 'Contacted' ? 'Updated contact log'
       : log.toStage === 'On Hold' ? 'Put on hold'
       : log.toStage === 'Lost' ? 'Marked as lost'
       : `Moved to ${log.toStage}`
@@ -92,7 +97,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
   activity.sort((a, b) => b.at.getTime() - a.at.getTime())
 
   return {
-    lead, team, now, stageMovement,
+    lead, team, now, stageMovement, quoteApproval,
     daysInPipeline: daysBetween(lead.createdAt.getTime(), now),
     timeline, parked,
     activity: activity.slice(0, 4),

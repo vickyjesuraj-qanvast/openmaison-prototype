@@ -50,6 +50,10 @@ export function Tabs({
             aria-current={selected ? 'page' : undefined}
             tabIndex={selected || (!hasActive && i === 0) ? 0 : -1}
             className={styles.tab}
+            /* Every tab is fetched in full as soon as the row is on screen, so a click swaps content that is already
+               in hand instead of starting a round trip and flashing the route's ghost (user 2026-08-30). The default
+               prefetch only fetches the loading boundary — which is precisely the flash we are trying to remove. */
+            prefetch
           >
             {t.label}
             {selected ? <span className={styles.ink} aria-hidden /> : null}

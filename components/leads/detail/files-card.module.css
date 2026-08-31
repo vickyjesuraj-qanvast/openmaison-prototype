@@ -8,13 +8,16 @@
   min-width: 0;
 }
 /* 858:24943 (430w): 92·92·92·90 tiles; 858:25922 (396w, quick links expanded): 83·83·83·83 — the tiles share the row,
-   shrinking evenly from 92, and the thumb keeps the 84:64 ratio (64 → 58 tall). */
-.tiles { display: flex; align-items: stretch; gap: var(--om-spacing-2); min-width: 0; overflow: hidden; }
+   shrinking evenly from 92, and the thumb keeps the 84:64 ratio (64 → 58 tall).
+   Every tile takes the same 1/--slots share of the row (the count comes from the measured width), so the row is
+   divided exactly and nothing is left over on the right. --slots defaults to the mock's 4 for the first paint. */
+.tiles { display: flex; align-items: stretch; gap: var(--om-spacing-2); min-width: 0; overflow: hidden; --slots: 4; }
+.tile, .more { flex: 0 0 calc((100% - (var(--slots) - 1) * var(--om-spacing-2)) / var(--slots)); }
 
 /* Tile 92×92: V p4, surface-bg fill, radius 4. */
 .tile {
-  display: flex; flex-direction: column; flex: 0 1 92px; min-width: 0;
-  width: 92px; padding: var(--om-spacing-1);
+  display: flex; flex-direction: column; min-width: 0;
+  padding: var(--om-spacing-1);
   border: 0; border-radius: var(--om-radius-1);
   background: var(--om-color-surface-bg);
   cursor: pointer; text-align: left;
@@ -46,8 +49,8 @@
 
 /* Overflow tile 90×92: V p4 → inner 82×84 with "+10" 12/Semi Bold/16 secondary centred. */
 .more {
-  display: flex; flex: 0 1 90px; min-width: 0;
-  width: 90px; padding: var(--om-spacing-1);
+  display: flex; min-width: 0;
+  padding: var(--om-spacing-1);
   border: 0; border-radius: var(--om-radius-1);
   background: var(--om-color-surface-bg);
   cursor: pointer;

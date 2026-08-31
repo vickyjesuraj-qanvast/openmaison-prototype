@@ -2,6 +2,7 @@
 
 import type { ParkedStep, StageStep } from '@/lib/leads/detail'
 import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { displayDate } from '@/lib/format'
 import { Card, CardRule } from './card'
 import styles from './stages-card.module.css'
@@ -15,24 +16,32 @@ const daysLabel = (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`
  * Every row is a button that opens the Move stage window at that stage; the arrow opens the Stages tab.
  * Spec: design-source/context/lead-overview/04-cards-stages-files-activity.txt.
  */
-export function LeadStagesCard({ timeline, parked, daysInPipeline, onOpenStage, onOpenTab }: {
+export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOpenStage, onOpenTab }: {
   timeline: StageStep[]
   parked: ParkedStep | null
   daysInPipeline: number
+  /** The shared stage gate (lib/leads/stage-policy blockedReason) — a row it refuses is shown refused, with the reason. */
+  blocked?: (stage: string) => string | null
   onOpenStage: (stage: string) => void
   onOpenTab: () => void
 }) {
-  const rows = timeline.map((step) => (
+  const rows = timeline.map((step) => {
+    // A Lost lead's un-reached stages are not somewhere to go — the way back is the stage it stopped at (REG-225).
+    const why = step.state === 'future' ? blocked?.(step.stage) ?? null : null
+    const row = (
     <button
       key={step.stage}
       type="button"
       className={styles.row}
       data-state={step.state}
-      onClick={() => onOpenStage(step.stage)}
+      data-blocked={why ? '' : undefined}
+      aria-disabled={why ? true : undefined}
+      onClick={why ? undefined : () => onOpenStage(step.stage)}
       aria-current={step.state === 'current' ? 'step' : undefined}
     >
+      {/* Completed stages take the FILLED green check, as the Move stage rail and the task tick already do. */}
       {step.state === 'current' ? <Icon name="radio_button_checked" size={20} className={styles.icon} />
-        : step.state === 'done' ? <Icon name="check_circle" size={20} weight={300} className={styles.icon} />
+        : step.state === 'done' ? <Icon name="check_circle" size={20} weight={300} fill className={styles.icon} />
         : <Icon name="radio_button_unchecked" size={20} weight={300} className={styles.icon} />}
       <span className={styles.label}>
         <span className={styles.nameGroup}><span className={styles.name}>{step.stage}</span></span>
@@ -52,7 +61,9 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, onOpenStage, 
       </span>
       <Icon name="keyboard_arrow_right" size={20} className={styles.chevron} />
     </button>
-  ))
+    )
+    return why ? <Tooltip key={step.stage} label={why}>{row}</Tooltip> : row
+  })
 
   return (
     <Card
@@ -73,8 +84,9 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, onOpenStage, 
             data-state={parked.stage === 'Lost' ? 'lost' : 'hold'}
             onClick={() => onOpenStage(parked.stage)}
           >
+            {/* Lost takes the FILLED cancel, as every other status glyph on this card is now filled (REG-222). */}
             {parked.stage === 'Lost'
-              ? <Icon name="cancel" size={20} weight={300} className={styles.icon} />
+              ? <Icon name="cancel" size={20} weight={300} fill className={styles.icon} />
               : <Icon name="timelapse" size={20} className={styles.icon} />}
             <span className={styles.label}>
               <span className={styles.nameGroup}>

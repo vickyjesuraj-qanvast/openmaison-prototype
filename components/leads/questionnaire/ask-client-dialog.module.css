@@ -2,6 +2,11 @@
    The shell (64 head · body p24 g24 · footer 68) is the shared Dialog at size="modal" (move-stage/wizard.module.css); this
    file holds the body — helper 14/Semi Bold #1a1a1a (352 wide, 2 lines) + the portal box — and the footer's shadow. */
 
+/* The host exists only to scope the footer selector below — it must generate no box. As a plain div it was a third flex
+   item in the tab's `gap: 24` column, so it silently ate 24px off the empty card's height once that card started filling
+   the body (it was invisible while the card was a frozen 784 and the tab simply overflowed). */
+.host { display: contents; }
+
 /* Footer (spec 01: "shadow 0 25 50 #000@25", the Move dialog / Drawer footer) — the shared shell only draws the top rule, so
    the shadow is added on the dialog's third child (head · body · foot) from this host, scoped to this dialog (the Notes
    Auto Fill / Add tasks specs record no shadow). Token level-5 is the nearest elevation (audit 2026-08-30). */

@@ -156,7 +156,9 @@ export function MoveStageWizard({
     if (editing) { onUpdate({ stage: active, data }); return }
     if (active === 'Contacted') {
       // Journey (user 2026-08-29): fields (manual or Auto Fill) → Save → Suggested tasks → Save there completes the stage.
-      const next = data.logs.find((l) => l.nextStepWhen)?.nextStepWhen
+      // Logs append oldest → newest (Add Log), so the operative commitment is the last one with a next step —
+      // the first match dated the task from a superseded log.
+      const next = [...data.logs].reverse().find((l) => l.nextStepWhen)?.nextStepWhen
       setAutoAddedTask(`Schedule a meeting with the client for ${next ?? displayDateTime(new Date(Date.now() + 12 * 86400000))}`)   // clock read in the handler
       setSuggestOpen(true)
       return
@@ -193,7 +195,7 @@ export function MoveStageWizard({
       case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} />
-      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} />
+      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} />
       default: return null
     }
   }

@@ -23,7 +23,7 @@ const dayLabel = (d: Date) => `${DAYS_LONG[d.getDay()]}, ${displayDate(d)}`
 /** How long the simulated upload takes before the toast row shows the green check. */
 const UPLOAD_MS = 1400
 
-type Toast = { name: string; state: 'uploading' | 'done' | 'failed' }
+type Toast = { name: string; pdf: boolean; state: 'uploading' | 'done' | 'failed' }
 
 /**
  * Attach files modal (902:28220 frame 57 · 56 one file + uploading toast 902:28261 · 58 · 64 empty): 1200×928 xl modal
@@ -92,20 +92,27 @@ export function AttachFilesModal({
   const pick = (file?: File) => {
     onUploadPicked(file)
     const name = file?.name ?? 'filename.jpg'   // the mock's row name when nothing real was picked (drop of a non-file)
+    const pdf = /\.pdf$/i.test(name)            // one reading of the kind for both the toast row and the file it lands
     if (timer.current) clearTimeout(timer.current)
-    setToast({ name, state: 'uploading' })
+    setToast({ name, pdf, state: 'uploading' })
     setToastCollapsed(false)
     timer.current = setTimeout(() => {
       setToast((t) => (t ? { ...t, state: 'done' } : t))
       // The uploaded file joins the library under today — the mock's thumbnail stands in for the real bytes (REG-149).
+      // The kind follows the picked name, though: the dropzone advertises PDFs, and a PDF captioned with a photo of a
+      // floor plan reads as a bug. A null thumb takes the row's existing surface-variant + glyph branch. Same
+      // derivation as components/leads/return/return-lead-wizard.tsx, so the two surfaces agree about one pick.
       const at = new Date()
-      setUploaded((u) => [{ id: `local-${at.getTime()}`, leadId: files[0]?.leadId ?? '', kind: 'image', name, thumb: '/figma-assets/file-thumb-1.png', createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064, mime: 'image/jpeg', updatedAt: at, deletedAt: null }, ...u])
+      setUploaded((u) => [{ id: `local-${at.getTime()}`, leadId: files[0]?.leadId ?? '', kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null }, ...u])
     }, UPLOAD_MS)
   }
 
   const count = picks.length
   const attachLabel = count === 0 ? 'Attach Files' : count === 1 ? 'Attach 1 File' : `Attach ${count} Files`
-  const uploadingCount = toast?.state === 'uploading' ? 1 : 0
+  // The head counts the toast's rows, not the in-flight flag: the toast stays up after the row's green check (only ✕
+  // removes it), and a count keyed off 'uploading' turned that frame into "Uploading 0 files". One row per toast —
+  // the Dropzone takes one file — so this reads "Uploading 1 file" throughout, as 902:28261 and the sibling toasts do.
+  const uploadingCount = toast ? 1 : 0
 
   return (
     <AnimatePresence>
@@ -277,8 +284,16 @@ export function AttachFilesModal({
                   </div>
                   {toastCollapsed ? null : (
                     <div className={styles.toastRow} data-state={toast.state}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/figma-assets/file-thumb-1.png" alt="" className={styles.toastThumb} width={40} height={40} />
+                      {toast.pdf ? (
+                        /* A PDF takes the tiles' surface-variant box + glyph at the thumb's 40×40: the mock's photograph
+                           beside "Quotation.pdf" drew the same pick two ways at once (the tile below already got it right). */
+                        <span className={styles.toastThumb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--om-color-surface-variant)' }}>
+                          <Icon name="picture_as_pdf" size={24} className={styles.tileBoxIcon} />
+                        </span>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src="/figma-assets/file-thumb-1.png" alt="" className={styles.toastThumb} width={40} height={40} />
+                      )}
                       <span className={styles.toastFile}>{toast.name}</span>
                       {toast.state === 'uploading' ? (
                         <>

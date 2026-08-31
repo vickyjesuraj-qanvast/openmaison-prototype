@@ -92,10 +92,13 @@
 /* Buttons Primary Outlined 468×36 "Attach Files" — full width of the column (task-panel.module.css .fullWidth) */
 .fullWidth { width: 100%; }
 
-/* ---- Tile 150×158: V p4, fill #f2f2f2 r4 → image 142×108 r2 + caption 142×42 (H g8 p8) — attachments-column.module.css ---- */
+/* ---- Tile 150×158: V p4, fill #f2f2f2 r4 → image 142×108 r2 + caption 142×42 (H g8 p8) — attachments-column.module.css.
+   The tile shares the row rather than holding 150: 3 × 150 + 2 × 12 = 474 > 468, which would wrap the third tile and strand a
+   whole tile's width on row one, so it flexes from 142 and is capped at the mock's 150 — one tile (931:48930) and two stay
+   150, three land at 148 and close the row. ---- */
 .tile {
   position: relative;
-  width: 150px; height: 158px; flex-shrink: 0;
+  flex: 1 1 142px; min-width: 142px; max-width: 150px; height: 158px;
   display: flex; flex-direction: column;
   padding: var(--om-spacing-1);
   background: var(--om-color-surface-bg);
@@ -110,9 +113,10 @@
   color: inherit; font: inherit;
   border-radius: var(--om-radius-1);
 }
-.tileImg { display: block; width: 142px; height: 108px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 142×108 r2 */
+/* Image and PDF box span the tile's content box — the mock's 142 = 150 − 2 × 4 padding, and they follow the tile when it shares the row. */
+.tileImg { display: block; width: 100%; height: 108px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 142×108 r2 */
 .tileBox {
-  width: 142px; height: 108px; flex-shrink: 0;
+  width: 100%; height: 108px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--om-color-surface-variant);
   border-radius: var(--om-radius-0-5);

@@ -68,3 +68,11 @@
 
 .support { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-on-surface-secondary); display: flex; align-items: center; gap: 4px; }
 .field[data-error] .support { color: var(--om-color-tertiary-red-default); }
+
+/* `below` — content inside the box, on its own row under the control (picked chips). The box stops being a fixed
+   48px row and becomes a column that grows downwards; the label floats by definition, since a box holding content is
+   never empty. Everything here is scoped to [data-below], so no other field is touched. */
+.field[data-below] .box { height: auto; min-height: 48px; flex-direction: column; align-items: stretch; gap: 0; padding-bottom: var(--om-spacing-2); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 46px; }
+.field[data-below] .control { height: 46px; }
+.below { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }

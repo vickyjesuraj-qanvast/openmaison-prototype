@@ -41,6 +41,8 @@ const SORTABLE: Record<ColumnKey, boolean> = {
 
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null
 const EMPTY_SELECTION = new Set<string>()
+/** px of scroller needed below a row kebab for its menu to open downwards — the tallest row menu is 2 items (86px with the 4px offset). */
+const MENU_CLEARANCE = 100
 
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata. */
 const colStyle = (key: ColumnKey) => ({ flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
@@ -114,6 +116,7 @@ export function LeadsTable({
 }) {
   const [sort, setSort] = useState<Sort>(null)
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  const [menuSide, setMenuSide] = useState<'down' | 'up'>('down')
   // Render-phase adjust: a Filters-modal sort change owns the column sort.
   const [seenFilterSort, setSeenFilterSort] = useState(filterSort)
   if (seenFilterSort !== filterSort) {
@@ -276,7 +279,7 @@ export function LeadsTable({
 
   return (
     <div className={styles.card}>
-      <div className={styles.scroller} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+      <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
         <div ref={tableRef} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
              style={{ minWidth }}>
           <div className={styles.headRow} role="row">
@@ -312,7 +315,7 @@ export function LeadsTable({
               </div>
             ))}
           </div>
-          {sorted.map((row, rowIdx) => (
+          {sorted.map((row) => (
             <div
               key={row.id}
               className={styles.row}
@@ -335,11 +338,22 @@ export function LeadsTable({
                       <Tooltip label="More actions" disabled={menuRow === row.id}>
                         <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
                                     aria-haspopup="menu" aria-expanded={menuRow === row.id}
-                                    onClick={() => setMenuRow((m) => (m === row.id ? null : row.id))} />
+                                    onClick={(e) => {
+                                      // Which side has room, measured against the scroller that clips it (overflow-x: auto
+                                      // ⇒ overflow-y: auto) — not counted from the row index, which left every menu pointing
+                                      // down when a stage filter narrows the table to one or two rows. Same rule as the
+                                      // kanban card kebab; on the full listing the last two rows still flip up.
+                                      const box = e.currentTarget.closest<HTMLElement>('[data-scroll-box]')
+                                      if (box) {
+                                        const k = e.currentTarget.getBoundingClientRect(), c = box.getBoundingClientRect()
+                                        const below = c.bottom - k.bottom, above = k.top - c.top
+                                        setMenuSide(below < MENU_CLEARANCE && above > below ? 'up' : 'down')
+                                      }
+                                      setMenuRow((m) => (m === row.id ? null : row.id))
+                                    }} />
                       </Tooltip>
                     </span>
-                    <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right"
-                              side={sorted.length >= 3 && rowIdx >= sorted.length - 2 ? 'up' : 'down'}>
+                    <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right" side={menuSide}>
                       <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem>
                       {canReturnLead(row) ? (
                         /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */

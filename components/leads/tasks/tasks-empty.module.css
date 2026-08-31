@@ -2,9 +2,12 @@
  * Lead Details › Tasks — empty state: the Quotes tab's empty card verbatim (components/leads/quotes/quotes-empty.module.css,
  * 910:36266): card 1244×784 fill #fff stroke #e5e5e5 (inside) r8, content centred; illustration → 24 → texts (V g12) → 24 → buttons (H g12).
  */
+/* Height follows the tab body, not the mock's literal 784: the tab pads 88px for the FAB where the mock frame (910:36266)
+   padded 24, so the frozen number overflowed short viewports and stopped short on tall ones. Same rule as the tab's
+   other empty card, components/leads/search-empty.module.css. */
 .card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; height: 784px;
+  width: 100%; flex: 1; min-height: 480px;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);

@@ -47,3 +47,8 @@
 .body[data-parked] .row[data-state='future'] .meta { font: var(--om-type-body-s); }
 
 .chevron { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+
+/* A row the stage gate refuses (a Lost lead's un-reached stages, REG-225): shown, but plainly not a destination —
+   the DS disabled opacity, no pointer, no hover. The tooltip on it carries the reason. */
+.row[data-blocked] { opacity: 0.5; cursor: default; }
+.row[data-blocked]:hover { background: none; }

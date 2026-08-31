@@ -1,29 +1,63 @@
 'use client'
 
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LeadFile } from '@/lib/db/schema'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { useComingSoon } from '@/components/om/snackbar'
 import { Card, CardEmpty } from './card'
 import styles from './files-card.module.css'
 
-/** How many tiles the row shows before the "+n" overflow tile (858:24943: folder + two files + "+10"). */
-const MAX_TILES = 3
+/*
+ * How many tiles fit in one row, and how wide each one is.
+ * The mock (858:24943, a 430px card) draws four slots — folder + two files + "+10" — at 92px, and 858:25922
+ * (396px, quick links expanded) draws the same four shrunk to 83. So the mock's own tile is a 92px box that
+ * shares the row and shrinks as the row tightens; 92 and 83 are two samples of one behaviour, not two sizes.
+ * The card is responsive: with the info column collapsed it is far wider than either mock. So the row picks
+ * the slot count whose resulting shared width lands closest to the mock's 92, and the tiles then divide the
+ * row exactly — no trailing dead space (user 2026-08-30). At 390px of row (the 430 mock) that is 4 × 91.5;
+ * at 356px (the 396 mock) it is 4 × 83. Both mocks fall out of the same arithmetic.
+ */
+const TILE = 92        // the mock's tile
+const GAP = 8          // --om-spacing-2, the mock's gap
+const DEFAULT_SLOTS = 4   // the mock's row: the first paint, and wherever the width cannot be measured
+
+/** The slot count whose evenly-shared tile width sits closest to the mock's 92. */
+function slotsFor(width: number) {
+  if (width <= 0) return DEFAULT_SLOTS
+  const shared = (n: number) => (width - (n - 1) * GAP) / n
+  const lo = Math.max(1, Math.floor((width + GAP) / (TILE + GAP)))
+  return Math.abs(shared(lo) - TILE) <= Math.abs(shared(lo + 1) - TILE) ? lo : lo + 1
+}
 
 /**
  * FILES card (858:24943 "FILES · 13" · 858:24125 "FILES · 2" · 858:24296 empty).
- * Folders first, then files, at most three 92×92 tiles; the rest collapse into a "+n" tile that opens the Files tab.
+ * Folders first, then files, as many tiles as the measured row fits; the rest collapse into a "+n" tile that opens the Files tab.
  * Spec: design-source/context/lead-overview/04-cards-stages-files-activity.txt (+ 05 for the empty state).
  */
-export function FilesCard({ files, onOpenTab, onCreateFolder, onUpload }: {
+export function FilesCard({ files, onOpenTab, onOpenFile, onCreateFolder, onUpload }: {
   files: LeadFile[]
   onOpenTab: () => void
+  onOpenFile: (file: LeadFile) => void
   onCreateFolder: () => void
   onUpload: () => void
 }) {
-  const comingSoon = useComingSoon()
+  const row = useRef<HTMLDivElement>(null)
+  const [slots, setSlots] = useState(DEFAULT_SLOTS)
+  useEffect(() => {
+    const el = row.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    // Measured in the observer callback, never in render — the row re-slots as the card grows or the info column collapses.
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry?.contentRect.width ?? 0
+      if (w > 0) setSlots(slotsFor(w))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const ordered = [...files.filter((f) => f.kind === 'folder'), ...files.filter((f) => f.kind !== 'folder')]
-  const shown = ordered.slice(0, MAX_TILES)
+  // Everything fits, or the last slot becomes the "+n" tile.
+  const shown = ordered.length <= slots ? ordered : ordered.slice(0, Math.max(1, slots - 1))
   const rest = ordered.length - shown.length
 
   return (
@@ -56,10 +90,13 @@ export function FilesCard({ files, onOpenTab, onCreateFolder, onUpload }: {
         />
       ) : (
         <div className={styles.body}>
-          <div className={styles.tiles}>
+          {/* --slots divides the row: exactly `slots` tiles fill it edge to edge, fewer keep the mock's size
+              and leave the row short rather than stretching a lone file across the whole card. */}
+          <div className={styles.tiles} ref={row} style={{ '--slots': slots } as CSSProperties}>
             {shown.map((file) => (
-              /* Tiles are inert in the mock (no tab designed yet) — every inert affordance answers "Coming soon". */
-              <button key={file.id} type="button" className={styles.tile} onClick={comingSoon} aria-label={file.name}>
+              /* A tile opens its own record — the folder in the Files tab, the file in its viewer (both arrived with REG-181).
+                 The mock predates them, so the tiles answered "Coming soon" while the arrow and the "+n" tile beside them opened the same files. */
+              <button key={file.id} type="button" className={styles.tile} onClick={() => onOpenFile(file)} aria-label={file.name}>
                 {file.kind === 'folder' || !file.thumb ? (
                   <span className={styles.thumbBox}>
                     {file.kind === 'folder' ? <Icon name="folder" size={24} className={styles.folderIcon} /> : null}
@@ -69,7 +106,9 @@ export function FilesCard({ files, onOpenTab, onCreateFolder, onUpload }: {
                   <img src={file.thumb} alt="" className={styles.thumb} width={84} height={64} />
                 )}
                 <span className={styles.caption}>
-                  {file.kind !== 'folder' ? <Icon name="image" size={12} className={styles.fileIcon} /> : null}
+                  {/* The glyph follows the record, as the Files tab's own kindIcon does — the mock had one image, so
+                      "image" was written in; an uploaded PDF then wore a photo's glyph. */}
+                  {file.kind !== 'folder' ? <Icon name={file.kind === 'pdf' || file.mime === 'application/pdf' ? 'picture_as_pdf' : 'image'} size={12} className={styles.fileIcon} /> : null}
                   <span className={styles.name}>{file.name}</span>
                 </span>
               </button>

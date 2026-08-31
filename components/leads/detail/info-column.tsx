@@ -1,6 +1,7 @@
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
+import { useFlagPref } from '@/lib/prefs'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import { displayDate, groupDigits, money } from '@/lib/format'
@@ -26,15 +27,12 @@ export type InfoColumnProps = {
   onCopy: (what: 'phone' | 'email', value: string) => void
   onWhatsApp: () => void
   onDirections: () => void
-  onAddAddress: () => void
-  /** Reserved for a Notes add flow — NOT wired: the mock (858:24857) shows Notes as inert "--" text. */
-  onAddNotes: () => void
 }
 
 const DASH = '--'
 
 export function InfoColumn({
-  lead, team, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, onAddAddress,
+  lead, team, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections,
 }: InfoColumnProps) {
   const assignees = lead.assignees
   // Owner: the mock (858:24806) shows "You" even before anyone is assigned — the signed-in member (isYou) owns the studio's leads.
@@ -143,11 +141,10 @@ export function InfoColumn({
           <Row k="Style" text={lead.style ?? DASH} />
           <Row k="Area size (sq ft)" text={lead.areaSqft != null ? groupDigits(String(lead.areaSqft)) : DASH} />
           <Row k="Key collection" text={lead.keyCollection ?? DASH} />
-          {lead.propertyAddress ? (
-            <Row k="Property address" text={lead.propertyAddress} />
-          ) : (
-            <Row k="Property address"><LinkButton label="Add" onClick={onAddAddress} /></Row>
-          )}
+          {/* An empty value reads "--" like Area size and Key collection above — no per-row Add. The header's Edit
+              opens the whole form, so a user fills everything in one pass instead of one field at a time
+              (user 2026-08-31). */}
+          <Row k="Property address" text={lead.propertyAddress ?? DASH} />
         </KVList>
       </Section>
 
@@ -155,8 +152,9 @@ export function InfoColumn({
 
       <Section title="Other info">
         <KVList>
-          {/* Inert text per the mock (858:24857) — onAddNotes is deliberately not wired here. */}
-          <Row k="Notes" text={lead.notes ?? DASH} />
+          {/* "Remarks" (user 2026-08-31) — the mock types "Notes", which collided with the Notes tab, a different
+              record entirely. Inert text per 858:24857. */}
+          <Row k="Remarks" text={lead.notes ?? DASH} />
         </KVList>
       </Section>
     </aside>
@@ -169,7 +167,8 @@ function Section({ title, link, children }: {
   link?: { label: string; onClick: (anchor: HTMLElement) => void }
   children: ReactNode
 }) {
-  const [open, setOpen] = useState(true)
+  // Collapsed sections are remembered per browser, like the listing's table/kanban choice (lib/prefs.ts).
+  const [open, setOpen] = useFlagPref(`om.detail.section.${title.toLowerCase().replace(/\s+/g, '-')}`, true)
   const bodyId = useId()
   return (
     <section className={styles.section} aria-label={title}>
@@ -180,7 +179,7 @@ function Section({ title, link, children }: {
         ) : null}
         <Tooltip label={open ? 'Collapse' : 'Expand'}>
           <button type="button" className={styles.iconBtn} aria-label={`${open ? 'Collapse' : 'Expand'} ${title}`}
-                  aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
+                  aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen(!open)}>
             <Icon name={open ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={20} weight={300} />
           </button>
         </Tooltip>

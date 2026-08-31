@@ -17,6 +17,13 @@ export const journeyIdx = (lead: Pick<LeadRow, 'stage' | 'resumeStage'>) =>
 export function blockedReason(lead: Pick<LeadRow, 'stage' | 'resumeStage' | 'assignees'>, stage: Stage, mode: StageMovement): string | null {
   // New is not complete without an owner: nothing moves past New until at least one member is assigned (REG-130), in both policies.
   if (isActiveStage(stage) && stage !== 'New' && lead.assignees.length === 0) return 'Assign a member first'
+  // A LOST lead cannot jump to a stage it never reached: it is over, and the way back is to resume where it stopped
+  // (user 2026-08-31 — "once the lead is lost then why we need to enable the not completed milestones"). On Hold is a
+  // pause, not an end, so it keeps resuming anywhere. Stages the lead did reach stay open, which is the way back.
+  if (lead.stage === 'Lost' && isActiveStage(stage) && STAGES.indexOf(stage) > journeyIdx(lead)) {
+    const resumeAt = STAGES[journeyIdx(lead)]
+    return resumeAt ? `Resume at ${resumeAt} first` : 'This lead is lost'
+  }
   if (!isActiveStage(lead.stage)) return null   // a parked lead may resume at any stage (with a confirm)
   if (mode !== 'linear' || !isActiveStage(stage)) return null
   const from = journeyIdx(lead)

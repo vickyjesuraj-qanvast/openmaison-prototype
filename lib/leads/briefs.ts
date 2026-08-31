@@ -24,6 +24,8 @@ export type BriefLead = {
   propertyType: string
   budgetMinor: number
   keyCollection: string | null
+  /** The QUESTIONNAIRE card's own summary (858:25077, `summarise` in question-model) — null / absent when the lead has no questions. */
+  questionnaire?: { answered: number; total: number } | null
 }
 
 /** "S$70.5K" — `moneyCompact` says "S$ 70.5K"; the brief writes it without the inner space (mock). */
@@ -68,8 +70,8 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
           actions: ['Build a call script', 'Set a follow-up reminder'],
         },
       ]
-    case 'Contacted':
-      return [
+    case 'Contacted': {
+      const briefs: Brief[] = [
         {
           tag: 'Keep momentum · book the meet',
           text: [
@@ -88,7 +90,11 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
           ],
           actions: ['Plan site visit', 'Send prep checklist'],
         },
-        {
+      ]
+      // "no questionnaire yet" is a claim about the record, not a nudge — with questions on the lead it contradicts the
+      // QUESTIONNAIRE card beside it ("7 / 11 answered"), so the brief drops out rather than assert a state it can't see.
+      if (!lead.questionnaire?.total) {
+        briefs.push({
           tag: 'Qualify the brief',
           text: [
             { t: `Budget ${budget}, no questionnaire yet. ` },
@@ -96,8 +102,10 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
             { t: ' briefs answered in advance cut the first meeting by 25 minutes.' },
           ],
           actions: ['Send questionnaire', 'Summarise call notes'],
-        },
-      ]
+        })
+      }
+      return briefs
+    }
     case 'Met':
       return [
         {

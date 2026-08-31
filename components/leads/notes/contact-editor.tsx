@@ -56,7 +56,8 @@ export function ContactEditor({
             <div className={styles.fieldPair}>
               <DateTimeField label="When" value={draft.when} today={today}
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
-              <TextField label="Outcome" value={draft.outcome} mode="select" options={OUTCOMES}
+              {/* Opens focused on its first field, as the note editor does — the user came here to enter data. */}
+              <TextField label="Outcome" autoFocus value={draft.outcome} mode="select" options={OUTCOMES}
                          onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             </div>
             {nextStep ? (

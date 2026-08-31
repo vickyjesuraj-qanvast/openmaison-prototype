@@ -61,7 +61,11 @@
 .cell.colTitle { gap: var(--om-spacing-3); }                                                               /* H g12 */
 .cell.colMember { gap: var(--om-spacing-2); }                                                              /* H g8 */
 .cell.colDue { padding: var(--om-spacing-3) var(--om-spacing-8) var(--om-spacing-3) var(--om-spacing-4); } /* p12/32/12/16 */
-.cell.colTags { gap: var(--om-spacing-1); }                                                                /* H g4 */
+/* Tags cell: 191 − p16/24 = 151 of content. A tag name is whatever the user typed (the picker creates any string) and a
+   DS Tag is nowrap and never shrinks, so the cell clips as its floor and the name chips give way first — the "+n" chip
+   and the row's hover actions stay readable. The mock's own tags (GENERIC · FOCUS · +2 = 145) are inside 151, so
+   902:26387 is untouched. */
+.cell.colTags { gap: var(--om-spacing-1); overflow: hidden; }                                              /* H g4 */
 /* Status / Tags cells: the spec lists no padding — the neighbouring cells' p12/24/12/16 is used (see .cell). */
 /* While a row is being renamed its other cells stay inert so no popover opens mid-edit (spec silent; kept to the field). */
 .cell[data-inert] { pointer-events: none; }
@@ -77,26 +81,37 @@
 .glyph[data-done] { color: var(--om-color-tertiary-green-default); }
 .glyph:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
-/* The rest of the title cell (name + count chips) is one button → opens the task; anchor = the cell. */
+/* The title button holds only the name now — the chips sit beside it so the comment chip can be its own control.
+   It hugs its text so the chips stay snug against the title (the mock's order); `.titleRest` takes the slack and
+   keeps "click anywhere in the cell opens the task" true. */
 .titleBtn {
   display: flex; align-items: center; gap: var(--om-spacing-3);
-  flex: 1; min-width: 0; height: 100%;
+  flex: 0 1 auto; min-width: 0; height: 100%;
   border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
   color: inherit; font: inherit;
 }
 .titleBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; border-radius: var(--om-radius-1); }
 .title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
 .title[data-unseen] { font: var(--om-type-heading-h5); }   /* RW-New: name 14/Bold */
-.chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }   /* H g8 */
-/* Count chip 34×24: p4 g4, fill #f2f2f2, r4 → icon 16/Light on-surface + count 12/Medium. */
+.chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; margin-left: var(--om-spacing-3); }   /* H g8, 12 from the title (the gap .titleBtn used to hold) */
+/* Filler: the cell's remaining width, still opening the task. Not a tab stop — the title button already is one. */
+.titleRest { flex: 1; min-width: 0; align-self: stretch; border: 0; background: none; padding: 0; cursor: pointer; }
+/* Count chip 34×24: p4 g4, fill #f2f2f2, r4 → icon 16/Light on-surface + count 12/Medium.
+   The comments one is a <button> (it opens the panel) and the attachments one a <span>; the reset below keeps them
+   the SAME container — no border, no elevation, nothing the DS does not draw (user 2026-08-30). The only difference
+   is the pointer, and a hover that stays inside the mock's own palette. */
 .chip {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   height: 24px; padding: var(--om-spacing-1);
+  border: 0; margin: 0; box-shadow: none; appearance: none;
   background: var(--om-color-surface-bg);
   border-radius: var(--om-radius-1);
   font: var(--om-type-caption-s);
   color: var(--om-color-on-surface-default);
 }
+.chip[data-action] { cursor: pointer; transition: background-color var(--motion-hover); }
+.chip[data-action]:hover { background: var(--om-color-surface-variant); }
+.chip[data-action]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* Member cell: Avatar Generic 24 r4 — #cccccc placeholder when unassigned. om/avatar has no placeholder mode, so the
    box is drawn here; the silhouette glyph (person 16, white) is not measured in the spec. */
@@ -137,6 +152,9 @@
   border-radius: var(--om-radius-1);
 }
 .tagsBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* A name chip may shrink (the DS Tag's own min-width would keep it at full width) and its name ellipsises inside it. */
+.tagChip { min-width: 0; }
+.tagName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "Link text Primary leading icon add" (add 20 + 14/Semi Bold #5500ff) rendered as a span inside the cell button —
    the DS Link can't nest in a button; geometry copied from the DS link (gap 4, subheading-m). */
 .link {
@@ -193,9 +211,19 @@ button.doneFilled[data-variant='primary']:hover {
 .menuWrap { position: relative; display: inline-flex; }
 .danger { color: var(--om-color-tertiary-red-default); }
 
-/* ---- Bottom bar 902:26450 — 53 tall: 1px top rule + p16/24; "Add Task" link 20 tall. ---- */
+/* ---- Bottom bar 902:26450 — 53 tall: 1px top rule + p16/24; "Add Task" link 20 tall. ----
+   It sticks to the bottom of the viewport while the table is taller than the page, so Add Task stays reachable
+   instead of living only at the very end of a long list (user 2026-08-30); once the card's end scrolls into view it
+   settles into place. It carries the card's own bottom radius and, while floating, the level-1 lift the page header
+   uses so it reads as a dock rather than a row. */
 .foot {
   display: flex; align-items: center;
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  position: sticky; bottom: 0; z-index: 1;
+  background: var(--om-color-surface-default);
+  border-radius: 0 0 var(--om-radius-2) var(--om-radius-2);
 }
+.foot[data-floating] { box-shadow: var(--om-elevation-level-1); }
+/* 1px sentinel at the card's true end — while it is off-screen the foot above is floating. */
+.footEnd { height: 1px; margin-top: -1px; }

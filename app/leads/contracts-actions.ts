@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts } from '@/lib/db/schema'
 import { type ContractStatus } from '@/lib/leads/contract-filters'
@@ -11,10 +11,23 @@ import { type ContractStatus } from '@/lib/leads/contract-filters'
 
 const touch = (leadId: string) => { revalidatePath(`/leads/${leadId}`); revalidatePath(`/leads/${leadId}/contracts`); revalidatePath('/leads') }
 
+const CONTRACT_TITLE = 'General Contract Agreement'
+
+/**
+ * Title from the lead's own count, the way quotes number themselves: the first contract is the mock's row
+ * (931:38692, "General Contract Agreement"), each later one is numbered so no two rows — or signed copies,
+ * named "<title>.pdf" — read alike.
+ */
+async function nextTitle(leadId: string): Promise<string> {
+  const [row] = await db.select({ n: sql<number>`count(*)` }).from(contracts).where(eq(contracts.leadId, leadId))
+  const n = row?.n ?? 0
+  return n ? `${CONTRACT_TITLE} ${n + 1}` : CONTRACT_TITLE
+}
+
 /** New Contract › From Blank / empty state › From Scratch (REG-178): a Draft titled as the mock's row, "General Contract Agreement". */
 export async function createContract(leadId: string): Promise<string> {
   const id = randomUUID(); const now = new Date()
-  await db.insert(contracts).values({ id, leadId, title: 'General Contract Agreement', status: 'Draft', createdAt: now, updatedAt: now })
+  await db.insert(contracts).values({ id, leadId, title: await nextTitle(leadId), status: 'Draft', createdAt: now, updatedAt: now })
   touch(leadId); return id
 }
 

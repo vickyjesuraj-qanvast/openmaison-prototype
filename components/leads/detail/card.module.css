@@ -22,13 +22,18 @@
 /* Head link ("Ask Client"): subheading-s primary; hover = "Link text" of interaction-states.md (#4400cc). */
 .link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-s); text-transform: none; color: var(--om-color-primary-default); white-space: nowrap; transition: color var(--motion-hover); }
 .link:hover { color: var(--om-color-on-primary-variant); }
+/* The glyph stays the mock's 16 and in the mock's place; the control is 24 (the negative margin absorbs the extra 8)
+   so it can carry the same hover plate every other icon control has — the info column's chevrons and kebabs
+   (components/leads/detail/info-column.module.css .iconBtn), which this one was missing (user 2026-08-30). */
 .open {
   border: 0; background: none; padding: 0; cursor: pointer;
-  width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; margin: -4px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--om-radius-1);
   color: var(--om-color-primary-default);
-  transition: color var(--motion-hover);
+  transition: color var(--motion-hover), background-color var(--motion-hover);
 }
-.open:hover { color: var(--om-color-on-primary-variant); }
+.open:hover { color: var(--om-color-on-primary-variant); background: var(--om-color-hover-08p); }
+.open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* Empty state (858:24171 …): 32 padding, centred column. */
 .empty { display: flex; flex-direction: column; align-items: center; padding: var(--om-spacing-8); }

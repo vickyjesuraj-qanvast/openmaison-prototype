@@ -40,12 +40,15 @@ export async function createFolder(leadId: string, name: string, parentId: strin
 }
 
 /**
- * New File › From Local Files / Upload Files (REG-149 flow): whatever was picked becomes the mock's file —
- * "Living Room", JPEG 711 KB with the mock thumbnail — owned by the signed-in member, in the open folder.
+ * New File › From Local Files / Upload Files (REG-149 flow): the mock's 711 KB and thumbnail stand in for bytes we
+ * never store, owned by the signed-in member, in the open folder. The kind follows the picked NAME — the same
+ * derivation attach-files-modal.tsx and return-lead-wizard.tsx make on the way in, so the pick keeps its identity
+ * once persisted; storing every pick as a JPEG turned an attached .pdf into a photograph on Confirm.
  */
 export async function uploadFile(leadId: string, parentId: string | null = null, name = 'Living Room'): Promise<string> {
   const id = randomUUID(); const now = new Date()
-  await db.insert(leadFiles).values({ id, leadId, kind: 'image', name, thumb: '/figma-assets/file-thumb-1.png', createdAt: now, parentId, ownerId: ME, sizeBytes: 728064, mime: 'image/jpeg', updatedAt: now })
+  const pdf = /\.pdf$/i.test(name)
+  await db.insert(leadFiles).values({ id, leadId, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: now, parentId, ownerId: ME, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: now })
   touch(leadId); return id
 }
 

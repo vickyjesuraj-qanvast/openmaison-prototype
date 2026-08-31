@@ -73,15 +73,17 @@ export function QanvastTable({ rows, onView }: { rows: QanvastLeadRow[]; onView:
             </span>
           </div>
 
-          {/* Row hover (209): ["Lead Return Updates" ·] "View Lead" — secondary outlined 36, 12 apart, floating at right 24. */}
+          {/* Row hover (209): ["Lead Return Updates" ·] "View Lead" — the LISTING's hover pair, primary outlined 36,
+              12 apart, floating at right 24. REG-199 read secondary off the 931:49435 render; the owner's rule is that
+              a row's hover actions look the same on every table, and the listing is the reference (user 2026-08-30). */}
           <span className={styles.actions}>
             {row.ret ? (
               <span className={styles.float}>
-                <Button variant="secondary" appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead Return Updates</Button>
+                <Button appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead Return Updates</Button>
               </span>
             ) : null}
             <span className={styles.float}>
-              <Button variant="secondary" appearance="outlined" onPress={() => onView(row.id)} aria-label={`View lead ${row.name}`}>View Lead</Button>
+              <Button appearance="outlined" onPress={() => onView(row.id)} aria-label={`View lead ${row.name}`}>View Lead</Button>
             </span>
           </span>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Avatar } from '@/components/om/avatar'
@@ -31,6 +31,8 @@ export type TasksTableProps = {
   onRenameSubmit: (id: string, title: string) => void
   onRenameCancel: () => void
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
+  /** The title cell's comment chip opens the comments panel straight away (user 2026-08-30). */
+  onOpenComments: (task: TaskRow) => void
   onToggleDone: (task: TaskRow) => void
   onAssign: (task: TaskRow, anchor: HTMLElement) => void
   onDue: (task: TaskRow, anchor: HTMLElement) => void
@@ -59,16 +61,39 @@ export function TasksTable({
   tasks, now, selected, onSelect, unseen,
   adding, onAddSubmit, onAddCancel,
   renaming, onRenameSubmit, onRenameCancel,
-  onOpen, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
 
   const allSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(tasks.map((t) => t.id)))
-  const toggleOne = (id: string) => {
+  /* Shift-click selects the run between the last row touched and this one, as a mail client does (user 2026-08-30):
+     it only ever ADDS, so shift-clicking across a partly-ticked list fills the gaps instead of flipping them. The
+     anchor is the last row clicked, with or without shift. */
+  const lastTouched = useRef<number | null>(null)
+
+  /* The Add Task bar is docked whenever the card's end sits below the fold; the 1px sentinel after it says so. */
+  const cardEnd = useRef<HTMLDivElement>(null)
+  const [floating, setFloating] = useState(false)
+  useEffect(() => {
+    const el = cardEnd.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([entry]) => setFloating(!entry?.isIntersecting), { rootMargin: '0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  const toggleOne = (id: string, index: number, range: boolean) => {
     const next = new Set(selected)
-    if (next.has(id)) next.delete(id); else next.add(id)
+    const from = lastTouched.current
+    if (range && from !== null) {
+      for (let i = Math.min(from, index); i <= Math.max(from, index); i++) {
+        const t = tasks[i]
+        if (t) next.add(t.id)
+      }
+    } else if (next.has(id)) next.delete(id)
+    else next.add(id)
+    lastTouched.current = index
     onSelect(next)
   }
 
@@ -105,7 +130,7 @@ export function TasksTable({
           now={now}
           unseen={unseen.has(task.id)}
           selected={selected.has(task.id)}
-          onToggleSelect={() => toggleOne(task.id)}
+          onToggleSelect={(range) => toggleOne(task.id, idx, range)}
           renaming={renaming === task.id}
           onRenameSubmit={(title) => onRenameSubmit(task.id, title)}
           onRenameCancel={onRenameCancel}
@@ -114,17 +139,19 @@ export function TasksTable({
           onMenuClose={() => setMenuRow(null)}
           /* Kebab flips up on the last two rows of a 3+ row table — the leads table's rule. */
           menuSide={tasks.length >= 3 && idx >= tasks.length - 2 ? 'up' : 'down'}
-          onOpen={onOpen} onToggleDone={onToggleDone} onAssign={onAssign} onDue={onDue} onAddTags={onAddTags}
+          onOpen={onOpen} onOpenComments={onOpenComments} onToggleDone={onToggleDone} onAssign={onAssign} onDue={onDue} onAddTags={onAddTags}
           onRowMenu={onRowMenu} onEdit={onEdit}
         />
       ))}
 
-      {/* Bottom bar 902:26450 — Link text Primary leading icon add "Add Task". */}
-      <div className={styles.foot}>
+      {/* Bottom bar 902:26450 — Link text Primary leading icon add "Add Task". Sticks to the viewport bottom while
+          the card runs past it; `data-floating` adds the lift only while it is actually docked. */}
+      <div className={styles.foot} data-floating={floating || undefined}>
         <Link variant="primary" iconStart={<Icon name="add" size={20} />} onPress={() => onAddClick?.()}>
           Add Task
         </Link>
       </div>
+      <div className={styles.footEnd} ref={cardEnd} aria-hidden />
     </div>
   )
 }
@@ -213,13 +240,13 @@ function TaskRowView({
   task, now, unseen, selected, onToggleSelect,
   renaming, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpen, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit,
 }: {
   task: TaskRow
   now: number
   unseen: boolean
   selected: boolean
-  onToggleSelect: () => void
+  onToggleSelect: (range: boolean) => void
   renaming: boolean
   onRenameSubmit: (title: string) => void
   onRenameCancel: () => void
@@ -228,6 +255,7 @@ function TaskRowView({
   onMenuClose: () => void
   menuSide: 'up' | 'down'
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
+  onOpenComments: (task: TaskRow) => void
   onToggleDone: (task: TaskRow) => void
   onAssign: (task: TaskRow, anchor: HTMLElement) => void
   onDue: (task: TaskRow, anchor: HTMLElement) => void
@@ -236,14 +264,19 @@ function TaskRowView({
   onEdit: (task: TaskRow) => void
 }) {
   const overdue = !task.done && isOverdue(task.dueAt, now)
+  const shiftHeld = useRef(false)
   const inert = renaming ? '' : undefined
   const pick = (action: TaskRowAction) => () => { onMenuClose(); onRowMenu(task, action) }
 
   return (
     <div className={styles.row} role="row" data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined}>
-      {/* Selection cell: checkbox 24/Light secondary → check_box 24 primary when selected. */}
-      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
-        <Checkbox isSelected={selected} onChange={onToggleSelect} aria-label={`Select ${task.title}`} />
+      {/* Selection cell: checkbox 24/Light secondary → check_box 24 primary when selected.
+          The DS Checkbox reports the next checked state, not the event, so Shift is read off the click on its way
+          down (capture runs before the input's own change) and handed to the range selector. */}
+      <div className={`${styles.cell} ${styles.colSel}`} role="cell"
+           onClickCapture={(e) => { shiftHeld.current = e.shiftKey }}
+           onKeyDownCapture={(e) => { shiftHeld.current = e.shiftKey }}>
+        <Checkbox isSelected={selected} onChange={() => onToggleSelect(shiftHeld.current)} aria-label={`Select ${task.title}`} />
       </div>
 
       {/* Title cell — status glyph · title (bold when unseen) · count chips; the rest of the cell opens the task. */}
@@ -260,29 +293,40 @@ function TaskRowView({
               aria-pressed={task.done}
               onClick={() => onToggleDone(task)}
             >
-              <Icon name={task.done ? 'check_circle' : 'radio_button_unchecked'} size={24} weight={300} />
+              {/* Completed = the FILLED check_circle, as the mock draws it; open = the outlined ring (user 2026-08-30). */}
+              <Icon name={task.done ? 'check_circle' : 'radio_button_unchecked'} size={24} weight={300} fill={task.done} />
             </button>
           </Tooltip>
           {/* Nested buttons aren't allowed, so the glyph sits beside this button; the anchor handed up is the cell itself. */}
           <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}>
             <span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span>
-            {task.comments.length > 0 || task.attachments.length > 0 ? (
-              <span className={styles.chips}>
-                {task.comments.length > 0 ? (
-                  <span className={styles.chip} aria-label={`${task.comments.length} comments`}>
+          </button>
+          {/* The chips sit BESIDE the title button, not inside it: the comment chip is a control of its own now
+              (opens the comments panel straight away, user 2026-08-30) and buttons cannot nest — the same reason
+              the status glyph sits outside. The attachment chip stays a plain count. */}
+          {task.comments.length > 0 || task.attachments.length > 0 ? (
+            <span className={styles.chips}>
+              {task.comments.length > 0 ? (
+                <Tooltip label="Open comments">
+                  <button type="button" className={styles.chip} data-action=""
+                          aria-label={`Open ${task.comments.length} comments`}
+                          onClick={() => onOpenComments(task)}>
                     <Icon name="comment" size={16} weight={300} />
                     {task.comments.length}
-                  </span>
-                ) : null}
-                {task.attachments.length > 0 ? (
-                  <span className={styles.chip} aria-label={`${task.attachments.length} attachments`}>
-                    <Icon name="attach_file" size={16} weight={300} />
-                    {task.attachments.length}
-                  </span>
-                ) : null}
-              </span>
-            ) : null}
-          </button>
+                  </button>
+                </Tooltip>
+              ) : null}
+              {task.attachments.length > 0 ? (
+                <span className={styles.chip} aria-label={`${task.attachments.length} attachments`}>
+                  <Icon name="attach_file" size={16} weight={300} />
+                  {task.attachments.length}
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+          {/* The rest of the cell still opens the task, as it did while the title button filled the row. */}
+          <button type="button" className={styles.titleRest} tabIndex={-1} aria-hidden
+                  onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)} />
         </div>
       )}
 
@@ -333,7 +377,10 @@ function TaskRowView({
             <AddTagsLink />
           ) : (
             <>
-              {task.tags.slice(0, 2).map((g) => <Tag key={g.id} appearance="outlined">{g.name}</Tag>)}
+              {/* The name sits in its own span so a long user-made tag ellipsises inside its chip instead of spilling the cell. */}
+              {task.tags.slice(0, 2).map((g) => (
+                <Tag key={g.id} appearance="outlined" className={styles.tagChip}><span className={styles.tagName}>{g.name}</span></Tag>
+              ))}
               {task.tags.length > 2 ? <Tag appearance="outlined">{`+${task.tags.length - 2}`}</Tag> : null}
             </>
           )}

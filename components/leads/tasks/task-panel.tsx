@@ -196,7 +196,9 @@ export function TaskPanel({
         <h3 className={styles.sectionTitle}>Attachments</h3>
         {task.attachments.length ? (
           <div className={styles.tiles}>
-            {task.attachments.map((f) => <FileTile key={f.id} name={f.name} onDelete={() => onDetach(f.id)} />)}
+            {/* These are real lead_files rows picked in the Attach files modal, so each tile shows that file's own
+                thumbnail and kind — an image named Q-101 must not be drawn as the PDF the modal never showed. */}
+            {task.attachments.map((f) => <FileTile key={f.id} name={f.name} thumb={f.thumb} kind={f.kind} onDelete={() => onDetach(f.id)} />)}
           </div>
         ) : null}
         <Button className={styles.fullWidth} variant="secondary" appearance="outlined" iconStart={<Icon name="attach_file" size={20} />} onPress={onAttach}>

@@ -4,21 +4,28 @@
 .body { display: flex; flex-direction: column; gap: var(--om-spacing-5); padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5); }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 
-/* Amount row: H g8, items bottom-aligned; the text group sits on one baseline. */
+/* Amount row: H g8, items bottom-aligned; the text group sits on one baseline.
+   The group wraps rather than squeezing the quote number — a number that loses its last character is unreadable
+   (user 2026-08-30). Each token stays whole and drops to the next line when the row tightens; on the mock's 430
+   card "S$ 70,500 · OM-10001 · Private" fits on one line, so 858:25057 is unchanged. */
 .amountRow { display: flex; align-items: flex-end; gap: var(--om-spacing-2); }
-.amountText { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: var(--om-spacing-2); }
+.amountText { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--om-spacing-2); }
 .amount { font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 24/Bold/32 = heading-h2 (defined in @openmaison/tokens theme) */
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.sub:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+/* number · visibility travel together, so the row never breaks on the separator; the 8px gaps are the mock's. */
+.meta { display: inline-flex; align-items: baseline; gap: var(--om-spacing-2); }
 /* Status = the DS Tag as it comes (uppercase "DRAFT", 858:25057). */
 .tag { display: inline-flex; }
 
-/* Progress: 8px track, surface-variant, r999; primary bar r999. */
-.track { width: 100%; height: 8px; background: var(--om-color-surface-variant); border-radius: var(--om-radius-full); overflow: hidden; }
+/* Progress: ONE unbroken 8px track the full width of the card (the mock's own bar, 858:25057), never split into
+   pieces. The stage marks are 2px breaks cut in it at the point each name below begins, so the bar reads as the
+   studio's stages without ever leaving a gap in the fill. */
+.track { position: relative; width: 100%; height: 8px; background: var(--om-color-surface-variant); border-radius: var(--om-radius-full); overflow: hidden; }
 .bar { height: 100%; background: var(--om-color-primary-default); border-radius: var(--om-radius-full); }
+.mark { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--om-color-surface-default); }
 
-/* Step labels (16 tall): Draft left (fill) · Sent centred (hug) · Approved right (fill); current step primary. */
-.labels { display: flex; align-items: center; height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
-.labels span:first-child { flex: 1; text-align: left; }
-.labels span:last-child { flex: 1; text-align: right; }
-.labels [data-current] { color: var(--om-color-primary-default); }
+/* Step names: each is its own text's width and starts where its stage starts on the track; the row spreads to the
+   card's full width, so the first is flush left and the last flush right. Never wrapped, never broken. */
+.labels { display: flex; justify-content: space-between; align-items: baseline; width: 100%; gap: var(--om-spacing-2); min-height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.stepLabel { flex: 0 0 auto; white-space: nowrap; }
+.stepLabel[data-current] { color: var(--om-color-primary-default); }

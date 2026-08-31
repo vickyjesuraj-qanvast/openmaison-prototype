@@ -54,7 +54,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   // imported lead keeps the sheet's own source (Facebook, Others, …), so it reads as yours too.
   push({ id: `lead-${lead.id}`, at: lead.createdAt, icon: 'person', text: `Lead created from ${lead.source}.`, link: { label: 'See Overview', href: base }, actor: lead.source === 'Qanvast' ? 'System' : 'You' })
   const overview = { label: 'See Overview', href: base }
+  // The Lost move on a return is returnLead's own side effect, named by `leadReturns.stageLogId` (seeded returns carry only the
+  // payload reason) — "You marked the lead as lost." claimed a move nobody made, next to the return row that already tells it.
+  const returnLogIds = new Set(rets.map((r) => r.stageLogId).filter((id): id is string => !!id))
+  const isReturnLog = (log: (typeof logs)[number]) =>
+    returnLogIds.has(log.id) || (!!log.payload && typeof log.payload === 'object' && (log.payload as { reason?: unknown }).reason === 'Lead returned to Qanvast')
   for (const log of logs) {
+    if (isReturnLog(log)) continue
     // fromStage === toStage is updateStageDetails recording a stage the lead reached before any log existed — a correction, not a move.
     const text = log.fromStage === log.toStage ? (log.toStage === 'Contacted' ? 'You updated the contact log.' : `You updated the ${log.toStage} details.`)
       : log.toStage === 'On Hold' ? 'You put the lead on hold.'
@@ -106,7 +112,8 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     : f.kind === 'folder' ? { label: 'See Files', href: `${base}/files?folder=${f.id}` } : { label: 'See File', href: `${base}/files/${f.id}` }
   for (const f of files) {
     const actor = who(f.ownerId)
-    push({ id: `file-${f.id}`, at: f.createdAt, icon: f.kind === 'folder' ? 'folder' : 'image', text: f.kind === 'folder' ? `${actor} created the folder ${q(f.name)}.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor })
+    // The glyph follows the record's kind (the mock's files were all images, so "image" was written in).
+    push({ id: `file-${f.id}`, at: f.createdAt, icon: f.kind === 'folder' ? 'folder' : f.kind === 'pdf' || f.mime === 'application/pdf' ? 'picture_as_pdf' : 'image', text: f.kind === 'folder' ? `${actor} created the folder ${q(f.name)}.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor })
     if (f.deletedAt) push({ id: `file-d-${f.id}`, at: f.deletedAt, icon: 'delete', text: `${actor} moved ${q(f.name)} to the Trash Folder.`, link: { label: 'See Files', href: `${base}/files` }, actor })
   }
   for (const c of fComments) { const f = files.find((x) => x.id === c.fileId); if (f) push({ id: `fc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the file ${q(f.name)}.`, link: fileLink(f), actor: who(c.authorId) }) }

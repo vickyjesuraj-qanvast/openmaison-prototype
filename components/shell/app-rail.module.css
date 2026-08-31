@@ -11,7 +11,6 @@
   align-self: flex-start;
   height: calc(100dvh - 16px);
   width: 52px; flex-shrink: 0;
-  transition: width var(--motion-modal, 0.2s) ease;
   z-index: 70;
 }
 .wrap[data-pinned] { width: 216px; }
@@ -24,7 +23,7 @@
   display: flex; flex-direction: column;
   padding: var(--om-spacing-2);
   overflow: hidden;
-  transition: width var(--motion-modal, 0.2s) ease, box-shadow var(--motion-modal, 0.2s) ease;
+
 }
 .panel[data-expanded] { width: 216px; }
 
@@ -151,3 +150,9 @@
 .studioOwner { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 .item:focus-visible, .avatar:focus-visible, .logoTile:focus-visible, .pinBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* The width animates only for the viewer's OWN toggle. A remembered rail (REG-232) arrives on the first client
+   render, and animating that would replay the expand on every page load — so the transition is gated on
+   `data-animate`, set once the viewer has actually pressed the control this session. */
+.wrap[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
+.panel[data-animate] { transition: width var(--motion-modal, 0.2s) ease, box-shadow var(--motion-modal, 0.2s) ease; }

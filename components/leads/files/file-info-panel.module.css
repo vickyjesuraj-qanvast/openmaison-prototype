@@ -22,6 +22,9 @@
 /* Information body (931:39990) V g24 p24 → block V g16 of rows H g12: label 120 wide secondary · value 219 wide on-surface, 20 tall. */
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .block { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-.row { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
+.row { display: flex; align-items: flex-start; gap: var(--om-spacing-3); min-height: 20px; }   /* min-height keeps the mock's 20px rhythm and lets a wrapped value grow its row */
 .label { width: 120px; flex-shrink: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.value { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The value column is 220 (panel 400 − p48 − label 120 − gap 12), so a renamed folder or a long member name would clip
+   at ~34 characters. Owner and Location are stated nowhere else in the viewer, so they wrap instead of truncating —
+   the info column's rule (components/leads/detail/info-column.module.css). Every mocked value is one line still. */
+.value { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }

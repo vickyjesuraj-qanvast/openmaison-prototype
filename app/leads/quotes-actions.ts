@@ -34,14 +34,18 @@ async function leadOf(quoteId: string): Promise<string | null> {
   return q?.leadId ?? null
 }
 
-/** Status cell menu (910:36673). First move out of Draft stamps Sent; Approved / Signed stamp the approval date. */
+/**
+ * Status cell menu (910:36673). First move out of Draft stamps Sent; only Approved stamps the approval date.
+ * Signed stamped it too, which dated an approval that never happened — Draft › Signed is one click, and a studio
+ * with Quote approval off (quoteStatuses()) has no Approved step at all. Approval Date stays "-" until then (REG-176).
+ */
 export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Promise<void> {
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) return
   const now = new Date()
   const patch: Partial<typeof quotes.$inferInsert> = { status, updatedAt: now }
   if ((status === 'Sent for Approval' || status === 'Sent to Client') && !q.sentAt) patch.sentAt = now
-  if ((status === 'Approved' || status === 'Signed') && !q.approvedAt) patch.approvedAt = now
+  if (status === 'Approved' && !q.approvedAt) patch.approvedAt = now
   await db.update(quotes).set(patch).where(eq(quotes.id, quoteId))
   touch(q.leadId)
 }

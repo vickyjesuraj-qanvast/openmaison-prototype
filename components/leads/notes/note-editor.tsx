@@ -24,11 +24,14 @@ export function NoteEditor({
   return (
     <div className={styles.editor} data-testid="note-editor">
       <div className={styles.fields}>
+        {/* The editor only exists because the user asked to write something, so it opens with the caret already in
+            the title — nobody should have to hunt for the field and click it first (user 2026-08-31). */}
         <input
           className={styles.title}
           value={draft.title}
           placeholder="Title"
           aria-label="Title"
+          autoFocus
           onChange={(e) => onChange({ title: e.target.value })}
         />
         <BodyArea value={draft.body} onChange={(v) => onChange({ body: v })} />

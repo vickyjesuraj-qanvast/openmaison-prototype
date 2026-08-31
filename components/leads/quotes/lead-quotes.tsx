@@ -9,6 +9,7 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { Quote } from '@/lib/db/schema'
 import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
+import type { QuoteApproval } from '@/lib/settings/types'
 import type { LeadQuotesData } from '@/lib/leads/quotes'
 import { archiveQuote, createQuote, deleteQuotes, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
 import { QuotesToolbar } from './quotes-toolbar'
@@ -25,7 +26,7 @@ import styles from './lead-quotes.module.css'
  * `useRun`; the `?new=1` landing and the `om:quotes:new` event through `useCreateIntent`.
  * Specs: design-source/context/lead-quotes/.
  */
-export function LeadQuotes({ leadId, data }: { leadId: string; data: LeadQuotesData }) {
+export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: LeadQuotesData; approval: QuoteApproval }) {
   const { quotes, now } = data
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -91,7 +92,7 @@ export function LeadQuotes({ leadId, data }: { leadId: string; data: LeadQuotesD
         <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
       ) : (
         <QuotesTable
-          quotes={visible} now={now}
+          quotes={visible} now={now} approval={approval}
           selected={selected} onSelect={setSelected}
           onStatus={onStatus}
           onDue={openDue}
@@ -115,7 +116,7 @@ export function LeadQuotes({ leadId, data }: { leadId: string; data: LeadQuotesD
         onClose={() => setDueFor(null)}
       />
       <QuotesFiltersModal
-        open={filtersOpen} value={filters} now={now}
+        open={filtersOpen} value={filters} now={now} approval={approval}
         onApply={(v) => { setFilters(v); setFiltersOpen(false) }}
         onClose={() => setFiltersOpen(false)}
       />

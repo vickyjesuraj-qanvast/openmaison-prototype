@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/lib/db'
-import { fileComments, leadFiles, leads, members, taskAttachments, type FileComment, type Member } from '@/lib/db/schema'
+import { fileComments, leadFiles, leads, members, noteAttachments, returnAttachments, taskAttachments, type FileComment, type Member } from '@/lib/db/schema'
 import type { FileRow } from './file-model'
 
 /* Lead Details › Files (931-39056) — loaders for the tab and the viewer. */
@@ -21,21 +21,30 @@ async function loadRows(leadId: string): Promise<{ rows: FileRow[]; team: Member
     db.select().from(members),
   ])
   const ids = all.map((f) => f.id)
-  const [comments, attachments] = ids.length
+  // All three relations that point at lead_files, not tasks alone: a file held only by a note or by a lead return read
+  // "--" here while the Notes tab / return details modal listed it as their attachment (Files shipped before both).
+  const [comments, taskLinks, noteLinks, returnLinks] = ids.length
     ? await Promise.all([
         db.select({ fileId: fileComments.fileId }).from(fileComments).where(inArray(fileComments.fileId, ids)),
         db.select({ fileId: taskAttachments.fileId }).from(taskAttachments).where(inArray(taskAttachments.fileId, ids)),
+        db.select({ fileId: noteAttachments.fileId }).from(noteAttachments).where(inArray(noteAttachments.fileId, ids)),
+        db.select({ fileId: returnAttachments.fileId }).from(returnAttachments).where(inArray(returnAttachments.fileId, ids)),
       ])
-    : [[], []]
+    : [[], [], [], []]
   const byMember = new Map(team.map((m) => [m.id, m]))
   const commentCount = new Map<string, number>()
   for (const c of comments) commentCount.set(c.fileId, (commentCount.get(c.fileId) ?? 0) + 1)
-  const attached = new Set(attachments.map((a) => a.fileId))
+  const onTask = new Set(taskLinks.map((a) => a.fileId))
+  const onNote = new Set(noteLinks.map((a) => a.fileId))
+  const onReturn = new Set(returnLinks.map((a) => a.fileId))
+  // One Tag per row (931:40181), Task first — a file on both a task and a note still reads "Task".
+  const attachedTo = (id: string): FileRow['attachedTo'] =>
+    onTask.has(id) ? 'Task' : onNote.has(id) ? 'Note' : onReturn.has(id) ? 'Return' : null
   const rows: FileRow[] = all.map((f) => ({
     ...f,
     owner: f.ownerId ? byMember.get(f.ownerId) ?? null : null,
     commentCount: commentCount.get(f.id) ?? 0,
-    attachedTo: attached.has(f.id) ? 'Task' : null,
+    attachedTo: attachedTo(f.id),
     itemCount: f.kind === 'folder' ? all.filter((c) => c.parentId === f.id && !c.deletedAt).length : 0,
   }))
   return { rows, team }

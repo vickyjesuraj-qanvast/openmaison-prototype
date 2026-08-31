@@ -11,8 +11,11 @@
 .card {
   display: grid;
   /* Title fluid (absorbs what Status needs, the quotes rule) · Status 128 at rest, grows to its widest content
-     ("Sent to Client") for EVERY row at once · Created 120 · Signed Copy 142 · Sent 140 · Updated 157 (spec 01). */
-  grid-template-columns: minmax(0, 1fr) minmax(128px, max-content) 120px 142px 140px 157px;
+     ("Sent to Client") for EVERY row at once · Created 120 · Signed Copy 142 · Sent 140 · Updated 157 (spec 01).
+     Floors + mocked maxima, not frozen px (the quotes twin): free space fills every track to its mocked width before the
+     fluid Title takes the rest, so the mock's 1244 card still resolves to 557 · 128 · 120 · 142 · 140 · 157 — and a
+     narrower frame (rail pinned + quick links expanded) squeezes the row instead of overflowing the body's `overflow: clip`. */
+  grid-template-columns: minmax(120px, 1fr) minmax(128px, max-content) minmax(96px, 120px) minmax(112px, 142px) minmax(112px, 140px) minmax(112px, 157px);
   width: 100%;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke #e5e5e5: rows stay 1244 wide (931:38690) */

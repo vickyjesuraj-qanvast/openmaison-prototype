@@ -21,6 +21,12 @@ export type TextFieldProps = {
   trailingIcon?: string | null
   /** Custom trailing element (unit switch, clear button). */
   trailing?: ReactNode
+  /**
+   * Content rendered INSIDE the box, on its own row under the control — picked chips and the like. The box then
+   * grows downwards instead of holding 48px, and the label floats, because a box with content is never empty.
+   * Callers that pass nothing keep exactly today's markup.
+   */
+  below?: ReactNode
   /** Prefix rendered before the value (e.g. +65). The label floats while it is shown. */
   leading?: ReactNode
   helper?: string
@@ -58,7 +64,7 @@ export type TextFieldProps = {
  * error and helper messages render underneath in the DS error/helper styles.
  */
 export function TextField({
-  label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, helper, error,
+  label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, below, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
   type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className,
 }: TextFieldProps) {
@@ -73,7 +79,7 @@ export function TextField({
   const listRef = useRef<HTMLDivElement | null>(null)
   const isSelect = mode === 'select'
   const open = isSelect ? menuOpen : !!openProp
-  const floated = focused || open || value !== '' || !!leading
+  const floated = focused || open || value !== '' || !!leading || !!below
   const message = typeof error === 'string' && error ? error : helper
   const hasError = !!error
   const icon = trailingIcon === undefined ? (isSelect ? 'expand_more' : null) : trailingIcon
@@ -120,9 +126,11 @@ export function TextField({
     <div className={className ? `${styles.field} ${className}` : styles.field}
          data-kind={mode} data-floated={floated || undefined} data-active={(focused || open) || undefined}
          data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}
-         data-trail={(icon || trailing) ? '' : undefined}>
+         data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined}>
       <div ref={setBox} className={styles.box}
            onMouseDown={(e) => { if (mode !== 'text') { e.preventDefault(); (e.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus(); activate() } }}>
+        {/* The control row. It only gets a wrapper when `below` is in play — otherwise the DOM is exactly as it was. */}
+        {below ? <div className={styles.row}>
         {leading ? <span className={styles.leading}>{leading}</span> : null}
         {mode === 'text' ? (
           <input
@@ -154,9 +162,45 @@ export function TextField({
             {value ? value : floated && placeholder ? <span className={styles.placeholder}>{placeholder}</span> : null}
           </button>
         )}
-        <label id={`${id}-label`} htmlFor={mode === 'text' ? id : undefined} className={styles.label}>{label}</label>
         {trailing ? <span className={styles.trailSlot}>{trailing}</span> : null}
         {icon ? <span className={styles.trail} aria-hidden><Icon name={icon} size={16} /></span> : null}
+        </div> : (<>
+        {leading ? <span className={styles.leading}>{leading}</span> : null}
+        {mode === 'text' ? (
+          <input
+            id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
+            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
+            disabled={disabled} required={required}
+            aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
+            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
+            onFocus={() => { setFocused(true); onFocus?.() }}
+            onBlur={() => { setFocused(false); onBlur?.() }}
+            onKeyDown={onKeyDown}
+          />
+        ) : (
+          <button
+            ref={controlRef}
+            type="button" id={id} className={styles.control} disabled={disabled}
+            role={isSelect ? 'combobox' : undefined} aria-haspopup={isSelect ? 'listbox' : 'dialog'} aria-expanded={open}
+            aria-labelledby={`${id}-label`} aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
+            aria-required={required || undefined}
+            onFocus={() => { setFocused(true); onFocus?.() }}
+            onBlur={(e) => {
+              setFocused(false)
+              const next = e.relatedTarget as Node | null   // keyboard focus leaving the field closes the menu; option clicks (inside the menu) don't
+              if (isSelect && next && !(next instanceof Element && next.closest('[data-om-menu]'))) setMenuOpen(false)
+              onBlur?.()
+            }}
+            onKeyDown={onControlKey}
+          >
+            {value ? value : floated && placeholder ? <span className={styles.placeholder}>{placeholder}</span> : null}
+          </button>
+        )}
+        {trailing ? <span className={styles.trailSlot}>{trailing}</span> : null}
+        {icon ? <span className={styles.trail} aria-hidden><Icon name={icon} size={16} /></span> : null}
+        </>)}
+        <label id={`${id}-label`} htmlFor={mode === 'text' ? id : undefined} className={styles.label}>{label}</label>
+        {below ? <div className={styles.below}>{below}</div> : null}
       </div>
       {message ? <span id={supportId} className={styles.support} role={hasError ? 'alert' : undefined}>{message}</span> : null}
       {isSelect && options ? (

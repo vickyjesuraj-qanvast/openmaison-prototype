@@ -29,10 +29,12 @@
 .tabIcon { color: var(--om-color-on-surface-secondary); display: inline-flex; }
 .tab[data-active] .tabIcon { color: var(--om-color-primary-default); }
 
-.panel { flex: 1; min-width: 0; max-width: 720px; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+/* The panel fills the column (settings cards are full-width by nature); the readable-measure cap sits on the
+   help copy instead, so 1440 no longer leaves a third of the card empty to the right of it. */
+.panel { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .sectionHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .sectionTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); margin: 0; }
-.sectionHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0; }
+.sectionHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }
 
 .setting {
   border: var(--om-border-1) solid var(--om-color-surface-variant);
@@ -42,5 +44,5 @@
 }
 .settingHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .settingTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.settingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.settingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 72ch; }
 .choices { display: flex; flex-direction: column; gap: var(--om-spacing-2); }

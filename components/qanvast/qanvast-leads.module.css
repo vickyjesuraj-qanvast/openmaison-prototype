@@ -49,10 +49,18 @@
 /* ---- Table 1152 wide at the mock (931:49232): fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. ---- */
 .card {
   display: grid;
-  /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock — Status is the
-     fluid track so the table fills the page content width (the contracts "Title fills" rule, applied to the last column). */
-  grid-template-columns: 240px 132px 138px 158px 115px minmax(369px, 1fr);
+  /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock's 1152-wide content.
+     The five data columns share whatever the container adds, in the mock's own proportions, instead of the slack falling into
+     Status — which holds two 20px tags and needs none (at 1440 with the rail collapsed that used to leave ~390px of white down
+     the right of every row). Status keeps its mocked 369; the ratios are the ghost loader's (components/shell/skeleton.tsx
+     QanvastSkeleton), so the columns don't jump at the PageReveal hand-off. At 1152 every track resolves to its exact mocked
+     px; narrower, each holds its px floor and the card scrolls sideways (the listing's rule, components/leads/table.module.css
+     .scroller) rather than pushing the row's "View Lead" out of reach. */
+  grid-template-columns:
+    minmax(240px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
+    minmax(158px, 158fr) minmax(115px, 115fr) 369px;
   width: 100%;
+  overflow-x: auto;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay full width */
   border-radius: var(--om-radius-2);

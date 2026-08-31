@@ -8,8 +8,8 @@ import { MaisonFab } from '@/components/shell/maison-fab'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { STAGE_MOVEMENT_OPTIONS, type StageMovement } from '@/lib/settings/types'
-import { setStageMovement } from './actions'
+import { QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, type QuoteApproval, type StageMovement } from '@/lib/settings/types'
+import { setQuoteApproval, setStageMovement } from './actions'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './settings.module.css'
 
@@ -22,13 +22,30 @@ const MODULES = [
   { key: 'finance', icon: 'account_balance_wallet', label: 'Finance' },
 ]
 
-export function SettingsView({ stageMovement }: { stageMovement: StageMovement }) {
+export function SettingsView({ stageMovement, quoteApproval }: { stageMovement: StageMovement; quoteApproval: QuoteApproval }) {
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const [mode, setMode] = useState<StageMovement>(stageMovement)
   // The server value changed under us (another tab saved): follow it (render-phase adjust).
   const [seen, setSeen] = useState(stageMovement)
   if (seen !== stageMovement) { setSeen(stageMovement); setMode(stageMovement) }
+
+  const [approval, setApproval] = useState<QuoteApproval>(quoteApproval)
+  const [seenApproval, setSeenApproval] = useState(quoteApproval)
+  if (seenApproval !== quoteApproval) { setSeenApproval(quoteApproval); setApproval(quoteApproval) }
+
+  const chooseApproval = async (next: QuoteApproval) => {
+    if (next === approval) return
+    const prev = approval
+    setApproval(next)   // optimistic, as Stage movement
+    try {
+      await setQuoteApproval(next)
+      snackbar({ message: `Quote approval set to ${QUOTE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}` })
+    } catch {
+      setApproval(prev)
+      snackbar({ message: 'Couldn’t save the setting — please try again' })
+    }
+  }
 
   const choose = async (next: StageMovement) => {
     if (next === mode) return
@@ -71,6 +88,19 @@ export function SettingsView({ stageMovement }: { stageMovement: StageMovement }
               <div className={styles.choices} role="radiogroup" aria-label="Stage movement">
                 {STAGE_MOVEMENT_OPTIONS.map((o) => (
                   <ChoiceCard key={o.key} title={o.title} help={o.help} selected={mode === o.key} onSelect={() => { void choose(o.key) }} />
+                ))}
+              </div>
+            </div>
+            {/* Quote approval (user 2026-08-30): studios differ on whether a quote is reviewed internally before it
+                reaches the client, so the quote's lifecycle — and every list of quote statuses — follows this. */}
+            <div className={styles.setting}>
+              <div className={styles.settingHead}>
+                <span className={styles.settingTitle}>Quote approval</span>
+                <span className={styles.settingHelp}>Whether a quote is reviewed inside the studio before it goes to the client. This sets the stages a quote moves through.</span>
+              </div>
+              <div className={styles.choices} role="radiogroup" aria-label="Quote approval">
+                {QUOTE_APPROVAL_OPTIONS.map((o) => (
+                  <ChoiceCard key={o.key} title={o.title} help={o.help} selected={approval === o.key} onSelect={() => { void chooseApproval(o.key) }} />
                 ))}
               </div>
             </div>

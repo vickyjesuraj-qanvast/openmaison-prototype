@@ -12,20 +12,25 @@
 
 /* Identity block (858:24788): name row 32 tall · 4 · contact rows 20 tall, 4 apart. */
 .identity { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.nameRow { display: flex; align-items: center; justify-content: space-between; height: 32px; }
+/* Grows when a long name wraps; the edit control stays beside the first line (its own 32px box centres the 20px glyph). */
+.nameRow { display: flex; align-items: flex-start; justify-content: space-between; min-height: 32px; }
+/* (32px name line − 20px control) / 2 — the control keeps the mock's optical centre on the first line and its 20×20 hover.
+   Targeted on .iconBtn, not the direct child: Tooltip's anchor is `display: contents`, so the button is the flex item. */
+.nameRow .iconBtn { margin-top: 6px; }
 .name {
   flex: 1; min-width: 0; margin: 0;
   font: var(--om-type-heading-h2);   /* 24 / Bold / 32 */
   color: var(--om-color-on-surface-default);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  overflow-wrap: anywhere;   /* a long name wraps rather than truncating (user 2026-08-30) */
 }
 .contact { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.contactRow { display: flex; align-items: center; gap: var(--om-spacing-2); height: 20px; }
+/* The row keeps the mock's 20px height for one-liners but grows when the value wraps; the icons stay on the first line. */
+.contactRow { display: flex; align-items: flex-start; gap: var(--om-spacing-2); min-height: 20px; }
 .contactText {
   min-width: 0;
   font: var(--om-type-body-m);   /* 14 / Regular / 20 */
   color: var(--om-color-on-surface-default);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* ENDING truncation (phone / address per spec; email kept single-line the same way) */
+  overflow-wrap: anywhere;   /* wraps rather than truncating — the detail page shows the whole value (user 2026-08-30) */
 }
 .whatsapp { display: block; width: 14px; height: 14px; }
 
@@ -78,7 +83,9 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .value { margin: 0; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
-.text { display: block; height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* ENDING, single line */
+/* Values wrap instead of truncating — this is the detail page, so the whole address should be readable (user 2026-08-30).
+   `min-height` keeps a one-line row on the mock's 20px rhythm; the label column is top-aligned already (.kv align-items: start). */
+.text { display: block; min-height: 20px; overflow-wrap: anywhere; }
 
 /* "Assign Member ›" / "Add ›" (CellDataGroup link): 14 / Semi Bold / 20 primary + 20 arrow, H g4. Hover as .headLink. */
 .link {
@@ -94,6 +101,6 @@
 
 /* Assignees (858:25155): one 20px row per member — avatar 20 · name fills · more_vert 20, H g8; rows 16 apart. */
 .assignees { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-.assignee { display: flex; align-items: center; gap: var(--om-spacing-2); height: 20px; }
-.assigneeName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.assignee { display: flex; align-items: flex-start; gap: var(--om-spacing-2); min-height: 20px; }
+.assigneeName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 /* Mock avatar "Generic" 20×20 r4, initial 14 / Medium / 20 = om/avatar size 20. */

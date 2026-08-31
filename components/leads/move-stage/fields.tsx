@@ -65,18 +65,20 @@ export function Divider() {
 }
 
 /**
- * Attached-file tile (781:58405): 146w, 4px pad, a 138×105 preview, then picture_as_pdf (filled, red) · name · delete.
- * Every attached file — call screenshots, meeting documents, site photos, renders — uses this one tile; the preview is
- * the mock's own image since the prototype never reads the real file.
+ * Attached-file tile (781:58405): 146w, 4px pad, a 138×105 preview, then the kind glyph (filled, red) · name · delete.
+ * `thumb` / `kind` come from the caller's real file row where it has one (Tasks › Attachments): the preview is that
+ * file's thumbnail and the glyph follows its kind — picture_as_pdf for a PDF, image otherwise, both red, the rule
+ * components/leads/files/files-grid.tsx already uses. The Move stage window simulates its uploads and passes neither,
+ * so it keeps the mock's own screenshot and picture_as_pdf (REG-151), as does any file with no thumbnail.
  */
-export function FileTile({ name, onDelete }: { name: string; onDelete: () => void }) {
+export function FileTile({ name, onDelete, thumb, kind = 'pdf' }: { name: string; onDelete: () => void; thumb?: string | null; kind?: string }) {
   const ro = useReadOnly()
   return (
     <div className={styles.tile}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className={styles.tileImg} src="/figma-assets/chat-screenshot-thumb.png" alt="" />
+      <img className={styles.tileImg} src={thumb ?? '/figma-assets/chat-screenshot-thumb.png'} alt="" />
       <div className={styles.tileRow}>
-        <span className={styles.tilePdf}><Icon name="picture_as_pdf" size={20} fill /></span>
+        <span className={styles.tilePdf}><Icon name={kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={20} fill /></span>
         <span className={styles.tileName}>{name}</span>
         {ro ? null : (
           <Tooltip label="Remove file">

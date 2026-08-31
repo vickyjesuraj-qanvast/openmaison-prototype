@@ -10,13 +10,16 @@
 /* Group head (931:39085 / 931:39121): checkbox 24 + "Folders" / "Friday, 17 Jul ‘26" 14/Semi Bold, 8 apart. */
 .groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
 .groupTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-/* Items row (931:39088 / 931:39124): 299-wide items 16 apart, wrapping. */
-.row { display: flex; flex-wrap: wrap; gap: var(--om-spacing-4); }
+/* Items row (931:39088 / 931:39124): tracks of at least 299 with 16 gaps. auto-fill divides whatever the centre column
+   measures, so the leftover never sits idle on the right (the quick links 72↔140 and the rail 52↔216 both resize it);
+   at the mock's 1244 it resolves to exactly 4 × 299 + 3 × 16. auto-fill, not auto-fit, so a lone folder card keeps one
+   track instead of stretching across the row. Folders and tiles share the same track. */
+.row { display: grid; grid-template-columns: repeat(auto-fill, minmax(299px, 1fr)); gap: var(--om-spacing-4); }
 
 /* ---- Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 ---- */
 .folder {
   position: relative;
-  width: 299px; height: 56px;
+  height: 56px;                          /* width = the row's track (299 at the mocked 1244) */
   display: flex; align-items: center; gap: var(--om-spacing-2);
   padding: var(--om-spacing-3);
   background: var(--om-color-surface-bg);
@@ -53,7 +56,7 @@
 /* ---- Tile 299×262 (931:39125): V p4, fill #f2f2f2 r4 → image 291×200 r2 + caption 291×54 ---- */
 .tile {
   position: relative;
-  width: 299px; height: 262px;
+  height: 262px;                         /* width = the row's track; 262 = p4 + image 200 + caption 54 + p4 */
   display: flex; flex-direction: column;
   padding: var(--om-spacing-1);
   background: var(--om-color-surface-bg);
@@ -71,9 +74,9 @@
   border-radius: var(--om-radius-1);
 }
 .tileMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.tileImg { display: block; width: 291px; height: 200px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 291×200 r2 */
+.tileImg { display: block; width: 100%; height: 200px; object-fit: cover; border-radius: var(--om-radius-0-5); flex-shrink: 0; }   /* image 291×200 r2 at the mocked track — the width follows the tile, object-fit crops */
 .tileBox {
-  width: 291px; height: 200px; flex-shrink: 0;
+  width: 100%; height: 200px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--om-color-surface-variant);
   border-radius: var(--om-radius-0-5);

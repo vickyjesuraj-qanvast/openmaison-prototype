@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useFlagPref } from '@/lib/prefs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
@@ -18,7 +19,7 @@ import styles from './app-rail.module.css'
 const TOP_ITEMS = [
   { icon: 'dashboard', label: 'Dashboard' },
   { icon: 'business_center', label: 'Projects' },
-  { icon: 'people_alt', label: 'Leads', href: '/leads', fill: true },
+  { icon: 'people_alt', label: 'Leads', href: '/leads' },
   { icon: 'storefront', label: 'Marketplace' },
   { icon: 'domain', label: 'Company' },
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
@@ -32,12 +33,16 @@ const BOTTOM_ITEMS = [
 export function AppRail() {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
-  const [expanded, setExpanded] = useState(false)
+  /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
+     Settings or Qanvast Ops remounted the rail and dropped the choice (user 2026-08-31). `animate` keeps the width
+     transition for the viewer's own toggle and suppresses it on load, so a remembered rail never plays an entrance. */
+  const [expanded, setExpandedPref, animate] = useFlagPref('om.rail.expanded', false)
+  const setExpanded = (next: boolean) => setExpandedPref(next)
   const [railHover, setRailHover] = useState(false)     // logo tile → expand icon (795:22541)
 
   const onEnter = () => setRailHover(true)
   const onLeave = () => setRailHover(false)
-  const togglePin = () => { setExpanded((e) => !e); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
+  const togglePin = () => { setExpanded(!expanded); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
   // Fixed overlays (review banner strip, snackbar host) follow the rail width through this variable.
   useEffect(() => {
     document.documentElement.style.setProperty('--rail-w', expanded ? '216px' : '52px')
@@ -46,7 +51,7 @@ export function AppRail() {
 
   // Collapsed rail: every control gets the shared tooltip (789:83369) to its right.
   // Items with an href are real destinations (Leads, Settings) and light up for their route; the rest answer "coming soon".
-  const navItem = (it: { icon: string; label: string; href?: string; fill?: boolean }, extra?: string) => {
+  const navItem = (it: { icon: string; label: string; href?: string }, extra?: string) => {
     const active = !!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))
     const className = extra ? `${styles.item} ${extra}` : styles.item
     const inner = (
@@ -55,7 +60,9 @@ export function AppRail() {
           /* The turn lives on a wrapper: a transformed element loses its background-clip: text in WebKit, which showed the gradient box turning (user 2026-08-29: "only the icon should spin") */
           <span className={styles.gemTurn}><Icon name="diamond" size={24} weight={300} fill className={styles.upgradeGlyph} /></span>
         ) : (
-          <Icon name={it.icon} size={24} weight={300} fill={!!it.fill} />
+          /* Filled marks the route you are ON; every other item stays outlined (user 2026-08-30). Leads used to
+             carry `fill: true` outright, so it read as selected from the Qanvast Ops and Settings pages too. */
+          <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
         <span className={styles.label}>{it.label}</span>
       </>
@@ -77,8 +84,9 @@ export function AppRail() {
   }
 
   return (
-    <div className={styles.wrap} data-pinned={expanded || undefined}>
+    <div className={styles.wrap} data-pinned={expanded || undefined} data-animate={animate || undefined}>
       <nav className={styles.panel} data-expanded={expanded || undefined} data-pinned={expanded || undefined}
+           data-animate={animate || undefined}
            aria-label="Workspace" onMouseEnter={onEnter} onMouseLeave={onLeave}>
         <div className={styles.top}>
           <div className={styles.logoRow} data-expanded={expanded || undefined}>
@@ -122,7 +130,7 @@ export function AppRail() {
           <div className={styles.items}>{TOP_ITEMS.map((it) => navItem(it))}</div>
         </div>
         <div className={styles.bottom}>
-          {navItem({ icon: 'diamond', label: 'Upgrade', fill: true }, styles.upgrade)}
+          {navItem({ icon: 'diamond', label: 'Upgrade' }, styles.upgrade)}
           {BOTTOM_ITEMS.map((it) => navItem(it))}
         </div>
         <div className={styles.avatarRow}>

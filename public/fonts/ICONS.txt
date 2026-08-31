@@ -36,6 +36,7 @@ create
 create_new_folder
 csv
 dashboard
+database
 delete
 deployed_code
 description

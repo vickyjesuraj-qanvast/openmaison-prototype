@@ -11,9 +11,10 @@ import { modalPanel, overlayFade } from '@/lib/motion'
 import { MSG } from '@/lib/forms'
 import { parseInputDate } from '@/lib/format'
 import {
-  EMPTY_QUOTE_FILTERS, QUOTE_STATUSES, activeQuoteGroups,
+  EMPTY_QUOTE_FILTERS, activeQuoteGroups, quoteStatuses,
   type QuoteDatePreset, type QuoteDue, type QuoteFilters, type QuoteSort, type QuoteStatus,
 } from '@/lib/leads/quote-filters'
+import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-filters-modal.module.css'
 
 /**
@@ -49,12 +50,14 @@ const DUES: { key: QuoteDue; label: string }[] = [
 ]
 
 export function QuotesFiltersModal({
-  open, value, onApply, onClose, now,
+  open, value, onApply, onClose, now, approval,
 }: {
   open: boolean
   value: QuoteFilters
   onApply: (v: QuoteFilters) => void
   onClose: () => void
+  /** Settings › Leads › Quote approval — the Status tab lists the studio's lifecycle, not the full five. */
+  approval: QuoteApproval
   /** Day-granular clock for the pickers' "today" ring (falls back to the mount time — never Date.now() in render). */
   now?: number
 }) {
@@ -153,7 +156,7 @@ export function QuotesFiltersModal({
                   <>
                     <span className={styles.sectionTitle}>Status</span>
                     <div className={styles.list}>
-                      {QUOTE_STATUSES.map((s) => (
+                      {quoteStatuses(approval).map((s) => (
                         <div key={s} className={styles.row} role="button" tabIndex={0} onClick={() => toggleStatus(s)}
                              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleStatus(s) } }}>
                           <span>{s}</span>

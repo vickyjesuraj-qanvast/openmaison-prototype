@@ -1,0 +1,32 @@
+/* Assign member field (REG-231 — no mock; every value below is an --om-* token and every shape is borrowed).
+   The box is components/om/text-field.tsx, the surface is PortalMenu painting components/leads/menus.module.css,
+   the rows are components/leads/assign-popover.module.css, the chips are components/leads/tasks/tag-picker.module.css. */
+
+.wrap { display: flex; flex-direction: column; width: 100%; }
+
+/* The trailing chevron turns while the list is up, as the Area unit and the DS selects in this modal do
+   (lead-form.module.css .fieldWrap [data-chev]) — TextField only turns its own chevron for mode="select". */
+.wrap [data-chev] { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.wrap :global([data-open]) [data-chev] { transform: rotate(180deg); }
+
+/* Picked members sit INSIDE the box (TextField's `below` slot lays them out); this is just the chip button. */
+.chip { border: 0; background: none; padding: 0; margin: 0; cursor: pointer; display: inline-flex; border-radius: var(--om-radius-1); }
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Row: the Assign popover's member row (assign-popover.module.css .row), re-padded because it now sits on a menu
+   surface instead of inside a 24px-padded body, and given the menu item's hover. */
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  width: 100%; padding: var(--om-spacing-3) var(--om-spacing-4);
+  border: 0; background: none; cursor: pointer; text-align: left;
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-hover-04p); }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.rowRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.check { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.checkOn { flex-shrink: 0; color: var(--om-color-primary-default); }
+
+/* Nothing matched — the Filters modal's line (filters-modal.module.css .noMatch). */
+.noMatch { margin: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

@@ -18,3 +18,25 @@ export const STAGE_MOVEMENT_OPTIONS: { key: StageMovement; title: string; help: 
 export function parseStageMovement(v: unknown): StageMovement {
   return v === 'flexible' ? 'flexible' : 'linear'
 }
+
+/**
+ * Quote approval — studio-level policy set under Settings › Leads (user brief 2026-08-30).
+ * Studios differ on whether a quote is reviewed inside the studio before it reaches the client, so the quote's
+ * lifecycle is not one fixed list: the two approval statuses exist only where approval is required.
+ *   required      Draft → Sent for Approval → Approved → Sent to Client → Signed
+ *   not-required  Draft → Sent to Client → Signed
+ * `required` is the default because it is the studio the mocks were drawn for (the Overview widget's Draft ·
+ * Sent · Approved track, 858:25057, and the five-status row menu 910:36404).
+ */
+export const QUOTE_APPROVALS = ['required', 'not-required'] as const
+export type QuoteApproval = (typeof QUOTE_APPROVALS)[number]
+export const DEFAULT_QUOTE_APPROVAL: QuoteApproval = 'required'
+
+export const QUOTE_APPROVAL_OPTIONS: { key: QuoteApproval; title: string; help: string }[] = [
+  { key: 'required', title: 'Required', help: 'Quotes are reviewed inside the studio before they reach the client. A quote runs Draft → Sent for Approval → Approved → Sent to Client → Signed.' },
+  { key: 'not-required', title: 'Not required', help: 'Designers send quotes straight to the client. A quote runs Draft → Sent to Client → Signed.' },
+]
+
+export function parseQuoteApproval(v: unknown): QuoteApproval {
+  return v === 'not-required' ? 'not-required' : 'required'
+}

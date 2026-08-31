@@ -18,7 +18,7 @@ import { AiSheet } from '@/components/leads/ai-sheet'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { DeleteLeadDialog } from '@/components/leads/delete-dialog'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { LeadFormModal } from '@/components/leads/lead-form'
+import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { LostDialog, OnHoldDialog } from '@/components/leads/move-stage/dialogs'
 import { AskClientDialog } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
@@ -66,7 +66,7 @@ const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); r
  * `origin="qanvast"` (931:49680, `?from=qanvast`): the L2 crumb reads "Qanvast Ops / Leads" and back goes to /qanvast-ops.
  */
 export function LeadOverview({ detail, tab, body, wide = false, origin }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: 'qanvast' }) {
-  const { lead, team, now, stageMovement, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret } = detail
+  const { lead, team, now, stageMovement, quoteApproval, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret } = detail
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -100,7 +100,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     if (stage === 'On Hold') { setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(true); return }
     if (stage === 'Lost') { setLostReason('Property too far'); setLost(true); return }
     const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
-    if (!isActiveStage(lead.stage)) { setConfirmMove(stage); return }          // parked lead resumes: one confirm, any stage
+    if (!isActiveStage(lead.stage)) {
+      // A parked lead resumes with one confirm — except where the shared gate refuses it, which is how a Lost lead's
+      // un-reached stages stay shut (REG-225). Active leads keep their own path below, unchanged.
+      const parkedBlock = blockedReason(lead, stage, stageMovement)
+      if (parkedBlock) { snackbar({ message: parkedBlock }); return }
+      setConfirmMove(stage); return
+    }
     if (to <= from) { setWizard(stage); return }                                // completed stages open for viewing / Edit (REG-132)
     if (stageMovement === 'linear') {
       if (to === from + 1) { setWizard(stage); return }
@@ -110,12 +116,19 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     if (stage === 'Won') { setWizard(stage); return }
     void quickMove(stage)
   }
+  /** Create quick links (Call Log / Meeting): the stage the lead is in or has already passed opens its window straight —
+   *  that is REG-168's "add another log". Anything ahead goes through the gate, so a quick link can no longer skip
+   *  Contacted the way the pill refuses to, or resume a parked lead without its confirm. */
+  const openStageLog = (stage: Stage) => {
+    if (isActiveStage(lead.stage) && STAGES.indexOf(stage as (typeof STAGES)[number]) <= journeyIdx(lead)) setWizard(stage)
+    else requestStageChange(stage)
+  }
 
   /* ── popovers, dialogs ── */
   const [kebabOpen, setKebabOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
   const [tasksFor, setTasksFor] = useState<({ el: HTMLElement } & TasksPos) | null>(null)
-  const [leadForm, setLeadForm] = useState<{ mode: 'edit'; lead: typeof lead } | null>(null)
+  const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [aiOpen, setAiOpen] = useState(false)
@@ -171,7 +184,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const tabItems = DETAIL_TABS.map((t) => ({ label: t.label, href: href(t.slug) }))
   const activeTab = DETAIL_TABS.find((t) => t.slug === tab) ?? DETAIL_TABS[0]
   const returnedBy = ret ? team.find((m) => m.id === ret.returnedById) ?? null : null
-  const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, lead).flatMap((b) => b.actions))).slice(0, 3), [lead])
+  /* The briefs read the questionnaire off the lead, so hand them the counts the QUESTIONNAIRE card already prints —
+     otherwise a lead with answers still reads "no questionnaire yet" beside a card saying 7 / 11 answered. */
+  const briefLead = useMemo(
+    () => ({ ...lead, questionnaire: questionnaire ? { answered: questionnaire.clientAnswered + questionnaire.studioAnswered, total: questionnaire.total } : null }),
+    [lead, questionnaire],
+  )
+  const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, briefLead).flatMap((b) => b.actions))).slice(0, 3), [lead.stage, briefLead])
 
   return (
     <PageReveal skeleton={<DetailSkeleton wide={wide} />}>
@@ -185,7 +204,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
               <MetaChip icon="call">{lead.phone}</MetaChip>
               <MetaChip icon="money_bag">{moneyCompact(lead.budgetMinor)}</MetaChip>
               <MetaChip icon="home">{lead.propertyType}</MetaChip>
-              <MetaChip color="green">{lead.source}</MetaChip>
+              {/* Green marks a Qanvast lead — the source that behaves differently (Return Lead, Qanvast Ops).
+                  Every other source is a plain chip, so the colour means something (user 2026-08-30).
+                  The leading glyph is a deviation: the mock draws this one chip WITHOUT an icon while its three
+                  neighbours have one (01-header spec, "Tag Outlined Green (no icon)"). One glyph for every source —
+                  Material Symbols ships no brand marks, so per-source icons would be honest for Referral and
+                  Walk-in and invented for Instagram, Facebook and the rest (user 2026-08-31). `database` was the
+                  owner's pick; it is not in the mocks' icon set, so the font subset was regenerated for it. */}
+              <MetaChip color={lead.source === 'Qanvast' ? 'green' : 'default'} icon="database">{lead.source}</MetaChip>
               {/* return + refund state chips (931:48553 · 931:49138): Return Processing yellow · Return Rejected red · Return Approved green + Refund Processing / Credited */}
               {returnTags(ret).map((t) => <MetaChip key={t.label} color={t.color}>{t.label}</MetaChip>)}
             </>
@@ -227,9 +253,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             </>
           }
         />
-        <Tabs items={tabItems} activeHref={href(tab)} aria-label="Lead sections" />
+        <Tabs items={tabItems} activeHref={href(tab)} aria-label="Lead sections" className={styles.stickyTabs} />
 
         <div className={styles.row}>
+          {/* "Add" beside a row opens the form ON that row, not at the top of fifteen fields (user 2026-08-31). */}
           {wide ? null : (
           <InfoColumn
             lead={lead}
@@ -243,33 +270,15 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             }}
             onWhatsApp={() => window.open(`https://wa.me/65${lead.phone}`, '_blank', 'noopener')}
             onDirections={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(lead.leadAddress ?? '')}`, '_blank', 'noopener')}
-            onAddAddress={() => setLeadForm({ mode: 'edit', lead })}
-            onAddNotes={() => setLeadForm({ mode: 'edit', lead })}
           />
           )}
 
           <div className={styles.centre} data-tab={tab || 'overview'}>
             {tab === '' ? (
               <>
-                <AiBrief stage={lead.stage} lead={lead} onAction={() => comingSoon()} />
+                <AiBrief stage={lead.stage} lead={briefLead} onAction={() => comingSoon()} />
                 <div className={styles.grid}>
-                  <div className={styles.column}>
-                    {ret ? (
-                      <LeadReturnedCard ret={ret} returnedBy={returnedBy} onView={() => setReturnDetailsOpen(true)} onAppeal={comingSoon} onOpenTab={() => goTab('activity')} />
-                    ) : null}
-                    <LeadStagesCard
-                      timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
-                      onOpenStage={(stage) => {
-                        if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
-                        const step = timeline.find((s) => s.stage === stage)
-                        if (step && step.state !== 'future') { setWizard(stage as Stage); return }
-                        requestStageChange(stage as Stage)
-                      }}
-                      onOpenTab={() => goTab('activity')}
-                    />
-                    <FilesCard files={files} onOpenTab={() => goTab('files')} onCreateFolder={comingSoon} onUpload={comingSoon} />
-                    <ActivityCard items={activity} now={now} onOpenTab={() => goTab('activity')} />
-                  </div>
+                  {/* Right column first: the two stacks were swapped as-is (user 2026-08-31). */}
                   <div className={styles.column}>
                     <div ref={myWorkRef}>
                       <MyWorkCard
@@ -280,8 +289,32 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         onOpenTab={() => goTab('tasks')}
                       />
                     </div>
-                    <QuoteCard quote={quote} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} />
+                    <QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} />
                     <QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onAdd={onNewQuestion} onOpenTab={() => goTab('questionnaire')} />
+                  </div>
+                  <div className={styles.column}>
+                    {ret ? (
+                      <LeadReturnedCard ret={ret} returnedBy={returnedBy} onView={() => setReturnDetailsOpen(true)} onAppeal={comingSoon} onOpenTab={() => goTab('activity')} />
+                    ) : null}
+                    <LeadStagesCard
+                      timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
+                      blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement)}
+                      onOpenStage={(stage) => {
+                        if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
+                        const step = timeline.find((s) => s.stage === stage)
+                        if (step && step.state !== 'future') { setWizard(stage as Stage); return }
+                        requestStageChange(stage as Stage)
+                      }}
+                      onOpenTab={() => goTab('activity')}
+                    />
+                    {/* A tile opens the record it draws — folder in the Files tab, file in its viewer (REG-181), the routes the card's own arrow and "+n" already use. */}
+                    <FilesCard
+                      files={files}
+                      onOpenTab={() => goTab('files')}
+                      onOpenFile={(file) => router.push(file.kind === 'folder' ? href('files', `folder=${file.id}`) : `/leads/${lead.id}/files/${file.id}`)}
+                      onCreateFolder={comingSoon} onUpload={comingSoon}
+                    />
+                    <ActivityCard items={activity} now={now} onOpenTab={() => goTab('activity')} />
                   </div>
                 </div>
               </>
@@ -294,11 +327,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           </div>
 
           <QuickLinks
-            onTask={() => { if (tab === 'tasks') window.dispatchEvent(new CustomEvent('om:tasks:add')); else if (myWorkRef.current) openTasks(myWorkRef.current) }}
+            /* Same shape as Quote / Note / Question above: in place on its own tab, otherwise land on the Tasks tab
+               with the add row already open. It used to open the MY WORK popover, whose anchor only exists on the
+               Overview — so from Quotes, Files, Notes … the link did nothing at all (user 2026-08-30). */
+            onTask={() => { if (tab === 'tasks') window.dispatchEvent(new CustomEvent('om:tasks:add')); else router.push(href('tasks', 'new=1')) }}
             onQuote={onNewQuote}
-            onCallLog={() => setWizard('Contacted')}
+            onCallLog={() => openStageLog('Contacted')}
             onNote={onNewNote}
-            onMeeting={() => setWizard('Met')}
+            onMeeting={() => openStageLog('Met')}
             onOther={() => comingSoon()}
           />
         </div>
@@ -412,6 +448,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onOpenTask={(task) => router.push(href('tasks', `open=${task.id}`))}
       />
       <LeadFormModal
+        team={team}
         now={now}
         form={leadForm}
         onClose={() => setLeadForm(null)}

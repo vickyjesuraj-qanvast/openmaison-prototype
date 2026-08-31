@@ -4,9 +4,12 @@
  * Illustration 180×154 → 24 → texts (V g12) → 24 → button.
  * Copied from components/leads/contracts/contracts-empty.module.css.
  */
+/* Height follows the tab body, not the mock's literal 784: the tab pads 88px for the FAB where the mock frame (931:46792)
+   padded 24, so the frozen number overflowed short viewports and stopped short on tall ones. Same rule as every other
+   empty card (components/leads/search-empty.module.css). */
 .card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; height: 784px;
+  width: 100%; flex: 1; min-height: 480px;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);

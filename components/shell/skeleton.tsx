@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './skeleton.module.css'
 
@@ -34,7 +34,8 @@ export function Bone({ w, h = 16, r, className, style }: { w: number | string; h
   return <span className={className ? `${styles.bone} ${className}` : styles.bone} style={{ width: w, height: h, borderRadius: r, ...style }} aria-hidden />
 }
 
-/* Deterministic "text" widths so rows read as real data, not a grid. */
+/* Deterministic "text" widths so rows read as real data, not a grid. Eight of each — the mock's rows; longer
+   sheets cycle through them (see `useRowCount`). */
 const NAME_W = [128, 96, 148, 112, 136, 104, 120, 156]
 const STAGE_W = [32, 32, 32, 32, 70, 70, 70, 34]
 const TASK_W = [180, 140, 210, 160, 190, 120, 170, 200]
@@ -43,8 +44,29 @@ const TYPE_W = [92, 70, 104, 84, 96, 74, 100, 88]
 const FILE_W = [168, 132, 190, 150, 176, 140]
 const ERR_W = [72, 210, 72, 168, 72, 240]
 
+/*
+ * How many table rows the sheet has room for. The mock draws eight because eight is what fits its frame — the real
+ * listing renders every lead (36 in the base state), so the bones should reach the fold at any viewport height.
+ * The first row starts 217px down (8 page pad + 68 header + 24 content pad + 36 toolbar + 24 gap + 1 border + 56 head)
+ * and the table ends --fab-clearance above the bottom, so at the demo's 1024 that is 12 rows of 64 — the last one
+ * running under the fold exactly as the real table does. Read through a store, not a lazy initialiser: `loading.tsx`
+ * is server-rendered, and the server snapshot (the mock's eight) keeps hydration honest (quick-links.tsx does the same).
+ */
+const ROW_H = 64
+const TABLE_TOP = 217
+const FAB_CLEARANCE = 88
+const MOCK_ROWS = 8
+const subscribeViewport = (cb: () => void) => {
+  window.addEventListener('resize', cb)
+  return () => window.removeEventListener('resize', cb)
+}
+const viewportRows = () => Math.max(1, Math.ceil((window.innerHeight - TABLE_TOP - FAB_CLEARANCE) / ROW_H))
+const mockRows = () => MOCK_ROWS
+const useRowCount = () => useSyncExternalStore(subscribeViewport, viewportRows, mockRows)
+
 /** Leads listing (779:19690 table variant): header · toolbar · table with the default columns. */
 export function LeadsSkeleton() {
+  const rows = useRowCount()
   return (
     <GhostSheet label="Loading leads">
       <div className={styles.header}>
@@ -76,22 +98,25 @@ export function LeadsSkeleton() {
             <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={88} h={12} /></span>
             <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={56} h={12} /></span>
           </div>
-          {NAME_W.map((w, i) => (
+          {Array.from({ length: rows }, (_, i) => {
+            const j = i % NAME_W.length   /* the mock's eight bone widths, cycled, so a taller sheet still reads as data */
+            return (
             <div key={i} className={styles.row}>
               <span className={`${styles.col} ${styles.nameCol}`} style={{ flex: '240 0 240px' }}>
-                <Bone w={w} h={14} /><Bone w={72} h={10} />
+                <Bone w={NAME_W[j] ?? 128} h={14} /><Bone w={72} h={10} />
               </span>
-              <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={STAGE_W[i] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
-              <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={TASK_W[i] ?? 160} h={14} /></span>
+              <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
+              <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={TASK_W[j] ?? 160} h={14} /></span>
               <span className={styles.col} style={{ flex: '160 0 160px' }}>
                 <span className={styles.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>
               </span>
-              <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={SRC_W[i] ?? 64} h={14} /></span>
+              <span className={styles.col} style={{ flex: '132 0 132px' }}><Bone w={SRC_W[j] ?? 64} h={14} /></span>
               <span className={styles.col} style={{ flex: '138 0 138px' }}><Bone w={64} h={14} /></span>
-              <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={TYPE_W[i] ?? 88} h={14} /></span>
+              <span className={styles.col} style={{ flex: '158 0 158px' }}><Bone w={TYPE_W[j] ?? 88} h={14} /></span>
               <span className={styles.col} style={{ flex: '115 0 115px' }}><Bone w={76} h={14} /></span>
             </div>
-          ))}
+            )
+          })}
           </div>
         </div>
       </div>
@@ -106,7 +131,8 @@ const QV_TAG_W = [[74], [118], [112, 118], [62], [62], [50], [118]]
 /**
  * Qanvast Ops › Leads (931:49232, spec design-source/context/lead-return/02-qanvast-ops.txt): header (title · Insights 110 ·
  * Add Lead 121 · kebab 36) · the 44px tab row (Leads · Credits · Reviews · Hangouts) · toolbar (pill 151 · Request Leads 133 ·
- * filter 36 · kebab 36) · table head 56 / rows 64 on the page's own tracks 240 · 132 · 138 · 158 · 115 · fluid — so the
+ * filter 36 · kebab 36) · table head 56 / rows 64 on the page's own tracks — the five data columns share the slack in the
+ * mock's 240 · 132 · 138 · 158 · 115 proportions and Status holds its 369 (qanvast-leads.module.css .card), so the
  * PageReveal crossfade lands in place (design-source/context/page-checklist.md). Text bones are sized to the mock's runs.
  */
 export function QanvastSkeleton() {

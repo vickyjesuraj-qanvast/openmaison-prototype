@@ -6,7 +6,10 @@
   border-radius: var(--om-radius-1);
   box-shadow: var(--om-elevation-level-3);
   display: flex; flex-direction: column;
-  max-height: 756px;
+  /* 780:80275 draws the card 752 tall (head 64 · body 620 · foot 68) and 756 is its cap; below 788px of
+     viewport that cap would push the Save footer off screen, so the height is whichever is smaller — the
+     mock's cap or the viewport less a 16px margin top and bottom (as the tasks popover). The body scrolls. */
+  max-height: min(756px, calc(100dvh - 32px));
 }
 .head {
   display: flex; align-items: flex-start; gap: var(--om-spacing-4);

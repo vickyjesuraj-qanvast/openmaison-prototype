@@ -33,7 +33,10 @@
 .rail[data-tone='yellow'] .railDot { background: var(--om-color-tertiary-yellow-default); }
 
 .column {
-  width: 320px; flex-shrink: 0; min-height: 0;
+  /* Takes the slack when there is any: scoped to one stage (780:20043) or with a band collapsed, a fixed
+     320px column strands most of the board. Never shrinks, so the unscoped 7-column board is still wider
+     than the viewport and keeps the drawn 320px, its scroll and its snap; the cap keeps a column readable. */
+  flex: 1 0 320px; max-width: 480px; min-height: 0;
   scroll-snap-align: start;
   display: flex; flex-direction: column;
   border-radius: var(--om-radius-2);
@@ -61,7 +64,7 @@
 }
 
 .card {
-  width: 288px;
+  width: 100%;   /* the column's content box — the mock's 288px in a 320px column, and it follows a grown one */
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-2);
   padding: var(--om-spacing-4);

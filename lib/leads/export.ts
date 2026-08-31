@@ -36,7 +36,7 @@ export function buildTable(title: string, head: string[], body: string[][], form
   switch (format) {
     case 'CSV': return new Blob(['﻿' + [head, ...body].map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' })
     case 'XLS': return new Blob([htmlTable(head, body)], { type: 'application/vnd.ms-excel' })
-    case 'XLSX': return new Blob([xlsx(head, body).buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    case 'XLSX': return new Blob([xlsx(title, head, body).buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     case 'PDF': return new Blob([pdf(title, head, body).buffer as ArrayBuffer], { type: 'application/pdf' })
   }
 }
@@ -67,14 +67,17 @@ const htmlTable = (head: string[], body: string[][]) =>
   `<html><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></body></html>`
 
 /* ---------- XLSX: minimal OOXML in a stored (uncompressed) zip ---------- */
-function xlsx(head: string[], body: string[][]): Uint8Array {
+function xlsx(title: string, head: string[], body: string[][]): Uint8Array {
+  // The worksheet tab is the export's own title without the product prefix ("OpenMaison — Tasks" → "Tasks"); the
+  // constant "Leads" headed the tasks workbook too. Excel caps a tab at 31 chars and refuses : \ / ? * [ ].
+  const tab = title.replace(/^OpenMaison\s*—\s*/, '').replace(/[:\\/?*[\]]/g, ' ').trim().slice(0, 31) || 'Sheet1'
   const colRef = (i: number) => { let s = ''; let n = i; do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 } while (n >= 0); return s }
   const row = (cells: string[], r: number) => `<row r="${r}">${cells.map((c, i) => `<c r="${colRef(i)}${r}" t="inlineStr"><is><t xml:space="preserve">${esc(c)}</t></is></c>`).join('')}</row>`
   const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${[head, ...body].map((r, i) => row(r, i + 1)).join('')}</sheetData></worksheet>`
   const files: [string, string][] = [
     ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`],
     ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
-    ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Leads" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esc(tab)}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
     ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`],
     ['xl/worksheets/sheet1.xml', sheet],
   ]
@@ -103,12 +106,17 @@ function zip(files: [string, string][]): Uint8Array {
 /* ---------- PDF: minimal text-only pages (Helvetica), A4 portrait ---------- */
 function pdf(title: string, head: string[], body: string[][]): Uint8Array {
   const W = 842, H = 595, M = 40, LH = 14, per = Math.floor((H - M * 2 - 30) / LH)   // landscape A4, fits the ten columns
-  const cols = head.map((_, i) => M + i * Math.floor((W - M * 2) / head.length))
+  const pitch = Math.floor((W - M * 2) / head.length)
+  const cols = head.map((_, i) => M + i * pitch)
+  // A cell may only use the pitch it is drawn into: 8pt Helvetica averages ~4pt a character, so the ten lead
+  // columns (76pt) clip at 17 and the six task columns (127pt) keep 30 — no overprinting, no dead space.
+  const maxChars = Math.max(4, Math.floor((pitch - 6) / 4))
+  const clip = (c: string) => (c.length > maxChars ? `${c.slice(0, maxChars - 3)}...` : c)
   const pdfText = (s: string) => s.replace(/[^\x20-\x7e]/g, '?').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
   const pages: string[] = []
   for (let p = 0; p < Math.max(1, Math.ceil(body.length / per)); p++) {
     const lines = [`BT /F2 12 Tf ${M} ${H - M} Td (${pdfText(title)} — page ${p + 1}) Tj ET`]
-    const draw = (cells: string[], y: number, bold: boolean) => cells.forEach((c, i) => lines.push(`BT /${bold ? 'F2' : 'F1'} 8 Tf ${cols[i]} ${y} Td (${pdfText(c.slice(0, 22))}) Tj ET`))
+    const draw = (cells: string[], y: number, bold: boolean) => cells.forEach((c, i) => lines.push(`BT /${bold ? 'F2' : 'F1'} 8 Tf ${cols[i]} ${y} Td (${pdfText(clip(c))}) Tj ET`))
     draw(head, H - M - 22, true)
     body.slice(p * per, (p + 1) * per).forEach((r, i) => draw(r, H - M - 22 - LH * (i + 1), false))
     pages.push(lines.join('\n'))

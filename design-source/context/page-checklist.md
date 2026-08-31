@@ -10,6 +10,10 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
       column widths as the real components, so the crossfade lands in place).
 - [ ] The page's client view is wrapped in `<PageReveal skeleton={<…Skeleton />}>`
       (`components/shell/page-reveal.tsx`): min hold `GHOST_MIN_MS` then crossfade.
+- [ ] The ghost's minimum hold applies ONLY when `loading.tsx` actually painted (`ghostClock.shownAt`): a warm
+      client navigation must reveal at once, or every tab click invents a skeleton over content already in hand (REG-217).
+- [ ] Routed tab / sub-nav links prefetch in FULL (`prefetch` on the Link — the default fetches only the loading
+      boundary), and dynamic routes need `experimental.staleTimes.dynamic` or the router refetches what it prefetched.
 - [ ] Verified with Playwright: ghost on hard load, on client navigation, on reload;
       no ghost on `router.refresh()` / server-action revalidation.
 
@@ -36,8 +40,19 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 ## Rows that can overflow
 - Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).
 - [ ] Horizontal chip / tab / pill rows use `ChipRail` (edge fades, chevron pagers, selected chip scrolls into view).
+- [ ] **Detail views never truncate a value** — a read-in-full surface (the Lead Details info column, a panel, a summary card) wraps to a second line (`overflow-wrap: anywhere`, no `text-overflow: ellipsis`); only table / list cells, where the column width is the design, keep the ellipsis (REG-212).
+- [ ] **A mock FRAME height is not an element height.** 784px cards, 928px sheets: the mock's number is the output of
+      "fill the section" at the mock's own padding. Reproduce the rule (`flex: 1; min-height: …`, height to content),
+      then check the app's padding differs from the mock's before assuming the number still holds (REG-213).
+- [ ] **Menus pick their side by measurement, never by row count** — compare the trigger's bottom against the real
+      clipping edge. A row-count threshold copied between tables is wrong on the first short table (REG-213).
+- [ ] **Responsive tile / card rows fill the width they actually have** — measure with a ResizeObserver and collapse only the remainder into "+n", never a hard-coded count; the arithmetic must still yield the mock's row at the mocked width (REG-212, `components/leads/detail/files-card.tsx`).
 
 ## Fields
+- [ ] **A surface opened to enter data opens with the caret in the field** — and when the user pressed "Add" beside ONE
+      row, the form opens ON that row: scroll it into view, focus it, expand whatever section hides it. Never make
+      someone hunt a field they just asked for. A create form with no such target focuses its first field; a plain
+      "Edit" opens unfocused, because nothing was singled out (REG-224, REG-226).
 - Every text input is `TextField` (`components/om/text-field.tsx`) — never a raw `<input>` with a label. Label inside when empty, floats on focus/value; five DS states (empty / active / filled / error / disabled — 836:23125, 836:23276).
 - **Numbers are filtered as typed**, never only validated: any field that holds digits (amounts, phone, area, %, counts) uses `TextField numeric="digits"` or `numeric="amount"` (thousands grouping) — letters and symbols must never appear in the box (REG-150).
 - Dates are `DateField`; dates with time are `DateTimeField` — read-only triggers over the Material picker. No free-typed dates anywhere.

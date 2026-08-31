@@ -7,8 +7,8 @@ import { displayDateWeekday, startOfDay } from '@/lib/format'
 export type FileRow = LeadFile & {
   owner: Member | null
   commentCount: number
-  /** "Attached to" (931:40181): the file is attached to a task → "Task"; nothing else attaches files yet. */
-  attachedTo: 'Task' | null
+  /** "Attached to" (931:40181): what holds the file — a task, a note or a lead return (Task first when several do). */
+  attachedTo: 'Task' | 'Note' | 'Return' | null
   /** Folders: direct children (files + folders) that are not trashed → "17 items". */
   itemCount: number
 }

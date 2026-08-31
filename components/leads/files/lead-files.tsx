@@ -94,7 +94,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const closeTrash = () => setTrash((s) => (s ? { ...s, open: false } : s))
   const closeMove = () => setMove((s) => (s ? { ...s, open: false } : s))
 
-  /* ── upload (REG-149: whatever is picked becomes the mock's "Living Room" JPEG) ── */
+  /* ── upload: the picked file's own name persists (REG-149: only the bytes behind it stay the mock's JPEG) ── */
   const picker = useRef<HTMLInputElement | null>(null)
   const [toast, setToast] = useState<UploadToastState | null>(null)
   const [toastCollapsed, setToastCollapsed] = useState(false)
@@ -113,7 +113,9 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
     const parentId = currentId
     timer.current = setTimeout(() => {
       timer.current = null
-      void uploadFile(leadId, parentId).then(
+      // The name the toast just showed is the name that lands (= the Return Lead wizard's call); dropping it left every
+      // upload named "Living Room" — the action's default — a beat after the real name was on screen.
+      void uploadFile(leadId, parentId, file.name).then(
         () => { setToast((t) => (t ? { ...t, state: 'done' } : t)); snackbar({ message: 'File uploaded' }) },
         () => fail('upload the file'),
       )

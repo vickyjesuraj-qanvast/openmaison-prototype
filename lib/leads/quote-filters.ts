@@ -1,5 +1,6 @@
 import type { Quote } from '@/lib/db/schema'
 import { parseInputDate, startOfDay } from '@/lib/format'
+import type { QuoteApproval } from '@/lib/settings/types'   // types only — safe to import from a client component
 
 /* Lead Details › Quotes (910-36240) — pure model shared by the table, the status menu and the Filters modal. */
 
@@ -7,6 +8,31 @@ import { parseInputDate, startOfDay } from '@/lib/format'
 export const QUOTE_STATUSES = ['Draft', 'Sent for Approval', 'Approved', 'Sent to Client', 'Signed'] as const
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
 export const isQuoteStatus = (s: string): s is QuoteStatus => (QUOTE_STATUSES as readonly string[]).includes(s)
+
+/**
+ * The two statuses that exist only in a studio that reviews quotes internally (Settings › Leads › Quote approval).
+ * Everything that lists quote statuses — the row menu, the Filters modal, the Overview widget's track — asks
+ * `quoteStatuses()` rather than mapping QUOTE_STATUSES, so one setting moves them together (user 2026-08-30).
+ */
+export const APPROVAL_ONLY_STATUSES: readonly QuoteStatus[] = ['Sent for Approval', 'Approved']
+
+/** The studio's quote lifecycle, in order. */
+export function quoteStatuses(approval: QuoteApproval): readonly QuoteStatus[] {
+  return approval === 'required' ? QUOTE_STATUSES : QUOTE_STATUSES.filter((s) => !APPROVAL_ONLY_STATUSES.includes(s))
+}
+
+/**
+ * Where a quote sits on the studio's track. A quote can hold a status the studio no longer uses — it was approved and
+ * then approval was switched off — so it lands on the last step it has actually passed, never back at Draft.
+ */
+export function quoteStepIndex(status: string, approval: QuoteApproval): number {
+  const steps = quoteStatuses(approval)
+  const reached = QUOTE_STATUSES.indexOf(status as QuoteStatus)
+  if (reached < 0) return 0
+  let idx = 0
+  steps.forEach((s, i) => { if (QUOTE_STATUSES.indexOf(s) <= reached) idx = i })
+  return idx
+}
 
 /** Filters modal (910:36338): Sort · Date · Status · Due. */
 export type QuoteSort = 'newest' | 'oldest'

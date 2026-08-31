@@ -4,9 +4,13 @@
  * Illustration 180×155 → 24 → texts (V g12) → 24 → buttons (H g12).
  * Copied from components/leads/contracts/contracts-empty.module.css (identical geometry).
  */
+/* Height follows the tab body, not the mock's literal 784: the tab pads 88px for the FAB where the mock frame
+   (931:40340) padded 24, so the frozen number overflowed short viewports and stopped short on tall ones. Same rule as
+   every other empty card — components/leads/search-empty.module.css. Worst case of the five: 30 of the 36 baseline
+   leads have no files, so this is the Files tab most demo leads open on. */
 .card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; height: 784px;
+  width: 100%; flex: 1; min-height: 480px;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);

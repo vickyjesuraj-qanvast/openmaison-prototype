@@ -1,6 +1,7 @@
 'use client'
 
-import { Fragment, useState } from 'react'
+import { Fragment } from 'react'
+import { useFlagPref } from '@/lib/prefs'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -11,13 +12,12 @@ import styles from './my-work-card.module.css'
 
 /**
  * MY WORK card (858:24989 full · 858:24505 due-today only · 858:24171 empty).
- * Open tasks grouped Overdue → Due today → Upcoming; the mock shows two rows per group (the label keeps the real
- * count) and Upcoming collapsed. Spec: design-source/context/lead-overview/05-*.txt.
+ * Open tasks grouped Overdue → Due today → Upcoming, Upcoming collapsed. Each group lists every task it counts:
+ * the label prints the real total, so the two rows per group in the mock are its data, not a cap (user 2026-08-30).
+ * Spec: design-source/context/lead-overview/05-*.txt.
  */
 
 const DAY_MS = 86_400_000
-/** The mock shows two rows per group (858:24989); the label count is the real total. */
-const MAX_ROWS = 2
 
 type GroupKey = 'overdue' | 'today' | 'upcoming'
 type Group = { key: GroupKey; label: string; tasks: LeadTask[] }
@@ -31,8 +31,9 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
   onOpenTask: (task: LeadTask) => void
   onOpenTab: () => void
 }) {
-  // Upcoming is collapsed by default (858:24989 shows only its 52px label row).
-  const [upcomingOpen, setUpcomingOpen] = useState(false)
+  // Upcoming is collapsed by default (858:24989 shows only its 52px label row) — and once the user opens or closes
+  // it, that choice is remembered per browser like every other remembered state (lib/prefs.ts).
+  const [upcomingOpen, setUpcomingOpen] = useFlagPref('om.detail.myWork.upcoming', false)
 
   // Grouping keeps the loader's order inside each group — the spec does not sort rows.
   const open = tasks.filter((t) => !t.done)
@@ -117,7 +118,7 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
                 </div>
               )}
               <div className={styles.list} data-ruled={!last || undefined}>
-                {g.tasks.slice(0, MAX_ROWS).map((t) => (
+                {g.tasks.map((t) => (
                   <TaskRow key={t.id} task={t} group={g.key} now={now} onComplete={onComplete} onOpenTask={onOpenTask} />
                 ))}
               </div>

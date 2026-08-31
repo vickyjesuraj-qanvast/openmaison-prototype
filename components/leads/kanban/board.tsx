@@ -29,6 +29,16 @@ const COLUMN_STEP = 328    // column 320 + 8 gap — pagers move by whole column
 const EDGE_ZONE = 72       // px from a scroll edge where auto-scroll kicks in
 const MAX_SCROLL_STEP = 18 // px per frame at the very edge
 const MENU_CLEARANCE = 100 // px of column body needed below the card kebab for its menu to open downwards
+/*
+ * How many assignee avatars the card foot shows. The mock's card draws one or two, and the second was read as
+ * a cap (REG-195) — but nothing on the card enforces it: the foot is the card's content box less the trailing
+ * 24px Assign button and its gap, divided by an avatar + gap. The 288px mock card leaves a 256px foot, i.e.
+ * seven slots, so the whole team fits and "+n" is left for a foot that genuinely runs out of room.
+ */
+const AVATAR = 24        // the mock's foot avatar
+const AVATAR_GAP = 8     // --om-spacing-2, the mock's gap
+const FOOT_SLOTS = 7     // the mock's 288px card: (256 − 24 button − 8 gap) / 32 — and wherever the foot cannot be measured
+const avatarSlotsFor = (width: number) => (width <= 0 ? FOOT_SLOTS : Math.max(1, Math.floor((width - AVATAR - AVATAR_GAP) / (AVATAR + AVATAR_GAP))))
 
 function KanbanCard({
   lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
@@ -56,6 +66,8 @@ function KanbanCard({
   const [menuSide, setMenuSide] = useState<'down' | 'up'>('down')   // measured on open: the column body clips a menu below its bottom edge
   const [lifted, setLifted] = useState(false)   // the card's slot placeholder while its ghost is out
   const cardEl = useRef<HTMLDivElement>(null)
+  const footEl = useRef<HTMLDivElement>(null)
+  const [avatarSlots, setAvatarSlots] = useState(FOOT_SLOTS)
   const firstTask = lead.tasks[0]
   const overdue = lead.tasks.some((t) => isOverdue(t.dueAt, now))
   const extra = lead.tasks.length - 1
@@ -198,6 +210,21 @@ function KanbanCard({
     wasPending.current = isPending
     // eslint-disable-next-line react-hooks/exhaustive-deps -- springBack is stable per card
   }, [isPending])
+  useEffect(() => {
+    const el = footEl.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    // Measured in the observer, never in render — the foot re-slots when the column takes up board slack.
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry?.contentRect.width ?? 0
+      if (w > 0) setAvatarSlots(avatarSlotsFor(w))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Everything the foot fits, or the last slot becomes the "+n" box (same rule as the overview FILES card).
+  const shownAssignees = lead.assignees.length <= avatarSlots ? lead.assignees : lead.assignees.slice(0, Math.max(1, avatarSlots - 1))
+  const restAssignees = lead.assignees.length - shownAssignees.length
 
   return (
     <motion.div
@@ -275,7 +302,7 @@ function KanbanCard({
         </button>
       )}
       <div className={styles.cardDivider} />
-      <div className={styles.cardFoot}>
+      <div className={styles.cardFoot} ref={footEl}>
         {lead.assignees.length === 0 ? (
           <button type="button" className={styles.assignLink} onClick={(e) => onAssign(lead, e.currentTarget)}>
             <Icon name="person_add" size={20} />
@@ -283,11 +310,11 @@ function KanbanCard({
           </button>
         ) : (
           <>
-            {lead.assignees.slice(0, 2).map((m) => (
+            {shownAssignees.map((m) => (
               <Avatar key={m.id} name={m.name} color={m.color} size={24} />
             ))}
-            {/* Third and later assignees: the table's "+n" box (table.tsx / REG-195). */}
-            {lead.assignees.length > 2 ? <span className={styles.plusBox}>+{lead.assignees.length - 2}</span> : null}
+            {/* Assignees the measured foot cannot hold: the table's "+n" box (table.tsx / REG-195). */}
+            {restAssignees > 0 ? <span className={styles.plusBox}>+{restAssignees}</span> : null}
             <Tooltip label="Assign members">
               <IconButton icon="person_add" label={`Assign members to ${lead.name}`} size={24} variant="primary"
                           onClick={(e) => onAssign(lead, e.currentTarget)} />
@@ -347,7 +374,9 @@ export function KanbanBoard({
             <span className={styles.railLabel}><span className={styles.railDot} />{band.label}</span>
           </button>
         ) : (
-          <div key={band.label} style={{ display: 'flex', gap: 8, minHeight: 0 }}>
+          /* flex '1 0 auto': the band passes any board slack down to its columns (a scoped board, or the other
+             band collapsed) and never shrinks, so the full 7-column board keeps its drawn width and scrolls. */
+          <div key={band.label} style={{ display: 'flex', gap: 8, minHeight: 0, flex: '1 0 auto' }}>
             <button type="button" className={styles.rail} data-tone={band.tone}
                     aria-expanded
                     onClick={() => setCollapsed((c) => ({ ...c, [band.label]: true }))}>

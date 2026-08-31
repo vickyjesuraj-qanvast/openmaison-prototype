@@ -1,6 +1,13 @@
 .menu {
   position: absolute; z-index: 60;
   width: 200px;
+  /* The list length is data, not layout: the Qanvast filter menu is 13 filters + 3 group titles = 613px and opens ~184px
+     down a page whose body is `overflow: clip`, so under an ~800px viewport its last filters were cut off with nothing to
+     scroll. Cap it to what is left below the deepest anchor and scroll inside (PortalMenu's tighter 320px cap is inline,
+     so it still wins). At the 1024 verification height the cap is 804px — taller than every menu we mock. */
+  max-height: calc(100dvh - 220px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--om-color-surface-default);
   border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-1);

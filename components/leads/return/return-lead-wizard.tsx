@@ -138,17 +138,25 @@ export function ReturnLeadWizard({
   }
 
   // AttachFilesModal hands back only the NEW picks; a file the modal uploaded itself (REG-149, local id) is not in `files`,
-  // so it gets the modal's stand-in tile (the mock's thumbnail + the picked name) — the same mock file the modal listed.
+  // so it gets the modal's stand-in tile (the picked name, and the mock's thumbnail when it is an image) — the same mock file
+  // the modal listed.
   // Its `local-*` id is swapped for a real lead_files row on Confirm (see `confirm`).
   const attach = (fileIds: string[]) => {
     setAttachOpen(false)
     const at = new Date()
     const picked = fileIds
       .filter((id) => !tiles.some((t) => t.id === id))
-      .map((id) => files.find((f) => f.id === id) ?? {
-        id, leadId: lead.id, kind: 'image', name: lastPicked.current ?? 'filename.jpg', thumb: '/figma-assets/file-thumb-1.png',
-        createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064, mime: 'image/jpeg', updatedAt: at, deletedAt: null,
-      } satisfies LeadFile)
+      .map((id) => {
+        const name = lastPicked.current ?? 'filename.jpg'
+        // The stand-in's kind follows the picked name — the dropzone also takes PDFs ("Supports: JPEG, PNG, PDF"), and a PDF
+        // has no thumbnail, so it takes the .tileBox + picture_as_pdf branch below instead of wearing the mock's photograph.
+        const pdf = /\.pdf$/i.test(name)
+        return files.find((f) => f.id === id) ?? {
+          id, leadId: lead.id, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png',
+          createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064,
+          mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null,
+        } satisfies LeadFile
+      })
     if (picked.length) setTiles((t) => [...t, ...picked])
   }
 

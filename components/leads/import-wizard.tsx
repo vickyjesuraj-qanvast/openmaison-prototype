@@ -183,6 +183,10 @@ export function ImportWizard({
   }
 
   const used = new Set(mapping.filter((f): f is ImportField => !!f && f !== IGNORE))
+  // The preview shows the columns the user just mapped, not every OpenMaison field: PREVIEW_COLUMNS is
+  // the label/width/order lookup, the mapping decides which of them appear. The shipped template maps
+  // all 14, so 779:26144 still draws 120/171/124/…/200; a file that maps 7 no longer scrolls past 7 blanks.
+  const previewCols = PREVIEW_COLUMNS.filter((c) => used.has(c.field))
   const nameMissing = !mapping.some((f) => f === 'Lead Name')
   const previewValue = (row: string[], field: ImportField) => {
     const rec = toRecord(parsed?.headers ?? [], mapping, row)
@@ -326,17 +330,17 @@ export function ImportWizard({
                         {/* A grid, not fixed-width cells: every value shows in full (mock widths are minimums; the
                             column grows to its longest value and the wrap scrolls sideways) — user 2026-08-28. */}
                         <div className={styles.preview} role="table" aria-label="Import preview"
-                             style={{ gridTemplateColumns: ['76px', ...PREVIEW_COLUMNS.map((c) => `minmax(${c.width}px, auto)`)].join(' ') }}>
+                             style={{ gridTemplateColumns: ['76px', ...previewCols.map((c) => `minmax(${c.width}px, auto)`)].join(' ') }}>
                           <div className={`${styles.pRow} ${styles.pHead}`} role="row">
                             <div className={styles.pCell} role="columnheader"><span>SL No</span></div>
-                            {PREVIEW_COLUMNS.map((c) => (
+                            {previewCols.map((c) => (
                               <div key={c.field} className={styles.pCell} role="columnheader"><span>{c.label}</span></div>
                             ))}
                           </div>
                           {parsed.rows.map((r, i) => (
                             <div key={i} className={styles.pRow} role="row">
                               <div className={styles.pCell} role="cell"><span>{i + 1}</span></div>
-                              {PREVIEW_COLUMNS.map((c) => (
+                              {previewCols.map((c) => (
                                 <div key={c.field} className={styles.pCell} role="cell"><span>{previewValue(r, c.field)}</span></div>
                               ))}
                             </div>

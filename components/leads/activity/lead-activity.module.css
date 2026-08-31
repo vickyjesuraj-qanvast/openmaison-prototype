@@ -18,14 +18,17 @@
 /* Row 1212×54: H g16 p16/24, white, 1px surface-variant stroke (no radius in the mock). The stroke is a real border so it
    occupies layout like the mock's inside stroke: 1 + 16 + 20 + 16 + 1 = 54 tall, content 25 from the sides. */
 .row {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);   /* flex-start: when the sentence wraps the meta stays on its first line (one-liners are unchanged — icon, sentence and meta are all 20 tall) */
   padding: var(--om-spacing-4) var(--om-spacing-6);
   background: var(--om-color-surface-default);
   border: var(--om-border-1) solid var(--om-color-surface-variant);
 }
-.textGroup { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
+.textGroup { display: flex; align-items: flex-start; gap: var(--om-spacing-2); flex: 1; min-width: 0; }   /* the glyph stays on the first line of a wrapped sentence (detail/info-column.module.css .contactRow) */
 .icon { color: var(--om-color-on-surface-default); flex-shrink: 0; display: inline-flex; }
-.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The sentence is the row's whole payload and carries user text (task titles, file names, note titles — lib/leads/activity.ts),
+   so it wraps rather than truncating, as every other detail-page value (user 2026-08-30, detail/info-column.module.css).
+   The mock's sentences are short: at the 1244 centre the longest baseline row measures 663 of 878px, so rows stay 54 tall. */
+.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow-wrap: anywhere; }
 .meta { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 /* "See Task" 14/Medium ink, underlined as in the mock render (931:48003) — no hover colour: the mock records none. */
 .link { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); text-decoration: underline; text-underline-offset: 2px; }

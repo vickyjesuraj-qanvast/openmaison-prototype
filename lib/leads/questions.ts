@@ -11,5 +11,8 @@ export async function fetchLeadQuestions(leadId: string): Promise<LeadQuestionsD
     db.select().from(questions).where(eq(questions.leadId, leadId)).orderBy(asc(questions.sortOrder), asc(questions.createdAt)),
     db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)),
   ])
-  return { questions: rows, leadName: lead[0]?.name ?? '', now: Date.now() }
+  // Unanswered first — those are the ones still needing work; answered ones are a record (user 2026-08-30).
+  // Array.prototype.sort is stable, so each group keeps the tab's own sortOrder / createdAt sequence.
+  const byOutstanding = [...rows].sort((a, b) => Number(a.answer !== null) - Number(b.answer !== null))
+  return { questions: byOutstanding, leadName: lead[0]?.name ?? '', now: Date.now() }
 }

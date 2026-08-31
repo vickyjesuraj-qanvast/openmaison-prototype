@@ -28,7 +28,7 @@ import { SearchEmpty } from '@/components/leads/search-empty'
 import { EMPTY_FILTERS, activeFilterCount, applyFilters, type LeadFilters } from '@/lib/leads/filters'
 import { KanbanBoard, type PendingDrop } from '@/components/leads/kanban/board'
 import { DeleteLeadDialog } from '@/components/leads/delete-dialog'
-import { LeadFormModal } from '@/components/leads/lead-form'
+import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { DeletedLeadsSheet } from '@/components/leads/deleted-sheet'
 import { ImportWizard } from '@/components/leads/import-wizard'
@@ -55,6 +55,17 @@ type Anchored = { id: string; el: HTMLElement; top: number; left: number } | nul
 const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom, window.innerHeight - 360), left: r.left } }   // menu hangs from the cell's bottom-left corner (780:86452)
 const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) } }
 const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom + 4, window.innerHeight - 520), left: Math.min(r.left, window.innerWidth - 420) } }
+/* Customise your view is the tall surface (752 at the mock's eight columns), so it clamps against its own
+   footprint: anchorRect's 460 is the Assign popover's, and it leaves the Save footer off screen once the
+   viewport drops under ~955px. The budget is the card's own CSS cap — min(756, 100dvh − 32), see
+   customise-view.module.css — so the card rides up only as far as it must and never overhangs the edge.
+   At 1440×1024 nothing clamps: top 203 under the gear, bottom 955, as 780:80275. */
+const CUSTOMISE_MAX = 756, EDGE = 16
+const customisePos = (el: HTMLElement) => {
+  const r = el.getBoundingClientRect()
+  const h = Math.min(CUSTOMISE_MAX, window.innerHeight - EDGE * 2)
+  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, window.innerHeight - h - EDGE)), left: Math.min(r.left, window.innerWidth - 420) }
+}
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
 function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement }: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
@@ -113,7 +124,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const deletingRef = useRef(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [nowTick, setNowTick] = useState(initialNow)
-  const [leadForm, setLeadForm] = useState<{ mode: 'create' } | { mode: 'edit'; lead: LeadRow } | null>(null)
+  const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const [tasksFor, setTasksFor] = useState<({ id: string; el: HTMLElement } & TasksPos) | null>(null)
   const addRef = useRef<HTMLDivElement>(null)
   const fabRef = useRef<HTMLDivElement>(null)   // the Maison AI FAB — the sheet exempts it from outside presses so the FAB toggles (REG-153)
@@ -147,8 +158,13 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     if (stage === 'On Hold') { setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return }
     if (stage === 'Lost') { setLostReason('Property too far'); setLost(lead.id); return }
     const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
-    // A parked lead (On Hold / Lost) resuming really changes where it is — one confirm, any stage.
-    if (!isActiveStage(lead.stage)) { setConfirmMove({ leadId: lead.id, stage }); return }
+    // A parked lead (On Hold / Lost) resuming really changes where it is — one confirm, any stage the gate allows.
+    // That gate is what keeps a Lost lead's un-reached stages shut (REG-225); active leads keep their path below.
+    if (!isActiveStage(lead.stage)) {
+      const parkedBlock = blockedReason(lead, stage, stageMovement)
+      if (parkedBlock) { setPendingDrop(null); snackbar({ message: parkedBlock }); return }
+      setConfirmMove({ leadId: lead.id, stage }); return
+    }
     // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
     if (to <= from) { setWizard({ leadId: lead.id, target: stage }); return }
     if (stageMovement === 'linear') {
@@ -212,7 +228,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const follow = () => {
       setStageMenu((s) => (s ? (offscreen(s.el) ? null : { ...s, ...stagePos(s.el) }) : s))
       setAssign((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
-      setCustomise((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
+      setCustomise((s) => (s ? (offscreen(s.el) ? null : { ...s, ...customisePos(s.el) }) : s))
       setTasksFor((s) => (s ? (offscreen(s.el) ? null : { ...s, ...tasksPos(s.el) }) : s))
     }
     document.addEventListener('scroll', follow, true)
@@ -351,7 +367,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onTaskClick={openTasks}
                 now={nowTick}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
-                onTuneClick={(anchor) => setCustomise((c) => (c ? null : anchorRect(anchor)))}   // the gear toggles its popover (REG-153)
+                onTuneClick={(anchor) => setCustomise((c) => (c ? null : customisePos(anchor)))}   // the gear toggles its popover (REG-153)
                 tuneOpen={!!customise}
                 query={query}
                 filterSort={filters.sort}
@@ -536,6 +552,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onOpenTask={(task) => router.push(`${detailHref(task.leadId, 'tasks')}?open=${task.id}`)}   // the task panel on Lead Details › Tasks, as the Overview's popover (REG-173)
       />
       <LeadFormModal
+        team={team}
         now={nowTick}
         form={leadForm}
         onClose={() => setLeadForm(null)}

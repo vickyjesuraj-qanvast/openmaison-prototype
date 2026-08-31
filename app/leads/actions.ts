@@ -3,14 +3,28 @@
 import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'node:crypto'
-import { db } from '@/lib/db'
+import { db, type Db } from '@/lib/db'
 import { leadAssignees, leads } from '@/lib/db/schema'
 
-export async function assignMembers(leadId: string, memberIds: string[]): Promise<void> {
-  await db.delete(leadAssignees).where(eq(leadAssignees.leadId, leadId))
-  if (memberIds.length) {
-    await db.insert(leadAssignees).values(memberIds.map((m) => ({ id: randomUUID(), leadId, memberId: m })))
+const ME = 'dane'   // the signed-in member (members.is_you), as in tasks-actions.ts
+
+/** The transaction handle Drizzle hands a `db.transaction` callback. */
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+
+/**
+ * Replaces a lead's assignees. One writer for both doors — the Assign popover and the Lead form's Assign member
+ * field (REG-231) — and de-duplicated, because `lead_assignees` carries unique(leadId, memberId).
+ */
+async function writeAssignees(tx: Tx, leadId: string, memberIds: string[]): Promise<void> {
+  await tx.delete(leadAssignees).where(eq(leadAssignees.leadId, leadId))
+  const ids = [...new Set(memberIds)]
+  if (ids.length) {
+    await tx.insert(leadAssignees).values(ids.map((m) => ({ id: randomUUID(), leadId, memberId: m })))
   }
+}
+
+export async function assignMembers(leadId: string, memberIds: string[]): Promise<void> {
+  await db.transaction((tx) => writeAssignees(tx, leadId, memberIds))   // atomic: no window with the rows deleted
   revalidatePath('/leads')
 }
 
@@ -33,10 +47,12 @@ export async function moveStage(input: {
     fromStage: input.fromStage, toStage: input.toStage,
     payload: input.payload as object, createdAt: now,
   })
+  // Suggested tasks are raised by the signed-in member, like every task createTask() writes. Unstamped they read
+  // "System created the task" in Activity, left the drawer's Creator row blank and hid under Filters › Creators › Dane.
   for (const title of input.tasks) {
     await db.insert(leadTasks).values({
       id: uuid(), leadId: input.leadId, title, kind: 'General',
-      dueAt: null, done: false, createdAt: now,
+      dueAt: null, done: false, createdAt: now, creatorId: ME, updatedAt: now,
     })
   }
   revalidatePath('/leads')
@@ -79,6 +95,8 @@ type LeadFormInput = {
   areaSize: string
   areaUnit: string
   notes: string
+  /** Member ids from the form's Assign member field (REG-231). Replaces the lead's assignees wholesale. */
+  assignees: string[]
 }
 
 function leadColumns(input: LeadFormInput) {
@@ -109,20 +127,29 @@ function leadColumns(input: LeadFormInput) {
 export async function createLead(input: LeadFormInput): Promise<string> {
   const now = new Date()
   const id = randomUUID()
-  await db.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })   // every new lead carries the band until someone clicks it (user 2026-08-29)
+  // One transaction: a lead is never visible without the owners it was created with, so a retry cannot leave two.
+  await db.transaction(async (tx) => {
+    await tx.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })   // every new lead carries the band until someone clicks it (user 2026-08-29)
+    await writeAssignees(tx, id, input.assignees)
+  })
   revalidatePath('/leads')
   return id
 }
 
 export async function updateLead(leadId: string, input: LeadFormInput): Promise<void> {
-  await db.update(leads).set({ ...leadColumns(input), updatedAt: new Date() }).where(eq(leads.id, leadId))
+  await db.transaction(async (tx) => {
+    await tx.update(leads).set({ ...leadColumns(input), updatedAt: new Date() }).where(eq(leads.id, leadId))
+    await writeAssignees(tx, leadId, input.assignees)
+  })
   revalidatePath('/leads')
 }
 
 export async function addTask(leadId: string, title: string): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
+  const now = new Date()
+  // Stamped like createTask(): without a creator the same task read as 'System' in Activity and '—' in the drawer.
   await db.insert(leadTasks).values({
-    id: randomUUID(), leadId, title, kind: 'General', createdAt: new Date(),
+    id: randomUUID(), leadId, title, kind: 'General', createdAt: now, creatorId: ME, updatedAt: now,
   })
   revalidatePath('/leads')
 }
@@ -275,7 +302,7 @@ function parseDMY(s: string | undefined): Date | null {
 
 /** Imported row → lead columns; enum values outside the mock vocab fall back to 'Others' / 'New'. */
 async function leadFromImport(data: Record<string, string>) {
-  const { SOURCES, PROPERTY_TYPES, STAGES } = await import('@/lib/leads/enums')
+  const { SOURCES, PROPERTY_TYPES, ALL_STAGES } = await import('@/lib/leads/enums')
   const pick = (v: string | undefined, list: readonly string[], fallback: string) => {
     const hit = list.find((x) => x.toLowerCase() === (v ?? '').trim().toLowerCase())
     return hit ?? fallback
@@ -287,7 +314,7 @@ async function leadFromImport(data: Record<string, string>) {
     phone: canonicalPhone(data['Lead Phone Number'] ?? ''),
     email: (data['Lead Email'] ?? '').trim() || null,
     source: pick(data['Lead Source'], SOURCES, 'Others'),
-    stage: pick(data['Lead Stage'], STAGES, 'New'),
+    stage: pick(data['Lead Stage'], ALL_STAGES, 'New'),   // the full vocabulary: STAGES is active-only, so an imported 'On Hold' / 'Lost' row landed silently in New
     propertyType: pick(data['Property Type'], PROPERTY_TYPES, 'Others'),
     propertyAddress: (data['Property Address'] ?? '').trim() || null,
     leadAddress: (data['Lead Address'] ?? '').trim() || null,

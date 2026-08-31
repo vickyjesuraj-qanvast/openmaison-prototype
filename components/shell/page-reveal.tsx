@@ -18,15 +18,22 @@ const FADE_FALLBACK_MS = 600
 export function PageReveal({ skeleton, children }: { skeleton: ReactNode; children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const [gone, setGone] = useState(false)
-  const startRef = useRef<number | null>(null)
+  const startRef = useRef<{ at: number | null } | null>(null)
 
   useEffect(() => {
     // Read-and-clear the clock now (not in the timer) so an unmount during the
     // hold — Back, a rail click — can't leak a stale stamp into the next route.
     // The ref makes the StrictMode double-run reuse the first value.
-    startRef.current ??= ghostClock.shownAt ?? performance.now()
-    ghostClock.shownAt = null
-    const wait = Math.max(0, GHOST_MIN_MS - (performance.now() - startRef.current))
+    if (startRef.current === null) {
+      startRef.current = { at: ghostClock.shownAt }
+      ghostClock.shownAt = null
+    }
+    // `shownAt` is set only when loading.tsx actually painted its ghost. When the server answered before that — every
+    // tab click on a warm route — there is no ghost to hand over from, so the hold has nothing to smooth and would
+    // just be 650ms of invented skeleton over content that is already here (user 2026-08-30: "every time i click a
+    // tab it loads"). Cold loads, where the ghost did paint, keep the full beat.
+    const at = startRef.current.at
+    const wait = at === null ? 0 : Math.max(0, GHOST_MIN_MS - (performance.now() - at))
     const t = setTimeout(() => setReady(true), wait)
     return () => clearTimeout(t)
   }, [])

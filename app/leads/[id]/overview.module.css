@@ -9,6 +9,11 @@
   flex-direction: column;
 }
 
+/* The tabs travel with the header instead of scrolling away (user 2026-08-31). The header is sticky at 8 and 72 tall,
+   so they dock at 80; z sits below the header's 20, so the header always covers them and never the reverse. They
+   already carry the white plate and the level-1 shadow that separate them from the rows passing underneath. */
+.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 72px); z-index: 19; }
+
 /* Below the tabs: info column 360 · centre (fluid) · Create quick links 72/140. Columns stretch to the row's height,
    which is at least the viewport minus the shell gutters, header and tabs, so the side rules run the full height. */
 .row {
@@ -46,3 +51,8 @@
 
 /* Notes (931:44882): the tab is one fixed 844px card that never scrolls under the FAB, so the mock's 24 bottom padding stands (the FAB overlaps the card corner in the mock). */
 .centre[data-tab='notes'] { --fab-clearance: var(--om-spacing-6); }
+/* An empty tab is one card that fills the body, and the mock pads 24 under it, not the FAB's 88 (910:36266 · 931:38634 ·
+   931:40340 · 931:46792 all measure 24 + 36 toolbar + 24 gap + 784 card + 24 = the 892 section). The 784 is that rule's
+   OUTPUT, not a constant — with the FAB band the card fell 64px short and the page grew a pointless scroll. The FAB then
+   sits over the card's empty bottom-right corner, exactly as it does on Notes above. Populated tabs keep the full band. */
+.centre:has([data-testid$='-empty']) { --fab-clearance: var(--om-spacing-6); }
