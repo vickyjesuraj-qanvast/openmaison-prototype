@@ -263,7 +263,8 @@ export function ReturnLeadWizard({
 
                           {/* [V g4] Text Area 96 "Comments (optional)" placeholder "Any notes goes here..." · "0/500" counter */}
                           <div className={styles.comments}>
-                            <TextArea label="Comments (optional)" placeholder="Any notes goes here..." value={comments}
+                            {/* "notes" → "remarks" (REG-267): the field vocabulary everywhere outside the Notes tab. */}
+                            <TextArea label="Comments (optional)" placeholder="Any remarks goes here..." value={comments}
                                       onChange={setComments} maxLength={COMMENTS_MAX} className={styles.textArea} />
                             <span className={styles.counter} aria-live="polite">{comments.length}/{COMMENTS_MAX}</span>
                           </div>

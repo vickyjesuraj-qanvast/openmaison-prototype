@@ -1,43 +1,70 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { Icon } from '@/components/om/icon'
-import { displayDateLong, displayTime, startOfDay } from '@/lib/format'
+import { SearchBar } from '@/components/ds'
+import { useSearchTarget } from '@/components/shell/search-focus'
+import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import { displayDateLong, displayTime } from '@/lib/format'
 import type { LeadActivityData } from '@/lib/leads/activity'
 import styles from './lead-activity.module.css'
 
 /**
- * Lead Details › Activity (931:47976, spec design-source/context/lead-activity/01-feed.txt): day groups (rule with a centred
- * "Wed, 12 Aug ’26" chip) of 54px rows — glyph 20/Light · sentence · "See Task" · actor · "08:59 PM". Newest day first,
- * newest event first inside a day (REG-191). The feed derives from the lead's records (lib/leads/activity.ts), so it is
- * never empty: the lead's creation is its first row.
+ * Lead Details › Activity — a single continuous timeline (REG-245 + REG-248, user 2026-09-01): the mock's
+ * boxed, day-grouped rows (931:47976) are replaced wholesale. The toolbar is the other tabs' — "All
+ * Activities" heading-h4 + the DS SearchBar 280 (REG-251); the search filters the sentences live, and no
+ * match shows the tabs' shared No-results card. Each row is `dot | date & time | activity` — the sentence
+ * ITSELF is the hyperlink (underlined on hover) where the event has a destination; no See-CTA, no "by who"
+ * (every sentence opens with its actor). Newest first (REG-191); the feed derives from the lead's records
+ * (lib/leads/activity.ts), so unfiltered it is never empty: the lead's creation is its last row.
  */
 export function LeadActivity({ data }: { data: LeadActivityData }) {
-  const groups = new Map<number, typeof data.events>()
-  for (const e of data.events) { const d = startOfDay(e.at); const list = groups.get(d); if (list) list.push(e); else groups.set(d, [e]) }
+  const [query, setQuery] = useState('')
+  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
+  // owns its <input>, so the target is resolved from the wrapper once it mounts (tasks-toolbar.tsx).
+  const searchInput = useRef<HTMLInputElement | null>(null)
+  useSearchTarget(searchInput)
+
+  const q = query.trim().toLowerCase()
+  const events = q ? data.events.filter((e) => e.text.toLowerCase().includes(q)) : data.events
+
   return (
     <div className={styles.tab} data-testid="activity-feed">
-      {[...groups.entries()].map(([day, events]) => (
-        <section key={day} className={styles.group} aria-label={displayDateLong(new Date(day))}>
-          <div className={styles.ruleRow}><span className={styles.dateChip}>{displayDateLong(new Date(day))}</span></div>
-          <div className={styles.rows}>
-            {events.map((e) => (
-              <div key={e.id} className={styles.row} data-testid="activity-row">
-                <div className={styles.textGroup}>
-                  <span className={styles.icon}><Icon name={e.icon} size={20} weight={300} /></span>
-                  <span className={styles.text} title={e.text}>{e.text}</span>
-                </div>
-                <div className={styles.meta}>
-                  {e.link ? <><Link href={e.link.href} className={styles.link}>{e.link.label}</Link><span aria-hidden>·</span></> : null}
-                  <span>{e.actor}</span>
-                  <span aria-hidden>·</span>
-                  <span>{displayTime(e.at)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className={styles.bar}>
+        <h2 className={styles.title}>All Activities</h2>
+        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+          <SearchBar
+            appearance="outlined" size="md"
+            placeholder="Search" aria-label="Search activities"
+            value={query} onChange={setQuery}
+            className={styles.search}
+          />
+        </span>
+      </div>
+
+      {events.length === 0 ? (
+        <TabSearchEmpty noun="activities" searching onClearAll={() => setQuery('')} />
+      ) : (
+        <div className={styles.list} role="list" aria-label="Activity">
+          {events.map((e) => (
+            <div key={e.id} className={styles.row} role="listitem" data-testid="activity-row">
+              <span className={styles.rail} aria-hidden>
+                <span className={styles.dot} />
+              </span>
+              <span className={styles.when}>
+                {displayDateLong(new Date(e.at))} · {displayTime(e.at)}
+              </span>
+              <span className={styles.body}>
+                {e.link ? (
+                  <Link href={e.link.href} className={styles.textLink}>{e.text}</Link>
+                ) : (
+                  <span className={styles.text}>{e.text}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

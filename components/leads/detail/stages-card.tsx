@@ -13,17 +13,19 @@ const daysLabel = (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`
 /**
  * LEAD STAGES card (858:24890 New-current · 858:24646 Lost · 858:24709 On Hold).
  * Five 36px stage rows (done · current · future), then — when the lead is parked — a 1px rule and the On Hold / Lost row.
- * Every row is a button that opens the Move stage window at that stage; the arrow opens the Stages tab.
+ * Every row is a button that opens the Move stage window at that stage; the head arrow opens the same window
+ * at the lead's current position (REG-259, user 2026-09-01 — it navigated to the Activity tab before).
  * Spec: design-source/context/lead-overview/04-cards-stages-files-activity.txt.
  */
-export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOpenStage, onOpenTab }: {
+export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOpenStage, onOpen }: {
   timeline: StageStep[]
   parked: ParkedStep | null
   daysInPipeline: number
   /** The shared stage gate (lib/leads/stage-policy blockedReason) — a row it refuses is shown refused, with the reason. */
   blocked?: (stage: string) => string | null
   onOpenStage: (stage: string) => void
-  onOpenTab: () => void
+  /** The head arrow — the Move stage window at the current position. */
+  onOpen: () => void
 }) {
   const rows = timeline.map((step) => {
     // A Lost lead's un-reached stages are not somewhere to go — the way back is the stage it stopped at (REG-225).
@@ -70,7 +72,7 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
       title="Lead stages"
       headGap={8}
       metaRight={`${daysLabel(daysInPipeline)} in pipeline`}
-      onOpen={onOpenTab}
+      onOpen={onOpen}
       openLabel="Open lead stages"
       testId="lead-stages"
     >

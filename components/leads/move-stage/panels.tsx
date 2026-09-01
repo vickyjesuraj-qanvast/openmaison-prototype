@@ -137,7 +137,7 @@ function LogCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <span className={fieldStyles.sectionLabel}>Notes (optional)</span>
+        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
         <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>
@@ -207,7 +207,7 @@ function MeetingCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <span className={fieldStyles.sectionLabel}>Notes (optional)</span>
+        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
         <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>

@@ -3,7 +3,13 @@
 .aside {
   box-sizing: border-box;
   width: 72px; flex-shrink: 0;
-  align-self: stretch; min-height: 100%;
+  /* Pinned while the page scrolls (REG-242, user 2026-09-01): sticky under the docked tabs (header 72 at top 8
+     + tabs 44, overview.module.css .stickyTabs), viewport-tall so the strip and its left rule always fill the
+     visible band — the shell rail's own rule. */
+  align-self: flex-start;
+  position: sticky;
+  top: calc(var(--om-spacing-2) + 72px + 44px);
+  height: calc(100dvh - 72px - 44px - var(--om-spacing-2) * 2);
   display: flex; flex-direction: column; align-items: flex-start;
   gap: var(--om-spacing-6);                       /* V g24 (collapsed) */
   padding: var(--om-spacing-6);                   /* p24 */

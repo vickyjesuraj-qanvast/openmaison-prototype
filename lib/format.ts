@@ -36,12 +36,14 @@ export function fileSize(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`
 }
 
-/** Activity rows (931:48007): "08:59 PM" — zero-padded hour, space before the meridiem. */
+/** Activity rows: "8:59 PM" — bare hour (REG-250, user 2026-09-01: "remove 0 in time … across the pages"),
+    as the other three date-time formatters below already print it; the mock's zero-padded "08:59 PM"
+    (931:48007) is overridden. */
 export function displayTime(d: Date): string {
   let h = d.getHours()
   const am = h < 12 ? 'AM' : 'PM'
   h = h % 12 || 12
-  return `${String(h).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
+  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
 }
 
 /** Notes list (931:44902): "17 Jul ’26・12:34 PM" — a katakana middle dot between date and time. */

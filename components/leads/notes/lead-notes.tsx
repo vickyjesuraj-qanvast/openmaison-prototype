@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ds'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
@@ -67,7 +68,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   /* ── items ── */
   // A lead with no notes opens on a blank note draft (frame 79); `now` is the loader's clock — no clock read in render.
   const [draft, setDraft] = useState<DraftItem | null>(() => (notes.length ? null : freshDraft('note', now)))
-  const [selectedId, setSelectedId] = useState<string | null>(() => (notes.length ? notes[notes.length - 1]!.id : DRAFT_ID))
+  const [selectedId, setSelectedId] = useState<string | null>(() => (notes.length ? notes[0]!.id : DRAFT_ID))   // the top item — newest first (REG-262)
   const [filter, setFilter] = useState<NoteFilter>('all')
   const [edits, setEdits] = useState<Record<string, NoteDraft>>({})
   const [contactEditing, setContactEditing] = useState<Set<string>>(() => new Set())
@@ -84,6 +85,8 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
 
   const byId = new Map(notes.map((n) => [n.id, n]))
   const fileById = new Map(files.map((f) => [f.id, f]))
+  /** Derived from the Contacted stage's logs (REG-265): view-only here — edited in the Move stage window, never deleted. */
+  const isStage = (id: string | null): boolean => !!id && id !== DRAFT_ID && byId.get(id)?.origin === 'stage'
   /** The item's live fields: the draft, the note's edit, or the note as saved. */
   const currentOf = (id: string): NoteDraft | null => {
     if (id === DRAFT_ID) return draft ? fieldsOf(draft) : null
@@ -107,14 +110,15 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   // 3. Nothing left at all → the blank note draft again (frame 79).
   if (!draft && notes.length === 0 && !savedDraftId) setDraft(freshDraft('note', now))
 
-  // The list: the filter's notes in creation order, then the draft (always shown — it is the item being written).
+  // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all —
+  // then the filter's notes as the query orders them (created desc).
   const items = [
-    ...filterNotes(notes, filter).map((n) => { const cur = edits[n.id] ?? draftFrom(n); return { id: n.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: n.createdAt } }),
     ...(draft ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
+    ...filterNotes(notes, filter).map((n) => { const cur = edits[n.id] ?? draftFrom(n); return { id: n.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: n.createdAt, locked: n.origin === 'stage' } }),
   ]
-  // 4. Selection follows the visible list: default = the draft, else the last item.
+  // 4. Selection follows the visible list: default = the draft, else the top item — the newest.
   if (!(selectedId && items.some((i) => i.id === selectedId))) {
-    const fallback = draft ? DRAFT_ID : (items[items.length - 1]?.id ?? null)
+    const fallback = draft ? DRAFT_ID : (items[0]?.id ?? null)
     if (fallback !== selectedId) setSelectedId(fallback)
   }
 
@@ -151,6 +155,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     setShowErrors((s) => without(s, [id]))
   }
   const edit = (id: string) => {
+    if (isStage(id)) return   // the stage's record — edited in the Move stage window (REG-265)
     select(id)
     if (id === DRAFT_ID) setDraft((prev) => (prev ? { ...prev, editing: true } : prev))
     else if (byId.get(id)?.kind === 'contact') setContactEditing((s) => withId(s, id))
@@ -167,11 +172,13 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
       return
     }
     const noun = d.kind === 'contact' ? 'contact log' : 'note'
-    const done = d.kind === 'contact' ? 'Contact log saved' : 'Note saved'
+    /* A note saves ITSELF (REG-263, autosave) — announcing every pause would be noise, so only the contact
+       log's explicit Save gets the toast. */
+    const done = d.kind === 'contact' ? 'Contact log saved' : null
     if (id === DRAFT_ID) {
       const fileIds = draft?.fileIds ?? []
       setSavingId(id)
-      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); snackbar({ message: done }) }
+      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (done) snackbar({ message: done }) }
       catch { fail(`save the ${noun}`) }
       finally { setSavingId(null) }
       return
@@ -179,13 +186,20 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const n = byId.get(id); if (!n) return
     if (same(d, draftFrom(n))) { clearEdit(id); return }   // nothing changed — just leave editing
     setSavingId(id)
-    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); snackbar({ message: done }) }
+    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (done) snackbar({ message: done }) }
     catch { fail(`save the ${noun}`) }
     finally { setSavingId(null) }
   }
+
   const itemMenu = (id: string, action: 'edit' | 'delete') => {
+    if (isStage(id)) return   // both items render disabled for a stage log (REG-265); this is the backstop
     if (action === 'edit') { edit(id); return }
-    if (id === DRAFT_ID) { setDraft(null); return }   // an unsaved draft is simply dropped
+    if (id === DRAFT_ID) {
+      // A draft with something typed confirms like everything else (REG-264); a pristine one just drops.
+      if (draft && draftDirty(draft)) setDeleting({ id: DRAFT_ID, kind: draft.kind })
+      else setDraft(null)
+      return
+    }
     const n = byId.get(id); if (n) setDeleting({ id, kind: n.kind === 'contact' ? 'contact' : 'note' })
   }
 
@@ -220,6 +234,23 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const isEditing = (id: string) => (id === DRAFT_ID ? !!draft?.editing : contactEditing.has(id))
   const errorsFor = (id: string, d: NoteDraft) => ((id === DRAFT_ID ? !!draft?.showErrors : showErrors.has(id)) ? validateDraft(d) : {})
 
+  /* ── Notes autosave (REG-263, user 2026-09-01: "it can be auto saved like apple notes … why do we need a
+     button") ── a NOTE commits itself ~900ms after typing pauses; the timer re-arms on every change (the key
+     serialises the current draft), and a new note's first pause CREATES its row. Contact logs keep the
+     explicit Edit → Save — structured fields need a validation commit point. */
+  const saveRef = useRef(save)
+  useEffect(() => { saveRef.current = save })
+  const autosaveKey =
+    selectedId && selected && selected.kind === 'note' && savingId !== selectedId && isDirty(selectedId)
+      ? `${selectedId} ${JSON.stringify(fieldsOf(selected))}`
+      : null
+  useEffect(() => {
+    if (!autosaveKey) return
+    const id = autosaveKey.slice(0, autosaveKey.indexOf(' '))
+    const t = setTimeout(() => { void saveRef.current(id) }, 900)
+    return () => clearTimeout(t)
+  }, [autosaveKey])
+
   return (
     <div className={styles.card}>
       <div className={styles.list}>
@@ -232,7 +263,6 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         />
       </div>
       <div className={styles.pane}>
-        <PaneToolbar onAttach={() => { if (selectedId) setAttachFor(selectedId) }} onRefine={comingSoon} />
         <div className={styles.body}>
           <div className={styles.editor}>
             {selectedId && selected ? (
@@ -243,22 +273,16 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
                   onChange={(patch) => change(selectedId, patch)}
                   errors={errorsFor(selectedId, selected)}
                   editing={isEditing(selectedId)}
+                  locked={isStage(selectedId)}
                   onEdit={() => edit(selectedId)}
                   onAutoFill={() => setAutoFillFor(selectedId)}
-                  onCancel={() => cancel(selectedId)}
-                  onSave={() => { void save(selectedId) }}
                   today={new Date(now)}
-                  saving={savingId === selectedId}
                 />
               ) : (
                 <NoteEditor
                   key={selectedId}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
-                  dirty={isDirty(selectedId)}
-                  onCancel={() => cancel(selectedId)}
-                  onSave={() => { void save(selectedId) }}
-                  saving={savingId === selectedId}
                 />
               )
             ) : null}
@@ -271,6 +295,28 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
             />
           ) : null}
         </div>
+
+        {/* The pane's bottom bar (REG-254 — the mock's top toolbar 931:44905 moved to the foot, where it sits
+            beside the body it formats): formatting + attach + AI at the left, and the contextual actions at the
+            right — Edit for a read-only contact log, Cancel · Save while an editor has something to decide.
+            Formatting runs on whichever rich body holds the selection — execCommand is deprecated but universal,
+            the right size for the prototype (REG-252) — and shows disabled while nothing is editable. */}
+        <PaneToolbar
+          onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
+          onRefine={comingSoon}
+          onFormat={(cmd) => document.execCommand(cmd)}
+          formattingDisabled={!selectedId || !selected || (selected.kind === 'contact' && !isEditing(selectedId))}
+          end={
+            /* Cancel · Save are the CONTACT LOG's commit point only (REG-256/263): notes autosave, so while a
+               note is selected the bar's end stays empty — Apple-notes style. */
+            selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) ? (
+              <>
+                <Button variant="secondary" appearance="outlined" onPress={() => cancel(selectedId)} isDisabled={savingId === selectedId}>Cancel</Button>
+                <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save</Button>
+              </>
+            ) : null
+          }
+        />
       </div>
 
       <AttachFilesModal
@@ -303,6 +349,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         onNo={() => setDeleting(null)}
         onYes={() => {
           const d = deleting; setDeleting(null); if (!d) return
+          if (d.id === DRAFT_ID) { setDraft(null); return }   // a confirmed dirty draft is dropped, no row exists yet (REG-264)
           clearEdit(d.id)
           void run('delete', () => deleteNote(d.id), d.kind === 'contact' ? 'Contact log deleted' : 'Note deleted')
         }}

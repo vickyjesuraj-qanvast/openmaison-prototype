@@ -20,8 +20,3 @@
 .layout { display: flex; align-items: flex-start; gap: var(--om-spacing-6); min-width: 0; }
 .questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 1 1 auto; min-width: 0; }
 .summary { flex: 0 0 480px; width: 480px; }
-
-/* "+ Add Question" under the last card (invented, REG-188) — the Tasks table's bottom bar (902:26450,
-   components/leads/tasks/tasks-table.module.css .foot: p16/24) without its top rule: here the link sits in the open column,
-   not inside a table card, so there is nothing to rule off. */
-.foot { display: flex; align-items: center; padding: var(--om-spacing-4) var(--om-spacing-6); }

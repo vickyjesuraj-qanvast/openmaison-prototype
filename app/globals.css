@@ -155,6 +155,14 @@ label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; mar
  */
 [class*='searchBar'] input:focus-visible { outline: none; }
 
+/*
+ * The DS TextArea likewise draws its own focus state — the inset stroke goes 1px → 2px primary (dist/styles.css
+ * ._textarea_…:focus) — and React Aria marks text inputs focus-visible even on a mouse click, so the global ring
+ * added the same second rectangle to every answer / description box (user 2026-09-01, REG-241: "our design system
+ * has only one border like … the search input field"). The field keeps its own indicator; the outline drops.
+ */
+textarea[class*='_textarea_']:focus-visible { outline: none; }
+
 /* Micro-motion (Figma: 50ms ease-out) applied by primitives via this token. */
 :root {
   --motion-hover: 50ms ease-out;

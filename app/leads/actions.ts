@@ -324,7 +324,7 @@ async function leadFromImport(data: Record<string, string>) {
     keyCollection: (data['Key Collection'] ?? '').trim() || null,
     condition: (data['Condition'] ?? '').trim() || null,
     areaSqft: Number(digits(data['Area Size'])) || null,
-    notes: (data['Notes'] ?? '').trim() || null,
+    notes: (data['Remarks'] ?? '').trim() || null,   // the import vocabulary's Remarks (REG-266); the DB column stays `notes`
     createdAt: now, updatedAt: now,
   }
 }

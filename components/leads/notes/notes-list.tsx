@@ -17,6 +17,8 @@ export type NotesListItem = {
   createdAt: Date
   /** Unsaved new note / contact log — the last item while it is being written (frame 79 / 165). */
   draft?: boolean
+  /** The Contacted stage's own log (REG-265): view-only — Edit and Delete render disabled. */
+  locked?: boolean
 }
 
 export type NotesListProps = {
@@ -116,8 +118,11 @@ export function NotesList({ items, filter, onFilter, selectedId, onSelect, onNew
                   </button>
                 </Tooltip>
                 <Dropdown open={open} onClose={close} align="right" width={140}>
-                  <DropdownItem onSelect={() => { close(); onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>
-                  <DropdownItem onSelect={() => { close(); onItemMenu(it.id, 'delete') }}><span className={styles.danger}>Delete</span></DropdownItem>
+                  {/* A stage-logged record keeps its items visible but inert (REG-265) — the title says why. */}
+                  <DropdownItem disabled={it.locked} title={it.locked ? 'Logged by the Contacted stage — edit it in the Move stage window' : undefined}
+                                onSelect={() => { close(); onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>
+                  <DropdownItem tone="danger" disabled={it.locked} title={it.locked ? 'Logged by the Contacted stage — it cannot be deleted here' : undefined}
+                                onSelect={() => { close(); onItemMenu(it.id, 'delete') }}><span className={it.locked ? undefined : styles.danger}>Delete</span></DropdownItem>
                 </Dropdown>
               </span>
             </div>

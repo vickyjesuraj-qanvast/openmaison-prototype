@@ -67,7 +67,9 @@ export function AiSheet({
           style={{ transformOrigin: 'bottom right' }}
         >
           <div className={styles.head}>
-            <span className={styles.spark}><Icon name="auto_awesome" size={16} fill /></span>
+            {/* The Maison AI mark — the FAB's own sparkle (REG-249), not a stock glyph. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <span className={styles.spark}><img src="/figma-assets/brief-sparkle.svg" width={16} height={16} alt="" /></span>
             Maison AI
           </div>
           <div className={styles.body}>

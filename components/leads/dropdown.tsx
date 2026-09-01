@@ -66,9 +66,18 @@ export function Dropdown({
   )
 }
 
-export function DropdownItem({ children, onSelect, tone }: { children: ReactNode; onSelect: () => void; /** Destructive item (Delete) — red text, as om/menu's `tone`. */ tone?: 'danger' }) {
+export function DropdownItem({ children, onSelect, tone, disabled, title }: {
+  children: ReactNode
+  onSelect: () => void
+  /** Destructive item (Delete) — red text, as om/menu's `tone`. */
+  tone?: 'danger'
+  /** Shown but inert (REG-265: a stage-logged record's Edit / Delete) — `title` says why on hover. */
+  disabled?: boolean
+  title?: string
+}) {
   return (
-    <button type="button" role="menuitem" className={styles.item} data-tone={tone} onClick={onSelect}>
+    <button type="button" role="menuitem" className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
+            onClick={disabled ? undefined : onSelect}>
       {children}
     </button>
   )

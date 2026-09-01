@@ -19,6 +19,8 @@ export type FilesTableProps = {
   onSelect: (ids: Set<string>) => void
   onOpenFolder: (folder: FileRow) => void
   onOpenFile: (file: FileRow) => void
+  /** The comment chip: the viewer with the comments panel open (the Tasks chip's interaction, REG-253). */
+  onOpenComments: (file: FileRow) => void
   /** A folder row offers the folder items (FolderAction), a file row the file items (FileAction). */
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
 }
@@ -42,7 +44,7 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
  * hover pattern (.actions/.float) with the kebab only (build plan, logged). Sorting is inert (coming soon).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onRowMenu }: FilesTableProps) {
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
 
@@ -92,7 +94,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           onMenuClose={() => setMenuRow(null)}
           /* Kebab flips up on the last two rows of a 3+ row table — the leads / tasks / quotes table rule. */
           menuSide={rows.length >= 3 && idx >= rows.length - 2 ? 'up' : 'down'}
-          onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onRowMenu={onRowMenu}
+          onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
         />
       ))}
     </div>
@@ -104,7 +106,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpenFolder, onOpenFile, onRowMenu,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu,
 }: {
   row: FileRow
   isSelected: boolean
@@ -115,6 +117,7 @@ function FileRowView({
   menuSide: 'up' | 'down'
   onOpenFolder: (folder: FileRow) => void
   onOpenFile: (file: FileRow) => void
+  onOpenComments: (file: FileRow) => void
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
 }) {
   const folder = isFolder(row)
@@ -143,11 +146,16 @@ function FileRowView({
           )}
         </span>
         <button type="button" className={styles.name} onClick={open}>{row.name}</button>
+        {/* The chip opens the viewer's comments panel straight away — the Tasks title cell's interaction (REG-253). */}
         {row.commentCount > 0 ? (
-          <span className={styles.chip} aria-label={`${row.commentCount} ${row.commentCount === 1 ? 'comment' : 'comments'}`}>
-            <Icon name="comment" size={16} weight={300} />
-            <span className={styles.chipCount}>{row.commentCount}</span>
-          </span>
+          <Tooltip label="Open comments">
+            <button type="button" className={styles.chip} data-action=""
+                    aria-label={`Open ${row.commentCount} ${row.commentCount === 1 ? 'comment' : 'comments'} on ${row.name}`}
+                    onClick={() => onOpenComments(row)}>
+              <Icon name="comment" size={16} weight={300} />
+              <span className={styles.chipCount}>{row.commentCount}</span>
+            </button>
+          </Tooltip>
         ) : null}
       </div>
 

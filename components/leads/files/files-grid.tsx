@@ -24,6 +24,8 @@ export type FilesGridProps = {
   onSelect: (ids: Set<string>) => void
   onOpenFolder: (folder: FileRow) => void
   onOpenFile: (file: FileRow) => void
+  /** The comment chip: the viewer with the comments panel open (the Tasks chip's interaction, REG-253). */
+  onOpenComments: (file: FileRow) => void
   onFolderMenu: (folder: FileRow, action: FolderAction) => void
   onFileMenu: (file: FileRow, action: FileAction) => void
 }
@@ -42,7 +44,7 @@ const kindIcon = (f: FileRow) => (f.kind === 'pdf' || f.mime === 'application/pd
  * Structure copied from components/leads/tasks/attach-files-modal.tsx (group heads, folder cards, tiles) with the Files
  * tab's sizes; kebabs toggle on their own trigger (REG-153) and carry a Tooltip (REG-75).
  */
-export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onFolderMenu, onFileMenu }: FilesGridProps) {
+export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu }: FilesGridProps) {
   const [menu, setMenu] = useState<string | null>(null)
 
   const toggle = (id: string) => {
@@ -134,7 +136,8 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                   /* Tile 299×262 (931:39125): V p4, fill #f2f2f2 r4 → image 291×200 r2 (cover) · caption 291×54
                      (H g8 p16/8/12/8): kind icon 20 red + name 14/Semi Bold · comment chip 36×26 · more_vert 24/Light.
                      Selected (frame 96): the whole tile fills #eee5ff. */
-                  <div key={f.id} className={styles.tile} data-testid="file-tile" data-selected={isOn || undefined}>
+                  <div key={f.id} className={styles.tile} data-testid="file-tile" data-selected={isOn || undefined}
+                       data-chip={f.commentCount > 0 || undefined}>
                     <button
                       type="button" className={styles.tileMain}
                       aria-pressed={isOn}
@@ -154,14 +157,20 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                           <Icon name={kindIcon(f)} size={20} className={styles.kindIcon} />
                           <span className={styles.tileName}>{f.name}</span>
                         </span>
-                        {f.commentCount > 0 ? (
-                          <span className={styles.chip} aria-label={`${f.commentCount} ${f.commentCount === 1 ? 'comment' : 'comments'}`}>
-                            <Icon name="comment" size={16} weight={300} />
-                            <span className={styles.chipCount}>{f.commentCount}</span>
-                          </span>
-                        ) : null}
                       </span>
                     </button>
+                    {/* The chip sits BESIDE the tile button, not inside it — buttons cannot nest (the Tasks
+                        title cell's rule); it opens the viewer's comments panel straight away (REG-253). */}
+                    {f.commentCount > 0 ? (
+                      <Tooltip label="Open comments">
+                        <button type="button" className={styles.chip} data-action=""
+                                aria-label={`Open ${f.commentCount} ${f.commentCount === 1 ? 'comment' : 'comments'} on ${f.name}`}
+                                onClick={() => onOpenComments(f)}>
+                          <Icon name="comment" size={16} weight={300} />
+                          <span className={styles.chipCount}>{f.commentCount}</span>
+                        </button>
+                      </Tooltip>
+                    ) : null}
                     <span className={styles.tileMenuWrap}>
                       <Tooltip label="File actions" disabled={open}>
                         <button

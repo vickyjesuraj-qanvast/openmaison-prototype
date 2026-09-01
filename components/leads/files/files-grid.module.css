@@ -91,10 +91,16 @@
 .nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }   /* H g8, 199 wide */
 .kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* image / picture_as_pdf 20/Regular #db382a */
 .tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Semi Bold */
-/* Comment chip 36×26: H g4 p4, fill #f2f2f2, stroke #e5e5e5 w1, r4 → comment 16/Light + count 12/Medium. */
+/* Comment chip 36×26: H g4 p4, fill #f2f2f2, stroke #e5e5e5 w1, r4 → comment 16/Light + count 12/Medium.
+   A real button since REG-253 (opens the viewer's comments panel), and a SIBLING of the tile button —
+   buttons cannot nest — anchored beside the kebab where the mock draws it: right 12 + 24 + 8 = 44, on the
+   kebab's caption line. Inside the tile button it also crushed against a long name (flexed after the
+   fluid name group), which is why the card view seemed to have no chip at all. */
 .chip {
+  position: absolute; right: 44px; bottom: 16px;
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   height: 26px; padding: var(--om-spacing-1);
+  border: 0; cursor: pointer;
   background: var(--om-color-surface-bg);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
   border-radius: var(--om-radius-1);
@@ -102,6 +108,9 @@
   flex-shrink: 0;
   min-width: 36px; justify-content: center;   /* 931:39131: the chip is 36 wide with a one-digit count */
 }
+.chip:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+/* The name stops before the chip's reserved band (chip 36 + gap 8) so it never runs underneath it. */
+.tile[data-chip] .nameGroup { margin-right: 44px; }
 .chipCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); }   /* "1" 12/Medium #1a1a1a */
 /* Kebab anchor at the caption's right, measured from the tile's outer edge: x = 4 + 291 − 8 − 24 → right 12;
    y = tile padding 4 + caption bottom 12 + (26 − 24) / 2 → bottom 17 (centred on the 26px name / chip line, y 481..505). */

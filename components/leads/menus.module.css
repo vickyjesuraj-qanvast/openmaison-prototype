@@ -27,6 +27,7 @@
 .item[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
 .item[aria-disabled='true']:hover { background: none; }
 .item[data-tone='danger'] { color: var(--om-color-tertiary-red-default); }
+.item[data-tone='danger'][aria-disabled='true'] { color: var(--om-color-on-surface-disabled); }   /* a locked Delete reads disabled, not dangerous (REG-265) */
 .divider { height: 1px; background: var(--om-color-surface-variant); }
 .item[data-selected] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .count { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

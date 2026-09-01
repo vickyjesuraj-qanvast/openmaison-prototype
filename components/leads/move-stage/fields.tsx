@@ -95,10 +95,10 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
   return (
     <textarea
       className={styles.notes} disabled={ro}
-      placeholder="Enter your notes"
+      placeholder="Enter your remarks"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      aria-label="Notes"
+      aria-label="Remarks"
     />
   )
 }

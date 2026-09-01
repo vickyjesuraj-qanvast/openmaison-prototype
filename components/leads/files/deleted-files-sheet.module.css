@@ -67,7 +67,7 @@
   padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
   color: var(--om-color-on-surface-secondary);
 }
-.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* caps as the listing head (REG-243) */
 .colSel { grid-column: 1; padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }   /* 16 + the 24 checkbox = 40 */
 .colTitle { grid-column: 2; }
 .colOwner { grid-column: 3; }

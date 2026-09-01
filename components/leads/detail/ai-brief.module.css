@@ -1,4 +1,6 @@
-/* Maison AI brief (858:24867): card 884×176 + 8 gap + pager row 24. Every value from
+/* Maison AI brief (858:24867 + REG-237): at rest, card 884×176 + 8 gap + 24 toggle row — the mock block's 208.
+   Show more stacks the remaining briefs' cards (8 gap) between the first card and the row; the mock's pager
+   (dots + ‹ ›) was replaced by the expander (user 2026-09-01). Card values from
    design-source/context/lead-overview/03-brief-grid.txt. */
 .block { width: 100%; display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
 
@@ -18,25 +20,23 @@
   display: flex; align-items: center; gap: var(--om-spacing-3);
   padding: var(--om-spacing-5) var(--om-spacing-5) var(--om-spacing-3);
   min-height: 52px;
-  position: relative;                               /* popLayout parks the exiting tag absolutely inside the head */
 }
 .eyebrow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .sparkle { width: 17px; height: 17px; display: block; flex-shrink: 0; }
 /* "MAISON AI BRIEF" 12/600/16 secondary — caption-s with the semibold weight, as the card head link in card.module.css. */
 .eyebrowText { font: var(--om-type-caption-s); font-weight: var(--om-font-weight-semibold); line-height: 16px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.tagWrap { display: inline-flex; flex-shrink: 0; }
 /* DS Tag Filled Yellow gives fill tertiary-yellow-default (#f19e2b), white 10/500/12 uppercase text, p4/8, r4 — the mock
    renders it uppercase ("FRESH LEAD · RESPOND FAST", 858:24867), so nothing is overridden. */
+.tag { flex-shrink: 0; }
 
 /* Body: p8/20/20/20, V g20. */
-.bodyWrap { position: relative; }
 .body {
   display: flex; flex-direction: column; gap: var(--om-spacing-5);
   padding: var(--om-spacing-2) var(--om-spacing-5) var(--om-spacing-5);
   width: 100%; box-sizing: border-box;
 }
-/* Brief 14/400/20 on-surface, at most 2 lines (mock box 844×40); min-height keeps the card at 176 for shorter briefs
-   so the carousel doesn't jump. */
+/* Brief 14/400/20 on-surface, at most 2 lines (mock box 844×40); min-height keeps every card in the stack at the
+   mock's 176 so shorter briefs don't break the rhythm. */
 .text {
   margin: 0;
   font: var(--om-type-body-m);
@@ -49,17 +49,16 @@
 /* Two Buttons Primary/36/Outlined, 12 apart (DS Button variant primary · appearance outlined · size md = 36 / p8 16 / 1px primary / r4). */
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
 
-/* Pager row: 24 tall, H g8; dots FILL on the left, two 24px icon buttons on the right. */
-.pager { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
-.dots { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-1); }
-.dot { width: 4px; height: 4px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); }
-.dot[data-active] { background: var(--om-color-on-surface-secondary); }
-/* Icon Buttons 24 Filled (white): white fill, 1px surface-variant, r4, 20/Regular on-surface glyph — over the IconButton primitive
-   (which rests on the on-surface-border stroke and a secondary glyph). */
-.pager .pagerBtn {
-  background-color: var(--om-color-surface-default);
-  border-color: var(--om-color-surface-variant);
-  color: var(--om-color-on-surface-default);
+/* Expanded tail: the height-animated wrapper (motion) and the stacked cards inside it. */
+.rest { width: 100%; min-width: 0; }
+.restInner { display: flex; flex-direction: column; gap: var(--om-spacing-2); width: 100%; }
+
+/* Toggle row, where the mock's pager sat: 24 tall; the button is the lead form's "Additional info"
+   expander verbatim (lead-form.module.css .moreToggle). */
+.toggleRow { display: flex; align-items: center; height: 24px; }
+.toggle {
+  display: inline-flex; gap: var(--om-spacing-1); align-items: center;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
 }
-/* Hover: the DS 4% overlay over the white fill (icon-button hover). */
-.pager .pagerBtn:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+.toggle span[data-chev] { color: var(--om-color-on-surface-secondary); display: inline-flex; }

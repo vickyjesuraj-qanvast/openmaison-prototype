@@ -1,12 +1,14 @@
 /**
- * Maison AI briefs — the scripted carousel behind the Lead Overview's "MAISON AI BRIEF" card (858:24867).
+ * Maison AI briefs — the scripted list behind the Lead Overview's "MAISON AI BRIEF" card (858:24867).
+ * The first brief is the stage's primary nudge (the card shown at rest); the rest stack below it behind
+ * Show more (REG-237).
  *
  * The first brief for New is the mock's copy verbatim (Olivia Martinez frame, 858:24770). Every other brief —
  * the extra New briefs and all briefs for Contacted / Met / Quote Sent / Won / On Hold / Lost — is INVENTED COPY
  * pending designer sign-off (REG-1xx: AI briefs scripted per stage; New = mock, the rest invented in the same
  * voice: one situational sentence, one bold nudge with a figure, one consequence; two 36px outlined actions).
  *
- * Pure data: no clock, no randomness — the carousel order is stable across renders and reloads.
+ * Pure data: no clock, no randomness — the list order is stable across renders and reloads.
  */
 import { moneyCompact } from '@/lib/format'
 
@@ -101,7 +103,7 @@ export function briefsFor(stage: string, lead: BriefLead): Brief[] {
             { t: 'Send the questionnaire before the meet:', bold: true },
             { t: ' briefs answered in advance cut the first meeting by 25 minutes.' },
           ],
-          actions: ['Send questionnaire', 'Summarise call notes'],
+          actions: ['Send questionnaire', 'Summarise call remarks'],   // "notes" → "remarks" outside the Notes tab (REG-267)
         })
       }
       return briefs

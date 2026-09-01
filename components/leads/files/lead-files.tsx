@@ -67,6 +67,9 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const openFolder = (f: FileRow) => { setQuery(''); router.push(`${rootHref}?folder=${f.id}`) }
   const back = () => { setQuery(''); router.push(rootHref) }
   const openFile = (f: FileRow) => router.push(`${rootHref}/${f.id}`)
+  /* The comment chip (grid tile + list row) opens the viewer with its comments panel already open —
+     the Tasks title-cell chip's interaction (REG-253, user 2026-09-01). */
+  const openComments = (f: FileRow) => router.push(`${rootHref}/${f.id}?panel=comments`)
 
   /* ── list state ── */
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -182,14 +185,14 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         <FilesGrid
           folders={folders} groups={groups}
           selected={selected} onSelect={setSelected}
-          onOpenFolder={openFolder} onOpenFile={openFile}
+          onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
           onFolderMenu={itemMenu} onFileMenu={itemMenu}
         />
       ) : (
         <FilesTable
           rows={visible}
           selected={selected} onSelect={setSelected}
-          onOpenFolder={openFolder} onOpenFile={openFile}
+          onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
           onRowMenu={itemMenu}
         />
       )}

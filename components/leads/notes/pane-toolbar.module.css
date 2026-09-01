@@ -1,14 +1,23 @@
 /*
- * Lead Details › Notes — pane toolbar (931:44905 884×68, H g16 p16/24, bottom rule #e5e5e5; spec design-source/context/
+ * Lead Details › Notes — pane toolbar (931:44905 884×68, H g16 p16/24; spec design-source/context/
  * lead-notes/01-layout-list-editor.txt). Bare 24px icon buttons (components/om/drawer.module.css .iconBtn), 1×36 rules,
  * the AI chip 47×28 (p4 g2: 17×17 gradient square + chevron 20).
+ * At the pane's FOOT since REG-254 (user 2026-09-01: the body sits after the contact-log fields, so a top bar read
+ * as disconnected) — the mock's bottom rule becomes a top rule, and the bar's right end hosts the contextual
+ * actions: Edit (a read-only contact log) or Cancel · Save (an editor with something to decide).
  */
 .toolbar {
   display: flex; align-items: center; gap: var(--om-spacing-4);
   height: 68px; flex-shrink: 0; width: 100%;
   padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
 }
+
+/* The contextual actions at the bar's right end: Edit, or Cancel · Save 12 apart (the retired editor footer's row). */
+.end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* Formatting outside an editable body (a contact log before Edit): visible, inert, disabled ink. */
+.iconBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; pointer-events: none; }
 
 /* Bare 24px icon button — copied from components/om/drawer.module.css .iconBtn (secondary glyph, hover-08p wash). */
 .iconBtn {
@@ -18,6 +27,8 @@
   transition: background-color var(--motion-hover);
 }
 .iconBtn:hover { background: var(--om-color-hover-08p); }
+/* Active format at the selection (REG-260) — the icon-button selected lavender (om/icon-button.module.css). */
+.iconBtn[aria-pressed='true'] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* Rule 1×36 #e5e5e5 between the groups. */
@@ -36,14 +47,9 @@
 }
 .aiChip:hover { background: var(--om-color-hover-08p); }
 .aiChip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-/* 17×17 gradient rounded square, r8.68 (≥ half of 17 → the full radius). No token holds the Maison AI tints: the gradient
-   is the one painted in public/figma-assets/maison-ai-fab.svg (paint0_linear, horizontal) — #AB2576 → #DF4D2A @44.7% →
-   #EE8E2B — and identically in brief-sparkle.svg (the 17×17 sparkle of components/leads/detail/ai-brief.tsx). */
-.aiSquare {
-  width: 17px; height: 17px; flex-shrink: 0;
-  border-radius: var(--om-radius-full);
-  background: linear-gradient(90deg, #ab2576 0%, #df4d2a 44.72%, #ee8e2b 100%);
-}
+/* The Maison AI mark, brief-sparkle.svg — the FAB's own sparkle, as the AI sheet (REG-249/255). The mock's 17×17
+   gradient disc approximated it; the real asset carries the same gradient (#AB2576 → #DF4D2A @44.7% → #EE8E2B). */
+.aiMark { width: 17px; height: 17px; flex-shrink: 0; display: block; }
 /* Chevron points up while the menu is open — every menu trigger does this (contracts-toolbar.module.css .chev). */
 .chev { display: inline-flex; transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }

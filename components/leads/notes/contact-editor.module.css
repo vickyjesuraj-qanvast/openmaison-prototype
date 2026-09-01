@@ -13,6 +13,8 @@
 
 /* Title row 654×20: "Contact log" 14/Semi Bold fills · Link text "Auto Fill" / "Edit" at the right (DS Link). */
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); width: 100%; min-height: 20px; }
+/* A stage-logged record's hint (REG-268), where Edit would sit: lock 14 + 12/16 secondary. */
+.lockHint { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .blockTitle { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 
 /* Row H g16 (When + Outcome · Date & Time + Preferred mode) = move-stage/wizard.module.css `.fieldPair`. */

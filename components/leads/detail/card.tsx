@@ -58,7 +58,8 @@ export function Card({
  */
 export function CardEmpty({ illustration, width, height, title, body, actions, gap = 20 }: {
   illustration: string; width: number; height: number
-  title: string; body: string; actions: ReactNode; gap?: 16 | 20
+  /** Optional since REG-246 — the QUESTIONNAIRE card's empty state has no action any more. */
+  title: string; body: string; actions?: ReactNode; gap?: 16 | 20
 }) {
   return (
     <div className={styles.empty} style={{ gap }}>
@@ -69,7 +70,7 @@ export function CardEmpty({ illustration, width, height, title, body, actions, g
           <p className={styles.emptyTitle}>{title}</p>
           <p className={styles.emptyBody}>{body}</p>
         </div>
-        <div className={styles.emptyActions}>{actions}</div>
+        {actions ? <div className={styles.emptyActions}>{actions}</div> : null}
       </div>
     </div>
   )

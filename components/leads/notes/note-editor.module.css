@@ -20,33 +20,21 @@
 }
 .title::placeholder { color: var(--om-color-on-surface-secondary); }
 
-/* "Write a note..." 16/Regular — components/leads/move-stage/fields.module.css `.notes` restyled: no border, no box,
-   no fixed height. Auto-grow = the hidden-mirror trick: the wrapper is a one-cell grid, its ::after repeats the text
-   (data-value) in the same font, the textarea sits on top of it, so the cell — and the textarea — is as tall as the
-   text. Pure CSS from a data attribute: no effect, no setState, works in every engine (field-sizing is Chromium-only). */
-.grow { display: grid; width: 100%; }
-.grow::after {
-  content: attr(data-value) ' ';
-  grid-area: 1 / 1;
-  visibility: hidden;
-  white-space: pre-wrap; overflow-wrap: anywhere;
-  font: var(--om-type-body-l);
-  padding: 0; border: 0;
-}
-.body {
-  grid-area: 1 / 1;
-  width: 100%; min-height: 24px; resize: none; overflow: hidden;
+/* "Write a note..." 16/Regular — a contenteditable rich body (REG-252: the pane toolbar formats for real).
+   No border, no box; it grows with its content natively, so the old hidden-mirror textarea trick is retired.
+   The placeholder paints from data-placeholder while the body is blank (data-empty, kept by the component). */
+.rich {
+  width: 100%; min-height: 24px;
   border: 0; background: none; outline: 0; padding: 0; margin: 0;
   font: var(--om-type-body-l);
   color: var(--om-color-on-surface-default);
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
-.body::placeholder { color: var(--om-color-on-surface-secondary); }
+.rich[data-empty]::before { content: attr(data-placeholder); color: var(--om-color-on-surface-secondary); pointer-events: none; }
+.rich b, .rich strong { font-weight: var(--om-font-weight-bold); }
+.rich ul, .rich ol { margin: 0; padding-left: var(--om-spacing-6); white-space: normal; }
+/* The app-wide reset strips markers (globals.css ul, ol → list-style: none) — a CONTENT list needs them back (REG-261). */
+.rich ul { list-style: disc; }
+.rich ol { list-style: decimal; }
 
-/* Footer (frame 80): 68 tall = 16 + 36 buttons + 16; top rule; Cancel · Save right-aligned, 12 apart. */
-.footer {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-}
+/* The Cancel · Save footer (frame 80) moved into the pane's bottom bar (REG-254, pane-toolbar .end). */

@@ -124,6 +124,15 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     else requestStageChange(stage)
   }
 
+  /** A LEAD STAGES row, and the card's head arrow at the lead's current position (REG-259): the Move stage
+      window for a reached stage, the resume flow for a parked lead, the guarded request for a future one. */
+  const openStageStep = (stage: string) => {
+    if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
+    const step = timeline.find((s) => s.stage === stage)
+    if (step && step.state !== 'future') { setWizard(stage as Stage); return }
+    requestStageChange(stage as Stage)
+  }
+
   /* ── popovers, dialogs ── */
   const [kebabOpen, setKebabOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
@@ -180,7 +189,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent('om:notes:new', { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
   /** New question (QUESTIONNAIRE card › Add Question, 931-46769): the Questionnaire tab opens its add card in place, elsewhere it lands with `?new=1`. */
-  const onNewQuestion = () => { if (tab === 'questionnaire') window.dispatchEvent(new CustomEvent('om:questionnaire:add')); else router.push(href('questionnaire', 'new=1')) }
   const tabItems = DETAIL_TABS.map((t) => ({ label: t.label, href: href(t.slug) }))
   const activeTab = DETAIL_TABS.find((t) => t.slug === tab) ?? DETAIL_TABS[0]
   const returnedBy = ret ? team.find((m) => m.id === ret.returnedById) ?? null : null
@@ -290,7 +298,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                       />
                     </div>
                     <QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} />
-                    <QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onAdd={onNewQuestion} onOpenTab={() => goTab('questionnaire')} />
+                    <QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} />
                   </div>
                   <div className={styles.column}>
                     {ret ? (
@@ -299,13 +307,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                     <LeadStagesCard
                       timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
                       blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement)}
-                      onOpenStage={(stage) => {
-                        if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
-                        const step = timeline.find((s) => s.stage === stage)
-                        if (step && step.state !== 'future') { setWizard(stage as Stage); return }
-                        requestStageChange(stage as Stage)
-                      }}
-                      onOpenTab={() => goTab('activity')}
+                      onOpenStage={openStageStep}
+                      /* The head arrow opens the Move stage window at the current position, not the Activity tab
+                         (user 2026-09-01, REG-259). */
+                      onOpen={() => openStageStep(lead.stage)}
                     />
                     {/* A tile opens the record it draws — folder in the Files tab, file in its viewer (REG-181), the routes the card's own arrow and "+n" already use. */}
                     <FilesCard

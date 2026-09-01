@@ -21,7 +21,7 @@
   padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
   color: var(--om-color-on-surface-secondary);
 }
-.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium — sentence case as the mock types it */
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* 12/Medium, caps as the listing head (REG-243; the mock types "Title") */
 /* Sort is inert (coming soon) — the head keeps the listing's sort-button look (components/leads/table.module.css .hSort). */
 .hSort {
   border: 0; background: none; padding: 0; cursor: pointer;
@@ -36,6 +36,7 @@
 .head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
 .colTitle { flex: 1 1 582px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
 .colMember { flex: 0 0 160px; }
+.colCreator { flex: 0 0 160px; }   /* REG-239, not in the mock: Avatar 24 + name */
 .colDue { flex: 0 0 137px; }
 .colStatus { flex: 0 0 118px; }
 .colTags { flex: 0 0 191px; }
@@ -60,6 +61,8 @@
 .cell.colSel { padding: var(--om-spacing-3) var(--om-spacing-4); }                                                    /* p12/16 (declared after .cell so it wins the cascade) */
 .cell.colTitle { gap: var(--om-spacing-3); }                                                               /* H g12 */
 .cell.colMember { gap: var(--om-spacing-2); }                                                              /* H g8 */
+.cell.colCreator { gap: var(--om-spacing-2); }                                                             /* Avatar · name, H g8 */
+.creatorName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cell.colDue { padding: var(--om-spacing-3) var(--om-spacing-8) var(--om-spacing-3) var(--om-spacing-4); } /* p12/32/12/16 */
 /* Tags cell: 191 − p16/24 = 151 of content. A tag name is whatever the user typed (the picker creates any string) and a
    DS Tag is nowrap and never shrinks, so the cell clips as its floor and the name chips give way first — the "+n" chip
@@ -113,15 +116,16 @@
 .chip[data-action]:hover { background: var(--om-color-surface-variant); }
 .chip[data-action]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
-/* Member cell: Avatar Generic 24 r4 — #cccccc placeholder when unassigned. om/avatar has no placeholder mode, so the
-   box is drawn here; the silhouette glyph (person 16, white) is not measured in the spec. */
-.ghostAvatar {
-  width: 24px; height: 24px; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-on-surface-border);
-  color: var(--om-color-on-primary-default);
+/* Member cell, unassigned: the leads listing's "Assign" link verbatim (table.module.css .assignLink, REG-240) —
+   no placeholder avatar; the mock's grey silhouette (Avatar Generic 24) is dropped for consistency (user 2026-09-01). */
+.assignLink {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer;
+  color: var(--om-color-primary-default);
+  font: var(--om-type-subheading-m);
+  transition: color var(--motion-hover);
 }
+.assignLink:hover { color: var(--om-color-on-primary-variant); }
 .memberStack { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
 /* More than two assignees: the listing's "+n" box (components/leads/table.module.css .plusBox) — the mock shows at most two. */
 .plusBox {

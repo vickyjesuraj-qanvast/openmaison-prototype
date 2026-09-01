@@ -15,14 +15,16 @@
      row together instead of paying it all out of Title and overflowing the lead body's `overflow: clip`. */
   grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px);
   width: 100%;
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (910:36322).
+     These three lived only on [data-no-approval] below, so a studio WITH the approval step lost the card's
+     surface entirely — no outer stroke, no radius (REG-244; user 2026-09-01) */
+  border-radius: var(--om-radius-2);
 }
 /* A studio with no approval step has no Approval Date to show (Settings › Leads › Quote approval, REG-214), so the
    table drops that column — and its track with it, or the 112–157px would sit at the right edge as dead space. */
 .card[data-no-approval] {
   grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px));
-  background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (910:36322) */
-  border-radius: var(--om-radius-2);
 }
 
 /* ---- Head row 1244×56 (910:36323) ---- */
@@ -33,7 +35,7 @@
   padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
   color: var(--om-color-on-surface-secondary);
 }
-.hLabel { font: var(--om-type-caption-s); white-space: nowrap; }   /* "Title" 12/Medium #666666 */
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* 12/Medium #666666, caps as the listing head (REG-243; the mock types "Title") */
 /* Sort is inert (coming soon) — the head keeps the tasks table's sort-button look (tasks-table.module.css .hSort). */
 .hSort {
   border: 0; background: none; padding: 0; cursor: pointer;

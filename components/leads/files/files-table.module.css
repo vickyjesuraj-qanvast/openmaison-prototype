@@ -85,15 +85,18 @@
 }
 .row:hover .name, .name:hover { color: var(--om-color-primary-default); }   /* hover not mocked — the listing's lead-name affordance (table.module.css: row hover → name primary) */
 .name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-/* Comment chip 34×24 (931:40181): H g4 p4, fill #f2f2f2, r4 → comment 16/Light + "1" 12/Medium. */
+/* Comment chip 34×24 (931:40181): H g4 p4, fill #f2f2f2, r4 → comment 16/Light + "1" 12/Medium.
+   A real button since REG-253 — it opens the viewer's comments panel (the Tasks chip's interaction). */
 .chip {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   height: 24px; padding: var(--om-spacing-1);
+  border: 0; cursor: pointer;
   background: var(--om-color-surface-bg);
   border-radius: var(--om-radius-1);
   color: var(--om-color-on-surface-default);
   flex-shrink: 0;
 }
+.chip:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
 .chipCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); }
 /* Owner name 14/Regular ink, truncated to the 240 column. */
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -15,10 +15,11 @@ const nextConfig: NextConfig = {
   /**
    * Every lead route is `force-dynamic`, and the client router treats dynamic entries as stale the moment they land —
    * so a prefetched tab was refetched on click anyway and the ghost flashed each time (user 2026-08-30: "why is there
-   * a jerk when i navigate through tabs"). Holding them for 30s makes tab-to-tab instant. Safe here because every
-   * mutation goes through a server action that calls `revalidatePath`, which evicts these entries regardless.
+   * a jerk when i navigate through tabs"). Holding them makes tab-to-tab instant; 30s → 300s so the cache outlasts a
+   * demo's talking pauses (REG-238 — a tab explained for a minute went stale and the next hop refetched). Safe here
+   * because every mutation goes through a server action that calls `revalidatePath`, which evicts these entries regardless.
    */
-  experimental: { staleTimes: { dynamic: 30, static: 180 } },
+  experimental: { staleTimes: { dynamic: 300, static: 300 } },
 
   transpilePackages: ['@openmaison/react'],   // @openmaison/icons is unused: the prototype renders Material Symbols (audit 2026-08-30)
 

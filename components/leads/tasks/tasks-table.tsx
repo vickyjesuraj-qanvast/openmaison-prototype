@@ -25,6 +25,8 @@ export type TasksTableProps = {
   /** Inline add row (frame 194) at the top of the table. */
   adding: boolean
   onAddSubmit: (title: string) => void
+  /** Changes per inline save: remounts the add row empty + focused so entry chains (REG-257). */
+  addKey?: number
   onAddCancel: () => void
   /** Row being renamed — the same field treatment on that row, pre-filled with the title. */
   renaming: string | null
@@ -47,6 +49,7 @@ export type TasksTableProps = {
 const HEADS: { key: string; label: string; col: string | undefined; sortable: boolean }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle, sortable: true },
   { key: 'assignees', label: 'Assignees', col: styles.colMember, sortable: true },
+  { key: 'creator', label: 'Creator', col: styles.colCreator, sortable: true },
   { key: 'due', label: 'Due date', col: styles.colDue, sortable: true },
   { key: 'status', label: 'Status', col: styles.colStatus, sortable: true },
   { key: 'tags', label: 'Tags', col: styles.colTags, sortable: false },
@@ -54,12 +57,14 @@ const HEADS: { key: string; label: string; col: string | undefined; sortable: bo
 
 /**
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt + 02-rows-menus-bulk.txt.
- * Head 56 · rows 48 · bottom bar 53; columns 56 · 582 · 160 · 137 · 118 · 191 (Title fills).
+ * Head 56 · rows 48 · bottom bar 53; columns 56 · 582 · 160 · 160 · 137 · 118 · 191 (Title fills).
+ * The Creator column is not in the mock (REG-239, user 2026-09-01): the panel's Creator row as a column,
+ * so who asked for a task is visible without opening it; Assignees keeps assignees + person_add only.
  * Every icon-only control carries a Tooltip; sorting is inert (coming soon); menus toggle on their own trigger.
  */
 export function TasksTable({
   tasks, now, selected, onSelect, unseen,
-  adding, onAddSubmit, onAddCancel,
+  adding, onAddSubmit, addKey, onAddCancel,
   renaming, onRenameSubmit, onRenameCancel,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick,
 }: TasksTableProps) {
@@ -120,7 +125,7 @@ export function TasksTable({
       </div>
 
       {adding ? (
-        <AddRow key="new" onSubmit={onAddSubmit} onCancel={onAddCancel} />
+        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} />
       ) : null}
 
       {tasks.map((task, idx) => (
@@ -191,15 +196,6 @@ function TitleField({ initial, onSubmit, onCancel }: { initial: string; onSubmit
   )
 }
 
-/** Avatar Generic 24 placeholder (#cccccc) — om/avatar has no placeholder mode, so it is drawn here. */
-function GhostAvatar() {
-  return (
-    <span className={styles.ghostAvatar} aria-hidden>
-      <Icon name="person" size={16} fill />
-    </span>
-  )
-}
-
 function AddTagsLink({ inert = false }: { inert?: boolean }) {
   return (
     <span className={styles.link} data-inert={inert || undefined}>
@@ -220,8 +216,14 @@ function AddRow({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onC
         <TitleField initial="" onSubmit={onSubmit} onCancel={onCancel} />
       </div>
       <div className={`${styles.cell} ${styles.colMember}`} role="cell">
-        <GhostAvatar />
-        <IconButton icon="person_add" label="Assign members" size={24} variant="primary" className={styles.inert} tabIndex={-1} aria-disabled />
+        <span className={`${styles.assignLink} ${styles.inert}`}>
+          <Icon name="person_add" size={20} />
+          Assign
+        </span>
+      </div>
+      {/* The creator is stamped on save; until then the cell reads as unset, the panel's own "—". */}
+      <div className={`${styles.cell} ${styles.colCreator}`} role="cell">
+        <span className={styles.creatorName}>—</span>
       </div>
       <div className={`${styles.cell} ${styles.colDue}`} role="cell">
         <IconButton icon="calendar_add_on" label="Set due date" size={24} variant="primary" className={styles.inert} tabIndex={-1} aria-disabled />
@@ -330,20 +332,38 @@ function TaskRowView({
         </div>
       )}
 
-      {/* Member cell: up to two Avatars 24 (placeholder when unassigned) + person_add 24 primary outlined. */}
+      {/* Member cell: up to two Avatars 24 + person_add 24 primary outlined; unassigned = the leads listing's
+          "Assign" link, no placeholder avatar (REG-240 — one vocabulary for "nobody yet" everywhere). */}
       <div className={`${styles.cell} ${styles.colMember}`} role="cell" data-inert={inert}>
         {task.assignees.length === 0 ? (
-          <GhostAvatar />
+          <button type="button" className={styles.assignLink} onClick={(e) => onAssign(task, e.currentTarget)}>
+            <Icon name="person_add" size={20} />
+            Assign
+          </button>
         ) : (
-          <span className={styles.memberStack}>
-            {task.assignees.slice(0, 2).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} />)}
-            {task.assignees.length > 2 ? <span className={styles.plusBox}>+{task.assignees.length - 2}</span> : null}
-          </span>
+          <>
+            <span className={styles.memberStack}>
+              {task.assignees.slice(0, 2).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} />)}
+              {task.assignees.length > 2 ? <span className={styles.plusBox}>+{task.assignees.length - 2}</span> : null}
+            </span>
+            <Tooltip label="Assign members">
+              <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24} variant="primary"
+                          onClick={(e) => onAssign(task, e.currentTarget)} />
+            </Tooltip>
+          </>
         )}
-        <Tooltip label="Assign members">
-          <IconButton icon="person_add" label={`Assign members to ${task.title}`} size={24} variant="primary"
-                      onClick={(e) => onAssign(task, e.currentTarget)} />
-        </Tooltip>
+      </div>
+
+      {/* Creator cell (REG-239, not in the mock): the panel's Creator row as a column — Avatar 24 + name, — when absent. */}
+      <div className={`${styles.cell} ${styles.colCreator}`} role="cell">
+        {task.creator ? (
+          <>
+            <Avatar name={task.creator.name} color={task.creator.color} size={24} />
+            <span className={styles.creatorName}>{task.creator.name}</span>
+          </>
+        ) : (
+          <span className={styles.creatorName}>—</span>
+        )}
       </div>
 
       {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}

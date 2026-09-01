@@ -2,7 +2,7 @@
 export const IMPORT_FIELDS = [
   'Lead Name', 'Lead Phone Number', 'Lead Email', 'Lead Source', 'Lead Stage',
   'Property Type', 'Property Address', 'Lead Address', 'Estimated Budget (S$)',
-  'Estimated Start Date', 'Style', 'Key Collection', 'Condition', 'Area Size', 'Notes',
+  'Estimated Start Date', 'Style', 'Key Collection', 'Condition', 'Area Size', 'Remarks',
 ] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
 export const IGNORE = 'Ignore' as const
@@ -26,7 +26,7 @@ export const PREVIEW_COLUMNS: { field: ImportField; label: string; width: number
   { field: 'Key Collection', label: 'Key Collection', width: 144 },
   { field: 'Condition', label: 'Condition', width: 120 },
   { field: 'Area Size', label: 'Area Size', width: 101 },
-  { field: 'Notes', label: 'Notes', width: 200 },
+  { field: 'Remarks', label: 'Remarks', width: 200 },
 ]
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -49,7 +49,7 @@ const ALIASES: Record<string, ImportField> = {
   keycollection: 'Key Collection', keys: 'Key Collection',
   condition: 'Condition', propertycondition: 'Condition',
   areasize: 'Area Size', area: 'Area Size', size: 'Area Size', sqft: 'Area Size',
-  notes: 'Notes', remarks: 'Notes', comments: 'Notes',
+  notes: 'Remarks', remarks: 'Remarks', comments: 'Remarks',   // REG-266: the canonical name is Remarks; a legacy 'Notes' header still maps
 }
 
 export function autoMap(headers: string[]): Mapping {

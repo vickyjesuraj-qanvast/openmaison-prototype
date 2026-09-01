@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -11,6 +11,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { MaisonFab } from '@/components/shell/maison-fab'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { FileCommentsPanel } from './file-comments-panel'
 import { ViewerSkeleton } from './viewer-skeleton'
 import { FileInfoPanel } from './file-info-panel'
@@ -49,8 +50,11 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const { run, fail, refresh } = useRun()
 
   const [zoomIdx, setZoomIdx] = useState(FIT)
-  const [panel, setPanel] = useState<Panel>(null)
+  // `?panel=comments` opens the panel with the page — the listings' comment chips land here (REG-253).
+  const landing = useSearchParams().get('panel')
+  const [panel, setPanel] = useState<Panel>(landing === 'comments' ? 'comments' : null)
   const [kebabOpen, setKebabOpen] = useState(false)
+  const [deletingComment, setDeletingComment] = useState<string | null>(null)   // every destructive action confirms (REG-264)
   const [renaming, setRenaming] = useState(false)
   const [trashing, setTrashing] = useState(false)
   const [moving, setMoving] = useState(false)
@@ -178,7 +182,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 now={now}
                 onAdd={(body) => { void run('post the comment', () => addFileComment(file.id, body)) }}
                 onEdit={(id, body) => { void run('save the comment', () => editFileComment(id, body)) }}
-                onDelete={(id) => { void run('delete the comment', () => deleteFileComment(id), 'Comment deleted') }}
+                onDelete={setDeletingComment}
                 onClose={() => setPanel(null)}
               />
             </aside>
@@ -229,6 +233,13 @@ export function FileViewer({ data }: { data: FileViewData }) {
           snackbar({ message: 'Folder created' }); refresh()
           return id
         }}
+      />
+
+      <ConfirmDialog
+        open={!!deletingComment} title="Delete Comment" confirmLabel="Yes" cancelLabel="No"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        onCancel={() => setDeletingComment(null)}
+        onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteFileComment(id), 'Comment deleted') }}
       />
 
       {/* Generic shell: Maison AI FAB + sheet (no lead brief here — the viewer carries no stage, so the sheet offers only its base controls). */}

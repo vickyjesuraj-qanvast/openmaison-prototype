@@ -15,6 +15,7 @@ import { TaskPanel } from './task-panel'
 import { TagPicker } from './tag-picker'
 import { ManageTagsDialog } from './manage-tags-dialog'
 import { CommentsPanel } from './comments-panel'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { AttachFilesModal } from './attach-files-modal'
 import { TasksFiltersModal } from './tasks-filters-modal'
 import { ChooseTemplateDialog, SaveTemplateDialog } from './template-dialogs'
@@ -62,6 +63,8 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [adding, setAdding] = useState(false)
+  /** Bumped per inline save: remounts the add row empty and focused, so tasks chain without re-opening (REG-257). */
+  const [addRun, setAddRun] = useState(0)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [seenLocally, setSeenLocally] = useState<Set<string>>(() => new Set())
   const unseen = useMemo(() => new Set(tasks.filter((t) => t.seenAt === null && !seenLocally.has(t.id)).map((t) => t.id)), [tasks, seenLocally])
@@ -88,6 +91,9 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const [dueFor, setDueFor] = useState<{ taskId: string; el: HTMLElement } | null>(null)
   const dueAnchor = useRef<HTMLElement | null>(null)
   const [manageTags, setManageTags] = useState(false)
+  /* Every destructive action confirms (REG-264): comment and tag deletes were the two paths that ran straight through. */
+  const [deletingComment, setDeletingComment] = useState<string | null>(null)
+  const [deletingTag, setDeletingTag] = useState<string | null>(null)
   const [attachFor, setAttachFor] = useState<string | null>(null)
   const [chooseTemplate, setChooseTemplate] = useState(false)
   const [saveTemplateFor, setSaveTemplateFor] = useState<string[] | null>(null)
@@ -172,7 +178,10 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           selected={selected} onSelect={setSelected}
           unseen={unseen}
           adding={adding}
-          onAddSubmit={(title) => { setAdding(false); if (title.trim()) void run('add the task', () => createTask(leadId, title.trim()), 'Task added') }}
+          /* Saving keeps the row open, empty and focused for the next task — entry chains until Esc / Cancel
+             (user 2026-09-01, REG-257: "user can just keep adding tasks one after the other"). */
+          onAddSubmit={(title) => { if (title.trim()) { void run('add the task', () => createTask(leadId, title.trim()), 'Task added'); setAddRun((n) => n + 1) } else setAdding(false) }}
+          addKey={addRun}
           onAddCancel={() => setAdding(false)}
           onAddClick={startAdd}
           renaming={renaming}
@@ -214,9 +223,15 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           onClose={() => { setOpenId(null); setPanelView('task') }}
           onAdd={(body) => { void run('post the comment', () => addComment(openTask.id, body)) }}
           onEdit={(id, body) => { void run('save the comment', () => editComment(id, body)) }}
-          onDelete={(id) => { void run('delete the comment', () => deleteComment(id), 'Comment deleted') }}
+          onDelete={setDeletingComment}
         />
       ) : null}
+      <ConfirmDialog
+        open={!!deletingComment} title="Delete Comment" confirmLabel="Yes" cancelLabel="No"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        onCancel={() => setDeletingComment(null)}
+        onConfirm={() => { const id = deletingComment; setDeletingComment(null); if (id) void run('delete the comment', () => deleteComment(id), 'Comment deleted') }}
+      />
 
       {/* Fixed popovers sit at the z-scale's 70; while the panel (Drawer, 100) is open they are raised above it — a popover
           opened from the panel's person_add, or from a table cell beside it, must never paint under the panel (T1). */}
@@ -256,8 +271,14 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         open={manageTags} tags={tags}
         onClose={() => setManageTags(false)}
         onRename={(id, name) => { void run('rename the tag', () => renameTag(id, name), undefined, REFRESH) }}
-        onDelete={(id) => { void run('delete the tag', () => deleteTag(id), 'Tag deleted', REFRESH) }}
+        onDelete={setDeletingTag}
         onCreate={(name) => { void run('add the tag', () => createTag(name), undefined, REFRESH) }}
+      />
+      <ConfirmDialog
+        open={!!deletingTag} title="Delete Tag" confirmLabel="Yes" cancelLabel="No"
+        message="Are you sure you want to delete this tag? It will be removed from every task. This action cannot be undone."
+        onCancel={() => setDeletingTag(null)}
+        onConfirm={() => { const id = deletingTag; setDeletingTag(null); if (id) void run('delete the tag', () => deleteTag(id), 'Tag deleted', REFRESH) }}
       />
       <AttachFilesModal
         open={!!attachTask}

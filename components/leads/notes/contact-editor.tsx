@@ -1,13 +1,14 @@
 'use client'
 
 import { Link } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
 import { ChoiceChips, Divider } from '@/components/leads/move-stage/fields'
 import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } from '@/lib/leads/enums'
 import { nextStepFor, type NoteDraft } from '@/lib/leads/note-model'
 import { displayDateTime, parseInputDateTime } from '@/lib/format'
-import { BodyArea, EditorFooter } from './note-editor'
+import { BodyArea } from './note-editor'
 import styles from './contact-editor.module.css'
 
 /**
@@ -18,25 +19,23 @@ import styles from './contact-editor.module.css'
  * rule · body textarea "Write a note...". View = "Contact log" + Edit link · label/value rows (labels 104) · rule · body.
  * The links are the DS `Link` (1:1 with the mock's "Link text" instance: 14/Semi Bold primary, no underline);
  * fields.tsx LinkButton was not used — it hides itself inside a read-only scope and this editor has none.
- * Footer (Cancel · Save) = the note editor's, shown the whole time the form is open (plan › ContactEditor: "footer Cancel · Save
- * while editing"; frame 165) — unlike the note editor it does not wait for a change: Cancel is the way out of an untouched Edit
- * and Save on an empty draft is what surfaces the validation. The host's Save with nothing changed simply leaves editing.
+ * Edit and Cancel · Save live in the pane's bottom bar since REG-254 (the mock's inline Edit link, frame 163,
+ * and the editor footer, frame 165, both moved there — the host renders them beside the formatting).
  */
 export function ContactEditor({
-  draft, onChange, errors, editing, onEdit, onAutoFill, onCancel, onSave, today, saving,
+  draft, onChange, errors, editing, locked, onEdit, onAutoFill, today,
 }: {
   draft: NoteDraft
   onChange: (patch: Partial<NoteDraft>) => void
   /** validateDraft keys: channel · when · outcome · nextStepWhen · nextStepMode — shown after the first Save, cleared live by the host. */
   errors: Record<string, string>
   editing: boolean
+  /** The Contacted stage's own log (REG-265): view-only — no Edit link; the stage window owns it. */
+  locked?: boolean
   onEdit: () => void
   onAutoFill: () => void
-  onCancel: () => void
-  onSave: () => void
   /** Day-granular "today" for the pickers (never Date.now() in render). */
   today: Date
-  saving?: boolean
 }) {
   const nextStep = nextStepFor(draft.outcome)
   return (
@@ -44,9 +43,17 @@ export function ContactEditor({
       <div className={styles.fields}>
         <div className={styles.titleRow}>
           <span className={styles.blockTitle}>Contact log</span>
+          {/* Edit sits inline at the title's right (user 2026-09-01, REG-256 — moved back from the REG-254 bar);
+              Cancel · Save stay in the bar. Auto Fill stays with the fields it fills. A stage-logged record
+              (REG-265) offers neither — where Edit would sit, a hint says why it is view-only (REG-268). */}
           {editing
             ? <Link variant="primary" onPress={onAutoFill}>Auto Fill</Link>
-            : <Link variant="primary" onPress={onEdit}>Edit</Link>}
+            : locked ? (
+              <span className={styles.lockHint}>
+                <Icon name="lock" size={14} />
+                Added during stage movement — view only
+              </span>
+            ) : <Link variant="primary" onPress={onEdit}>Edit</Link>}
         </div>
 
         {editing ? (
@@ -95,9 +102,8 @@ export function ContactEditor({
 
         {editing
           ? <BodyArea value={draft.body} onChange={(v) => onChange({ body: v })} />
-          : <p className={styles.viewBody} data-empty={draft.body.trim() ? undefined : 'true'}>{draft.body.trim() ? draft.body : 'Write a note...'}</p>}
+          : <BodyArea value={draft.body} onChange={() => {}} disabled />}
       </div>
-      {editing ? <EditorFooter onCancel={onCancel} onSave={onSave} saving={saving} /> : null}
     </div>
   )
 }

@@ -1,35 +1,53 @@
-/* Lead Details › Activity feed (931:47991, spec design-source/context/lead-activity/01-feed.txt): the centre already pads 24,
-   the mock's container pads 40 and stacks day groups 80 apart — so the tab adds 16 and keeps the 80. */
-.tab { display: flex; flex-direction: column; gap: var(--om-spacing-20); padding: var(--om-spacing-4); min-width: 0; flex: 1; }   /* 80 = the mock's g80 */
+/* Lead Details › Activity — the timeline (REG-245, replacing the mock's boxed day groups 931:47991): one
+   continuous 1px rail with an 8px dot per row, rows plain and inline as the overview's RECENT ACTIVITY card.
+   The centre's 24 is the only inset (REG-251 — the boxed feed's extra 16 read as a deeper margin than the
+   other tabs); the toolbar is the tabs' shared bar. */
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
 
-/* Day group: rule with the centred date chip, then rows 12 apart, 24 below the rule. */
-.group { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
-.ruleRow { position: relative; height: 1px; background: var(--om-color-surface-variant); }
-.dateChip {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 140px; height: 20px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--om-color-surface-default);
-  font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary);
+/* Toolbar (the questionnaire / files bar): "All Activities" heading-h4 fills · DS SearchBar 280. */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search { width: 280px; }
+
+.list { display: flex; flex-direction: column; }
+
+/* Row: rail 24 · when 200 · body (fluid). The cells carry the block padding, not the row, so the rail cell
+   spans every row edge-to-edge and the line reads as one unbroken stroke. */
+.row {
+  display: grid;
+  grid-template-columns: 24px 200px minmax(0, 1fr);
+  column-gap: var(--om-spacing-4);
+}
+
+/* The rail: line through the full row, trimmed to the dot at both ends of the list; dot centred on the
+   first text line (12 block pad + half the 20 line). */
+.rail { position: relative; display: block; }
+.rail::before {
+  content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+  top: 0; bottom: 0; width: 1px;
+  background: var(--om-color-surface-variant);
+}
+.row:first-child .rail::before { top: 22px; }
+.row:last-child .rail::before { bottom: calc(100% - 22px); }
+.dot {
+  position: absolute; left: 50%; top: 18px; transform: translateX(-50%);
+  width: 8px; height: 8px; border-radius: var(--om-radius-full);
+  background: var(--om-color-on-surface-border);
+}
+
+/* "Tue, 25 Aug ’26 · 09:00 AM" — the overview card's secondary date column, nowrap so rows align. */
+.when {
+  padding-block: var(--om-spacing-3);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);
   white-space: nowrap;
 }
-.rows { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 
-/* Row 1212×54: H g16 p16/24, white, 1px surface-variant stroke (no radius in the mock). The stroke is a real border so it
-   occupies layout like the mock's inside stroke: 1 + 16 + 20 + 16 + 1 = 54 tall, content 25 from the sides. */
-.row {
-  display: flex; align-items: flex-start; gap: var(--om-spacing-4);   /* flex-start: when the sentence wraps the meta stays on its first line (one-liners are unchanged — icon, sentence and meta are all 20 tall) */
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
-}
-.textGroup { display: flex; align-items: flex-start; gap: var(--om-spacing-2); flex: 1; min-width: 0; }   /* the glyph stays on the first line of a wrapped sentence (detail/info-column.module.css .contactRow) */
-.icon { color: var(--om-color-on-surface-default); flex-shrink: 0; display: inline-flex; }
-/* The sentence is the row's whole payload and carries user text (task titles, file names, note titles — lib/leads/activity.ts),
-   so it wraps rather than truncating, as every other detail-page value (user 2026-08-30, detail/info-column.module.css).
-   The mock's sentences are short: at the 1244 centre the longest baseline row measures 663 of 878px, so rows stay 54 tall. */
-.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow-wrap: anywhere; }
-.meta { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-/* "See Task" 14/Medium ink, underlined as in the mock render (931:48003) — no hover colour: the mock records none. */
-.link { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); text-decoration: underline; text-underline-offset: 2px; }
-.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* The sentence; user text (task titles, file names) wraps rather than truncating, as every other
+   detail-page value (user 2026-08-30). */
+.body { padding-block: var(--om-spacing-3); font: var(--om-type-body-m); min-width: 0; overflow-wrap: anywhere; }
+.text { color: var(--om-color-on-surface-default); }
+/* A linked event: the sentence IS the hyperlink (REG-248) — plain ink at rest, underlined on hover, so
+   linked and plain rows read alike until pointed at. */
+.textLink { color: var(--om-color-on-surface-default); text-decoration: none; text-underline-offset: 2px; }
+.textLink:hover { text-decoration: underline; }
+.textLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }

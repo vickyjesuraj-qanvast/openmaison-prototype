@@ -75,12 +75,13 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
   if (tab === 'questionnaire') {
     // Questionnaire (931-46769): the same wide frame; the tab owns its toolbar, cards, summary and the Ask the client dialog.
     const data = await fetchLeadQuestions(id)
-    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuestionnaire leadId={id} data={data} />} />
+    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuestionnaire data={data} />} />
   }
   if (tab === 'activity') {
     // Activity (931-47975): the same wide frame; the feed derives from the lead's records.
     const data = await fetchLeadActivity(id)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadActivity data={data} />} />
   }
-  return <LeadOverview detail={detail} tab={tab} origin={origin} />
+  // Meetings (and any future tab): the wide frame too — the info column is the Overview's alone (REG-247, user 2026-09-01).
+  return <LeadOverview detail={detail} tab={tab} origin={origin} wide />
 }

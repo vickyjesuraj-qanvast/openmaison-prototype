@@ -1,18 +1,17 @@
 'use client'
 
-import { Button } from '@/components/ds'
 import type { LeadQuestionnaire } from '@/lib/db/schema'
 import { Card, CardEmpty } from './card'
 import styles from './questionnaire-card.module.css'
 
 /**
  * QUESTIONNAIRE card (858:25077 · empty 858:24219): answered / total progress with client · studio counts.
- * Spec: design-source/context/lead-overview/05-*.txt.
+ * Spec: design-source/context/lead-overview/05-*.txt. The empty state's Add Question went with REG-246 —
+ * questions are studio-level setup, not added from a lead.
  */
-export function QuestionnaireCard({ q, onAsk, onAdd, onOpenTab }: {
+export function QuestionnaireCard({ q, onAsk, onOpenTab }: {
   q: LeadQuestionnaire | null
   onAsk: () => void
-  onAdd: () => void
   onOpenTab: () => void
 }) {
   const answered = q ? q.clientAnswered + q.studioAnswered : 0
@@ -48,10 +47,9 @@ export function QuestionnaireCard({ q, onAsk, onAdd, onOpenTab }: {
           illustration="/figma-assets/empty-questionnaire.svg"
           width={140}
           height={120}
-          title="Create your first question"
-          body="Create and share your questions to clarify the client’s scope."
+          title="No questions yet"
+          body="Questions are set up by your studio’s admins and will appear here."
           gap={20}
-          actions={<Button onPress={onAdd}>Add Question</Button>}
         />
       )}
     </Card>
