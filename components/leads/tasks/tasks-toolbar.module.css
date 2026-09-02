@@ -29,3 +29,20 @@
 
 /* Menu item tones — "Dropdown Menu / Tasks": danger items #db382a. */
 .danger { color: var(--om-color-tertiary-red-default); }
+
+/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
+   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+@media (max-width: 767px) {
+  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .search, .searchWrap { width: 100%; flex-basis: 100%; }
+  .right, .actions { flex-wrap: wrap; }
+}
+
+/* Touch ergonomics (REG-273): the toolbar's controls are the DS 36px height — a fingertip wants 40. The
+   target grows by 2px on every side through a transparent overlay, so Add Task, the filter button (and its
+   count badge) and the kebab are drawn exactly as the mock draws them; the row's 12 gaps still leave 8
+   between neighbouring targets, and the row itself does not reflow. Desktop with a mouse is untouched. */
+@media (max-width: 767px), (hover: none) {
+  .touchTarget { position: relative; }
+  .touchTarget::after { content: ''; position: absolute; inset: -2px; }
+}

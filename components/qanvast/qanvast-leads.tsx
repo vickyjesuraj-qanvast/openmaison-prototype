@@ -1,13 +1,15 @@
 'use client'
 
-import { useMemo, useState, type MouseEvent } from 'react'
+import { useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
-import { Button } from '@/components/ds'
+import { Button, SearchBar } from '@/components/ds'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { Dropdown } from '@/components/leads/dropdown'
 import menuStyles from '@/components/leads/menus.module.css'
+import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { Icon } from '@/components/om/icon'
+import { AppliedDot } from '@/components/om/applied-dot'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tabs } from '@/components/om/tabs'
@@ -15,10 +17,13 @@ import { Tooltip } from '@/components/om/tooltip'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
+import { useSearchTarget } from '@/components/shell/search-focus'
 import { QanvastSkeleton } from '@/components/shell/skeleton'
+import { displayDate, money } from '@/lib/format'
 import { INACTIVE_STAGES, STAGES } from '@/lib/leads/enums'
 import type { QanvastLeadsData } from '@/lib/leads/qanvast'
 import { RETURN_FILTERS } from '@/lib/leads/return-tags'
+import { filterByQuery } from '@/lib/search'
 import { QanvastTable } from './qanvast-table'
 import styles from './qanvast-leads.module.css'
 
@@ -26,8 +31,8 @@ import styles from './qanvast-leads.module.css'
  * Qanvast Ops › Leads (208 931:49232 · 209 931:49435 · 174 931:49680) — spec design-source/context/lead-return/
  * 02-qanvast-ops.txt, build plan 00-build-plan.md. The page frame (PageReveal + QanvastSkeleton, PageHeader with
  * Insights · Add Lead · kebab, MaisonFab + AiSheet) is copied from app/leads/workspace.tsx; the tabs are the Lead Details
- * Tabs (components/om/tabs.tsx). Only Leads is live: Insights, Add Lead, the kebab, Request Leads, search, filter, the
- * other tabs and the head's sort / customise controls answer coming soon.
+ * Tabs (components/om/tabs.tsx). Only Leads is live: Insights, Add Lead, the kebab, Request Leads, filter, the
+ * other tabs and the head's sort / customise controls answer coming soon — search is real (REG-275).
  */
 const TABS_HREF = '/qanvast-ops'
 /* Leads · Credits · Reviews · Hangouts (spec 02). Tabs only takes hrefs, so the inert tabs carry a ?tab= href and the
@@ -50,11 +55,31 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   /* ── status scope: null = All Leads · a stage name · a return label (RETURN_FILTERS) ── */
   const [scope, setScope] = useState<string | null>(null)
   const [scopeOpen, setScopeOpen] = useState(false)
-  const filtered = useMemo(() => {
+  const scoped = useMemo(() => {
     if (scope === null) return rows
     if ((RETURN_FILTERS as readonly string[]).includes(scope)) return rows.filter((r) => r.tags.some((t) => t.label === scope))
     return rows.filter((r) => r.ret === null && r.stage === scope)
   }, [rows, scope])
+
+  /* Search (REG-275, REG-274's rule): the last step of the pipeline, matching everything a ROW SHOWS — the name,
+     the credits, the budget cell's own "70,500", the property type, the DISPLAYED created date ("17 Jul ’26", via
+     the table's own displayDate — never the raw timestamp) and every status tag label, so a returned row is found
+     by "Return Processing" as well as by "Approved". The phone under the name goes through the matcher's `phones`
+     argument, which compares digits-only at any length: "98", "9812 0443" and "+65 9812 0443" all find the stored
+     "98120443" (the owner's original complaint). Source is deliberately NOT matched: every row here is Qanvast and
+     the column does not exist on this table — matching invisible data reads as a bug. */
+  const [query, setQuery] = useState('')
+  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar owns its
+  // <input>, so the target is resolved from the wrapper once it mounts.
+  const searchInput = useRef<HTMLInputElement | null>(null)
+  useSearchTarget(searchInput)
+  const visible = useMemo(() => filterByQuery(scoped, query, (r) => ({
+    fields: [r.name, String(r.credits), money(r.budgetMinor), r.propertyType, displayDate(r.createdAt), ...r.tags.map((t) => t.label)],
+    phones: [r.phone],
+  })), [scoped, query])
+  const clearAll = () => { setQuery(''); setScope(null) }
+  // "No results found" only when the reader narrowed something — an empty Qanvast table keeps its bare head.
+  const nothingMatches = rows.length > 0 && visible.length === 0 && (query.trim() !== '' || scope !== null)
 
   const [aiOpen, setAiOpen] = useState(false)
 
@@ -108,13 +133,15 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
         </div>
 
         <div className={pageStyles.content}>
-          {/* Toolbar (y 144): "All Leads (99)" ▾ pill 151×36 … Request Leads 133×36 · search 36 · filter 36. */}
+          {/* Toolbar (y 144): "All Leads (99)" ▾ pill 151×36 … Request Leads 133×36 · search 280×36 (REG-275) · filter 36.
+              The pill's count follows the pipeline, so it reads what the table shows while a search is on (the listing's rule). */}
           <div className={styles.bar}>
             <div className={styles.left}>
               <button type="button" className={styles.chip} onClick={() => setScopeOpen((o) => !o)}
                       aria-haspopup="menu" aria-expanded={scopeOpen} data-open={scopeOpen || undefined}>
-                {`${scope ?? 'All Leads'} (${filtered.length})`}
+                {`${scope ?? 'All Leads'} (${visible.length})`}
                 <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
+                {scope !== null ? <AppliedDot /> : null}   {/* (REG-295) */}
               </button>
               {/* Dropdown Menu / Leads "Lead Status" 200 wide (931:49435): All Leads · ACTIVE stages · INACTIVE stages · Lead Return states. */}
               <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={200}>
@@ -130,20 +157,31 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
                 {RETURN_FILTERS.map((s) => item(s, s))}
               </Dropdown>
             </div>
-            {/* Right group (931:49232 / 931:49435 render): Request Leads · search 36 · filter 36 — no kebab (spec 02's "filter · kebab" was a
-                mis-transcription; audit 2026-08-30). Search and filter answer coming soon (REG-193). */}
+            {/* Right group (931:49232 / 931:49435 render): Request Leads · search · filter 36 — no kebab (spec 02's "filter · kebab" was a
+                mis-transcription; audit 2026-08-30). Filter still answers coming soon (REG-193); the mock's inert 36px search ICON is
+                now the DS Search Bar 280 every other list toolbar uses, wired live (REG-275, owner-directed — the mock draws the icon).
+                The wrapper is a <label> so the 2px band it grows on a touch pointer still focuses the field (REG-273). */}
             <div className={styles.right}>
               <Button variant="secondary" appearance="outlined" onPress={comingSoon}>Request Leads</Button>
-              <Tooltip label="Search">
-                <IconButton icon="search" label="Search" onClick={comingSoon} />
-              </Tooltip>
+              <label className={styles.searchWrap} ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }}>
+                <SearchBar
+                  appearance="outlined" size="md"
+                  placeholder="Search" aria-label="Search leads"
+                  value={query} onChange={setQuery}
+                  className={styles.search}
+                />
+              </label>
               <Tooltip label="Filters">
                 <IconButton icon="filter_list" label="Filters" onClick={comingSoon} />
               </Tooltip>
             </div>
           </div>
 
-          <QanvastTable rows={filtered} onView={(id) => router.push(`/leads/${id}?from=qanvast`)} />
+          {nothingMatches ? (
+            <TabSearchEmpty noun="leads" searching={query.trim() !== ''} onClearAll={clearAll} />
+          ) : (
+            <QanvastTable rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)} />
+          )}
         </div>
       </div>
 

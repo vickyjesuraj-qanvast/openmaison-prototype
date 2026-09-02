@@ -1,52 +1,23 @@
 /*
  * Lead Details › Notes — list column (931:44882 · spec design-source/context/lead-notes/01-layout-list-editor.txt).
- * Column 360 wide with the right rule #e5e5e5; head 360×68 (931:44884, H g8 p16, bottom rule); items 360×100
- * ("Table / Cell / Two line", H g12 p16/24/16/24, bottom rule). Selected item: fill #eee5ff + 4px primary band at the
- * left edge. Chip geometry: 36 tall, p10/12 (icon variant p10/12/10/8, icon 16 + gap 4) — the look is the move-stage
- * ChoiceChips' (fields.module.css .chip) at the Notes sizes.
+ * Column 400 wide (REG-281; the mock draws 360) with the right rule #e5e5e5. (REG-293) The mocked 68px head — chips,
+ * New ▾, and the REG-275 search row under them — is gone from this column: those controls are the tab's toolbar now
+ * (notes-toolbar.module.css), so the items start at the card's top and run its full height.
+ * Items 100 tall ("Table / Cell / Two line", H g12 p16/24/16/24, bottom rule); selected: fill #eee5ff + a 4px primary
+ * band at the left edge.
  */
 .column {
-  width: 360px; flex: 1 0 auto; min-height: 0;   /* fills the card height so the right rule runs the full 844 (931:44883) */
+  width: 100%; flex: 1 0 auto; min-height: 0;   /* the host sets the column width (REG-281); this fills it so the right rule runs the full 844 (931:44883) */
   display: flex; flex-direction: column;
   box-shadow: inset calc(-1 * var(--om-border-1)) 0 0 var(--om-color-surface-variant);   /* the right rule is inside the 360 (Figma inside stroke) so the items stay 360 wide */
 }
 
-/* Head 360×68: H g8 p16, bottom rule; chips left, New ▾ right-aligned (x 281 → 16 from the card's right edge). */
-.head {
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  height: 68px; flex-shrink: 0;
-  padding: var(--om-spacing-4);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-}
-.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1; min-width: 0; }   /* 931:44884 "chips" H g8 */
-/* Choice chip 36 tall: p10/12 → the 36 height carries the vertical 10s; stroke #ccc r4; "All" 12/Semi Bold #1a1a1a.
-   The stroke is an inset box-shadow, not a border — Figma strokes sit INSIDE the padding (the DS Chip's own convention,
-   @openmaison/react chip.module.css), so "All" measures the mock's 39 (12 + 15 + 12), not 41. */
-.chip {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  height: 36px; padding: 0 var(--om-spacing-3);
-  border: 0;
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: transparent;
-  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default);
-  cursor: pointer; white-space: nowrap;
-  transition: background-color var(--motion-toggle), box-shadow var(--motion-toggle), color var(--motion-toggle);
-}
-.chip[data-icon] { padding-left: var(--om-spacing-2); }   /* Leading Item=Icon: p10/12/10/8 */
-.chipIcon { flex-shrink: 0; }                              /* sticky_note_2 / list_alt 16 — inherits the chip colour (selected: #4400cc, frame 82) */
-.chip[data-selected] { background: var(--om-color-primary-variant); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }   /* Selected=Yes: fill #eee5ff stroke #5500ff text #4400cc */
-.chip:not([data-selected]):hover { background: var(--om-color-hover-04p); }   /* hover not mocked — the ChoiceChips' hover-04p */
-.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-
-/* Menu anchors (New ▾ · item kebab) — the Dropdown positions itself against these. */
-.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
-/* Chevron points up while the menu is open — every menu trigger does this (contracts-toolbar.module.css .chev). */
-.chev { display: inline-flex; transition: transform var(--motion-toggle); }
-.chev[data-open] { transform: rotate(180deg); }
-
-/* Items scroll under the fixed head (776 = 844 − 68). */
+/* The items are the whole column (REG-293) and scroll inside it. */
 .items { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* No-results (REG-275): the tabs' shared card takes the items' place, inset 16 so it never touches the column's right
+   rule. The unsaved draft is never filtered, so this answers a scope / query only — never "no notes". */
+.empty { flex: 1; min-height: 0; display: flex; padding: var(--om-spacing-4); overflow-y: auto; }
 
 /* Item 360×100 (Table / Cell / Two line): H g12 p16/24/16/24, bottom rule #e5e5e5. */
 .item {
@@ -94,3 +65,26 @@
 
 /* Menu Delete #db382a — every kebab's destructive item (files-grid.module.css .danger; the Figma menu 931:45488 paints it red). */
 .danger { color: var(--om-color-tertiary-red-default); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   The column is the list HALF of the card, whatever width that half is given — 280 at tablet, the whole
+   screen in the ≤767 master-detail push; its mocked 360 would otherwise outgrow that half. */
+@media (max-width: 1199px) {
+  .column { width: 100%; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Below 768 this list is a touch list: every control gets a ≥40px box, the marks and the type keep the
+   mock's sizes. Desktop (≥1200) never sees any of it. */
+@media (max-width: 767px) {
+  /* The item kebab's menu draws 36px rows, and a menu on a phone is a list of finger targets. menus.module.css
+     is the owner's file, so the rows take the target from here for this surface. (The chip / New ▾ / search
+     targets moved to notes-toolbar.module.css with their controls in REG-293.) */
+  .kebabWrap :global([role='menuitem']) { min-height: 40px; }
+  /* The item kebab is a 20px mark in a 20px button. The button becomes a 40px target and the wrap moves out
+     by the same 10px each way, so the mark stays exactly where the mock puts it (its centre 26 down / 34 in
+     from the item's top-right). The title's reserved right padding grows to clear the wider box. */
+  .kebabWrap { top: 6px; right: 14px; }
+  .kebab { width: 40px; height: 40px; }
+  .titleRow { padding-right: 32px; }
+}

@@ -32,10 +32,13 @@ export function LeadActivity({ data }: { data: LeadActivityData }) {
     <div className={styles.tab} data-testid="activity-feed">
       <div className={styles.bar}>
         <h2 className={styles.title}>All Activities</h2>
-        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+        {/* Wrapper class instead of the old inline display:inline-flex so mobile can widen it (REG-269). */}
+        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
+          {/* (REG-275) The box matches the sentence each row prints, so what a reader actually types is a
+              person, a task or a file name — the placeholder says so. The aria-label stays the plain name. */}
           <SearchBar
             appearance="outlined" size="md"
-            placeholder="Search" aria-label="Search activities"
+            placeholder="Search people, tasks, files…" aria-label="Search activities"
             value={query} onChange={setQuery}
             className={styles.search}
           />

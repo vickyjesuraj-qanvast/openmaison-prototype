@@ -2,6 +2,10 @@
 .header { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); height: 72px; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .titleCol { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .titleRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+/* The meta chips are a slot of their own in the real header (page-header-l2.module.css .chips), which drops to
+   its own line at mobile. `display: contents` keeps the desktop row byte-identical — the three bones stay direct
+   flex items of .titleRow — while giving the ≤767 rule below something to move. (REG-269) */
+.chips { display: contents; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 44px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
 .row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 44px); }
@@ -27,3 +31,50 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
 .headRow { height: 48px; }
 .tableRow { height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .tableWrap .col { flex-direction: row; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-4); }
+
+/* ── Responsive (REG-269) ───────────────────────────────────────────────────────────────────────────────
+   The ghost mirrors the RESPONSIVE frame at each breakpoint, not the desktop one — bones that fade into a
+   differently-shaped page are the REG-74 failure this ghost exists to prevent. Every rule below names the file
+   it mirrors. */
+@media (max-width: 1199px) {
+  .info { width: 300px; }                                  /* info-column.module.css ≤1199 */
+  /* Tablet locks the quick-links strip collapsed (quick-links.module.css ≤1199 pins .aside AND
+     .aside[data-state='expanded'] to 72), so the ghost stops honouring the remembered expanded width. Same
+     selector as the base rule above, restated here so it wins by order rather than by specificity accident. */
+  body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 72px; gap: var(--om-spacing-6); }
+  /* om Tabs at ≤1199 (om/tabs.module.css): the nine bones scroll instead of clipping; the part-cut tab is the
+     affordance, and the scrollbar is hidden as it is on the real row. */
+  .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  /* The card grid drops to one column (overview.module.css ≤1199); the two stacks keep their DOM order. */
+  .grid { flex-direction: column; align-items: stretch; }
+  .grid > .col { flex: none; width: 100%; }
+  /* The tab tables keep their columns and scroll sideways in their own box (tasks / quotes / contracts /
+     files-list all took the same ≤1199 scroller), so the bone rows hold their floors instead of squashing. */
+  .tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .headRow, .tableRow { width: max-content; min-width: 100%; }   /* the same idiom the real tables took */
+}
+
+@media (max-width: 767px) {
+  /* L2 header leaves the sticky stack, goes auto-height and wraps (page-header-l2.module.css ≤767: p12/16,
+     row-gap 8); its chips take their own line under the title. */
+  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
+  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-basis: 100%; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  /* The three-part row stacks: info column full width above the centre, quick-links strip gone — exactly what
+     overview.module.css and info-column.module.css do at ≤767, down to the right rule becoming a bottom rule
+     and the 24 → 16 content padding. The row keeps the real min-height so the ghost is not short of the fold. */
+  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 44px); }
+  .info {
+    flex: none; width: 100%;
+    padding: var(--om-spacing-4);
+    border-right: 0;
+    border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .centre { padding: var(--om-spacing-4); }
+  .tools { display: none; }
+  /* The tab toolbars wrap rather than clip (tasks / quotes / contracts / files toolbars all took the same
+     ≤767 rule); the ghost's row measures ~366 against 358 of content at 390, so it wraps too. */
+  .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+}

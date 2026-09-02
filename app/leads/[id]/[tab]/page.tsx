@@ -30,6 +30,18 @@ export const dynamic = 'force-dynamic'
 
 const isTab = (s: string): s is Exclude<DetailTabSlug, ''> => DETAIL_TABS.some((t) => t.slug === s && t.slug !== '')
 
+/**
+ * The lead frame and the tab's own rows are two INDEPENDENT queries; this route used to await `fetchLeadDetail`
+ * and only then start the tab loader, serialising two round trips for no reason (REG-286, audit "request waterfall").
+ * They now run together. Every tab loader is safe on an id that is not a lead — it returns an empty set — so
+ * starting it before `notFound()` costs nothing, and `Promise.all` settles both so neither rejects unhandled.
+ */
+async function loadFrame<T>(id: string, load: (leadId: string) => Promise<T>) {
+  const [detail, data] = await Promise.all([fetchLeadDetail(id), load(id)])
+  if (!detail) notFound()
+  return { detail, data }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string; tab: string }> }): Promise<Metadata> {
   const { id, tab } = await params
   const detail = await fetchLeadDetail(id)
@@ -45,43 +57,43 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
   const [{ id, tab }, sp] = await Promise.all([params, searchParams])
   if (!isTab(tab)) notFound()
   const origin = sp.from === 'qanvast' ? ('qanvast' as const) : undefined
-  const detail = await fetchLeadDetail(id)
-  if (!detail) notFound()
   if (tab === 'tasks') {
     // Tasks (902-36216): the lead frame without the info column; the tab owns its table, panels and dialogs.
-    const data = await fetchLeadTasks(id)
+    const { detail, data } = await loadFrame(id, fetchLeadTasks)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadTasks leadId={id} data={data} />} />
   }
   if (tab === 'quotes') {
     // Quotes (910-36240): the same wide frame; the tab owns its table, menus, filters and dialogs.
-    const data = await fetchLeadQuotes(id)
+    const { detail, data } = await loadFrame(id, fetchLeadQuotes)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuotes leadId={id} data={data} approval={detail.quoteApproval} />} />
   }
   if (tab === 'contracts') {
     // Contracts (931-38609): the same wide frame; the tab owns its table, menus, filters and dialogs.
-    const data = await fetchLeadContracts(id)
+    const { detail, data } = await loadFrame(id, fetchLeadContracts)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadContracts leadId={id} data={data} />} />
   }
   if (tab === 'files') {
     // Files (931-39056): the same wide frame; the tab owns its grid / list, folders, menus, dialogs and the upload flow.
-    const data = await fetchLeadFiles(id)
+    const { detail, data } = await loadFrame(id, fetchLeadFiles)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadFiles leadId={id} data={data} />} />
   }
   if (tab === 'notes') {
     // Notes (931-44865): the same wide frame; the tab owns its list, editors, toolbar, attachments and dialogs.
-    const data = await fetchLeadNotes(id)
+    const { detail, data } = await loadFrame(id, fetchLeadNotes)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadNotes leadId={id} data={data} />} />
   }
   if (tab === 'questionnaire') {
     // Questionnaire (931-46769): the same wide frame; the tab owns its toolbar, cards, summary and the Ask the client dialog.
-    const data = await fetchLeadQuestions(id)
+    const { detail, data } = await loadFrame(id, fetchLeadQuestions)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuestionnaire data={data} />} />
   }
   if (tab === 'activity') {
     // Activity (931-47975): the same wide frame; the feed derives from the lead's records.
-    const data = await fetchLeadActivity(id)
+    const { detail, data } = await loadFrame(id, fetchLeadActivity)
     return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadActivity data={data} />} />
   }
   // Meetings (and any future tab): the wide frame too — the info column is the Overview's alone (REG-247, user 2026-09-01).
+  const detail = await fetchLeadDetail(id)
+  if (!detail) notFound()
   return <LeadOverview detail={detail} tab={tab} origin={origin} wide />
 }

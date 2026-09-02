@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Link } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
@@ -9,6 +9,7 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { displayDateTimeTight } from '@/lib/format'
 import { returnTags } from '@/lib/leads/return-tags'
@@ -43,13 +44,14 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const comingSoon = useComingSoon()
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  /* (REG-287) The panel claims `aria-modal`, so it owes the WAI-ARIA dialog contract: focus moves in on open,
+     Tab cycles inside instead of walking into the page the modal has declared inert, and focus returns to the
+     opener on close. Esc goes through the same layer policy as every other surface — a menu / picker / nested
+     dialog above this panel owns it first (components/om/surface.ts), which is what the hand-rolled
+     `!e.defaultPrevented` window listener this replaces was reaching for. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
 
   const showAppeal = ret.status === 'rejected' && !!ret.appealDays
   const me = ret.returnedBy
@@ -84,8 +86,11 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label={leadName}
-                      data-testid="return-details">
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                      role="dialog" aria-modal aria-label={leadName} tabIndex={-1} data-testid="return-details">
             <div className={styles.heading}>
               <div className={styles.titleWrap}>
                 <span className={styles.title}>{leadName}</span>

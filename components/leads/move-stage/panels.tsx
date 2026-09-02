@@ -27,7 +27,7 @@ export function NewPanel({
     <>
       <p className={styles.panelTitle}>New</p>
       <div className={styles.stack12}>
-        <SectionRow label="Assignees" />
+        <SectionRow label="Members" />
         {team.map((m) => (
           <div key={m.id} className={styles.memberRow}>
             <Avatar name={m.name} color={m.color} size={40} />
@@ -60,8 +60,11 @@ function LogShell({
       <div className={styles.logHead}>
         <span className={styles.logTitle}>Log {index + 1}</span>
         {!collapsed && !readOnly ? (
+          /* (REG-291) The Maison AI mark — the FAB's own sparkle, as the AI brief / sheet / Notes bar use.
+             sparkle.svg, the mock's asset here, is a different four-pointed shape; Auto Fill is a Maison AI
+             action, so it now carries the same mark everywhere it appears. */
           // eslint-disable-next-line @next/next/no-img-element
-          <LinkButton leading={<img src="/figma-assets/sparkle.svg" alt="" />} onClick={onAutoFill}>Auto Fill</LinkButton>
+          <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={onAutoFill}>Auto Fill</LinkButton>
         ) : null}
         {!collapsed && readOnly && onEdit ? (
           <LinkButton icon="edit" onClick={onEdit}>Edit</LinkButton>

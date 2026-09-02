@@ -24,7 +24,12 @@ export const emptyDraft = (kind: NoteKind): NoteDraft => ({ kind, title: '', bod
 
 export const draftFrom = (n: LeadNote): NoteDraft => ({
   kind: n.kind === 'contact' ? 'contact' : 'note',
-  title: n.title, body: n.body, channel: n.channel,
+  title: n.title,
+  /* (REG-291) A contact log's Remarks is a plain field now, not the rich body — so a log saved while the body
+     WAS rich carries HTML, and a textarea would print its tags. Flatten it on the way into the draft; notes
+     keep their HTML. Saving from here writes plain text, so each log converts once, the first time it is opened. */
+  body: n.kind === 'contact' ? bodyText(n.body) : n.body,
+  channel: n.channel,
   when: n.contactedAt ? formatInputDateTime(n.contactedAt) : '',
   outcome: n.outcome ?? '',
   nextStepWhen: n.nextStepAt ? formatInputDateTime(n.nextStepAt) : '',

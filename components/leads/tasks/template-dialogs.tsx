@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Radio, RadioGroup, SearchBar, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import type { TemplateRow } from '@/lib/leads/tasks'
 import styles from './template-dialogs.module.css'
@@ -18,21 +19,25 @@ function TemplateShell({
   open, kind, title, onClose, children, footer,
 }: { open: boolean; kind: 'choose' | 'save'; title: string; onClose: () => void; children: ReactNode; footer: ReactNode }) {
   useScrollLock(open)   // the page never scrolls behind this surface
-  // Layer policy (R3): Esc closes the topmost dialog.
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); e.stopPropagation(); onClose() }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  /* (REG-287) `aria-modal` promised assistive tech the page behind is inert, but the shell only locked scrolling:
+     Tab from Select / Save walked straight back out. The app's surface policy does all three — and both dialogs get
+     it here, since both render through this shell (components/om/surface.ts, as in components/om/dialog.tsx):
+     Esc closes the TOPMOST surface only (the "Choose template" select menu wins first), focus moves onto the panel
+     on open — Save as Template's name field autofocuses, and the hook leaves focus alone when it is already inside —
+     Tab cycles inside it, and focus returns to the opener on close. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
   return (
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} data-kind={kind} variants={modalPanel} role="dialog" aria-modal aria-label={title}>
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} data-kind={kind} variants={modalPanel}
+                      role="dialog" aria-modal aria-label={title} tabIndex={-1}>
             <div className={styles.heading}>
               <span className={styles.title}>{title}</span>
               <Tooltip label="Close">

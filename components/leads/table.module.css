@@ -49,7 +49,7 @@
   transition: box-shadow var(--motion-toggle);
 }
 /* The group's shadow only shows while the table is scrolled — set on the scroller by its scroll handler. */
-.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06); }
+.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
 .headRow .pin { z-index: 4; }
 
 .row { display: flex; height: 64px; align-items: stretch; position: relative; }
@@ -203,3 +203,79 @@
 
 /* C2 (REG-69/71): every name is bold since REG-161, so the search hit falls back to colour on every row — as the kanban card does (board.module.css .cardName mark). */
 .name mark { color: var(--om-color-primary-default); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   Tablet-and-down the table keeps every mocked column and becomes a touch-scrollable region (the .scroller
+   already is one, with the inline min-width as its floor) with the FIRST column frozen — the mock's pinned
+   treatment generalised. Lead Name is always pinned (customise-view LOCKED), so .pin / [data-pin-edge] above
+   normally do the work and this only guarantees it for a column set that arrives with nothing pinned: same
+   sticky, same 1px resting edge, same scrolled shadow driven by the scroller's own [data-scrolled] flag —
+   no second mechanism. The row's background lives on .cell, so the hover / selected / unseen states (and the
+   4px unseen band, absolutely placed inside the sticky cell) ride along with the frozen column. */
+@media (max-width: 1199px) {
+  .scroller { overscroll-behavior-x: contain; }   /* the sideways pan stays in the table — never the page / browser back-swipe */
+  .headRow > .hCell:first-child, .row > .cell:first-child { position: sticky; left: 0; }
+  .row > .cell:first-child { z-index: 2; }
+  .headRow > .hCell:first-child { z-index: 4; }
+  .headRow > .hCell:first-child:not(.pin), .row > .cell:first-child:not(.pin) {
+    border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+    clip-path: inset(0 -6px 0 0);
+    transition: box-shadow var(--motion-toggle);
+  }
+  .scroller[data-scrolled] .headRow > .hCell:first-child:not(.pin),
+  .scroller[data-scrolled] .row > .cell:first-child:not(.pin) { box-shadow: var(--om-shadow-frozen-column); }   /* REG-286 */
+}
+/* Touch has no hover, so a table that offers selection (never the listing — REG-89) shows its checkboxes and
+   keeps their 40px from the start, instead of waiting for a hover that never comes (REG-269). */
+@media (max-width: 767px) {
+  .table[data-selectable] .selBox, .table[data-selectable] .headSelBox { opacity: 1; }
+  .table[data-selectable] .nameCell, .table[data-selectable] .hCell:first-of-type { padding-left: 40px; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Nothing in a row may depend on hover: a finger never produces one, so the two hover-revealed pieces are
+   simply always there where the pointer cannot hover (the row keeps its resting look otherwise). This is the
+   same rule the Lead Details tables already carry (tasks-table.module.css .actions), and `hover: none` never
+   reaches a mouse, so desktop is byte-identical. */
+@media (hover: none) {
+  .rowActions { opacity: 1; pointer-events: auto; }
+  .copyBtn { opacity: 1; }
+  /* The selection checkboxes had the same treatment at ≤767 (above); a touch TABLET needs them too, and the
+     name cell keeps the 40px the checkbox occupies. Inert on the listing, which never offers selection (REG-89). */
+  .table[data-selectable] .selBox, .table[data-selectable] .headSelBox { opacity: 1; }
+  .table[data-selectable] .nameCell, .table[data-selectable] .hCell:first-of-type { padding-left: 40px; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The listing is the front door on a phone, and every control in it was drawn for a mouse: the head's sort
+   buttons are a 16px label + a 16px glyph, the gear is 16, the stage pill and the two inline links are one
+   text line, the copy-phone glyph is 14. At ≤767 each grows its BOX to 40px — the glyph and the type keep
+   their mocked sizes, only the tappable area around them grows (owner 2026-09-01).
+   Where a control must not move, the extra is given back as a negative margin (the gear keeps the head cell's
+   16px footprint); where a whole row is free to breathe, the row grows instead: the head keeps its 56px by
+   trading 16px of padding for 8, and a body row goes height-auto with a 64px floor, so the name cell's two
+   40px targets (the name link, then the phone + copy row) stack without slicing. Column widths are untouched —
+   the table already scrolls sideways with the first column frozen. */
+@media (max-width: 767px) {
+  /* Head: 56px unchanged, its padding re-cut so a 40px control fits inside it. */
+  .hCell { padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-2); }
+  .hSort { min-height: 40px; }
+  .hTune {
+    width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    margin: -12px;   /* 40 − 24 = the 16px glyph box the head cell laid out: the gear does not move */
+  }
+
+  /* Rows grow to hold their targets rather than clipping them (responsive.md: spacing follows the target). */
+  .row { height: auto; min-height: 64px; }
+  .cell { padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-2); }
+  /* The 4px name→phone gap is spent on the two touch boxes instead; the name keeps its block box (and so its
+     ellipsis) and grows by padding, never by becoming a flex container. */
+  .nameCell { gap: 0; }
+  .name { padding-block: 10px; }
+  .phoneRow { min-height: 40px; }
+  .copyBtn { min-width: 40px; min-height: 40px; align-items: center; justify-content: center; }
+  .stageBtn { min-height: 40px; }
+  .taskBox { min-height: 40px; }
+  .assignLink { min-height: 40px; }
+}

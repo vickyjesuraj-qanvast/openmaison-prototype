@@ -17,3 +17,15 @@
 .date { flex: 0 0 120px; width: 120px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Event: fills, 14/Regular/20 on-surface — wraps rather than truncating, as the info column's values do. */
 .text { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   The date column is a fixed 120 (audit: activity-card.module.css:17). At 390 the row still reads as the mock
+   does — 120 date + 190 of event text, which is where "Lead created from Qanvast import" wants to sit — so the
+   two-column read is KEPT. On the tablet card (~232 wide) the same fixed date would leave the event ~104px, a
+   four-line ribbon, so the row wraps and the event takes its own full-width line under the date.
+   The 160px basis is the switch: the event drops below the date only when it would otherwise be narrower than
+   that. Nothing is hidden or truncated at either width, and the desktop row is untouched. */
+@media (max-width: 1199px) {
+  .row { flex-wrap: wrap; }
+  .text { flex: 1 1 160px; }
+}

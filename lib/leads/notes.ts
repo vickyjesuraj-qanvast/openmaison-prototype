@@ -1,3 +1,4 @@
+import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadNotes, members, noteAttachments, stageLogs, type LeadFile, type LeadNote, type Member } from '@/lib/db/schema'

@@ -71,3 +71,39 @@
   transition: box-shadow var(--motion-toggle);
 }
 .footer[data-shadow] { box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   This panel predates components/om/dialog and carries its own overlay, so it repeats that shell's rules:
+   tablet-and-down it clamps to the viewport, and at mobile it is the full-screen sheet every other form
+   surface becomes (100vw / 100dvh, radius 0) with the body scrolling under a fixed heading and footer.
+   Inside, the mock's two-up rows (source + property type, budget + start date, style + key collection,
+   condition + area) stack — one field per line, the same 24px rhythm as the section. The Additional info
+   expander, the assignee field and every composite slot (phone prefix, area unit) are untouched. */
+@media (max-width: 1199px) {
+  .panel { max-width: calc(100vw - 48px); }
+}
+@media (max-width: 767px) {
+  .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  .panel {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  .fieldRow { flex-direction: column; }
+  .fieldRow.fieldRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Three bare controls sit between the DS fields (which are 56px tall and need nothing): the heading's 24px
+   close, the "Additional information" expander and the area-unit menu inside the field's trailing slot. At
+   ≤767 each takes a 40px box and gives the extra back as margin, so the heading inset, the 24px section
+   rhythm and the field's own height are exactly as drawn. */
+@media (max-width: 767px) {
+  .close {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+  }
+  .moreToggle { min-height: 40px; margin-block: -10px; }
+  .unitBtn { min-height: 40px; margin-block: -10px; }
+}

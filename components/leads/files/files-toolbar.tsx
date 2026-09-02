@@ -106,27 +106,33 @@ export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onN
           </Dropdown>
         </span>
         <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+          {/* (REG-275) The box matches the file name, its owner, its type label and what it is attached to
+              (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain
+              name of the control. */}
           <SearchBar
             appearance="outlined" size="md"
-            placeholder="Search" aria-label="Search files"
+            placeholder="Search name, owner, type…" aria-label="Search files"
             value={query} onChange={onQuery}
             className={styles.search}
           />
         </span>
+        {/* (REG-273) `touchBtn` / `viewToggle` grow these 36px boxes to 40 at ≤767 — the icons keep their size. */}
         <Tooltip label="Filters">
-          <IconButton icon="filter_list" label="Filters" onClick={onFilter} />
+          <IconButton icon="filter_list" label="Filters" className={styles.touchBtn} onClick={onFilter} />
         </Tooltip>
         {/* Segmented Icon Button 931:40165: Start = view_list (frames 87/90 selected), End = view_kanban (frame 85 selected → grid). */}
-        <SegmentedIconToggle
-          label="View"
-          value={view}
-          options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]}
-          onChange={(v) => onView(v === 'list' ? 'list' : 'grid')}
-        />
+        <span className={styles.viewToggle}>
+          <SegmentedIconToggle
+            label="View"
+            value={view}
+            options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]}
+            onChange={(v) => onView(v === 'list' ? 'list' : 'grid')}
+          />
+        </span>
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton
-              icon="more_vert" label="More options"
+              icon="more_vert" label="More options" className={styles.touchBtn}
               aria-haspopup="menu" aria-expanded={menu === 'more'}
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />

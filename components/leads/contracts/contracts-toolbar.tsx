@@ -58,9 +58,12 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, filterCount,
           </Dropdown>
         </span>
         <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+          {/* (REG-275) The box matches title, status, the signed copy's file name and every date the row prints
+              as it prints it (lib/leads/contract-filters.ts). The placeholder names the three people reach for;
+              the aria-label stays the plain name of the control. */}
           <SearchBar
             appearance="outlined" size="md"
-            placeholder="Search" aria-label="Search contracts"
+            placeholder="Search title, status, date…" aria-label="Search contracts"
             value={query} onChange={onQuery}
             className={styles.search}
           />

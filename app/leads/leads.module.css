@@ -22,3 +22,13 @@
    down to the 24px container padding and each column scrolls its own cards under a fixed column header. */
 .body[data-view='kanban'] { height: calc(100dvh - 16px); }
 .body[data-view='kanban'] .content { min-height: 0; overflow: hidden; padding-bottom: var(--om-spacing-6); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   The shell drops its 8px gutter ≤767, so the sheet runs edge-to-edge (no radius, or grey canvas shows in
+   the corners) and the kanban body measures against the 56px mobile bar instead of that gutter. Content
+   padding 24 → 16, the mobile inset the whole system uses. */
+@media (max-width: 767px) {
+  .body { border-radius: 0; }
+  .body[data-view='kanban'] { height: calc(100dvh - var(--app-mobile-bar-height)); }
+  .content { padding: var(--om-spacing-4); }
+}

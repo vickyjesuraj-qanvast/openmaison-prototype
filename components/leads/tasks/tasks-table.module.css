@@ -231,3 +231,83 @@ button.doneFilled[data-variant='primary']:hover {
 .foot[data-floating] { box-shadow: var(--om-elevation-level-1); }
 /* 1px sentinel at the card's true end — while it is off-screen the foot above is floating. */
 .footEnd { height: 1px; margin-top: -1px; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199 the table scrolls sideways inside its own card instead of being clipped by the page sheet's
+   `overflow: clip` (the audit's silent-truncation failure: content measured ~2.5× its container with
+   overflow-x visible, so columns were unreachable). Rows size to their content and still fill a wide
+   card, so desktop ≥1200 is untouched. */
+@media (max-width: 1199px) {
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .head, .row { width: max-content; min-width: 100%; }
+}
+
+/* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
+   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+@media (hover: none) {
+  .actions { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
+   Below 768 — and on any touch pointer, where the same fingertip is the only input — every control in the
+   table grows a ≥40px target. The MARK never changes: each control takes padding or a fixed 40px box and
+   hands the extra straight back as negative margin, so the 56px head, the 48px rows and every column keep
+   the mock's geometry to the pixel. A mouse at ≥1200 matches neither arm of the query, so desktop is
+   untouched. Controls that DRAW a box (the count chip's fill, the floating Edit / kebab pills) grow a
+   transparent ::after overlay instead, so only the target grows and the fill stays its mocked size. */
+@media (max-width: 767px), (hover: none) {
+  /* Head sort buttons: 40 tall inside the 56 head (the head cell's own p16 absorbs the 8 either side). */
+  .hSort { min-height: 40px; padding: var(--om-spacing-2); margin: calc(-1 * var(--om-spacing-2)); }
+
+  /* Status glyph — the most-tapped control on the tab: a 40 box centred on the mocked 24 ring, ±8 given back,
+     so the ring stays exactly 16 from the cell edge and 12 from the title. */
+  .glyph { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+
+  /* Count chips are real buttons (the comment one opens the panel). The 34×24 chip keeps its fill; the
+     overlay carries the 50×40 target — ±8 is exactly the gap to the attachment chip beside it, so the two
+     never overlap. */
+  .chip[data-action] { position: relative; }
+  .chip[data-action]::after { content: ''; position: absolute; inset: -8px; }
+
+  /* Due date: 20px of underlined text → a 40 tall, 16 wider target; the underline and the date do not move. */
+  .dueBtn { padding: 10px var(--om-spacing-2); margin: -10px calc(-1 * var(--om-spacing-2)); }
+
+  /* "Assign" — the member cell's inline link, 20 tall like every other link on the tab. */
+  .assignLink { padding-block: 10px; margin-block: -10px; }
+
+  /* Tags cell button: it filled the cell's 24 of content height — 40 now (the cell is 48, so its
+     `overflow: hidden` still clips nothing). */
+  .tagsBtn { height: auto; min-height: 40px; margin-block: -8px; }
+
+  /* Inline add / rename: the bare input IS the field, so it gets the same 40 — a tap anywhere across the
+     cell's height lands in the caret instead of missing a 20px line. */
+  .editInput { min-height: 40px; }
+
+  /* Row actions: the DS Edit button and the om kebab are 36 — 2px of overlay each takes them to 40 without
+     redrawing the mock's white pill, and the 12 gap still leaves 8 between the two targets. */
+  .rowEdit, .rowKebab { position: relative; }
+  .rowEdit::after, .rowKebab::after { content: ''; position: absolute; inset: -2px; }
+}
+
+/* The add row's ✕ / ✓ are om icon buttons at 24: components/om/icon-button.module.css already grows those to
+   a 40 box on a touch pointer and paints the mocked 24 box with ::before. Two of them 4 apart would overlap
+   by 12, so the row gives them room — the drawn buttons keep their 24 footprints, only the space grows.
+   The filled ✓ also has to hand its fill to that pseudo-element, or the purple square grows with the target
+   (its selector is specific enough to beat the shared rule, which is why it must opt in explicitly). REG-273. */
+@media (hover: none) {
+  .editActions { gap: var(--om-spacing-5); }
+  button.doneFilled[data-variant='primary'],
+  button.doneFilled[data-variant='primary']:hover { background: transparent; border-color: transparent; }
+  button.doneFilled[data-variant='primary']::before {
+    background: var(--om-color-primary-default);
+    border-color: var(--om-color-primary-default);
+  }
+  /* the ✓ glyph paints above the pseudo-element that now carries the fill */
+  button.doneFilled[data-variant='primary'] > * { position: relative; z-index: 1; }
+}
+
+/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The title button hugs its text (23px tall) inside a 48px row; on touch it takes the row's height so
+   the name itself is the target, not just its glyph line. `.titleRest` already opens the task either way. */
+@media (hover: none) {
+  .titleBtn { min-height: 40px; }
+}

@@ -50,3 +50,15 @@
   color: var(--om-color-on-surface-default);
   transition: background var(--motion-hover);
 }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   The white skirt is drawn to the body's edges: on desktop / tablet that is the rail plus the page's 8px
+   gutters (--rail-w + 16). At mobile there is no rail and the page sheet goes edge to edge (app-shell:
+   padding 0), so the skirt spans the viewport — otherwise --rail-w's stale 52px would inset it 68px and rows
+   would show through beside the banner. The banner itself keeps its 8px inset, its fill and its chevron; only
+   the title + duplicates tag are let out of one nowrap line, which a 390px screen cannot hold. */
+@media (max-width: 767px) {
+  .strip { left: 0; right: 0; }
+  .lead { flex-wrap: wrap; row-gap: var(--om-spacing-2); min-width: 0; }
+  .title { white-space: normal; }
+}

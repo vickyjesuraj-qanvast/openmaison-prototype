@@ -6,10 +6,28 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import styles from './pane-toolbar.module.css'
 
+/**
+ * The pane's header strip (REG-292, user 2026-09-02: "add a header if its note or contact log ... there is
+ * bottom border for the container"). It IS the mock's toolbar container — 68 tall, p16/24, bottom rule
+ * (931:44905) — so every item now opens under one bordered strip: its kind on the left, its own actions on
+ * the right (a note's are the format tools, a contact log's are Auto Fill / Edit). The title is omitted while
+ * nothing is selected, and the actions then sit left, exactly where the bare toolbar drew them.
+ */
+export function PaneHeader({ title, children }: { title?: string; children?: ReactNode }) {
+  return (
+    <div className={styles.header}>
+      {title ? <span className={styles.title}>{title}</span> : null}
+      {children}
+    </div>
+  )
+}
+
 /** The commands the format buttons fire — `document.execCommand` names, acting on the rich body's selection. */
 export type FormatCommand = 'bold' | 'italic' | 'underline' | 'insertUnorderedList' | 'insertOrderedList'
 
 export type PaneToolbarProps = {
+  /** The header's kind label — "Note" while one is selected, absent on the empty pane (REG-292). */
+  title?: string
   /** attach_file_add → the files library (the Tasks Attach files modal). */
   onAttach: () => void
   /** AI chip menu › "Refine" — answers coming soon in the parent. */
@@ -18,8 +36,6 @@ export type PaneToolbarProps = {
   onFormat: (cmd: FormatCommand) => void
   /** True while no body is editable (a contact log before Edit): the format buttons show disabled (REG-254). */
   formattingDisabled?: boolean
-  /** The bar's right end — Edit, or Cancel · Save (REG-254). */
-  end?: ReactNode
 }
 
 /** Toolbar icon buttons in the mock's order (931:44905): name · weight (Regular = 400, Light = 300) · tooltip. */
@@ -44,7 +60,7 @@ const FORMAT_B: ToolIcon[] = [
  * (REG-153) and its chevron points up while open (contracts-toolbar.module.css .chev). Tooltip labels are the icons'
  * Material names in plain words (no tooltip copy is mocked).
  */
-export function PaneToolbar({ onAttach, onRefine, onFormat, formattingDisabled, end }: PaneToolbarProps) {
+export function PaneToolbar({ title, onAttach, onRefine, onFormat, formattingDisabled }: PaneToolbarProps) {
   const [aiOpen, setAiOpen] = useState(false)
 
   /* The buttons mirror the selection (REG-260, user 2026-09-01: "the B should be active for the fonts that i
@@ -79,7 +95,8 @@ export function PaneToolbar({ onAttach, onRefine, onFormat, formattingDisabled, 
     tool(t, () => { onFormat(t.cmd); readActive() }, formattingDisabled, !formattingDisabled && !!active[t.cmd])
 
   return (
-    <div className={styles.toolbar} role="toolbar" aria-label="Note tools">
+    <PaneHeader title={title}>
+      <div className={styles.tools} role="toolbar" aria-label="Note tools">
       {FORMAT_A.map(formatTool)}
       <span className={styles.rule} role="separator" />
       {FORMAT_B.map(formatTool)}
@@ -99,12 +116,13 @@ export function PaneToolbar({ onAttach, onRefine, onFormat, formattingDisabled, 
             <span className={styles.chev} data-open={aiOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
         </Tooltip>
-        {/* The bar sits at the pane's foot (REG-254), so the menu opens upward — downward it fell out of view (REG-255). */}
-        <Dropdown open={aiOpen} onClose={() => setAiOpen(false)} align="left" width={140} side="up">
+        {/* The bar is back at the pane's TOP (REG-277), so the menu hangs downward again — REG-255's upward
+            flip existed only because the bar had moved to the foot. */}
+        <Dropdown open={aiOpen} onClose={() => setAiOpen(false)} align="left" width={140}>
           <DropdownItem onSelect={() => { setAiOpen(false); onRefine() }}>Refine</DropdownItem>
         </Dropdown>
       </span>
-      {end ? <span className={styles.end}>{end}</span> : null}
-    </div>
+      </div>
+    </PaneHeader>
   )
 }

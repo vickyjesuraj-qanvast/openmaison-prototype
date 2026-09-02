@@ -11,3 +11,8 @@
 .glyph { position: absolute; inset: -16.67% -41.67% -83.33% -41.67%; pointer-events: none; }
 .glyph img { display: block; width: 100%; height: 100%; }
 .button:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 4px; border-radius: 50%; }
+
+/* Responsive (REG-269): the FAB keeps its desktop 24px inset at every width. Tucking it to the 16px content
+   gutter looked right on paper but the asset (maison-ai-fab.svg, 88×96) paints its drop shadow ~20px outside
+   the 48px control, so at 16 that bleed crossed the viewport edge — the one real escapee the deep gate found.
+   24 keeps the whole glyph, shadow included, on screen, and matches the desktop UI as-is. */

@@ -156,3 +156,31 @@
    `data-animate`, set once the viewer has actually pressed the control this session. */
 .wrap[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
 .panel[data-animate] { transition: width var(--motion-modal, 0.2s) ease, box-shadow var(--motion-modal, 0.2s) ease; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤767: the rail leaves the flow — mobile-nav's drawer hosts this same component ([data-drawer]).
+   768–1199: locked collapsed (a pinned 216 starves content) and the pin affordance sleeps; the persisted
+   om.rail.expanded pref simply resumes at ≥1200. */
+@media (max-width: 767px) {
+  .wrap { display: none; }
+  .wrap[data-drawer] { display: block; position: static; height: 100dvh; width: 216px; }
+  .wrap[data-drawer] .panel { width: 216px; border-radius: 0; }
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .wrap:not([data-drawer])[data-pinned] { width: 52px; }
+  .wrap:not([data-drawer]) .panel[data-expanded] { width: 52px; }
+  .wrap:not([data-drawer]) .logoRow[data-expanded] .headerExpanded { opacity: 0; pointer-events: none; }
+  .wrap:not([data-drawer]) .logoRow[data-expanded] .headerCollapsed { opacity: 1; pointer-events: auto; }
+  .wrap:not([data-drawer]) .expandGlyph { display: none; }               /* the tile stays the logo — no pin here */
+  .wrap:not([data-drawer]) .logoTile[data-icon] { background: transparent; color: var(--om-color-on-surface-secondary); }
+}
+/* The drawer never plays the pin affordance either. */
+.wrap[data-drawer] .pinBtn { display: none; }
+
+/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The rail is the app's primary navigation on a tablet, where it stays collapsed. */
+@media (hover: none) {
+  .item, .searchTile, .logoTile { min-height: 40px; }
+  .wrap:not([data-drawer]) .item,
+  .wrap:not([data-drawer]) .searchTile,
+  .wrap:not([data-drawer]) .logoTile { width: 40px; margin-inline: -2px; }
+}

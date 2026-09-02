@@ -49,3 +49,28 @@
 
 /* Slot: right actions, 12 apart, centred. */
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3); flex-shrink: 0; position: relative; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199: the chip row gives way (scrolls) before anything clips. ≤767: the header leaves the sticky stack
+   (only the mobile bar and the tabs dock — the 124px desktop stack is too tall for a 844px viewport),
+   goes auto-height, and the chips take their own scrollable line under the title. */
+@media (max-width: 1199px) {
+  .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 767px) {
+  .header { position: static; height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
+  .header::after { border-radius: 0; }
+  .header::before { top: 0; }
+  .chips { flex-basis: 100%; order: 4; justify-content: flex-start; }
+  /* The action cluster (stage pill + primary + kebab ≈ 374px) is wider than a 390 screen's content box, and
+     only .header was wrapping — so the kebab clipped. L1's .actions already wraps; L2's now does too. */
+  .actions { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+/* Touch ergonomics (REG-273): the back arrow is a 24px glyph and the only way out of a detail screen on a
+   phone. The box becomes 40 with the glyph still centred at 24; the extra is given back as margin so the
+   header row is unchanged. */
+@media (hover: none) {
+  .back { width: 40px; height: 40px; margin: -8px; }
+}

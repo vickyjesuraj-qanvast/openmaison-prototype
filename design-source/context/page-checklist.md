@@ -25,6 +25,12 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] Every inert affordance answers with the coming-soon snackbar (`useComingSoon`).
 - [ ] The page's search input registers with `useSearchTarget` (`components/shell/search-focus.ts`)
       so the rail search tile and the "/" key focus it.
+- [ ] A control whose current value narrows what the page shows says so when it is off its default: a scope
+      pill wears `AppliedDot` (`components/om/applied-dot.tsx`), the Filters button its count badge (REG-69, REG-295).
+      A narrowed view must never pass for the whole after the user looks away.
+      **Which control** (REG-297): one dominant single-choice dimension → a scope pill naming the value + count
+      (stage, kind, status); several dimensions or any multi-select → the Filters icon + modal. Never both for the
+      same dimension — a pill must not duplicate a modal group. No filter at all → a plain title, no control.
 
 ## Tooltips
 - [ ] Every icon-only control is wrapped in `<Tooltip label side>` (`components/om/tooltip.tsx`)
@@ -53,6 +59,8 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
       row, the form opens ON that row: scroll it into view, focus it, expand whatever section hides it. Never make
       someone hunt a field they just asked for. A create form with no such target focuses its first field; a plain
       "Edit" opens unfocused, because nothing was singled out (REG-224, REG-226).
+      A selection the user did not make — a fallback after a search, a filter or a delete moved it — never takes
+      focus either: autofocus follows intent, not mounting (REG-294). Typing in a search box must never lose the caret.
 - Every text input is `TextField` (`components/om/text-field.tsx`) — never a raw `<input>` with a label. Label inside when empty, floats on focus/value; five DS states (empty / active / filled / error / disabled — 836:23125, 836:23276).
 - **Numbers are filtered as typed**, never only validated: any field that holds digits (amounts, phone, area, %, counts) uses `TextField numeric="digits"` or `numeric="amount"` (thousands grouping) — letters and symbols must never appear in the box (REG-150).
 - Dates are `DateField`; dates with time are `DateTimeField` — read-only triggers over the Material picker. No free-typed dates anywhere.
@@ -79,8 +87,21 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] Esc / outside-click layering follows the z-scale (menus 60 · popovers 70 · bulk bar 80 ·
       FAB 90 · modals 100 · nested 110 · snackbar 120 · PortalMenu 130 · tooltip 140).
 
+## Responsive (REG-269 — the system is `design-source/context/responsive.md`)
+- [ ] Rules live in `@media (max-width: 767px)` (mobile) / `@media (max-width: 1199px)` (tablet-and-down) —
+      those two literals only, mobile layering on top of tablet. **Desktop ≥1200 must stay pixel-identical.**
+- [ ] The PAGE never scrolls horizontally: wide content (tables, tab rows, chip rows) scrolls inside its own
+      `overflow-x` container, with the first column sticky where a table scrolls.
+- [ ] No fixed px width survives below 1200 unclamped — dialogs/drawers clamp (`max-width: 100vw`), fixed
+      overlays are not anchored to `--rail-w`, and JS-positioned popovers clamp to the real viewport.
+- [ ] Mobile chrome: the rail is the `MobileTopBar` drawer; sticky offsets derive from
+      `--app-mobile-bar-height`, never from the desktop 72px header.
+- [ ] The route's ghost mirrors the responsive layout at each breakpoint (the PageReveal crossfade lands in place).
+
 ## Verification
 - [ ] 1440×1024 Playwright pass against the Figma frame; screenshots banked in `design-source/verify/`.
+- [ ] **390×844 and 768×1024 passes too** — `scratchpad/verify-responsive.cjs` (route × viewport, fails on any
+      page-level horizontal overflow and names the offending elements).
 - [ ] Deviations / invented details logged in `design-source/REGISTER.md`.
 
 ## Lessons carried from the listing polish (2026-08-27)

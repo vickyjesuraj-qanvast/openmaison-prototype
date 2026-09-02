@@ -1,5 +1,6 @@
 import type { Contract } from '@/lib/db/schema'
-import { parseInputDate, startOfDay } from '@/lib/format'
+import { displayDate, parseInputDate, startOfDay } from '@/lib/format'
+import { filterByQuery } from '@/lib/search'
 
 /* Lead Details › Contracts (931-38609) — pure model shared by the table, the status menu and the Filters modal.
    The mock shows "Draft" only; the statuses, filters and search are the Quotes tab's model trimmed to the Contracts columns (REG-178). */
@@ -50,8 +51,22 @@ export function applyContractFilters(rows: Contract[], f: ContractFilters, now: 
   return sorted
 }
 
-/** Search matches the title. */
+/**
+ * Search matches every column the Contracts row prints (REG-274, user 2026-09-01 "look at the other pages"):
+ * title · status label · Created · Signed Copy (the file name in the cell) · Sent · Updated. Dates are matched as
+ * `displayDate` renders them ("17 Jul ’26"), never as raw timestamps; an empty cell (the row's "-") contributes
+ * nothing. Title alone was searchable before, so a contract could not be found by its status, its dates or the
+ * signed copy sitting in plain sight in its row.
+ */
 export function searchContracts(rows: Contract[], query: string): Contract[] {
-  const q = query.trim().toLowerCase()
-  return q ? rows.filter((c) => c.title.toLowerCase().includes(q)) : rows
+  return filterByQuery(rows, query, (c) => ({
+    fields: [
+      c.title,
+      c.status,
+      displayDate(c.createdAt),
+      c.signedCopy,
+      c.sentAt ? displayDate(c.sentAt) : null,
+      displayDate(c.updatedAt ?? c.createdAt),
+    ],
+  }))
 }

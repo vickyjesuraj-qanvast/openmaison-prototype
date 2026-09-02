@@ -18,9 +18,13 @@ export function DetailSkeleton({ wide = false }: { wide?: boolean }) {
           <Bone w={44} h={12} />
           <div className={styles.titleRow}>
             <Bone w={148} h={24} />
-            <Bone w={80} h={20} r={4} />
-            <Bone w={71} h={20} r={4} />
-            <Bone w={94} h={20} r={4} />
+            {/* The meta chips are their own header slot and take their own line at ≤767 (REG-269); `display: contents`
+                keeps them inline with the title at desktop, so the banked 1440 render is unchanged. */}
+            <span className={styles.chips}>
+              <Bone w={80} h={20} r={4} />
+              <Bone w={71} h={20} r={4} />
+              <Bone w={94} h={20} r={4} />
+            </span>
           </div>
         </div>
         <div className={styles.actions}>

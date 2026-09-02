@@ -22,3 +22,12 @@
 .title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
 .body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }   /* 14/Regular #1a1a1a */
 .buttons { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }   /* 910:36282 H g12 */
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The two CTAs are DS buttons at the mock's 36. On a touch pointer each keeps its drawn size and gains a
+   transparent 2px ring, so the target is 40px, the pair stays centred on the mock's 12px gap (8px clear
+   between targets) and the card is unchanged. A mouse never sees this rule. */
+@media (hover: none) {
+  .buttons button { position: relative; }
+  .buttons button::after { content: ''; position: absolute; inset: -2px; }
+}

@@ -1,17 +1,19 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { revalidatePath } from 'next/cache'
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadReturns, leadTasks, leads, returnAttachments, stageLogs, type LeadFile } from '@/lib/db/schema'
+import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { parseInputDateTime } from '@/lib/format'
+import { revalidateLead } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
 
 /* Qanvast lead return (931:48236) + Invite to Portal (931:48844). Every action revalidates the lead's pages and the listings. */
 
-const ME = 'dane'
-const touch = (leadId: string) => { revalidatePath(`/leads/${leadId}`); revalidatePath('/leads'); revalidatePath('/qanvast-ops') }
+const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+/** (REG-286) One shared eviction for every detail tab — a return writes a task and a stage log the Tasks and Activity tabs show. */
+const touch = (leadId: string) => revalidateLead(leadId)
 
 export type ReturnInput = {
   reason: string
@@ -36,15 +38,21 @@ export async function returnLead(leadId: string, input: ReturnInput): Promise<{ 
   const now = new Date()
   const returnId = randomUUID(); const logId = randomUUID(); const taskId = randomUUID()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0)
-  await db.insert(leadTasks).values({ id: taskId, leadId, title: 'Respond to Qanvast team', kind: 'General', dueAt: today, done: false, createdAt: now, creatorId: ME, seenAt: now, updatedAt: now })
-  await db.insert(stageLogs).values({ id: logId, leadId, fromStage: lead.stage, toStage: 'Lost', payload: { reason: 'Lead returned to Qanvast' }, createdAt: now })
-  await db.update(leads).set({ stage: 'Lost', updatedAt: now }).where(eq(leads.id, leadId))
-  await db.insert(leadReturns).values({
-    id: returnId, leadId, status: 'processing', returnedById: ME, returnedAt: now, reason: input.reason, createdAt: now,
-    firstOutreachAt: parseInputDateTime(input.firstOutreach), attempts: input.attempts, comments: input.comments.trim() || null,
-    stageBefore: lead.stage, stageLogId: logId, taskId,
+  /* (REG-286) One transaction. These five writes are a single act, and the return row is the LAST of them while Undo
+     keys off it: a failure partway left the lead sitting in Lost, with a Lost stage log and a "Respond to Qanvast
+     team" task, and no return record — so the LEAD RETURNED card never appeared, the snackbar's Undo had nothing to
+     reverse, and `canReturnLead` (which reads the latest return) happily offered Return Lead a second time. */
+  await db.transaction(async (tx) => {
+    await tx.insert(leadTasks).values({ id: taskId, leadId, title: 'Respond to Qanvast team', kind: 'General', dueAt: today, done: false, createdAt: now, creatorId: ME, seenAt: now, updatedAt: now })
+    await tx.insert(stageLogs).values({ id: logId, leadId, fromStage: lead.stage, toStage: 'Lost', payload: { reason: 'Lead returned to Qanvast' }, createdAt: now })
+    await tx.update(leads).set({ stage: 'Lost', updatedAt: now }).where(eq(leads.id, leadId))
+    await tx.insert(leadReturns).values({
+      id: returnId, leadId, status: 'processing', returnedById: ME, returnedAt: now, reason: input.reason, createdAt: now,
+      firstOutreachAt: parseInputDateTime(input.firstOutreach), attempts: input.attempts, comments: input.comments.trim() || null,
+      stageBefore: lead.stage, stageLogId: logId, taskId,
+    })
+    if (input.fileIds.length) await tx.insert(returnAttachments).values(input.fileIds.map((fileId) => ({ returnId, fileId, createdAt: now })))
   })
-  if (input.fileIds.length) await db.insert(returnAttachments).values(input.fileIds.map((fileId) => ({ returnId, fileId, createdAt: now })))
   touch(leadId)
   return { returnId }
 }
@@ -53,10 +61,14 @@ export async function returnLead(leadId: string, input: ReturnInput): Promise<{ 
 export async function undoReturn(returnId: string): Promise<void> {
   const [ret] = await db.select().from(leadReturns).where(eq(leadReturns.id, returnId))
   if (!ret) return
-  if (ret.stageBefore) await db.update(leads).set({ stage: ret.stageBefore, updatedAt: new Date() }).where(eq(leads.id, ret.leadId))
-  if (ret.stageLogId) await db.delete(stageLogs).where(eq(stageLogs.id, ret.stageLogId))
-  if (ret.taskId) await db.delete(leadTasks).where(eq(leadTasks.id, ret.taskId))
-  await db.delete(leadReturns).where(eq(leadReturns.id, returnId))
+  // (REG-286) The mirror of returnLead, and just as indivisible: half an undo is a lead back in Contacted that
+  // Qanvast Ops still lists as returned, or a return row whose stage log and task are already gone.
+  await db.transaction(async (tx) => {
+    if (ret.stageBefore) await tx.update(leads).set({ stage: ret.stageBefore, updatedAt: new Date() }).where(eq(leads.id, ret.leadId))
+    if (ret.stageLogId) await tx.delete(stageLogs).where(eq(stageLogs.id, ret.stageLogId))
+    if (ret.taskId) await tx.delete(leadTasks).where(eq(leadTasks.id, ret.taskId))
+    await tx.delete(leadReturns).where(eq(leadReturns.id, returnId))
+  })
   touch(ret.leadId)
 }
 

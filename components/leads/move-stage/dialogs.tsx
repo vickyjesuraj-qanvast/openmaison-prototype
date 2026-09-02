@@ -5,6 +5,8 @@ import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
+import { displayDate } from '@/lib/format'
+import { HOLD_DURATIONS, holdFollowUpAt } from '@/lib/leads/enums'
 import { Divider, Dropzone, TextField } from './fields'
 import styles from './wizard.module.css'
 
@@ -104,13 +106,24 @@ export function SuggestedTasksDialog({
   )
 }
 
+/**
+ * Move stage › On Hold. The dialog owns the duration vocabulary AND the follow-up date it promises: both come
+ * from `HOLD_DURATIONS` / `holdFollowUpAt` (REG-286, audit finding "the On Hold duration → follow-up-date rule
+ * is computed in four places"), measured from `openedAt` — the instant the dialog opened — so the date it
+ * saves is the date the reader just agreed to, even if the dialog sat open across midnight.
+ */
 export function OnHoldDialog({
-  open, onClose, onSave, reason, setReason, duration, setDuration, followUp,
+  open, onClose, onSave, reason, setReason, duration, setDuration, openedAt, followUp,
 }: {
-  open: boolean; onClose: () => void; onSave: (otherReason?: string) => void
+  open: boolean; onClose: () => void
+  /** `followUpAt` is the ISO date this dialog just promised on screen — store THAT, never a recomputed one (REG-286). */
+  onSave: (otherReason: string | undefined, followUpAt: string) => void
   reason: string; setReason: (v: string) => void
   duration: string; setDuration: (v: string) => void
-  followUp: string
+  /** When the dialog was opened (ms). The follow-up date is measured from it. */
+  openedAt?: number
+  /** @deprecated Pass `openedAt` instead and let the dialog derive the line; only read while a caller still computes it. */
+  followUp?: string
 }) {
   // "Other reason" lives here — the parent only knows `reason` (see openQuestions in the change report).
   const [other, setOther] = useState('')
@@ -123,7 +136,15 @@ export function OnHoldDialog({
   const invalid = Object.values(errors).some(Boolean)
   const reset = () => { setOther(''); setShowErrors(false) }   // the dialog stays mounted between leads — never carry text or errors over
   const close = () => { reset(); onClose() }
-  const save = () => { if (invalid) { setShowErrors(true); return } const v = reason === 'Others' ? other.trim() : undefined; reset(); onSave(v) }
+  // The promised date and the saved one are the same call on the same instant (REG-286).
+  const followUpDate = (from: number) => holdFollowUpAt(duration, from)
+  const followUpLine = openedAt === undefined ? (followUp ?? '') : displayDate(followUpDate(openedAt))
+  const save = () => {
+    if (invalid) { setShowErrors(true); return }
+    const v = reason === 'Others' ? other.trim() : undefined
+    reset()
+    onSave(v, followUpDate(openedAt ?? Date.now()).toISOString())
+  }
   return (
     <Dialog open={open} onClose={close} title="Move stage" width={400}
             subtitle={<span className={styles.subtitle}>Moving to On Hold</span>}
@@ -136,9 +157,9 @@ export function OnHoldDialog({
         <TextField label="Other reason" value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
       ) : null}
       <TextField label="Duration" value={duration} onChange={setDuration} mode="select"
-                 options={['1 month', '3 months', '6 months']}
+                 options={HOLD_DURATIONS}
                  error={showErrors ? errors.duration : undefined} />
-      <span className={styles.helper}>Next follow up date will be {followUp}</span>
+      <span className={styles.helper}>Next follow up date will be {followUpLine}</span>
     </Dialog>
   )
 }

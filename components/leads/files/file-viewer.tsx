@@ -101,8 +101,9 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 <Icon name="comment" size={24} />
               </button>
             </Tooltip>
+            {/* ≤767 (REG-269) this button hides and Download becomes the kebab's first item — the 56px row keeps the name. */}
             <Tooltip label="Download">
-              <button type="button" className={styles.iconBtn} aria-label="Download" onClick={() => { void download() }}>
+              <button type="button" className={`${styles.iconBtn} ${styles.actionDownload}`} aria-label="Download" onClick={() => { void download() }}>
                 <Icon name="download" size={24} />
               </button>
             </Tooltip>
@@ -119,6 +120,10 @@ export function FileViewer({ data }: { data: FileViewData }) {
               </Tooltip>
               {/* Frame 95 (931:39889): Move · Duplicate · Rename · Delete, 200 wide under the kebab */}
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
+                {/* (REG-269) Mobile only: the header's Download folds in here — `display: contents` ≤767, nothing at all above. */}
+                <span className={styles.mobileItem}>
+                  <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem>
+                </span>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); void run('duplicate the file', () => duplicateFiles([file.id]), 'File duplicated', REFRESH) }}>Duplicate</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setRenaming(true) }}>Rename</DropdownItem>
@@ -161,9 +166,12 @@ export function FileViewer({ data }: { data: FileViewData }) {
                   <Icon name="remove" size={24} />
                 </button>
               </Tooltip>
+              {/* (REG-273) arrows_output is the one glyph here whose meaning lives only in its tooltip, and a tooltip
+                  never fires for a touch pointer — so ≤767 the tooltip's own words become a visible label beside it. */}
               <Tooltip label="Fit to screen" side="top">
-                <button type="button" className={styles.zoomBtn} aria-label="Fit to screen" aria-disabled={zoomIdx === FIT} onClick={() => setZoomIdx(FIT)}>
+                <button type="button" className={`${styles.zoomBtn} ${styles.zoomFit}`} aria-label="Fit to screen" aria-disabled={zoomIdx === FIT} onClick={() => setZoomIdx(FIT)}>
                   <Icon name="arrows_output" size={24} />
+                  <span className={styles.zoomLabel}>Fit to screen</span>
                 </button>
               </Tooltip>
               <Tooltip label="Zoom in" side="top">

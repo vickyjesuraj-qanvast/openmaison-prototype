@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, type ReactNode } from 'react'
+import { SearchBar } from '@/components/ds'
+import { AppliedDot } from '@/components/om/applied-dot'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
@@ -12,6 +14,7 @@ export function LeadsToolbar({
   chipLabel,
   onChipClick,
   chipOpen = false,
+  chipScoped = false,
   query,
   onQueryChange,
   onFilterClick,
@@ -24,6 +27,8 @@ export function LeadsToolbar({
   onChipClick: () => void
   /** The pill's menu is open — chevron points up. */
   chipOpen?: boolean
+  /** (REG-295) The pill stands off its default (a stage, not All Leads) — it wears the applied dot. */
+  chipScoped?: boolean
   query: string
   onQueryChange: (q: string) => void
   onFilterClick: () => void
@@ -43,28 +48,27 @@ export function LeadsToolbar({
         <button type="button" className={styles.chip} onClick={onChipClick} aria-haspopup="menu" aria-expanded={chipOpen} data-open={chipOpen || undefined}>
           {chipLabel}
           <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
+          {chipScoped ? <AppliedDot /> : null}
         </button>
         {chipMenu}
       </div>
       <div className={styles.right}>
-        <label className={styles.search}>
-          <Icon name="search" size={20} family="outlined" />
-          <input
-            ref={searchRef}
-            className={styles.searchInput}
-            placeholder="Search"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
+        {/* (REG-276) The DS SearchBar, as every other list in the app now uses (owner 2026-09-01: "make it like
+            its in the DS SearchBar"). It replaces a hand-rolled label+input that drew the same 280x36 field but
+            painted its focus ring as a real border, so focusing re-cut the padding and nudged the text by a
+            pixel; the DS draws that ring INSIDE the box (REG-241's lesson) and owns its own clear affordance.
+            The wrapper span resolves the DS component's inner <input> for the rail search tile and the "/" key.
+            The placeholder names what the box matches (REG-274/275); the aria-label stays the plain name. */}
+        <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
+          <SearchBar
+            appearance="outlined" size="md"
+            placeholder="Search name, phone, email…"
             aria-label="Search leads"
+            value={query}
+            onChange={onQueryChange}
+            className={styles.search}
           />
-          {query ? (
-            <Tooltip label="Clear search">
-              <button type="button" className={styles.searchClear} aria-label="Clear search" onClick={() => onQueryChange('')}>
-                <Icon name="close" size={18} />
-              </button>
-            </Tooltip>
-          ) : null}
-        </label>
+        </span>
         <span className={styles.filterWrap}>
           <Tooltip label={filterLabel}>
             <IconButton icon="filter_list" label={filterLabel} onClick={onFilterClick} selected={filterCount > 0} />

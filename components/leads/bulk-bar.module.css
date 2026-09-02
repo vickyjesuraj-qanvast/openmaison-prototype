@@ -27,3 +27,25 @@
 .link[data-danger]:hover { color: var(--om-color-on-tertiary-red-variant); }
 .divider { width: 1px; height: 20px; background: var(--om-color-surface-variant); }
 .close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   The bar is centred on the viewport, so at mobile it clamps to it and its action row wraps onto a second
+   line instead of running off both edges. Same DS pieces, same 16px rhythm — count chip, text actions,
+   dividers and close, only reflowed. It keeps clearing the FAB through --bottom-dock. */
+@media (max-width: 767px) {
+  .bar {
+    max-width: calc(100vw - 32px);
+    flex-wrap: wrap; justify-content: center;
+    row-gap: var(--om-spacing-3);
+    padding: var(--om-spacing-3);
+  }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Every action here is a bare text button one line tall, and the close is a 20px glyph — under a fingertip
+   they sit inside a bar that also holds a "Delete" a mis-tap away. At ≤767 each takes a 40px box; the type,
+   the colours and the 16px rhythm are the mock's. The count chip is a label, not a control, so it stays 24. */
+@media (max-width: 767px) {
+  .link { display: inline-flex; align-items: center; min-height: 40px; }
+  .close { min-width: 40px; min-height: 40px; align-items: center; justify-content: center; }
+}

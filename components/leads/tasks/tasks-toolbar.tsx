@@ -40,8 +40,9 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onM
       <h2 className={styles.title}>All Tasks</h2>
       <div className={styles.actions}>
         <span className={styles.menuWrap}>
+          {/* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */}
           <Button
-            variant="primary" appearance="outlined"
+            variant="primary" appearance="outlined" className={styles.touchTarget}
             iconEnd={<span className={styles.chev} data-open={menu === 'add' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
             aria-haspopup="menu" aria-expanded={menu === 'add'}
             onPress={() => setMenu((m) => (m === 'add' ? null : 'add'))}
@@ -54,23 +55,28 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onM
           </Dropdown>
         </span>
         <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+          {/* (REG-275) The box matches title, assignee, creator, due date, status and tags — and now the
+              description (lead-tasks.tsx), which the row marks with an "In description" chip when the
+              description is the only hit. The placeholder names the three fields people reach for; the
+              aria-label stays the plain name of the control. */}
           <SearchBar
             appearance="outlined" size="md"
-            placeholder="Search" aria-label="Search tasks"
+            placeholder="Search title, member, tag…" aria-label="Search tasks"
             value={query} onChange={onQuery}
             className={styles.search}
           />
         </span>
         <span className={styles.filterWrap}>
           <Tooltip label="Filters">
-            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
+            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
+                        onClick={onFilter} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton
-              icon="more_vert" label="More options"
+              icon="more_vert" label="More options" className={styles.touchTarget}
               aria-haspopup="menu" aria-expanded={menu === 'more'}
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />

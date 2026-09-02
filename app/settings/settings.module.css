@@ -46,3 +46,56 @@
 .settingTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .settingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 72ch; }
 .choices { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   Desktop (≥1200) is untouched. Tablet keeps the nav beside the panel and narrows it to 200 — the Move
+   stage window's rail rule (components/leads/move-stage/wizard.module.css), and 200 still holds every
+   module label on one line. Mobile lays the SAME nav across the top as a horizontal chip row: the grey
+   track and the white active pill are the desktop nav's own language, rotated, so nothing new is invented.
+   The DS ChipRail is not used here because its edge fades paint --om-color-surface-default (white) over a
+   track that is surface-bg (grey), and wrapping the buttons in it would restructure the desktop DOM; the
+   ask for a surface-aware fade is logged for the shared file instead. */
+@media (max-width: 1199px) {
+  .nav { width: 200px; }
+}
+
+@media (max-width: 767px) {
+  /* The row stacks. `align-items: flex-start` is the ROW's cross axis at desktop; in a column it would
+     shrink the panel to its content width, so the children stretch instead. Content padding 24 → 16
+     (responsive.md ground rule); the FAB clearance is re-declared after the shorthand. */
+  .content {
+    flex-direction: column; align-items: stretch;
+    gap: var(--om-spacing-4);
+    padding: var(--om-spacing-4);
+    padding-bottom: var(--fab-clearance);
+  }
+  /* The 240 rail becomes the chip row: same grey track, same tabs, scrolled sideways with the scrollbar
+     hidden (components/om/chip-rail.module.css .rail) — a part-cut chip at the edge is the affordance. */
+  .nav {
+    width: 100%;
+    flex-direction: row;
+    padding: var(--om-spacing-1);
+    gap: var(--om-spacing-1);
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  /* Each tab hugs its label as a 44-tall pill (≥40 touch target) at the chip radius; the active state keeps
+     its white fill, which now reads as the selected chip. */
+  .tab {
+    width: auto; flex: 0 0 auto;
+    padding: var(--om-spacing-3) var(--om-spacing-4);
+    border-radius: var(--om-radius-1);
+    white-space: nowrap;
+  }
+  /* Setting cards follow the page's 24 → 16. Their heads and the two ChoiceCard rows already stack. */
+  .setting { padding: var(--om-spacing-4); }
+}
+
+/* ── Touch ergonomics (REG-273) — measured, nothing to grow ────────────────────────────────────────────────
+   Every control on this page already clears the 40px floor at 390, so no rule is added rather than one being
+   invented: the module chips are 12 + 20 + 12 = 44 tall in the mobile nav row above (and 52 in the tablet
+   rail beside the panel), and each option row is a whole ChoiceCard — 12 + 20 title + 4 + 16 help + 12 = 64,
+   or 44 for a card with no help line — whose entire box is the radio's target, not just the 20px mark on its
+   right. There is no Switch on this page: both settings are radio groups of ChoiceCards. */

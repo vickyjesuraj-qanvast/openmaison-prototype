@@ -13,6 +13,7 @@
   font: var(--om-type-subheading-m);
   color: var(--om-color-on-surface-default);
   transition: background-color var(--motion-hover);
+  position: relative;   /* anchors the REG-295 applied dot */
 }
 .chip:hover { background: var(--om-color-hover-04p); }
 .chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
@@ -20,30 +21,11 @@
 .chip[data-open] .chipChevron { transform: rotate(180deg); }
 
 /* Search — 280px trigger/input; focused = 2px primary border (spec). */
-.search {
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  width: 280px; height: 36px;
-  padding: 0 var(--om-spacing-2);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  color: var(--om-color-on-surface-secondary);
-  transition: border-color var(--motion-toggle);
-}
-.search:focus-within {
-  border: var(--om-border-2) solid var(--om-color-primary-default);
-  padding: 0 calc(var(--om-spacing-2) - 1px);
-}
-.searchInput {
-  flex: 1; min-width: 0; border: 0; outline: 0; background: none;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-on-surface-default);
-}
-.searchInput::placeholder { color: var(--om-color-on-surface-secondary); font: var(--om-type-subheading-m); }
-.searchClear {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; color: var(--om-color-on-surface-secondary);
-}
+/* (REG-276) The search is the DS SearchBar now — it draws the 280x36 outlined field, its own leading glyph,
+   its clear affordance and an INSIDE focus ring. Only the width and the wrapper live here; the hand-rolled
+   .search / .searchInput / .searchClear rules retired with the markup they styled. */
+.searchWrap { display: inline-flex; }
+.search { width: 280px; }
 
 /* A2: active-filter count badge on the filter icon button. */
 .filterWrap { position: relative; display: inline-flex; }
@@ -55,4 +37,33 @@
   font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
   border: 2px solid var(--om-color-surface-default);
   box-sizing: content-box;
+}
+
+/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
+   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+@media (max-width: 767px) {
+  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .search, .searchWrap { width: 100%; flex-basis: 100%; }
+  .right, .actions { flex-wrap: wrap; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The two hand-rolled controls in this row were drawn at the mock's 36px, and the clear-search glyph is an
+   18px mark with no box at all. At ≤767 the scope pill and the search field stand up to 40 and the clear
+   glyph gets the whole 40px height as its target — sizes only, no new copy and no re-ordering. The DS/om
+   controls beside them (the 36px filter IconButton, the segmented view toggle) are left exactly as drawn:
+   36px is a comfortable target and the design system owns their geometry. */
+@media (max-width: 767px) {
+  .chip { height: 40px; }
+  .search { height: 40px; }
+  .searchClear {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin-right: -4px;   /* the glyph keeps its 8px inset from the field's edge */
+  }
+}
+
+/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
+@media (hover: none) {
+  .searchInput { block-size: 100%; }
 }

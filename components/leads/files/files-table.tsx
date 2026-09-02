@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
+import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -47,6 +48,8 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
 export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
+  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')
 
   const ids = rows.map((r) => r.id)
   const on = ids.filter((id) => selected.has(id)).length
@@ -65,8 +68,12 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
     onSelect(next)
   }
 
+  /* ≤1199 the card is the table's own horizontal scroller (REG-269) and `data-scrolled` lifts the frozen
+     column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
+     is all that shows, and no React state is touched on scroll. */
   return (
-    <div className={styles.card} role="table" aria-label="Files">
+    <div className={styles.card} role="table" aria-label="Files"
+         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
@@ -83,17 +90,23 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
         ))}
       </div>
 
-      {rows.map((row, idx) => (
+      {rows.map((row) => (
         <FileRowView
           key={row.id}
           row={row}
           isSelected={selected.has(row.id)}
           onToggle={() => toggle(row.id)}
           menuOpen={menuRow === row.id}
-          onMenuToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))}
+          onMenuToggle={(trigger) => {
+            /* (REG-286) This table still counted rows: with three files the last two kebabs opened UPWARD, over the
+               toolbar and the tab strip, with half a screen free below them. The side is now measured off the
+               trigger and this menu's real height (components/leads/menu-side.ts) — six items for a file, four for
+               a folder. */
+            if (menuRow !== row.id) setMenuSide(menuSideFor(trigger, isFolder(row) ? 4 : 6))
+            setMenuRow((m) => (m === row.id ? null : row.id))
+          }}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up on the last two rows of a 3+ row table — the leads / tasks / quotes table rule. */
-          menuSide={rows.length >= 3 && idx >= rows.length - 2 ? 'up' : 'down'}
+          menuSide={menuSide}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
         />
       ))}
@@ -112,7 +125,8 @@ function FileRowView({
   isSelected: boolean
   onToggle: () => void
   menuOpen: boolean
-  onMenuToggle: () => void
+  /** (REG-286) Hands the kebab up so the parent can measure which way its menu fits (menu-side.ts). */
+  onMenuToggle: (trigger: HTMLElement) => void
   onMenuClose: () => void
   menuSide: 'up' | 'down'
   onOpenFolder: (folder: FileRow) => void
@@ -186,9 +200,10 @@ function FileRowView({
       <span className={styles.actions} data-open={menuOpen || undefined}>
         <span className={styles.menuWrap}>
           <span className={styles.float}>
+            {/* (REG-273) `touchBtn` takes this 36px button to a 40px box at ≤767; the glyph keeps its size. */}
             <Tooltip label={folder ? 'Folder actions' : 'File actions'} disabled={menuOpen}>
-              <IconButton icon="more_vert" label={`Actions for ${row.name}`} variant="primary"
-                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
+              <IconButton icon="more_vert" label={`Actions for ${row.name}`} variant="primary" className={styles.touchBtn}
+                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
           {folder

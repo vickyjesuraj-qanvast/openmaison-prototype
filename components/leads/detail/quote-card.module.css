@@ -29,3 +29,20 @@
 .labels { display: flex; justify-content: space-between; align-items: baseline; width: 100%; gap: var(--om-spacing-2); min-height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 .stepLabel { flex: 0 0 auto; white-space: nowrap; }
 .stepLabel[data-current] { color: var(--om-color-primary-default); }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   The five-status lifecycle (Draft · Sent for Approval · Approved · Sent to Client · Signed) is ~294px of
+   `nowrap` text that could not shrink — past the desktop widths it simply ran out of the card, taking the page's
+   horizontal scroll with it (audit: quote-card.module.css:30). It COMPRESSES rather than scrolls: the track is
+   the width of the card and the marks are cut where each name begins, so a scroller would slide the names off
+   their own marks and break the one thing the widget says.
+   So each name keeps its place in the row and wraps inside itself — "Sent for / Approval" — which leaves every
+   label's LEFT edge exactly where it was; that left edge is what quote-card.tsx measures for the marks and the
+   fill, so the bar keeps telling the truth. The minimum gap drops 8 → 4 so five names break at their spaces
+   (~229px of words) rather than mid-word all the way down to the narrowest tablet card (~232px); below even
+   that, `overflow-wrap: anywhere` guarantees the row still cannot outgrow the card. All five stay legible and
+   the current one stays in its primary colour — no abbreviating, no hiding steps. */
+@media (max-width: 1199px) {
+  .labels { gap: var(--om-spacing-1); }
+  .stepLabel { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+}

@@ -98,7 +98,7 @@ export function InfoColumn({
       <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
         <KVList>
           <Row k="Owner" text={owner} />
-          <Row k="Assignees">
+          <Row k="Members">
             {assignees.length ? (
               <div className={styles.assignees}>
                 {assignees.map((m) => (

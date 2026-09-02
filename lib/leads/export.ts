@@ -18,7 +18,7 @@ const COLUMNS: { label: string; value: (r: LeadRow) => string }[] = [
   { label: 'Budget (S$)', value: (r) => money(r.budgetMinor) },
   { label: 'Property type', value: (r) => r.propertyType ?? '' },
   { label: 'Property address', value: (r) => r.propertyAddress ?? '' },
-  { label: 'Assignees', value: (r) => r.assignees.map((m) => m.name).join(', ') },
+  { label: 'Members', value: (r) => r.assignees.map((m) => m.name).join(', ') },   /* REG-290: header follows the column */
   { label: 'Created', value: (r) => inputDate(r.createdAt) },
 ]
 
@@ -47,7 +47,7 @@ export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date):
 
 /** Export Tasks (902:29293): the lead's tasks as a table. */
 export function downloadTasks(tasks: { title: string; assignees: { name: string }[]; dueAt: Date | null; done: boolean; tags: { name: string }[]; createdAt: Date }[], format: ExportFormat, now: Date): string {
-  const head = ['Title', 'Assignees', 'Due date', 'Status', 'Tags', 'Created']
+  const head = ['Title', 'Members', 'Due date', 'Status', 'Tags', 'Created']   /* REG-290 */
   const body = tasks.map((t) => [t.title, t.assignees.map((m) => m.name).join(', '), t.dueAt ? displayDate(t.dueAt) : '', t.done ? 'Completed' : 'Open', t.tags.map((g) => g.name).join(', '), displayDate(t.createdAt)])
   return downloadBlob(buildTable('OpenMaison — Tasks', head, body, format), `openmaison-tasks-${now.toISOString().slice(0, 10)}.${format.toLowerCase()}`)
 }

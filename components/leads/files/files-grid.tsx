@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import type { FileRow } from '@/lib/leads/file-model'
 import styles from './files-grid.module.css'
 
@@ -43,9 +44,15 @@ const kindIcon = (f: FileRow) => (f.kind === 'pdf' || f.mime === 'application/pd
  * Selected surfaces fill primary-variant (#eee5ff).
  * Structure copied from components/leads/tasks/attach-files-modal.tsx (group heads, folder cards, tiles) with the Files
  * tab's sizes; kebabs toggle on their own trigger (REG-153) and carry a Tooltip (REG-75).
+ *
+ * Touch (REG-273): a double-tap is hostile on a phone, so ≤767 the Drive convention splits in two — a single tap OPENS
+ * the folder / file and selection moves onto an explicit checkbox, the same affordance the list view already carries on
+ * every row (files-table.tsx "Cell / Selection"). The checkbox is not rendered at all above 767 (`display: none`), so the
+ * desktop mock is untouched; `useMediaQuery` only swaps what the tap DOES, which no stylesheet can express.
  */
 export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu }: FilesGridProps) {
   const [menu, setMenu] = useState<string | null>(null)
+  const touch = useMediaQuery(MOBILE)
 
   const toggle = (id: string) => {
     const next = new Set(selected)
@@ -76,7 +83,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
               <Checkbox isSelected={all} isIndeterminate={some} onChange={() => toggleGroup(ids)} aria-label="Select all folders" />
               <span className={styles.groupTitle}>Folders</span>
             </div>
-            <div className={styles.row}>
+            <div className={`${styles.row} ${styles.foldersRow}`}>
               {folders.map((f) => {
                 const isOn = selected.has(f.id)
                 const open = menu === f.id
@@ -84,11 +91,15 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                   /* Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 → folder 24 · texts (name 14/Semi Bold,
                      "n items" 10/Regular secondary) · more_vert 24/Light. Selected (frame 97): fill #eee5ff. */
                   <div key={f.id} className={styles.folder} data-testid="folder-card" data-selected={isOn || undefined}>
+                    {/* (REG-273) ≤767 only: the card's selection affordance, so the tap itself can open. */}
+                    <span className={styles.pick}>
+                      <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
+                    </span>
                     <button
                       type="button" className={styles.folderMain}
-                      aria-pressed={isOn}
-                      aria-label={`${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
-                      onClick={() => toggle(f.id)}
+                      aria-pressed={touch ? undefined : isOn}
+                      aria-label={touch ? `Open ${f.name}` : `${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
+                      onClick={() => (touch ? onOpenFolder(f) : toggle(f.id))}
                       onDoubleClick={() => onOpenFolder(f)}
                     >
                       <Icon name="folder" size={24} className={styles.folderIcon} />
@@ -138,11 +149,15 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                      Selected (frame 96): the whole tile fills #eee5ff. */
                   <div key={f.id} className={styles.tile} data-testid="file-tile" data-selected={isOn || undefined}
                        data-chip={f.commentCount > 0 || undefined}>
+                    {/* (REG-273) ≤767 only: the tile's selection affordance over the image's top-left, so the tap opens. */}
+                    <span className={styles.tilePick}>
+                      <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
+                    </span>
                     <button
                       type="button" className={styles.tileMain}
-                      aria-pressed={isOn}
-                      aria-label={`${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
-                      onClick={() => toggle(f.id)}
+                      aria-pressed={touch ? undefined : isOn}
+                      aria-label={touch ? `Open ${f.name}` : `${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
+                      onClick={() => (touch ? onOpenFile(f) : toggle(f.id))}
                       onDoubleClick={() => onOpenFile(f)}
                     >
                       {f.thumb ? (

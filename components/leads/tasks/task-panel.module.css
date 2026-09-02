@@ -15,15 +15,8 @@
   font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Mock avatar "Generic" 20×20 r4 with a 14/Medium #fff initial — om/avatar only ships 24 | 40, so its 24 is resized
-   exactly as components/leads/detail/info-column.module.css .avatar20 does (specificity 0,3,0 beats the avatar module). */
-.avatar20 { display: inline-flex; flex-shrink: 0; }
-.value .avatar20 > [data-size] {
-  width: 20px; height: 20px;
-  font-size: var(--om-font-size-m); line-height: 20px;
-  font-weight: var(--om-font-weight-medium);
-  border-radius: var(--om-radius-1);
-}
+/* Mock avatar "Generic" 20×20 r4 with a 14/Medium initial = om/avatar `size={20}` (REG-287: the local `.avatar20`
+   re-sizing of a 24 is gone — the component ships the size, and the wrapper span with it). */
 
 /* Fields (24,168,352,296): Text Area 64 · Text Field 48 · Text Area 112, V g36. */
 .fields { display: flex; flex-direction: column; gap: var(--om-spacing-9); }
@@ -65,7 +58,7 @@
 }
 .area[data-active] .areaLabel { color: var(--om-color-primary-default); }
 
-/* Sections (Assignees 68 · Tags 80 · Attachments 68): V g12, title 14/Semi Bold 20 tall. */
+/* Sections (Members 68 · Tags 80 · Attachments 68): V g12, title 14/Semi Bold 20 tall. */
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .sectionTitle {
   flex: 1; min-width: 0; margin: 0; height: 20px;
@@ -89,16 +82,9 @@
 .link:hover { color: var(--om-color-on-primary-variant); }
 .link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }   /* as om/icon-button */
 
-/* Assignees row: Avatar Generic 36 r4 ("H" 14/Medium #fff) …, H g8, then the person_add icon button. */
+/* Members row: Avatar Generic 36 r4 ("H" 14/Medium #fff) …, H g8, then the person_add icon button. */
 .avatarRow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); }
-/* om/avatar ships 24 | 40 — its 40 is resized to the mock's 36 the same way as .avatar20 above. */
-.avatar36 { display: inline-flex; flex-shrink: 0; }
-.avatarRow .avatar36 > [data-size] {
-  width: 36px; height: 36px;
-  font-size: var(--om-font-size-m); line-height: 36px;
-  font-weight: var(--om-font-weight-medium);
-  border-radius: var(--om-radius-1);
-}
+/* The mock's "Generic 36" = om/avatar `size={36}` (REG-287: the local `.avatar36` re-sizing of a 40 is gone). */
 
 /* Tags set (frame 190): Tag Outlined Default chips wrapping (gap 8) inside a 1px #e5e5e5 r4 box p8. */
 .tagBox {
@@ -117,3 +103,16 @@
 /* Kebab host: the Dropdown (200w, right-aligned) positions itself against this box (as the table row / header kebabs). */
 .menuHost { position: relative; display: inline-flex; }
 .danger { color: var(--om-color-tertiary-red-default); }   /* "Delete" (red) — as the row kebab in components/leads/table.tsx */
+
+/* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
+   "+ Add Tag" is 20px of link text and person_add is the DS 36 — both under a fingertip's 40. The type and
+   the drawn button keep their mocked sizes; the box grows around them and the extra comes back as margin,
+   so the 20px Tags head row and the assignee row do not move. The panel's own head actions (comment ·
+   attach_file · more_vert · close) are om icon buttons at 24 and are already grown by
+   components/om/icon-button.module.css on a touch pointer; the drawer head's 16 gaps leave their 40 boxes
+   exactly touching, so nothing here has to compensate. Desktop with a mouse matches neither arm. */
+@media (max-width: 767px), (hover: none) {
+  .link { min-height: 40px; padding-block: 10px; margin-block: -10px; }
+  .touchTarget { position: relative; }
+  .touchTarget::after { content: ''; position: absolute; inset: -2px; }
+}

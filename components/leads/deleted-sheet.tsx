@@ -12,6 +12,7 @@ import { displayDate, money } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
 import styles from './deleted-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 
 type Key = 'name' | 'stage' | 'source' | 'budget' | 'propertyType' | 'created' | 'archived'
 const COLS: { key: Key; label: string; width: number }[] = [
@@ -79,14 +80,14 @@ export function DeletedLeadsSheet({
   }
   const prune = (ids: string[]) => setSelected((s) => { const n = new Set(s); ids.forEach((id) => n.delete(id)); return n })
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented && !confirm) onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose, confirm])
+  /* (REG-287) aria-modal told assistive tech the page behind was inert while nothing held focus in: Tab walked
+     straight out of the sheet. Same policy as Dialog / the Move stage window (components/om/surface.ts) — Esc
+     closes this surface only while it is the topmost one (the Delete Forever / Empty trash alerts render after
+     the sheet, so they own Esc while open — what the old `!confirm` gate hand-rolled), focus moves into the
+     panel on open, Tab cycles inside it, and the opener gets focus back on close. */
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panelRef, onClose)
+  useDialogFocus(open, panelRef)
 
   const rows = useMemo(() => {
     if (!sort) return deleted
@@ -116,7 +117,10 @@ export function DeletedLeadsSheet({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Leads">
+            {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
+                controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
+            <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Leads"
+                        tabIndex={-1} style={{ outline: 'none' }}>
               <div className={styles.heading}>
                 <div className={styles.titleBlock}>
                   <span className={styles.crumb}>Leads / </span>
@@ -153,8 +157,11 @@ export function DeletedLeadsSheet({
                        e.currentTarget.toggleAttribute('data-scrolled-y', e.currentTarget.scrollTop > 0)
                      }}>
                   <div className={styles.table} role="table" aria-label="Deleted leads">
+                    {/* (REG-286) ARIA grid roles: role="table"/role="row" were declared but the cells carried no
+                        role, so a screen reader saw rows of generic children and dropped out of table mode —
+                        no column announcements, no cell navigation. Additive only; nothing here is styled by role. */}
                     <div className={styles.headRow} role="row">
-                      <span className={styles.selCell}>
+                      <span className={styles.selCell} role="columnheader">
                         <Checkbox
                           isSelected={deleted.length > 0 && liveSelected.size === deleted.length}
                           isIndeterminate={liveSelected.size > 0 && liveSelected.size < deleted.length}
@@ -179,22 +186,22 @@ export function DeletedLeadsSheet({
                       <div className={styles.emptyRow}>No deleted leads.</div>
                     ) : rows.map((l) => (
                       <div key={l.id} className={styles.row} role="row" data-selected={liveSelected.has(l.id) || undefined}>
-                        <span className={styles.selCell}>
+                        <span className={styles.selCell} role="cell">
                           <Checkbox isSelected={liveSelected.has(l.id)} onChange={() => toggle(l.id)} aria-label={`Select ${l.name}`} />
                         </span>
-                        <div className={`${styles.cell} ${styles.pin}`} style={{ width: 176 }}>
+                        <div className={`${styles.cell} ${styles.pin}`} style={{ width: 176 }} role="cell">
                           <span className={styles.twoLine}>
                             <span className={styles.name}>{l.name}</span>
                             <span className={styles.phone}>{l.phone}</span>
                           </span>
                         </div>
-                        <div className={styles.cell} style={{ width: 146 }}><span className={styles.plain}>{l.stage}</span></div>
-                        <div className={styles.cell} style={{ width: 132 }}><span className={styles.plain}>{l.source}</span></div>
-                        <div className={styles.cell} style={{ width: 138 }}><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
-                        <div className={styles.cell} style={{ width: 158 }}><span className={styles.plain}>{l.propertyType}</span></div>
-                        <div className={styles.cell} style={{ width: 137 }}><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
-                        <div className={styles.cell} style={{ width: 137 }}><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
-                        <div className={`${styles.cell} ${styles.actions}`} style={{ width: ACTIONS_W }}>
+                        <div className={styles.cell} style={{ width: 146 }} role="cell"><span className={styles.plain}>{l.stage}</span></div>
+                        <div className={styles.cell} style={{ width: 132 }} role="cell"><span className={styles.plain}>{l.source}</span></div>
+                        <div className={styles.cell} style={{ width: 138 }} role="cell"><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
+                        <div className={styles.cell} style={{ width: 158 }} role="cell"><span className={styles.plain}>{l.propertyType}</span></div>
+                        <div className={styles.cell} style={{ width: 137 }} role="cell"><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
+                        <div className={styles.cell} style={{ width: 137 }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
+                        <div className={`${styles.cell} ${styles.actions}`} style={{ width: ACTIONS_W }} role="cell">
                           <button type="button" className={styles.link} disabled={pending.has(l.id)}
                                   onClick={() => { prune([l.id]); void run([l.id], () => onRestore([l.id])) }}>Restore</button>
                           <button type="button" className={styles.link} data-danger disabled={pending.has(l.id)}

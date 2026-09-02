@@ -1,0 +1,65 @@
+/* Lead Details › Notes — toolbar row (REG-293). Geometry is the sibling tabs' bar (36 tall, gap 16, actions 12
+   apart) so tab-to-tab has no jump; the scope pill is the LEAD LISTING's "All Leads (24)" chip, copied here rather
+   than imported — a cross-feature class reference is what broke the imports search in REG-276.
+   Sources: components/leads/tasks/tasks-toolbar.module.css · components/leads/toolbar.module.css. */
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.left { flex: 1; min-width: 0; display: flex; position: relative; }
+.right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
+
+/* "All Notes (2)" pill: h36, border ccc, r4, pl-16 pr-12, gap-8 (toolbar.module.css .chip). */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+  position: relative;   /* anchors the REG-295 applied dot */
+}
+.chip:hover { background: var(--om-color-hover-04p); }
+.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
+/* Chevron points up while the menu is open (user 2026-08-28) — every menu trigger does this. */
+.chip[data-open] .chipChevron { transform: rotate(180deg); }
+
+/* Menu anchor (New ▾) — the Dropdown positions itself against this. */
+.menuWrap { position: relative; display: inline-flex; }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+/* Search Bar 36 Outlined — 280 wide, as in every other tab toolbar. */
+.searchWrap { display: inline-flex; }
+.search { width: 280px; }
+
+/* (REG-273) Touch ergonomics: the 36px control keeps its drawn size and grows only its hit area. */
+@media (hover: none) {
+  .touchTarget { position: relative; }
+  .touchTarget::after { content: ''; position: absolute; inset: -2px; }
+}
+
+/* ── Responsive (REG-269) ── the sibling toolbars' own rule: below 768 the row wraps to two lines and the
+   search takes the full width, so a 280 box never squeezes the pill off the screen. */
+@media (max-width: 767px) {
+  .bar { height: auto; flex-wrap: wrap; gap: var(--om-spacing-3); }
+  .left { flex: 1 1 auto; }
+  .right { flex: 1 1 100%; }
+  .searchWrap { flex: 1; min-width: 0; }
+  .search { width: 100%; }
+}
+
+/* ── Touch ergonomics (REG-273), carried over with the controls this row took from the list column (REG-293).
+   Every box reaches 40px; the marks, the type and the 1px strokes keep the mock's sizes. */
+@media (max-width: 767px) {
+  .chip { height: auto; min-height: 40px; }
+  .menuWrap > :global(button) { min-height: 40px; }
+  /* Both menus draw 36px rows, and a menu on a phone is a list of finger targets. */
+  .left :global([role='menuitemradio']),
+  .menuWrap :global([role='menuitem']) { min-height: 40px; }
+}
+/* The DS md SearchBar is 36 tall and a fingertip wants 40, so the BOX stands up — the 20px glyph, the subheading
+   type and the stroke are the DS's, untouched. The selector carries the DS's own `[data-size]` inside the wrapper
+   so it outweighs `._searchBar[data-size=md] { height: 36px }` whichever order the stylesheets land in. */
+@media (max-width: 767px), (hover: none) {
+  .searchWrap .search[data-size='md'] { height: 40px; }
+}

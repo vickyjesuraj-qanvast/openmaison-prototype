@@ -42,3 +42,10 @@
   transition: background-color var(--motion-hover);
 }
 .close:hover { background: rgba(255, 255, 255, 0.08); }   /* same inverse wash, see .action:hover */
+
+/* Responsive (REG-269): ≤767 the host spans the viewport minus 16px gutters — the desktop anchor
+   (left: rail + 32) and the locked 344px bar pushed the action/close off a 390px screen. */
+@media (max-width: 767px) {
+  .host { left: var(--om-spacing-4); right: var(--om-spacing-4); }
+  .bar { width: auto; min-width: 0; max-width: 100%; }
+}

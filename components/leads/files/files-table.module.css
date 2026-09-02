@@ -118,3 +118,76 @@
   box-shadow: var(--om-elevation-level-1);
 }
 .menuWrap { position: relative; display: inline-flex; }
+/* Touch hook (REG-273) — inert until the ≤767 block at the foot of this file; repeats the om icon button's
+   own `flex-shrink: 0` so the desktop row is byte-identical. */
+.touchBtn { flex-shrink: 0; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199 the table scrolls sideways inside its own card instead of being clipped by the page sheet's
+   `overflow: clip` (the audit's silent-truncation failure: content measured ~2.5× its container with
+   overflow-x visible, so columns were unreachable). Rows size to their content and still fill a wide
+   card, so desktop ≥1200 is untouched. */
+@media (max-width: 1199px) {
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .head, .row { width: max-content; min-width: 100%; }
+  /* The Title track is `minmax(0, 1fr)`: once the 824px of fixed tracks overflow the card there is no free
+     space left to flex, so it resolved to 0 and the thumb + name painted over Owner (measured in Chromium).
+     Inside the scroller it takes the mock's own 420 instead — the table keeps its mocked geometry and
+     simply scrolls (design-source/context/responsive.md "Tables"). */
+  .card { grid-template-columns: 40px minmax(420px, 1fr) 240px 116px 119px 114px 195px; }
+  /* Frozen first column, the listing's treatment generalised (components/leads/table.module.css .pin):
+     Selection + Title stick to the left edge, carry the row's own fill (hover and the selected tint) so the
+     scrolled columns pass underneath, and the Title cell — the last pinned one — draws the 1px edge at rest
+     and the group's rightward shadow only while the card is scrolled sideways. */
+  .head .colSel, .head .colTitle,
+  .row .colSel, .row .colTitle { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
+  .colSel { left: 0; }
+  .colTitle {
+    left: 40px;
+    border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+    clip-path: inset(0 -6px 0 0);
+    transition: box-shadow var(--motion-toggle);
+  }
+  .row:hover .colSel, .row:hover .colTitle { background: var(--om-color-surface-bg); }
+  .row[data-selected] .colSel, .row[data-selected] .colTitle { background: var(--om-color-primary-variant); }
+  .card[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
+}
+/* ≤767 the frozen band has to leave something to scroll: 40 + 420 is wider than a 358px card, so the Title
+   track takes 200 (thumb 48 + name + comment chip) and ~118 of the metadata columns stay in view. */
+@media (max-width: 767px) {
+  .card { grid-template-columns: 40px minmax(200px, 1fr) 240px 116px 119px 114px 195px; }
+}
+
+/* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
+   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+@media (hover: none) {
+  .actions { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The permanently visible kebab (the block above) floats over the row's last column, so inside the
+   ≤1199 scroller the "Attached to" tag would sit under it for good. The last cell reserves the button's
+   band instead (its 40px touch box + the 24 inset + a 16 gap) — the row is inside its own horizontal
+   scroller, so the extra width costs the page nothing. Scoped to a touch pointer AND ≤1199: the desktop
+   mock, which only shows the kebab on hover, keeps its mocked column padding. */
+@media (max-width: 1199px) and (hover: none) {
+  .cell.colAttached { padding-right: 80px; }
+}
+
+/* ≤767 every mark keeps its mocked size and only its tappable box grows to 40. The head (56) and the
+   rows (60) are taller than that, so the grown boxes sit inside them and nothing reflows. */
+@media (max-width: 767px) {
+  /* Sort buttons: the 12/Medium label + unfold_more 16 draw a ~20px line — the button becomes a 40px box
+     around them (it answers "coming soon", the second channel a tooltip could never give a touch pointer). */
+  .hSort { min-height: 40px; }
+  /* The name is the row's open affordance: a 40px line box, still ellipsised (line-height, not flex, so
+     text-overflow keeps working), centred in the 60px row exactly where the mock draws it. */
+  .name { min-height: 40px; line-height: 40px; }
+  /* Comment chip 34×24: the drawn chip stays the mock's; ±8 above and below takes the target to 40. */
+  .chip { position: relative; }
+  .chip::after { content: ''; position: absolute; inset: -8px 0; }
+  /* Row kebab: the DS 36px button (and the white plate behind it) become a 40px box, re-centred in the
+     60px row — `min-*` beats the DS `width/height: 36px` whatever the selector's specificity. */
+  .touchBtn { min-width: 40px; min-height: 40px; }
+  .actions { top: 10px; }
+}

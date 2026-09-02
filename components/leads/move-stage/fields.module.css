@@ -105,3 +105,29 @@
 .chips[aria-disabled='true'] .chip[data-selected='true'] { background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); color: var(--om-color-on-surface-secondary); }
 .chips[aria-disabled='true'] .chip:hover { background: transparent; }
 .notes:disabled { color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   Audited at 390: the chip group, notes textarea and dropzone are already width:100% and the dropzone's
+   helper column (237) fits, so the only fixed box here is the 146 attachment tile — two per row inside the
+   mobile sheet's 16px padding. It keeps its drawn width and only refuses to outgrow a narrower panel. */
+@media (max-width: 767px) {
+  .tile { max-width: 100%; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Two things in this file sit under a fingertip: "Link text" (Auto Fill · Edit · Add Log · Attach Files ·
+   Reset to default · View), which is type-height, and the choice chips, which the mock draws 32 tall. */
+@media (hover: none) {
+  /* The link's BOX becomes a 40px target and gives the extra back as margin, so no row that hosts one (the
+     log head, a section row, a quote row) moves a pixel. A mouse always reports hover: hover, so desktop
+     never matches — and a touch tablet gets the target too. */
+  .link { min-height: 40px; margin-block: -10px; }
+  /* The dropzone's only feedback is its hover border, which a touch pointer never fires: the press does it. */
+  .dropzone:active { border-color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
+  .dropzone[data-uploading='true']:active { border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-bg); }
+}
+@media (max-width: 767px) {
+  /* Choice chips (Contacted via · the Notes contact log's channel): the box grows to the 40px target; the
+     14/Semi Bold label, the 12px side padding and the 1px stroke stay the mock's. The group already wraps. */
+  .chip { display: inline-flex; align-items: center; min-height: 40px; }
+}

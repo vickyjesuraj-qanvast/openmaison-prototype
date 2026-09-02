@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import styles from './quick-links.module.css'
 
 /**
@@ -41,12 +42,16 @@ const write = (s: QuickLinksState) => {
 const serverSnapshot = (): QuickLinksState => 'collapsed'
 
 type Link = { icon: string; label: string; kind: 'task' | 'quote' | 'callLog' | 'note' | 'meeting' | 'other' }
-/** Order and glyphs as the mock lists them (top → bottom). */
+/**
+ * Glyphs as the mock lists them, and its order top → bottom — except that Note sits ABOVE Contact Log
+ * (REG-289, owner 2026-09-02; the mock draws Contact Log first). One list drives both the expanded tiles
+ * and the collapsed glyph strip, so the two can never disagree.
+ */
 const LINKS: Link[] = [
   { icon: 'task_alt', label: 'Task', kind: 'task' },
   { icon: 'docs', label: 'Quote', kind: 'quote' },
-  { icon: 'call_log', label: 'Call Log', kind: 'callLog' },
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
+  { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
   { icon: 'event', label: 'Meeting', kind: 'meeting' },
   { icon: 'wand_shine', label: 'AI Visualiser', kind: 'other' },
   { icon: 'scan', label: 'Quote X-Ray', kind: 'other' },
@@ -73,7 +78,11 @@ export function QuickLinks({
   const state = useSyncExternalStore(subscribe, read, serverSnapshot)
   // Animate the width only once the viewer has toggled — never on load / hydration.
   const animate = useSyncExternalStore(subscribe, () => cached !== null, () => false)
-  const expanded = state === 'expanded'
+  /* (REG-269) Below 1200 the strip is collapsed-only (responsive.md): 140px of shortcuts there would leave the
+     centre column narrower than any card. The remembered choice is NOT overwritten — it is only ignored at this
+     width, so a viewer who pinned the strip open on their desktop still finds it open there. */
+  const locked = useMediaQuery(TABLET_DOWN)
+  const expanded = state === 'expanded' && !locked
   const toggle = () => write(expanded ? 'collapsed' : 'expanded')
 
   const fire = (link: Link) => {
@@ -86,7 +95,9 @@ export function QuickLinks({
   }
 
   return (
-    <aside className={styles.aside} aria-label="Create" data-state={state} data-animate={animate || undefined}>
+    // data-state reports the state the strip is actually IN, so the locked tablet strip never carries the
+    // expanded state's white plate or width (identical to `state` at every desktop width).
+    <aside className={styles.aside} aria-label="Create" data-state={expanded ? 'expanded' : 'collapsed'} data-animate={animate || undefined}>
       {expanded ? (
         <>
           <div className={styles.head}>

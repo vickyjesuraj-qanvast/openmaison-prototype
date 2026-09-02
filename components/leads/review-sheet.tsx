@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -9,6 +9,7 @@ import { displayDate, relativeTime } from '@/lib/format'
 import type { ReviewRow } from '@/lib/leads/queries'
 import styles from './review-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Tooltip } from '@/components/om/tooltip'
 
@@ -51,12 +52,15 @@ export function ReviewSheet({
   }
   useEffect(() => { if (open) busyRef.current = false }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented && !busyRef.current) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  /* (REG-287) aria-modal told assistive tech the page behind was inert while nothing held focus in: Tab walked
+     straight out of the panel. Same policy as Dialog / the Move stage window (components/om/surface.ts) — Esc
+     closes this surface only while it is the topmost one, focus moves into the panel on open, Tab cycles inside
+     it, and the opener gets focus back on close. Esc keeps its own gate: an approve / reject / merge in flight
+     is never interrupted (the ref is read in the handler, never in render). */
+  const panelRef = useRef<HTMLDivElement>(null)
+  const escClose = useCallback(() => { if (!busyRef.current) onClose() }, [onClose])
+  useEscapeLayer(open, panelRef, escClose)
+  useDialogFocus(open, panelRef)
 
   const duplicates = rows.filter((r) => r.row.status === 'duplicate')
   const clean = rows.filter((r) => r.row.status === 'pending')
@@ -72,6 +76,13 @@ export function ReviewSheet({
   const activeSource = source !== null && sources.some(([s]) => s === source) ? source : null
   const visible = rows.filter((r) => (!activeSource || (r.data['Lead Source'] || 'Others') === activeSource) && (!effectiveDupOnly || r.row.status === 'duplicate'))
   const selected = visible.find((r) => r.row.id === selectedId) ?? visible[0] ?? null
+  // The queue-duplicate comparison's two column headings, lifted out of the head row so the ≤767 stacked
+  // layout can repeat them inside the cells (REG-269) — same copy, one source.
+  const twin = selected?.twin ?? null
+  const twinHead = twin
+    ? `${twin.sameFile ? 'In this file' : 'Queued earlier'} · ${twin.status === 'approved' ? 'already added' : twin.status === 'pending' ? 'awaiting review' : twin.status}`
+    : ''
+  const thisRowHead = selected ? `This row · ${displayDate(selected.receivedAt)}` : ''
 
   // Radios default to the existing value (mock); picks are keyed by row id + label.
   const pickOf = (label: string): Pick => picks[`${selected?.row.id}:${label}`] ?? 'existing'
@@ -101,7 +112,10 @@ export function ReviewSheet({
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit">
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads">
+          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
+              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
+          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads"
+                      tabIndex={-1} style={{ outline: 'none' }}>
             <div className={styles.heading}>
               <div className={styles.titleGroup}>
                 <span className={styles.title}>Review imported leads ({rows.length})</span>
@@ -131,7 +145,9 @@ export function ReviewSheet({
               </Button>
             </div>
 
-            <div className={styles.body}>
+            {/* Responsive (REG-269): below 1200 the queue and the detail are two screens — data-pane says
+                which one is showing. At desktop both panes render side by side exactly as the mock draws them. */}
+            <div className={styles.body} data-pane={selectedId ? 'detail' : 'list'}>
               <div className={styles.list} role="list">
                 {visible.length === 0 ? <div className={styles.emptyList}>{rows.length === 0 ? 'Nothing left to review.' : 'No leads match this filter.'}</div> : null}
                 {visible.map((r) => {
@@ -173,6 +189,10 @@ export function ReviewSheet({
               </div>
 
               <div className={styles.detail}>
+                {/* ≤1199 only (display:none above): returns the queue to the screen. */}
+                <button type="button" className={styles.backBar} onClick={() => setSelectedId(null)}>
+                  <Icon name="arrow_back" size={20} weight={300} />Back to queue
+                </button>
                 {!selected ? (
                   <div className={styles.emptyDetail}>Select a lead to review it.</div>
                 ) : selected.row.status === 'duplicate' && selected.existing ? (
@@ -254,11 +274,13 @@ export function ReviewSheet({
                     <div className={styles.detailBody}>
                       <span className={styles.detailTitle}>{selected.twin.sameFile ? 'Duplicate of another row in this file' : 'Duplicate of a row already in the queue'}</span>
                       <span className={styles.note}>{selected.twin.sameFile ? 'Both rows came in the same file' : `The same lead was imported earlier (${selected.twin.fileName})`} — there is no existing lead to merge into. Keep both as separate leads, or reject this one.</span>
-                      <div className={styles.table} role="table" onScroll={markScroll} aria-label="Duplicate rows">
+                      {/* data-stack: at ≤767 this comparison stacks its two records one above the other (REG-269) —
+                          the merge table next door keeps its frozen edges instead. */}
+                      <div className={styles.table} data-stack role="table" onScroll={markScroll} aria-label="Duplicate rows">
                         <div className={styles.tr} role="row">
                           <div className={`${styles.th} ${styles.cLabel}`} />
-                          <div className={`${styles.th} ${styles.cCol}`}>{selected.twin.sameFile ? 'In this file' : 'Queued earlier'} · {selected.twin.status === 'approved' ? 'already added' : selected.twin.status === 'pending' ? 'awaiting review' : selected.twin.status}</div>
-                          <div className={`${styles.th} ${styles.cCol}`}>This row · {displayDate(selected.receivedAt)}</div>
+                          <div className={`${styles.th} ${styles.cCol}`}>{twinHead}</div>
+                          <div className={`${styles.th} ${styles.cCol}`}>{thisRowHead}</div>
                         </div>
                         {FIELDS.map((f) => {
                           const tw = newValue({ ...selected, data: selected.twin!.data }, f)
@@ -269,8 +291,12 @@ export function ReviewSheet({
                               <div className={`${styles.td} ${styles.cLabel}`} data-warn={matched || undefined}>
                                 {f.label}{matched ? <span data-warn><Icon name="warning" size={16} /></span> : null}
                               </div>
-                              <div className={`${styles.td} ${styles.cCol}`}><span className={styles.cValue}>{tw || '—'}</span></div>
                               <div className={`${styles.td} ${styles.cCol}`}>
+                                <span className={styles.stackLabel}>{twinHead}</span>
+                                <span className={styles.cValue}>{tw || '—'}</span>
+                              </div>
+                              <div className={`${styles.td} ${styles.cCol}`}>
+                                <span className={styles.stackLabel}>{thisRowHead}</span>
                                 {matched ? <span className={`${styles.cValue} ${styles.matchedNote}`}>identical - matched on this</span> : <span className={styles.cValue}>{nw || '—'}</span>}
                               </div>
                             </div>

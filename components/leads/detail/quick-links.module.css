@@ -83,3 +83,34 @@
 .toggle:focus-visible, .glyph:focus-visible, .tile:focus-visible {
   outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px;
 }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   Tablet: the strip is COLLAPSED-ONLY (responsive.md — a 140px strip at 768 leaves the centre 180px of cards),
+   so the expanded state is locked out in quick-links.tsx and the toggle that offers it goes with it; without a
+   toggle the divider under it has nothing to divide, so the strip becomes the pure 72px glyph rail the shell's
+   own rail already is between 768 and 1199. The 140px width rule can no longer be reached, but it is pinned
+   back to 72 as well so a stale `data-state="expanded"` can never widen the strip on its own.
+   `overflow` also stops being `hidden`: the width never animates here, and the glyph stack is ~408px tall — on
+   a short landscape tablet the lower links were simply unreachable (audit hazard, quick-links.module.css:12). */
+@media (max-width: 1199px) {
+  .aside, .aside[data-state='expanded'] { width: 72px; gap: var(--om-spacing-6); background: none; }
+  .aside { overflow: hidden auto; }
+  .toggle, .divider { display: none; }
+}
+/* Mobile: no strip at all. The row stacks (app/leads/[id]/overview.module.css) and every create lives in its own
+   tab — the Maison AI FAB stays the one floating affordance. Hidden rather than unmounted so the sticky column
+   leaves nothing behind: no rule, no height, no sticky remnant. */
+@media (max-width: 767px) {
+  .aside { display: none; }
+}
+
+/* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
+   The strip is hidden ≤767, so its touch pass belongs to the tablet query: 768–1199 is the collapsed glyph
+   rail, eight bare 24px controls a tablet is expected to tap. The 24px mark and its hover plate are untouched;
+   the invisible ::after grows each target to 40×40 — into the strip's own 24px side padding on one axis and
+   into the 24px stack gap on the other, so neighbouring targets stay 8px apart and never overlap.
+   (The expanded strip's 92×80 tiles and its toggle only exist ≥1200, where the mock rules.) */
+@media (max-width: 1199px) {
+  .glyph { position: relative; }
+  .glyph::after { content: ''; position: absolute; inset: -8px; }
+}

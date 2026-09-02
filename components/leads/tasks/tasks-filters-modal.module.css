@@ -87,3 +87,33 @@
   box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
 }
+
+/* Responsive (REG-269, added under REG-273): this shell is a copy of the listing's FiltersModal but never got
+   the listing's clamps (components/leads/filters-modal.module.css), so the 600×600 panel still opened wider
+   than a 390 screen. Same rules as the original: ≤1199 it fits the viewport, ≤767 it is a full-screen sheet
+   with the date pair stacked. */
+@media (max-width: 1199px) {
+  .panel { max-width: calc(100vw - 48px); }
+}
+@media (max-width: 767px) {
+  .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  .panel {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  .content { padding: var(--om-spacing-4); }
+  .sortRow { width: 100%; }
+  .dateRow { flex-direction: column; }
+  .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+}
+
+/* Touch ergonomics (REG-273): the close is a bare 24px glyph and the Status choices are 32-tall chips. The
+   glyph and the chip keep their mocked sizes — the close takes a 40 box with ±8 handed back (the 64 heading
+   does not move) and each chip takes a transparent 40-tall overlay, which the row's 12 gap absorbs with 4 to
+   spare. Rail options (52), one-line (44) and two-line (64) rows are already past 40. */
+@media (max-width: 767px), (hover: none) {
+  .close { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+  .chip { position: relative; }
+  .chip::after { content: ''; position: absolute; inset: -4px; }
+}

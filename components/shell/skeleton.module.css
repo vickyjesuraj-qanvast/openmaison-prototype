@@ -66,3 +66,67 @@
 .settingsPanel { flex: 1; max-width: 720px; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .settingsHead { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .settingsCard { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+/* ── Responsive ghosts (REG-269) ────────────────────────────────────────────────────────────────────────
+   The bones mirror the RESPONSIVE screen at each breakpoint, not the desktop one — a ghost that fades into a
+   differently-shaped page is the REG-74 failure. `data-min` holds the desktop track width (it was an inline
+   style, which no media query could reach). */
+.tableInner[data-min='1410'] { min-width: 1410px; }
+.tableInner[data-min='1316'] { min-width: 1316px; }
+
+@media (max-width: 1199px) {
+  /* The real tables KEEP every column and scroll sideways inside their own box below the desktop width
+     (table.module.css .scroller · imports.module.css .card · qanvast-leads.module.css .card), so the bones
+     scroll too: squashing them to the viewport would cross-fade into a table twice as wide. */
+  .tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .headRow, .row { width: max-content; min-width: 100%; }   /* hold the column floors; the box scrolls */
+  /* The listing freezes its first column: a plain 1px edge at rest, staying put while the rest scrolls
+     (table.module.css .pin[data-pin-edge]). The ghost draws the same frozen edge — the shadow is scroll-state
+     only, and a ghost is never scrolled. No z-index: sticky already paints over the plain cells, and a z-index
+     would lift the column above the sheet's sweep and leave one stripe of the table un-shimmered. */
+  .pinCol {
+    position: sticky; left: 0;
+    align-self: stretch;   /* so the edge runs the full 56 / 64, as the real column's does */
+    background: var(--om-color-surface-default);
+    border-right: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .nameCol.pinCol { justify-content: center; }   /* the column-direction cell re-centres its bones once stretched */
+  /* om Tabs at ≤1199 (om/tabs.module.css): tighter rhythm, scrollbar hidden, the cut-off tab is the affordance. */
+  .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  /* Settings: the section rail narrows to 200 (settings.module.css .nav) and the panel loses its cap. */
+  .settingsNav { width: 200px; }
+  .settingsPanel { max-width: none; }
+}
+
+@media (max-width: 767px) {
+  /* The shell drops its 8px gutter at mobile (app-shell.module.css), so the sheet runs edge-to-edge. Doubled
+     class: the page body's radius comes from another module, and module order must not decide this. */
+  .sheet.sheet { border-radius: 0; }
+  /* L1 header wraps — title row, then actions (page-header.module.css ≤767: p12/16, row-gap 8). */
+  .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
+  .headerActions { flex-wrap: wrap; }
+  /* Toolbars wrap, and the right cluster takes a full-width row of its own — both real ones do
+     (toolbar.module.css ≤767 .bar / .right · imports.module.css ≤767 .toolbar / .toolRight). Where the search
+     lands then differs by page, so the two ghosts carry different search bones:
+       · listing — the search has a whole row to itself (.search { flex-basis: 100% }), so chip / search /
+         filters = 3 × 36 + 2 × 12 = the 132 the row-count math in skeleton.tsx assumes;
+       · imports — the search fills the rest of its row beside the filter (.toolRight label { flex: 1 }), so
+         the section title and that one row = 20 + 12 + 36.
+     flex-basis is what beats the bone's inline width inside a flex row. */
+  .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .toolbarRight { flex: 1 1 100%; }
+  .searchBone { flex: 1 1 100%; }
+  .searchGrow { flex: 1 1 auto; min-width: 0; }
+  /* Settings stacks and the 240 rail becomes the nav's own chip row — same grey track, 4px inset, 44px pills
+     scrolled sideways with the scrollbar hidden (settings.module.css ≤767 .content / .nav / .tab). */
+  .settingsRow { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); padding: var(--om-spacing-4); }
+  .settingsNav {
+    width: 100%; flex-direction: row;
+    padding: var(--om-spacing-1); gap: var(--om-spacing-1);
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  }
+  .settingsNav::-webkit-scrollbar { display: none; }
+  .settingsNavItem { flex: 0 0 auto; height: 44px; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); }
+  .settingsCard { padding: var(--om-spacing-4); }
+}

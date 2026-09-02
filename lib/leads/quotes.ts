@@ -1,3 +1,4 @@
+import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { quotes, type Quote } from '@/lib/db/schema'

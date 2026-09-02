@@ -3,9 +3,16 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
+import { useMenuKeyboard } from '@/components/om/surface'
 import styles from './menus.module.css'
 
-/** The mocks' 200px dropdown (Add Lead / kebab family) with the layer policy. */
+/**
+ * The mocks' 200px dropdown (Add Lead / kebab family) with the layer policy.
+ *
+ * Keyboard (REG-286): opening it used to leave focus on the trigger, so the items could only be reached by
+ * tabbing past everything the menu covers. Focus now moves onto the checked (or first) item, arrows / Home / End
+ * walk the items, and Tab or Esc — or any close — hand focus back to the trigger (components/om/surface.ts).
+ */
 export function Dropdown({
   open,
   onClose,
@@ -23,6 +30,7 @@ export function Dropdown({
   width?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  useMenuKeyboard(open, ref, onClose)   // (REG-286) keyboard reach — see the note above
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {

@@ -46,7 +46,12 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
         : step.state === 'done' ? <Icon name="check_circle" size={20} weight={300} fill className={styles.icon} />
         : <Icon name="radio_button_unchecked" size={20} weight={300} className={styles.icon} />}
       <span className={styles.label}>
-        <span className={styles.nameGroup}><span className={styles.name}>{step.stage}</span></span>
+        <span className={styles.nameGroup}>
+          <span className={styles.name}>{step.stage}</span>
+          {/* (REG-273) The refusal reason, visible at mobile only — the Tooltip below carries it for a mouse,
+              and a tooltip never fires for a touch pointer, so the row had nothing to say on a phone. */}
+          {why ? <span className={styles.why}>{why}</span> : null}
+        </span>
         <span className={styles.meta}>
           {step.state === 'current' ? (
             <>

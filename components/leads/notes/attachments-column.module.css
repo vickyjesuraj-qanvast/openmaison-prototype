@@ -61,3 +61,12 @@
 }
 .kebab:hover { background: var(--om-color-hover-08p); }
 .kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The tile's Remove lives behind a 24px kebab in the caption. The mark keeps its size and its place — its
+   centre stays 24 in from the tile's right edge and 25 up from its bottom — while the button around it
+   becomes the 40px target, so the anchor moves out by the same 8px it grew. Desktop is untouched. */
+@media (max-width: 767px) {
+  .tileMenuWrap { right: var(--om-spacing-1); bottom: 5px; }
+  .kebab { width: 40px; height: 40px; }
+}

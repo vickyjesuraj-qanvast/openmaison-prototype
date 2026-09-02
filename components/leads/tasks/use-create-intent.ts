@@ -4,15 +4,17 @@ import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 /**
- * The window events the Overview's Create quick links raise on the tab they already stand on
- * (app/leads/[id]/overview.tsx dispatches the same literals) and the tabs listen for.
+ * The window events the Overview's Create quick links raise on the tab they already stand on, and the tabs listen for.
+ * BOTH ends read this map now (REG-286): overview.tsx used to `dispatchEvent` bare string literals, so a rename here
+ * would silently disconnect the two halves. `questionnaire: 'om:questionnaire:add'` went with it — the Add Question
+ * quick link was removed in REG-246, so nothing raised it and nothing listened for it.
+ * `contracts` / `files` have live listeners waiting on a quick link that does not exist yet (see their tabs).
  */
 export const CREATE_EVENTS = {
   tasks: 'om:tasks:add',
   quotes: 'om:quotes:new',
   contracts: 'om:contracts:new',
   notes: 'om:notes:new',
-  questionnaire: 'om:questionnaire:add',
   files: 'om:files:upload',
 } as const
 

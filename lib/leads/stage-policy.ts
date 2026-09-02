@@ -31,6 +31,55 @@ export function blockedReason(lead: Pick<LeadRow, 'stage' | 'resumeStage' | 'ass
   return `Complete ${STAGES[from + 1]} first`
 }
 
+/* ── The stage-movement dispatch, once (REG-286) ───────────────────────────────────────────────────────────
+   `requestStageChange` used to be written twice — once in app/leads/workspace.tsx (listing table + kanban) and
+   once in app/leads/[id]/overview.tsx (Lead Details pill / stages card / quick links) — and the copies had
+   already drifted (the audit found the Details copy dropping a failed flexible move on the floor: no snackbar,
+   no change). The BRANCH SET is the product rule (REG-111 … REG-132), so it lives here as one pure decision and
+   each surface only maps the intent onto its own dialogs, snackbar and (on the listing) the held kanban drop.
+   Order matters and is the register's: already there → On Hold → Lost → parked resume → completed stage →
+   linear gate → Won → flexible quick move. */
+export type StageIntent =
+  /** The lead is already in that stage — nothing to do. */
+  | { kind: 'none' }
+  /** On Hold / Lost keep their compact dialogs (REG-111). */
+  | { kind: 'hold' }
+  | { kind: 'lost' }
+  /** The gate refuses this stage; `message` is the snackbar copy (same string the dropdown shows as a tooltip). */
+  | { kind: 'blocked'; message: string }
+  /** A parked lead resuming: the "Resume at X?" confirm, then a quick move. */
+  | { kind: 'confirm-resume'; stage: Stage }
+  /** The Move stage window: the next stage in linear, Won always (it creates the project), a completed stage read-only. */
+  | { kind: 'wizard'; stage: Stage }
+  /** Flexible: move now, Undo in the snackbar. */
+  | { kind: 'quick'; stage: Stage }
+
+/** What choosing `stage` for `lead` means right now. Pure — the caller owns the dialogs and the snackbar. */
+export function stageIntent(
+  lead: Pick<LeadRow, 'stage' | 'resumeStage' | 'assignees'>,
+  stage: Stage,
+  mode: StageMovement,
+): StageIntent {
+  if (lead.stage === stage) return { kind: 'none' }
+  if (stage === 'On Hold') return { kind: 'hold' }
+  if (stage === 'Lost') return { kind: 'lost' }
+  const from = journeyIdx(lead), to = STAGES.indexOf(stage as ActiveStage)
+  // A parked lead (On Hold / Lost) resuming really changes where it is — one confirm, any stage the gate allows.
+  // That gate is what keeps a Lost lead's un-reached stages shut (REG-225); active leads keep their path below.
+  if (!isActiveStage(lead.stage)) {
+    const parkedBlock = blockedReason(lead, stage, mode)
+    return parkedBlock ? { kind: 'blocked', message: parkedBlock } : { kind: 'confirm-resume', stage }
+  }
+  // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
+  if (to <= from) return { kind: 'wizard', stage }
+  if (mode === 'linear') {
+    if (to === from + 1) return { kind: 'wizard', stage }
+    return { kind: 'blocked', message: blockedReason(lead, stage, mode) ?? `Complete ${STAGES[from + 1]} first` }
+  }
+  if (stage === 'Won') return { kind: 'wizard', stage }
+  return { kind: 'quick', stage }
+}
+
 /** A stage the lead has already passed (never a drop target — REG-132). */
 /**
  * Return Lead (931:49039) is offered to Qanvast-sourced leads only (REG-139) and not while a return is processing or already

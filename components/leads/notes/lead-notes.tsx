@@ -2,22 +2,26 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ds'
+import { Button, Link } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
+import { LinkButton } from '@/components/leads/move-stage/fields'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateWeekday, formatInputDateTime } from '@/lib/format'
-import { draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, nextStepFor, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
+import { displayDateTimeDot, displayDateWeekday, formatInputDateTime } from '@/lib/format'
+import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, nextStepFor, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
 import type { LeadNotesData } from '@/lib/leads/notes'
+import { filterByQuery } from '@/lib/search'
 import { createNote, deleteNote, setNoteAttachments, updateNote } from '@/app/leads/notes-actions'
 import { createTask } from '@/app/leads/tasks-actions'
 import { NotesList } from './notes-list'
 import { NoteEditor } from './note-editor'
 import { ContactEditor } from './contact-editor'
-import { PaneToolbar } from './pane-toolbar'
+import { PaneHeader, PaneToolbar } from './pane-toolbar'
+import { NotesToolbar } from './notes-toolbar'
 import { AttachmentsColumn } from './attachments-column'
 import { DeleteNoteDialog } from './delete-dialog'
 import styles from './lead-notes.module.css'
@@ -36,7 +40,9 @@ import styles from './lead-notes.module.css'
  * (`contactEditing`); validation shows after the first Save (`showErrors`). A saved draft / edit stays on screen until the
  * revalidated data carries it (`savedDraftId` / `pending`, retired in the render-phase adjust) so nothing flashes back.
  * `pending[id]` is the snapshot that went to the server (normalised = what the row will read back), so keystrokes typed
- * while the save is in flight never stop it from settling — they simply keep the note dirty afterwards.
+ * while the save is in flight never stop it from settling — they simply keep the note dirty afterwards. The create path
+ * has the same answer since REG-286: the draft's keystrokes are carried onto the new row as its edit (adjust 1) and the
+ * editor keeps the draft's key across the handover, so nothing is remounted and nothing is typed into a dying draft.
  */
 
 const DRAFT_ID = 'draft'
@@ -70,12 +76,25 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const [draft, setDraft] = useState<DraftItem | null>(() => (notes.length ? null : freshDraft('note', now)))
   const [selectedId, setSelectedId] = useState<string | null>(() => (notes.length ? notes[0]!.id : DRAFT_ID))   // the top item — newest first (REG-262)
   const [filter, setFilter] = useState<NoteFilter>('all')
+  const [query, setQuery] = useState('')   // the list's search (REG-275) — matched against what an item shows, below
   const [edits, setEdits] = useState<Record<string, NoteDraft>>({})
   const [contactEditing, setContactEditing] = useState<Set<string>>(() => new Set())
   const [showErrors, setShowErrors] = useState<Set<string>>(() => new Set())
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedDraftId, setSavedDraftId] = useState<string | null>(null)   // createNote's id — the draft retires once the data carries it
   const [pending, setPending] = useState<Record<string, NoteDraft>>({})   // updateNote'd ids → the saved snapshot; the edit retires once the data carries it
+  /* (REG-286) The row a draft just became, with the key the editor wore while it was that draft — see `editorKey`. */
+  const [carried, setCarried] = useState<{ id: string; key: string } | null>(null)
+  /* Mobile master-detail push (REG-269): ≤767 the list is the screen; selecting shows the pane full-width with
+     a back affordance. Back never clears selectedId — the CSS just swaps which half shows; inert ≥768. */
+  const [mobilePane, setMobilePane] = useState(false)
+  /* (REG-294, user 2026-09-02: "when i start typing within search bar ... it moves to note editor automatically")
+     Whether the editor about to mount may take the caret. The editor is keyed on the item, so a new selection
+     REMOUNTS it and its first field's autoFocus fires. That is right when the user chose the item (clicked a row,
+     pressed New) and wrong when the selection moved on its own — which is what searching does: the query narrows
+     the list, the selected row drops out, the fallback below picks another, and the caret was stolen out of the
+     search box mid-word. So intent, not mounting, decides. */
+  const [mayFocusEditor, setMayFocusEditor] = useState(true)
 
   /* ── overlays ── */
   const [deleting, setDeleting] = useState<{ id: string; kind: NoteKind } | null>(null)
@@ -94,9 +113,23 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     return edits[id] ?? draftFrom(n)
   }
 
+  /** (REG-286) The editor's key while a draft is open — per draft SESSION, so the next draft still remounts it. */
+  const draftKey = draft ? `draft-${draft.createdAt}` : DRAFT_ID
+
   /* ── render-phase adjusts (no setState in effects) ── */
   // 1. The saved draft arrived with the revalidated data: retire the draft and select the real note.
-  if (savedDraftId && byId.has(savedDraftId)) { setSavedDraftId(null); setDraft(null); setSelectedId(savedDraftId) }
+  if (savedDraftId && byId.has(savedDraftId)) {
+    const row = byId.get(savedDraftId)!
+    setSavedDraftId(null)
+    /* (REG-286, audit "the create path has no equivalent of `pending`"): anything typed while createNote was in
+       flight lives in the draft alone, and retiring the draft used to throw it away. The update path parks such
+       keystrokes in `edits` and lets the autosave commit them — so the create path parks them there too. */
+    if (draft && !same(normalise(fieldsOf(draft)), draftFrom(row))) { const typed = fieldsOf(draft); setEdits((e) => ({ ...e, [savedDraftId]: typed })) }
+    setDraft(null)
+    /* (REG-286) Take the selection only while the draft is still what is on screen: a save flushed on the way
+       out (the autosave block below) must not yank the user back off the item they had moved to. */
+    if (selectedId === DRAFT_ID) { setSelectedId(savedDraftId); setCarried({ id: savedDraftId, key: draftKey }) }
+  }
   // 2. Saved edits arrived (the row now reads as the snapshot that was sent, or the note went): the save has settled.
   //    The edit is dropped — and editing left — only where it still equals the row; anything typed meanwhile stays dirty.
   const settled = Object.keys(pending).filter((id) => { const n = byId.get(id); const snap = pending[id]; return !n || !snap || same(snap, draftFrom(n)) })
@@ -110,23 +143,43 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   // 3. Nothing left at all → the blank note draft again (frame 79).
   if (!draft && notes.length === 0 && !savedDraftId) setDraft(freshDraft('note', now))
 
-  // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all —
-  // then the filter's notes as the query orders them (created desc).
+  /* Search (REG-275, lib/search.ts): a row matches what it SHOWS — its title, its secondary line and the date the
+     list prints (`displayDateTimeDot`, the list's own formatter, never the raw timestamp) — plus the note's BODY as
+     plain text: the secondary line IS the body's first line, so a body hit is what the row summarises. `bodyText`
+     strips the rich markup (REG-252) so "div" matches nothing. Rows carry their live fields (an unsaved edit
+     included) so the search reads the same words the item shows. No phone column here — notes hold no numbers. */
+  /* (REG-293) The scope pill's totals — every item the list can hold, before the scope and the query, the draft
+     included (it is in the list and never filtered out). The listing's stage counts read the same way. */
+  const kinds = [...notes.map((n) => (edits[n.id] ?? draftFrom(n)).kind), ...(draft ? [draft.kind] : [])]
+  const counts: Record<NoteFilter, number> = {
+    all: kinds.length,
+    note: kinds.filter((k) => k === 'note').length,
+    contact: kinds.filter((k) => k === 'contact').length,
+  }
+  const rows = filterNotes(notes, filter).map((n) => ({ note: n, cur: edits[n.id] ?? draftFrom(n) }))
+  const matched = filterByQuery(rows, query, ({ note, cur }) => ({
+    fields: [listTitle(cur), listSecondary(cur), bodyText(cur.body), displayDateTimeDot(note.createdAt)],
+  }))
+  // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all, and it is
+  // never filtered out (no chip and no query hides the thing you are typing) — then the matched notes (created desc).
   const items = [
     ...(draft ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
-    ...filterNotes(notes, filter).map((n) => { const cur = edits[n.id] ?? draftFrom(n); return { id: n.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: n.createdAt, locked: n.origin === 'stage' } }),
+    ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: note.createdAt, locked: note.origin === 'stage' })),
   ]
   // 4. Selection follows the visible list: default = the draft, else the top item — the newest.
   if (!(selectedId && items.some((i) => i.id === selectedId))) {
     const fallback = draft ? DRAFT_ID : (items[0]?.id ?? null)
-    if (fallback !== selectedId) setSelectedId(fallback)
+    if (fallback !== selectedId) { setSelectedId(fallback); setMayFocusEditor(false) }   // (REG-294) nobody asked for this one
   }
+  // 5. (REG-286) The key a note carried over from its draft lasts only while that note stays selected.
+  if (carried && carried.id !== selectedId) setCarried(null)
 
   /** New ▾ › Note / Contact Log, the Overview quick link and `?new=`: one draft at a time — a dirty draft is kept (and selected) rather than replaced. */
   const startDraft = useCallback((kind: NoteKind) => {
     const at = Date.now()
     setDraft((prev) => (prev && draftDirty(prev) ? prev : freshDraft(kind, at)))
     setSelectedId(DRAFT_ID)
+    setMayFocusEditor(true)   // New ▾ exists to start typing (REG-294)
   }, [])
 
   // Create quick links › Note lands here with ?new=note|contact (one draft, then the param is dropped — as lead-quotes.tsx);
@@ -139,7 +192,12 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
 
   /* ── per-item handlers ── */
   const select = (id: string) => {
+    /* (REG-286) Autosave's safety net (`flushLeft`, the autosave block below): the item being left commits now
+       instead of losing the debounce it was waiting on. Contact logs are never armed — their Cancel / Save stands. */
+    flushLeft(id)
     setSelectedId(id)
+    setMayFocusEditor(true)   // the user picked this item — the caret belongs in it (REG-294)
+    setMobilePane(true)   // ≤767 the pane takes the screen (REG-269); inert at every wider width
     // Leaving a pristine draft drops it (nothing typed, nothing lost); a dirty draft keeps its row (plan › Rules).
     if (id !== DRAFT_ID && notes.length) setDraft((prev) => (prev && !draftDirty(prev) ? null : prev))
   }
@@ -164,7 +222,12 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     if (id === DRAFT_ID) setDraft(null)   // adjust 3 brings a blank draft back when the lead has no notes
     else clearEdit(id)
   }
+  /* (REG-286) One save in flight per item. The debounce and a flush can fire for the same item inside one tick
+     (leaving the tab flushes exactly what the timer was about to send), and `savingId` cannot stop the second —
+     it is state the flush's closure has not seen yet. The ref is read in handlers and effect cleanups only. */
+  const inflight = useRef<Set<string>>(new Set())
   const save = async (id: string) => {
+    if (inflight.current.has(id)) return
     const cur = currentOf(id); if (!cur) return
     const d = normalise(cur)
     if (Object.keys(validateDraft(d)).length) {
@@ -176,19 +239,25 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
        log's explicit Save gets the toast. */
     const done = d.kind === 'contact' ? 'Contact log saved' : null
     if (id === DRAFT_ID) {
+      /* One draft creates ONE note (REG-285). `savingId` clears the moment createNote resolves, while the draft
+         is still mounted and still dirty — so the autosave key went live again and, if the revalidated data did
+         not yet carry the new row (a read replica behind the write, split read/write services, a dropped
+         revalidation), the 900ms debounce fired createNote again, and again. `savedDraftId` is set for the rest
+         of the draft's life, so it is the durable guard the in-flight flag cannot be. */
+      if (savedDraftId) return
       const fileIds = draft?.fileIds ?? []
-      setSavingId(id)
+      inflight.current.add(id); setSavingId(id)
       try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (done) snackbar({ message: done }) }
       catch { fail(`save the ${noun}`) }
-      finally { setSavingId(null) }
+      finally { inflight.current.delete(id); setSavingId(null) }
       return
     }
     const n = byId.get(id); if (!n) return
     if (same(d, draftFrom(n))) { clearEdit(id); return }   // nothing changed — just leave editing
-    setSavingId(id)
+    inflight.current.add(id); setSavingId(id)
     try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (done) snackbar({ message: done }) }
     catch { fail(`save the ${noun}`) }
-    finally { setSavingId(null) }
+    finally { inflight.current.delete(id); setSavingId(null) }
   }
 
   const itemMenu = (id: string, action: 'edit' | 'delete') => {
@@ -230,6 +299,12 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const attachments: LeadFile[] = selectedId === DRAFT_ID
     ? (draft?.fileIds ?? []).map((id) => fileById.get(id)).filter((f): f is LeadFile => !!f)
     : (selectedNote?.attachments ?? [])
+  /* (REG-286, audit "the draft → saved handover remounts the editor") The editor's identity. Normally the item's
+     id — moving to another item must tear the editor down (fresh autoFocus, fresh body). The exception is the
+     draft becoming its own saved row: the SAME item under a new id, so it keeps the key it wore as a draft and
+     the editor is never remounted mid-save — the caret stays where the user is typing instead of being thrown
+     back to Title, which is what `key={selectedId}` did the moment DRAFT_ID turned into the real id. */
+  const editorKey = selectedId === DRAFT_ID ? draftKey : carried?.id === selectedId ? carried.key : selectedId
   const isDirty = (id: string) => (id === DRAFT_ID ? (draft ? draftDirty(draft) : false) : !!edits[id] && !pending[id])
   const isEditing = (id: string) => (id === DRAFT_ID ? !!draft?.editing : contactEditing.has(id))
   const errorsFor = (id: string, d: NoteDraft) => ((id === DRAFT_ID ? !!draft?.showErrors : showErrors.has(id)) ? validateDraft(d) : {})
@@ -240,49 +315,126 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
      explicit Edit → Save — structured fields need a validation commit point. */
   const saveRef = useRef(save)
   useEffect(() => { saveRef.current = save })
-  const autosaveKey =
-    selectedId && selected && selected.kind === 'note' && savingId !== selectedId && isDirty(selectedId)
-      ? `${selectedId} ${JSON.stringify(fieldsOf(selected))}`
-      : null
+  /** Every item that owes the DB a save of its own: the dirty draft and any dirty NOTE edit, minus whatever is
+   *  already in flight. Contact logs are never here — they commit through their explicit Save (validation needs
+   *  a commit point), and a stage-derived log is not editable at all (REG-265). */
+  const autosaveIds = [
+    /* `!savedDraftId` (REG-285): once the draft has been created, it is waiting to be replaced by its real
+       row — scheduling another save for it would create a second note. */
+    ...(draft && draft.kind === 'note' && !savedDraftId ? [DRAFT_ID] : []),
+    ...Object.entries(edits).filter(([, e]) => e.kind === 'note').map(([id]) => id),
+  ].filter((id) => isDirty(id) && savingId !== id && !isStage(id) && (id === DRAFT_ID || byId.has(id)))
+  const autosaveId = selectedId && autosaveIds.includes(selectedId) ? selectedId : null
+  const autosaveKey = autosaveId && selected ? `${autosaveId} ${JSON.stringify(fieldsOf(selected))}` : null
   useEffect(() => {
-    if (!autosaveKey) return
-    const id = autosaveKey.slice(0, autosaveKey.indexOf(' '))
-    const t = setTimeout(() => { void saveRef.current(id) }, 900)
+    if (!autosaveId || !autosaveKey) return
+    const t = setTimeout(() => { void saveRef.current(autosaveId) }, 900)
     return () => clearTimeout(t)
-  }, [autosaveKey])
+  }, [autosaveId, autosaveKey])
+
+  /* (REG-286, audit "typing is lost when you leave the tab inside the debounce" + "only the selected note ever
+     autosaves") — the debounce is the common case; the two below are the safety net, at the moments the timer
+     would otherwise be thrown away with the text still in memory and nowhere else:
+       · LEAVING THE ITEM — `flushLeft` runs from the handlers that move the selection (`select`, and New ▾ in
+         the list below), so what is being left commits at once. It is also the answer to the second finding:
+         a note left dirty while another is selected can no longer sit unsaved forever. Flushing on the switch,
+         rather than running a debounce per dirty note, keeps ONE timer and makes the moment that ends the edit
+         the moment that ends the save. A handler runs after the commit, so it sees the state on screen —
+         nothing here can resurrect a draft that was deleted in the same breath.
+       · LEAVING THE TAB — the unmount cleanup commits EVERYTHING still owed. It covers the selection moving on
+         its own (a filter hiding the note being edited leaves a dirty edit nobody is watching) and a flush that
+         failed. `owedRef` is written after each commit, and unmount is always a later tick than the state it
+         reads, so it cannot resurrect anything either. `save`'s in-flight guard makes an overlap a no-op. */
+  const flushLeft = (staying: string | null) => { if (autosaveId && autosaveId !== staying) void save(autosaveId) }
+  const owedRef = useRef<string[]>([])
+  useEffect(() => { owedRef.current = autosaveIds })
+  useEffect(() => () => { owedRef.current.forEach((id) => { void saveRef.current(id) }) }, [])
+
+  /* The selected item's id when it is a contact log — the pane header's actions all act on that one id
+     (and it narrows `selectedId` for them, which `selected.kind` alone cannot). */
+  const contactId = selectedId && selected?.kind === 'contact' ? selectedId : null
 
   return (
-    <div className={styles.card}>
+    /* data-pane drives the ≤767 master-detail push (REG-269): the list is the screen until an item is
+       chosen, then the pane is. Both halves stay mounted — CSS swaps which one shows — so nothing
+       remounts and the editor keeps its state. */
+    <div className={styles.tab}>
+      {/* (REG-293) The tab's own row, as every sibling has: the "All Notes & Logs (n) ▾" scope pill (the kind chips'
+          successor) and the search on the left, New ▾ on the right — the lead listing's bar over one list. */}
+      <NotesToolbar
+        filter={filter} onFilter={setFilter} counts={counts}
+        query={query} onQuery={setQuery}
+        /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
+        onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
+      />
+      <div className={styles.card} data-pane={mobilePane || undefined}>
       <div className={styles.list}>
         <NotesList
           items={items}
-          filter={filter} onFilter={setFilter}
+          searching={query.trim() !== ''}
+          /* (REG-275) Clear All = the sibling tabs' — the query goes and the scope goes back to All Notes & Logs. */
+          onClearAll={() => { setQuery(''); setFilter('all') }}
           selectedId={selectedId} onSelect={select}
-          onNew={startDraft}
           onItemMenu={itemMenu}
         />
       </div>
       <div className={styles.pane}>
+        {/* Mobile-only back affordance, above the pane's own content (hidden ≥768 by CSS). */}
+        <button type="button" className={styles.back} onClick={() => setMobilePane(false)}>
+          <Icon name="arrow_back" size={24} weight={300} />
+          Notes
+        </button>
+
+        {/* The pane toolbar, back at the TOP (REG-277, owner 2026-09-01: REG-254 had docked it to the foot and
+            "it doesn't look good"). This is the mock's own placement again (931:44905, 68px with a bottom rule).
+            Formatting runs on whichever rich body holds the selection — execCommand is deprecated but universal,
+            the right size for the prototype (REG-252) — and shows disabled while nothing is editable. */}
+        {/* (REG-291, user 2026-09-02) Not for a contact log: it is all fields, so there is no rich text to
+            format and nothing for Maison AI to refine — the bar and its rule would only be dead weight above
+            a form. Notes keep it, and so does an empty pane (nothing selected), where it shows disabled. */}
+        {contactId ? (
+          /* (REG-292) The contact log's own header: the kind on the left, the actions that used to sit inline
+             with the block title (REG-256 Edit · Auto Fill · the REG-268 lock hint) on the right. It has to be
+             a child of the pane, not of the editor, so the rule spans the pane and the fields scroll under it. */
+          <PaneHeader title="Contact log">
+            {isEditing(contactId)
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
+              : isStage(contactId) ? (
+                <span className={styles.lockHint}>
+                  <Icon name="lock" size={14} />
+                  Added during stage movement — view only
+                </span>
+              ) : <Link variant="primary" onPress={() => edit(contactId)}>Edit</Link>}
+          </PaneHeader>
+        ) : (
+          <PaneToolbar
+            title={selected ? 'Note' : undefined}
+            onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
+            onRefine={comingSoon}
+            onFormat={(cmd) => document.execCommand(cmd)}
+            formattingDisabled={!selectedId || !selected}
+          />
+        )}
         <div className={styles.body}>
           <div className={styles.editor}>
             {selectedId && selected ? (
               selected.kind === 'contact' ? (
                 <ContactEditor
-                  key={selectedId}
+                  key={editorKey}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
                   errors={errorsFor(selectedId, selected)}
                   editing={isEditing(selectedId)}
-                  locked={isStage(selectedId)}
-                  onEdit={() => edit(selectedId)}
-                  onAutoFill={() => setAutoFillFor(selectedId)}
+                  autoFocus={mayFocusEditor}
                   today={new Date(now)}
                 />
               ) : (
                 <NoteEditor
-                  key={selectedId}
+                  key={editorKey}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
+                  autoFocus={mayFocusEditor}
                 />
               )
             ) : null}
@@ -296,27 +448,16 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           ) : null}
         </div>
 
-        {/* The pane's bottom bar (REG-254 — the mock's top toolbar 931:44905 moved to the foot, where it sits
-            beside the body it formats): formatting + attach + AI at the left, and the contextual actions at the
-            right — Edit for a read-only contact log, Cancel · Save while an editor has something to decide.
-            Formatting runs on whichever rich body holds the selection — execCommand is deprecated but universal,
-            the right size for the prototype (REG-252) — and shows disabled while nothing is editable. */}
-        <PaneToolbar
-          onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
-          onRefine={comingSoon}
-          onFormat={(cmd) => document.execCommand(cmd)}
-          formattingDisabled={!selectedId || !selected || (selected.kind === 'contact' && !isEditing(selectedId))}
-          end={
-            /* Cancel · Save are the CONTACT LOG's commit point only (REG-256/263): notes autosave, so while a
-               note is selected the bar's end stays empty — Apple-notes style. */
-            selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) ? (
-              <>
-                <Button variant="secondary" appearance="outlined" onPress={() => cancel(selectedId)} isDisabled={savingId === selectedId}>Cancel</Button>
-                <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save</Button>
-              </>
-            ) : null
-          }
-        />
+        {/* Cancel · Save return to a footer at the pane's foot (REG-277) — the frame-80 row the editors carried
+            before REG-254 moved them into the bar. Still the CONTACT LOG's commit point alone: notes autosave
+            (REG-263), so a selected note shows no footer at all. */}
+        {selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) ? (
+          <div className={styles.footer}>
+            <Button variant="secondary" appearance="outlined" onPress={() => cancel(selectedId)} isDisabled={savingId === selectedId}>Cancel</Button>
+            <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save</Button>
+          </div>
+        ) : null}
+      </div>
       </div>
 
       <AttachFilesModal

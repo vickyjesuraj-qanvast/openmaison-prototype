@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -36,19 +37,9 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
    ~550px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
-   Same helper as the quotes twin (components/leads/quotes/quotes-table.tsx), after the kanban card kebab. */
-const MENU_H = 6 * 36 + 8 + 2   /* menus.module.css: the six items at 36 + the list's 4px padding + its 1px border = 226 */
-const MENU_GAP = 4              /* the Dropdown hangs at calc(100% + 4px) */
-function menuSideFor(trigger: HTMLElement): 'up' | 'down' {
-  let top = 0, bottom = window.innerHeight
-  for (let n = trigger.parentElement; n; n = n.parentElement) {
-    if (getComputedStyle(n).overflowY === 'visible') continue   /* only a clipping ancestor (the lead body) can cut the menu off */
-    const r = n.getBoundingClientRect()
-    top = Math.max(top, r.top); bottom = Math.min(bottom, r.bottom)
-  }
-  const k = trigger.getBoundingClientRect(), need = MENU_H + MENU_GAP
-  return bottom - k.bottom < need && k.top - top >= need ? 'up' : 'down'
-}
+   (REG-286) The measurement was copied from the quotes twin into this file verbatim; both now call the one shared
+   rule in components/leads/menu-side.ts. The row kebab draws six items. */
+const MENU_ITEMS = 6
 
 /**
  * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
@@ -86,7 +77,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu }: Contr
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === contract.id}
           onMenuToggle={(trigger) => {
-            if (menuRow !== contract.id) setMenuSide(menuSideFor(trigger))   /* measure the room below the kebab before it opens */
+            if (menuRow !== contract.id) setMenuSide(menuSideFor(trigger, MENU_ITEMS))   /* measure the room below the kebab before it opens */
             setMenuRow((m) => (m === contract.id ? null : contract.id))
           }}
           onMenuClose={() => setMenuRow(null)}

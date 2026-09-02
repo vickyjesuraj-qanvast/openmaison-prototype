@@ -39,7 +39,9 @@
 .tab[data-active] { background: var(--om-color-surface-default); }
 .tab span:first-child { flex: 1; }
 /* "Filter Option with Dot" — the listing's dot (6px primary) */
-.tabDot { width: 6px; height: 6px; border-radius: 50%; background: var(--om-color-primary-default); }
+/* The listing's copy (components/leads/filters-modal.module.css) moved to the radius token and the copies did
+   not; on a 6px box 999px and 50% draw the same circle, so this only puts the copies back in step (REG-286). */
+.tabDot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); }
 
 /* "Filter content" 440×536, V g16 p24 */
 .content { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); overflow-y: auto; overscroll-behavior: contain; }
@@ -83,6 +85,48 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
-  box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--om-shadow-modal-footer);   /* app/globals.css, same value (REG-286) */
   flex-shrink: 0;
+}
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   This panel carries its own overlay instead of components/om/dialog, so it repeats that shell's rules —
+   the listing filters modal (components/leads/filters-modal.module.css) verbatim, since it is the same
+   600×600 shell: clamped to the viewport tablet-and-down, a full-screen sheet at mobile (600px on a 390
+   screen put Clear All / Apply off-screen). The 160px tab rail stays — it is the mock's navigation — and
+   the group side takes the mobile content padding (24 → 16) plus the two rows that were drawn at a fixed
+   width: the sort row and the two-up date range, both now full width. */
+@media (max-width: 1199px) {
+  .panel { max-width: calc(100vw - 48px); }
+}
+@media (max-width: 767px) {
+  .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  .panel {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  .content { padding: var(--om-spacing-4); }
+  .sortRow { width: 100%; }
+  .dateRow { flex-direction: column; }
+  .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Four controls in this modal are smaller than a fingertip. Each keeps its drawn size and grows only its
+   BOX, so the mock's 64px heading, 44px rows and 32px chips all measure the same:
+   · close — a bare 24px glyph: padding out to 40, the same 8px handed back as margin;
+   · Choice chips (32 tall) and the footer's 36px DS buttons: a transparent ring, which takes no space;
+   · the Sort radios — a DS Radio's own label is only as big as its mark plus its text, so the label is
+     stretched over the whole 44px row (the row's padding moves onto the label; nothing shifts).
+   The status rows already answer a press anywhere on their 44px box; they only stop clamping their
+   checkbox, which globals grows to 40 on touch. A mouse never sees any of this. */
+@media (hover: none) {
+  .close { padding: var(--om-spacing-2); margin: calc(var(--om-spacing-2) * -1); }
+  .chip, .footer button { position: relative; }
+  .chip::after { content: ''; position: absolute; inset: -4px 0; }         /* 32 → 40 tall, same width */
+  .footer button::after { content: ''; position: absolute; inset: -2px; }  /* 36 → 40 */
+  .sortRow { padding-block: 0; }
+  .sortRow label { min-block-size: 44px; inline-size: 100%; }
+  .row { height: auto; min-height: 44px; }
 }

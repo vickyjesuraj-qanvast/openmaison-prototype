@@ -1,5 +1,6 @@
 import type { LeadFile, Member } from '@/lib/db/schema'
 import { displayDateWeekday, startOfDay } from '@/lib/format'
+import { filterByQuery } from '@/lib/search'
 
 /* Lead Details › Files (931-39056) — pure model shared by the grid, the list, the move dialog and the viewer. */
 
@@ -53,8 +54,17 @@ export function groupByDay<T extends LeadFile>(files: T[]): { day: number; label
   return [...map.entries()].sort((a, b) => b[0] - a[0]).map(([day, list]) => ({ day, label: displayDateWeekday(new Date(day)), files: list }))
 }
 
-/** Search matches the name (files and folders alike, across every folder — a hit outside the open folder is still a hit). */
-export function searchFiles<T extends LeadFile>(files: T[], query: string): T[] {
-  const q = query.trim().toLowerCase()
-  return q ? files.filter((f) => f.name.toLowerCase().includes(q)) : files
+/**
+ * Search across every folder — a hit outside the open folder is still a hit — over what the row / tile prints
+ * (REG-274, user 2026-09-01 "look at the other pages"): name · owner name (the Owner cell, not the member id) ·
+ * file type label ("JPEG" / "PDF" / "Folder", the same `fileTypeLabel` the File type cell prints) · "Attached to"
+ * ("Task" / "Note" / "Return"). The name was the only searchable field before, so a file could not be found by its
+ * owner or its type. One helper serves both views (the grid and the list read the same rows).
+ * The generic stays open so a caller holding bare `LeadFile` rows still type-checks — those simply carry no owner or
+ * attachment to match on.
+ */
+export function searchFiles<T extends LeadFile & Partial<Pick<FileRow, 'owner' | 'attachedTo'>>>(files: T[], query: string): T[] {
+  return filterByQuery(files, query, (f) => ({
+    fields: [f.name, f.owner?.name, fileTypeLabel(f), f.attachedTo],
+  }))
 }

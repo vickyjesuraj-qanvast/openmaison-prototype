@@ -9,9 +9,11 @@ import { SegmentedIconToggle } from '@/components/om/segmented'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Dropzone } from '@/components/leads/move-stage/fields'
 import { modalPanel, overlayFade, snackbarRise } from '@/lib/motion'
 import { displayDate, startOfDay } from '@/lib/format'
+import { filterByQuery } from '@/lib/search'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './attach-files-modal.module.css'
 
@@ -55,6 +57,14 @@ export function AttachFilesModal({
   const [toastCollapsed, setToastCollapsed] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /* (REG-287) `aria-modal` promised assistive tech the page behind is inert, but the panel only locked scrolling:
+     Tab from the last control walked straight back out. The app's surface policy does all three (components/om/surface.ts,
+     as in components/om/dialog.tsx): Esc closes the TOPMOST surface only (the date picker / a portal menu above wins
+     first), focus moves onto the panel on open — unless a field inside already autofocused — Tab cycles inside it, and
+     focus returns to the opener on close. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
 
   // Fresh state per opening (render-phase adjust): selection = what the task already has.
   if (open !== wasOpen) {
@@ -62,16 +72,15 @@ export function AttachFilesModal({
     if (open) { setSelected(new Set(attached)); setQuery(''); setUploaded([]); setToast(null); setToastCollapsed(false) }
   }
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onClose() } }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   const all = [...uploaded, ...files]
-  const q = query.trim().toLowerCase()
-  const shown = q ? all.filter((f) => f.name.toLowerCase().includes(q)) : all
+  /* Search matches everything a tile shows (REG-274): the file name, the kind caption under it ("pdf" / "image"),
+     and the day heading the tile sits under, formatted by this modal's own `dayLabel` ("Friday, 17 Jul ’26") so a
+     search for a day keeps that whole group. Folders carry neither a kind caption nor a day heading — they render
+     under "Folders" — so they match on their name alone. Name-only was the previous rule. */
+  const shown = filterByQuery(all, query, (f) => ({
+    fields: f.kind === 'folder' ? [f.name] : [f.name, f.kind, dayLabel(f.createdAt)],
+  }))
   const folders = shown.filter((f) => f.kind === 'folder')
   const items = shown.filter((f) => f.kind !== 'folder')
   // One group per calendar day, newest day first (the spec shows a single day; the order is the library's — recent on top).
@@ -119,7 +128,11 @@ export function AttachFilesModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Attach files">
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                      role="dialog" aria-modal aria-label="Attach files" tabIndex={-1}>
             {/* Heading 64 (p20/24): title 20/Bold · bare 24px close · 1px rule — the modal header standard (779:26016). */}
             <div className={styles.heading}>
               <span className={styles.title}>Attach files</span>

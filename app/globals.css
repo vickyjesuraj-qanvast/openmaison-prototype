@@ -9,17 +9,40 @@
 @import '@openmaison/tokens/css/theme-dark.css';
 
 :root {
-  /* Prototype-level layout constants (the DS defines no breakpoint tokens). */
-  --app-header-height: 60px;
-  --app-bottom-nav-height: 56px;
-  --app-side-nav-width: 200px;
-  --app-side-nav-rail-width: 48px;
-  --app-content-max: 1160px;
+  /* Responsive system (REG-269, design-source/context/responsive.md): mobile ≤767 · tablet 768–1199 ·
+     desktop ≥1200 (the mocked design, unchanged). Media queries cannot read custom properties, so every
+     stylesheet writes the literals `(max-width: 767px)` and `(max-width: 1199px)`. The stale --app-*
+     constants that disagreed with the real shell (rail 52/216) were removed with them. */
+  --app-mobile-bar-height: 56px;   /* mobile-nav.module.css .bar — sticky offsets below it derive from this */
   /* Space every page keeps below its last content so the Maison AI FAB (48px, 24px inset) never overlaps it: 24 + 48 + 16. */
   --fab-clearance: 88px;
   /* Modal widths (designer rule, 2026-08-29): s 400 · m 600 · l 800 · xl 1200; height follows content (capped to the viewport).
      xxl is fluid: no set width, a 48px margin on every side (viewport − 96 both ways), centred. */
   --om-modal-s: 400px; --om-modal-m: 600px; --om-modal-l: 800px; --om-modal-xl: 1200px; --om-modal-xxl-margin: 48px;
+}
+
+/* ---------------------------------------------------------------------------
+   Shadow decisions (REG-286 — DS-consistency audit: "two shadow decisions
+   written as raw rgba in 15 stylesheets").
+
+   The only raw colours this file declares, and deliberately so: these are two
+   values the mocks draw that no --om-elevation-level-* token carries (the
+   frozen-column shadow is level-1 turned sideways, but level-1's alphas are
+   #1A / #0F, not the mocks' 0.1 / 0.06). Written once here they stop drifting
+   copy by copy; the values themselves are unchanged, so every screen renders
+   byte-identically.
+
+   · frozen column — the shadow a sticky first column casts over the scrolled
+     body, shown only while the table is scrolled sideways (user 2026-08-29).
+     `-mirrored` is the same decision cast leftwards, for a column frozen to
+     the RIGHT edge (the review sheet's "Merged result").
+   · modal footer — the lift under a modal / wizard footer whose body scrolls
+     behind it (lead form · Filters · Import wizard, mock 780:92903).
+   --------------------------------------------------------------------------- */
+:root {
+  --om-shadow-frozen-column: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06);
+  --om-shadow-frozen-column-mirrored: -1px 0 3px 0 rgba(0, 0, 0, 0.1), -1px 0 2px 0 rgba(0, 0, 0, 0.06);
+  --om-shadow-modal-footer: 0 -12px 24px -12px rgba(0, 0, 0, 0.25);
 }
 
 *,
@@ -39,7 +62,8 @@ body {
   color: var(--om-color-on-surface-default);
   font: var(--om-type-body-m);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* overflow-x: hidden was removed (REG-269): it silently clipped everything wider than the viewport, hiding
+     exactly the failures the responsive gate measures. Wide content scrolls inside its own container instead. */
 }
 
 h1,
@@ -147,6 +171,17 @@ svg {
  */
 label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; margin: 3px; }
 
+/* Touch ergonomics (REG-273): the checkbox's own label is a 24px box — half a fingertip. On a touch pointer
+   the label becomes a 40px target with the glyph still centred at its mocked 18px, and the extra is given
+   back as margin so no row shifts. A mouse (hover: hover) never sees this rule. */
+@media (hover: none) {
+  label:has(input[type='checkbox']) {
+    min-inline-size: 40px; min-block-size: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin: -8px;
+  }
+}
+
 /*
  * The DS SearchBar already draws the focus state the mocks specify — a 2px primary stroke INSIDE its own box, the
  * same single border the listing's hand-rolled search paints (components/leads/toolbar.module.css .search:focus-within).
@@ -162,6 +197,47 @@ label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; mar
  * has only one border like … the search input field"). The field keeps its own indicator; the outline drops.
  */
 textarea[class*='_textarea_']:focus-visible { outline: none; }
+
+/* Touch ergonomics (REG-273) — the two DS controls that sit under a fingertip. The design system ships them
+   at their mocked sizes and lives in node_modules, so the touch box is grown here, centrally, and ONLY for a
+   touch pointer: a DS Link is text-height (~20px) and a `sm` Button is 24px. The type and the drawn button
+   keep their sizes; the box grows around them and the extra is given back as margin, so no row reflows. */
+@media (hover: none) {
+  [class*='_link_'] { min-block-size: 40px; }
+  /* The DS SearchBar's shell is 36-40px but its <input> is only ~22px tall, so the bands above and below the
+     text did not focus it. The input fills its shell on touch; the bar's drawn geometry is unchanged. */
+  [class*='_searchBar_'] input { block-size: 100%; }
+  /* The DS's `md` control height is 36 — comfortable with a mouse, under both Apple's 44pt and Android's
+     48dp with a finger. On a touch pointer every md control stands up to 40: the type, padding rhythm and
+     radius are untouched, so the design language is the desktop's, four pixels taller. Covers DS Buttons and
+     SearchBars, the om 36px IconButton and the segmented control. */
+  [class*='_button_'][data-size='md'],
+  [class*='_searchBar_'],
+  [class*='icon-button'][data-size='36'],
+  [class*='segmented'] button { min-block-size: 40px; min-inline-size: 44px; }
+  /* A touch TABLET (768–1199) is still a finger. Several surfaces grew their controls under
+     `max-width: 767px`, which a 10" tablet never matches — so the same small-control families are lifted here
+     by pointer capability instead of width. CSS-module class names keep their authored suffix
+     (`…-module__HASH__hSort`), which is what these substring selectors match. Height only, so no row reflows;
+     the drawn control and its type are untouched. */
+  [class*='hSort'], [class*='statusBtn'], [class*='dueBtn'], [class*='tagsBtn'],
+  [class*='assignLink'], [class*='addLink'], [class*='searchInput'] { min-block-size: 40px; }
+  /* The Tasks row's status circle — the most-tapped control on that tab — draws at 24. */
+  [class*='tasks-table-module'][class*='glyph'] { min-inline-size: 40px; min-block-size: 40px; }
+  /* The rest of the small-control families, always scoped to BUTTONS so label chips (DS Tag, meta chip) are
+     never inflated: the quick-links strip's glyph tiles, the comment-count chips that open a panel, the
+     column-tune and bare icon buttons, and the review banner's open affordance. */
+  button[class*='quick-links-module'][class*='glyph'],
+  button[class*='chip'], button[class*='iconBtn'], button[class*='hTune'],
+  button[class*='review-banner-module'][class*='open'] { min-inline-size: 40px; min-block-size: 40px; }
+  /* Back arrows, chevrons, open affordances and button-shaped links, wherever a module named them. */
+  button[class*='back'], button[class*='chev'], button[class*='open'], button[class*='link']
+    { min-inline-size: 40px; min-block-size: 40px; }
+  /* NOT lifted, deliberately: an inline link inside a sentence (the Activity timeline's whole row text, a
+     brief's inline action). Growing those would break the prose line rhythm, and WCAG 2.2's target-size rule
+     exempts links in a block of text for exactly that reason. */
+  [class*='_button_'][data-size='sm'] { min-block-size: 40px; margin-block: -8px; }
+}
 
 /* Micro-motion (Figma: 50ms ease-out) applied by primitives via this token. */
 :root {

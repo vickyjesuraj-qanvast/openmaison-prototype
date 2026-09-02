@@ -16,3 +16,12 @@
 /* Legend (16 tall): "Client answered: n" left · "Studio answered: n" right, subtitle-s secondary. */
 .legend { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 .legend span:last-child { flex: 1; text-align: right; }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   "Client answered: n" and "Studio answered: n" are ~110 each; they still sit on one line at 390 (the card is
+   318 inside), but on the tablet card (~192 inside) the fixed 16px height would have cut the second one as it
+   shrank. The pair wraps to a second line there and the height becomes a floor. The 8px row gap comes from the
+   same spacing scale as the legend's own column gap. */
+@media (max-width: 1199px) {
+  .legend { flex-wrap: wrap; height: auto; min-height: 16px; row-gap: var(--om-spacing-2); }
+}

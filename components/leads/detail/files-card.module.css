@@ -61,3 +61,21 @@
   flex: 1; display: flex; align-items: center; justify-content: center;
   font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary);
 }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   Mobile: the mock's row of four (folder · file · file · "+10") becomes a 2×2 grid — the same four cells, the
+   same 8px gap, wrapped rather than shrunk, so a thumbnail on a phone is a thumbnail and not a stamp. The card
+   hands the row `slots = 4` at this width (files-card.tsx); the share below is the same arithmetic as the base
+   rule with the row count fixed at 2, so the two columns still divide the row exactly with nothing left over.
+   Tablet needs no rule: the measured row (~232px there) already picks two slots on its own. */
+@media (max-width: 767px) {
+  .tiles { flex-wrap: wrap; }
+  .tile, .more { flex: 0 0 calc((100% - var(--om-spacing-2)) / 2); }
+}
+
+/* ── Touch ergonomics (REG-273) — measured, nothing to grow ────────────────────────────────────────────────
+   The tile IS the target (the whole button — thumb, caption and all), and the 2-up rule above already makes
+   it the largest control on the Overview: at 390 the row is 318 inside the card, so each tile is 155 wide and
+   155 − 8 padding × 84:64 + 20 caption + 8 = ~140 tall; the "+n" tile shares the same cell. On the narrowest
+   tablet card the measured row still picks ~91px tiles at ~97 tall. Both are far past the 40px floor, so the
+   tiles are left exactly as the mock draws them. */

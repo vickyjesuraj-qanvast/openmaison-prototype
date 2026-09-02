@@ -128,3 +128,45 @@
 }
 .menuWrap { position: relative; display: inline-flex; }
 .danger { color: var(--om-color-tertiary-red-default); }   /* 910:36723 Delete #db382a */
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
+   `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
+@media (max-width: 1199px) {
+  /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
+     past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
+     card itself, so the sheet clipped it exactly as before. */
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
+   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+@media (hover: none) {
+  .actions { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Below 768 every control in this table is a fingertip target. The MARK never changes size — the box
+   around it does, and horizontal growth is handed straight back as a negative margin — so the type, the
+   glyphs and the mock's column rhythm are untouched. Sort (inert head button), Status (opens the status
+   menu) and Due (opens the date picker) are all drawn as bare text, i.e. ~20px tall boxes at rest.
+   The head keeps its mocked 56 (8 + 40 + 8) and the 64px row already leaves exactly 40 between its two
+   12px cell paddings, so nothing reflows. */
+@media (max-width: 767px) {
+  .head .hCell { padding-block: var(--om-spacing-2); }   /* 16/16 → 8/8: a 40px sort button still lands the head on 56 */
+  .hSort, .statusBtn, .dueBtn {
+    min-height: 40px;
+    padding-inline: var(--om-spacing-2);
+    margin-inline: calc(var(--om-spacing-2) * -1);        /* the label/date does not move: the padding pushes it back */
+  }
+  .dueBtn { display: inline-flex; align-items: center; }  /* the date centres in the taller box */
+}
+
+/* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls. On a touch
+   pointer each keeps its drawn size and gains a transparent 2px ring — a 40px target that takes no space,
+   so the float, its shadow and the 12px gap between the two stay pixel-exact (8px still clear between the
+   two targets). A mouse never sees this rule. */
+@media (hover: none) {
+  .float button { position: relative; }
+  .float button::after { content: ''; position: absolute; inset: -2px; }
+}

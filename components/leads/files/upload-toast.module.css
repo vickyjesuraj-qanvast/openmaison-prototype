@@ -40,3 +40,14 @@
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤767 the card spans the viewport minus the 16px gutters, exactly as the snackbar host does
+   (components/om/snackbar.module.css): 360 fixed at right 24 left 6px of a 390 screen. It keeps its
+   place in the bottom band — the dock offset above the FAB and `--bottom-dock` are unchanged. */
+@media (max-width: 767px) {
+  .toast { left: var(--om-spacing-4); right: var(--om-spacing-4); width: auto; }
+  /* Touch ergonomics (REG-273): the head's collapse and dismiss marks keep their 24px glyphs inside 40px
+     boxes; the extra is handed back as margin so the 56px head, its 16px gaps and the title all hold. */
+  .toastBtn { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+}

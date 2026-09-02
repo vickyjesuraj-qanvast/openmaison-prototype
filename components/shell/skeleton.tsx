@@ -47,20 +47,34 @@ const ERR_W = [72, 210, 72, 168, 72, 240]
 /*
  * How many table rows the sheet has room for. The mock draws eight because eight is what fits its frame — the real
  * listing renders every lead (36 in the base state), so the bones should reach the fold at any viewport height.
- * The first row starts 217px down (8 page pad + 68 header + 24 content pad + 36 toolbar + 24 gap + 1 border + 56 head)
- * and the table ends --fab-clearance above the bottom, so at the demo's 1024 that is 12 rows of 64 — the last one
- * running under the fold exactly as the real table does. Read through a store, not a lazy initialiser: `loading.tsx`
- * is server-rendered, and the server snapshot (the mock's eight) keeps hydration honest (quick-links.tsx does the same).
+ * The first row starts TABLE_TOP down and the table ends --fab-clearance above the bottom, so at the demo's 1024
+ * that is 12 rows of 64 — the last one running under the fold exactly as the real table does. Read through a store,
+ * not a lazy initialiser: `loading.tsx` is server-rendered, and the server snapshot (the mock's eight) keeps
+ * hydration honest (quick-links.tsx does the same).
+ *
+ * TABLE_TOP is per breakpoint, not per mock (REG-269): the desktop 217 is 8 page pad + 68 header + 24 content pad +
+ * 36 toolbar + 24 gap + 1 border + 56 head, and ≤767 that stack is a different shape — the shell trades its 8px
+ * gutter for a 56px bar (--app-mobile-bar-height, mobile-nav.module.css), the header wraps to title over actions
+ * (12 + 28 title bone + 8 + 36 + 12 = 96, page-header.module.css) and the toolbar wraps to chip / search /
+ * filters (3 × 36 + 2 × 12 = 132, toolbar.module.css and this sheet's own ≤767 rules), so
+ * 56 + 0 + 96 + 24 + 132 + 24 + 1 + 56 = 389. At 390×844 that is six rows; the desktop constant drew nine and ran
+ * the ghost ~190px past where the real table stops. 768–1199 keeps the desktop stack (nothing wraps there, and
+ * the rail stays collapsed), so it keeps the desktop constant.
  */
 const ROW_H = 64
 const TABLE_TOP = 217
+const TABLE_TOP_MOBILE = 389
+const MOBILE_MAX = 767
 const FAB_CLEARANCE = 88
 const MOCK_ROWS = 8
 const subscribeViewport = (cb: () => void) => {
   window.addEventListener('resize', cb)
   return () => window.removeEventListener('resize', cb)
 }
-const viewportRows = () => Math.max(1, Math.ceil((window.innerHeight - TABLE_TOP - FAB_CLEARANCE) / ROW_H))
+const viewportRows = () => {
+  const top = window.innerWidth <= MOBILE_MAX ? TABLE_TOP_MOBILE : TABLE_TOP
+  return Math.max(1, Math.ceil((window.innerHeight - top - FAB_CLEARANCE) / ROW_H))
+}
 const mockRows = () => MOCK_ROWS
 const useRowCount = () => useSyncExternalStore(subscribeViewport, viewportRows, mockRows)
 
@@ -81,15 +95,18 @@ export function LeadsSkeleton() {
         <div className={styles.toolbar}>
           <Bone w={132} h={36} r="var(--om-radius-1)" />
           <div className={styles.toolbarRight}>
-            <Bone w={280} h={36} r="var(--om-radius-1)" />
+            <Bone w={280} h={36} r="var(--om-radius-1)" className={styles.searchBone} />
             <Bone w={36} h={36} r="var(--om-radius-1)" />
             <Bone w={72} h={36} r="var(--om-radius-1)" />
           </div>
         </div>
         <div className={styles.tableWrap}>
-          <div className={styles.tableInner} style={{ minWidth: 1410 }}>
+          {/* data-min carries the desktop track width (a media query cannot reach an inline style); ≤1199 the
+              tracks hold and the wrap scrolls, exactly as the real table does (REG-269). */}
+          <div className={styles.tableInner} data-min="1410">
           <div className={styles.headRow}>
-            <span className={styles.col} style={{ flex: '240 0 240px' }}><Bone w={72} h={12} /></span>
+            {/* Lead Name is the listing's frozen column (table.module.css .pin) — the ghost freezes it too ≤1199. */}
+            <span className={`${styles.col} ${styles.pinCol}`} style={{ flex: '240 0 240px' }}><Bone w={72} h={12} /></span>
             <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '160 0 160px' }}><Bone w={64} h={12} /></span>
@@ -102,7 +119,7 @@ export function LeadsSkeleton() {
             const j = i % NAME_W.length   /* the mock's eight bone widths, cycled, so a taller sheet still reads as data */
             return (
             <div key={i} className={styles.row}>
-              <span className={`${styles.col} ${styles.nameCol}`} style={{ flex: '240 0 240px' }}>
+              <span className={`${styles.col} ${styles.nameCol} ${styles.pinCol}`} style={{ flex: '240 0 240px' }}>
                 <Bone w={NAME_W[j] ?? 128} h={14} /><Bone w={72} h={10} />
               </span>
               <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={STAGE_W[j] ?? 48} h={14} /><Bone w={14} h={14} r={7} /></span>
@@ -203,13 +220,12 @@ export function ImportsSkeleton() {
         <div className={styles.toolbar}>
           <Bone w={164} h={20} />
           <div className={styles.toolbarRight}>
-            <Bone w={280} h={36} r="var(--om-radius-1)" />
+            <Bone w={280} h={36} r="var(--om-radius-1)" className={styles.searchGrow} />
             <Bone w={36} h={36} r="var(--om-radius-1)" />
-            
           </div>
         </div>
         <div className={styles.tableWrap}>
-          <div className={styles.tableInner} style={{ minWidth: 1316 }}>
+          <div className={styles.tableInner} data-min="1316">
           <div className={styles.headRow}>
             <span className={styles.col} style={{ flex: '141 0 141px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '285 0 285px' }}><Bone w={64} h={12} /></span>

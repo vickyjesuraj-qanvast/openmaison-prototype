@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { MSG } from '@/lib/forms'
 import { parseInputDate } from '@/lib/format'
@@ -66,19 +67,20 @@ export function QuotesFiltersModal({
   const [draft, setDraft] = useState<QuoteFilters>(value)
   const [wasOpen, setWasOpen] = useState(false)
   const [mountedAt] = useState(() => Date.now())
+  /* (REG-287) `aria-modal` promised assistive tech the page behind is inert, but the panel only locked scrolling:
+     Tab from Apply walked straight back out into the table. The app's surface policy does all three
+     (components/om/surface.ts, as in components/om/dialog.tsx): Esc closes the TOPMOST surface only — so the Date
+     pane's Custom picker keeps its own Esc — focus moves onto the panel on open, Tab cycles inside it, and focus
+     returns to the Filters button on close. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
 
   // Render-phase adjust: every opening starts from the applied value on the Sort pane.
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) { setDraft(value); setTab('sort') }
   }
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   const dots = activeQuoteGroups(draft)
   const toggleStatus = (s: QuoteStatus) =>
@@ -100,7 +102,11 @@ export function QuotesFiltersModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Filters">
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                      role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
             <div className={styles.heading}>
               <span className={styles.title}>Filters</span>
               <Tooltip label="Close">

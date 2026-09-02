@@ -5,6 +5,7 @@ import type { LeadFile } from '@/lib/db/schema'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Card, CardEmpty } from './card'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import styles from './files-card.module.css'
 
 /*
@@ -20,6 +21,7 @@ import styles from './files-card.module.css'
 const TILE = 92        // the mock's tile
 const GAP = 8          // --om-spacing-2, the mock's gap
 const DEFAULT_SLOTS = 4   // the mock's row: the first paint, and wherever the width cannot be measured
+const MOBILE_SLOTS = 4    // (REG-269) ≤767 the same four cells, laid 2-up by the stylesheet
 
 /** The slot count whose evenly-shared tile width sits closest to the mock's 92. */
 function slotsFor(width: number) {
@@ -42,18 +44,26 @@ export function FilesCard({ files, onOpenTab, onOpenFile, onCreateFolder, onUplo
   onUpload: () => void
 }) {
   const row = useRef<HTMLDivElement>(null)
-  const [slots, setSlots] = useState(DEFAULT_SLOTS)
+  const [measured, setMeasured] = useState(DEFAULT_SLOTS)
   useEffect(() => {
     const el = row.current
     if (!el || typeof ResizeObserver === 'undefined') return
     // Measured in the observer callback, never in render — the row re-slots as the card grows or the info column collapses.
     const ro = new ResizeObserver(([entry]) => {
       const w = entry?.contentRect.width ?? 0
-      if (w > 0) setSlots(slotsFor(w))
+      if (w > 0) setMeasured(slotsFor(w))
     })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  /* (REG-269) Mobile keeps the mock's OWN four cells and lets the stylesheet lay them 2-up (files-card.module.css),
+     instead of shrinking the row until three stamps share it: same composition as 858:24943, wrapped. The count
+     has to be decided here because it is what fixes how many tiles exist before the "+n" takes the last cell.
+     `MOBILE_SLOTS` and `DEFAULT_SLOTS` are the same 4, so the server markup and the phone's first client render
+     agree — nothing re-slots after hydration. */
+  const narrow = useMediaQuery(MOBILE)
+  const slots = narrow ? MOBILE_SLOTS : measured
 
   const ordered = [...files.filter((f) => f.kind === 'folder'), ...files.filter((f) => f.kind !== 'folder')]
   // Everything fits, or the last slot becomes the "+n" tile.

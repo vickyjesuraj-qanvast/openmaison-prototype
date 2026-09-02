@@ -23,7 +23,7 @@ import styles from './lead-questionnaire.module.css'
  * later — the REG-188 add card, the foot link and the Overview card's Add Question are all removed; `createQuestion`
  * stays in questions-actions for that flow. Failures use the tabs' shared `useRun` message.
  * Answers from this side are always "By Studio" (REG-189); Save → `answerQuestion` → "Answer saved";
- * Send Notification → "Notification sent to <lead>" (REG-188).
+ * "Send via WhatsApp" (REG-288) → "Notification sent to <lead>" (REG-188).
  */
 export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
   const { questions, leadName, now } = data

@@ -77,14 +77,39 @@
 .composerCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .privacy { display: block; height: 12px; font: var(--om-type-body-xs); line-height: 12px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 
-/* Avatar Generic 36 r4 (fill = the member's tint, initial 14/Medium) — components/om/avatar.module.css at 36. */
+/* Avatar Generic 36 r4 (fill = the member's tint, initial 14/Medium).
+   (REG-287) om/avatar DOES ship 36 (`<Avatar size={36}>`) — the JSDoc in file-comments-panel.tsx saying it "only
+   ships 24 and 40" is stale. This block is that component's drawing copied verbatim and is redundant: it goes when
+   CommentAvatar there is swapped for the component, exactly as in the Tasks comments panel. */
 .avatar {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; flex-shrink: 0;
   border-radius: var(--om-radius-1);
-  color: #fff;   /* avatar.module.css uses the same literal for the initial */
+  color: var(--om-color-on-primary-default);   /* (REG-287) the token avatar.module.css uses, not a raw #fff */
   font: var(--om-type-subtitle-m);
   overflow: hidden;
   background: var(--om-color-surface-variant);
 }
 .avatarPhoto { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤767 the panel is a full-screen overlay (file-viewer.module.css .panel) rather than a 400px column:
+   head / body / footer keep their rows and take the mobile content padding (24 → 16). The head's 64px,
+   the 20/Bold title and the close button are untouched — the way out of the overlay stays where it is. */
+@media (max-width: 767px) {
+  .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .body { padding: var(--om-spacing-4); }
+  .footer { padding: var(--om-spacing-4); }
+
+  /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
+     The two bare marks of this panel grow their box to 40 and keep their glyph: close (24) inside the
+     64px head, and each comment's more_horiz (20) at the right of its 20px meta line. The extra comes
+     back as margin, so the head's rhythm and the meta line's baseline are untouched — the kebab simply
+     overlaps the (non-interactive) comment text band by 10px on either side. */
+  .close { width: 40px; height: 40px; margin: -8px; }
+  .kebab { width: 40px; height: 40px; margin: -10px; }
+  /* The inline editor's Cancel / Save are DS `size="sm"` (24 tall) — a text button's box IS its mark, so
+     here the whole control grows to 40 and its row grows with it (spacing follows the target, not the mock). */
+  .editRow { height: auto; min-height: 40px; }
+  .editRow button { min-height: 40px; }
+}

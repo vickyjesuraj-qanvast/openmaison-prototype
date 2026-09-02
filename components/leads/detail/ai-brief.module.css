@@ -62,3 +62,28 @@
   font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
 }
 .toggle span[data-chev] { color: var(--om-color-on-surface-secondary); display: inline-flex; }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   The two action buttons already wrap (`.actions` above is `flex-wrap: wrap` in the base rule, verified: at 390
+   "Call Now" + "Send WhatsApp" fit one line inside the 318px card; on the ~232px tablet card they stack), and
+   the Show more row is a plain 24px row below the card — it stays exactly where it is at every width.
+   The HEAD did not wrap: "MAISON AI BRIEF" (≈130) plus a filled tag as long as "FRESH LEAD · RESPOND FAST"
+   (≈160) is more than the tablet card holds, and both are `nowrap`/`flex-shrink: 0`, so the tag ran out of the
+   gradient. The eyebrow stops growing and the tag takes the free space as a margin instead: identical result
+   while the two fit on one line (eyebrow left, tag hard right, as 858:24867 draws it), and the tag drops to its
+   own line, still right-aligned, when they do not. */
+@media (max-width: 1199px) {
+  .head { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .eyebrow { flex: 0 0 auto; }
+  .tag { margin-left: auto; }
+}
+/* Mobile: the brief is clamped to the mock's two lines because the mock's box is 844 wide — the same sentence
+   needs four at 318. It stays CLAMPED (the card is a brief, not the record) and stays on its 40px floor, but at
+   a width where two lines is half a sentence, four is the honest equivalent of what desktop shows. */
+@media (max-width: 767px) {
+  .text { -webkit-line-clamp: 4; }
+  /* (REG-273) "Show more" is a 24px text-and-chevron row — the type and the chevron keep their size, the row
+     it sits in grows to 40 and the button stretches to fill it, so the target matches the touch floor. */
+  .toggleRow { height: 40px; }
+  .toggle { align-self: stretch; }
+}

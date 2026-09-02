@@ -1,61 +1,46 @@
 'use client'
 
-import { Link } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
-import { ChoiceChips, Divider } from '@/components/leads/move-stage/fields'
+import { ChoiceChips, NotesArea } from '@/components/leads/move-stage/fields'
 import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } from '@/lib/leads/enums'
 import { nextStepFor, type NoteDraft } from '@/lib/leads/note-model'
 import { displayDateTime, parseInputDateTime } from '@/lib/format'
-import { BodyArea } from './note-editor'
 import styles from './contact-editor.module.css'
 
 /**
  * Lead Details › Notes — contact log editor (frames 162 931:45124 empty · 165 931:45231 filled · 163 931:45383 view).
  * Spec: design-source/context/lead-notes/02-contact-log-dialogs.txt.
- * Editing = the Move stage window's Contacted log (components/leads/move-stage/panels.tsx LogCard): "Contact log" +
- * Auto Fill link · "Contacted via" ChoiceChips · When + Outcome · the next-step block when the outcome asks for one ·
- * rule · body textarea "Write a note...". View = "Contact log" + Edit link · label/value rows (labels 104) · rule · body.
+ * Editing = the Move stage window's Contacted log (components/leads/move-stage/panels.tsx LogCard): "Contacted via"
+ * ChoiceChips · When + Outcome · the next-step block when the outcome asks for one · "Remarks" + NotesArea.
+ * View = label/value rows (labels 104), Remarks the last row.
+ * The "Contact log" title and its Auto Fill / Edit / lock hint moved to the pane header (REG-292) — it has to span
+ * the pane for its rule to, and the fields scroll under it.
+ * (REG-291, user 2026-09-02) A log is ALL fields: the rich body, the rule above it and the pane's formatting bar
+ * are gone — the host renders no PaneToolbar for a contact log, since there is no rich text to format.
  * The links are the DS `Link` (1:1 with the mock's "Link text" instance: 14/Semi Bold primary, no underline);
  * fields.tsx LinkButton was not used — it hides itself inside a read-only scope and this editor has none.
  * Edit and Cancel · Save live in the pane's bottom bar since REG-254 (the mock's inline Edit link, frame 163,
  * and the editor footer, frame 165, both moved there — the host renders them beside the formatting).
  */
 export function ContactEditor({
-  draft, onChange, errors, editing, locked, onEdit, onAutoFill, today,
+  draft, onChange, errors, editing, autoFocus = true, today,
 }: {
   draft: NoteDraft
   onChange: (patch: Partial<NoteDraft>) => void
   /** validateDraft keys: channel · when · outcome · nextStepWhen · nextStepMode — shown after the first Save, cleared live by the host. */
   errors: Record<string, string>
   editing: boolean
-  /** The Contacted stage's own log (REG-265): view-only — no Edit link; the stage window owns it. */
-  locked?: boolean
-  onEdit: () => void
-  onAutoFill: () => void
+  /** (REG-294) False when the host selected this log by itself — a search must not pull the caret out of its box. */
+  autoFocus?: boolean
   /** Day-granular "today" for the pickers (never Date.now() in render). */
   today: Date
 }) {
   const nextStep = nextStepFor(draft.outcome)
+  const remarks = draft.body.trim()
   return (
     <div className={styles.editor} data-testid="contact-editor" data-mode={editing ? 'edit' : 'view'}>
       <div className={styles.fields}>
-        <div className={styles.titleRow}>
-          <span className={styles.blockTitle}>Contact log</span>
-          {/* Edit sits inline at the title's right (user 2026-09-01, REG-256 — moved back from the REG-254 bar);
-              Cancel · Save stay in the bar. Auto Fill stays with the fields it fills. A stage-logged record
-              (REG-265) offers neither — where Edit would sit, a hint says why it is view-only (REG-268). */}
-          {editing
-            ? <Link variant="primary" onPress={onAutoFill}>Auto Fill</Link>
-            : locked ? (
-              <span className={styles.lockHint}>
-                <Icon name="lock" size={14} />
-                Added during stage movement — view only
-              </span>
-            ) : <Link variant="primary" onPress={onEdit}>Edit</Link>}
-        </div>
-
         {editing ? (
           <>
             <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={draft.channel}
@@ -63,8 +48,8 @@ export function ContactEditor({
             <div className={styles.fieldPair}>
               <DateTimeField label="When" value={draft.when} today={today}
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
-              {/* Opens focused on its first field, as the note editor does — the user came here to enter data. */}
-              <TextField label="Outcome" autoFocus value={draft.outcome} mode="select" options={OUTCOMES}
+              {/* Opens focused on its first field, as the note editor does — when the user came here to enter data (REG-294). */}
+              <TextField label="Outcome" autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
                          onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             </div>
             {nextStep ? (
@@ -78,6 +63,12 @@ export function ContactEditor({
                 </div>
               </div>
             ) : null}
+            {/* Remarks is one of the fields now (REG-291, user 2026-09-02): the Move stage window's own
+                label + NotesArea, in place of the rich "Write a note..." body the formatting bar used to serve. */}
+            <div className={styles.remarks}>
+              <span className={styles.sectionLabel}>Remarks</span>
+              <NotesArea value={draft.body} onChange={(v) => onChange({ body: v })} />
+            </div>
           </>
         ) : (
           <div className={styles.rows}>
@@ -87,6 +78,8 @@ export function ContactEditor({
               <span className={styles.label}>Outcome</span>
               {nextStep ? <span className={styles.label}>Next follow-up</span> : null}
               {nextStep ? <span className={styles.label}>Preferred mode</span> : null}
+              {/* Last row on both sides, so a remark that wraps cannot pull the columns out of step. */}
+              {remarks ? <span className={styles.label}>Remarks</span> : null}
             </div>
             <div className={styles.values}>
               <span className={styles.value}>{draft.channel ?? ''}</span>
@@ -94,15 +87,10 @@ export function ContactEditor({
               <span className={styles.value}>{draft.outcome}</span>
               {nextStep ? <span className={styles.value}>{viewDateTime(draft.nextStepWhen)}</span> : null}
               {nextStep ? <span className={styles.value}>{draft.nextStepMode}</span> : null}
+              {remarks ? <span className={`${styles.value} ${styles.remarksValue}`}>{remarks}</span> : null}
             </div>
           </div>
         )}
-
-        <Divider />
-
-        {editing
-          ? <BodyArea value={draft.body} onChange={(v) => onChange({ body: v })} />
-          : <BodyArea value={draft.body} onChange={() => {}} disabled />}
       </div>
     </div>
   )

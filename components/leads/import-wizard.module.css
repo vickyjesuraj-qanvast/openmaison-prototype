@@ -152,6 +152,12 @@
 .reviewList span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .colSelect { width: 320px; flex-shrink: 0; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
 .hLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+/* The field-select trigger's anchor box (PortalMenu measures it): inline-flex on desktop, stretched to the
+   cell once the mapping rows go single-column (REG-269). */
+.selectWrap { display: inline-flex; }
+/* The map table's column headings, repeated inside each row for the ≤767 stacked layout where the head row
+   is gone. Same copy, same caption style — hidden at every width the head row is visible. */
+.stackLabel { display: none; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .select {
   width: 280px; height: 36px;
   display: inline-flex; align-items: center; gap: var(--om-spacing-2);
@@ -201,3 +207,107 @@
 .destList { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 /* Lead routing option cards → the generic ChoiceCard (components/om/choice-card). */
 .doneSub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   Desktop ≥1200 is untouched (the panel is narrower than the 1200 token there, so none of this applies).
+   Tablet clamps the xl panel to the viewport (the xxl rule, 100vw − 48) and makes step 1's two fixed
+   columns and step 2's three fixed tracks fluid — 1200px of locked tracks cannot fit a 720px panel.
+   ≤767 the panel becomes the full-screen sheet responsive.md gives every l/xl modal, step 1 stacks, each
+   mapping row becomes one column, and the upload toast spans the sheet instead of sitting 360px wide in
+   its corner. Steps 3's preview keeps every column (the "never truncate" rule) and scrolls, with SL No
+   frozen. The Lead routing / close dialogs ride components/om/dialog.module.css's own clamps.
+   The stepper ("Step N of 4") stays: title + stepper + close measure ~276px, inside 390. */
+@media (max-width: 1199px) {
+  .panel {
+    width: min(var(--om-modal-xl), calc(100vw - 2 * var(--om-modal-xxl-margin)));
+    max-height: calc(100dvh - 2 * var(--om-modal-xxl-margin));   /* dvh: the footer stays clear of mobile browser chrome */
+  }
+
+  /* Step 1 — the 303 | 60 | 597 pair goes fluid and the 80/120 padding comes down. */
+  .step1 { padding: var(--om-spacing-10) var(--om-spacing-6); gap: var(--om-spacing-6); overflow-y: auto; }
+  .tips { width: auto; flex: 0 1 303px; }
+  .uploadCol { width: auto; flex: 1 1 260px; min-width: 0; }
+  .dropSuccess { padding: var(--om-spacing-6) var(--om-spacing-4); }
+
+  /* Step 2 — the 320 | ≥200 | 320 row (840 min) is wider than the clamped panel, so the tracks shrink
+     instead of the row scrolling; the select follows its cell. */
+  .colName { width: 240px; }
+  .colReview { min-width: 140px; }
+  .colSelect { width: 264px; }
+  .selectWrap { align-self: stretch; }
+  .select { width: 100%; }
+
+  /* Step 3 — SL No freezes so a row stays identifiable while the preview scrolls sideways (REG-144 edge rule). */
+  .previewWrap { -webkit-overflow-scrolling: touch; }
+  .pCell:first-child {
+    position: sticky; left: 0; z-index: 2;
+    clip-path: inset(0 -6px 0 0);
+    transition: box-shadow var(--motion-toggle);
+  }
+  .pHead .pCell:first-child { z-index: 3; }   /* the corner cell sticks on both axes */
+  .previewWrap[data-scrolled-x='true'] .pCell:first-child {
+    box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+@media (max-width: 767px) {
+  .overlay { padding: 0; }
+  .panel {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  .heading { padding: var(--om-spacing-4); gap: var(--om-spacing-3); }
+  .title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step { flex-shrink: 0; }
+  .footer { padding: var(--om-spacing-4); }
+
+  /* Step 1 — one column: tips, then the upload column, whose dropzone still takes the rest of the sheet.
+     height stays 100% (base) so the ≤1199 overflow-y actually has something to scroll against. */
+  .step1 {
+    flex-direction: column; align-items: stretch; gap: var(--om-spacing-6);
+    padding: var(--om-spacing-6) var(--om-spacing-4);
+  }
+  .tips { width: auto; flex: 0 0 auto; }
+  .uploadCol { width: auto; flex: 1 1 auto; min-height: 200px; }
+  .dropzone { padding: var(--om-spacing-6) var(--om-spacing-4); }
+
+  /* Upload toast — spans the sheet above the footer instead of a fixed 360×200 card in the corner. */
+  .toast { left: var(--om-spacing-4); right: var(--om-spacing-4); bottom: var(--om-spacing-4); width: auto; height: auto; }
+
+  /* Steps 2 & 3 */
+  .stepBody { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  /* Step 2 — one mapping row per source column: name + status, its sample values, then the field select.
+     The head row's three labels move into the rows themselves (.stackLabel). */
+  .mapTable { overflow-x: hidden; }
+  .mapHead { display: none; }
+  .mapRow { flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
+  .mapCell { padding: 0; }
+  .colName, .colSelect { width: auto; }
+  .colReview { min-width: 0; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
+  .stackLabel { display: block; }
+
+  /* Step 4 */
+  .done { padding: var(--om-spacing-6) var(--om-spacing-4); text-align: center; }
+
+  /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────
+     The wizard's small controls, each grown to a ≥40px box without moving a mark or changing a type size:
+       · the heading's bare 24px close and the upload toast's two 24px controls — an invisible ::after takes
+         each to 40×40; the toast's pair sits 16 apart and grows 8 each way, so the targets meet exactly;
+       · step 1's two stacked links ("Download Template" / "View import history") and the success card's
+         "Re-upload File" — 20px text lines that take a 40px box (the column's own 12px gaps keep them
+         apart, and the success card is centred, so nothing shifts sideways);
+       · step 2's field select, the control every mapping row exists for: 36 → 44 tall. It is already full
+         width in the stacked row, so only its height changes — the label, the chevron and the error line
+         below it are untouched.
+     Not grown: "this template", which is a link INSIDE a sentence in the tips list — a 40px box around a
+     run of body text would break the paragraph it belongs to, and the same file is one tap away from the
+     stacked "Download Template" link below it. */
+  .close { position: relative; }
+  .close::after { content: ''; position: absolute; inset: -8px; }
+  .toastBtn { position: relative; }
+  .toastBtn::after { content: ''; position: absolute; inset: -8px; }
+  .link { min-height: 40px; }
+  .reupload { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; }
+  .select { height: 44px; }
+}

@@ -117,3 +117,53 @@
 .tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 17px; display: inline-flex; }
 
 .danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */
+
+/* The mobile-only selection affordances (REG-273, see the touch block below) — never rendered on the desktop mock. */
+.pick, .tilePick { display: none; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────
+   Tablet and down: fluid tracks — minmax 220 (160 at mobile, below); the tile gives up its fixed
+   262/200 so the image band scales with the track at the mock's 291:200 crop; the caption keeps
+   its 54px line intact. Desktop ≥1200 keeps the mocked 299px tracks untouched. */
+@media (max-width: 1199px) {
+  .row { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .tile { height: auto; }
+  .tileImg, .tileBox { height: auto; aspect-ratio: 291 / 200; }
+}
+/* Mobile (REG-269): tracks bottom out at 160 so two tiles ride a 390 screen. */
+@media (max-width: 767px) {
+  .row { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────
+   ≤767 every mark keeps its mocked size and only the TAPPABLE BOX around it grows to 40; the extra
+   is handed back as negative margin, so the card / tile geometry above is unchanged and nothing in
+   the row shifts. Desktop ≥1200 never enters this query. */
+@media (max-width: 767px) {
+  /* Kebab: the more_vert glyph stays 24 where the mock draws it (folder card's right edge; the tile's
+     caption line, anchored by .tileMenuWrap) — the box around it becomes 40. */
+  .kebab { width: 40px; height: 40px; margin: -8px; }
+
+  /* Comment chip 36×26: the drawn chip is the mock's own, so the target is added AROUND it — ±7 top and
+     bottom takes the short side to 40. It is not widened: the kebab's own 40px box now reaches to
+     right 44 and the two must not overlap. */
+  .chip::after { content: ''; position: absolute; inset: -7px 0; }
+
+  /* Group head: the DS checkbox is a 40px target on a touch pointer (app/globals.css), so the head keeps
+     a 40px line of its own instead of letting it bleed into the cards below. */
+  .groupHead { height: auto; min-height: 40px; }
+
+  /* Selection affordance (the tap now opens — see files-grid.tsx). The folder card carries it inline,
+     ahead of the icon; the tile floats it over the image's top-left on a white plate so it reads on any
+     photo. Both are the DS Checkbox, drawn at its mocked 24 with a 40px touch box on a touch pointer. */
+  .pick { display: inline-flex; align-items: center; flex-shrink: 0; }
+  .tilePick {
+    display: inline-flex; position: absolute; z-index: 2;
+    left: var(--om-spacing-2); top: var(--om-spacing-2);
+    background: var(--om-color-surface-default);
+    border-radius: var(--om-radius-1);
+  }
+  /* With the checkbox in front of it a 160px folder card leaves ~40px for the name, so the folders group
+     goes one card per row (spacing follows the target, not the mock). The tiles keep their 2-up tracks. */
+  .foldersRow { grid-template-columns: 1fr; }
+}

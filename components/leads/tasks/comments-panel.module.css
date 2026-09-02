@@ -38,12 +38,26 @@
 .composerRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 36px; }
 .privacy { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
 
-/* Avatar 36 r4 — components/om/avatar.module.css at 36, initial 14/Medium (spec: "H" 14/Medium on #387e47). */
+/* Touch ergonomics (REG-273): the per-comment kebab is a 20px box — half a fingertip. It keeps its 20px
+   glyph AND its 20px hover wash (a 40px wash would read as a grey tile on a comment); the target alone grows
+   to 40 through a transparent overlay, inside the drawer body's own 24 padding. The meta row stays 20 tall.
+   Composer / edit buttons are DS controls: app/globals.css already lifts the `sm` Cancel · Save to 40 on a
+   touch pointer, and their 8 gap is horizontal, so nothing collides. Desktop with a mouse never matches. */
+@media (max-width: 767px), (hover: none) {
+  .kebab { position: relative; }
+  .kebab::after { content: ''; position: absolute; inset: -10px; }
+}
+
+/* Avatar 36 r4, initial 14/Medium (spec: "H" 14/Medium on #387e47).
+   (REG-287) om/avatar DOES ship 36 (`<Avatar size={36}>`) — the JSDoc in comments-panel.tsx saying it "only ships
+   24 and 40" is stale. This block is that component's drawing copied verbatim (subtitle-m = medium/14/20 inter,
+   same box, same radius) and is redundant: it goes when CommentAvatar there is swapped for the component, which
+   also covers the member-less fallback (`color` takes the surface-variant token, an empty `name` draws no initial). */
 .avatar {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; flex-shrink: 0;
   border-radius: var(--om-radius-1);
-  color: #fff;   /* avatar.module.css uses the same literal for the initial */
+  color: var(--om-color-on-primary-default);   /* (REG-287) the token avatar.module.css uses, not a raw #fff */
   font: var(--om-type-subtitle-m);
   overflow: hidden;
   background: var(--om-color-surface-variant);

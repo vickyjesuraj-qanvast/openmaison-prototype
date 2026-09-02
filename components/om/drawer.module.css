@@ -40,3 +40,6 @@
   background: var(--om-color-surface-default);
   position: relative; z-index: 1;
 }
+
+/* Responsive (REG-269): a 400px drawer on a 390px screen becomes the screen. */
+.drawer { max-width: 100vw; }

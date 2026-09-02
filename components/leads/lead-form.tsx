@@ -12,11 +12,12 @@ import menuStyles from '@/components/leads/menus.module.css'
 import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
 import { modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
-import { parseInputDate, groupDigits } from '@/lib/format'
+import { parseInputDate, groupDigits, inputDate, phoneDigits } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Tooltip } from '@/components/om/tooltip'
 
 /* Only 'Contemporary' / 'Collected' / 'New' are mock-visible; the rest are
@@ -72,9 +73,9 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
   email: lead.email ?? '',
   leadAddress: lead.leadAddress ?? '',
   budget: groupDigits(String(Math.round(lead.budgetMinor / 100))),
-  startDate: lead.estimatedStartDate
-    ? `${lead.estimatedStartDate.getDate()}/${lead.estimatedStartDate.getMonth() + 1}/${lead.estimatedStartDate.getFullYear()}`
-    : '',
+  // (REG-287) `inputDate` is the inverse of `parseInputDate` the field validates with — one d/m/yyyy formatter,
+  // not this hand-rolled twin of it.
+  startDate: lead.estimatedStartDate ? inputDate(lead.estimatedStartDate) : '',
   style: lead.style ?? '',
   keyCollection: lead.keyCollection ?? '',
   condition: lead.condition ?? '',
@@ -93,7 +94,7 @@ export function validateLeadForm(data: LeadFormData, requireAssignee = false): L
   const errors: LeadFormErrors = {}
   if (requireAssignee && data.assignees.length === 0) errors.assignees = MSG.assignee
   if (!data.name.trim()) errors.name = MSG.required
-  if (data.phone.replace(/\D/g, '').length !== 8) errors.phone = MSG.phone
+  if (phoneDigits(data.phone).length !== 8) errors.phone = MSG.phone   // (REG-287) the one phone rule, not a local copy
   if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) errors.email = MSG.email
   const budgetDigits = data.budget.replace(/,/g, '').trim()
   if (budgetDigits && !/^\d+$/.test(budgetDigits)) errors.budget = MSG.number
@@ -101,16 +102,21 @@ export function validateLeadForm(data: LeadFormData, requireAssignee = false): L
   return errors
 }
 
-/* Phone field: "+65 | divider | digits" per 779:24644 — a TextField with a leading prefix. */
+/* Phone field: "+65 | divider | digits" per 779:24644 — a TextField with a leading prefix.
+   (REG-287) The box holds the STORED 8-digit local number, so what a person pastes has to be reduced to it by the
+   app's one phone rule: `digitsOnly(v).slice(0, 8)` turned a pasted "+65 9123 4567" into "65912345" — the country
+   code ate the number. `maxLength` is gone with it: the browser truncated a paste to 8 raw characters ("+65 9123")
+   before `phoneDigits` could ever see the country code. Typing is still capped at 8 by the slice below, so the
+   value the field can hold is unchanged. */
 function PhoneField({ value, onChange, error, inputRef }: {
   value: string; onChange: (v: string) => void; error?: string; inputRef?: RefObject<HTMLInputElement | null>
 }) {
   return (
     <TextField
       label="Lead phone number*" value={value} error={error} inputRef={inputRef}
-      type="tel" inputMode="tel" numeric="digits" maxLength={8} trailingIcon={null}
+      type="tel" inputMode="tel" numeric="digits" trailingIcon={null}
       leading={<span className={styles.prefix}>+65<span className={styles.divider} /></span>}
-      onChange={(v) => onChange(v.slice(0, 8))}
+      onChange={(v) => onChange(phoneDigits(v).slice(0, 8))}
     />
   )
 }
@@ -215,12 +221,14 @@ export function LeadFormModal({
     return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner) }
   }, [open, focusTarget])
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  /* (REG-287) `aria-modal` promises the page behind is inert, so this panel owes the WAI-ARIA dialog contract:
+     focus moves in on open, Tab and Shift+Tab cycle inside it instead of walking into the listing underneath, and
+     focus returns to whatever opened it on close. Esc rides the shared layer policy — the source / property-type
+     PortalMenu and the date picker each render after this panel and own Esc first, which is what the hand-rolled
+     `!e.defaultPrevented` listener this replaces was reaching for. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
 
   const set = <K extends keyof LeadFormData>(k: K) => (v: LeadFormData[K]) =>
     setData((d) => ({ ...d, [k]: v }))
@@ -259,7 +267,9 @@ export function LeadFormModal({
           variants={overlayFade} initial="initial" animate="animate" exit="exit"
           onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
         >
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal
+          <motion.div ref={panel} className={styles.panel} variants={modalPanel} role="dialog" aria-modal tabIndex={-1}
+                      /* focus lands on the panel on open; the ring belongs to its controls (om/dialog.module.css) */
+                      style={{ outline: 'none' }}
                       aria-label={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}>
             <div className={styles.heading}>
               <span className={styles.title}>{form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}</span>

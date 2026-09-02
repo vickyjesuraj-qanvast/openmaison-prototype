@@ -5,7 +5,8 @@ import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useComingSoon } from '@/components/om/snackbar'
+import { useCopy } from '@/components/om/use-copy'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
 import { PORTAL_LINK } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MSG } from '@/lib/forms'
@@ -28,7 +29,6 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
   onClose: () => void
   onSend: (phone: string, showHistory: boolean) => void
 }) {
-  const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
   const [name, setName] = useState(lead.name)
   const [phone, setPhone] = useState(() => digitsOnly(lead.phone).slice(0, 8))
@@ -49,13 +49,8 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
     if (phoneError) { setPressed(true); return }
     onSend(phone, showHistory)
   }
-  const copy = () => {
-    // The Questionnaire's Ask-the-client Copy (ask-client-dialog.tsx) — same call, same two outcomes.
-    void navigator.clipboard?.writeText(PORTAL_LINK).then(
-      () => snackbar({ message: 'Link copied' }),
-      () => snackbar({ message: 'Couldn’t copy the link — please try again' }),
-    )
-  }
+  // Copy confirms in the button as well as the snackbar (REG-283) — the Ask-the-client box's own hook.
+  const { copied, copy } = useCopy(PORTAL_LINK, { resetOn: open })   // resetOn: both hosts stay mounted while closed
 
   return (
     <Dialog
@@ -98,7 +93,7 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
             <span className={styles.boxLabel}>Portal link</span>
             <span className={styles.boxUrl} title={PORTAL_LINK}>{PORTAL_LINK}</span>
           </div>
-          <Button variant="primary" appearance="outlined" onPress={copy}>Copy</Button>
+          <Button variant="primary" appearance="outlined" onPress={copy}>{copied ? 'Copied' : 'Copy'}</Button>
         </div>
       </div>
     </Dialog>

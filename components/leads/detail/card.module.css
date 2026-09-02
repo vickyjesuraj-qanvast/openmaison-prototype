@@ -45,3 +45,36 @@
 .emptyActions { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }
 
 .rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   Tablet and down the cards narrow a long way: the grid drops to one column, but the tablet row still spends
+   300 on the info column and 72 on the Create strip, so a card is ~272 wide at 768 (and 358 at 390, where the
+   row stacks). The head's pieces are all `nowrap` and the right-hand meta never shrank, so "LEAD STAGES" +
+   "365 days in pipeline" ran under the arrow and out of the card (audit: card.module.css:19/21).
+   The head keeps its shape — title left, arrow right — and only the TEXT group wraps: the right meta drops to
+   its own line under the title (still right-aligned, still the head's own type) when, and only when, the two
+   no longer fit. Nothing wraps while there is room, so every width from 1199 up to the desktop mock is
+   untouched. The arrow and the head link stay on the first line, always reachable. */
+@media (max-width: 1199px) {
+  .headText { flex-wrap: wrap; }
+  /* Two 36px buttons ("Create Folder" + "Upload Files" ≈ 300) never fit the empty state's 32px-padded box at
+     these widths — they stack instead of overflowing it (audit: card.module.css:45). */
+  .emptyActions { flex-wrap: wrap; }
+}
+/* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
+   The arrow is a 16px glyph in a 24px control — the smallest target on the Overview, and the ONLY thing that
+   says where the card leads is its Tooltip, which never fires for a touch pointer. So below 768 the card's
+   whole HEAD ROW becomes the arrow's target: the ::after is stretched to the head instead of a ring around
+   the glyph, which both takes the target past 40px in either dimension and gives the tooltip its second
+   channel — the title you are tapping ("LEAD STAGES ›") is the label. Nothing moves and nothing repaints:
+   the ::after is invisible, the arrow keeps its mocked 16px mark, its 24px plate and its place on the right.
+   The head link ("Ask Client") sits BEFORE the arrow in the DOM, so it is raised out of the overlay's way and
+   given a 40-tall box of its own — inside the head's own 20/12 padding, so the 48px head keeps its height. */
+@media (max-width: 767px) {
+  /* .head is the positioned ancestor and .open deliberately is NOT — that is what lets the arrow's ::after
+     resolve `inset: 0` against the whole head row instead of its own 24px box. */
+  .head { position: relative; }
+  .open::after { content: ''; position: absolute; inset: 0; }
+  .link { position: relative; z-index: 1; }
+  .link::after { content: ''; position: absolute; inset: -12px -8px; }
+}

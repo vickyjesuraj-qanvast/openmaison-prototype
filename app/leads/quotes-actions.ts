@@ -1,15 +1,16 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { revalidatePath } from 'next/cache'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leads, quotes } from '@/lib/db/schema'
-import { type QuoteStatus } from '@/lib/leads/quote-filters'
+import { revalidateLead } from '@/lib/leads/queries'
+import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 
 /* Lead Details › Quotes (910-36240). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const touch = (leadId: string) => { revalidatePath(`/leads/${leadId}`); revalidatePath(`/leads/${leadId}/quotes`); revalidatePath('/leads') }
+/** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every quote milestone. */
+const touch = (leadId: string) => revalidateLead(leadId)
 
 /** Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). */
 async function nextNumber(): Promise<string> {
@@ -40,6 +41,9 @@ async function leadOf(quoteId: string): Promise<string | null> {
  * with Quote approval off (quoteStatuses()) has no Approved step at all. Approval Date stays "-" until then (REG-176).
  */
 export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Promise<void> {
+  // (REG-286) A server action is a public endpoint: `status` is written straight into the column the row menu, the
+  // filters and the Overview widget's track all read back, so it must be one of the five (isQuoteStatus, 910:36673).
+  if (!isQuoteStatus(status)) throw new Error(`Unknown quote status: ${String(status)}`)
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) return
   const now = new Date()

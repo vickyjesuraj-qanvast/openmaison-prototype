@@ -33,3 +33,24 @@
 
 /* Owner rule past New (user 2026-08-29): DS error text in the footer, before the buttons. */
 .footMsg { margin-right: auto; font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   The card is 400 wide and the workspace anchors it with an inline `left` clamped against that width
+   (window.innerWidth − 420), which is negative on a phone. Mobile keeps the surface — same head, rows and
+   footer — and only drops the horizontal anchor: 16px inside both viewport edges. The inline left is beaten
+   with !important because it is written on the element by the workspace (app/leads/workspace.tsx). */
+@media (max-width: 767px) {
+  .card { left: var(--om-spacing-4) !important; right: var(--om-spacing-4); width: auto; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The head's close is a bare 24px glyph. At ≤767 it takes a 40px box and hands the extra back as margin, so
+   the heading keeps the mock's 16px inset and the title stays put. The member rows are already 64px tall
+   (40px avatar + 12px padding) and their checkbox gets its touch box centrally (app/globals.css). */
+@media (max-width: 767px) {
+  .close {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+  }
+}

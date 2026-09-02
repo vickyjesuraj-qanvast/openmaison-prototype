@@ -45,7 +45,7 @@ function AreaField({
 
 /**
  * Task side panel (902:27363 — frames 53 · 54 · 59 · 63 · 160 · 190): a Drawer titled "Task" with comment · attach_file ·
- * more_vert head actions, the creator block, the three fields, then Assignees · Tags · Attachments between rules and a
+ * more_vert head actions, the creator block, the three fields, then Members (REG-290) · Tags · Attachments between rules and a
  * sticky "Mark as Completed" footer. Spec: design-source/context/lead-tasks/03-panel-tags.txt.
  * Edits commit on blur (fields) or at once (date, tags, assignees) through the callbacks — the panel keeps no server state.
  */
@@ -133,7 +133,8 @@ export function TaskPanel({
         <dd className={styles.value}>
           {task.creator ? (
             <>
-              <span className={styles.avatar20}><Avatar name={task.creator.name} color={task.creator.color} size={24} /></span>
+              {/* (REG-287) om/avatar ships 20 — the mock's "Generic 20" is the component's own size, not a resized 24. */}
+              <Avatar name={task.creator.name} color={task.creator.color} size={20} />
               <span>{task.creator.name}</span>
             </>
           ) : '—'}
@@ -152,16 +153,18 @@ export function TaskPanel({
 
       <DrawerRule />
 
-      {/* Assignees: Avatar 36 per member + Icon Buttons Primary/36/Outlined person_add */}
-      <section className={styles.section} aria-label="Assignees">
-        <h3 className={styles.sectionTitle}>Assignees</h3>
+      {/* Members (mock: Assignees): Avatar 36 per member + Icon Buttons Primary/36/Outlined person_add */}
+      <section className={styles.section} aria-label="Members">
+        <h3 className={styles.sectionTitle}>Members</h3>
         <div className={styles.avatarRow}>
           {task.assignees.map((m) => (
-            <span key={m.id} className={styles.avatar36}><Avatar name={m.name} color={m.color} size={40} /></span>
+            /* (REG-287) om/avatar ships 36 — the mock's "Generic 36" is the component's own size, not a resized 40. */
+            <Avatar key={m.id} name={m.name} color={m.color} size={36} />
           ))}
+          {/* touchTarget: the 36px button takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
           <Tooltip label="Assign members">
             <IconButton icon="person_add" label="Assign members" size={36} variant="primary" aria-haspopup="dialog"
-                        onClick={(e) => onAssign(e.currentTarget)} />
+                        className={styles.touchTarget} onClick={(e) => onAssign(e.currentTarget)} />
           </Tooltip>
         </div>
       </section>

@@ -38,9 +38,10 @@ import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
 import { fetchLeadFilesForReturn, returnLead, undoReturn, type ReturnInput } from './return-actions'
-import { displayDate } from '@/lib/format'
-import { STAGES, type Stage } from '@/lib/leads/enums'
-import { blockedReason, detailHref, isActiveStage, isCompletedFor, journeyIdx } from '@/lib/leads/stage-policy'
+import { displayDate, money, phoneDisplay } from '@/lib/format'
+import { filterByQuery } from '@/lib/search'
+import { type Stage } from '@/lib/leads/enums'
+import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
 import type { StageMovement } from '@/lib/settings/types'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
@@ -52,9 +53,20 @@ import styles from './leads.module.css'
 type Anchored = { id: string; el: HTMLElement; top: number; left: number } | null
 
 /* Anchored popovers are fixed-position; these derive their spot from the anchor so they can follow it while the table / board scrolls. */
-const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom, window.innerHeight - 360), left: r.left } }   // menu hangs from the cell's bottom-left corner (780:86452)
-const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) } }
-const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom + 4, window.innerHeight - 520), left: Math.min(r.left, window.innerWidth - 420) } }
+/* Anchored popovers clamp on BOTH axes with a 16px floor (REG-269): the old one-sided
+   `innerWidth - 420` / `innerHeight - N` went NEGATIVE on a narrow or short viewport, putting the card off
+   the top-left of the screen with nothing to scroll it back. `clampPos` is the shared maths: the card's own
+   footprint, the viewport, an edge inset. */
+const POP_EDGE = 16
+const clampAxis = (preferred: number, size: number, viewport: number) =>
+  Math.max(POP_EDGE, Math.min(preferred, Math.max(POP_EDGE, viewport - size - POP_EDGE)))
+const clampPos = (el: HTMLElement, w: number, h: number) => {
+  const r = el.getBoundingClientRect()
+  return { top: clampAxis(r.bottom + 4, h, window.innerHeight), left: clampAxis(r.left, w, window.innerWidth) }
+}
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 356, window.innerHeight), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
+const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
+const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
 /* Customise your view is the tall surface (752 at the mock's eight columns), so it clamps against its own
    footprint: anchorRect's 460 is the Assign popover's, and it leaves the Save footer off screen once the
    viewport drops under ~955px. The budget is the card's own CSS cap — min(756, 100dvh − 32), see
@@ -64,7 +76,7 @@ const CUSTOMISE_MAX = 756, EDGE = 16
 const customisePos = (el: HTMLElement) => {
   const r = el.getBoundingClientRect()
   const h = Math.min(CUSTOMISE_MAX, window.innerHeight - EDGE * 2)
-  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, window.innerHeight - h - EDGE)), left: Math.min(r.left, window.innerWidth - 420) }
+  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, window.innerHeight - h - EDGE)), left: clampAxis(r.left, 400, window.innerWidth) }
 }
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
@@ -141,7 +153,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /* ---- Stage movement policy (Settings › Leads, user 2026-08-29) ----
      linear: one stage at a time through the Move stage window; later stages are locked, earlier ones are a confirm away.
      flexible: instant moves with Undo; only Won (it creates the project) opens the window. On Hold / Lost keep their dialogs. */
-  // The pure rules (isActiveStage · journeyIdx · blockedReason · isCompletedFor) live in lib/leads/stage-policy, shared with the Lead Details pages.
+  // The pure rules (stageIntent · journeyIdx · blockedReason · isCompletedFor) live in lib/leads/stage-policy, shared with the Lead Details pages.
   const fail = (what: string) => snackbar({ message: `Couldn’t ${what} — please try again` })
   /** Every stage-move action runs through here: a failure gets the module's snackbar and releases a held kanban drop
       (on success the render-phase adjust above releases it once the refreshed rows agree, so the card never springs back first). */
@@ -152,29 +164,20 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const { logId } = await quickMoveStage({ leadId: lead.id, fromStage: lead.stage, toStage: stage })
     snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoStageMove({ leadId: lead.id, logId, toStage: lead.stage })) } })
   })
-  /** Every stage change — table dropdown or kanban drop — comes through here. */
+  /** Every stage change — table dropdown or kanban drop — comes through here.
+      The branch set itself is `stageIntent` in lib/leads/stage-policy, shared with Lead Details (REG-286):
+      this half only maps the intent onto the listing's dialogs, snackbar and held kanban drop. */
   const requestStageChange = (lead: LeadRow, stage: Stage) => {
-    if (lead.stage === stage) { setPendingDrop(null); return }
-    if (stage === 'On Hold') { setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return }
-    if (stage === 'Lost') { setLostReason('Property too far'); setLost(lead.id); return }
-    const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
-    // A parked lead (On Hold / Lost) resuming really changes where it is — one confirm, any stage the gate allows.
-    // That gate is what keeps a Lost lead's un-reached stages shut (REG-225); active leads keep their path below.
-    if (!isActiveStage(lead.stage)) {
-      const parkedBlock = blockedReason(lead, stage, stageMovement)
-      if (parkedBlock) { setPendingDrop(null); snackbar({ message: parkedBlock }); return }
-      setConfirmMove({ leadId: lead.id, stage }); return
+    const intent = stageIntent(lead, stage, stageMovement)
+    switch (intent.kind) {
+      case 'none': setPendingDrop(null); return
+      case 'hold': setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
+      case 'lost': setLostReason('Property too far'); setLost(lead.id); return
+      case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
+      case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage }); return
+      case 'wizard': setWizard({ leadId: lead.id, target: intent.stage }); return
+      case 'quick': void quickMove(lead, intent.stage); return
     }
-    // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
-    if (to <= from) { setWizard({ leadId: lead.id, target: stage }); return }
-    if (stageMovement === 'linear') {
-      if (to === from + 1) { setWizard({ leadId: lead.id, target: stage }); return }
-      setPendingDrop(null)
-      snackbar({ message: blockedReason(lead, stage, stageMovement) ?? `Complete ${STAGES[from + 1]} first` })
-      return
-    }
-    if (stage === 'Won') { setWizard({ leadId: lead.id, target: stage }); return }
-    void quickMove(lead, stage)
   }
 
   const effectiveRows = useMemo(() => rows.map((r) => {
@@ -187,12 +190,27 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const scoped = useMemo(() => (stageScope ? effectiveRows.filter((r) => r.stage === stageScope) : effectiveRows), [effectiveRows, stageScope])
   const filtered = useMemo(() => {
     const base = applyFilters(scoped, filters, nowTick)
-    if (!query.trim()) return base
-    const q = query.trim().toLowerCase()
-    const qDigits = q.replace(/\D/g, '')   // "9812 0443" matches the stored "98120443"
-    return base.filter((r) =>
-      r.name.toLowerCase().includes(q) || (qDigits.length >= 3 && r.phone.includes(qDigits)) ||
-      r.source.toLowerCase().includes(q) || r.propertyType.toLowerCase().includes(q))
+    /* Search stays the LAST step of the pipeline, and now matches everything a row SHOWS (REG-274, user
+       2026-09-01: "in the lead listing search i should be able to search by mobile number as well").
+       Matched fields: lead name · stage label · task titles · assignee NAMES · source · budget (the column's
+       own "70,500", also the card's "S$70,500") · property type · the DISPLAYED created date ("17 Jul ’26",
+       via the table's own displayDate, never the raw timestamp) · the On Hold follow-up date shown beside the
+       phone · property address (the Customise-view column) · email — email is the one value with no column
+       today, but it is on the lead and people look leads up by it.
+       Phone goes through the matcher's `phones` argument, which compares DIGITS-ONLY on both sides at any
+       length: "98", "9812 0443" and "+65 9812 0443" all find the stored "98120443". The old rule gated phones
+       on `qDigits.length >= 3` and matched nothing else, so typing "98" — the start of five real numbers —
+       emptied the list, and no lead could be found by its email, address, stage, assignee or task. */
+    return filterByQuery(base, query, (r) => ({
+      fields: [
+        r.name, r.stage, r.source, r.propertyType, r.email, r.propertyAddress,
+        money(r.budgetMinor), displayDate(r.createdAt),
+        r.onHoldFollowUp ? displayDate(new Date(r.onHoldFollowUp)) : null,
+        ...r.tasks.map((t) => t.title),
+        ...r.assignees.map((m) => m.name),
+      ],
+      phones: [r.phone],
+    }))
   }, [scoped, filters, query, nowTick])
   // Selection follows the pipeline: ids hidden by scope / filters / search drop out (render-phase adjust).
   const stageCounts = useMemo(() => {
@@ -243,11 +261,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     setAssign(null)
     try {
       await assignMembers(leadId, memberIds)
-      snackbar({ message: 'Assignees updated' })
+      snackbar({ message: 'Members updated' })
     } catch {
       // Back to the server's assignees — the optimistic set must not outlive a failed action.
       setOptimisticAssignees((o) => { const n = { ...o }; delete n[leadId]; return n })
-      fail('update the assignees')
+      fail('update the members')
     }
   }
 
@@ -311,6 +329,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               chipLabel={rows.length === 0 ? 'All Leads' : `${stageScope ?? 'All Leads'} (${filtered.length})`}
               onChipClick={() => setStageMenuOpen((o) => !o)}
               chipOpen={stageMenuOpen}
+              chipScoped={stageScope !== null}   // (REG-295) a stage scope is a filter — say so
               chipMenu={
                 <StageFilterDropdown open={stageMenuOpen} onClose={() => setStageMenuOpen(false)}
                                      counts={stageCounts} value={stageScope}
@@ -375,11 +394,13 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onDeleteRow={(row) => { setDeleteReason('Spam'); setDeleting([row.id]) }}
                 onReturnRow={(row) => { void openReturn(row) }}
                 onCopyPhone={async (row) => {
+                  // (REG-287) `phoneDisplay` is the app's one copy/export format — the literal "+65 ${row.phone}"
+                  // template this replaced was a second rule that only agreed with it by luck.
                   try {
-                    await navigator.clipboard.writeText(`+65 ${row.phone}`)
+                    await navigator.clipboard.writeText(phoneDisplay(row.phone))
                     snackbar({ message: 'Copied to clipboard' })
                   } catch {
-                    snackbar({ message: `+65 ${row.phone}` })
+                    snackbar({ message: phoneDisplay(row.phone) })
                   }
                 }}
               />

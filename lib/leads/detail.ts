@@ -1,11 +1,12 @@
+import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/lib/db'
-import { leadFiles, questions, quotes, stageLogs, type LeadFile, type LeadQuestionnaire, type Member, type Quote } from '@/lib/db/schema'
+import { leadFiles, questions, quotes, type LeadFile, type Member, type Quote } from '@/lib/db/schema'
 import { summarise } from '@/lib/leads/question-model'
 import { fetchReturnDetail, type ReturnDetail } from '@/lib/leads/returns'
 import { STAGES } from '@/lib/leads/enums'
-import { fetchLeadRows, type LeadRow } from '@/lib/leads/queries'
+import { fetchLeadRow, type LeadRow } from '@/lib/leads/queries'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 import { fetchQuoteApproval, fetchStageMovement } from '@/lib/settings/queries'
 import type { QuoteApproval, StageMovement } from '@/lib/settings/types'
@@ -16,6 +17,22 @@ export type ActiveStage = (typeof STAGES)[number]
 export type StageStep = { stage: ActiveStage; state: 'done' | 'current' | 'future'; days: number | null }
 export type ParkedStep = { stage: 'On Hold' | 'Lost'; days: number; till: string | null }
 export type ActivityItem = { at: Date; text: string }
+/**
+ * QUESTIONNAIRE card counts (858:25077), derived from the `questions` rows (REG-286).
+ *
+ * This shape used to borrow `LeadQuestionnaire` — the row type of `lead_questionnaires`, a table nothing reads or
+ * writes any more (see lib/db/schema.ts). Borrowing it told anyone reading the schema that these counts are stored,
+ * and the next person would have built a writer for a table the Questionnaire tab replaced. They are derived per
+ * request from `questions`, and now they say so.
+ */
+export type QuestionnaireSummary = {
+  leadId: string
+  total: number
+  clientAnswered: number
+  studioAnswered: number
+  /** The newest question's creation date — what the card prints as "Last updated". */
+  updatedAt: Date
+}
 
 export type LeadDetail = {
   lead: LeadRow
@@ -30,7 +47,7 @@ export type LeadDetail = {
   activity: ActivityItem[]
   quote: Quote | null
   files: LeadFile[]
-  questionnaire: LeadQuestionnaire | null
+  questionnaire: QuestionnaireSummary | null
   ret: ReturnDetail | null   // the latest return with its attachments + people (Qanvast lead return, REG-192)
 }
 
@@ -39,17 +56,17 @@ const isActive = (s: string): s is ActiveStage => (STAGES as readonly string[]).
 const daysBetween = (from: number, to: number) => Math.max(0, Math.floor((to - from) / DAY))
 
 async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
-  const [{ rows, team, now }, stageMovement, quoteApproval, logs, quoteRows, files, qRows, retRows] = await Promise.all([
-    fetchLeadRows(),
+  // (REG-286) `fetchLeadRow` replaces `fetchLeadRows()` + `rows.find(...)`: the same builder, six selects bounded by
+  // this lead instead of six unfiltered ones, and it hands back the stage logs this function used to query again.
+  const [{ row: lead, team, logs, now }, stageMovement, quoteApproval, quoteRows, files, qRows, retRows] = await Promise.all([
+    fetchLeadRow(id),
     fetchStageMovement(),
     fetchQuoteApproval(),
-    db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select().from(quotes).where(and(eq(quotes.leadId, id), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),   // archived / deleted quotes leave the card (Quotes tab, REG-175)
     db.select().from(leadFiles).where(and(eq(leadFiles.leadId, id), isNull(leadFiles.deletedAt))).orderBy(asc(leadFiles.createdAt)),   // trashed files leave the card (Files tab)
     db.select({ answeredBy: questions.answeredBy, createdAt: questions.createdAt }).from(questions).where(eq(questions.leadId, id)),   // the card's counts derive from the Questionnaire tab's rows (REG-187)
     fetchReturnDetail(id),
   ])
-  const lead = rows.find((r) => r.id === id)
   if (!lead) return null
 
   /* ── Lead stages (858:24890 / 858:24646 / 858:24709) ──
@@ -102,7 +119,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     timeline, parked,
     activity: activity.slice(0, 4),
     quote, files,
-    questionnaire: (() => { const sum = summarise(qRows); return sum ? { leadId: id, ...sum, updatedAt: qRows.reduce((m, q) => (q.createdAt > m ? q.createdAt : m), qRows[0]!.createdAt) } satisfies LeadQuestionnaire : null })(),
+    questionnaire: (() => { const sum = summarise(qRows); return sum ? { leadId: id, ...sum, updatedAt: qRows.reduce((m, q) => (q.createdAt > m ? q.createdAt : m), qRows[0]!.createdAt) } satisfies QuestionnaireSummary : null })(),
     ret,
   }
 }

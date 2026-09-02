@@ -12,22 +12,24 @@ import styles from './note-editor.module.css'
  * Textarea = components/leads/move-stage/fields.tsx NotesArea restyled (no box) with a CSS hidden-mirror auto-grow.
  */
 export function NoteEditor({
-  draft, onChange,
+  draft, onChange, autoFocus = true,
 }: {
   draft: NoteDraft
   onChange: (patch: Partial<NoteDraft>) => void
+  /** (REG-294) False when the host selected this note by itself — a search narrowing the list must not steal the caret. */
+  autoFocus?: boolean
 }) {
   return (
     <div className={styles.editor} data-testid="note-editor">
       <div className={styles.fields}>
-        {/* The editor only exists because the user asked to write something, so it opens with the caret already in
-            the title — nobody should have to hunt for the field and click it first (user 2026-08-31). */}
+        {/* The editor opens with the caret already in the title — nobody should have to hunt for the field and
+            click it first (user 2026-08-31) — but only when the user chose this note (REG-294). */}
         <input
           className={styles.title}
           value={draft.title}
           placeholder="Title"
           aria-label="Title"
-          autoFocus
+          autoFocus={autoFocus}
           onChange={(e) => onChange({ title: e.target.value })}
         />
         <BodyArea value={draft.body} onChange={(v) => onChange({ body: v })} />
@@ -48,10 +50,10 @@ const isBlankHtml = (h: string) =>
  * Uncontrolled while focused (rewriting innerHTML would throw the caret): its own typing round-trips
  * through onChange untouched, and external changes — Cancel, switching notes — land through the effect.
  * Paste is forced to plain text so formatting only ever comes from the toolbar.
- * Shared with the contact editor (spec 02: "the same free text as a note"); the old hidden-mirror
- * auto-grow textarea is retired — a contenteditable grows natively.
+ * The NOTE's body alone since REG-291 — a contact log's Remarks is a plain field now — so this is local
+ * again; the old hidden-mirror auto-grow textarea is retired, a contenteditable grows natively.
  */
-export function BodyArea({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+function BodyArea({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -59,18 +61,19 @@ export function BodyArea({ value, onChange, disabled }: { value: string; onChang
     const html = bodyHtml(value)
     if (document.activeElement !== el && el.innerHTML !== html) el.innerHTML = html
     el.toggleAttribute('data-empty', isBlankHtml(el.innerHTML))
-  }, [value, disabled])
+  }, [value])
   return (
     <div
       ref={ref}
       className={styles.rich}
-      contentEditable={!disabled}
+      contentEditable
       suppressContentEditableWarning
       role="textbox"
       aria-multiline="true"
       aria-label="Note"
-      /* An invitation to type — a read-only body (a contact log before Edit) shows nothing instead (user 2026-09-01). */
-      data-placeholder={disabled ? undefined : 'Write a note...'}
+      /* An invitation to type. The `disabled` variant went with REG-291 — the only read-only body was the
+         contact log's, and a log has no rich body any more. */
+      data-placeholder="Write a note..."
       onInput={(e) => {
         const el = e.currentTarget
         el.toggleAttribute('data-empty', isBlankHtml(el.innerHTML))

@@ -45,3 +45,20 @@
 }
 .dangerButton:hover { filter: brightness(0.92); }
 .dangerButton:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   Tablet-and-down every dialog clamps to the viewport and its body scrolls (callers pass raw px widths).
+   ≤767 the form/modal sizes become full-screen sheets — the compact/standard alerts stay centred cards. */
+@media (max-width: 1199px) {
+  .dialog { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
+  .body { overflow-y: auto; }
+}
+@media (max-width: 767px) {
+  .dialog { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
+  .overlay:has(.dialog[data-size='form']), .overlay:has(.dialog[data-size='modal']) { align-items: stretch; justify-content: stretch; }
+  .dialog[data-size='form'], .dialog[data-size='modal'] {
+    width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  .dialog[data-size='form'] .body, .dialog[data-size='modal'] .body { flex: 1; }
+}

@@ -1,8 +1,11 @@
+import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs } from '@/lib/db/schema'
-import type { ImportBatch, ImportRow, Lead, LeadTask, Member } from '@/lib/db/schema'
+import type { ImportBatch, ImportRow, Lead, LeadTask, Member, StageLog } from '@/lib/db/schema'
 import { STAGES, type Stage } from '@/lib/leads/enums'
+import { DETAIL_TABS, detailHref } from '@/lib/leads/stage-policy'
 import { mergeStageData, type WizardData } from '@/lib/leads/stage-data'
 
 export type LeadRow = Lead & {
@@ -18,16 +21,55 @@ export type LeadRow = Lead & {
   returnStatus: 'processing' | 'rejected' | 'approved' | null
 }
 
-/** Full listing payload — 18 rows; joins resolved in memory. */
-export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
-  const [allLeads, allTasks, links, team, logs, rets] = await Promise.all([
-    db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
-    db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
-    db.select().from(leadAssignees),
-    db.select().from(members),
-    db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
-    db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
-  ])
+/**
+ * REVALIDATION (REG-286) — the one eviction for a lead, used by every server action that writes about it.
+ *
+ * `next.config.ts` holds dynamic route entries for 300s on the promise that "every mutation goes through a server
+ * action that calls revalidatePath". That promise was kept by six hand-copied `touch(leadId)` helpers, each naming
+ * the sibling paths it happened to remember: the Activity tab was named by NONE of them (so a new task or note took
+ * up to five minutes to appear there), Files named Tasks but Notes did not, and `app/leads/actions.ts` — stage
+ * moves, assignment, lead edits — refreshed only the listing, leaving the lead's own pages stale.
+ *
+ * This walks DETAIL_TABS, so a tab added there is covered the day it ships, and never by hand again.
+ */
+export function revalidateLead(leadId: string): void {
+  for (const tab of DETAIL_TABS) revalidatePath(detailHref(leadId, tab.slug))
+  revalidateLeadListings()
+}
+
+/** The screens that list leads rather than show one: the listing (table + kanban) and Qanvast Ops › Leads. */
+export function revalidateLeadListings(): void {
+  revalidatePath('/leads')
+  revalidatePath('/qanvast-ops')
+}
+
+/**
+ * Studio-level writes with no single lead to name — the tag catalogue, task templates. A layout revalidate reaches
+ * every route nested under /leads (the pattern app/settings/actions.ts already uses for Quote approval).
+ */
+export function revalidateEveryLead(): void {
+  revalidatePath('/leads', 'layout')
+  revalidatePath('/qanvast-ops')
+}
+
+/**
+ * Everything a `LeadRow` needs beside the lead record. The listing passes every row of each table; the by-id path
+ * passes only the rows of one lead — the builder filters by lead id either way, so both get identical rows.
+ */
+type RowParts = {
+  tasks: LeadTask[]
+  links: (typeof leadAssignees.$inferSelect)[]
+  team: Member[]
+  logs: StageLog[]
+  rets: { leadId: string; status: string }[]
+}
+
+/**
+ * THE row builder (REG-286). `fetchLeadRows` (listing) and `fetchLeadRow` (one lead) both come through here, so a
+ * lead can never render differently in the table than on its own page — the second assembler this replaced would
+ * have drifted the first time one of them learnt a new field.
+ */
+function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets }: RowParts): LeadRow[] {
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
   const logsByLead = new Map<string, typeof logs>()
@@ -47,9 +89,9 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     const last = logsByLead.get(l.id)?.filter((g) => g.toStage === l.stage).at(-1)
     return last && isActive(last.fromStage) ? last.fromStage : null
   }
-  const rows = allLeads.map((l) => ({
+  return rows.map((l) => ({
     ...l,
-    tasks: allTasks.filter((t) => t.leadId === l.id && !t.done),
+    tasks: tasks.filter((t) => t.leadId === l.id && !t.done),
     assignees: links
       .filter((a) => a.leadId === l.id)
       .map((a) => byMember.get(a.memberId))
@@ -59,7 +101,39 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     resumeStage: resumeStageOf(l),
     returnStatus: latestReturn.get(l.id) ?? null,
   }))
-  return { rows, team, now: Date.now() }
+}
+
+/** Full listing payload — 18 rows; joins resolved in memory. */
+export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
+  const [allLeads, tasks, links, team, logs, rets] = await Promise.all([
+    db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
+    db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
+    db.select().from(leadAssignees),
+    db.select().from(members),
+    db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
+    db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
+  ])
+  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets }), team, now: Date.now() }
+}
+
+/**
+ * ONE lead, assembled by the same builder (REG-286). `fetchLeadDetail` used to call `fetchLeadRows()` and then
+ * `rows.find(...)`: six unfiltered selects — every lead, every task, every assignment, every stage log and every
+ * return in the database — to render one page. Each select here is bounded by the lead id; `team` stays the full
+ * members roster, because the pickers (Assign, task assignees, filters) list the whole studio.
+ *
+ * `logs` rides along because the caller needs the lead's stage logs too, and this already loaded them.
+ */
+export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; team: Member[]; logs: StageLog[]; now: number }> {
+  const [rows, tasks, links, team, logs, rets] = await Promise.all([
+    db.select().from(leads).where(and(eq(leads.id, id), isNull(leads.deletedAt))).limit(1),   // a trashed lead has no detail page, exactly as the listing path excluded it
+    db.select().from(leadTasks).where(eq(leadTasks.leadId, id)).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
+    db.select().from(leadAssignees).where(eq(leadAssignees.leadId, id)),
+    db.select().from(members),
+    db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
+    db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, id)).orderBy(asc(leadReturns.returnedAt)),
+  ])
+  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets })[0] ?? null, team, logs, now: Date.now() }
 }
 
 /** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. */

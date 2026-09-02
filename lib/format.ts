@@ -108,6 +108,24 @@ export function groupDigits(raw: string): string {
   return d ? Number(d).toLocaleString('en-SG') : ''
 }
 
+/**
+ * ONE phone rule for the app (REG-286, audit finding "phone normalisation exists in four places and they
+ * contradict each other"). Leads store the 8-digit local number ("91234567"); anything a person types, pastes
+ * or copies — "+65 9123 4567", "6591234567", "9123 4567" — reduces to it here. Search compares this form on
+ * both sides, so the number copied out of the listing ("+65 91234567") finds its own lead when pasted back
+ * into the box — before this it matched nothing, because "6591234567" is not a substring of "91234567".
+ */
+export function phoneDigits(raw: string | null | undefined): string {
+  const d = digitsOnly(raw ?? '')
+  return d.length === 10 && d.startsWith('65') ? d.slice(2) : d   // the +65 country code is implied, never stored
+}
+
+/** How a phone is shown, copied and exported: "+65 91234567" — the country code the column leaves implied. */
+export function phoneDisplay(phone: string | null | undefined): string {
+  const d = phoneDigits(phone)
+  return d ? `+65 ${d}` : ''
+}
+
 export function money(minor: number): string {
   return new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 }).format(minor / 100)
 }
@@ -125,8 +143,16 @@ export const isDueToday = (due: Date | null | undefined, now: number) =>
 
 /* ---- Input parsing (strict) — fields never accept free text that is not a real date (user 2026-08-29) ---- */
 
-/** `d/m/yyyy` → local midnight, or null. Rejects impossible dates (31/2). */
-export function parseInputDate(s: string): Date | null {
+/**
+ * THE `d/m/yyyy` parser — local midnight, or null. Rejects impossible dates (31/2, 32/13/2026).
+ *
+ * (REG-286, audit finding "parseDMY exists three times and the import copy silently accepts impossible dates"):
+ * fields, filters and the CSV import must all read this one, so a date the UI refuses can never arrive through
+ * another door. `null` / `undefined` parse as "no date", so an absent CSV column can be handed straight in.
+ * `inputDate` is the inverse.
+ */
+export function parseInputDate(s: string | null | undefined): Date | null {
+  if (!s) return null
   const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(s)
   if (!m) return null
   const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))

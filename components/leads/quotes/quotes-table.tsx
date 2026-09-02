@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -46,19 +47,10 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
    ~560px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
-   Same shape as the kanban card kebab (components/leads/kanban/board.tsx), with the clipping edge found by walking up. */
-const MENU_H = 6 * 36 + 8 + 2   /* menus.module.css: the six items at 36 + the list's 4px padding + its 1px border = 226 */
-const MENU_GAP = 4              /* the Dropdown hangs at calc(100% + 4px) */
-function menuSideFor(trigger: HTMLElement): 'up' | 'down' {
-  let top = 0, bottom = window.innerHeight
-  for (let n = trigger.parentElement; n; n = n.parentElement) {
-    if (getComputedStyle(n).overflowY === 'visible') continue   /* only a clipping ancestor (the lead body) can cut the menu off */
-    const r = n.getBoundingClientRect()
-    top = Math.max(top, r.top); bottom = Math.min(bottom, r.bottom)
-  }
-  const k = trigger.getBoundingClientRect(), need = MENU_H + MENU_GAP
-  return bottom - k.bottom < need && k.top - top >= need ? 'up' : 'down'
-}
+   (REG-286) That measurement used to be copied out into this file, the Contracts twin, the leads table and the kanban
+   card — four hand-written answers to one question, and Tasks / Files never got it at all. It now lives once in
+   components/leads/menu-side.ts; the row kebab draws six items. */
+const MENU_ITEMS = 6
 
 /**
  * Lead Details › Quotes table (910:36322) — specs design-source/context/lead-quotes/01-listing-table.txt +
@@ -118,7 +110,7 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === quote.id}
           onMenuToggle={(trigger) => {
-            if (menuRow !== quote.id) setMenuSide(menuSideFor(trigger))   /* measure the room below the kebab before it opens */
+            if (menuRow !== quote.id) setMenuSide(menuSideFor(trigger, MENU_ITEMS))   /* measure the room below the kebab before it opens */
             setMenuRow((m) => (m === quote.id ? null : quote.id))
           }}
           onMenuClose={() => setMenuRow(null)}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -12,6 +12,7 @@ import { DateField } from '@/components/om/date-field'
 import type { Member } from '@/lib/db/schema'
 import styles from './filters-modal.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { MSG } from '@/lib/forms'
 import { Tooltip } from '@/components/om/tooltip'
 
@@ -20,7 +21,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'sort', label: 'Sort' },
   { key: 'propertyTypes', label: 'Property type' },
   { key: 'sources', label: 'Source' },
-  { key: 'assignees', label: 'Assignees' },
+  { key: 'assignees', label: 'Members' },   /* REG-290 */
   { key: 'date', label: 'Date' },
 ]
 const PRESETS: { key: DatePreset; label: string }[] = [
@@ -38,6 +39,13 @@ export function FiltersModal({
   now: number
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
+  /* (REG-287) aria-modal told assistive tech the page behind was inert while nothing held focus in: Tab walked
+     straight out of the panel. Same policy as Dialog / the Move stage window (components/om/surface.ts) — Esc
+     closes this surface only while it is the topmost one (an open date picker owns Esc first), focus moves into
+     the panel on open, Tab cycles inside it, and the opener gets focus back on close. */
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panelRef, onClose)
+  useDialogFocus(open, panelRef)
   const [tab, setTab] = useState<Tab>('sort')
   const [draft, setDraft] = useState<LeadFilters>(value)
   const [q, setQ] = useState('')
@@ -47,13 +55,6 @@ export function FiltersModal({
     setWasOpen(open)
     if (open) { setDraft(value); setTab('sort'); setQ('') }
   }
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   const dots = activeGroups(draft)
   const toggle = (key: 'propertyTypes' | 'sources' | 'assignees', v: string) =>
@@ -79,7 +80,10 @@ export function FiltersModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Filters">
+          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
+              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
+          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Filters"
+                      tabIndex={-1} style={{ outline: 'none' }}>
             <div className={styles.heading}>
               <span className={styles.title}>Filters</span>
               <Tooltip label="Close">
@@ -152,7 +156,7 @@ export function FiltersModal({
                   </>
                 ) : tab === 'assignees' ? (
                   <>
-                    <span className={styles.sectionTitle}>Assignees</span>
+                    <span className={styles.sectionTitle}>Members</span>
                     <div className={styles.list}>
                       {team.map((m) => (
                         <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('assignees', m.id)}

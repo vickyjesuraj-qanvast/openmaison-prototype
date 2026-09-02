@@ -1,5 +1,8 @@
 /* Kanban board — 1:1 from the Board component (779:24866). */
 .boardWrap { position: relative; flex: 1; min-height: 0; min-width: 0; display: flex; }
+/* Box-less wrapper around the om edge pagers: they stay absolutely placed against .boardWrap exactly as
+   before (display: contents generates no box), and mobile can switch them off in one rule (REG-269). */
+.pagers { display: contents; }
 .board {
   display: flex; gap: var(--om-spacing-2); align-items: stretch;
   flex: 1; min-height: 0; min-width: 0;
@@ -165,3 +168,47 @@
 .noResultsSub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); }   /* same block as the table's (search-empty.module.css .sub, REG-146) */
 .clearLink { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
 .clearLink:hover { color: var(--om-color-on-primary-variant); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   Mobile: the board becomes a one-column-at-a-time swipe — columns narrow to 300px (the mock's 320 less the
+   spare a phone doesn't have; a scoped board still takes the slack up to the 480 cap) and the board snaps
+   mandatorily on their leading edge, so a swipe always lands a whole column with the next one peeking. The
+   column head / foot treatment, tones, cards and card contents are the desktop ones, unchanged.
+   The scrollbar is hidden: the snap and the peeking neighbour are the affordance on touch, and a phone paints
+   no resting bar anyway. `touch-action` goes back to the browser so BOTH pans work with a finger — the board
+   sideways and the column's card list vertically; the pointer-drag ghost gives way to the native gesture
+   (the browser fires pointercancel, which springs the card back). Drag-to-stage stays a pointer affordance;
+   on touch a lead moves stage from its row / detail stage pill. Tablet keeps the desktop board as drawn. */
+@media (max-width: 767px) {
+  .board {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .board::-webkit-scrollbar { display: none; }
+  .column { flex: 1 0 300px; }
+  .card { touch-action: auto; }
+  .pagers { display: none; }   /* the mouse-only edge pagers: a swipe is the touch equivalent, and they would sit on top of the cards */
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The card's own controls are the table's, drawn small: the kebab is a bare 20px glyph, the task box is 36px
+   tall and "Add task" / "Assign" are single text lines. At ≤767 each takes a 40px box while the glyph, the
+   type and the card's 16px padding stay the mock's. The kebab gives its extra back as margin so the card head
+   (name · "2d ago" · kebab) keeps its drawn rhythm; the task box and the links simply stand up, which the
+   card's column layout absorbs. Nothing on a card is hover-revealed — the kebab, the task box and the
+   assignee row are all painted at rest — so there is nothing to un-hide here (the row-level hover work lives
+   in table.module.css). Tablet keeps the desktop board as drawn (responsive.md). */
+@media (max-width: 767px) {
+  /* The card's name is its link to the lead — one 24px text line. It grows by padding (never by becoming a
+     flex box, which would cost it its ellipsis) and the head stands up with it. */
+  .cardName { padding-block: var(--om-spacing-2); }
+  .cardKebab {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin: -10px;   /* 40 − 20 = the glyph box the card head laid out: the kebab does not move */
+  }
+  .cardTask { min-height: 40px; }
+  .assignLink { min-height: 40px; }
+  .clearLink { min-height: 40px; }
+}

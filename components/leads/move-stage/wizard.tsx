@@ -1,11 +1,13 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
+import { useSnackbar } from '@/components/om/snackbar'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { displayDateTime } from '@/lib/format'
@@ -45,9 +47,16 @@ export function MoveStageWizard({
   onUpdate: (payload: { stage: Stage; data: WizardData }) => void
 }) {
   useScrollLock(true)   // the page never scrolls behind this surface
+  /* (REG-273) Touch: a locked stage explains itself through a Tooltip, and the DS Tooltip never fires for a
+     touch pointer — so below 768 the tap answers with the same sentence in the app's snackbar instead. The
+     breakpoint has to be read in render because it decides whether the row has a click handler at all; the
+     server snapshot is always the desktop answer, so nothing changes for a mouse. */
+  const snackbar = useSnackbar()
+  const touch = useMediaQuery(MOBILE)
   // R3: Esc closes the window when it is the topmost surface (an inner dialog / menu / picker owns Esc while open); focus
   // moves in on open and returns to the opener on close (components/om/surface.ts).
   const panelRef = useRef<HTMLDivElement>(null)
+  const railRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(true, panelRef, onClose)
   useDialogFocus(true, panelRef)
   // On Hold / Lost leads resume from the stage they left; a lead with no history starts before New.
@@ -71,6 +80,19 @@ export function MoveStageWizard({
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set([SUGGESTED]))
   const [autoAddedTask, setAutoAddedTask] = useState('')
+
+  // (REG-269) Mobile: the stage rail is a horizontal strip across the top of the sheet, so the open stage has to be
+  // scrolled into view. Move the strip's OWN scrollLeft — scrollIntoView would scroll the sheet's ancestors too and
+  // break the sticky header / footer. A no-op at desktop, where the vertical rail never overflows sideways.
+  useEffect(() => {
+    const rail = railRef.current
+    if (!rail || rail.scrollWidth <= rail.clientWidth) return
+    const item = rail.querySelector<HTMLElement>('[data-state="active"]')
+    if (!item) return
+    const railBox = rail.getBoundingClientRect()
+    const itemBox = item.getBoundingClientRect()
+    rail.scrollLeft += itemBox.left - railBox.left - (railBox.width - itemBox.width) / 2   // centred; the browser clamps the range
+  }, [active])
 
   const update = (patch: Partial<WizardData>) => setData((d) => ({ ...d, ...patch }))
   // Errors only surface after the first Save attempt, then re-compute live so each clears as the user fixes it.
@@ -218,17 +240,21 @@ export function MoveStageWizard({
             </Tooltip>
           </div>
           <div className={styles.body}>
-            <div className={styles.rail} role="tablist" aria-label="Stages">
+            <div ref={railRef} className={styles.rail} role="tablist" aria-label="Stages">
               {STAGES.map((s, i) => {
                 const st = railState(s, i)
                 const done = isDone(i)          // a completed stage keeps its check even while it is the open tab
                 const locked = st === 'locked'
                 return (
-                  /* aria-disabled, not `disabled`: a disabled button swallows the pointer, and the tooltip explains the lock. */
+                  /* aria-disabled, not `disabled`: a disabled button swallows the pointer, and the tooltip explains the lock.
+                     On touch (REG-273) the tooltip cannot fire, so the locked row answers the tap with the same sentence
+                     in the snackbar — the second channel the strip needs at ≤767. */
                   <Tooltip key={s} label={locked ? lockReason(i) : ''} side="right" disabled={!locked}>
                     <button type="button" role="tab" aria-selected={s === active} aria-disabled={locked || undefined}
                             className={styles.railItem} data-state={st}
-                            onClick={locked ? undefined : () => goTo(s, i)}>
+                            onClick={locked
+                              ? (touch ? () => snackbar({ message: lockReason(i) }) : undefined)
+                              : () => goTo(s, i)}>
                       <motion.span className={styles.railIcon} data-kind={done ? 'done' : st}
                                    initial={false}
                                    animate={done ? { scale: [0.6, 1] } : { scale: 1 }}   /* springs take 2 keyframes max — the overshoot is the pop */
@@ -243,7 +269,9 @@ export function MoveStageWizard({
                 )
               })}
             </div>
-            <div style={{ flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden' }}>
+            {/* .panelWrap carries what this used to hold inline (flex:1 · min-width:0 · relative · overflow hidden);
+                it is a class so the ≤767 sheet can add min-height:0 in the column layout (REG-269). */}
+            <div className={styles.panelWrap}>
               <AnimatePresence mode="popLayout" custom={dir}>
                 <motion.div
                   key={active}

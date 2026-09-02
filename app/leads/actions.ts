@@ -5,8 +5,25 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'node:crypto'
 import { db, type Db } from '@/lib/db'
 import { leadAssignees, leads } from '@/lib/db/schema'
+import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { ALL_STAGES } from '@/lib/leads/enums'
+// (REG-287) The app's one phone rule and one strict d/m/yyyy parser — the CSV import used to carry private copies
+// of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
+import { digitsOnly, parseInputDate, phoneDigits } from '@/lib/format'
+import { revalidateEveryLead, revalidateLead, revalidateLeadListings } from '@/lib/leads/queries'
 
-const ME = 'dane'   // the signed-in member (members.is_you), as in tasks-actions.ts
+const ME = SESSION_MEMBER_ID   // (REG-286) one stand-in for the signed-in member, shared by every module that stamps a write
+
+/**
+ * (REG-286) A server action is a public endpoint: its TypeScript parameter types are not runtime guarantees, and a
+ * stage string lands in `leads.stage` and `stage_logs`, where every policy helper, filter and kanban column reads it
+ * back. A value outside the mock's vocabulary makes a lead that no column shows and no policy can move. Reject it.
+ * (Same shape as the `kind` guard REG-285 added to updateTask; the vocabulary itself stays in lib/leads/enums.ts.)
+ */
+const isStage = (s: unknown): s is string => typeof s === 'string' && (ALL_STAGES as readonly string[]).includes(s)
+function assertStage(...stages: unknown[]): void {
+  for (const s of stages) if (!isStage(s)) throw new Error(`Unknown stage: ${String(s)}`)
+}
 
 /** The transaction handle Drizzle hands a `db.transaction` callback. */
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
@@ -25,7 +42,7 @@ async function writeAssignees(tx: Tx, leadId: string, memberIds: string[]): Prom
 
 export async function assignMembers(leadId: string, memberIds: string[]): Promise<void> {
   await db.transaction((tx) => writeAssignees(tx, leadId, memberIds))   // atomic: no window with the rows deleted
-  revalidatePath('/leads')
+  revalidateLead(leadId)
 }
 
 export async function moveStage(input: {
@@ -36,26 +53,32 @@ export async function moveStage(input: {
   tasks: string[]
   followUpAt?: string | null
 }): Promise<void> {
+  assertStage(input.fromStage, input.toStage)   // (REG-286)
   const { leads, stageLogs, leadTasks } = await import('@/lib/db/schema')
   const { randomUUID: uuid } = await import('node:crypto')
   const now = new Date()
-  await db.update(leads)
-    .set({ stage: input.toStage, updatedAt: now })
-    .where(eq(leads.id, input.leadId))
-  await db.insert(stageLogs).values({
-    id: uuid(), leadId: input.leadId,
-    fromStage: input.fromStage, toStage: input.toStage,
-    payload: input.payload as object, createdAt: now,
-  })
-  // Suggested tasks are raised by the signed-in member, like every task createTask() writes. Unstamped they read
-  // "System created the task" in Activity, left the drawer's Creator row blank and hid under Filters › Creators › Dane.
-  for (const title of input.tasks) {
-    await db.insert(leadTasks).values({
-      id: uuid(), leadId: input.leadId, title, kind: 'General',
-      dueAt: null, done: false, createdAt: now, creatorId: ME, updatedAt: now,
+  // (REG-286) One transaction: the lead's new stage, the log that records the move and the suggested tasks are one
+  // fact. Unwrapped, a failure after the update left a lead sitting in a stage its journey has no log for — which is
+  // what `resumeStage`, the stage timeline and Activity all read.
+  await db.transaction(async (tx) => {
+    await tx.update(leads)
+      .set({ stage: input.toStage, updatedAt: now })
+      .where(eq(leads.id, input.leadId))
+    await tx.insert(stageLogs).values({
+      id: uuid(), leadId: input.leadId,
+      fromStage: input.fromStage, toStage: input.toStage,
+      payload: input.payload as object, createdAt: now,
     })
-  }
-  revalidatePath('/leads')
+    // Suggested tasks are raised by the signed-in member, like every task createTask() writes. Unstamped they read
+    // "System created the task" in Activity, left the drawer's Creator row blank and hid under Filters › Creators › Dane.
+    for (const title of input.tasks) {
+      await tx.insert(leadTasks).values({
+        id: uuid(), leadId: input.leadId, title, kind: 'General',
+        dueAt: null, done: false, createdAt: now, creatorId: ME, updatedAt: now,
+      })
+    }
+  })
+  revalidateLead(input.leadId)
 }
 
 export async function deleteLead(leadId: string, reason: string): Promise<void> {
@@ -65,18 +88,7 @@ export async function deleteLead(leadId: string, reason: string): Promise<void> 
   await db.update(leads)
     .set({ deletedAt: new Date(), deleteReason: reason, stageBeforeDelete: lead.stage })
     .where(eq(leads.id, leadId))
-  revalidatePath('/leads')
-}
-
-export async function restoreLead(leadId: string): Promise<boolean> {
-  const { leads } = await import('@/lib/db/schema')
-  const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1)
-  if (!lead || !lead.deletedAt) return false
-  await db.update(leads)
-    .set({ deletedAt: null, deleteReason: null, stage: lead.stageBeforeDelete ?? lead.stage, stageBeforeDelete: null })
-    .where(eq(leads.id, leadId))
-  revalidatePath('/leads')
-  return true
+  revalidateLead(leadId)
 }
 
 type LeadFormInput = {
@@ -100,23 +112,23 @@ type LeadFormInput = {
 }
 
 function leadColumns(input: LeadFormInput) {
-  const digits = (s: string) => s.replace(/\D/g, '')
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(input.startDate.trim())
+  // (REG-287) One phone rule (`phoneDigits`) and one date parser (`parseInputDate`, strict) — the hand-written
+  // `digits(input.phone)` and the lax inline d/m/yyyy regex that stood here were two more copies of both.
   return {
     name: input.name.trim(),
-    phone: digits(input.phone),
+    phone: phoneDigits(input.phone),
     source: input.source || 'Others',
     propertyType: input.propertyType || 'Others',
     propertyAddress: input.propertyAddress.trim() || null,
     email: input.email.trim() || null,
     leadAddress: input.leadAddress.trim() || null,
-    budgetMinor: Number(digits(input.budget) || 0) * 100,
-    estimatedStartDate: m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null,
+    budgetMinor: Number(digitsOnly(input.budget) || 0) * 100,
+    estimatedStartDate: parseInputDate(input.startDate),
     style: input.style || null,
     keyCollection: input.keyCollection || null,
     condition: input.condition || null,
     areaSqft: (() => {
-      const n = Number(digits(input.areaSize))
+      const n = Number(digitsOnly(input.areaSize))
       if (!n) return null
       return input.areaUnit === 'sq m' ? Math.round(n * 10.7639) : n
     })(),
@@ -132,7 +144,7 @@ export async function createLead(input: LeadFormInput): Promise<string> {
     await tx.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })   // every new lead carries the band until someone clicks it (user 2026-08-29)
     await writeAssignees(tx, id, input.assignees)
   })
-  revalidatePath('/leads')
+  revalidateLead(id)
   return id
 }
 
@@ -141,7 +153,7 @@ export async function updateLead(leadId: string, input: LeadFormInput): Promise<
     await tx.update(leads).set({ ...leadColumns(input), updatedAt: new Date() }).where(eq(leads.id, leadId))
     await writeAssignees(tx, leadId, input.assignees)
   })
-  revalidatePath('/leads')
+  revalidateLead(leadId)
 }
 
 export async function addTask(leadId: string, title: string): Promise<void> {
@@ -151,19 +163,28 @@ export async function addTask(leadId: string, title: string): Promise<void> {
   await db.insert(leadTasks).values({
     id: randomUUID(), leadId, title, kind: 'General', createdAt: now, creatorId: ME, updatedAt: now,
   })
-  revalidatePath('/leads')
+  revalidateLead(leadId)
+}
+
+/** The task's own lead, so the Tasks and Activity tabs are evicted too (REG-286) — the listing popover knows only the task id. */
+async function leadOfTask(taskId: string): Promise<string | null> {
+  const { leadTasks } = await import('@/lib/db/schema')
+  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, taskId)).limit(1)
+  return t?.leadId ?? null
 }
 
 export async function completeTask(taskId: string): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
   await db.update(leadTasks).set({ done: true }).where(eq(leadTasks.id, taskId))
-  revalidatePath('/leads')
+  const leadId = await leadOfTask(taskId)
+  if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }
 
 export async function setTaskDue(taskId: string, due: Date): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
   await db.update(leadTasks).set({ dueAt: due }).where(eq(leadTasks.id, taskId))
-  revalidatePath('/leads')
+  const leadId = await leadOfTask(taskId)
+  if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }
 
 /** Bulk soft delete — one statement; SQLite evaluates SET against the pre-update row. */
@@ -172,7 +193,7 @@ export async function deleteLeads(leadIds: string[], reason: string): Promise<vo
   await db.update(leads)
     .set({ deletedAt: new Date(), deleteReason: reason, stageBeforeDelete: sql`stage` })
     .where(and(inArray(leads.id, leadIds), isNull(leads.deletedAt)))
-  revalidatePath('/leads')
+  revalidateEveryLead()   // (REG-286) a bulk op touches many leads: one layout revalidate beats a path per lead per tab
 }
 
 /** Bulk restore — returns how many leads were actually still in the trash. */
@@ -181,7 +202,7 @@ export async function restoreLeads(leadIds: string[]): Promise<number> {
   const res = await db.update(leads)
     .set({ deletedAt: null, deleteReason: null, stage: sql`coalesce(stage_before_delete, stage)`, stageBeforeDelete: null })
     .where(and(inArray(leads.id, leadIds), isNotNull(leads.deletedAt)))
-  revalidatePath('/leads')
+  revalidateEveryLead()   // (REG-286)
   return res.rowsAffected
 }
 
@@ -201,7 +222,7 @@ export async function deleteForever(leadIds: string[]): Promise<void> {
     await tx.delete(stageLogs).where(inArray(stageLogs.leadId, ids))
     await tx.delete(leads).where(inArray(leads.id, ids))
   })
-  revalidatePath('/leads')
+  revalidateEveryLead()   // (REG-286)
 }
 
 export async function emptyTrash(): Promise<void> {
@@ -211,12 +232,6 @@ export async function emptyTrash(): Promise<void> {
 
 export type ImportDestination = 'listing' | 'review'
 type ImportPayloadInput = { fileName: string; headers: string[]; mapping: (string | null)[]; rows: string[][]; destination?: ImportDestination }
-
-/** "+65 9123 4567" | "6591234567" | "91234567" → "91234567" (leads store 8-digit local numbers). */
-function canonicalPhone(s: string): string {
-  const d = s.replace(/\D/g, '')
-  return d.length === 10 && d.startsWith('65') ? d.slice(2) : d
-}
 
 /** Import wizard step 3 → 4: persists the batch + every row into the review
  *  queue (M8). Rows without a Lead Name are skipped; phone/email matches
@@ -230,7 +245,7 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
   const byPhone = new Map<string, string>()
   const byEmail = new Map<string, string>()
   for (const l of existing) {
-    if (l.phone) byPhone.set(canonicalPhone(l.phone), l.id)
+    if (l.phone) byPhone.set(phoneDigits(l.phone), l.id)
     if (l.email) byEmail.set(l.email.trim().toLowerCase(), l.id)
   }
   const importId = randomUUID()
@@ -242,7 +257,7 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
   const queued = await db.select({ data: importRows.data }).from(importRows).where(inArray(importRows.status, ['pending', 'duplicate']))
   for (const qd of queued) {
     const d = qd.data as Record<string, string>
-    const p = canonicalPhone(d['Lead Phone Number'] ?? ''); if (p) seenPhone.add(p)
+    const p = phoneDigits(d['Lead Phone Number'] ?? ''); if (p) seenPhone.add(p)
     const e = (d['Lead Email'] ?? '').trim().toLowerCase(); if (e) seenEmail.add(e)
   }
   for (const raw of input.rows) {
@@ -254,7 +269,7 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
       rowsOut.push({ id: randomUUID(), importId, data: { ...rec, __reason: 'Missing Lead Name' }, status: 'skipped', duplicateOfLeadId: null, matchedOn: null })
       continue
     }
-    const phone = canonicalPhone(rec['Lead Phone Number'] ?? '')
+    const phone = phoneDigits(rec['Lead Phone Number'] ?? '')
     if (rec['Lead Phone Number'] !== undefined) rec['Lead Phone Number'] = phone
     const email = (rec['Lead Email'] ?? '').toLowerCase()
     let dupOf: string | null = null, matchedOn: string | null = null
@@ -287,18 +302,12 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
     const res = await approveImportRows(pending.map((r) => r.id))
     approved = res.approved; flagged = res.flagged
   }
-  revalidatePath('/leads')
+  revalidateLeadListings()   // (REG-286) Qanvast Ops lists imported Qanvast leads too
   revalidatePath('/leads/imports')
   return { importId, total, imported, skipped, duplicates, destination, approved, flagged }
 }
 
 /* ---------- Review imported leads (M8) ---------- */
-
-function parseDMY(s: string | undefined): Date | null {
-  if (!s) return null
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s.trim())
-  return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null
-}
 
 /** Imported row → lead columns; enum values outside the mock vocab fall back to 'Others' / 'New'. */
 async function leadFromImport(data: Record<string, string>) {
@@ -307,23 +316,24 @@ async function leadFromImport(data: Record<string, string>) {
     const hit = list.find((x) => x.toLowerCase() === (v ?? '').trim().toLowerCase())
     return hit ?? fallback
   }
-  const digits = (v: string | undefined) => (v ?? '').replace(/\D/g, '')
   const now = new Date()
   return {
     name: (data['Lead Name'] ?? '').trim(),
-    phone: canonicalPhone(data['Lead Phone Number'] ?? ''),
+    phone: phoneDigits(data['Lead Phone Number'] ?? ''),
     email: (data['Lead Email'] ?? '').trim() || null,
     source: pick(data['Lead Source'], SOURCES, 'Others'),
     stage: pick(data['Lead Stage'], ALL_STAGES, 'New'),   // the full vocabulary: STAGES is active-only, so an imported 'On Hold' / 'Lost' row landed silently in New
     propertyType: pick(data['Property Type'], PROPERTY_TYPES, 'Others'),
     propertyAddress: (data['Property Address'] ?? '').trim() || null,
     leadAddress: (data['Lead Address'] ?? '').trim() || null,
-    budgetMinor: Number(digits(data['Estimated Budget (S$)']) || 0) * 100,
-    estimatedStartDate: parseDMY(data['Estimated Start Date']),
+    budgetMinor: Number(digitsOnly(data['Estimated Budget (S$)'] ?? '') || 0) * 100,
+    // (REG-287) The STRICT shared parser. The `parseDMY` copy that stood here accepted 32/13/2026 and rolled it into
+    // a real Date, so a CSV could put a date on a lead that no field in the UI would ever have taken.
+    estimatedStartDate: parseInputDate(data['Estimated Start Date']),
     style: (data['Style'] ?? '').trim() || null,
     keyCollection: (data['Key Collection'] ?? '').trim() || null,
     condition: (data['Condition'] ?? '').trim() || null,
-    areaSqft: Number(digits(data['Area Size'])) || null,
+    areaSqft: Number(digitsOnly(data['Area Size'] ?? '')) || null,
     notes: (data['Remarks'] ?? '').trim() || null,   // the import vocabulary's Remarks (REG-266); the DB column stays `notes`
     createdAt: now, updatedAt: now,
   }
@@ -342,7 +352,7 @@ export async function approveImportRows(rowIds: string[]): Promise<{ approved: n
     const live = await tx.select({ id: leads.id, phone: leads.phone, email: leads.email }).from(leads).where(isNull(leads.deletedAt))
     const byPhone = new Map<string, string>(), byEmail = new Map<string, string>()
     for (const l of live) {
-      if (l.phone) byPhone.set(canonicalPhone(l.phone), l.id)
+      if (l.phone) byPhone.set(phoneDigits(l.phone), l.id)
       if (l.email) byEmail.set(l.email.trim().toLowerCase(), l.id)
     }
     for (const r of rows) {
@@ -367,7 +377,7 @@ export async function approveImportRows(rowIds: string[]): Promise<{ approved: n
       approved++
     }
   })
-  revalidatePath('/leads')
+  revalidateLeadListings()   // (REG-286)
   return { approved, flagged }
 }
 
@@ -376,7 +386,7 @@ export async function rejectImportRows(rowIds: string[]): Promise<number> {
   const { importRows } = await import('@/lib/db/schema')
   const res = await db.update(importRows).set({ status: 'rejected' })
     .where(and(inArray(importRows.id, rowIds), inArray(importRows.status, ['pending', 'duplicate'])))
-  revalidatePath('/leads')
+  revalidateLeadListings()   // (REG-286)
   return res.rowsAffected
 }
 
@@ -413,35 +423,44 @@ export async function mergeImportRow(rowId: string, picks: Record<string, 'exist
     if (Object.keys(patch).length) await tx.update(leads).set({ ...patch, updatedAt: new Date() }).where(eq(leads.id, existing.id))
     await tx.update(importRows).set({ status: 'merged' }).where(eq(importRows.id, rowId))
   })
-  revalidatePath('/leads')
+  revalidateLead(existing.id)
   return true
 }
 
 /** Flexible stage movement (and linear moves backwards / out of On Hold): the lead moves at once; no details are captured. */
 export async function quickMoveStage(input: { leadId: string; fromStage: string; toStage: string }): Promise<{ logId: string }> {
+  assertStage(input.fromStage, input.toStage)   // (REG-286)
   const { leads, stageLogs } = await import('@/lib/db/schema')
   const { randomUUID: uuid } = await import('node:crypto')
   const now = new Date()
   const logId = uuid()
-  await db.update(leads).set({ stage: input.toStage, updatedAt: now }).where(eq(leads.id, input.leadId))
-  await db.insert(stageLogs).values({
-    id: logId, leadId: input.leadId, fromStage: input.fromStage, toStage: input.toStage,
-    payload: { quick: true }, createdAt: now,
+  // (REG-286) Atomic, like moveStage: the stage and the log that lets Undo take it back are one fact — half of it
+  // is a lead that moved with no way home.
+  await db.transaction(async (tx) => {
+    await tx.update(leads).set({ stage: input.toStage, updatedAt: now }).where(eq(leads.id, input.leadId))
+    await tx.insert(stageLogs).values({
+      id: logId, leadId: input.leadId, fromStage: input.fromStage, toStage: input.toStage,
+      payload: { quick: true }, createdAt: now,
+    })
   })
-  revalidatePath('/leads')
+  revalidateLead(input.leadId)
   return { logId }
 }
 
 /** Snackbar Undo for a quick move: the lead returns to where it was and the move leaves no trace in its journey. */
 export async function undoStageMove(input: { leadId: string; logId: string; toStage: string }): Promise<void> {
+  assertStage(input.toStage)   // (REG-286)
   const { leads, stageLogs } = await import('@/lib/db/schema')
-  await db.update(leads).set({ stage: input.toStage, updatedAt: new Date() }).where(eq(leads.id, input.leadId))
-  await db.delete(stageLogs).where(eq(stageLogs.id, input.logId))
-  revalidatePath('/leads')
+  await db.transaction(async (tx) => {   // (REG-286) both halves of the undo, or neither
+    await tx.update(leads).set({ stage: input.toStage, updatedAt: new Date() }).where(eq(leads.id, input.leadId))
+    await tx.delete(stageLogs).where(eq(stageLogs.id, input.logId))
+  })
+  revalidateLead(input.leadId)
 }
 
 /** Corrections to a completed stage (Move stage window, linear movement): the stage's latest log takes the new details. */
 export async function updateStageDetails(input: { leadId: string; stage: string; data: unknown }): Promise<void> {
+  assertStage(input.stage)   // (REG-286)
   const { stageLogs } = await import('@/lib/db/schema')
   const { randomUUID: uuid } = await import('node:crypto')
   const { desc } = await import('drizzle-orm')
@@ -457,7 +476,7 @@ export async function updateStageDetails(input: { leadId: string; stage: string;
       payload: input.data as object, createdAt: new Date(),
     })
   }
-  revalidatePath('/leads')
+  revalidateLead(input.leadId)
 }
 
 /** The left band marks a lead nobody has opened or clicked yet (user 2026-08-29); the first interaction clears it. */
@@ -471,6 +490,8 @@ export async function markLeadSeen(leadId: string): Promise<void> {
 export async function resetPrototype(): Promise<{ rows: number }> {
   const { restoreBaseline } = await import('@/lib/db/baseline')
   const r = await restoreBaseline()
-  revalidatePath('/leads'); revalidatePath('/leads/imports'); revalidatePath('/settings')
+  // (REG-286) Every table changed, so every cached page is wrong — including the lead detail routes, which the old
+  // three paths never named and `staleTimes.dynamic = 300` then served for five minutes after a reset.
+  revalidatePath('/', 'layout')
   return { rows: r.rows }
 }

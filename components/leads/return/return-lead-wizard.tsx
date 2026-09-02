@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Link, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -9,6 +9,7 @@ import { TextField } from '@/components/om/text-field'
 import { DateTimeField } from '@/components/om/date-field'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { duration, ease, modalPanel, overlayFade } from '@/lib/motion'
@@ -87,6 +88,14 @@ export function ReturnLeadWizard({
   const today = useMemo(() => new Date(now), [now])
   /** The last file picked in the attach modal, so a simulated upload's tile can carry its name (read in handlers only). */
   const lastPicked = useRef<string | null>(null)
+  /* (REG-287) `aria-modal` promises the page behind is inert, so the panel owes the WAI-ARIA dialog contract:
+     focus moves in on open, Tab stays inside it, and focus returns to the opener on close. Esc rides the shared
+     layer policy — the reason select's menu, the date-time picker, a tile's Dropdown and the stacked Attach files
+     modal each sit above this panel and own Esc first (components/om/surface.ts), which is exactly what the
+     hand-rolled `!e.defaultPrevented` window listener this replaces was after. */
+  const panelRef = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panelRef, onClose)
+  useDialogFocus(open, panelRef)
 
   // Render-phase adjust: every opening starts fresh on step 1.
   if (open !== wasOpen) {
@@ -96,14 +105,6 @@ export function ReturnLeadWizard({
       setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false)
     }
   }
-
-  useEffect(() => {
-    if (!open) return
-    // Pickers, menus and the attach modal preventDefault their own Escape first (document listeners run before window's).
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   // Validation (lib/forms MSG): every field but the comments is mandatory; messages show after the first press and clear live.
   const errors: FieldErrors<Field> = {
@@ -166,7 +167,11 @@ export function ReturnLeadWizard({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Return Lead"
+            {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+                focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+                surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+            <motion.div ref={panelRef} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                        role="dialog" aria-modal aria-label="Return Lead" tabIndex={-1}
                         data-testid="return-wizard" data-step={step}>
               {/* Heading 84: "Return Lead" 20/Bold · "<name> · Received on <date>" 12 secondary · info 24 (coming soon) · close 24 */}
               <div className={styles.head}>

@@ -1,6 +1,9 @@
 'use client'
 
-import type { LeadQuestionnaire } from '@/lib/db/schema'
+// (REG-287) The counts are derived per request from the `questions` rows, not stored: this card takes
+// `QuestionnaireSummary` (lib/leads/detail.ts), not `LeadQuestionnaire` — the @deprecated row type of the dead
+// `lead_questionnaires` table it used to borrow. Type-only import, as every other client reader of that module.
+import type { QuestionnaireSummary } from '@/lib/leads/detail'
 import { Card, CardEmpty } from './card'
 import styles from './questionnaire-card.module.css'
 
@@ -10,7 +13,7 @@ import styles from './questionnaire-card.module.css'
  * questions are studio-level setup, not added from a lead.
  */
 export function QuestionnaireCard({ q, onAsk, onOpenTab }: {
-  q: LeadQuestionnaire | null
+  q: QuestionnaireSummary | null
   onAsk: () => void
   onOpenTab: () => void
 }) {

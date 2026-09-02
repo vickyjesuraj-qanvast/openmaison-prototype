@@ -90,3 +90,37 @@
   display: flex; flex-direction: column; gap: var(--om-spacing-3);
 }
 .addBtns { display: flex; gap: var(--om-spacing-3); justify-content: flex-end; }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   Same rule as the Assign popover: the 400px surface is anchored with an inline `left` clamped against its
+   own width (window.innerWidth − 420 in app/leads/workspace.tsx), which is negative on a phone. Mobile keeps
+   the popover and its vertical anchor and only sits it 16px inside both viewport edges — the inline value
+   needs !important to be overridden. The rows, the 256px list cap and the composer are unchanged. */
+@media (max-width: 767px) {
+  .pop { left: var(--om-spacing-4) !important; right: var(--om-spacing-4); width: auto; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Four bare marks live in here: the close (24), the complete radio (20), the open chevron (20) and the
+   "Set Due Date" link (one text line). At ≤767 each takes a 40px box. The three that sit in a drawn row give
+   the extra back as margin, so the 8px-padded task rows keep the mock's geometry and the 8px between rows
+   still separates two neighbouring targets; only the due-date link, which owns its own line inside the row's
+   text column, is allowed to stand the row up. Glyphs, type and colours are unchanged. */
+@media (max-width: 767px) {
+  .close {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+  }
+  .radio, .chevBtn {
+    min-width: 40px; min-height: 40px;
+    align-items: center; justify-content: center;
+    margin: -10px;   /* 40 − 20 = the 20px glyph box the row laid out */
+  }
+  .setDue { min-height: 40px; }
+}
+
+/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the complete-task radio draws at 20px. */
+@media (hover: none) {
+  .radio { width: 40px; height: 40px; margin: -10px; display: inline-flex; align-items: center; justify-content: center; }
+}

@@ -29,7 +29,10 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
 export function QanvastTable({ rows, onView }: { rows: QanvastLeadRow[]; onView: (id: string) => void }) {
   const comingSoon = useComingSoon()
   return (
-    <div className={styles.card} role="table" aria-label="Qanvast leads" data-testid="qanvast-leads">
+    /* data-scrolled drives the frozen Name column's shadow ≤1199 (REG-269) — the listing's own handler
+       (components/leads/table.tsx .scroller); inert at desktop, where the card never scrolls. */
+    <div className={styles.card} role="table" aria-label="Qanvast leads" data-testid="qanvast-leads"
+         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div className={styles.head} role="row">
         {HEADS.map((h, i) => (
           <div key={h.key} className={`${styles.hCell} ${h.col ?? ''}`} role="columnheader">

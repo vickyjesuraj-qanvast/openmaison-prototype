@@ -25,3 +25,20 @@
 .portalText { display: flex; flex-direction: column; gap: var(--om-spacing-1); flex: 1; min-width: 0; }
 .portalLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 .portalUrl { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Responsive (REG-269): mobile — the panel width rides the shared dialog clamp (min(400px, viewport − margin),
+   handled centrally in the om dialog shell); the portal box trades its fixed 58 for a min-height so the
+   label / Copy row can breathe if the clamped panel ever forces a wrap. */
+@media (max-width: 767px) {
+  .portal { height: auto; min-height: 58px; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   "Copy" is the mock's 68×36 button inside the 58px portal box. On a touch pointer it keeps its drawn
+   size and gains a transparent 2px ring — a 40px target that takes no space, so the box, the URL's
+   ellipsis and the 12px gap are unchanged. The dialog's own footer buttons and close belong to the
+   shared shell (components/leads/move-stage/dialogs.tsx). A mouse never sees this rule. */
+@media (hover: none) {
+  .portal button { position: relative; }
+  .portal button::after { content: ''; position: absolute; inset: -2px; }
+}

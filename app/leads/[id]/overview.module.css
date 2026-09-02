@@ -12,7 +12,9 @@
 /* The tabs travel with the header instead of scrolling away (user 2026-08-31). The header is sticky at 8 and 72 tall,
    so they dock at 80; z sits below the header's 20, so the header always covers them and never the reverse. They
    already carry the white plate and the level-1 shadow that separate them from the rows passing underneath. */
-.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 72px); z-index: 19; }
+.stickyTabs.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 72px); z-index: 19; }   /* doubled class = specificity 0,2,0: om/tabs' own `.tabs { position: relative }` must never win the
+   cascade here — when it did, the row kept this rule's `top: 80px` as a RELATIVE offset and the whole
+   strip painted 80px low on every detail tab (REG-269 regression, caught by the desktop byte-compare). */
 
 /* Below the tabs: info column 360 · centre (fluid) · Create quick links 72/140. Columns stretch to the row's height,
    which is at least the viewport minus the shell gutters, header and tabs, so the side rules run the full height. */
@@ -48,6 +50,29 @@
 
 /* Stage pill + kebab live in the header's actions slot; menus anchor to these wrappers. */
 .anchor { position: relative; display: inline-flex; }
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   Tablet and down: the card grid drops to one column. The two stacks keep their DOM order — MY WORK / QUOTES /
+   QUESTIONNAIRE first, then LEAD RETURNED / STAGES / FILES / RECENT ACTIVITY. */
+@media (max-width: 1199px) {
+  .grid { flex-direction: column; align-items: stretch; }
+  .column { flex: none; width: 100%; }
+}
+
+/* (REG-269) Mobile: the three-part row stacks — the info column goes full-width above the centre (its own
+   module drops the 360 and the quick-links strip hides itself); the tabs dock under the static 56px app bar
+   (the L2 header is static at mobile, so 8+72 no longer exists); centre padding 24 → 16 with the FAB clearance
+   kept; the row's min-height loses the desktop 72+44 chrome assumption; the sheet runs edge-to-edge. */
+@media (max-width: 767px) {
+  .body { border-radius: 0; }
+  .stickyTabs { top: var(--app-mobile-bar-height, 56px); }
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 44px);
+  }
+  .centre { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); }
+}
 
 /* Notes (931:44882): the tab is one fixed 844px card that never scrolls under the FAB, so the mock's 24 bottom padding stands (the FAB overlaps the card corner in the mock). */
 .centre[data-tab='notes'] { --fab-clearance: var(--om-spacing-6); }

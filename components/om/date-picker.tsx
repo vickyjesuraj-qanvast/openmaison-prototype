@@ -104,6 +104,14 @@ export function DatePicker({
       onClose()
     }
     const onKey = (e: KeyboardEvent) => {
+      /* (REG-286, a11y audit "anchored popovers are unreachable by keyboard"): the panel is portalled to the end
+         of <body>, so tabbing out of it landed past the whole page. Close it and put focus back on the field —
+         no preventDefault, so the browser's own Tab carries on from there. (Focus inside the time row's portalled
+         option menu is not inside the panel: PortalMenu handles its own Tab.) */
+      if (e.key === 'Tab') {
+        if (panel.current?.contains(document.activeElement)) { focusAnchor(anchorRef.current); onClose() }
+        return
+      }
       if (e.key !== 'Escape') return
       if (document.querySelector('[data-om-menu]')) return   // an open time-row menu consumes Esc first
       e.preventDefault(); e.stopPropagation()
@@ -124,6 +132,19 @@ export function DatePicker({
     document.addEventListener('scroll', onScroll, true)
     return () => { window.removeEventListener('pointerdown', onDown, true); window.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize); document.removeEventListener('scroll', onScroll, true) }
   }, [open, onClose, anchorRef])
+
+  /* (REG-286) Focus restore. Picking a day with Enter closed the picker with focus still on that day button, and
+     the panel then unmounted — focus fell to <body> and the next Tab restarted from the top of the page. Its own
+     effect, keyed on `open` alone: hosts pass an inline `onClose`, so a cleanup that depended on it would fire on
+     every re-render and yank focus out of the grid mid-use. */
+  useEffect(() => {
+    if (!open) return
+    const el = panel.current
+    // The anchor is read at CLOSE time on purpose — the host may re-point `anchorRef` at another field while the
+    // picker stays open (`anchorKey`), so the field focus goes back to is the one it is anchored to then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { if (el?.contains(document.activeElement)) focusAnchor(anchorRef.current) }
+  }, [open, anchorRef])
 
   // Time row: edits apply to the current value (or today at defaultHour when nothing is picked yet).
   const base = () => { const d = value ? new Date(value) : new Date(today); if (!value) d.setHours(defaultHour, 0, 0, 0); return d }

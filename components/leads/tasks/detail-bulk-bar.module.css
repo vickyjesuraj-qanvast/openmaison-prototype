@@ -45,3 +45,18 @@
   border-radius: var(--om-radius-1);
 }
 .close:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* Responsive (REG-269): the bar is content-sized with nowrap actions (~440px on Files) and fixed at left 50%
+   — at 390 it ran off both edges. It now fits the viewport and wraps its actions onto a second line. */
+@media (max-width: 767px) {
+  .bar { max-width: calc(100vw - 32px); flex-wrap: wrap; row-gap: var(--om-spacing-3); justify-content: center; padding: var(--om-spacing-3) var(--om-spacing-4); }
+}
+
+/* Touch ergonomics (REG-273): every action here is 14px link text (20 tall) and the clear is a bare 24px
+   glyph — both half a fingertip. The type and the glyph keep their sizes; the box around them grows to 40
+   and the extra is handed back as margin, so the 50px bar and its 24 gaps are unchanged (the actions sit 24
+   apart, so the grown boxes never touch). Desktop with a mouse never matches. */
+@media (max-width: 767px), (hover: none) {
+  .link { padding-block: 10px; margin-block: -10px; }
+  .close { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+}

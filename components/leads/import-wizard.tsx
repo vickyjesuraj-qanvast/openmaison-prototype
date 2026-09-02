@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Tag } from '@/components/ds'
@@ -13,6 +13,7 @@ import { parseCsv } from '@/lib/csv'
 import { IMPORT_FIELDS, IGNORE, PREVIEW_COLUMNS, autoMap, toRecord, type ImportField, type Mapping } from '@/lib/leads/import-fields'
 import styles from './import-wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
@@ -32,7 +33,7 @@ function FieldSelect({
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   return (
-    <div ref={ref} style={{ display: 'inline-flex' }}>
+    <div ref={ref} className={styles.selectWrap}>
       <button type="button" className={styles.select} data-open={open || undefined} data-error={error || undefined} onClick={() => setOpen((o) => !o)}>
         <span>{value ?? 'Select Field'}</span>
         <span className={styles.chev}><Icon name="expand_more" size={16} /></span>
@@ -79,6 +80,7 @@ export function ImportWizard({
   const fileRef = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const busyRef = useRef(false)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   if (open !== wasOpen) {
     setWasOpen(open)
@@ -114,12 +116,15 @@ export function ImportWizard({
   const closeRef = useRef(close)
   useEffect(() => { closeRef.current = close })   // keep the Esc handler on the latest closure
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) closeRef.current() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
+  /* (REG-287) aria-modal told assistive tech the page behind was inert while nothing held focus in: Tab walked
+     straight out of the panel. Same policy as Dialog / the Move stage window (components/om/surface.ts) — Esc
+     closes this surface only while it is the topmost one (the field menu, the Lead routing dialog and the
+     confirm-close alert all sit above it and own Esc first, which is what the old `!e.defaultPrevented` guard
+     was reaching for), focus moves into the panel on open, Tab cycles inside it, and the opener gets focus back
+     on close. The handler stays on the latest `close` through closeRef, so the busy / step-4 gating is unchanged. */
+  const escClose = useCallback(() => { closeRef.current() }, [])
+  useEscapeLayer(open, panelRef, escClose)
+  useDialogFocus(open, panelRef)
 
   const acceptFile = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase()
@@ -200,7 +205,10 @@ export function ImportWizard({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Import Leads">
+          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
+              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
+          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Import Leads"
+                      tabIndex={-1} style={{ outline: 'none' }}>
             <div className={styles.heading}>
               <span className={styles.title}>Import Leads</span>
               <span className={styles.step}>Step {step} of 4</span>
@@ -307,9 +315,12 @@ export function ImportWizard({
                                 })()}
                               </div>
                               <div className={`${styles.mapCell} ${styles.colReview}`}>
+                                {/* Responsive (REG-269): the head row's labels ride along in each row, for the ≤767 stacked layout. */}
+                                <span className={styles.stackLabel}>Content Review</span>
                                 <div className={styles.reviewList}>{samples.map((s, k) => <span key={k}>{s}</span>)}</div>
                               </div>
                               <div className={`${styles.mapCell} ${styles.colSelect}`}>
+                                <span className={styles.stackLabel}>Select OpenMaison Field Name</span>
                                 <FieldSelect value={mapping[i] ?? null} used={used} error={errorRow === i && nameMissing} onChange={(v) => setField(i, v)} />
                                 {errorRow === i && nameMissing ? <span className={styles.required}>Required</span> : null}
                               </div>
@@ -326,7 +337,13 @@ export function ImportWizard({
                           Ensure your columns align with the correct OpenMaison fields, especially assigning one to “Lead Name”. Only columns matched to a OpenMaison field name will be imported.
                         </div>
                       </div>
-                      <div className={styles.previewWrap} onScroll={(e) => { e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0) }}>
+                      {/* data-scrolled = down (sticky head shadow); data-scrolled-x = sideways (the frozen
+                          SL No column's shadow below 1200, REG-269/REG-144). */}
+                      <div className={styles.previewWrap}
+                           onScroll={(e) => {
+                             e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0)
+                             e.currentTarget.dataset.scrolledX = String(e.currentTarget.scrollLeft > 0)
+                           }}>
                         {/* A grid, not fixed-width cells: every value shows in full (mock widths are minimums; the
                             column grows to its longest value and the wrap scrolls sideways) — user 2026-08-28. */}
                         <div className={styles.preview} role="table" aria-label="Import preview"

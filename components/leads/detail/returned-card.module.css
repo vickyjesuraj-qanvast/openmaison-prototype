@@ -42,3 +42,30 @@
   transition: color var(--motion-hover);
 }
 .view:hover { color: var(--om-color-on-primary-variant); }   /* Link text hover #4400cc (interaction-states.md) */
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   The KV rows are a fixed 120 key + a fixed 36 height, and the approved state puts TWO MetaChips (≈250) in the
+   value slot — at the tablet card (~232 wide) the value gets 104px and the chips left the card entirely
+   (audit: returned-card.module.css:28/31).
+   At 390 the value still gets ~190px, which is the mock's own reading width for "Homeowner did not shortlist ID
+   to pro…", so the two-column read is KEPT there; the 150px basis drops the value onto its own full-width line
+   only when it would be crushed, which is the tablet card. The row height becomes a floor so a wrapped value or
+   a second chip row grows it instead of being cut, and the chips wrap among themselves. Single-line values keep
+   their ENDING ellipsis and their `title` — mock parity, and the whole text is on the row's tooltip. */
+@media (max-width: 1199px) {
+  .row { flex-wrap: wrap; height: auto; min-height: 36px; }
+  .val { flex: 1 1 150px; }
+  .chips { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+}
+
+/* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
+   "View Details ›" is the card's only control and sits on a 20px footer line — the footer becomes 40 and the
+   link stretches into it, so the target clears the floor without the label or the chevron changing size.
+   The value cells carry their full text in a `title` attribute behind an ENDING ellipsis; a native title is
+   a hover tooltip, so on touch the cut-off half of "Homeowner did not shortlist ID to pro…" was unreachable.
+   At mobile the value wraps instead — the whole reason is on the card, which is the second channel. */
+@media (max-width: 767px) {
+  .footer { height: 40px; }
+  .view { align-self: stretch; }
+  .name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+}

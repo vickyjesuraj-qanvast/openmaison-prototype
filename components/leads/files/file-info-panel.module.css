@@ -28,3 +28,18 @@
    at ~34 characters. Owner and Location are stated nowhere else in the viewer, so they wrap instead of truncating —
    the info column's rule (components/leads/detail/info-column.module.css). Every mocked value is one line still. */
 .value { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199 the panel narrows to 320 (file-viewer.module.css), so the label column drops to 96 — still wider
+   than the longest label ("File type") and it hands the 24 back to the value. ≤767 the panel is a
+   full-screen overlay and the body takes the mobile content padding (24 → 16). */
+@media (max-width: 1199px) {
+  .label { width: 96px; }
+}
+@media (max-width: 767px) {
+  .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .body { padding: var(--om-spacing-4); }
+  /* Touch ergonomics (REG-273): the only control on this panel is the head's close — 24px glyph, 40px box,
+     the extra given back as margin so the 64px head keeps the Comments panel's rhythm exactly. */
+  .close { width: 40px; height: 40px; margin: -8px; }
+}

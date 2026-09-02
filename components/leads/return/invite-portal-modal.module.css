@@ -32,3 +32,20 @@
 .boxLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 .boxSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .boxUrl { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
+   Three things here are under the touch floor on a phone:
+     · the "+65 ▾" country control inside the phone field — a 20px text line; it takes a 40px box, which the
+       48px field swallows, and it is already ~44 wide, so neither the field nor the prefix rule moves;
+     · the DS Switch (sm) — a 40×20 track, i.e. 20px of tappable height. Its own row is 40+ tall already, so
+       the switch is stretched to a 40px box around the same track: the mark, its size and its optical centre
+       are unchanged, only what a finger can hit grows. (It is the box's only <label>; the Portal link box's
+       trailing child is a DS Button.)
+     · the portal URL, whose full value lived ONLY in a `title` — a hover tooltip, so unreachable on touch.
+       It wraps at mobile instead, which puts the whole link on the card: the second channel, not a tooltip.
+   Everything else in the dialog is a DS field or button at its mocked size. */
+@media (max-width: 767px) {
+  .country { min-block-size: 40px; }
+  .box > label { min-block-size: 40px; }
+  .boxUrl { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+}

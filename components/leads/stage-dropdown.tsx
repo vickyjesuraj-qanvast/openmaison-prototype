@@ -5,9 +5,18 @@ import { useEffect, useRef } from 'react'
 import { anchoredSurface } from '@/lib/motion'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { Tooltip } from '@/components/om/tooltip'
+import { useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
 import styles from './menus.module.css'
 import ddStyles from './stage-dropdown.module.css'
+
+/**
+ * Touch ergonomics (REG-273): a tooltip never fires for a touch pointer, so on a phone or a tablet the reason
+ * a stage is out of reach — the whole point of the locked item — was unreachable. The tap that used to do
+ * nothing now answers in the app's own snackbar, with the same sentence the tooltip carries. Read in the
+ * handler, never in render; a mouse always reports `hover: hover`, so desktop behaviour is untouched.
+ */
+const isTouchPointer = () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
 export function StageDropdown({
   open, onClose, onSelect, position, blocked, current = null, doneThrough = -1,
@@ -23,7 +32,9 @@ export function StageDropdown({
   /** Index (in STAGES) of the last completed active stage — On Hold / Lost leads keep the checks of where they left. */
   doneThrough?: number
 }) {
-  // aria-disabled rather than `disabled`: disabled buttons swallow pointer events, and the tooltip explains the lock.
+  const snackbar = useSnackbar()
+  // aria-disabled rather than `disabled`: disabled buttons swallow pointer events, and the tooltip explains the lock
+  // (on touch, where no tooltip fires, the tap answers with the same sentence in the snackbar — REG-273).
   const item = (s: Stage) => {
     const why = blocked?.(s) ?? null
     const isCurrent = s === current
@@ -32,7 +43,7 @@ export function StageDropdown({
       <Tooltip key={s} label={why ?? ''} side="right" disabled={!why}>
         <button type="button" role="menuitem" className={styles.item} aria-disabled={why ? true : undefined}
                 aria-current={isCurrent ? 'step' : undefined} data-done={done || undefined}
-                onClick={why ? undefined : () => onSelect(s)}>
+                onClick={why ? () => { if (isTouchPointer()) snackbar({ message: why }) } : () => onSelect(s)}>
           <span className={ddStyles.itemText}>{s}</span>
           {isCurrent ? <span className={ddStyles.meta}>current</span> : null}
           {done ? <span className={ddStyles.done} aria-hidden><Icon name="check_circle" size={20} fill /></span> : null}

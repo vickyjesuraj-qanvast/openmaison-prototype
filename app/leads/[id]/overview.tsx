@@ -23,6 +23,7 @@ import { LostDialog, OnHoldDialog } from '@/components/leads/move-stage/dialogs'
 import { AskClientDialog } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { StageDropdown } from '@/components/leads/stage-dropdown'
+import { CREATE_EVENTS } from '@/components/leads/tasks/use-create-intent'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { AiBrief } from '@/components/leads/detail/ai-brief'
 import { ActivityCard } from '@/components/leads/detail/activity-card'
@@ -44,15 +45,21 @@ import type { LeadDetail } from '@/lib/leads/detail'
 import { returnTags } from '@/lib/leads/return-tags'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
-import { displayDate, moneyCompact } from '@/lib/format'
-import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, isActiveStage, journeyIdx, type DetailTabSlug } from '@/lib/leads/stage-policy'
+import { displayDate, moneyCompact, phoneDigits, phoneDisplay } from '@/lib/format'
+import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, isActiveStage, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import styles from './overview.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
-/* Anchored popovers are fixed-position; these derive their spot from the anchor so they can follow it while the page scrolls. */
-const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom + 4, window.innerHeight - 360), left: r.left } }
-const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: Math.min(r.bottom + 4, window.innerHeight - 460), left: Math.min(r.left, window.innerWidth - 420) } }
-const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: Math.min(r.bottom + 4, window.innerHeight - 520), left: Math.min(r.left, window.innerWidth - 420) } }
+/* Anchored popovers are fixed-position; these derive their spot from the anchor so they can follow it while the page
+   scrolls. Both axes clamp with a 16px floor (REG-269, the fix workspace.tsx already carries — this page keeps its own
+   copies): the old one-sided `innerWidth - 420` / `innerHeight - N` went NEGATIVE on a narrow or short viewport and put
+   the card off the top-left of the screen with nothing to scroll it back. */
+const POP_EDGE = 16
+const clampAxis = (preferred: number, size: number, viewport: number) =>
+  Math.max(POP_EDGE, Math.min(preferred, Math.max(POP_EDGE, viewport - size - POP_EDGE)))
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 356, window.innerHeight), left: clampAxis(r.left, 240, window.innerWidth) } }
+const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: clampAxis(r.bottom + 4, 456, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
+const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 516, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
 /**
@@ -89,34 +96,35 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     return displayDate(new Date((holdOpenedAt || 0) + days * 86400000))
   }, [holdDuration, holdOpenedAt])
 
-  const quickMove = async (stage: Stage) => {
+  /* A flexible-mode quick move used to be awaited RAW here: `void quickMove(stage)` with nothing around it, so a
+     server action that threw became an unhandled rejection — no snackbar, no change, nothing on screen. The listing's
+     twin has always reported it. Both the move and its Undo now go through `run` (REG-286, audit "the stage-movement
+     dispatch is written twice"), with the listing's own copy. */
+  const quickMove = (stage: Stage) => run(async () => {
     const { logId } = await quickMoveStage({ leadId: lead.id, fromStage: lead.stage, toStage: stage })
-    snackbar({ message: `Moved to ${stage}`, actionLabel: 'Undo', onAction: () => { void undoStageMove({ leadId: lead.id, logId, toStage: lead.stage }).then(refresh) } })
+    snackbar({
+      message: `Moved to ${stage}`,
+      actionLabel: 'Undo',
+      onAction: () => { void run(async () => { await undoStageMove({ leadId: lead.id, logId, toStage: lead.stage }); refresh() }, 'Couldn’t undo the move — please try again') },
+    })
     refresh()
-  }
-  /** Every stage change on this page — pill, stages card, quick links — comes through here (same branches as the listing). */
+  }, 'Couldn’t move the lead — please try again')
+  /** Every stage change on this page — pill, stages card, quick links — comes through here.
+      The branch set is `stageIntent` in lib/leads/stage-policy, the one copy the listing runs too (REG-286);
+      this half only maps the intent onto this page's dialogs and snackbar. */
   const requestStageChange = (stage: Stage) => {
-    if (lead.stage === stage) return
-    if (stage === 'On Hold') { setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(true); return }
-    if (stage === 'Lost') { setLostReason('Property too far'); setLost(true); return }
-    const from = journeyIdx(lead), to = STAGES.indexOf(stage as (typeof STAGES)[number])
-    if (!isActiveStage(lead.stage)) {
-      // A parked lead resumes with one confirm — except where the shared gate refuses it, which is how a Lost lead's
-      // un-reached stages stay shut (REG-225). Active leads keep their own path below, unchanged.
-      const parkedBlock = blockedReason(lead, stage, stageMovement)
-      if (parkedBlock) { snackbar({ message: parkedBlock }); return }
-      setConfirmMove(stage); return
+    const intent = stageIntent(lead, stage, stageMovement)
+    switch (intent.kind) {
+      case 'none': return
+      case 'hold': setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(true); return
+      case 'lost': setLostReason('Property too far'); setLost(true); return
+      case 'blocked': snackbar({ message: intent.message }); return
+      case 'confirm-resume': setConfirmMove(intent.stage); return
+      case 'wizard': setWizard(intent.stage); return
+      case 'quick': void quickMove(intent.stage); return
     }
-    if (to <= from) { setWizard(stage); return }                                // completed stages open for viewing / Edit (REG-132)
-    if (stageMovement === 'linear') {
-      if (to === from + 1) { setWizard(stage); return }
-      snackbar({ message: blockedReason(lead, stage, stageMovement) ?? `Complete ${STAGES[from + 1]} first` })
-      return
-    }
-    if (stage === 'Won') { setWizard(stage); return }
-    void quickMove(stage)
   }
-  /** Create quick links (Call Log / Meeting): the stage the lead is in or has already passed opens its window straight —
+  /** Create quick links (Contact Log / Meeting): the stage the lead is in or has already passed opens its window straight —
    *  that is REG-168's "add another log". Anything ahead goes through the gate, so a quick link can no longer skip
    *  Contacted the way the pill refuses to, or resume a parked lead without its confirm. */
   const openStageLog = (stage: Stage) => {
@@ -184,11 +192,12 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     return parts.length ? `${detailHref(lead.id, slug)}?${parts.join('&')}` : detailHref(lead.id, slug)
   }
   const goTab = (slug: DetailTabSlug) => router.push(href(slug))
+  /* The tab window events come from CREATE_EVENTS, the map the listening tabs already read (REG-286) — these three
+     dispatchers used to hard-code the same strings, so a rename on one side broke the quick link in silence. */
   /** New quote (QUOTES card › From Scratch, Create quick links › Quote): the Quotes tab handles it in place, elsewhere it opens with `?new=1`. */
-  const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent('om:quotes:new')); else router.push(href('quotes', 'new=1')) }
+  const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
-  const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent('om:notes:new', { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
-  /** New question (QUESTIONNAIRE card › Add Question, 931-46769): the Questionnaire tab opens its add card in place, elsewhere it lands with `?new=1`. */
+  const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
   const tabItems = DETAIL_TABS.map((t) => ({ label: t.label, href: href(t.slug) }))
   const activeTab = DETAIL_TABS.find((t) => t.slug === tab) ?? DETAIL_TABS[0]
   const returnedBy = ret ? team.find((m) => m.id === ret.returnedById) ?? null : null
@@ -273,10 +282,12 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onAssign={openAssign}
             onAssigneeMenu={(anchor) => openAssign(anchor)}
             onCopy={async (what, value) => {
-              try { await navigator.clipboard.writeText(what === 'phone' ? `+65 ${value}` : value); snackbar({ message: 'Copied to clipboard' }) }
+              // (REG-287) One copy format for the whole app — `phoneDisplay`, not a second "+65 ${value}" template here.
+              try { await navigator.clipboard.writeText(what === 'phone' ? phoneDisplay(value) : value); snackbar({ message: 'Copied to clipboard' }) }
               catch { snackbar({ message: 'Couldn’t copy — please try again' }) }
             }}
-            onWhatsApp={() => window.open(`https://wa.me/65${lead.phone}`, '_blank', 'noopener')}
+            // (REG-287) wa.me wants country code + local number, so the local half goes through `phoneDigits`.
+            onWhatsApp={() => window.open(`https://wa.me/65${phoneDigits(lead.phone)}`, '_blank', 'noopener')}
             onDirections={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(lead.leadAddress ?? '')}`, '_blank', 'noopener')}
           />
           )}
@@ -335,7 +346,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             /* Same shape as Quote / Note / Question above: in place on its own tab, otherwise land on the Tasks tab
                with the add row already open. It used to open the MY WORK popover, whose anchor only exists on the
                Overview — so from Quotes, Files, Notes … the link did nothing at all (user 2026-08-30). */
-            onTask={() => { if (tab === 'tasks') window.dispatchEvent(new CustomEvent('om:tasks:add')); else router.push(href('tasks', 'new=1')) }}
+            onTask={() => { if (tab === 'tasks') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.tasks)); else router.push(href('tasks', 'new=1')) }}
             onQuote={onNewQuote}
             onCallLog={() => openStageLog('Contacted')}
             onNote={onNewNote}
@@ -361,7 +372,12 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         message={`${lead.stage} ends and the lead continues from ${confirmMove ?? ''}. Details already recorded stay on its journey.`}
         confirmLabel="Resume"
         onCancel={() => setConfirmMove(null)}
-        onConfirm={() => { const stage = confirmMove; setConfirmMove(null); if (stage) void run(() => quickMove(stage), 'Couldn’t move the lead — please try again') }}
+        onConfirm={() => {
+          // `quickMove` reports its own failure now (REG-286), so the resume confirm no longer wraps it a second time.
+          const stage = confirmMove
+          setConfirmMove(null)
+          if (stage) void quickMove(stage)
+        }}
       />
       {wizard ? (
         <MoveStageWizard
@@ -428,7 +444,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         value={lead.assignees.map((m) => m.id)}
         anchor={assign?.el}
         onClose={() => setAssign(null)}
-        onApply={(memberIds) => { setAssign(null); void run(async () => { await assignMembers(lead.id, memberIds); snackbar({ message: 'Assignees updated' }); refresh() }, 'Couldn’t update the assignees — please try again') }}
+        onApply={(memberIds) => { setAssign(null); void run(async () => { await assignMembers(lead.id, memberIds); snackbar({ message: 'Members updated' }); refresh() }, 'Couldn’t update the members — please try again') }}
         requireOne={lead.stage !== 'New'}
         position={assign}
       />

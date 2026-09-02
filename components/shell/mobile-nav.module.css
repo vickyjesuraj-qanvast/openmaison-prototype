@@ -1,0 +1,35 @@
+/* Mobile chrome (REG-269): the ≤767 top bar + off-canvas nav drawer. Nothing here renders ≥768. */
+.bar { display: none; }
+@media (max-width: 767px) {
+  .bar {
+    position: sticky; top: 0; z-index: 80;
+    display: flex; align-items: center; gap: var(--om-spacing-3);
+    height: var(--app-mobile-bar-height); flex-shrink: 0;
+    padding: 0 var(--om-spacing-4);
+    background: var(--om-color-surface-default);
+    box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+  }
+}
+.menuBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 40px; height: 40px; margin-left: calc(-1 * var(--om-spacing-2));
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.menuBtn:hover, .menuBtn:active { background: var(--om-color-hover-08p); }
+.lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
+.wordmark { height: 14px; display: block; }
+
+/* Drawer layer: above the FAB and dialogs' base z; the drawer is the expanded rail, edge to edge. */
+.layer { position: fixed; inset: 0; z-index: 120; }
+@media (min-width: 768px) { .layer { display: none; } }
+.scrim { position: absolute; inset: 0; border: 0; padding: 0; margin: 0; background: var(--om-color-overlay-60p); cursor: default; }
+.drawer {
+  position: absolute; top: 0; left: 0; bottom: 0; width: 216px;
+  background: var(--om-color-surface-default);
+  box-shadow: var(--om-elevation-level-5);
+  display: flex;
+}

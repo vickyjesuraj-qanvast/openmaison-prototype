@@ -109,3 +109,44 @@
 }
 .menuWrap { position: relative; display: inline-flex; }
 .danger { color: var(--om-color-tertiary-red-default); }   /* quotes 910:36723 Delete #db382a */
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   ≤1199 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
+   `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
+@media (max-width: 1199px) {
+  /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
+     past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
+     card itself, so the sheet clipped it exactly as before. */
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
+   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+@media (hover: none) {
+  .actions { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The Quotes twin's rule (components/leads/quotes/quotes-table.module.css), with this table's two
+   measurements. Below 768 the head's Sort buttons and the row's Status trigger — both drawn as bare text,
+   ~20px tall — grow their BOX to 40; the mark never moves, because the horizontal padding is handed back
+   as a negative margin. The 68px row already leaves 44 between its 12px cell paddings; the head is the
+   one row that has to grow, from the mock's 48 to 56 (8 + 40 + 8), which is the brief's "where 40px
+   boxes would collide, the row grows". */
+@media (max-width: 767px) {
+  .head { height: auto; min-height: 56px; }
+  .head .hCell { padding-block: var(--om-spacing-2); }
+  .hSort, .statusBtn {
+    min-height: 40px;
+    padding-inline: var(--om-spacing-2);
+    margin-inline: calc(var(--om-spacing-2) * -1);
+  }
+}
+
+/* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls. On a touch
+   pointer each keeps its drawn size and gains a transparent 2px ring — a 40px target that takes no space,
+   so the float, its shadow and the 12px gap between the two stay pixel-exact. A mouse never sees this. */
+@media (hover: none) {
+  .float button { position: relative; }
+  .float button::after { content: ''; position: absolute; inset: -2px; }
+}

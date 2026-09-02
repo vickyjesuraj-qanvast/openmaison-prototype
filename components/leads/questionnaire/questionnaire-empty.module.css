@@ -21,4 +21,10 @@
    components/leads/detail/card.module.css .emptyTitle does. */
 .title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
 .body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }   /* 14/Regular #1a1a1a */
-.buttons { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }   /* 931:46839 */
+
+/* Responsive (REG-269): mobile — the centred copy gets an inline inset so wrapped lines never touch the
+   card edge (the card itself carries no horizontal padding). The 480 min-height stays: every tab's empty
+   card shares it, and shrinking only this one would break the cross-tab rhythm. */
+@media (max-width: 767px) {
+  .inner { padding-inline: var(--om-spacing-4); }
+}

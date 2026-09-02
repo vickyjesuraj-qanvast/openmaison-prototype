@@ -27,3 +27,24 @@
   border: 2px solid var(--om-color-surface-default);
   box-sizing: content-box;
 }
+
+/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
+   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+@media (max-width: 767px) {
+  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .search, .searchWrap { width: 100%; flex-basis: 100%; }
+  .right, .actions { flex-wrap: wrap; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   New Quote, Filters and the kebab are the mock's 36px controls. On a touch pointer each keeps its drawn
+   size and gains a transparent 2px ring: the target is 40px, the ring takes no space, so the wrapped row,
+   the 12px gaps (8px still clear between targets) and the filter badge do not move. The two selectors are
+   the DS Button (a direct child of its wrapper) and the om IconButton (inside the Tooltip's anchor span);
+   both stop short of the Dropdown's own rows, which are the shared menu's business. */
+@media (hover: none) {
+  .menuWrap > button, .menuWrap > span > button, .filterWrap button { position: relative; }
+  .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
+    content: ''; position: absolute; inset: -2px;
+  }
+}

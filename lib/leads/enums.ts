@@ -41,12 +41,39 @@ export const TEAM = [
 ] as const
 
 /** Contact channels — Move Stage "Contacted via" chips (781:58292). */
+/** Task kinds (lib/db/schema.ts lead_tasks.kind, "General | Call (mock vocab)") — named here so a server
+    action can validate against the vocabulary instead of trusting a client string (REG-285). */
+export const TASK_KINDS = ['General', 'Call'] as const
+export type TaskKind = (typeof TASK_KINDS)[number]
+
 export const CONTACT_CHANNELS = ['WhatsApp', 'Email', 'SMS', 'Call', 'Others'] as const
 /** Contact-log outcomes and the next step each one asks for (Move stage window 780:9xxxx · Notes 931:45231 "Connected → Schedule a meeting", 931:45383 "Callback requested"). */
 export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled', 'No response'] as const
 export const NEXT_STEP_BY_OUTCOME: Record<string, string> = { Connected: 'Schedule a meeting', 'Callback requested': 'Schedule a call' }
 /** "Preferred mode" options — the channels plus "In person" (Notes 931:45231). */
 export const CONTACT_MODES = [...CONTACT_CHANNELS, 'In person'] as const
+
+/**
+ * On Hold: how long the lead is parked, and the follow-up date each duration promises.
+ *
+ * ONE rule (REG-286, audit finding "the On Hold duration → follow-up-date rule is computed in four places and
+ * in neither the dialog that owns the options nor on the server"): the dialog's Duration options, the date its
+ * helper line promises and the `followUpAt` written on the stage log all come from here, measured from the same
+ * instant — so what the dialog says and what the listing shows can no longer drift apart (they did when the
+ * dialog was left open across midnight: the label counted from when it opened, the save from Date.now()).
+ * `Record<HoldDuration, number>` keeps the map exhaustive: a new option cannot be added without its days.
+ */
+export const HOLD_DURATIONS = ['1 month', '3 months', '6 months'] as const
+export type HoldDuration = (typeof HOLD_DURATIONS)[number]
+export const HOLD_DURATION_DAYS: Record<HoldDuration, number> = { '1 month': 30, '3 months': 90, '6 months': 180 }
+/** What the dialog opens on. */
+export const DEFAULT_HOLD_DURATION: HoldDuration = '3 months'
+
+/** Next follow-up = `from` + the duration's days. Text outside the vocabulary falls back to the default duration. */
+export function holdFollowUpAt(duration: string, from: number): Date {
+  const days = HOLD_DURATION_DAYS[duration as HoldDuration] ?? HOLD_DURATION_DAYS[DEFAULT_HOLD_DURATION]
+  return new Date(from + days * 86_400_000)
+}
 
 /** Only style/condition/key-collection values visible anywhere in the mocks. */
 export const STYLES_SEEN = ['Contemporary'] as const

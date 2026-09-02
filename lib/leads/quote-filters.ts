@@ -1,5 +1,6 @@
 import type { Quote } from '@/lib/db/schema'
-import { parseInputDate, startOfDay } from '@/lib/format'
+import { displayDate, money, parseInputDate, startOfDay } from '@/lib/format'
+import { filterByQuery } from '@/lib/search'
 import type { QuoteApproval } from '@/lib/settings/types'   // types only — safe to import from a client component
 
 /* Lead Details › Quotes (910-36240) — pure model shared by the table, the status menu and the Filters modal. */
@@ -91,9 +92,29 @@ export function applyQuoteFilters(quotes: Quote[], f: QuoteFilters, now: number)
   return sorted
 }
 
-/** Search matches the title or the quote number ("OM-10001"). */
+/**
+ * Search matches every piece of text the Quotes row prints (REG-274, user 2026-09-01 "look at the other pages"):
+ * title · number ("OM-10001") · visibility ("Private" / "Shared") · status label · total ("S$70,000", the exact
+ * string the Total cell prints, so "70,000" and "S$70" both land) · Due · Created · Sent · Updated · Approval Date.
+ * Dates are matched as `displayDate` renders them ("17 Jul ’26"), never as raw timestamps, and an empty date column
+ * (the row's "-") contributes nothing. Approval Date is safe to match even though its column is conditional: the
+ * table shows it whenever any visible quote carries `approvedAt` (quotes-table.tsx `showApproval`), so a quote found
+ * by its approval date always lands in a table that prints the column.
+ * Title + number were the only two fields before, so a quote could not be found by its status or any of its dates.
+ */
 export function searchQuotes(quotes: Quote[], query: string): Quote[] {
-  const q = query.trim().toLowerCase()
-  if (!q) return quotes
-  return quotes.filter((x) => x.title.toLowerCase().includes(q) || x.number.toLowerCase().includes(q))
+  return filterByQuery(quotes, query, (q) => ({
+    fields: [
+      q.title,
+      q.number,
+      q.visibility,
+      q.status,
+      `S$${money(q.amountMinor)}`,
+      q.dueAt ? displayDate(q.dueAt) : null,
+      displayDate(q.createdAt),
+      q.sentAt ? displayDate(q.sentAt) : null,
+      displayDate(q.updatedAt ?? q.createdAt),
+      q.approvedAt ? displayDate(q.approvedAt) : null,
+    ],
+  }))
 }

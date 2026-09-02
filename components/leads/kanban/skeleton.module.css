@@ -34,3 +34,15 @@
 }
 .cardHead { display: flex; align-items: center; justify-content: space-between; }
 .divider { height: 1px; width: 100%; background: var(--om-color-surface-variant); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   The ghost follows the board it stands in for (board.module.css): 300px columns at mobile, cards filling
+   the column's content box. The 192px vertical budget is the desktop chrome (header 68 + paddings + toolbar);
+   under the mobile bar, with a header that wraps, the board just takes what the content box has left.
+   The 24px content padding stays in step with app/leads/leads.module.css .content — if that drops to 16 at
+   mobile, this must follow, or the ghost/page crossfade shifts. */
+@media (max-width: 767px) {
+  .board { height: auto; flex: 1; min-height: 320px; }
+  .column { width: 300px; }
+  .card { width: 100%; }
+}

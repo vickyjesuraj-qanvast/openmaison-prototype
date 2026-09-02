@@ -23,6 +23,8 @@ import { DeleteTasksDialog } from './delete-dialog'
 import { useRun } from './use-run'
 import { CREATE_EVENTS, useCreateIntent } from './use-create-intent'
 import { EMPTY_TASK_FILTERS, activeTaskFilterCount, applyTaskFilters, type TaskFilters } from '@/lib/leads/task-filters'
+import { filterByQuery, matchesQuery } from '@/lib/search'
+import { displayDate } from '@/lib/format'
 import type { LeadTasksData, TaskRow } from '@/lib/leads/tasks'
 import {
   addComment, applyTemplate, attachFiles, createTag, createTask, deleteComment, deleteTag, deleteTasks, detachFile, duplicateTasks,
@@ -44,6 +46,20 @@ const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); r
 
 /** tasks-actions that only `revalidatePath('/leads')` (tags, templates) — the tab must refresh itself after them (use-run.ts). */
 const REFRESH = { refresh: true } as const
+
+/**
+ * Every piece of text the task ROW prints (REG-274): title · assignee names · creator (the REG-239 column) · the due
+ * date exactly as the cell prints it (displayDate, never the raw timestamp) · the status label · tag names.
+ * It is also the yardstick for "matched on the description alone" (REG-275) — see `descriptionOnly` below.
+ */
+const rowText = (t: TaskRow): (string | null | undefined)[] => [
+  t.title,
+  ...t.assignees.map((m) => m.name),
+  t.creator?.name,
+  t.dueAt ? displayDate(t.dueAt) : null,
+  t.done ? 'Completed' : 'Open',
+  ...t.tags.map((g) => g.name),
+]
 
 /**
  * Lead Details › Tasks (902-36216): the tab's state — table, inline add / rename, selection + bulk bar, the task / comments
@@ -71,9 +87,18 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const filterCount = activeTaskFilterCount(filters)
   const visible = useMemo(() => {
     const base = applyTaskFilters(tasks, filters, now)
-    const q = query.trim().toLowerCase()
-    return q ? base.filter((t) => t.title.toLowerCase().includes(q) || t.tags.some((g) => g.name.toLowerCase().includes(q))) : base
+    /* Search is the last step, after the filters, and matches every piece of text the ROW shows (REG-274, one rule
+       for every list) — `rowText` above — plus the DESCRIPTION (REG-275, user: "fix all of them"). The description
+       lives in the task panel, not the row, so a hit on it alone used to read as a bug; the row now says why it is
+       there (the "In description" chip beside the title), which is what unlocked matching it. */
+    return filterByQuery(base, query, (t) => ({ fields: [...rowText(t), t.description] }))
   }, [tasks, filters, query, now])
+  /* (REG-275) The tasks whose ONLY hit is the description — the chip's trigger. Quiet by construction: empty while
+     the box is empty, and empty for a task the reader can already see the query in. */
+  const descriptionOnly = useMemo(() => {
+    if (!query.trim()) return new Set<string>()
+    return new Set(visible.filter((t) => !matchesQuery(query, rowText(t))).map((t) => t.id))
+  }, [visible, query])
   // Search / filters that match nothing → the listing's "No results found" card (T6); the bare head never shows.
   const nothingMatches = tasks.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
   // Selection follows the visible set (render-phase adjust).
@@ -177,6 +202,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           tasks={visible} now={now}
           selected={selected} onSelect={setSelected}
           unseen={unseen}
+          descriptionMatches={descriptionOnly}   /* (REG-275) rows the search found by their description alone */
           adding={adding}
           /* Saving keeps the row open, empty and focused for the next task — entry chains until Esc / Cancel
              (user 2026-09-01, REG-257: "user can just keep adding tasks one after the other"). */
@@ -242,7 +268,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           value={assignTask?.assignees.map((m) => m.id) ?? []}
           anchor={assign?.el}
           onClose={() => setAssign(null)}
-          onApply={(memberIds) => { const t = assignTask; setAssign(null); if (t) void run('update the assignees', () => setTaskAssignees(t.id, memberIds), 'Assignees updated') }}
+          onApply={(memberIds) => { const t = assignTask; setAssign(null); if (t) void run('update the members', () => setTaskAssignees(t.id, memberIds), 'Members updated') }}
           position={assign}
         />
         <TagPicker

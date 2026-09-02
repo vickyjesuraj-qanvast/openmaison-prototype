@@ -1,10 +1,25 @@
-/* Lead Details › Notes card (931:44882, spec 01): 1244×844 inside the centre's p24 (section container 931:44865), stroke #e5e5e5 w1 inside
-   (`inset` box-shadow — the plan's rule), r4; H: list column 360 with a right rule + pane 884 (V: toolbar 68 + body 776). */
+/* Lead Details › Notes card (931:44882, spec 01): 1244 wide inside the centre's p24 (section container 931:44865),
+   stroke #e5e5e5 w1 inside (`inset` box-shadow — the plan's rule), r4; H: list column 400 with a right rule + pane
+   (V: header 68 + body). The mock draws the column at 360 (931:44882); the owner widened it to 400 (REG-281) — the
+   "Contact Log" chip and the search row both live in this column, and 360 left them tight. Pane takes the rest.
+
+   (REG-293) The card FILLS what the toolbar leaves instead of standing at the mock's 844: the tab now has the
+   siblings' 36px title row + 24 gap above it, and 844 = 36 + 24 + 784 — the same arithmetic the centre's
+   fab-clearance rule already spells out (overview.module.css). Filling reproduces that 784 without hard-coding it,
+   so the section stays 892 like every other tab and nothing scrolls. */
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-spacing-6);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
 .card {
   display: flex;
   flex: 1;
   min-width: 0;
-  height: 844px;
+  min-height: 0;
   border-radius: var(--om-radius-2);   /* r8 — the card radius every tab's table carries (REG-258; r4 is fields/buttons) */
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
@@ -13,8 +28,8 @@
 .list {
   display: flex;
   flex-direction: column;
-  flex: 0 0 360px;
-  width: 360px;
+  flex: 0 0 400px;
+  width: 400px;   /* REG-281: 360 in the mock */
   min-height: 0;
 }
 .pane {
@@ -38,4 +53,44 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
+}
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   768–1199: the list column narrows to 280 so the pane keeps a usable editor.
+   ≤767: master-detail PUSH — the card is the viewport-tall screen and shows the LIST until an item is
+   chosen (data-pane), then the PANE with its back affordance. Both stay mounted; only display swaps. */
+.back { display: none; }
+
+/* Cancel · Save footer at the pane's foot (REG-277 — frame 80's row, restored after REG-254 had moved these
+   two into the toolbar): 68 tall = 16 + 36 buttons + 16, top rule, right-aligned, 12 apart. */
+.footer {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .list { flex: 0 0 280px; width: 280px; }
+}
+@media (max-width: 767px) {
+  .card { min-height: calc(100dvh - var(--app-mobile-bar-height) - 120px); border-radius: 0; box-shadow: none; }
+  .list { flex: 1 1 auto; width: 100%; }
+  .card[data-pane] .list { display: none; }
+  .pane { display: none; }
+  .card[data-pane] .pane { display: flex; }
+  .back {
+    display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+    flex-shrink: 0; height: 48px; padding: 0 var(--om-spacing-4);
+    border: 0; background: none; cursor: pointer;
+    font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+    box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+  }
+  /* The editor column and its attachments stack instead of sitting side by side. */
+  .body { flex-direction: column; }
+}
+
+/* (REG-292) The stage-logged record's hint (REG-268), in the pane header where Edit would sit: lock 14 + 12/16 secondary. */
+.lockHint {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap;
 }

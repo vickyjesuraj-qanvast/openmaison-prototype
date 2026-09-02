@@ -30,3 +30,12 @@
   color: var(--om-color-on-surface-default);
 }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
+
+/* Responsive (REG-269): ≤767 the header wraps — title row, then actions — instead of clipping actions. */
+@media (max-width: 767px) {
+  .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
+  .header::after { border-radius: 0; }
+  .header { top: var(--app-mobile-bar-height); }
+  .header::before { top: 0; }
+  .actions { flex-wrap: wrap; }
+}

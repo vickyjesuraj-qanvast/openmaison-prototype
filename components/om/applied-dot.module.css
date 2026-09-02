@@ -1,0 +1,10 @@
+/* (REG-295) 8px primary dot with a 2px surface ring straddling the host's top-right corner — the Filters count
+   badge's own geometry (leads/toolbar.module.css .filterBadge) at dot size. The DS sizes its dot through
+   `[data-variant=dot]` (0,2,0), so the override carries the same attribute (0,2,1) and wins whichever order the
+   stylesheets land in. */
+span.dot[data-variant='dot'] {
+  position: absolute; top: -4px; right: -4px;
+  inline-size: 8px; block-size: 8px; border-radius: var(--om-radius-full);
+  background: var(--om-color-primary-default);
+  box-shadow: 0 0 0 2px var(--om-color-surface-default);
+}

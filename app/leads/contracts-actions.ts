@@ -1,15 +1,16 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { revalidatePath } from 'next/cache'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts } from '@/lib/db/schema'
-import { type ContractStatus } from '@/lib/leads/contract-filters'
+import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
+import { revalidateLead } from '@/lib/leads/queries'
 
 /* Lead Details › Contracts (931-38609). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const touch = (leadId: string) => { revalidatePath(`/leads/${leadId}`); revalidatePath(`/leads/${leadId}/contracts`); revalidatePath('/leads') }
+/** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every contract milestone. */
+const touch = (leadId: string) => revalidateLead(leadId)
 
 const CONTRACT_TITLE = 'General Contract Agreement'
 
@@ -38,6 +39,8 @@ async function leadOf(contractId: string): Promise<string | null> {
 
 /** Status cell menu. Sent to Client stamps Sent (first time); Signed stamps the signed date and names the signed copy "<title>.pdf". */
 export async function setContractStatus(contractId: string, status: ContractStatus): Promise<void> {
+  // (REG-286) Public endpoint, and `status` decides the stamped dates below as well as what the table prints.
+  if (!(CONTRACT_STATUSES as readonly string[]).includes(status)) throw new Error(`Unknown contract status: ${String(status)}`)
   const [c] = await db.select().from(contracts).where(eq(contracts.id, contractId))
   if (!c) return
   const now = new Date()

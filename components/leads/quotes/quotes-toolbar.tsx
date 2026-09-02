@@ -57,9 +57,12 @@ export function QuotesToolbar({ query, onQuery, onNew, onFilter, filterCount, on
           </Dropdown>
         </span>
         <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
+          {/* (REG-275) The box matches title, number, visibility, status, total and every date the row prints
+              (lib/leads/quote-filters.ts). The placeholder names the three people reach for; the aria-label
+              stays the plain name of the control. */}
           <SearchBar
             appearance="outlined" size="md"
-            placeholder="Search" aria-label="Search quotes"
+            placeholder="Search title, number, status…" aria-label="Search quotes"
             value={query} onChange={onQuery}
             className={styles.search}
           />

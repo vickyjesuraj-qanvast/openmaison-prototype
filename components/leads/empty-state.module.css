@@ -13,3 +13,11 @@
 .title { font: var(--om-type-subheading-xl); }
 .sub { font: var(--om-type-body-m); }
 .ctas { display: flex; gap: var(--om-spacing-3); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   The mock's two side-by-side CTAs are ~350px wide — more than a phone's content box, so they stack (primary
+   pattern kept: same DS buttons, same 12px gap, each full width) and the illustration keeps its aspect. */
+@media (max-width: 767px) {
+  .ctas { flex-direction: column; }   /* the stack centres them; both take the wider button's width */
+  .illo { width: 100%; max-width: 180px; height: auto; }
+}

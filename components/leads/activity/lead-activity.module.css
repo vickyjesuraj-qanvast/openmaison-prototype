@@ -8,6 +8,8 @@
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
 .title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search { width: 280px; }
+/* The SearchBar's ref wrapper (lead-activity.tsx) — was an inline display:inline-flex; a class so mobile can widen it (REG-269). */
+.searchWrap { display: inline-flex; }
 
 .list { display: flex; flex-direction: column; }
 
@@ -51,3 +53,18 @@
 .textLink { color: var(--om-color-on-surface-default); text-decoration: none; text-underline-offset: 2px; }
 .textLink:hover { text-decoration: underline; }
 .textLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+
+/* Responsive (REG-269): mobile — the toolbar wraps (the search drops to its own full-width row under the
+   title) and each timeline row becomes rail 24 + ONE content column: the when-line sits ABOVE the sentence.
+   The rail cell spans both rows (grid-row: span 2) so the 1px stroke stays unbroken, and the when-line keeps
+   its 12px top pad so the dot's 18px alignment on the first text line holds untouched. Tablet keeps the
+   desktop three-column row (the audit measured it fine from 768 up). */
+@media (max-width: 767px) {
+  .bar { flex-wrap: wrap; height: auto; min-height: 36px; row-gap: var(--om-spacing-3); }
+  .searchWrap { width: 100%; }
+  .search { width: 100%; }
+  .row { grid-template-columns: 24px minmax(0, 1fr); }
+  .rail { grid-row: span 2; }
+  .when { padding-block: var(--om-spacing-3) 0; white-space: normal; }
+  .body { grid-column: 2; padding-block: var(--om-spacing-1) var(--om-spacing-3); }
+}

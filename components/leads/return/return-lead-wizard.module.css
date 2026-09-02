@@ -171,3 +171,54 @@
   flex-shrink: 0;
 }
 .wide { min-inline-size: 120px; }   /* the mock's 120 for Submit / Next / Confirm (their natural width is narrower) */
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   Desktop (≥1200) is the mock and is untouched. Tablet clamps the 800 panel to the viewport (the xxl
+   margin rule, generalised — components/leads/move-stage/wizard.module.css) and lets the form column take
+   whatever the tips box leaves; mobile is the full-screen sheet with one column. The head and the footer
+   keep flex-shrink: 0, so Cancel / Next / Confirm are always reachable and the body scrolls between them. */
+@media (max-width: 1199px) {
+  /* dvh, not vh: a mobile browser's shrinking chrome must never sit over the footer. */
+  .panel { max-width: calc(100vw - var(--om-modal-xxl-margin)); max-height: calc(100dvh - 96px); }
+  /* The mock's fixed 468 + 24 + 260 = 752 body no longer fits a clamped panel. The form takes the room
+     that is left (at the mock's own 800 panel it still resolves to exactly 468) and the tips box keeps
+     its 260 while there is space for it. */
+  .form { width: auto; flex: 1 1 auto; min-width: 0; }
+  .tips { width: min(260px, 100%); }
+}
+
+@media (max-width: 767px) {
+  /* 1) Full-screen sheet — the overlay drops its 48px band, the panel fills the viewport, radius 0. */
+  .overlay { padding: 0; align-items: stretch; justify-content: stretch; overflow: hidden; }
+  .panel {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0;
+  }
+  /* 2) Content padding 24 → 16 (responsive.md ground rule); the column's own 36 rhythm is unchanged. */
+  .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .body { padding: var(--om-spacing-4); }
+  .footer { padding: var(--om-spacing-4); }
+  /* 3) The two-up body stacks: the form first, its tips underneath (they read as guidance for the form,
+     and the mock's own reading order is form → tips). Both columns go fluid. */
+  .columns { flex-direction: column; }
+  .form, .tips { width: 100%; }
+  /* 4) Step 2's terms card follows the same 24 → 16 and drops the 20px inset on its centred sentence. */
+  .terms { padding: var(--om-spacing-4); }
+  .termsText { padding: 0; }
+
+  /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────
+     5) The bare glyph controls — the head's info and close (24px marks, 16 apart) and the attachment tile's
+     24px kebab — keep their marks, their hover plates and their places; the invisible ::after around each
+     grows the target to 40×40. info and close each grow 8px toward the other, so their targets end up
+     exactly adjacent and never overlap; the kebab grows into the tile's own padding, over the tile face,
+     which is not a control here (the wizard has nowhere to open a file).
+     The five attempt chips are already 48 tall and "Attach Files" is a full-width DS button, so both clear
+     the floor as drawn; only the tips box's "View all" text link needed a box, which it takes below the
+     list without moving the list. */
+  .iconBtn { position: relative; }
+  .iconBtn::after { content: ''; position: absolute; inset: -8px; }
+  .kebab { position: relative; }
+  .kebab::after { content: ''; position: absolute; inset: -8px; }
+  .tipsLink.tipsLink { min-block-size: 40px; display: inline-flex; align-items: center; }
+}

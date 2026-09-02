@@ -66,3 +66,28 @@ button.groupLabel:hover .toggleIcon { background: var(--om-color-hover-08p); }  
   transition: background-color var(--motion-hover);
 }
 .chev:hover { background: var(--om-color-hover-08p); }   /* "Link icon 20px" hover (interaction-states.md) */
+
+/* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
+   Tablet and down, a task row keeps its shape — radio · text · chevron, both controls `flex-shrink: 0`, so the
+   chevron never leaves the row — but the meta line ("Follow-up · Mon, 25 Aug · (3d overdue)") was `nowrap`
+   under `overflow: hidden`, i.e. cut mid-word with no ellipsis to admit it. At a ~248px row it wraps between
+   its own tokens instead: every token stays whole, the row grows the way a wrapped title already does. */
+@media (max-width: 1199px) {
+  .meta { flex-wrap: wrap; overflow: visible; row-gap: 0; }
+}
+/* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
+   A task row carries two bare 20px controls — the radio that completes the task and the chevron that opens
+   it — one at each end of a 56px row. Both marks stay 20px in their mocked places; the invisible ::after
+   around each grows to a full 40×40, which the 56px row swallows whole (the row's own 8px padding and the
+   8px gap to the text absorb the overhang, and the text between them is not a control, so nothing is stolen).
+   The expanded "Upcoming" label is also a button and only 32 tall at rest — it takes a 44px box. */
+@media (max-width: 767px) {
+  .radio, .chev { position: relative; }
+  .radio::after, .chev::after { content: ''; position: absolute; inset: -10px; }
+  button.groupLabel { min-height: 44px; align-items: center; }
+}
+
+/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the MY WORK card's task radio draws at 20px. */
+@media (hover: none) {
+  .radio { width: 40px; height: 40px; margin: -10px; display: inline-flex; align-items: center; justify-content: center; }
+}

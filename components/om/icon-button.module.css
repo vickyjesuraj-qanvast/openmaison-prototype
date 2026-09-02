@@ -37,3 +37,35 @@
   color: var(--om-color-on-primary-variant);
 }
 .btn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   On a touch pointer the 24px variant is half a fingertip. The BOX grows to 40 and the drawn control keeps
+   its size: the 24px border/fill is painted by ::before at the mocked geometry, centred, while the button
+   itself is the 40px target. `hover: none` means this never reaches a mouse — desktop is untouched — and it
+   applies at every width, so a touch tablet gets it too.
+   The 36px variant is already a comfortable target; only its margin-free neighbours needed room, which the
+   surfaces handle in their own rows. */
+@media (hover: none) {
+  /* The 36 variant stands up to 40 on touch — the drawn square keeps its radius and glyph, the box is the
+     target (REG-273; the earlier note that 36 was already comfortable was measured against a mouse). */
+  .btn[data-size='36'] { width: 40px; height: 40px; margin: -2px; }
+  .btn[data-size='24'] {
+    position: relative;
+    width: 40px; height: 40px;
+    border-color: transparent; background: transparent;
+    /* the row keeps the mock's rhythm: the extra 8px each side is given back as margin */
+    margin: -8px;
+  }
+  .btn[data-size='24']::before {
+    content: '';
+    position: absolute; left: 50%; top: 50%; width: 24px; height: 24px;
+    transform: translate(-50%, -50%);
+    border: inherit; border-color: var(--om-color-on-surface-border);
+    border-radius: var(--om-radius-1);
+    background: inherit;
+    pointer-events: none;
+  }
+  .btn[data-size='24'][data-variant='primary']::before { border-color: var(--om-color-primary-default); }
+  .btn[data-size='24'][data-variant='bare']::before { border: 0; }
+  .btn[data-size='24'][data-selected='true']::before { background: var(--om-color-primary-variant); }
+}

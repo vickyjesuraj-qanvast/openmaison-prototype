@@ -130,6 +130,8 @@
 }
 .zoomBtn[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
 .zoomBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* The fit button's caption only exists on a touch-sized screen (REG-273, see the ≤767 block). */
+.zoomLabel { display: none; }
 
 /* Side panel (931:39912): 400 wide, white, left rule surface-variant; the panel component fills it head / body / footer.
    Layered above the fixed Maison FAB (maison-fab.module.css z-index 90) the way the Drawer twin is (drawer.module.css
@@ -141,4 +143,60 @@
   min-height: 0;
   background: var(--om-color-surface-default);
   box-shadow: inset var(--om-border-1) 0 0 var(--om-color-surface-variant);
+}
+
+/* Download folds into the kebab's menu at mobile (see the responsive block) — it renders nowhere else. */
+.mobileItem { display: none; }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   Tablet (768–1199): the letterbox padding gives way first — 100/120 becomes 24/40 (24 beside an open
+   panel) with the zoom bar's band (22 + 50 + 8 = 80) still kept clear of the image as p100 keeps it at
+   desktop — and the panel narrows to 320 but stays docked, so a 692px column keeps 372 of canvas.
+   Mobile (≤767): the sheet runs edge-to-edge under the 56px app bar, the canvas takes the whole screen
+   and the panels become full-screen overlays above it (their own 64px head and close button unchanged);
+   the zoom bar compacts to 40px targets; Download folds into the mock's own kebab menu so the 56px
+   header row still holds the file name. */
+@media (max-width: 1199px) {
+  .canvas { padding: var(--om-spacing-6) var(--om-spacing-10) var(--om-spacing-20); }
+  .canvas[data-panel] { padding: var(--om-spacing-6) var(--om-spacing-6) var(--om-spacing-20); }
+  .panel { width: 320px; }
+}
+@media (max-width: 767px) {
+  /* The page sheet loses its radius; the header leaves the sticky stack (the app bar is the only dock)
+     and its gutter plate collapses with the shell's 8px padding. It stays POSITIONED (relative, offset 0):
+     the rounded ::after plate that carries the header's bottom rule is absolute against it, and going
+     static would re-anchor both plates to the page and lose the divider. */
+  .body { border-radius: 0; }
+  .header { position: relative; top: 0; padding: var(--om-spacing-4); border-radius: 0; }
+  .header::before { top: 0; }
+  .header::after { border-radius: 0; }
+  .actions { gap: var(--om-spacing-4); }                       /* 24 → 16: three icons + the name fit one 56px row */
+  .actionDownload { display: none; }
+  .mobileItem { display: contents; }                           /* the wrapper vanishes; its DropdownItem is a menu row */
+  /* The stage is the viewport under the app bar and this header — no shell gutters at mobile. */
+  .stage { height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 56px); }
+  /* Content padding 24 → 16, with the compact zoom bar's band (22 + 56 + 8) kept clear of the image. */
+  .canvas, .canvas[data-panel] { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 56px + var(--om-spacing-2)); }
+  /* Full-screen overlay over the canvas: above the FAB (90) and the app bar (80), below every modal (100). */
+  .panel { position: fixed; inset: 0; z-index: 95; width: auto; box-shadow: none; }
+  /* Same bar (r8, level-3, surface-variant stroke), 40px targets: 8 + 3 × 40 + 8 + the 1px sides = 138 × 56. */
+  .zoomBar { width: auto; height: 56px; gap: 0; padding: var(--om-spacing-2); }
+  .zoomBtn { width: 40px; height: 40px; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The header's bare 24px marks (arrow_back and the comment / info / more_vert actions) are the smallest
+   controls on this page. ≤767 each keeps its 24px glyph and grows a 40px box around it, the extra handed
+   back as margin so the 56px row, its 16px gaps and the file name all stay exactly where the layout pass
+   left them: three 40px boxes end up edge to edge with no visual change at all.
+   The zoom bar (40px targets, above) and prev / next (48×48, mocked) already clear 40. */
+@media (max-width: 767px) {
+  .back, .iconBtn { width: 40px; height: 40px; margin: -8px; }
+
+  /* Second channel for a tooltip (REG-273): remove / add read as zoom on sight, but arrows_output does not —
+     and the DS Tooltip suppresses touch pointers, so its label was unreachable. The button carries the
+     tooltip's own words (no new copy) as a 12/Medium caption; it widens, the bar re-centres itself, and the
+     other two keep their 40px squares. */
+  .zoomFit { width: auto; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-3); }
+  .zoomLabel { display: inline; font: var(--om-type-caption-s); white-space: nowrap; }
 }

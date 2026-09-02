@@ -39,3 +39,29 @@
 .doneBtn:hover { background: var(--om-color-primary-hover); border-color: var(--om-color-primary-hover); color: var(--om-color-on-primary-default); }
 
 .rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+
+/* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
+   Delete and Rename are 20px glyphs 8 apart: two 40px targets there would overlap by 12 and a tap between
+   them would rename what the reader meant to delete. Each keeps its 20px glyph and 20px hover wash and takes
+   the target through a transparent overlay; the row then opens the gap to 20 so the two targets meet without
+   overlapping (the name column absorbs it). Desktop with a mouse matches neither arm of the query. */
+@media (max-width: 767px), (hover: none) {
+  .row { gap: var(--om-spacing-5); }
+  .iconBtn { position: relative; }
+  .iconBtn::after { content: ''; position: absolute; inset: -10px; }
+}
+
+/* The edit row's ✓ / ✕ are om icon buttons at 24, grown to a 40 box on a touch pointer by
+   components/om/icon-button.module.css (which paints the mocked 24 box with ::before). Two of them 8 apart
+   would overlap by 8, so the row opens to 20; and the filled ✓ hands its fill to that pseudo-element, or
+   the purple square grows with the target. REG-273. */
+@media (hover: none) {
+  .editActions { gap: var(--om-spacing-5); }
+  button.doneBtn[data-variant='primary'],
+  button.doneBtn[data-variant='primary']:hover { background: transparent; border-color: transparent; }
+  button.doneBtn[data-variant='primary']::before {
+    background: var(--om-color-primary-default);
+    border-color: var(--om-color-primary-default);
+  }
+  button.doneBtn[data-variant='primary'] > * { position: relative; z-index: 1; }
+}

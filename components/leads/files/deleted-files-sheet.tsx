@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -9,6 +9,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { displayDate, fileSize } from '@/lib/format'
 import { fileTypeLabel, isFolder, type FileRow } from '@/lib/leads/file-model'
@@ -71,14 +72,14 @@ export function DeletedFilesSheet({
   }
   const prune = (ids: string[]) => setSelected((s) => { const n = new Set(s); ids.forEach((id) => n.delete(id)); return n })
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !e.defaultPrevented && !confirm) onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose, confirm])
+  /* (REG-287) `aria-modal` promises the page behind is inert, so the sheet owes the WAI-ARIA dialog contract:
+     focus moves in on open, Tab cycles inside it, and focus returns to the opener on close. Esc rides the shared
+     layer policy (components/om/surface.ts) — an open confirm Dialog renders after this panel, so it owns Esc —
+     and the `!confirm` guard the hand-rolled window listener carried is kept as the same belt and braces. */
+  const panel = useRef<HTMLDivElement>(null)
+  const escape = useCallback(() => { if (!confirm) onClose() }, [confirm, onClose])
+  useEscapeLayer(open, panel, escape)
+  useDialogFocus(open, panel)
 
   // A trashed folder's children are trashed with it, so a parent may live in either list.
   const byId = useMemo(() => new Map([...files, ...trashed].map((f) => [f.id, f] as const)), [files, trashed])
@@ -98,7 +99,11 @@ export function DeletedFilesSheet({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Files">
+            {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+                focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+                surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+            <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                        role="dialog" aria-modal aria-label="Deleted Files" tabIndex={-1}>
               <div className={styles.heading}>
                 <div className={styles.titleBlock}>
                   <span className={styles.crumb}>Files / </span>
@@ -138,11 +143,14 @@ export function DeletedFilesSheet({
                   {trashed.length === 0 ? (
                     <div className={styles.emptyRow}>No deleted files.</div>
                   ) : trashed.map((f) => (
+                    /* (REG-286) ARIA grid roles: role="table"/role="row" were declared but the cells carried no role,
+                       so a screen reader saw rows of generic children and dropped out of table mode — no column
+                       announcements, no cell navigation. Additive only; nothing here is styled by role. */
                     <div key={f.id} className={styles.row} role="row" data-selected={liveSelected.has(f.id) || undefined}>
-                      <div className={`${styles.cell} ${styles.colSel}`}>
+                      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
                         <Checkbox isSelected={liveSelected.has(f.id)} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
                       </div>
-                      <div className={`${styles.cell} ${styles.colTitle}`}>
+                      <div className={`${styles.cell} ${styles.colTitle}`} role="cell">
                         <span className={styles.thumb}>
                           {f.thumb ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
@@ -153,7 +161,7 @@ export function DeletedFilesSheet({
                         </span>
                         <span className={styles.name}>{f.name}</span>
                       </div>
-                      <div className={`${styles.cell} ${styles.colOwner}`}>
+                      <div className={`${styles.cell} ${styles.colOwner}`} role="cell">
                         {f.owner ? (
                           <>
                             <Avatar name={f.owner.name} color={f.owner.color} size={24} />
@@ -161,14 +169,14 @@ export function DeletedFilesSheet({
                           </>
                         ) : <span className={styles.plain}>--</span>}
                       </div>
-                      <div className={`${styles.cell} ${styles.colUpdated}`}><span className={styles.plain}>{displayDate(f.updatedAt ?? f.createdAt)}</span></div>
-                      <div className={`${styles.cell} ${styles.colType}`}><span className={styles.plain}>{fileTypeLabel(f)}</span></div>
-                      <div className={`${styles.cell} ${styles.colSize}`}><span className={styles.plain}>{fileSize(f.sizeBytes)}</span></div>
-                      <div className={`${styles.cell} ${styles.colLocation}`}>
+                      <div className={`${styles.cell} ${styles.colUpdated}`} role="cell"><span className={styles.plain}>{displayDate(f.updatedAt ?? f.createdAt)}</span></div>
+                      <div className={`${styles.cell} ${styles.colType}`} role="cell"><span className={styles.plain}>{fileTypeLabel(f)}</span></div>
+                      <div className={`${styles.cell} ${styles.colSize}`} role="cell"><span className={styles.plain}>{fileSize(f.sizeBytes)}</span></div>
+                      <div className={`${styles.cell} ${styles.colLocation}`} role="cell">
                         <Icon name="folder" size={20} weight={300} className={styles.locIcon} />
                         <span className={styles.plain}>{locationOf(f)}</span>
                       </div>
-                      <div className={`${styles.cell} ${styles.colActions}`}>
+                      <div className={`${styles.cell} ${styles.colActions}`} role="cell">
                         <button type="button" className={styles.link} disabled={pending.has(f.id)}
                                 onClick={() => { prune([f.id]); void run([f.id], () => onRestore([f.id])) }}>Restore</button>
                         <button type="button" className={styles.link} data-danger disabled={pending.has(f.id)}

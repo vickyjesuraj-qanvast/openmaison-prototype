@@ -77,7 +77,6 @@
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   margin-top: auto;
 }
-.timeLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-right: 2px; }
 .timeSelect {
   height: 32px; min-width: 46px;
   display: inline-flex; align-items: center; justify-content: space-between; gap: 0;

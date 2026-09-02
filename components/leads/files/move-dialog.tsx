@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -8,6 +8,7 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { childrenOf, descendantIds, folderPath, isFolder, type FileRow } from '@/lib/leads/file-model'
 import styles from './move-dialog.module.css'
@@ -56,19 +57,20 @@ export function MoveDialog({
   const [newName, setNewName] = useState('')
   const [busy, setBusy] = useState(false)
   const [wasOpen, setWasOpen] = useState(false)
+  /* (REG-287) `aria-modal` promises the page behind is inert, so the panel owes the WAI-ARIA dialog contract:
+     focus moves in on open, Tab cycles inside it, and focus returns to the opener on close. Esc rides the shared
+     layer policy (components/om/surface.ts) instead of the hand-rolled `!e.defaultPrevented` window listener this
+     replaces. The Create Folder field's own autoFocus is untouched: it mounts on a later render, long after the
+     focus effect has run, and the effect never steals focus that is already inside the panel. */
+  const panel = useRef<HTMLDivElement>(null)
+  useEscapeLayer(open, panel, onClose)
+  useDialogFocus(open, panel)
 
   // Render-phase adjust: every opening browses from the root with no Create Folder form.
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) { setFolderId(null); setCreating(false); setNewName(''); setBusy(false) }
   }
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   // The moved items and everything inside a moved folder stay out of the browse list.
   const hidden = useMemo(() => {
@@ -110,7 +112,11 @@ export function MoveDialog({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label={title}>
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
+              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
+              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+                      role="dialog" aria-modal aria-label={title} tabIndex={-1}>
             <div className={styles.heading}>
               <div className={styles.titleRow}>
                 <span className={styles.title}>{title}</span>

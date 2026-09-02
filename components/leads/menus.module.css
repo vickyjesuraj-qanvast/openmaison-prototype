@@ -32,3 +32,14 @@
 .item[data-selected] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .count { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .link { color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
+
+/* Responsive (REG-269): an anchored Dropdown is absolutely positioned against its trigger and cannot see the
+   viewport, so ≤767 it clamps its own width and lets a long menu scroll rather than run off the screen.
+   (The portalled PortalMenu / DatePicker clamp their x in JS; this covers the in-flow menus.) */
+@media (max-width: 767px) {
+  .menu { max-width: calc(100vw - 32px); max-height: calc(100dvh - 160px); overflow-y: auto; }
+  /* Touch ergonomics (REG-273): the 36px menu row is the last control under a fingertip, and it is shared —
+     lifting it here lifts every anchored Dropdown at once (row kebabs, the stage menu, the scope pill, the
+     lead form's unit picker) instead of each surface shadowing its own. */
+  .item { height: auto; min-height: 40px; }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -22,6 +23,11 @@ export type TasksTableProps = {
   onSelect: (ids: Set<string>) => void
   /** Tasks nobody has opened yet (`seenAt === null`, REG-131 for tasks): primary band + bold title. */
   unseen: Set<string>
+  /**
+   * (REG-275) Tasks the live search found by their DESCRIPTION alone — the title cell prints an "In description"
+   * chip for them so the hit is explainable (the description is not in the row). Empty while the box is empty.
+   */
+  descriptionMatches?: Set<string>
   /** Inline add row (frame 194) at the top of the table. */
   adding: boolean
   onAddSubmit: (title: string) => void
@@ -48,7 +54,7 @@ export type TasksTableProps = {
 /* Column order + head copy — sentence case, exactly as the mock types it (spec 01). Tags has no sort icon. */
 const HEADS: { key: string; label: string; col: string | undefined; sortable: boolean }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle, sortable: true },
-  { key: 'assignees', label: 'Assignees', col: styles.colMember, sortable: true },
+  { key: 'assignees', label: 'Members', col: styles.colMember, sortable: true },   /* REG-290 */
   { key: 'creator', label: 'Creator', col: styles.colCreator, sortable: true },
   { key: 'due', label: 'Due date', col: styles.colDue, sortable: true },
   { key: 'status', label: 'Status', col: styles.colStatus, sortable: true },
@@ -59,17 +65,19 @@ const HEADS: { key: string; label: string; col: string | undefined; sortable: bo
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt + 02-rows-menus-bulk.txt.
  * Head 56 · rows 48 · bottom bar 53; columns 56 · 582 · 160 · 160 · 137 · 118 · 191 (Title fills).
  * The Creator column is not in the mock (REG-239, user 2026-09-01): the panel's Creator row as a column,
- * so who asked for a task is visible without opening it; Assignees keeps assignees + person_add only.
+ * so who asked for a task is visible without opening it; Members keeps the avatars + person_add only.
  * Every icon-only control carries a Tooltip; sorting is inert (coming soon); menus toggle on their own trigger.
  */
 export function TasksTable({
-  tasks, now, selected, onSelect, unseen,
+  tasks, now, selected, onSelect, unseen, descriptionMatches,
   adding, onAddSubmit, addKey, onAddCancel,
   renaming, onRenameSubmit, onRenameCancel,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
+  /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
+  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')
 
   const allSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(tasks.map((t) => t.id)))
@@ -134,16 +142,23 @@ export function TasksTable({
           task={task}
           now={now}
           unseen={unseen.has(task.id)}
+          descriptionMatch={descriptionMatches?.has(task.id) ?? false}
           selected={selected.has(task.id)}
           onToggleSelect={(range) => toggleOne(task.id, idx, range)}
           renaming={renaming === task.id}
           onRenameSubmit={(title) => onRenameSubmit(task.id, title)}
           onRenameCancel={onRenameCancel}
           menuOpen={menuRow === task.id}
-          onMenuToggle={() => setMenuRow((m) => (m === task.id ? null : task.id))}
+          onMenuToggle={(trigger) => {
+            /* (REG-286) This table still counted rows: with three tasks the last two kebabs opened UPWARD, over the
+               toolbar and the tab strip, with half a screen free below them. The side is now measured off the
+               trigger and this menu's real height (components/leads/menu-side.ts) — five items, four once the task
+               is done and "Mark as Completed" drops out. */
+            if (menuRow !== task.id) setMenuSide(menuSideFor(trigger, task.done ? 4 : 5))
+            setMenuRow((m) => (m === task.id ? null : task.id))
+          }}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up on the last two rows of a 3+ row table — the leads table's rule. */
-          menuSide={tasks.length >= 3 && idx >= tasks.length - 2 ? 'up' : 'down'}
+          menuSide={menuSide}
           onOpen={onOpen} onOpenComments={onOpenComments} onToggleDone={onToggleDone} onAssign={onAssign} onDue={onDue} onAddTags={onAddTags}
           onRowMenu={onRowMenu} onEdit={onEdit}
         />
@@ -239,7 +254,7 @@ function AddRow({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onC
 }
 
 function TaskRowView({
-  task, now, unseen, selected, onToggleSelect,
+  task, now, unseen, descriptionMatch, selected, onToggleSelect,
   renaming, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit,
@@ -247,13 +262,16 @@ function TaskRowView({
   task: TaskRow
   now: number
   unseen: boolean
+  /** (REG-275) The live search found this row by its description alone — the title cell says so. */
+  descriptionMatch: boolean
   selected: boolean
   onToggleSelect: (range: boolean) => void
   renaming: boolean
   onRenameSubmit: (title: string) => void
   onRenameCancel: () => void
   menuOpen: boolean
-  onMenuToggle: () => void
+  /** (REG-286) Hands the kebab up so the parent can measure which way its menu fits (menu-side.ts). */
+  onMenuToggle: (trigger: HTMLElement) => void
   onMenuClose: () => void
   menuSide: 'up' | 'down'
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
@@ -306,7 +324,7 @@ function TaskRowView({
           {/* The chips sit BESIDE the title button, not inside it: the comment chip is a control of its own now
               (opens the comments panel straight away, user 2026-08-30) and buttons cannot nest — the same reason
               the status glyph sits outside. The attachment chip stays a plain count. */}
-          {task.comments.length > 0 || task.attachments.length > 0 ? (
+          {task.comments.length > 0 || task.attachments.length > 0 || descriptionMatch ? (
             <span className={styles.chips}>
               {task.comments.length > 0 ? (
                 <Tooltip label="Open comments">
@@ -322,6 +340,16 @@ function TaskRowView({
                 <span className={styles.chip} aria-label={`${task.attachments.length} attachments`}>
                   <Icon name="attach_file" size={16} weight={300} />
                   {task.attachments.length}
+                </span>
+              ) : null}
+              {/* (REG-275) The search matches the description now, and the description is not in the row — so when it
+                  is the ONLY hit the cell says where the match is. The count chips' own box, no new element; it shows
+                  while a search is running and never otherwise. Its own words rather than a tooltip: tooltips never
+                  fire on touch (responsive.md). */}
+              {descriptionMatch ? (
+                <span className={styles.chip} aria-label="Matched in the description">
+                  <Icon name="description" size={16} weight={300} />
+                  In description
                 </span>
               ) : null}
             </span>
@@ -411,13 +439,15 @@ function TaskRowView({
       {renaming ? null : (
         <span className={styles.actions} data-open={menuOpen || undefined}>
           <span className={styles.float}>
-            <Button variant="primary" appearance="outlined" onPress={() => onEdit(task)}>Edit</Button>
+            {/* rowEdit / rowKebab: the 36px controls take a ≥40 touch target below 768 (REG-273) — a transparent
+                overlay, so the mock's pill is drawn exactly as it is on desktop. */}
+            <Button variant="primary" appearance="outlined" className={styles.rowEdit} onPress={() => onEdit(task)}>Edit</Button>
           </span>
           <span className={styles.menuWrap}>
             <span className={styles.float}>
               <Tooltip label="More actions" disabled={menuOpen}>
-                <IconButton icon="more_vert" label={`More actions for ${task.title}`} variant="primary"
-                            aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
+                <IconButton icon="more_vert" label={`More actions for ${task.title}`} variant="primary" className={styles.rowKebab}
+                            aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
               </Tooltip>
             </span>
             <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide}>

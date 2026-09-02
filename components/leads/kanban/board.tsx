@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, animate, motion } from 'motion/react'
 import { Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -9,10 +9,11 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ScrollPagers } from '@/components/om/scroll-pagers'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { menuSideFor } from '@/components/leads/menu-side'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { displayDate, isOverdue, moneySGD, relativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
-import { highlightMatch } from '@/components/leads/highlight'
+import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
 import styles from './board.module.css'
@@ -28,7 +29,6 @@ export type PendingDrop = { leadId: string; stage: Stage } | null
 const COLUMN_STEP = 328    // column 320 + 8 gap — pagers move by whole columns
 const EDGE_ZONE = 72       // px from a scroll edge where auto-scroll kicks in
 const MAX_SCROLL_STEP = 18 // px per frame at the very edge
-const MENU_CLEARANCE = 100 // px of column body needed below the card kebab for its menu to open downwards
 /*
  * How many assignee avatars the card foot shows. The mock's card draws one or two, and the second was read as
  * a cap (REG-195) — but nothing on the card enforces it: the foot is the card's content box less the trailing
@@ -71,6 +71,13 @@ function KanbanCard({
   const firstTask = lead.tasks[0]
   const overdue = lead.tasks.some((t) => isOverdue(t.dueAt, now))
   const extra = lead.tasks.length - 1
+  /* (REG-275) A card carries fewer fields than a table row, so a hit that lands off the name is the hardest to
+     explain here: emphasise it in the meta line (phone · budget · source) and the task line too. Guarded on a
+     non-empty query — with the box empty the card renders the plain strings it always did. */
+  const q = query.trim()
+  const hit = (text: string): ReactNode => (q ? highlightMatch(text, q) : text)
+  /** Phones match digits-to-digits (lib/search.ts), so they need the digit-aware pass. */
+  const hitPhone = (text: string): ReactNode => (q ? highlightPhone(text, q) : text)
 
   // ---- Drag: a fixed ghost clone follows the pointer (pointer events + capture), the real card stays in
   // flow as a dimmed placeholder. No motion `drag` — its layout projection fought the scrolling board.
@@ -247,7 +254,7 @@ function KanbanCard({
               onClick={() => onNameClick(lead)}
               onKeyDown={(e) => e.key === 'Enter' && onNameClick(lead)}
               style={{ cursor: 'pointer' }}>
-          {highlightMatch(lead.name, query)}
+          {hit(lead.name)}
         </span>
         <span className={styles.cardMetaRight}>
           <span className={styles.cardAgo}>{relativeTime(lead.updatedAt, new Date(now))}</span>
@@ -256,14 +263,10 @@ function KanbanCard({
               <button type="button" className={styles.cardKebab} aria-label={`More actions for ${lead.name}`}
                       aria-haspopup="menu" aria-expanded={menuOpen}
                       onClick={(e) => {
-                        // Same as the table's last rows: flip the menu above the trigger when the scrolling column body
-                        // would clip it below (cards near the bottom edge) — as long as there is more room above.
-                        const col = cardEl.current?.closest<HTMLElement>('[data-col-body]')
-                        if (col) {
-                          const k = e.currentTarget.getBoundingClientRect(), c = col.getBoundingClientRect()
-                          const below = c.bottom - k.bottom, above = k.top - c.top
-                          setMenuSide(below < MENU_CLEARANCE && above > below ? 'up' : 'down')
-                        }
+                        // (REG-286) The ONE shared rule (components/leads/menu-side.ts), as every row kebab now uses:
+                        // flip above the trigger only when the scrolling column body would clip this 1- or 2-item menu
+                        // below AND there is room for it above. Was a local copy with a worst-case 100px constant.
+                        setMenuSide(menuSideFor(e.currentTarget, canReturnLead(lead) ? 2 : 1))
                         setMenuOpen((o) => !o)
                       }}>
                 <Icon name="more_vert" size={20} weight={300} />
@@ -280,16 +283,16 @@ function KanbanCard({
         </span>
       </div>
       <div className={styles.cardMeta}>
-        <span>{lead.phone}</span><span>·</span>
-        <span>{moneySGD(lead.budgetMinor)}</span><span>·</span>
-        <span>{lead.source}</span>
-        {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {displayDate(new Date(lead.onHoldFollowUp))}</span></> : null}
+        <span>{hitPhone(lead.phone)}</span><span>·</span>
+        <span>{hit(moneySGD(lead.budgetMinor))}</span><span>·</span>
+        <span>{hit(lead.source)}</span>
+        {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDate(new Date(lead.onHoldFollowUp)))}</span></> : null}
       </div>
       </div>
       {firstTask ? (
         <button type="button" className={styles.cardTask} aria-label={`Tasks for ${lead.name}`} data-drag-ok
                 onClick={(e) => onTaskClick(lead, e.currentTarget)}>
-          <span className={styles.cardTaskText}>{firstTask.title}</span>
+          <span className={styles.cardTaskText}>{hit(firstTask.title)}</span>
           {overdue ? <Tag color="red" appearance="outlined">Overdue</Tag> : null}
           {extra > 0 ? <Tag appearance="outlined">{`+${extra}`}</Tag> : null}
         </button>
@@ -384,8 +387,11 @@ export function KanbanBoard({
               <span className={styles.railLabel}><span className={styles.railDot} />{band.label}</span>
             </button>
             {band.stages.map((stage, i) => {
+              // (REG-286) `allByStage` already buckets every row by stage just above, and the column renders that
+              // bucket — the head count re-scanned the whole `rows` array once PER COLUMN for the same number
+              // (7 columns × every lead, on every board render). The bucket's own length is that number.
               const leads = allByStage.get(stage) ?? []
-              const total = rows.filter((r) => r.stage === stage).length
+              const total = leads.length
               return (
                 <motion.div key={stage} className={styles.column} data-tone={band.tone} data-stage={stage}
                             initial={{ opacity: 0 }}
@@ -422,8 +428,11 @@ export function KanbanBoard({
         )
       })}
     </motion.div>
-    {/* Edge pagers (user 2026-08-29): mouse users page the board by whole columns. */}
-    <ScrollPagers scrollRef={boardRef} fades={false} step={(w) => Math.max(COLUMN_STEP, Math.floor((w * 0.7) / COLUMN_STEP) * COLUMN_STEP)} labels={['Scroll columns left', 'Scroll columns right']} />
+    {/* Edge pagers (user 2026-08-29): mouse users page the board by whole columns. The wrapper generates no box
+        (display: contents) — it is the handle mobile uses to drop them for the swipe board (REG-269). */}
+    <div className={styles.pagers}>
+      <ScrollPagers scrollRef={boardRef} fades={false} step={(w) => Math.max(COLUMN_STEP, Math.floor((w * 0.7) / COLUMN_STEP) * COLUMN_STEP)} labels={['Scroll columns left', 'Scroll columns right']} />
+    </div>
     </div>
   )
 }

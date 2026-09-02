@@ -323,7 +323,16 @@ export const fileComments = sqliteTable(
   (t) => [index('file_comments_file_idx').on(t.fileId)],
 )
 
-/** Questionnaire progress (QUESTIONNAIRE card 858:25077) — counts only until the tab is designed. */
+/**
+ * DEAD TABLE — nothing reads or writes it (REG-286). Kept only because migrations here are additive (CLAUDE.md), so
+ * dropping it is a schema change we do not make; `scripts/seed-overview.ts` still fills it and `lib/db/baseline.ts`
+ * still snapshots it, both harmlessly.
+ *
+ * It held the QUESTIONNAIRE card's counts (858:25077) before the Questionnaire tab existed. The tab's `questions`
+ * table replaced it: the counts are now DERIVED per request (`lib/leads/question-model.ts` summarise → the
+ * `QuestionnaireSummary` type in `lib/leads/detail.ts`). Nothing keeps these columns in step with `questions`, so a
+ * reader who trusts them gets last month's numbers. Do not build against it — build against `questions`.
+ */
 export const leadQuestionnaires = sqliteTable('lead_questionnaires', {
   leadId: text('lead_id').primaryKey().references(() => leads.id, { onDelete: 'cascade' }),
   total: integer('total').notNull(),
@@ -398,6 +407,7 @@ export type FileComment = typeof fileComments.$inferSelect
 export type LeadNote = typeof leadNotes.$inferSelect
 export type Question = typeof questions.$inferSelect
 export type LeadFile = typeof leadFiles.$inferSelect
+/** @deprecated (REG-286) the row type of the dead `lead_questionnaires` table — derived counts are `QuestionnaireSummary` in lib/leads/detail.ts. */
 export type LeadQuestionnaire = typeof leadQuestionnaires.$inferSelect
 export type LeadReturn = typeof leadReturns.$inferSelect
 

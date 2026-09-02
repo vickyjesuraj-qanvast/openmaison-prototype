@@ -84,3 +84,38 @@
   flex-shrink: 0; position: relative; z-index: 1;
 }
 .footerRight { margin-left: auto; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
+   This modal carries its own shell (copied from the tasks filters modal), so it repeats the shared
+   Dialog clamp (components/om/dialog.module.css): ≤1199 it clamps to the viewport minus 48, ≤767 it is
+   a full-screen sheet. The browse rows are already fluid — only the paddings come down to the mobile 16
+   and the footer may wrap so New Folder · Cancel · Move never clip. */
+@media (max-width: 1199px) {
+  .overlay { padding: var(--om-spacing-12) var(--om-spacing-6); }
+  .panel { width: min(var(--om-modal-m), calc(100vw - 48px)); }
+}
+@media (max-width: 767px) {
+  .overlay { padding: 0; }
+  .panel { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+  .heading { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .body { padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); }
+  .footer { padding: var(--om-spacing-4); flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+
+  /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
+     Close and the folder head's back keep their 24px glyphs inside 40px boxes (the extra as margin, so
+     the heading rows keep their mocked rhythm). The browse rows are the primary target: 40 as mocked,
+     grown to 48 here because the row-hover "Move" button — a DS 24px `size="sm"` that this file cannot
+     resize — is permanently visible on a touch pointer (see the hover block below) and needs the room. */
+  .close, .back { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+  /* Row 40 → 56 = the row's own 8/8 padding around a 40px "Move" (a DS `size="sm"`, 24 tall, whose box is
+     its mark): the row stays the primary target and the shortcut inside it is now tappable too. */
+  .folderRow { height: auto; min-height: 56px; }
+  .rowMove button { min-height: 40px; }
+}
+
+/* Touch ergonomics (REG-273): the row's "Move" shortcut is revealed on hover (931:39249), which a touch
+   pointer can never do — where there is no hover it is simply always there. Tapping the row still drills
+   into the folder; the button moves the items straight into it. */
+@media (hover: none) {
+  .rowMove { opacity: 1; pointer-events: auto; }
+}

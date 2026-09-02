@@ -12,3 +12,49 @@
   gap: var(--om-spacing-2);
   min-height: 0;
 }
+
+/* (REG-286, a11y audit "no main landmark") — the <main> wrapper around every route's content. A transparent
+   pass-through: these are the three declarations the route's own root already resolved to as a flex child of
+   .main (identical to page-reveal's .reveal), so the box, the stretch height and the kanban body's
+   `height: calc(100dvh - 16px)` all land where they did before. No overflow, no position, no transform — it
+   creates no scroll container and no containing block, so sticky headers still track the viewport. */
+.content { flex: 1; min-width: 0; display: flex; }
+/* The landmark carries tabindex="-1" so the skip link can move focus into it. A focus ring around the whole
+   page would be noise (and a click inside can focus it in Chrome / Safari); the first Tab after the jump lands
+   on a real control, which draws its own. */
+.content:focus { outline: none; }
+
+/* (REG-286) Skip to content. Hidden with the globals `.visually-hidden` technique — absolute, 1px, clipped —
+   so it is never painted at any breakpoint; on focus it becomes a fixed pill in the app's own style. Both
+   states are out of flow, so the shell's layout is untouched either way. */
+.skip {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.skip:focus {
+  position: fixed;
+  top: var(--om-spacing-2); left: var(--om-spacing-2);
+  z-index: 200;                       /* over the mobile drawer (120) and every overlay the shell hosts */
+  width: auto; height: auto;
+  margin: 0;
+  padding: 10px var(--om-spacing-4);  /* 20px line + 2×10 = a 40px box, the touch-target floor */
+  overflow: visible;
+  clip-path: none;
+  background: var(--om-color-surface-default);
+  color: var(--om-color-on-surface-default);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  box-shadow: var(--om-elevation-level-2);
+  font: var(--om-type-subtitle-m);
+}
+
+/* Responsive (REG-269, design-source/context/responsive.md): mobile goes edge-to-edge under the mobile bar. */
+@media (max-width: 767px) {
+  .page { padding: 0; }
+  .main { gap: 0; }
+}

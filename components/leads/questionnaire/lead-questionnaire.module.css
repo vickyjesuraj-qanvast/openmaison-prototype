@@ -20,3 +20,30 @@
 .layout { display: flex; align-items: flex-start; gap: var(--om-spacing-6); min-width: 0; }
 .questions { display: flex; flex-direction: column; gap: var(--om-spacing-6); flex: 1 1 auto; min-width: 0; }
 .summary { flex: 0 0 480px; width: 480px; }
+
+/* Responsive (REG-269): ≤1199 the questions + summary row stacks — the summary card goes LAST (it is
+   already second in the DOM) and full-width; question cards stay fluid. Desktop ≥1200 keeps the mock's
+   side-by-side 480. */
+@media (max-width: 1199px) {
+  .layout { flex-direction: column; align-items: stretch; }
+  .summary { flex: 0 0 auto; width: 100%; }
+}
+
+/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
+   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+@media (max-width: 767px) {
+  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .search, .searchWrap { width: 100%; flex-basis: 100%; }
+  .right, .actions { flex-wrap: wrap; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   "Ask Client" is the mock's 36px DS button. On a touch pointer it keeps its drawn size and gains a
+   transparent 2px ring — a 40px target that takes no space, so the toolbar row is unchanged. While the
+   button is locked its `pointer-events: none` (above) covers the ring too, so the wrapper still receives
+   the press: nothing about the disabled state changes. The lock's reason is not tooltip-only — the empty
+   card directly below says "No questions yet" and explains who adds them — so touch loses nothing. */
+@media (hover: none) {
+  .anchor > button { position: relative; }
+  .anchor > button::after { content: ''; position: absolute; inset: -2px; }
+}

@@ -28,3 +28,25 @@
   border: 2px solid var(--om-color-surface-default);
   box-sizing: content-box;
 }
+
+/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
+   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+@media (max-width: 767px) {
+  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .search, .searchWrap { width: 100%; flex-basis: 100%; }
+  .right, .actions { flex-wrap: wrap; }
+}
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   The Quotes twin's rule (components/leads/quotes/quotes-toolbar.module.css): New Contract, Filters and
+   the kebab are the mock's 36px controls, so on a touch pointer each keeps its drawn size and gains a
+   transparent 2px ring — a 40px target that takes no space, leaving the wrapped row, the 12px gaps and
+   the filter badge exactly where they were. The selectors are the DS Button (a direct child of its
+   wrapper) and the om IconButton (inside the Tooltip's anchor span); neither reaches the Dropdown's own
+   rows, which are the shared menu's business. */
+@media (hover: none) {
+  .menuWrap > button, .menuWrap > span > button, .filterWrap button { position: relative; }
+  .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
+    content: ''; position: absolute; inset: -2px;
+  }
+}

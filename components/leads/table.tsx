@@ -1,8 +1,9 @@
 'use client'
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { highlightMatch } from '@/components/leads/highlight'
+import { menuSideFor } from '@/components/leads/menu-side'
+import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import { Button, Checkbox, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -22,7 +23,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'name', label: 'Lead Name', visible: true, pinned: true },
   { key: 'stage', label: 'Stage', visible: true, pinned: false },
   { key: 'tasks', label: 'Tasks', visible: true, pinned: false },
-  { key: 'assignees', label: 'Assignees', visible: true, pinned: false },
+  { key: 'assignees', label: 'Members', visible: true, pinned: false },   /* REG-290: the key stays `assignees` (data), the label is Members */
   { key: 'source', label: 'Source', visible: true, pinned: false },
   { key: 'budget', label: 'Budget (S$)', visible: true, pinned: false },
   { key: 'propertyType', label: 'Property Type', visible: true, pinned: false },
@@ -41,8 +42,6 @@ const SORTABLE: Record<ColumnKey, boolean> = {
 
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null
 const EMPTY_SELECTION = new Set<string>()
-/** px of scroller needed below a row kebab for its menu to open downwards — the tallest row menu is 2 items (86px with the 4px offset). */
-const MENU_CLEARANCE = 100
 
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata. */
 const colStyle = (key: ColumnKey) => ({ flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
@@ -109,7 +108,7 @@ export function LeadsTable({
   onCopyPhone: (row: LeadRow) => void
   /** Clock captured by the caller in an event handler / on mount (purity rule). */
   now: number
-  /** Live search text — the matched substring of the name is emphasised (C2). */
+  /** Live search text — the matched substring is emphasised in every cell it can land in (C2, REG-275). */
   query?: string
   /** Filters modal sort — resets/sets the column sort so the two never fight. */
   filterSort?: 'newest' | 'oldest'
@@ -131,20 +130,36 @@ export function LeadsTable({
   let pinAcc = 0
   for (const c of visible) if (c.pinned) { pinOffset[c.key] = pinAcc; pinAcc += WIDTHS[c.key] }
   const pinEdge = [...visible].reverse().find((c) => c.pinned)?.key
+  /* (REG-286) ARIA grid roles: the data cells carried no role at all, so a screen reader saw a role="table" whose
+     rows held generic children and dropped out of table mode entirely — no column announcements, no cell
+     navigation. Every cell is built here, so the role is added here; the head spreads this same object and
+     overrides it with role="columnheader" (a later JSX attribute wins over the spread). */
   const cellProps = (col: ColumnConfig, base: string | undefined) => ({
+    role: 'cell',
     className: col.pinned ? `${base} ${styles.pin}` : base,
     style: col.pinned ? { ...colStyle(col.key), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key),
     'data-pin-edge': col.pinned && col.key === pinEdge ? true : undefined,
   })
-  // Fluid columns grow pro rata, so sticky offsets scale by (rendered width ÷ floor). DOM write only.
-  const tableRef = (el: HTMLDivElement | null) => {
+  /* Fluid columns grow pro rata, so sticky offsets scale by (rendered width ÷ floor). DOM write only.
+     (REG-286) Was an inline ref callback: a fresh function identity every render, so React 19 ran its cleanup and
+     re-ran it on EVERY render — a ResizeObserver torn down and rebuilt per keystroke of the search box — and its
+     `el.clientWidth` read landed straight after commit, forcing a synchronous layout of the whole table. The
+     observer now lives in an effect keyed on the only input that can change the scale, and the width comes off the
+     observer's own entry, so nothing reads layout on the commit path. */
+  const tableEl = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = tableEl.current
     if (!el) return
-    const apply = () => el.style.setProperty('--col-scale', String(Math.max(1, el.clientWidth / minWidth)))
-    apply()
-    const ro = new ResizeObserver(apply)
+    const apply = (w: number) => el.style.setProperty('--col-scale', String(Math.max(1, w / minWidth)))
+    if (typeof ResizeObserver === 'undefined') { apply(el.clientWidth); return }
+    // The first notification carries the initial size and is delivered before paint, so the scale is never a frame late.
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry?.contentRect.width ?? 0
+      if (w > 0) apply(w)
+    })
     ro.observe(el)
     return () => ro.disconnect()
-  }
+  }, [minWidth])
   const sorted = useMemo(() => {
     if (!sort) return rows
     const out = [...rows].sort((a, b) => {
@@ -160,6 +175,15 @@ export function LeadsTable({
   }
   const sortIcon = (key: ColumnKey) =>
     sort?.key === key ? (sort.dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'
+
+  /* (REG-275) A row now matches on everything it SHOWS (REG-274), so the hit is emphasised wherever it landed —
+     a lead found by its phone, source or task title used to arrive with nothing marked and no way to see why it
+     was in the list. Guarded on a non-empty query: with the box empty every cell renders the same plain string
+     it always did (highlightMatch walks the whole string, and there is nothing to find). */
+  const q = query.trim()
+  const hit = (text: string): ReactNode => (q ? highlightMatch(text, q) : text)
+  /** Phones match digits-to-digits, so they need the digit-aware pass. */
+  const hitPhone = (text: string): ReactNode => (q ? highlightPhone(text, q) : text)
 
   const renderCell = (row: LeadRow, col: ColumnConfig) => {
     switch (col.key) {
@@ -184,13 +208,15 @@ export function LeadsTable({
               onClick={() => onNameClick(row)}
               onKeyDown={(e) => e.key === 'Enter' && onNameClick(row)}
             >
-              {highlightMatch(row.name, query)}
+              {hit(row.name)}
             </span>
             <span className={styles.phoneRow}>
               <span className={styles.phone}>
-                {row.phone}
+                {hitPhone(row.phone)}
                 {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) */}
-                {row.stage === 'On Hold' && row.onHoldFollowUp ? ` · On hold till: ${displayDate(new Date(row.onHoldFollowUp))}` : null}
+                {row.stage === 'On Hold' && row.onHoldFollowUp
+                  ? <>{' · On hold till: '}{hit(displayDate(new Date(row.onHoldFollowUp)))}</>
+                  : null}
               </span>
               <Tooltip label="Copy phone number">
                 <button type="button" className={styles.copyBtn} aria-label={`Copy ${row.name}'s phone number`}
@@ -207,7 +233,7 @@ export function LeadsTable({
             <button type="button" className={styles.stageBtn}
                     title={row.onHoldFollowUp ? `Next follow up: ${displayDate(new Date(row.onHoldFollowUp))}` : undefined}
                     onClick={(e) => onStageClick(row, e.currentTarget.parentElement as HTMLElement) /* anchor = the cell (780:86452) */}>
-              {row.stage}
+              {hit(row.stage)}
               <span className={styles.chev}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>
           </div>
@@ -220,7 +246,7 @@ export function LeadsTable({
           <div key={col.key} {...cellProps(col, styles.cell)}>
             {first ? (
               <button type="button" className={styles.taskBox} onClick={(e) => onTaskClick(row, e.currentTarget)}>
-                <span className={styles.taskText}>{first.title}</span>
+                <span className={styles.taskText}>{hit(first.title)}</span>
                 {overdue ? <Tag color="red" appearance="outlined">Overdue</Tag> : null}
                 {extra > 0 ? <Tag appearance="outlined">{`+${extra}`}</Tag> : null}
               </button>
@@ -263,15 +289,16 @@ export function LeadsTable({
           </div>
         )
       case 'source':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.source}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(row.source)}</span></div>
       case 'budget':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{money(row.budgetMinor)}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(money(row.budgetMinor))}</span></div>
       case 'propertyType':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyType}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(row.propertyType)}</span></div>
       case 'created':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{displayDate(row.createdAt)}</span></div>
+        // The DISPLAYED date, through the column's own formatter — exactly the string search matches (REG-274).
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(displayDate(row.createdAt))}</span></div>
       case 'address':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ?? '—'}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ? hit(row.propertyAddress) : '—'}</span></div>
     }
   }
 
@@ -280,7 +307,7 @@ export function LeadsTable({
   return (
     <div className={styles.card}>
       <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-        <div ref={tableRef} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
+        <div ref={tableEl} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
              style={{ minWidth }}>
           <div className={styles.headRow} role="row">
             {visible.map((col, i) => (
@@ -339,16 +366,11 @@ export function LeadsTable({
                         <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
                                     aria-haspopup="menu" aria-expanded={menuRow === row.id}
                                     onClick={(e) => {
-                                      // Which side has room, measured against the scroller that clips it (overflow-x: auto
-                                      // ⇒ overflow-y: auto) — not counted from the row index, which left every menu pointing
-                                      // down when a stage filter narrows the table to one or two rows. Same rule as the
-                                      // kanban card kebab; on the full listing the last two rows still flip up.
-                                      const box = e.currentTarget.closest<HTMLElement>('[data-scroll-box]')
-                                      if (box) {
-                                        const k = e.currentTarget.getBoundingClientRect(), c = box.getBoundingClientRect()
-                                        const below = c.bottom - k.bottom, above = k.top - c.top
-                                        setMenuSide(below < MENU_CLEARANCE && above > below ? 'up' : 'down')
-                                      }
+                                      // (REG-286) Which side has room, from the ONE shared rule (components/leads/menu-side.ts):
+                                      // measured off this trigger and the height of THIS menu (1 or 2 items), never counted
+                                      // from the row index. The answer used to be written out in five places and two of the
+                                      // copies had drifted — Tasks and Files were still counting rows.
+                                      setMenuSide(menuSideFor(e.currentTarget, canReturnLead(row) ? 2 : 1))
                                       setMenuRow((m) => (m === row.id ? null : row.id))
                                     }} />
                       </Tooltip>

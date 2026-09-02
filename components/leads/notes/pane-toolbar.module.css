@@ -1,20 +1,24 @@
 /*
- * Lead Details › Notes — pane toolbar (931:44905 884×68, H g16 p16/24; spec design-source/context/
+ * Lead Details › Notes — pane toolbar (931:44905 884×68, H g16 p16/24, bottom rule; spec design-source/context/
  * lead-notes/01-layout-list-editor.txt). Bare 24px icon buttons (components/om/drawer.module.css .iconBtn), 1×36 rules,
  * the AI chip 47×28 (p4 g2: 17×17 gradient square + chevron 20).
- * At the pane's FOOT since REG-254 (user 2026-09-01: the body sits after the contact-log fields, so a top bar read
- * as disconnected) — the mock's bottom rule becomes a top rule, and the bar's right end hosts the contextual
- * actions: Edit (a read-only contact log) or Cancel · Save (an editor with something to decide).
+ * At the pane's TOP — the mock's own placement. REG-254 had docked it to the foot; the owner reverted that
+ * (REG-277: "i know earlier i asked to move it down but it doesn't look good"), so the bottom rule is back and
+ * Cancel · Save returned to their own footer at the pane's foot (lead-notes.module.css .footer).
  */
-.toolbar {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
+/* The pane header (REG-292) — the mock's own toolbar container, now shared by both kinds: the kind label on
+   the left, the item's actions on the right. `space-between` with a single child leaves the actions where the
+   bare toolbar drew them, so the empty pane is unchanged. */
+.header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4);
   height: 68px; flex-shrink: 0; width: 100%;
   padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
 }
-
-/* The contextual actions at the bar's right end: Edit, or Cancel · Save 12 apart (the retired editor footer's row). */
-.end { margin-left: auto; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+/* "Note" / "Contact log" — the contact editor's own block title (14/Semi Bold), which this header replaces. */
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* The format tools keep the mock's 16px rhythm inside the header. */
+.tools { display: flex; align-items: center; gap: var(--om-spacing-4); }
 
 /* Formatting outside an editable body (a contact log before Edit): visible, inert, disabled ink. */
 .iconBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; pointer-events: none; }
@@ -53,3 +57,34 @@
 /* Chevron points up while the menu is open — every menu trigger does this (contracts-toolbar.module.css .chev). */
 .chev { display: inline-flex; transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }
+
+/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
+   Six bare 24px icon buttons, three 1px rules and the 28px AI chip in one 68px bar: at 390 every one of them
+   is under half a fingertip, and the bar's mocked 24px side padding left it 12px wider than the card anyway.
+   The marks keep their sizes and their 16px rhythm; only the boxes around them grow. Desktop is untouched. */
+@media (max-width: 767px) {
+  .toolbar {
+    height: auto; min-height: 68px;
+    padding: var(--om-spacing-4);            /* 24 → 16 (responsive.md ground rule) — the 8px the row needs */
+    flex-wrap: wrap; row-gap: var(--om-spacing-3);   /* the tools wrap rather than squeeze at 390 */
+  }
+  /* The 24px mark stays where it is and the button around it becomes the 40px target: the extra 8px on every
+     side is given back as margin, so the bar's layout is the mock's to the pixel. */
+  .iconBtn { position: relative; width: 40px; height: 40px; margin: -8px; }
+  /* The active-format lavender is drawn STATE, not target, so it stays the mocked 24px square — painted
+     behind the glyph rather than on the grown button. */
+  .iconBtn[aria-pressed='true'] { background: none; }
+  .iconBtn[aria-pressed='true']::before {
+    content: ''; position: absolute; inset: 8px;
+    border-radius: var(--om-radius-1); background: var(--om-color-primary-variant);
+  }
+  .iconBtn :global(.msr) { position: relative; }   /* the glyph paints over the square above */
+  /* The rules are inert, so the 40px boxes are free to overlap them: 10px of air each side instead of 16 is
+     what keeps the whole bar on one line at 390 with no two BUTTON targets touching. */
+  .rule { margin: 0 -6px; }
+  /* The AI chip: 47×28 drawn, 47×40 to the finger. */
+  .aiChip { min-height: 40px; margin-block: -6px; }
+  /* The AI chip's menu ("Refine") draws 36px rows; menus.module.css is the owner's, so the row takes the
+     target from here for this surface (the same row height is in sharedRequests for every menu). */
+  .menuWrap :global([role='menuitem']) { min-height: 40px; }
+}

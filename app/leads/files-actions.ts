@@ -5,12 +5,22 @@ import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { fileComments, leadFiles, type LeadFile } from '@/lib/db/schema'
+import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { descendantIds } from '@/lib/leads/file-model'
+import { revalidateLead } from '@/lib/leads/queries'
 
 /* Lead Details › Files (931-39056). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const ME = 'dane'   // the signed-in member (members.is_you)
-const touch = (leadId: string) => { revalidatePath(`/leads/${leadId}`); revalidatePath(`/leads/${leadId}/files`); revalidatePath(`/leads/${leadId}/tasks`); revalidatePath('/leads') }
+const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+/**
+ * (REG-286) One shared eviction for every detail tab — this helper named Files and Tasks by hand but never Notes,
+ * the return details modal or Activity, all of which show the lead's files. `fileIds` additionally clears the
+ * viewer route `/leads/{lead}/files/{file}`, which is a page of its own and was refreshed for comments only.
+ */
+const touch = (leadId: string, ...fileIds: string[]) => {
+  revalidateLead(leadId)
+  for (const f of fileIds) revalidatePath(`/leads/${leadId}/files/${f}`)
+}
 const leadOf = async (fileId: string) => (await db.select({ leadId: leadFiles.leadId }).from(leadFiles).where(eq(leadFiles.id, fileId)))[0]?.leadId ?? null
 const allOf = (leadId: string) => db.select().from(leadFiles).where(eq(leadFiles.leadId, leadId))
 /**
@@ -56,7 +66,7 @@ export async function uploadFile(leadId: string, parentId: string | null = null,
 export async function renameFile(fileId: string, name: string): Promise<void> {
   const leadId = await leadOf(fileId); if (!leadId) return
   await db.update(leadFiles).set({ name, updatedAt: new Date() }).where(eq(leadFiles.id, fileId))
-  touch(leadId)
+  touch(leadId, fileId)
 }
 
 /** Move dialog (931:39216): into a folder or to the root (null). A folder never moves into itself or its own descendants. */
@@ -68,7 +78,7 @@ export async function moveFiles(fileIds: string[], parentId: string | null): Pro
   for (const id of fileIds) { const f = all.find((x) => x.id === id); if (f?.kind === 'folder') { blocked.add(id); for (const d of descendantIds(all, id)) blocked.add(d) } }
   if (parentId && blocked.has(parentId)) return
   await db.update(leadFiles).set({ parentId, updatedAt: new Date() }).where(inArray(leadFiles.id, fileIds))
-  touch(leadId)
+  touch(leadId, ...fileIds)
 }
 
 /** Duplicate (tile / viewer kebab, bulk bar): a copy beside the original, same name (the mock is silent — the tasks rule). Folders copy their contents. */
@@ -78,14 +88,18 @@ export async function duplicateFiles(fileIds: string[]): Promise<string[]> {
   const all = await allOf(leadId)
   const now = new Date()
   const made: string[] = []
-  const copy = async (id: string, parentId: string | null) => {
-    const f = all.find((x) => x.id === id); if (!f) return
-    const nid = randomUUID()
-    await db.insert(leadFiles).values({ ...f, id: nid, parentId, createdAt: now, updatedAt: now, deletedAt: null })
-    made.push(nid)
-    if (f.kind === 'folder') for (const c of all.filter((x) => x.parentId === id && !x.deletedAt)) await copy(c.id, nid)
-  }
-  for (const id of fileIds) { const f = all.find((x) => x.id === id); if (f) await copy(id, f.parentId ?? null) }
+  // (REG-286) One transaction: a folder copy is a tree. Unwrapped, a failure mid-recursion left a duplicated folder
+  // holding only the children that happened to land — a copy the user has to inspect file by file to trust.
+  await db.transaction(async (tx) => {
+    const copy = async (id: string, parentId: string | null) => {
+      const f = all.find((x) => x.id === id); if (!f) return
+      const nid = randomUUID()
+      await tx.insert(leadFiles).values({ ...f, id: nid, parentId, createdAt: now, updatedAt: now, deletedAt: null })
+      made.push(nid)
+      if (f.kind === 'folder') for (const c of all.filter((x) => x.parentId === id && !x.deletedAt)) await copy(c.id, nid)
+    }
+    for (const id of fileIds) { const f = all.find((x) => x.id === id); if (f) await copy(id, f.parentId ?? null) }
+  })
   touch(leadId); return made
 }
 
@@ -93,7 +107,7 @@ export async function duplicateFiles(fileIds: string[]): Promise<string[]> {
 export async function trashFiles(fileIds: string[]): Promise<void> {
   const { leadId, ids } = await withDescendants(fileIds, (f) => !f.deletedAt); if (!leadId) return
   await db.update(leadFiles).set({ deletedAt: new Date() }).where(inArray(leadFiles.id, ids))
-  touch(leadId)
+  touch(leadId, ...ids)
 }
 
 /**
@@ -106,14 +120,14 @@ export async function restoreFiles(fileIds: string[]): Promise<void> {
   const set = new Set(ids)
   for (const id of ids) { let p = all.find((x) => x.id === id)?.parentId ?? null; while (p) { const f = all.find((x) => x.id === p); if (f?.deletedAt) set.add(f.id); p = f?.parentId ?? null } }
   await db.update(leadFiles).set({ deletedAt: null }).where(inArray(leadFiles.id, [...set]))
-  touch(leadId)
+  touch(leadId, ...set)
 }
 
 /** Deleted Files › Delete Forever — hard delete of the folder and everything inside it (comments and task attachments cascade). */
 export async function deleteFilesForever(fileIds: string[]): Promise<void> {
   const { leadId, ids } = await withDescendants(fileIds, () => true); if (!leadId) return
   await db.delete(leadFiles).where(inArray(leadFiles.id, ids))
-  touch(leadId)
+  touch(leadId, ...ids)
 }
 
 /** Deleted Files › Empty Trash. */
@@ -127,15 +141,15 @@ export async function addFileComment(fileId: string, body: string): Promise<stri
   const leadId = await leadOf(fileId); if (!leadId) throw new Error('file not found')
   const id = randomUUID()
   await db.insert(fileComments).values({ id, fileId, authorId: ME, body, createdAt: new Date() })
-  touch(leadId); revalidatePath(`/leads/${leadId}/files/${fileId}`); return id
+  touch(leadId, fileId); return id
 }
 export async function editFileComment(commentId: string, body: string): Promise<void> {
   const [c] = await db.select({ fileId: fileComments.fileId }).from(fileComments).where(eq(fileComments.id, commentId)); if (!c) return
   await db.update(fileComments).set({ body, updatedAt: new Date() }).where(eq(fileComments.id, commentId))
-  const leadId = await leadOf(c.fileId); if (leadId) { touch(leadId); revalidatePath(`/leads/${leadId}/files/${c.fileId}`) }
+  const leadId = await leadOf(c.fileId); if (leadId) touch(leadId, c.fileId)
 }
 export async function deleteFileComment(commentId: string): Promise<void> {
   const [c] = await db.select({ fileId: fileComments.fileId }).from(fileComments).where(eq(fileComments.id, commentId)); if (!c) return
   await db.delete(fileComments).where(eq(fileComments.id, commentId))
-  const leadId = await leadOf(c.fileId); if (leadId) { touch(leadId); revalidatePath(`/leads/${leadId}/files/${c.fileId}`) }
+  const leadId = await leadOf(c.fileId); if (leadId) touch(leadId, c.fileId)
 }

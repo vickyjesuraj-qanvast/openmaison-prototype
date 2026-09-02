@@ -1,6 +1,8 @@
+import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts, fileComments, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 import { parseInputDateTime } from '@/lib/format'
 
@@ -22,7 +24,12 @@ export type ActivityEvent = {
 
 export type LeadActivityData = { events: ActivityEvent[]; now: number }
 
-const ME = 'dane'
+/**
+ * (REG-286) The signed-in member, defined once in lib/db/session.ts. It shapes the SENTENCES below, not just a
+ * stamp: `who()` prints "You" for this id and the member's name for anyone else, so the read side and the five
+ * action modules that write `creatorId` / `authorId` / `returnedById` have to agree on who "you" is.
+ */
+const ME = SESSION_MEMBER_ID
 
 export async function fetchLeadActivity(leadId: string): Promise<LeadActivityData> {
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId))
@@ -120,7 +127,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   for (const n of notes) {
     const actor = who(n.authorId)
     const link = { label: 'See Note', href: `${base}/notes` }
-    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'list_alt' : 'sticky_note_2', text: n.kind === 'contact' ? `${actor} logged a contact${n.channel ? ` via ${n.channel}` : ''}${n.outcome ? ` — ${n.outcome}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor })
+    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'call_log' : 'sticky_note_2'   /* one mark for a contact log everywhere (REG-278) */, text: n.kind === 'contact' ? `${actor} logged a contact${n.channel ? ` via ${n.channel}` : ''}${n.outcome ? ` — ${n.outcome}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor })
   }
   for (const x of qns) {
     const link = { label: 'See Questionnaire', href: `${base}/questionnaire` }

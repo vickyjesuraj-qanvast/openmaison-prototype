@@ -1,6 +1,6 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import styles from './tabs.module.css'
 
@@ -37,8 +37,22 @@ export function Tabs({
 
   const hasActive = items.some((t) => t.href === activeHref)
 
+  /* When the row scrolls (≤1199, REG-269) the active tab centres itself — otherwise a tab past the fold is
+     selected invisibly. The row's OWN scrollLeft is set directly: `scrollIntoView` also scrolls ancestors,
+     and on this sticky row that displaced the whole tab strip by its dock offset at desktop. No-op where the
+     row does not overflow, so ≥1200 never moves. */
+  const listRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = listRef.current
+    if (!list || list.scrollWidth <= list.clientWidth) return
+    const active = list.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!active) return
+    const target = active.offsetLeft - (list.clientWidth - active.offsetWidth) / 2
+    list.scrollLeft = Math.max(0, Math.min(target, list.scrollWidth - list.clientWidth))
+  }, [activeHref])
+
   return (
-    <div role="tablist" aria-label={ariaLabel} className={className ? `${styles.tabs} ${className}` : styles.tabs} onKeyDown={onKeyDown}>
+    <div ref={listRef} role="tablist" aria-label={ariaLabel} className={className ? `${styles.tabs} ${className}` : styles.tabs} onKeyDown={onKeyDown}>
       {items.map((t, i) => {
         const selected = t.href === activeHref
         return (

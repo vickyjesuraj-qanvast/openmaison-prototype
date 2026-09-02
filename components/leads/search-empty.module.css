@@ -10,3 +10,11 @@
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .clear { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); margin-top: var(--om-spacing-1); }
 .clear:hover { color: var(--om-color-on-primary-variant); }
+
+/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
+   The mock's 480px floor is taller than what is left under a wrapped mobile header, which pushed the block
+   below the fold; the card still fills the content box (flex: 1), it just stops demanding 480. Padding keeps
+   the copy off the edges. */
+@media (max-width: 767px) {
+  .card { min-height: 320px; padding: var(--om-spacing-6) var(--om-spacing-4); }
+}
