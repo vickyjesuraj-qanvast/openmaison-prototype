@@ -13,10 +13,11 @@ jobs:
 
       # The prototype consumes the design system from a sibling checkout.
       # It is a private repo, so CI needs a deploy key or PAT in DS_REPO_TOKEN.
+      # The owner is taken from this repo, so the same workflow works in every mirror of the prototype.
       - name: Check out the design system
         uses: actions/checkout@v4
         with:
-          repository: vickyjesuraj-livspace/openmaison-design-system
+          repository: ${{ github.repository_owner }}/openmaison-design-system
           path: openmaison-design-system
           token: ${{ secrets.DS_REPO_TOKEN }}
 

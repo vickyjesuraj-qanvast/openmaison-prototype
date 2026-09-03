@@ -2,7 +2,7 @@
 
 Hi-fi, working prototype of the **OpenMaison 2.0** experience — a multi-tenant SaaS for
 interior design studios. Built to be demoed on desktop, tablet and mobile, and wired
-directly to the [OpenMaison Design System](https://github.com/vickyjesuraj-livspace/openmaison-design-system).
+directly to the [OpenMaison Design System](https://github.com/vickyjesuraj-qanvast/openmaison-design-system).
 
 Not a mockup: real auth, real database, real server actions.
 
