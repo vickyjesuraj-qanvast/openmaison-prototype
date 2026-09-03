@@ -44,13 +44,16 @@ export function useFlagPref(key: string, fallback: boolean): [boolean, (value: b
   }
   const value = useSyncExternalStore(subscribe, read, () => fallback)
   const touched = useSyncExternalStore(subscribe, () => written.has(key), () => false)
-  const set = (next: boolean) => {
-    cache.set(key, next)
-    written.add(key)
-    try { localStorage.setItem(key, next ? '1' : '0') } catch {}
-    listeners.forEach((l) => l())
-  }
+  const set = (next: boolean) => setFlagPref(key, next)
   return [value, set, touched]
+}
+
+/** Writes a flag from outside its hook — the info column's collapsed strip opens a section it is not rendering (REG-304). */
+export function setFlagPref(key: string, next: boolean) {
+  cache.set(key, next)
+  written.add(key)
+  try { localStorage.setItem(key, next ? '1' : '0') } catch {}
+  listeners.forEach((l) => l())
 }
 
 /** Clears every remembered flag — used by Maison AI › "Reset prototype to base", which clears all `om.*` keys. */

@@ -1,35 +1,116 @@
-/* Mobile chrome (REG-269): the ≤767 top bar + off-canvas nav drawer. Nothing here renders ≥768. */
-.bar { display: none; }
+/* Mobile chrome (1082:23305, REG-298): the ≤767 top bar, the bottom dock and the More drawer. Nothing renders ≥768. */
+.bar, .dock { display: none; }
 @media (max-width: 767px) {
+  /* Top bar (1082:23389): 60 tall, px16 py12, the lockup left and the four marks right. The mocked shadow sits
+     under the page header below it (page-header*.module.css), so the bar itself draws no edge.
+     (REG-308) The height token already carries env(safe-area-inset-top); padding-top spends it, so the drawn 60
+     sits below the status bar and the side insets keep the lockup and marks off a landscape notch. */
   .bar {
     position: sticky; top: 0; z-index: 80;
     display: flex; align-items: center; gap: var(--om-spacing-3);
     height: var(--app-mobile-bar-height); flex-shrink: 0;
-    padding: 0 var(--om-spacing-4);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: calc(var(--om-spacing-4) + env(safe-area-inset-right, 0px));
+    padding-bottom: 0;
+    padding-left: calc(var(--om-spacing-4) + env(safe-area-inset-left, 0px));
     background: var(--om-color-surface-default);
-    box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+  }
+  /* Bottom dock (1082:24937): fixed, pt8 pb12 px8, five 64×50 columns spread across, level-5 lift.
+     (REG-308) The height token carries env(safe-area-inset-bottom); padding-bottom spends it, so the 50px columns
+     stay 8/12 inside the drawn 70 and the home indicator gets its own band beneath them. */
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 85;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: var(--om-spacing-1);
+    height: var(--app-mobile-dock-height);
+    padding-top: var(--om-spacing-2);
+    padding-right: calc(var(--om-spacing-2) + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(var(--om-spacing-2) + env(safe-area-inset-left, 0px));
+    background: var(--om-color-surface-default);
+    box-shadow: var(--om-elevation-level-5);
   }
 }
-.menuBtn {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  width: 40px; height: 40px; margin-left: calc(-1 * var(--om-spacing-2));
+
+.lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
+.wordmark { height: 14px; display: block; }
+
+/* The bar's right group: 24px Light glyphs 16 apart, then the 36px avatar (r8, 1px surface/variant stroke).
+   Each glyph keeps its 24 and gets a 44px box through padding paid back as margin (REG-273). */
+.barActions { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-4); }
+.barIcon {
+  border: 0; background: none; cursor: pointer;
+  width: 24px; height: 24px; padding: 10px; margin: -10px; box-sizing: content-box;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: var(--om-radius-1);
   color: var(--om-color-on-surface-default);
   transition: background-color var(--motion-hover);
 }
-.menuBtn:hover, .menuBtn:active { background: var(--om-color-hover-08p); }
-.lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
-.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
-.wordmark { height: 14px; display: block; }
+.barIcon:hover, .barIcon:active { background: var(--om-color-hover-08p); }
+.avatarBtn {
+  position: relative;   /* the 36 avatar takes a 44 touch box through ::after (REG-306) */
+  width: 36px; height: 36px; flex-shrink: 0;
+  padding: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); background: none; cursor: pointer;
+  border-radius: var(--om-radius-2); overflow: hidden;
+}
+.avatarBtn img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.avatarBtn::after { content: ''; position: absolute; inset: -4px; }
 
-/* Drawer layer: above the FAB and dialogs' base z; the drawer is the expanded rail, edge to edge. */
+/* Dock items: a 36px icon box (r8) over a subtitle/xs label, 2 apart; the active route tints the box primary/variant
+   and turns the glyph and label primary (the Leads column in the mock). */
+.dockItem {
+  /* 64 as mocked at 375; on a 320 screen five 64s do not fit, so the columns share the width (REG-306). */
+  flex: 1 1 0; min-width: 0; max-width: 64px; height: 50px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: 0; background: none; padding: 0; cursor: pointer; text-decoration: none;
+  color: var(--om-color-on-surface-secondary);
+}
+.dockIcon {
+  width: 36px; height: 36px; border-radius: var(--om-radius-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background-color var(--motion-hover);
+}
+.dockItem:hover .dockIcon { background: var(--om-color-hover-08p); }
+.dockItem[data-active] { color: var(--om-color-primary-default); }
+.dockItem[data-active] .dockIcon { background: var(--om-color-primary-variant); }
+.dockLabel { font: var(--om-type-subtitle-xs); white-space: nowrap; }
+
+/* More sheet (1082:24995, REG-300): the layer sits above the dock and the FAB; the sheet rises from the bottom edge —
+   white, r16 on top, pb24, level-5 — a 56px head (subheading/l title + close 24, level-1 under it) over the rows. */
 .layer { position: fixed; inset: 0; z-index: 120; }
 @media (min-width: 768px) { .layer { display: none; } }
 .scrim { position: absolute; inset: 0; border: 0; padding: 0; margin: 0; background: var(--om-color-overlay-60p); cursor: default; }
-.drawer {
-  position: absolute; top: 0; left: 0; bottom: 0; width: 216px;
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  max-height: calc(100dvh - var(--app-mobile-bar-height));
   background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-4) var(--om-radius-4) 0 0;
+  padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px));   /* pb24 + the home-indicator inset (REG-308) */
   box-shadow: var(--om-elevation-level-5);
-  display: flex;
+  display: flex; flex-direction: column; overflow: hidden;
 }
+.sheetHead {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  height: 56px; flex-shrink: 0; padding: var(--om-spacing-2) var(--om-spacing-4);
+  padding-right: calc(var(--om-spacing-4) + env(safe-area-inset-right, 0px));   /* (REG-308) off a landscape notch */
+  padding-left: calc(var(--om-spacing-4) + env(safe-area-inset-left, 0px));
+  box-shadow: var(--om-elevation-level-1);
+}
+.sheetTitle { flex: 1; min-width: 0; margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.sheetList { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) 0; overflow-y: auto; }
+.sheetGroup { display: flex; flex-direction: column; }
+/* One Line (1082:25102): px16 py14, glyph 20 secondary, body/m label — 48 tall, a finger target as drawn. */
+.sheetItem {
+  display: flex; align-items: center; gap: var(--om-spacing-4); width: 100%;
+  padding: 14px var(--om-spacing-4);
+  padding-right: calc(var(--om-spacing-4) + env(safe-area-inset-right, 0px));   /* (REG-308) off a landscape notch */
+  padding-left: calc(var(--om-spacing-4) + env(safe-area-inset-left, 0px));
+  border: 0; background: none; cursor: pointer; text-decoration: none; text-align: left;
+  color: var(--om-color-on-surface-default); font: var(--om-type-body-m);
+  transition: background-color var(--motion-hover);
+}
+.sheetItem:hover { background: var(--om-color-hover-04p); }
+.sheetIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.sheetLabel { flex: 1; min-width: 0; }
+.sheetRule { height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }

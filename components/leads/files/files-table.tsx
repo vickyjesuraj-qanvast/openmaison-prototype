@@ -68,7 +68,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
     onSelect(next)
   }
 
-  /* ≤1199 the card is the table's own horizontal scroller (REG-269) and `data-scrolled` lifts the frozen
+  /* ≤1024 the card is the table's own horizontal scroller (REG-269) and `data-scrolled` lifts the frozen
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
   return (

@@ -2,7 +2,7 @@
    360 wide · V g24 p24 · right stroke 1px surface-variant. Dividers are 1px surface-variant rules in the flow. */
 .column {
   /* (REG-287) `min-width: 360px` used to be declared here and `min-width: 0` again at the end of the block — the
-     second always won, so the 360 was dead. It also must stay dead: the ≤1199 rule narrows the column to 300, and
+     second always won, so the 360 was dead. It also must stay dead: the ≤1024 rule narrows the column to 300, and
      a live 360 floor would have pinned it back to 360. `flex: 0 0 360px` (shrink 0) already fixes the desktop width. */
   flex: 0 0 360px; width: 360px; min-width: 0;
   align-self: stretch; min-height: 100%;
@@ -50,8 +50,36 @@
 .iconBtn:hover { background: var(--om-color-hover-08p); }
 .iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }   /* as om/icon-button */
 
+/* (REG-304) Whole-column collapse — the Create strip's twin (quick-links.module.css): 72 wide, p24, the toggle ·
+   a 24×1 rule · one 24px glyph per block, 24 apart. The width runs on the rail's timing, armed after a toggle only. */
+.column[data-animate] { transition: width var(--motion-modal, 0.2s) ease, flex-basis var(--motion-modal, 0.2s) ease; }
+.column[data-state='collapsed'] { flex-basis: 72px; width: 72px; align-items: flex-start; overflow: hidden; }
+.nameActions { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); flex-shrink: 0; }
+.stripToggle {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover);
+}
+.stripToggle:hover { background: var(--om-color-hover-08p); }
+.divider { width: 24px; height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }
+.glyphs { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.glyph {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.glyph:hover { background: var(--om-color-hover-08p); }
+
 /* Section pattern: V g16 · head H g12 (title fills · link · chevron) 20 tall · body = key/value list. */
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+/* (REG-304) A strip glyph scrolls its section to the top: land it under the sticky header + tabs (+ the column's padding). */
+.section { scroll-margin-top: calc(var(--om-spacing-2) + 72px + 44px + var(--om-spacing-6)); }
 .sectionHead { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
 .sectionTitle {
   flex: 1; min-width: 0; margin: 0;
@@ -108,7 +136,7 @@
 /* Mock avatar "Generic" 20×20 r4, initial 14 / Medium / 20 = om/avatar size 20. */
 
 /* (REG-269) Tablet: the column narrows to 300 so the single-column card stack keeps a usable centre. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .column { flex: 0 0 300px; width: 300px; }
   /* At 300 the column is 252 inside, so a value slot is 252 − 120 key − 12 = 120: every value still wraps and
      nothing is cut (`.text` and `.assigneeName` already wrap on `overflow-wrap: anywhere`, keys still fit their
@@ -128,40 +156,46 @@
     border-right: 0;
     border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
   }
+  /* (REG-304) Collapsed at mobile is the identity block on the full width — the strip geometry is for ≥768. */
+  .column[data-state='collapsed'] { flex: none; width: 100%; overflow: visible; align-items: stretch; }   /* the strip's flex-start would hug the name row to its text */
+  .section { scroll-margin-top: calc(var(--app-mobile-bar-height) + 44px + var(--om-spacing-4)); }
   /* The key/value rows KEEP the mock's two-column read (REG-269, measured before deciding): full width at 390
      the column is 358 inside, so a 120px key + 12 gap leaves the value 226 — WIDER than the 210 it gets in the
      desktop mock's own 360px column. Nothing is crushed, so nothing is restacked: the label/value pair reads
      across, exactly as it does on the desktop page. (The tablet column, at a 120px value, is the narrow case —
      see the rule above.) The 120px key track therefore stays as the mock cut it. */
-
+}
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ──────────────────────────────────────────────────────────────────────────
      Every bare control in this column is a 16 or 20px glyph — the edit pencil, both copy icons, WhatsApp,
      directions, each section's collapse chevron and each assignee's kebab. The GLYPHS keep their mocked size
-     and their mocked place; the invisible ::after around each one grows to a full 40×40, and the rows they
-     sit in are opened up just enough that two 40px targets never overlap:
-       · contact rows: 20 → 40 tall, items centred, and the row's 8px gap becomes 24 so the copy + WhatsApp
-         pair (16px marks, 40px targets) sits exactly target-to-target with nothing to mis-tap between them;
-       · section heads: 20 → 40 tall with a 16px gap, so "Add" and the chevron each get their own 40;
-       · assignee rows: 20 → 40 tall, centred, so each kebab's 40 lands inside its own row.
-     The name row is left as drawn: the pencil's 40 fits the 32px name line plus the 4px gap below it without
-     touching the phone row's own target. */
+     and their mocked place; the invisible ::after around each one grows to a full 44×44, and the rows they
+     sit in are opened up just enough that two 44px targets never overlap:
+       · contact rows: 20 → 44 tall, items centred, and the row's 8px gap becomes 28 so the copy + WhatsApp
+         pair (16px marks, 44px targets) sits exactly target-to-target with nothing to mis-tap between them;
+       · section heads: 20 → 44 tall with a 16px gap, so "Add" and the chevron each get their own 44;
+       · assignee rows: 20 → 44 tall, centred, so each kebab's 44 lands inside its own row.
+     The name row is left as drawn, but the pencil's 44 (mark centred on y16 of the 32px name line) reaches y38,
+     so the 4px gap below the name row becomes 8 and the phone row's own target starts at y40, clear of it. */
   .iconBtn { position: relative; }
-  .iconBtn::after { content: ''; position: absolute; inset: -10px; }
-  .iconBtn[data-size='16']::after { inset: -12px; }
+  .iconBtn::after { content: ''; position: absolute; inset: -12px; }
+  .iconBtn[data-size='16']::after { inset: -14px; }
 
-  .contactRow { min-height: 40px; align-items: center; gap: var(--om-spacing-6); }
+  .identity { gap: var(--om-spacing-2); }
+  .contactRow { min-height: 44px; align-items: center; gap: calc(var(--om-spacing-6) + var(--om-spacing-1)); }
 
-  .sectionHead { height: auto; min-height: 40px; gap: var(--om-spacing-4); }
+  .sectionHead { height: auto; min-height: 44px; gap: var(--om-spacing-4); }
   .headLink { position: relative; }
-  .headLink::after { content: ''; position: absolute; inset: -10px -4px; }
+  .headLink::after { content: ''; position: absolute; inset: -12px -4px; }
 
-  /* "Assign Member ›" is a text link on a 20px line — it takes a 40px box of its own (the row grows with it). */
-  .link { min-height: 40px; }
+  /* "Assign Member ›" is a text link on a 20px line — it takes a 44px box of its own (the row grows with it). */
+  .link { min-height: 44px; }
 
-  .assignee { min-height: 40px; align-items: center; }
+  .assignee { min-height: 44px; align-items: center; }
 }
 
-/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the info column's copy / WhatsApp glyphs draws at 20px. */
+/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the info column's copy / WhatsApp glyphs draws at 20px. */
 @media (hover: none) {
-  .iconBtn { width: 40px; height: 40px; margin: -10px; display: inline-flex; align-items: center; justify-content: center; }
+  .iconBtn { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }

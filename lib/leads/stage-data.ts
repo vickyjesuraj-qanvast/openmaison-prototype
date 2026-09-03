@@ -1,4 +1,4 @@
-import { NEXT_STEP_BY_OUTCOME, STAGES, type Stage } from '@/lib/leads/enums'
+import { STAGES, type Stage } from '@/lib/leads/enums'
 import { MSG } from '@/lib/forms'
 import { parseInputDateTime } from '@/lib/format'
 
@@ -110,12 +110,8 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
         if (!l.channel) e[k('channel')] = MSG.choose
         if (!l.when) e[k('when')] = MSG.required; else if (!parseInputDateTime(l.when)) e[k('when')] = MSG.dateTime
         if (!l.outcome) e[k('outcome')] = MSG.required
-        // Which outcomes ask for a next step is the panel's map (NEXT_STEP_BY_OUTCOME), not one outcome:
-        // hard-coding 'Callback requested' left "Connected → Schedule a meeting" rendered but never validated.
-        if (NEXT_STEP_BY_OUTCOME[l.outcome]) {
-          if (!l.nextStepWhen) e[k('nextStepWhen')] = MSG.required; else if (!parseInputDateTime(l.nextStepWhen)) e[k('nextStepWhen')] = MSG.dateTime
-          if (!l.nextStepMode) e[k('nextStepMode')] = MSG.required
-        }
+        // (REG-319, mock 781:58313) The schedule pair is optional for every outcome; a date that IS entered must parse.
+        if (l.nextStepWhen && !parseInputDateTime(l.nextStepWhen)) e[k('nextStepWhen')] = MSG.dateTime
         if (l.files.length === 0) e[k('files')] = MSG.attach
       })
       break

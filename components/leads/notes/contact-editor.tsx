@@ -3,8 +3,8 @@
 import { ChoiceChips, NotesArea } from '@/components/leads/move-stage/fields'
 import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
-import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } from '@/lib/leads/enums'
-import { nextStepFor, type NoteDraft } from '@/lib/leads/note-model'
+import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
+import type { NoteDraft } from '@/lib/leads/note-model'
 import { displayDateTime, parseInputDateTime } from '@/lib/format'
 import styles from './contact-editor.module.css'
 
@@ -36,8 +36,8 @@ export function ContactEditor({
   /** Day-granular "today" for the pickers (never Date.now() in render). */
   today: Date
 }) {
-  const nextStep = nextStepFor(draft.outcome)
   const remarks = draft.body.trim()
+  const scheduled = !!(draft.nextStepWhen || draft.nextStepMode)   // (REG-319) the view shows the schedule rows only when something was scheduled
   return (
     <div className={styles.editor} data-testid="contact-editor" data-mode={editing ? 'edit' : 'view'}>
       <div className={styles.fields}>
@@ -46,23 +46,25 @@ export function ContactEditor({
             <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={draft.channel}
                          onChange={(v) => onChange({ channel: v })} error={errors.channel} />
             <div className={styles.fieldPair}>
-              <DateTimeField label="When" value={draft.when} today={today}
+              <DateTimeField label="Date & Time" value={draft.when} today={today}
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
               {/* Opens focused on its first field, as the note editor does — when the user came here to enter data (REG-294). */}
               <TextField label="Outcome" autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
                          onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             </div>
-            {nextStep ? (
-              <div className={styles.nextStep}>
-                <span className={styles.sectionLabel}>Next step: {nextStep}</span>
+            {/* (REG-319, mock 781:58313) The optional schedule block, one heading + helper for every outcome — the Move stage window's. */}
+            <div className={styles.nextStep}>
+                <div className={styles.sectionHead}>
+                  <span className={styles.sectionLabel}>{SCHEDULE.heading}</span>
+                  <span className={styles.sectionHelper}>{SCHEDULE.helper}</span>
+                </div>
                 <div className={styles.fieldPair}>
                   <DateTimeField label="Date & Time" value={draft.nextStepWhen} today={today}
                                  onChange={(v) => onChange({ nextStepWhen: v })} error={errors.nextStepWhen} />
                   <TextField label="Preferred mode" value={draft.nextStepMode} mode="select" options={CONTACT_MODES}
                              onChange={(v) => onChange({ nextStepMode: v })} error={errors.nextStepMode} />
                 </div>
-              </div>
-            ) : null}
+            </div>
             {/* Remarks is one of the fields now (REG-291, user 2026-09-02): the Move stage window's own
                 label + NotesArea, in place of the rich "Write a note..." body the formatting bar used to serve. */}
             <div className={styles.remarks}>
@@ -76,8 +78,8 @@ export function ContactEditor({
               <span className={styles.label}>Contacted via</span>
               <span className={styles.label}>Date & Time</span>
               <span className={styles.label}>Outcome</span>
-              {nextStep ? <span className={styles.label}>Next follow-up</span> : null}
-              {nextStep ? <span className={styles.label}>Preferred mode</span> : null}
+              {scheduled ? <span className={styles.label}>Next follow-up</span> : null}
+              {scheduled ? <span className={styles.label}>Preferred mode</span> : null}
               {/* Last row on both sides, so a remark that wraps cannot pull the columns out of step. */}
               {remarks ? <span className={styles.label}>Remarks</span> : null}
             </div>
@@ -85,8 +87,8 @@ export function ContactEditor({
               <span className={styles.value}>{draft.channel ?? ''}</span>
               <span className={styles.value}>{viewDateTime(draft.when)}</span>
               <span className={styles.value}>{draft.outcome}</span>
-              {nextStep ? <span className={styles.value}>{viewDateTime(draft.nextStepWhen)}</span> : null}
-              {nextStep ? <span className={styles.value}>{draft.nextStepMode}</span> : null}
+              {scheduled ? <span className={styles.value}>{draft.nextStepWhen ? viewDateTime(draft.nextStepWhen) : '--'}</span> : null}
+              {scheduled ? <span className={styles.value}>{draft.nextStepMode || '--'}</span> : null}
               {remarks ? <span className={`${styles.value} ${styles.remarksValue}`}>{remarks}</span> : null}
             </div>
           </div>

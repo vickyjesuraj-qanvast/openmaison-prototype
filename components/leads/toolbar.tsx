@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { SearchBar } from '@/components/ds'
 import { AppliedDot } from '@/components/om/applied-dot'
 import { Icon } from '@/components/om/icon'
@@ -40,7 +40,13 @@ export function LeadsToolbar({
   chipMenu?: ReactNode
 }) {
   const searchRef = useRef<HTMLInputElement>(null)
-  useSearchTarget(searchRef)
+  /* (REG-298) ≤767 the mock's toolbar is the pill and the filter glyph (1082:25269); search lives in the top bar.
+     The box is hidden there until the bar's search (or "/") asks for it, and it goes back when it is left empty.
+     ≥768 the CSS ignores the flag and the box is always in the row. */
+  const [searchOpen, setSearchOpen] = useState(false)
+  const reveal = useCallback(() => setSearchOpen(true), [])
+  useSearchTarget(searchRef, reveal)
+  useEffect(() => { if (searchOpen) searchRef.current?.focus() }, [searchOpen])
   const filterLabel = filterCount ? `Filters (${filterCount} active)` : 'Filters'   // one accessible name for the control and its tooltip (page-checklist › Tooltips)
   return (
     <div className={styles.bar}>
@@ -59,7 +65,9 @@ export function LeadsToolbar({
             pixel; the DS draws that ring INSIDE the box (REG-241's lesson) and owns its own clear affordance.
             The wrapper span resolves the DS component's inner <input> for the rail search tile and the "/" key.
             The placeholder names what the box matches (REG-274/275); the aria-label stays the plain name. */}
-        <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
+        <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}
+              data-open={searchOpen || query !== '' || undefined}
+              onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setSearchOpen(false) }}>
           <SearchBar
             appearance="outlined" size="md"
             placeholder="Search name, phone, email…"
@@ -75,15 +83,18 @@ export function LeadsToolbar({
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
-        <SegmentedIconToggle
-          label="View"
-          value={view}
-          onChange={(v) => onViewChange(v as 'table' | 'kanban')}
-          options={[
-            { value: 'table', icon: 'view_list', label: 'Table view' },
-            { value: 'kanban', icon: 'view_kanban', label: 'Kanban view' },
-          ]}
-        />
+        {/* (REG-299) ≤767 there is one view — the mock's cards — so the toggle leaves the row. */}
+        <span className={styles.viewWrap}>
+          <SegmentedIconToggle
+            label="View"
+            value={view}
+            onChange={(v) => onViewChange(v as 'table' | 'kanban')}
+            options={[
+              { value: 'table', icon: 'view_list', label: 'Table view' },
+              { value: 'kanban', icon: 'view_kanban', label: 'Kanban view' },
+            ]}
+          />
+        </span>
       </div>
     </div>
   )

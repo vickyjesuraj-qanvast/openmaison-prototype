@@ -42,7 +42,7 @@
    (~229px of words) rather than mid-word all the way down to the narrowest tablet card (~232px); below even
    that, `overflow-wrap: anywhere` guarantees the row still cannot outgrow the card. All five stay legible and
    the current one stays in its primary colour — no abbreviating, no hiding steps. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .labels { gap: var(--om-spacing-1); }
   .stepLabel { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 }

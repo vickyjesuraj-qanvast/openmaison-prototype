@@ -111,9 +111,9 @@
 .danger { color: var(--om-color-tertiary-red-default); }   /* quotes 910:36723 Delete #db382a */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   ≤1199 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
+   ≤1024 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
    `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
      past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
      card itself, so the sheet clipped it exactly as before. */
@@ -129,24 +129,32 @@
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The Quotes twin's rule (components/leads/quotes/quotes-table.module.css), with this table's two
    measurements. Below 768 the head's Sort buttons and the row's Status trigger — both drawn as bare text,
-   ~20px tall — grow their BOX to 40; the mark never moves, because the horizontal padding is handed back
-   as a negative margin. The 68px row already leaves 44 between its 12px cell paddings; the head is the
-   one row that has to grow, from the mock's 48 to 56 (8 + 40 + 8), which is the brief's "where 40px
-   boxes would collide, the row grows". */
-@media (max-width: 767px) {
+   ~20px tall — grow their BOX to 44; the mark never moves, because the horizontal padding is handed back
+   as a negative margin. The 68px row already leaves exactly 44 between its 12px cell paddings; the head is the
+   one row that has to grow, from the mock's 48 to 56 (6 + 44 + 6), which is the brief's "where 44px
+   boxes would collide, the row grows".
+   (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .head { height: auto; min-height: 56px; }
-  .head .hCell { padding-block: var(--om-spacing-2); }
+  .head .hCell { padding-block: 6px; }   /* 16/16 → 6/6: 6 + 44 + 6 = the 56 above */
   .hSort, .statusBtn {
-    min-height: 40px;
+    min-height: 44px;
     padding-inline: var(--om-spacing-2);
     margin-inline: calc(var(--om-spacing-2) * -1);
   }
 }
 
 /* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls. On a touch
-   pointer each keeps its drawn size and gains a transparent 2px ring — a 40px target that takes no space,
-   so the float, its shadow and the 12px gap between the two stay pixel-exact. A mouse never sees this. */
+   pointer each keeps its drawn size and gains a transparent 4px ring — a 44px target that takes no space,
+   so the float, its shadow and the 12px gap between the two stay pixel-exact (4px still clear between the
+   two targets). A mouse never sees this. */
 @media (hover: none) {
   .float button { position: relative; }
-  .float button::after { content: ''; position: absolute; inset: -2px; }
+  .float button::after { content: ''; position: absolute; inset: -4px; }
+}
+
+/* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
+   the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
+@media (hover: none) and (max-width: 1024px) {
+  .card { grid-template-columns: minmax(120px, 1fr) minmax(128px, max-content) minmax(96px, 120px) minmax(112px, 142px) minmax(112px, 140px) minmax(112px, 157px) 150px; }
 }

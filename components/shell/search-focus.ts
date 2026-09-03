@@ -18,18 +18,20 @@ function isTyping(el: EventTarget | null) {
   return el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
 }
 
-/** Registers `ref` as the page's search input: focused by the rail tile and by the "/" key. */
-export function useSearchTarget(ref: RefObject<HTMLInputElement | null>) {
+/** Registers `ref` as the page's search input: focused by the rail tile, the mobile bar's search glyph and the "/" key.
+ *  `onRequest` (REG-298) runs first, so a page whose box is hidden at mobile can reveal it before the focus lands. */
+export function useSearchTarget(ref: RefObject<HTMLInputElement | null>, onRequest?: () => void) {
   useEffect(() => {
     const focus = () => { const el = ref.current; if (!el) return; el.focus(); el.select() }
+    const request = () => { onRequest?.(); focus() }
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || isTyping(e.target)) return
       if (document.querySelector('[aria-modal="true"]')) return   // a modal owns the keyboard
       e.preventDefault()
-      focus()
+      request()
     }
-    window.addEventListener(EVENT, focus)
+    window.addEventListener(EVENT, request)
     window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener(EVENT, focus); window.removeEventListener('keydown', onKey) }
-  }, [ref])
+    return () => { window.removeEventListener(EVENT, request); window.removeEventListener('keydown', onKey) }
+  }, [ref, onRequest])
 }

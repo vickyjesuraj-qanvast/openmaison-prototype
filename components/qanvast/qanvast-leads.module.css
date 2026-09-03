@@ -149,12 +149,12 @@
 }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   Desktop (≥1200) is the mock and is untouched. The card already scrolls sideways below its 1152 floor
+   Desktop (≥1025) is the mock and is untouched. The card already scrolls sideways below its 1152 floor
    (base .card overflow-x: auto), so tablet-and-down only adds touch momentum and freezes the Name column
    the way the listing freezes its pinned group (components/leads/table.module.css .pin[data-pin-edge]):
    the 1px inner edge at rest — .colName already draws it — and the group shadow ONLY while scrolled, set
    from the card's own scroll handler (qanvast-table.tsx). Row height, tracks and paddings are unchanged. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .card { -webkit-overflow-scrolling: touch; }
   .colName {
     position: sticky; left: 0; z-index: 2;
@@ -191,33 +191,35 @@
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    The head's controls are the two smallest things on the page: every column's sort button (a 12px caption +
    a 16px unfold_more, ~16 tall) and the Name head's 16px "Customise your view" glyph. Both keep their mark,
-   their type and their place; the invisible ::after around each grows the target to 40 in both directions,
-   which the 56px head row absorbs whole (40 inside 56 leaves 8 clear top and bottom) and which fits inside
+   their type and their place; the invisible ::after around each grows the target to 44 in both directions,
+   which the 56px head row absorbs whole (44 inside 56 leaves 6 clear top and bottom) and which fits inside
    each head cell's own 16/24 padding, so no two heads' targets can touch.
-   The row's floating actions are DS Buttons (36 tall, well past 40 wide) and are already permanently visible
-   where the pointer cannot hover — the `@media (hover: none)` block above, which is the touch fix for them. */
-@media (max-width: 767px) {
+   The row's floating actions are DS Buttons (36 tall, well past 44 wide) and are already permanently visible
+   where the pointer cannot hover — the `@media (hover: none)` block above, which is the touch fix for them.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .hSort { position: relative; }
-  .hSort::after { content: ''; position: absolute; inset: -12px -4px; }
+  .hSort::after { content: ''; position: absolute; inset: -14px -4px; }
   .hTune { position: relative; }
-  .hTune::after { content: ''; position: absolute; inset: -12px; }
+  .hTune::after { content: ''; position: absolute; inset: -14px; }
 }
 
 /* Touch ergonomics (REG-273): the head's sort buttons draw a 12px label + 16px glyph — a ~16px tall target.
-   The box grows to 40 and the head keeps its 56px by re-cutting the cell's block padding (border-box:
-   8 + 40 + 8 = 56), so the drawn head is the mock's to the pixel. */
-@media (max-width: 767px) {
-  .hSort, .hTune { min-height: 40px; }
-  .hCell { padding-block: var(--om-spacing-2); }
+   The box grows to 44 and the head keeps its 56px by re-cutting the cell's block padding (border-box:
+   6 + 44 + 6 = 56), so the drawn head is the mock's to the pixel.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .hSort, .hTune { min-height: 44px; }
+  .hCell { padding-block: 6px; }
 }
 
 /* Touch ergonomics for the search bar (REG-273, added with REG-275). The DS Search Bar is 36 tall at `md` and
    its clear affordance is a bare 20px glyph — both short of a fingertip. Neither is REDRAWN: the label around
-   the field carries a 2px transparent band (a label click focuses the field, so the band is a real target) and
-   gives the space straight back as negative margin, and the clear button keeps its glyph inside a 40px ::after
+   the field carries a 4px transparent band (a label click focuses the field, so the band is a real target) and
+   gives the space straight back as negative margin, and the clear button keeps its glyph inside a 44px ::after
    ring. The filter button next to it is an om IconButton, which grows itself (components/om/icon-button.module.css). */
 @media (hover: none) {
-  .searchWrap { padding-block: 2px; margin-block: -2px; }
+  .searchWrap { padding-block: 4px; margin-block: -4px; }
   .search button { position: relative; }
-  .search button::after { content: ''; position: absolute; inset: -10px; }
+  .search button::after { content: ''; position: absolute; inset: -12px; }
 }

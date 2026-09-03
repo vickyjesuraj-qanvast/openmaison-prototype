@@ -5,23 +5,12 @@ import { Button, SearchBar } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { useSearchTarget } from '@/components/shell/search-focus'
-import { AppliedDot } from '@/components/om/applied-dot'
-import type { NoteFilter, NoteKind } from '@/lib/leads/note-model'
-import menus from '@/components/leads/menus.module.css'
+import type { NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-toolbar.module.css'
 
 /** The pill's three scopes, in the order the retired chips drew them (931:44884). */
-const SCOPES: { key: NoteFilter; label: string }[] = [
-  { key: 'all', label: 'All Notes & Logs' },   // (REG-296) the whole = both kinds, and the label says so
-  { key: 'note', label: 'Notes' },
-  { key: 'contact', label: 'Contact Log' },
-]
 
 export type NotesToolbarProps = {
-  filter: NoteFilter
-  onFilter: (f: NoteFilter) => void
-  /** Unfiltered totals per scope — the pill and its menu print them, as the listing's stage counts do. */
-  counts: Record<NoteFilter, number>
   query: string
   onQuery: (q: string) => void
   onNew: (kind: NoteKind) => void
@@ -39,41 +28,18 @@ export type NotesToolbarProps = {
  * New ▾ keeps the siblings' position (first control on the right, as Add Task / New Quote).
  * Menus toggle on their own trigger (REG-153); the chevron points up while open.
  */
-export function NotesToolbar({ filter, onFilter, counts, query, onQuery, onNew }: NotesToolbarProps) {
-  const [menu, setMenu] = useState<'scope' | 'new' | null>(null)
+export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
+  const [menu, setMenu] = useState<'new' | null>(null)
   // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
   // owns its <input>, so the target is resolved from the wrapper once it mounts (tasks-toolbar.tsx).
   const searchInput = useRef<HTMLInputElement | null>(null)
   useSearchTarget(searchInput)
 
-  const current = SCOPES.find((s) => s.key === filter) ?? SCOPES[0]!
-
   return (
     <div className={styles.bar}>
-      <div className={styles.left}>
-        <button
-          type="button" className={styles.chip}
-          aria-haspopup="menu" aria-expanded={menu === 'scope'} data-open={menu === 'scope' || undefined}
-          onClick={() => setMenu((m) => (m === 'scope' ? null : 'scope'))}
-        >
-          {`${current.label} (${counts[current.key]})`}
-          <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
-          {/* (REG-295) Off "All Notes & Logs" the pill is a filter — the dot says so, as the listing's pill does. */}
-          {filter !== 'all' ? <AppliedDot /> : null}
-        </button>
-        <Dropdown open={menu === 'scope'} onClose={() => setMenu(null)} align="left" width={200}>
-          {SCOPES.map((s) => (
-            <button
-              key={s.key} type="button" role="menuitemradio" aria-checked={filter === s.key}
-              className={menus.item} data-selected={filter === s.key || undefined}
-              onClick={() => { setMenu(null); onFilter(s.key) }}
-            >
-              <span>{s.label}</span>
-              <span className={menus.count}>{counts[s.key]}</span>
-            </button>
-          ))}
-        </Dropdown>
-      </div>
+      {/* (REG-318, user 2026-09-02) The tab's title, as every sibling has ("All Tasks", "All Quotes"): the REG-293 scope
+          pill is gone — the kind filter went back to the mock's chips in the list head (931:44884, notes-list.tsx). */}
+      <h2 className={styles.title}>All Notes &amp; Logs</h2>
 
       <div className={styles.right}>
         <span className={styles.menuWrap}>

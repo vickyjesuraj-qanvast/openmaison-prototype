@@ -16,6 +16,8 @@ import { Icon } from '@/components/om/icon'
 import { Button } from '@/components/ds'
 import { LeadsToolbar } from '@/components/leads/toolbar'
 import { LeadsTable, DEFAULT_COLUMNS, type ColumnConfig } from '@/components/leads/table'
+import { LeadCards } from '@/components/leads/lead-cards'
+import { MOBILE, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/leads/dropdown'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { CustomiseView } from '@/components/leads/customise-view'
@@ -62,9 +64,9 @@ const clampAxis = (preferred: number, size: number, viewport: number) =>
   Math.max(POP_EDGE, Math.min(preferred, Math.max(POP_EDGE, viewport - size - POP_EDGE)))
 const clampPos = (el: HTMLElement, w: number, h: number) => {
   const r = el.getBoundingClientRect()
-  return { top: clampAxis(r.bottom + 4, h, window.innerHeight), left: clampAxis(r.left, w, window.innerWidth) }
+  return { top: clampAxis(r.bottom + 4, h, usableViewportHeight()), left: clampAxis(r.left, w, window.innerWidth) }
 }
-const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 356, window.innerHeight), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 356, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
 const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
 /* Customise your view is the tall surface (752 at the mock's eight columns), so it clamps against its own
@@ -75,10 +77,10 @@ const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
 const CUSTOMISE_MAX = 756, EDGE = 16
 const customisePos = (el: HTMLElement) => {
   const r = el.getBoundingClientRect()
-  const h = Math.min(CUSTOMISE_MAX, window.innerHeight - EDGE * 2)
-  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, window.innerHeight - h - EDGE)), left: clampAxis(r.left, 400, window.innerWidth) }
+  const h = Math.min(CUSTOMISE_MAX, usableViewportHeight() - EDGE * 2)
+  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, usableViewportHeight() - h - EDGE)), left: clampAxis(r.left, 400, window.innerWidth) }
 }
-const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
+const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > usableViewportHeight() }
 
 function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement }: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
   const comingSoon = useComingSoon()
@@ -94,6 +96,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const storedView = useStoredView()
   const [chosenView, setChosenView] = useState<ListingView | null>(urlView)
   const view: ListingView = chosenView ?? storedView ?? 'table'
+  /* (REG-299, mock 1082:23305) ≤767 the listing is the mock's cards whatever view is remembered — the toggle is
+     not in the row there. Server snapshot = desktop, so the markup hydrates as the mock and the width takes over. */
+  const mobile = useMediaQuery(MOBILE)
   const setView = (v: ListingView) => { setChosenView(v); rememberView(v) }
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
   const [addOpen, setAddOpen] = useState(false)
@@ -128,11 +133,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   // The queue emptied under an open sheet → close it (render-phase adjust; the action's snackbar is the cue).
   if (reviewOpen && review.length === 0) setReviewOpen(false)
   const docked = review.length > 0 && !reviewOpen
-  // Bottom-docked overlays (bulk bar, snackbar, AI sheet) lift above the review banner.
-  useEffect(() => {
-    document.documentElement.style.setProperty('--bottom-dock', docked ? '56px' : '0px')   // banner 50 + 16 inset − 10
-    return () => { document.documentElement.style.removeProperty('--bottom-dock') }
-  }, [docked])
+  // Bottom-docked overlays (FAB, bulk bar, snackbar, AI sheet) lift above the review banner through `--bottom-dock`,
+  // which the banner itself writes from its measured height (REG-302, components/leads/review-banner.tsx).
   const deletingRef = useRef(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [nowTick, setNowTick] = useState(initialNow)
@@ -286,43 +288,72 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     ]
   }, [newest])
 
+  /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
+  const addMenu = (
+    <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right">
+      <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }}>Create New Lead</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
+      <DropdownDivider />
+      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Email</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Zapier</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Connect to Ads</DropdownItem>
+    </Dropdown>
+  )
+  const kebabMenu = (
+    <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
+      <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportOpen(true) }}>Export all as…</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/settings') }}>Leads Settings</DropdownItem>
+    </Dropdown>
+  )
+
   return (
-    <PageReveal skeleton={view === 'kanban' ? <KanbanSkeleton /> : <LeadsSkeleton />}>
-        <div className={styles.body} style={{ position: 'relative' }} data-view={view}>
+    <PageReveal skeleton={view === 'kanban' && !mobile ? <KanbanSkeleton /> : <LeadsSkeleton />}>
+        <div className={styles.body} style={{ position: 'relative' }} data-view={mobile ? 'cards' : view}>
           <PageHeader
             title="Leads"
-            actions={
+            actions={mobile ? (
+              /* (REG-299, 1082:25131) The mobile header: Add Lead as the filled square, Insights and the kebab as
+                 outlined squares — the same two menus, the same actions, icon-only. */
               <>
-                <Button variant="secondary" appearance="outlined"
-                        iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
-                  Insights
-                </Button>
                 <div ref={addRef} style={{ position: 'relative' }}>
-                  <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
-                    Add Lead
-                  </Button>
-                  <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right">
-                    <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }}>Create New Lead</DropdownItem>
-                    <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
-                    <DropdownDivider />
-                    <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Email</DropdownItem>
-                    <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Zapier</DropdownItem>
-                    <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Connect to Ads</DropdownItem>
-                  </Dropdown>
+                  <Tooltip label="Add Lead" disabled={addOpen}>
+                    <IconButton icon="add" label="Add Lead" variant="filled" aria-haspopup="menu" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)} />
+                  </Tooltip>
+                  {addMenu}
                 </div>
+                <Tooltip label="Insights">
+                  <IconButton icon="bar_chart_4_bars" label="Insights" onClick={comingSoon} />
+                </Tooltip>
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
                     <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
                   </Tooltip>
-                  <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
-                    <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
-                    <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportOpen(true) }}>Export all as…</DropdownItem>
-                    <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
-                    <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/settings') }}>Leads Settings</DropdownItem>
-                  </Dropdown>
+                  {kebabMenu}
                 </div>
               </>
-            }
+            ) : (
+              /* (REG-305, user 2026-09-02) Add Lead first, then Insights — the order the mobile mock draws (1082:25131). */
+              <>
+                <div ref={addRef} style={{ position: 'relative' }}>
+                  <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
+                    Add Lead
+                  </Button>
+                  {addMenu}
+                </div>
+                <Button variant="secondary" appearance="outlined"
+                        iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
+                  Insights
+                </Button>
+                <div style={{ position: 'relative' }}>
+                  <Tooltip label="More options" disabled={kebabOpen}>
+                    <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
+                  </Tooltip>
+                  {kebabMenu}
+                </div>
+              </>
+            )}
           />
           <div className={styles.content}>
             <LeadsToolbar
@@ -344,8 +375,20 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             />
             {rows.length === 0 ? (
               <LeadsEmptyState onImport={() => setImportOpen(true)} onCreate={() => setLeadForm({ mode: 'create' })} />
-            ) : nothingMatches && view === 'table' ? (
+            ) : nothingMatches && (mobile || view === 'table') ? (
               <SearchEmpty onClearAll={clearAll} searching={query.trim() !== ''} />
+            ) : mobile ? (
+              /* (REG-299) The mock's cards — the table's anchors and popovers, one code path for every action. */
+              <LeadCards
+                rows={filtered}
+                now={nowTick}
+                query={query}
+                openStageId={stageMenu?.id ?? null}
+                onOpen={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
+                onStageClick={(row, anchor) => setStageMenu({ id: row.id, el: anchor, ...stagePos(anchor) })}
+                onTaskClick={openTasks}
+                onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
+              />
             ) : view === 'kanban' ? (
               <KanbanBoard
                 rows={filtered}

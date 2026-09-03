@@ -15,6 +15,39 @@
 /* The items are the whole column (REG-293) and scroll inside it. */
 .items { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 
+/* (REG-318) Head 360×68 (931:44884, H g8 p16, bottom rule) = the "Choice" chips with a leading icon — restored from the
+   pre-REG-293 column. Chip look copied from components/leads/move-stage/fields.tsx ChoiceChips (radio group) at the
+   Notes sizes: 36 tall, p10/12, stroke #ccc r4 as an INSET box-shadow (Figma strokes sit inside the padding, the DS
+   Chip's own convention), "All" 12/Semi Bold #1a1a1a; selected = fill #eee5ff, stroke #5500ff, text #4400cc. */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  height: 68px; flex-shrink: 0;
+  padding: var(--om-spacing-4);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 1; min-width: 0; }
+.chip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  height: 36px; padding: 0 var(--om-spacing-3);
+  border: 0;
+  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default);
+  white-space: nowrap;
+  transition: background-color var(--motion-hover), color var(--motion-hover), box-shadow var(--motion-hover);
+  position: relative;
+}
+.chip[data-icon] { padding-left: var(--om-spacing-2); }   /* Leading Item=Icon: p10/12/10/8 */
+.chipIcon { flex-shrink: 0; }                              /* sticky_note_2 / call_log 16 — inherits the chip colour */
+.chip[data-selected] { background: var(--om-color-primary-variant); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
+.chip:not([data-selected]):hover { background: var(--om-color-hover-04p); }
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Touch (REG-273 / REG-312): the 36 chip keeps its drawn size and takes a 44 box through ::after. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .chip::after { content: ''; position: absolute; inset: -4px 0; }
+}
+
 /* No-results (REG-275): the tabs' shared card takes the items' place, inset 16 so it never touches the column's right
    rule. The unsaved draft is never filtered, so this answers a scope / query only — never "no notes". */
 .empty { flex: 1; min-height: 0; display: flex; padding: var(--om-spacing-4); overflow-y: auto; }
@@ -69,22 +102,23 @@
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    The column is the list HALF of the card, whatever width that half is given — 280 at tablet, the whole
    screen in the ≤767 master-detail push; its mocked 360 would otherwise outgrow that half. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .column { width: 100%; }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   Below 768 this list is a touch list: every control gets a ≥40px box, the marks and the type keep the
-   mock's sizes. Desktop (≥1200) never sees any of it. */
-@media (max-width: 767px) {
+   Below 768 this list is a touch list: every control gets a ≥44px box, the marks and the type keep the
+   mock's sizes. Desktop (≥1025) never sees any of it.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* The item kebab's menu draws 36px rows, and a menu on a phone is a list of finger targets. menus.module.css
      is the owner's file, so the rows take the target from here for this surface. (The chip / New ▾ / search
      targets moved to notes-toolbar.module.css with their controls in REG-293.) */
-  .kebabWrap :global([role='menuitem']) { min-height: 40px; }
-  /* The item kebab is a 20px mark in a 20px button. The button becomes a 40px target and the wrap moves out
-     by the same 10px each way, so the mark stays exactly where the mock puts it (its centre 26 down / 34 in
+  .kebabWrap :global([role='menuitem']) { min-height: 44px; }
+  /* The item kebab is a 20px mark in a 20px button. The button becomes a 44px target and the wrap moves out
+     by the same 12px each way, so the mark stays exactly where the mock puts it (its centre 26 down / 34 in
      from the item's top-right). The title's reserved right padding grows to clear the wider box. */
-  .kebabWrap { top: 6px; right: 14px; }
-  .kebab { width: 40px; height: 40px; }
-  .titleRow { padding-right: 32px; }
+  .kebabWrap { top: 4px; right: 12px; }
+  .kebab { width: 44px; height: 44px; }
+  .titleRow { padding-right: 34px; }
 }

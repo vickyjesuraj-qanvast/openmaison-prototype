@@ -49,7 +49,15 @@ export type TaskKind = (typeof TASK_KINDS)[number]
 export const CONTACT_CHANNELS = ['WhatsApp', 'Email', 'SMS', 'Call', 'Others'] as const
 /** Contact-log outcomes and the next step each one asks for (Move stage window 780:9xxxx · Notes 931:45231 "Connected → Schedule a meeting", 931:45383 "Callback requested"). */
 export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled', 'No response'] as const
-export const NEXT_STEP_BY_OUTCOME: Record<string, string> = { Connected: 'Schedule a meeting', 'Callback requested': 'Schedule a call' }
+/** (REG-319, mock 781:58313) The optional schedule block under a contact log — one heading for every outcome, the helper
+ *  saying what filling it does. Replaces the outcome-keyed "Next step: …" headings (NEXT_STEP_BY_OUTCOME). */
+export const SCHEDULE = {
+  heading: 'Schedule a call/meeting (optional)',
+  helper: 'If you wish to be reminded, a task will be created.',
+} as const
+/** The reminder task the helper promises, from the schedule's own fields (invented copy, REG-319). */
+export const reminderTaskTitle = (when: string, mode: string): string =>
+  mode === 'In person' ? `Meet the client on ${when}` : mode ? `Follow up with the client via ${mode} on ${when}` : `Follow up with the client on ${when}`
 /** "Preferred mode" options — the channels plus "In person" (Notes 931:45231). */
 export const CONTACT_MODES = [...CONTACT_CHANNELS, 'In person'] as const
 

@@ -79,7 +79,7 @@
    Inside, the mock's two-up rows (source + property type, budget + start date, style + key collection,
    condition + area) stack — one field per line, the same 24px rhythm as the section. The Additional info
    expander, the assignee field and every composite slot (phone prefix, area unit) are untouched. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
@@ -91,19 +91,21 @@
   }
   .fieldRow { flex-direction: column; }
   .fieldRow.fieldRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Three bare controls sit between the DS fields (which are 56px tall and need nothing): the heading's 24px
    close, the "Additional information" expander and the area-unit menu inside the field's trailing slot. At
-   ≤767 each takes a 40px box and gives the extra back as margin, so the heading inset, the 24px section
-   rhythm and the field's own height are exactly as drawn. */
-@media (max-width: 767px) {
+   ≤767 each takes a 44px box and gives the extra back as margin, so the heading inset, the 24px section
+   rhythm and the field's own height are exactly as drawn.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+    margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
   }
-  .moreToggle { min-height: 40px; margin-block: -10px; }
-  .unitBtn { min-height: 40px; margin-block: -10px; }
+  .moreToggle { min-height: 44px; margin-block: -12px; }
+  .unitBtn { min-height: 44px; margin-block: -12px; }
 }

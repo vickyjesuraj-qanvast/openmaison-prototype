@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { displayDateTimeDot } from '@/lib/format'
-import type { NoteKind } from '@/lib/leads/note-model'
+import type { NoteFilter, NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-list.module.css'
 
 export type NotesListItem = {
@@ -30,7 +30,17 @@ export type NotesListProps = {
   selectedId: string | null
   onSelect: (id: string) => void
   onItemMenu: (id: string, action: 'edit' | 'delete') => void
+  /** (REG-318) The kind filter, drawn as the mock's head chips (931:44884) inside the column again. */
+  filter: NoteFilter
+  onFilter: (f: NoteFilter) => void
 }
+
+/** Head chips (931:44884): All · Notes (sticky_note_2) · Contact Log (call_log, REG-278) — one per NoteFilter, in the mock's order. */
+const FILTERS: { key: NoteFilter; label: string; icon?: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'note', label: 'Notes', icon: 'sticky_note_2' },
+  { key: 'contact', label: 'Contact Log', icon: 'call_log' },
+]
 
 /* (REG-293) Only the per-item kebab now — New ▾ moved to the tab's toolbar. */
 type OpenMenu = { kind: 'item'; id: string } | null
@@ -45,12 +55,29 @@ type OpenMenu = { kind: 'item'; id: string } | null
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  * The whole item (except the kebab) is the select button.
  */
-export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu }: NotesListProps) {
+export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter }: NotesListProps) {
   const [menu, setMenu] = useState<OpenMenu>(null)
   const close = () => setMenu(null)
 
   return (
     <div className={styles.column}>
+      {/* (REG-318, user 2026-09-02: "bring back the quick filter tags … within the container") The mock's head (931:44884):
+          the "Choice" chips with a leading icon, 36 tall, on a 68px row with a bottom rule — back inside the column, where
+          REG-293 had folded them into a toolbar pill. New ▾ and the search stay in the tab's toolbar row. */}
+      <div className={styles.head}>
+        <div className={styles.chips} role="radiogroup" aria-label="Filter notes">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key} type="button" role="radio" aria-checked={filter === f.key}
+              className={styles.chip} data-selected={filter === f.key || undefined} data-icon={f.icon ? '' : undefined}
+              onClick={() => onFilter(f.key)}
+            >
+              {f.icon ? <Icon name={f.icon} size={16} className={styles.chipIcon} /> : null}
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
       {/* (REG-275) Nothing left after the chips and the query — the tabs' shared no-results card, in the column.
           The unsaved draft is never filtered out, so this only ever answers a search / filter, never "no notes". */}
       {items.length === 0 ? (

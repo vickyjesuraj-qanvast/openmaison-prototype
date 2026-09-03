@@ -130,13 +130,13 @@
 .confirmText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
-   Desktop ≥1200 is untouched. The table is already its own two-axis scroller with the select + Lead Name
-   columns frozen (REG-144), so below 1200 only the 1200px panel has to give: tablet clamps it to the
+   Desktop ≥1025 is untouched. The table is already its own two-axis scroller with the select + Lead Name
+   columns frozen (REG-144), so below 1025 only the 1200px panel has to give: tablet clamps it to the
    viewport (the xxl rule, 100vw − 48), ≤767 it becomes the full-screen sheet responsive.md gives every
    l/xl modal — which is also what hands the frozen table its widest possible scroll window. The two
    permanent-delete confirmations are om/dialog and ride that shell's own clamps; the floating BulkBar
    stays inside the panel (it is `inset`), so it follows the panel's width. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel {
     width: min(var(--om-modal-xl), calc(100vw - 2 * var(--om-modal-xxl-margin)));
     max-height: calc(100dvh - 2 * var(--om-modal-xxl-margin));   /* dvh: the note stays clear of mobile browser chrome */
@@ -154,21 +154,27 @@
   .heading { padding: var(--om-spacing-4); gap: var(--om-spacing-3); }
   .title { overflow: hidden; text-overflow: ellipsis; }
   .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }   /* [data-bulk] keeps its 96px band: higher specificity */
+  /* (REG-308) No footer here: the scroll end and the floating bar's band clear the home indicator (viewport-fit=cover); env() is 0 elsewhere. */
+  .body { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  .body[data-bulk] { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
 
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────
      Four controls sit under the touch floor and all four take an invisible ::after instead of a new size:
-       · the heading's bare 24px close (grows into the heading's 16px padding, leaving 4px clear of the
-         "Empty Trash" button beside it) and the banner's 20px dismiss — 40×40 each;
-       · every column's sort button (12px caption + 16px glyph): 40 tall inside the 48px head cell, 4px
+       · the heading's bare 24px close (grows into the heading's 16px padding, leaving 2px clear of the
+         "Empty Trash" button beside it) and the banner's 20px dismiss — 44×44 each;
+       · every column's sort button (12px caption + 16px glyph): 44 tall inside the 48px head cell, 4px
          either side inside its 16/24 padding — so no two heads' targets can meet, and the head row keeps
          its height and its sticky shadow;
-       · each row's Restore / Delete Forever: 40 tall inside the 64px row, 8px either side, which is exactly
+       · each row's Restore / Delete Forever: 44 tall inside the 64px row, 8px either side, which is exactly
          a third of their 24px gap — the two targets stay 8px apart.
      The head and row cells are `overflow: hidden`, so each of these is sized to stay inside its own cell:
      a target that spilled would simply be clipped, not enlarged. The select checkboxes are the DS's own. */
   .close, .bannerClose, .hSort, .link { position: relative; }
-  .close::after { content: ''; position: absolute; inset: -8px; }
-  .bannerClose::after { content: ''; position: absolute; inset: -10px; }
-  .hSort::after { content: ''; position: absolute; inset: -12px -4px; }
-  .link::after { content: ''; position: absolute; inset: -10px -8px; }
+  .close::after { content: ''; position: absolute; inset: -10px; }
+  .bannerClose::after { content: ''; position: absolute; inset: -12px; }
+  .hSort::after { content: ''; position: absolute; inset: -14px -4px; }
+  .link::after { content: ''; position: absolute; inset: -12px -8px; }
 }

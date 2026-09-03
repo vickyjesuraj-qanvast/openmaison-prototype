@@ -54,7 +54,7 @@
 /* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
    Tablet and down: the card grid drops to one column. The two stacks keep their DOM order — MY WORK / QUOTES /
    QUESTIONNAIRE first, then LEAD RETURNED / STAGES / FILES / RECENT ACTIVITY. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .grid { flex-direction: column; align-items: stretch; }
   .column { flex: none; width: 100%; }
 }
@@ -65,11 +65,11 @@
    kept; the row's min-height loses the desktop 72+44 chrome assumption; the sheet runs edge-to-edge. */
 @media (max-width: 767px) {
   .body { border-radius: 0; }
-  .stickyTabs { top: var(--app-mobile-bar-height, 56px); }
+  .stickyTabs { top: var(--app-mobile-bar-height); }
   .row {
     flex-direction: column;
     align-items: stretch;
-    min-height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 44px);
+    min-height: calc(100dvh - var(--app-mobile-bar-height) - 44px);
   }
   .centre { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); }
 }

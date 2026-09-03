@@ -23,9 +23,9 @@
 .tab:focus-visible { outline-offset: -2px; }   /* the 44px row scrolls (overflow-x) and clips an outset ring; keep it inside, as text fields do */
 .ink { height: 4px; width: 100%; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; background: var(--om-color-primary-default); }
 
-/* Responsive (REG-269): tighter rhythm ≤1199; the row already scrolls — hide the scrollbar, keep the affordance
+/* Responsive (REG-269): tighter rhythm ≤1024; the row already scrolls — hide the scrollbar, keep the affordance
    (the cut-off next tab), and tabs.tsx centres the active tab into view. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
 }

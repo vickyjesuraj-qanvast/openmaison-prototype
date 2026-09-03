@@ -68,23 +68,28 @@
     padding: var(--om-spacing-4);            /* 24 → 16 (responsive.md ground rule) — the 8px the row needs */
     flex-wrap: wrap; row-gap: var(--om-spacing-3);   /* the tools wrap rather than squeeze at 390 */
   }
-  /* The 24px mark stays where it is and the button around it becomes the 40px target: the extra 8px on every
+  /* The rules are inert, so the boxes are free to overlap them: the −6 keeps the whole bar on one line at 390. */
+  .rule { margin: 0 -6px; }
+}
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  /* The 24px mark stays where it is and the button around it becomes the 44px target: the extra 10px on every
      side is given back as margin, so the bar's layout is the mock's to the pixel. */
-  .iconBtn { position: relative; width: 40px; height: 40px; margin: -8px; }
+  .iconBtn { position: relative; width: 44px; height: 44px; margin: -10px; }
+  /* (REG-312) 44px boxes on 24px marks 16 apart would overlap by 4, so the tools sit 20 apart on a touch pointer —
+     spacing follows the target (responsive.md): no two button targets touch, and the bar still fits one line at 390. */
+  .toolbar { gap: var(--om-spacing-5); }
   /* The active-format lavender is drawn STATE, not target, so it stays the mocked 24px square — painted
      behind the glyph rather than on the grown button. */
   .iconBtn[aria-pressed='true'] { background: none; }
   .iconBtn[aria-pressed='true']::before {
-    content: ''; position: absolute; inset: 8px;
+    content: ''; position: absolute; inset: 10px;
     border-radius: var(--om-radius-1); background: var(--om-color-primary-variant);
   }
   .iconBtn :global(.msr) { position: relative; }   /* the glyph paints over the square above */
-  /* The rules are inert, so the 40px boxes are free to overlap them: 10px of air each side instead of 16 is
-     what keeps the whole bar on one line at 390 with no two BUTTON targets touching. */
-  .rule { margin: 0 -6px; }
-  /* The AI chip: 47×28 drawn, 47×40 to the finger. */
-  .aiChip { min-height: 40px; margin-block: -6px; }
+  /* The AI chip: 47×28 drawn, 47×44 to the finger. */
+  .aiChip { min-height: 44px; margin-block: -8px; }
   /* The AI chip's menu ("Refine") draws 36px rows; menus.module.css is the owner's, so the row takes the
      target from here for this surface (the same row height is in sharedRequests for every menu). */
-  .menuWrap :global([role='menuitem']) { min-height: 40px; }
+  .menuWrap :global([role='menuitem']) { min-height: 44px; }
 }

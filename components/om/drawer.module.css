@@ -43,3 +43,8 @@
 
 /* Responsive (REG-269): a 400px drawer on a 390px screen becomes the screen. */
 .drawer { max-width: 100vw; }
+
+/* (REG-308) The drawer is fixed full-height at every width (viewport-fit=cover): the head pads below the status bar and the
+   footer past the home indicator, keeping their own 20 / 16 — env() is 0 off-iOS, so nothing moves on the desktop. */
+.head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
+.footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }

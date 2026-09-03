@@ -1,0 +1,82 @@
+/* Lead Listing · mobile cards (1082:23305 → "Card / Desktop / Leads" 1082:25585, REG-299). The listing renders these
+   only at ≤767; the values are the mock's: card p16 gap12 r8 level-1 on the surface/bg canvas, rows as described in
+   lead-cards.tsx. Touch boxes (REG-273): the drawn rows keep the mock's heights; the hit areas grow through
+   padding paid back with negative margin, so nothing moves. */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+
+.card {
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  box-shadow: var(--om-elevation-level-1);
+  padding: var(--om-spacing-4);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+}
+
+/* Head: name (heading/h4, truncates) · "1d ago" (body/s) · chevron 20 Light, all secondary but the name. */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  width: 100%; border: 0; background: none; cursor: pointer; text-align: left;
+  color: var(--om-color-on-surface-default);
+  padding: 10px 0; margin: -10px 0;   /* 24 drawn, 44 tappable */
+}
+.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-heading-h4); }
+.meta { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Info line: phone · budget · source — body/m secondary, wraps at the dots. */
+.info { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.info > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 4px; text-align: center; }
+
+/* Task box (1082:25625): border ccc, r4, p8, the title truncating before the tags. */
+.taskBox {
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  width: 100%; padding: var(--om-spacing-2);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: none; cursor: pointer; text-align: left;
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.taskBox:hover { background: var(--om-color-hover-04p); }
+.taskBox { position: relative; }
+.taskBox::after { content: ''; position: absolute; inset: -3px; }   /* 38 drawn, 44 tappable (REG-273 / REG-306) */
+.taskText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
+
+/* "Add Task" / "Assign" — the DS Link text (513:45306): glyph 20 + subheading/m, primary. */
+.link {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; cursor: pointer;
+  color: var(--om-color-primary-default); font: var(--om-type-subheading-m);
+  padding: 12px 0; margin: -12px 0;   /* 20 drawn, 44 tappable */
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-on-primary-variant); }
+
+.rule { width: 100%; height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }
+
+/* Foot: members left, the stage button right. */
+.foot { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.members { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
+.plusBox {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  font: var(--om-type-subheading-m);
+  color: var(--om-color-on-surface-secondary);
+}
+/* Stage (1082:25603): the outlined Button — h36, pl16 pr12, gap 8, subheading/m, chevron 20 secondary. */
+.stageBtn {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: none; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+  position: relative;
+  transition: background-color var(--motion-hover);
+}
+.stageBtn:hover { background: var(--om-color-hover-04p); }
+.stageBtn::after { content: ''; position: absolute; inset: -4px; }   /* 36 drawn, 44 tappable (REG-273) */
+.chev { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.stageBtn[data-open] .chev { transform: rotate(180deg); }

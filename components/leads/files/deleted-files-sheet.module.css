@@ -132,10 +132,10 @@
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    The xl panel carries its own shell, so it repeats the shared Dialog clamp (components/om/dialog.module.css):
-   ≤1199 it clamps to the viewport minus 48 and the all-fixed 1152 table scrolls sideways inside its card
+   ≤1024 it clamps to the viewport minus 48 and the all-fixed 1152 table scrolls sideways inside its card
    instead of being clipped by the card's `overflow: hidden`; ≤767 it is a full-screen sheet, the crumb head
    may wrap (Empty Trash + close never clip) and the body takes the mobile content padding. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .overlay { padding: var(--om-spacing-12) var(--om-spacing-6); }
   .panel { width: min(var(--om-modal-xl), calc(100vw - 48px)); }
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -147,12 +147,18 @@
   .heading { flex-wrap: wrap; row-gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-4); }
   .title { overflow: hidden; text-overflow: ellipsis; }
   .body { padding: var(--om-spacing-4); }
+  /* (REG-308) No footer here: the scroll end and the floating bar's band clear the home indicator (viewport-fit=cover); env() is 0 elsewhere. */
+  .body { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  .body[data-bulk] { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
 
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
-     Close keeps its 24px glyph inside a 40px box (the extra as margin, so the wrapped heading row does
-     not grow), and the row's two text links — the only way to restore or purge a file — become 40px
+     Close keeps its 24px glyph inside a 44px box (the extra as margin, so the wrapped heading row does
+     not grow), and the row's two text links — the only way to restore or purge a file — become 44px
      lines. The rows are 60 tall, so the taller links sit inside them and the table's rhythm is the
      mock's; the 24px gap between the two links keeps their boxes apart. */
-  .close { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
-  .link { display: inline-flex; align-items: center; min-height: 40px; }
+  .close { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
+  .link { display: inline-flex; align-items: center; min-height: 44px; }
 }

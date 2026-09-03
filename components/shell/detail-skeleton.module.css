@@ -36,21 +36,21 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
    The ghost mirrors the RESPONSIVE frame at each breakpoint, not the desktop one — bones that fade into a
    differently-shaped page are the REG-74 failure this ghost exists to prevent. Every rule below names the file
    it mirrors. */
-@media (max-width: 1199px) {
-  .info { width: 300px; }                                  /* info-column.module.css ≤1199 */
-  /* Tablet locks the quick-links strip collapsed (quick-links.module.css ≤1199 pins .aside AND
+@media (max-width: 1024px) {
+  .info { width: 300px; }                                  /* info-column.module.css ≤1024 */
+  /* Tablet locks the quick-links strip collapsed (quick-links.module.css ≤1024 pins .aside AND
      .aside[data-state='expanded'] to 72), so the ghost stops honouring the remembered expanded width. Same
      selector as the base rule above, restated here so it wins by order rather than by specificity accident. */
   body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 72px; gap: var(--om-spacing-6); }
-  /* om Tabs at ≤1199 (om/tabs.module.css): the nine bones scroll instead of clipping; the part-cut tab is the
+  /* om Tabs at ≤1024 (om/tabs.module.css): the nine bones scroll instead of clipping; the part-cut tab is the
      affordance, and the scrollbar is hidden as it is on the real row. */
   .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  /* The card grid drops to one column (overview.module.css ≤1199); the two stacks keep their DOM order. */
+  /* The card grid drops to one column (overview.module.css ≤1024); the two stacks keep their DOM order. */
   .grid { flex-direction: column; align-items: stretch; }
   .grid > .col { flex: none; width: 100%; }
   /* The tab tables keep their columns and scroll sideways in their own box (tasks / quotes / contracts /
-     files-list all took the same ≤1199 scroller), so the bone rows hold their floors instead of squashing. */
+     files-list all took the same ≤1024 scroller), so the bone rows hold their floors instead of squashing. */
   .tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .headRow, .tableRow { width: max-content; min-width: 100%; }   /* the same idiom the real tables took */
 }
@@ -65,7 +65,7 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
   /* The three-part row stacks: info column full width above the centre, quick-links strip gone — exactly what
      overview.module.css and info-column.module.css do at ≤767, down to the right rule becoming a bottom rule
      and the 24 → 16 content padding. The row keeps the real min-height so the ghost is not short of the fold. */
-  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 44px); }
+  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height) - 44px); }
   .info {
     flex: none; width: 100%;
     padding: var(--om-spacing-4);

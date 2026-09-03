@@ -90,9 +90,9 @@
 
 /* Responsive (REG-269, added under REG-273): this shell is a copy of the listing's FiltersModal but never got
    the listing's clamps (components/leads/filters-modal.module.css), so the 600×600 panel still opened wider
-   than a 390 screen. Same rules as the original: ≤1199 it fits the viewport, ≤767 it is a full-screen sheet
+   than a 390 screen. Same rules as the original: ≤1024 it fits the viewport, ≤767 it is a full-screen sheet
    with the date pair stacked. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
@@ -106,14 +106,15 @@
   .sortRow { width: 100%; }
   .dateRow { flex-direction: column; }
   .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 }
 
 /* Touch ergonomics (REG-273): the close is a bare 24px glyph and the Status choices are 32-tall chips. The
-   glyph and the chip keep their mocked sizes — the close takes a 40 box with ±8 handed back (the 64 heading
-   does not move) and each chip takes a transparent 40-tall overlay, which the row's 12 gap absorbs with 4 to
-   spare. Rail options (52), one-line (44) and two-line (64) rows are already past 40. */
+   glyph and the chip keep their mocked sizes — the close takes a 44 box with ±10 handed back (the 64 heading
+   does not move) and each chip takes a transparent 44-tall overlay, which the row's 12 gap absorbs exactly
+   (±6 either side meet in the middle, never overlap). Rail options (52), one-line (44) and two-line (64) rows are already 44 or more. */
 @media (max-width: 767px), (hover: none) {
-  .close { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+  .close { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
   .chip { position: relative; }
-  .chip::after { content: ''; position: absolute; inset: -4px; }
+  .chip::after { content: ''; position: absolute; inset: -6px; }
 }

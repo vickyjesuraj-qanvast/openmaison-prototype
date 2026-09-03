@@ -9,8 +9,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
-import { STAGES, type Stage } from '@/lib/leads/enums'
-import { displayDateTime } from '@/lib/format'
+import { STAGES, type Stage, reminderTaskTitle } from '@/lib/leads/enums'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
@@ -139,7 +138,7 @@ export function MoveStageWizard({
     const target = autoFillFor
     if (target === null) return
     // Clock read lives in the event handler (render stays pure).
-    setAutoAddedTask(`Schedule a meeting with the client for ${displayDateTime(new Date(Date.now() + 12 * 86400000))}`)
+    setAutoAddedTask(reminderTaskTitle('24/8/2026, 7:00 PM', 'WhatsApp'))   // (REG-319) the auto-filled schedule's own reminder; Save recomputes it from the logs anyway
     if (active === 'Met') {
       // Scripted: the site photo fills the meeting log whose Auto Fill was pressed.
       setData((d) => ({ ...d, meetings: d.meetings.map((m, i) => i === target ? { ...m, where: m.where || 'In person', when: m.when || '1/9/2026, 10:40 AM', files: m.files.length ? m.files : ['Site-photos.pdf'] } : m) }))
@@ -180,8 +179,9 @@ export function MoveStageWizard({
       // Journey (user 2026-08-29): fields (manual or Auto Fill) → Save → Suggested tasks → Save there completes the stage.
       // Logs append oldest → newest (Add Log), so the operative commitment is the last one with a next step —
       // the first match dated the task from a superseded log.
-      const next = [...data.logs].reverse().find((l) => l.nextStepWhen)?.nextStepWhen
-      setAutoAddedTask(`Schedule a meeting with the client for ${next ?? displayDateTime(new Date(Date.now() + 12 * 86400000))}`)   // clock read in the handler
+      // (REG-319) The reminder the helper promises: from the last log that scheduled something — none scheduled, no auto-added task.
+      const last = [...data.logs].reverse().find((l) => l.nextStepWhen)
+      setAutoAddedTask(last ? reminderTaskTitle(last.nextStepWhen, last.nextStepMode) : '')
       setSuggestOpen(true)
       return
     }
@@ -312,7 +312,7 @@ export function MoveStageWizard({
         <SuggestedTasksDialog
           open={suggestOpen}
           onClose={() => finishWithTasks([])}   /* Cancel / ✕: the stage details are already valid — complete the move without tasks */
-          onSave={() => finishWithTasks([autoAddedTask, ...Array.from(pickedTasks)])}
+          onSave={() => finishWithTasks([autoAddedTask, ...Array.from(pickedTasks)].filter(Boolean))}
           autoAdded={autoAddedTask}
           suggestions={[SUGGESTED]}
           picked={pickedTasks}

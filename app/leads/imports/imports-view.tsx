@@ -140,7 +140,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                 </div>
               </div>
 
-              {/* Responsive (REG-269): below 1200 the table scrolls inside this box and the Date column
+              {/* Responsive (REG-269): below 1025 the table scrolls inside this box and the Date column
                   freezes — data-scrolled turns its shadow on only while the box is scrolled sideways. */}
               <div className={styles.tableWrap}
                    onScroll={(e) => { e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0) }}>

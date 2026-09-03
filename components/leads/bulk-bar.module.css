@@ -7,7 +7,7 @@
   box-shadow: var(--om-elevation-level-3);
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-3);
 }
-.bar[data-inset] { position: absolute; bottom: 24px; }
+.bar[data-inset] { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) inside a full-screen sheet it clears the home indicator; 24 where env() is 0 */
 .count {
   width: 24px; height: 24px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -34,6 +34,7 @@
    dividers and close, only reflowed. It keeps clearing the FAB through --bottom-dock. */
 @media (max-width: 767px) {
   .bar {
+    bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px));   /* (REG-298) above the dock */
     max-width: calc(100vw - 32px);
     flex-wrap: wrap; justify-content: center;
     row-gap: var(--om-spacing-3);
@@ -43,9 +44,10 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Every action here is a bare text button one line tall, and the close is a 20px glyph — under a fingertip
-   they sit inside a bar that also holds a "Delete" a mis-tap away. At ≤767 each takes a 40px box; the type,
-   the colours and the 16px rhythm are the mock's. The count chip is a label, not a control, so it stays 24. */
-@media (max-width: 767px) {
-  .link { display: inline-flex; align-items: center; min-height: 40px; }
-  .close { min-width: 40px; min-height: 40px; align-items: center; justify-content: center; }
+   they sit inside a bar that also holds a "Delete" a mis-tap away. At ≤767 each takes a 44px box; the type,
+   the colours and the 16px rhythm are the mock's. The count chip is a label, not a control, so it stays 24.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .link { display: inline-flex; align-items: center; min-height: 44px; }
+  .close { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
 }

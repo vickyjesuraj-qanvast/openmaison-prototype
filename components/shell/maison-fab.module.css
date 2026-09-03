@@ -1,6 +1,14 @@
 .wrap { position: fixed; right: 24px; bottom: 24px; width: 48px; height: 48px; z-index: 90; transition: bottom var(--motion-toggle); }
-/* Sits 16px above the review banner when it is shown (banner 16 + 50 + 16; the mock's 34px gap read as too loose — user 2026-08-27). */
-.wrap[data-raised] { bottom: 82px; }
+/* Sits 16px above the review banner when it is shown (banner 16 + 50 + 16 = 82 on desktop; the mock's 34px gap read as
+   too loose — user 2026-08-27). (REG-302) The banner writes `--bottom-dock` = its measured height + 6, so this is
+   16 + height + 16 = --bottom-dock + 26 whatever the banner wraps to — 82 to the pixel on desktop. */
+.wrap[data-raised] { bottom: calc(var(--bottom-dock, 56px) + 26px); }
+/* (REG-298) ≤767 the FAB sits 16 in from the right and 16 above the bottom dock (1082:23383: right 16, bottom 86);
+   raised, it keeps the same 16 above the banner, which itself rests 16 above the dock. */
+@media (max-width: 767px) {
+  .wrap { right: 16px; bottom: calc(var(--app-mobile-dock-height) + 16px); }
+  .wrap[data-raised] { bottom: calc(var(--app-mobile-dock-height) + var(--bottom-dock, 56px) + 26px); }
+}
 .button {
   position: relative; width: 100%; height: 100%;
   border: 0; padding: 0; background: none; cursor: pointer;

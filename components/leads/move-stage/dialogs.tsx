@@ -56,6 +56,7 @@ export function SuggestedTasksDialog({
   open, onClose, onSave, autoAdded, suggestions, picked, onToggle, title = 'Suggested tasks', width = 400, variant = 'wizard',
 }: {
   open: boolean; onClose: () => void; onSave: () => void
+  /** (REG-319) Empty when nothing was scheduled — the Auto added group is then left out. */
   autoAdded: string; suggestions: string[]
   picked: Set<string>; onToggle: (s: string) => void
   /** Notes › Add tasks (931:45360) reuses this shell as "Add tasks" at 600; the wizard keeps the 400 defaults. */
@@ -68,6 +69,7 @@ export function SuggestedTasksDialog({
   if (notes) {
     return (
       <Dialog open={open} onClose={onClose} title={title} width={width} size="modal" footer={footer}>
+        {autoAdded ? (<>
         <div className={styles.taskGroup}>
           <span className={styles.groupLabel} data-variant="notes">Auto added</span>
           <div className={styles.taskRow} data-auto="true" data-variant="notes">
@@ -76,6 +78,7 @@ export function SuggestedTasksDialog({
           </div>
         </div>
         <Divider />
+        </>) : null}
         <div className={styles.taskGroup}>
           <span className={styles.groupLabel} data-variant="notes">Suggestions</span>
           {suggestions.map((s) => (
@@ -90,11 +93,13 @@ export function SuggestedTasksDialog({
   }
   return (
     <Dialog open={open} onClose={onClose} title={title} width={width} footer={footer} nested>
+      {autoAdded ? (<>
       <span className={styles.groupLabel}>Auto added</span>
       <div className={styles.taskRow} data-auto="true" aria-label={`Auto added task: ${autoAdded}`}>
         <span className={styles.taskText}>{autoAdded}</span>
         <Icon name="check_box" size={24} weight={300} className={styles.taskCheck} />
       </div>
+      </>) : null}
       <span className={styles.groupLabel}>Suggestions</span>
       {suggestions.map((s) => (
         <button key={s} type="button" className={styles.taskRow} onClick={() => onToggle(s)}>

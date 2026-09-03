@@ -38,13 +38,13 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    New Quote, Filters and the kebab are the mock's 36px controls. On a touch pointer each keeps its drawn
-   size and gains a transparent 2px ring: the target is 40px, the ring takes no space, so the wrapped row,
-   the 12px gaps (8px still clear between targets) and the filter badge do not move. The two selectors are
+   size and gains a transparent 4px ring: the target is 44px, the ring takes no space, so the wrapped row,
+   the 12px gaps (4px still clear between targets) and the filter badge do not move. The two selectors are
    the DS Button (a direct child of its wrapper) and the om IconButton (inside the Tooltip's anchor span);
    both stop short of the Dropdown's own rows, which are the shared menu's business. */
 @media (hover: none) {
   .menuWrap > button, .menuWrap > span > button, .filterWrap button { position: relative; }
   .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
-    content: ''; position: absolute; inset: -2px;
+    content: ''; position: absolute; inset: -4px;
   }
 }

@@ -77,5 +77,5 @@
    The tile IS the target (the whole button — thumb, caption and all), and the 2-up rule above already makes
    it the largest control on the Overview: at 390 the row is 318 inside the card, so each tile is 155 wide and
    155 − 8 padding × 84:64 + 20 caption + 8 = ~140 tall; the "+n" tile shares the same cell. On the narrowest
-   tablet card the measured row still picks ~91px tiles at ~97 tall. Both are far past the 40px floor, so the
+   tablet card the measured row still picks ~91px tiles at ~97 tall. Both are far past the 44px floor, so the
    tiles are left exactly as the mock draws them. */

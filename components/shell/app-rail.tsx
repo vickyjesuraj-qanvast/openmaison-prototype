@@ -30,34 +30,23 @@ const BOTTOM_ITEMS = [
   { icon: 'notifications', label: 'Notifications' },
   { icon: 'settings', label: 'Settings', href: '/settings' },
 ]
-export function AppRail({ drawer, onNavigate }: {
-  /** Mobile drawer mode (REG-269): always the expanded 216 layout, no pin affordance — mobile-nav hosts it. */
-  drawer?: boolean
-  /** Drawer mode: called on any nav press so the drawer closes behind the navigation. */
-  onNavigate?: () => void
-} = {}) {
+export function AppRail() {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
      Settings or Qanvast Ops remounted the rail and dropped the choice (user 2026-08-31). `animate` keeps the width
      transition for the viewer's own toggle and suppresses it on load, so a remembered rail never plays an entrance. */
-  const [expandedPref, setExpandedPref, animate] = useFlagPref('om.rail.expanded', false)
-  const expanded = drawer ? true : expandedPref
-  const setExpanded = (next: boolean) => setExpandedPref(next)
+  const [expanded, setExpanded, animate] = useFlagPref('om.rail.expanded', false)
   const [railHover, setRailHover] = useState(false)     // logo tile → expand icon (795:22541)
 
   const onEnter = () => setRailHover(true)
   const onLeave = () => setRailHover(false)
   const togglePin = () => { setExpanded(!expanded); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
   // Fixed overlays (review banner strip, snackbar host) follow the rail width through this variable.
-  // The mobile DRAWER copy must not write it (REG-269): it is always "expanded", so it would report a 216px
-  // rail to overlays that are, at that width, not beside a rail at all — and its unmount would clear the
-  // variable the in-flow rail owns.
   useEffect(() => {
-    if (drawer) return
     document.documentElement.style.setProperty('--rail-w', expanded ? '216px' : '52px')
     return () => { document.documentElement.style.removeProperty('--rail-w') }
-  }, [drawer, expanded])
+  }, [expanded])
 
   // Collapsed rail: every control gets the shared tooltip (789:83369) to its right.
   // Items with an href are real destinations (Leads, Settings) and light up for their route; the rest answer "coming soon".
@@ -81,12 +70,11 @@ export function AppRail({ drawer, onNavigate }: {
       <Tooltip key={it.label} label={it.label} side="right" disabled={expanded}>
         {it.href ? (
           <Link href={it.href} className={className} data-active={active || undefined} aria-label={it.label}
-                aria-current={active ? 'page' : undefined} onClick={onNavigate}>
+                aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>
         ) : (
-          <button type="button" className={className} aria-label={it.label}
-                  onClick={() => { onNavigate?.(); comingSoon() }}>
+          <button type="button" className={className} aria-label={it.label} onClick={comingSoon}>
             {inner}
           </button>
         )}
@@ -95,11 +83,10 @@ export function AppRail({ drawer, onNavigate }: {
   }
 
   return (
-    <div className={styles.wrap} data-pinned={expanded || undefined} data-animate={(animate && !drawer) || undefined}
-         data-drawer={drawer || undefined}>
+    <div className={styles.wrap} data-pinned={expanded || undefined} data-animate={animate || undefined}>
       <nav className={styles.panel} data-expanded={expanded || undefined} data-pinned={expanded || undefined}
-           data-animate={(animate && !drawer) || undefined}
-           aria-label="Workspace" onMouseEnter={drawer ? undefined : onEnter} onMouseLeave={drawer ? undefined : onLeave}>
+           data-animate={animate || undefined}
+           aria-label="Workspace" onMouseEnter={onEnter} onMouseLeave={onLeave}>
         <div className={styles.top}>
           <div className={styles.logoRow} data-expanded={expanded || undefined}>
             {/* Both headers stay mounted and crossfade with the width change — no pop when collapsing / expanding. */}

@@ -63,20 +63,21 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Two bare marks: the close (24) and the row's pin (16) — the smallest control on the listing. At ≤767 both
-   take a 40px box and give the extra back as margin, so the heading's inset and the 56px column rows are the
+   take a 44px box and give the extra back as margin, so the heading's inset and the 56px column rows are the
    mock's, and the pin still reads as a pin. Its meaning survives without a tooltip: the "PINNED (3 columns
    max)" caption sits above the group, and the glyph fills when a column is pinned.
    The drag handle is not a control — the whole row is the Reorder listener (customise-view.tsx) and that row
-   is already 56px tall — and the DS Switch keeps the geometry the design system draws. */
-@media (max-width: 767px) {
+   is already 56px tall — and the DS Switch keeps the geometry the design system draws.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+    margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
   }
   .pinBtn {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -12px;   /* 40 − 24 = the 16px glyph box the row laid out */
+    margin: -14px;   /* 44 − 28 = the 16px glyph box the row laid out */
   }
 }

@@ -35,10 +35,10 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    "Copy" is the mock's 68×36 button inside the 58px portal box. On a touch pointer it keeps its drawn
-   size and gains a transparent 2px ring — a 40px target that takes no space, so the box, the URL's
+   size and gains a transparent 4px ring — a 44px target that takes no space, so the box, the URL's
    ellipsis and the 12px gap are unchanged. The dialog's own footer buttons and close belong to the
    shared shell (components/leads/move-stage/dialogs.tsx). A mouse never sees this rule. */
 @media (hover: none) {
   .portal button { position: relative; }
-  .portal button::after { content: ''; position: absolute; inset: -2px; }
+  .portal button::after { content: ''; position: absolute; inset: -4px; }
 }

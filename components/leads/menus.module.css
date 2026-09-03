@@ -38,8 +38,11 @@
    (The portalled PortalMenu / DatePicker clamp their x in JS; this covers the in-flow menus.) */
 @media (max-width: 767px) {
   .menu { max-width: calc(100vw - 32px); max-height: calc(100dvh - 160px); overflow-y: auto; }
+}
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* Touch ergonomics (REG-273): the 36px menu row is the last control under a fingertip, and it is shared —
      lifting it here lifts every anchored Dropdown at once (row kebabs, the stage menu, the scope pill, the
      lead form's unit picker) instead of each surface shadowing its own. */
-  .item { height: auto; min-height: 40px; }
+  .item { height: auto; min-height: 44px; }
 }

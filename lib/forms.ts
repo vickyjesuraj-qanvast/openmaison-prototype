@@ -15,6 +15,7 @@ export const MSG = {
   milestones: 'Milestones must add up to 100%',
   assignee: 'Assign at least one member',
   dateRange: 'From date must be on or before To date',
+  mapField: 'Select a field or Ignore',   // Import Leads › mapping (REG-317)
 } as const
 
 export type FieldErrors<K extends string = string> = Partial<Record<K, string>>

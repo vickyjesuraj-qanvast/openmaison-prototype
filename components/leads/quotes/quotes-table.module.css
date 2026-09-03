@@ -130,9 +130,9 @@
 .danger { color: var(--om-color-tertiary-red-default); }   /* 910:36723 Delete #db382a */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   ≤1199 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
+   ≤1024 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
    `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
      past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
      card itself, so the sheet clipped it exactly as before. */
@@ -150,12 +150,15 @@
    around it does, and horizontal growth is handed straight back as a negative margin — so the type, the
    glyphs and the mock's column rhythm are untouched. Sort (inert head button), Status (opens the status
    menu) and Due (opens the date picker) are all drawn as bare text, i.e. ~20px tall boxes at rest.
-   The head keeps its mocked 56 (8 + 40 + 8) and the 64px row already leaves exactly 40 between its two
-   12px cell paddings, so nothing reflows. */
-@media (max-width: 767px) {
-  .head .hCell { padding-block: var(--om-spacing-2); }   /* 16/16 → 8/8: a 40px sort button still lands the head on 56 */
+   The head keeps its mocked 56 (6 + 44 + 6) and the row its mocked 64 (10 + 44 + 10): each cell's padding
+   gives up what the box needs (16 → 6 in the head, 12 → 10 in the row) and the centred text does not move,
+   so nothing reflows.
+   (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .head .hCell { padding-block: 6px; }   /* 16/16 → 6/6: a 44px sort button still lands the head on 56 */
+  .cell { padding-block: 10px; }         /* 12/12 → 10/10: a 44px status / due button still lands the row on 64 (.colSel keeps its 12: its checkbox pays its own box back as margin) */
   .hSort, .statusBtn, .dueBtn {
-    min-height: 40px;
+    min-height: 44px;
     padding-inline: var(--om-spacing-2);
     margin-inline: calc(var(--om-spacing-2) * -1);        /* the label/date does not move: the padding pushes it back */
   }
@@ -163,10 +166,17 @@
 }
 
 /* Touch ergonomics (REG-273): the row's View button and kebab are the mock's 36px controls. On a touch
-   pointer each keeps its drawn size and gains a transparent 2px ring — a 40px target that takes no space,
-   so the float, its shadow and the 12px gap between the two stay pixel-exact (8px still clear between the
+   pointer each keeps its drawn size and gains a transparent 4px ring — a 44px target that takes no space,
+   so the float, its shadow and the 12px gap between the two stay pixel-exact (4px still clear between the
    two targets). A mouse never sees this rule. */
 @media (hover: none) {
   .float button { position: relative; }
-  .float button::after { content: ''; position: absolute; inset: -2px; }
+  .float button::after { content: ''; position: absolute; inset: -4px; }
+}
+
+/* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
+   the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
+@media (hover: none) and (max-width: 1024px) {
+  .card { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
+  .card[data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
 }

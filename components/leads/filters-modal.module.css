@@ -90,7 +90,7 @@
    what the group lists want anyway). The 160px tab rail stays — it is the mock's navigation and the drill-in
    alternative would be a new pattern — and the group side gets the mobile content padding (24 → 16) plus the
    two rows that were drawn at a fixed width: the sort row and the two-up date range, both now full width. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
@@ -104,25 +104,27 @@
   .sortRow { width: 100%; }
   .dateRow { flex-direction: column; }
   .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The option rows are already touch-sized (44 / 64), and the tab rail's items are 52 — the mock did the work.
-   What is left under 40 at ≤767: the bare 24px close, the 32px date chips, and the sort radios, whose row is
-   44 tall but whose LABEL (the actual control) is one text line. Each gets a 40px box; the chip keeps its
-   fill, stroke, radius and type, and the radios keep the DS mark. */
-@media (max-width: 767px) {
+   What is left under 44 at ≤767: the bare 24px close, the 32px date chips, and the sort radios, whose row is
+   44 tall but whose LABEL (the actual control) is one text line. Each gets a 44px box; the chip keeps its
+   fill, stroke, radius and type, and the radios keep the DS mark.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+    margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
   }
-  .chip { height: auto; min-height: 40px; }
+  .chip { height: auto; min-height: 44px; }
   .sortRow { height: auto; min-height: 44px; }
-  .sortRow > * { min-block-size: 40px; }   /* the DS Radio's own label — inline-flex, centred, so the mark stays put */
+  .sortRow > * { min-block-size: 44px; }   /* the DS Radio's own label — inline-flex, centred, so the mark stays put */
 }
 
-/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
+/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
 @media (hover: none) {
   .searchInput { block-size: 100%; }
 }

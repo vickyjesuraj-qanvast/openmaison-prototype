@@ -59,25 +59,27 @@
    Oct ’26": both are unshrinkable, so on the tablet card the date pushed the stage name itself into an ellipsis.
    It drops under the name instead, and the row's fixed 36 becomes a floor so the second line is not cut. Rows
    that fit — every one of them at 390 — are laid out exactly as the mock draws them. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .row { height: auto; min-height: 36px; }
   .nameGroup { flex-wrap: wrap; row-gap: 0; }
 }
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    The whole row is the button (icon · name · meta · chevron are all inside it), so the target is the row, and
-   the row is 36 tall — under the 40px floor. Its own padding grows 8 → 12, which puts the 20px icon line in a
+   the row is 36 tall — under the 44px floor. Its own padding grows 8 → 12, which puts the 20px icon line in a
    44px box: the mark, the type and the 8px gaps are untouched, only the box around them grows. Five stacked
    44px rows read as a list of destinations rather than a dense summary, which is what a finger needs.
-   The chevron needs nothing of its own — it is a glyph inside the row's target, not a separate control. */
-@media (max-width: 767px) {
+   The chevron needs nothing of its own — it is a glyph inside the row's target, not a separate control.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .row { min-height: 44px; padding: var(--om-spacing-3) var(--om-spacing-2); }
 }
 
 /* (REG-273) A blocked row's only explanation is its Tooltip, and a tooltip never fires for a touch pointer —
    on a phone the row was simply dimmed and inert with nothing to say why. The same string is rendered as a
-   caption under the stage name and revealed at mobile only (desktop keeps the tooltip and the mock's row). */
+   caption under the stage name and revealed at mobile only (desktop keeps the tooltip and the mock's row).
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same caption. */
 .why { display: none; }
-@media (max-width: 767px) {
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .why { display: block; flex: 1 0 100%; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 }

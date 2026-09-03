@@ -72,7 +72,7 @@
    gradient. The eyebrow stops growing and the tag takes the free space as a margin instead: identical result
    while the two fit on one line (eyebrow left, tag hard right, as 858:24867 draws it), and the tag drops to its
    own line, still right-aligned, when they do not. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .head { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
   .eyebrow { flex: 0 0 auto; }
   .tag { margin-left: auto; }
@@ -82,8 +82,11 @@
    a width where two lines is half a sentence, four is the honest equivalent of what desktop shows. */
 @media (max-width: 767px) {
   .text { -webkit-line-clamp: 4; }
+}
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* (REG-273) "Show more" is a 24px text-and-chevron row — the type and the chevron keep their size, the row
-     it sits in grows to 40 and the button stretches to fill it, so the target matches the touch floor. */
-  .toggleRow { height: 40px; }
+     it sits in grows to 44 and the button stretches to fill it, so the target matches the touch floor. */
+  .toggleRow { height: 44px; }
   .toggle { align-self: stretch; }
 }

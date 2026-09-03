@@ -46,6 +46,7 @@
 /* Responsive (REG-269): ≤767 the host spans the viewport minus 16px gutters — the desktop anchor
    (left: rail + 32) and the locked 344px bar pushed the action/close off a 390px screen. */
 @media (max-width: 767px) {
-  .host { left: var(--om-spacing-4); right: var(--om-spacing-4); }
+  /* (REG-298) …and rises above the bottom dock, 16 clear of it, keeping the bulk-bar offset on top. */
+  .host { left: var(--om-spacing-4); right: var(--om-spacing-4); bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px)); }
   .bar { width: auto; min-width: 0; max-width: 100%; }
 }

@@ -87,10 +87,10 @@
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    This modal carries its own shell (copied from the tasks filters modal), so it repeats the shared
-   Dialog clamp (components/om/dialog.module.css): ≤1199 it clamps to the viewport minus 48, ≤767 it is
+   Dialog clamp (components/om/dialog.module.css): ≤1024 it clamps to the viewport minus 48, ≤767 it is
    a full-screen sheet. The browse rows are already fluid — only the paddings come down to the mobile 16
    and the footer may wrap so New Folder · Cancel · Move never clip. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .overlay { padding: var(--om-spacing-12) var(--om-spacing-6); }
   .panel { width: min(var(--om-modal-m), calc(100vw - 48px)); }
 }
@@ -100,17 +100,21 @@
   .heading { padding: var(--om-spacing-5) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); }
   .footer { padding: var(--om-spacing-4); flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
+}
 
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
-     Close and the folder head's back keep their 24px glyphs inside 40px boxes (the extra as margin, so
+     Close and the folder head's back keep their 24px glyphs inside 44px boxes (the extra as margin, so
      the heading rows keep their mocked rhythm). The browse rows are the primary target: 40 as mocked,
-     grown to 48 here because the row-hover "Move" button — a DS 24px `size="sm"` that this file cannot
+     grown to 60 here because the row-hover "Move" button — a DS 24px `size="sm"` that this file cannot
      resize — is permanently visible on a touch pointer (see the hover block below) and needs the room. */
-  .close, .back { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
-  /* Row 40 → 56 = the row's own 8/8 padding around a 40px "Move" (a DS `size="sm"`, 24 tall, whose box is
+  .close, .back { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
+  /* Row 40 → 60 = the row's own 8/8 padding around a 44px "Move" (a DS `size="sm"`, 24 tall, whose box is
      its mark): the row stays the primary target and the shortcut inside it is now tappable too. */
-  .folderRow { height: auto; min-height: 56px; }
-  .rowMove button { min-height: 40px; }
+  .folderRow { height: auto; min-height: 60px; }
+  .rowMove button { min-height: 44px; }
 }
 
 /* Touch ergonomics (REG-273): the row's "Move" shortcut is revealed on hover (931:39249), which a touch

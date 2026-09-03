@@ -50,9 +50,9 @@
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────
    Tablet and down: the bar may wrap (the ~585px actions cluster drops under the title once the row
-   runs short) and the search gives up its fixed 280 so the cluster can shrink. Desktop ≥1200 keeps
+   runs short) and the search gives up its fixed 280 so the cluster can shrink. Desktop ≥1025 keeps
    the base one-line row untouched. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .bar { flex-wrap: wrap; height: auto; min-height: 36px; row-gap: var(--om-spacing-3); }
   .actions { flex-wrap: wrap; max-width: 100%; row-gap: var(--om-spacing-3); }
   .search { width: auto; flex: 1 1 200px; min-width: 160px; }
@@ -73,16 +73,17 @@
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   ≤767 every icon-only control in this row becomes a 40px target. The bare glyphs (breadcrumb back 24,
+   ≤767 every icon-only control in this row becomes a 44px target. The bare glyphs (breadcrumb back 24,
    folder kebab 20) keep their mark and hand the extra back as margin, so the crumb row's rhythm is the
    mock's; the bordered 36px controls (filter, the view segments, the header kebab) grow their own box —
-   36 is the DS size and the box IS the mark there, so it grows with the target. Desktop never enters. */
-@media (max-width: 767px) {
-  .back { width: 40px; height: 40px; margin: -8px; }
-  .folderKebab { width: 40px; height: 40px; margin: -10px; }
+   36 is the DS size and the box IS the mark there, so it grows with the target. Desktop never enters.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .back { width: 44px; height: 44px; margin: -10px; }
+  .folderKebab { width: 44px; height: 44px; margin: -12px; }
   /* `min-*` beats the DS `width/height: 36px` whatever the selector's specificity. */
-  .touchBtn { min-width: 40px; min-height: 40px; }
-  .viewToggle button { min-width: 40px; min-height: 40px; }
+  .touchBtn { min-width: 44px; min-height: 44px; }
+  .viewToggle button { min-width: 44px; min-height: 44px; }
   /* The crumb row's own line grows with the back button so the title never rides on top of it. */
-  .crumbRow { min-height: 40px; }
+  .crumbRow { min-height: 44px; }
 }

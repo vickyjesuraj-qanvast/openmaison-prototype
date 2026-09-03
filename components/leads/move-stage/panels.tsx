@@ -8,7 +8,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Avatar } from '@/components/om/avatar'
-import { CONTACT_CHANNELS, CONTACT_MODES, NEXT_STEP_BY_OUTCOME, OUTCOMES } from '@/lib/leads/enums'
+import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
 import { moneySGD } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
@@ -17,7 +17,7 @@ import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
 
-// OUTCOMES / NEXT_STEP_BY_OUTCOME / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186).
+// OUTCOMES / SCHEDULE / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186, REG-319).
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
@@ -100,11 +100,15 @@ function LogCard({
   errors: StageErrors
   today: Date
 }) {
-  const nextStep = NEXT_STEP_BY_OUTCOME[log.outcome]
   const err = (f: string) => errors[`logs.${index}.${f}`]
   return (
     <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
               readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
+      {/* (REG-320, user 2026-09-02) Where this log lives afterwards — only here, the Notes tab is already that place. */}
+      <p className={fieldStyles.callout}>
+        <Icon name="info" size={16} weight={300} />
+        <span>This log is saved under Lead Details › Notes › Contact Log.</span>
+      </p>
       <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={log.channel}
                    onChange={(v) => onChange({ channel: v })} error={err('channel')} />
       <div className={styles.fieldPair}>
@@ -113,17 +117,19 @@ function LogCard({
         <TextField label="Outcome" value={log.outcome} mode="select" options={OUTCOMES}
                    onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
       </div>
-      {nextStep ? (
-        <div className={styles.stack24}>
-          <span className={fieldStyles.sectionLabel}>Next step: {nextStep}</span>
-          <div className={styles.fieldPair}>
-            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
-                           onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
-            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
-                       onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
-          </div>
+      {/* (REG-319, mock 781:58313) One optional schedule block for every outcome: heading + helper (V g4), then the pair. */}
+      <div className={styles.stack24}>
+        <div className={fieldStyles.sectionHead}>
+          <span className={fieldStyles.sectionLabel}>{SCHEDULE.heading}</span>
+          <span className={fieldStyles.sectionHelper}>{SCHEDULE.helper}</span>
         </div>
-      ) : null}
+        <div className={styles.fieldPair}>
+          <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
+                         onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
+          <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
+                     onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
+        </div>
+      </div>
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach screenshots of your call attempts"

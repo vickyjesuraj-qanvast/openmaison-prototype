@@ -198,10 +198,10 @@
 .taskCheck { display: inline-flex; flex-shrink: 0; color: var(--om-color-primary-default); }   /* check_box 24/Light #5500ff */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   Desktop (≥1200) is the mock and is untouched. Tablet keeps the two-pane window and clamps it to the
+   Desktop (≥1025) is the mock and is untouched. Tablet keeps the two-pane window and clamps it to the
    viewport (the xxl margin rule, generalised); mobile turns it into the full-screen sheet with the stage
    rail laid across the top. Every rule below lives inside one of the two breakpoint literals. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   /* The 800 modal no longer fits: clamp it like every other l/xl surface and take the height from dvh so a
      mobile browser's toolbar can never sit over the footer's Save. */
   .modal { max-width: calc(100vw - 48px); max-height: calc(100dvh - 96px); }   /* 24 either side, the same clamp components/om/dialog takes */
@@ -222,6 +222,7 @@
     border-radius: 0;
   }
   .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }   /* (REG-308) below the status bar; 20 where env() is 0 */
   /* Long lead names truncate instead of pushing the close button out of the header. */
   .subtitle { min-width: 0; }
   .subtitle > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -262,6 +263,7 @@
 
   /* The footer stacks: the shake-error message above the buttons instead of fighting them for one row. */
   .foot { flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
+  .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator; 16 where env() is 0 */
   .footError { flex: none; }
   .footSpacer { display: none; }
   .footBtns { justify-content: flex-end; }
@@ -269,21 +271,22 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    At ≤767 the window is a full-screen sheet, so everything in it is a finger target. Boxes grow; the marks,
-   the labels and the mock's geometry do not. Desktop (≥1200) matches none of this. */
-@media (max-width: 767px) {
+   the labels and the mock's geometry do not. Desktop (≥1025) matches none of this.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* The stage strip is 52 tall and as wide as its label — already past the 44px target; the guard keeps it
      there if the strip's height ever changes. A LOCKED stage is explained only by a Tooltip, and tooltips
      never fire for a touch pointer, so wizard.tsx answers the TAP with the snackbar that carries the same
      sentence ("Complete Met first"); the lock glyph stays as the standing cue. */
   .railItem { min-height: 44px; }
-  /* The log head carries two bare 24px icon buttons (delete · collapse). Their touch boxes are 40 wide
+  /* The log head carries two bare 24px icon buttons (delete · collapse). Their touch boxes are 44 wide
      (components/om/icon-button.module.css grows them on a touch pointer), so the mock's 12px gap would
-     overlap them by 4 — 16 is the smallest gap that keeps two 24px marks a full 40px apart. */
-  .logHead { gap: var(--om-spacing-4); }
+     overlap them by 8 — 20 is the smallest gap that keeps two 24px marks a full 44px apart. */
+  .logHead { gap: var(--om-spacing-5); }
   /* The milestone % field drew a 36px box around a ~20px input, so the tappable part was a third of a
-     fingertip: the input now fills its field and the field takes the 40px target — the row grows the 4px. */
-  .msPct { height: 40px; }
+     fingertip: the input now fills its field and the field takes the 44px target — the row grows the 8px. */
+  .msPct { height: 44px; }
   .msPct input { align-self: stretch; }
   /* Cancel / Save & Move are DS md buttons (36 tall) — the box takes the target, the label is untouched. */
-  .footBtns :global(button) { min-height: 40px; }
+  .footBtns :global(button) { min-height: 44px; }
 }

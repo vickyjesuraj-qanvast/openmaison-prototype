@@ -25,7 +25,7 @@
    four-line ribbon, so the row wraps and the event takes its own full-width line under the date.
    The 160px basis is the switch: the event drops below the date only when it would otherwise be narrower than
    that. Nothing is hidden or truncated at either width, and the desktop row is untouched. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .row { flex-wrap: wrap; }
   .text { flex: 1 1 160px; }
 }

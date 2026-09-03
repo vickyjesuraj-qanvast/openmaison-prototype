@@ -100,16 +100,19 @@
   .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-4); }
   .footer { padding: var(--om-spacing-4); }
+}
 
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
-     The two bare marks of this panel grow their box to 40 and keep their glyph: close (24) inside the
+     The two bare marks of this panel grow their box to 44 and keep their glyph: close (24) inside the
      64px head, and each comment's more_horiz (20) at the right of its 20px meta line. The extra comes
      back as margin, so the head's rhythm and the meta line's baseline are untouched — the kebab simply
-     overlaps the (non-interactive) comment text band by 10px on either side. */
-  .close { width: 40px; height: 40px; margin: -8px; }
-  .kebab { width: 40px; height: 40px; margin: -10px; }
+     overlaps the (non-interactive) comment text band by 12px on either side. */
+  .close { width: 44px; height: 44px; margin: -10px; }
+  .kebab { width: 44px; height: 44px; margin: -12px; }
   /* The inline editor's Cancel / Save are DS `size="sm"` (24 tall) — a text button's box IS its mark, so
-     here the whole control grows to 40 and its row grows with it (spacing follows the target, not the mock). */
-  .editRow { height: auto; min-height: 40px; }
-  .editRow button { min-height: 40px; }
+     here the whole control grows to 44 and its row grows with it (spacing follows the target, not the mock). */
+  .editRow { height: auto; min-height: 44px; }
+  .editRow button { min-height: 44px; }
 }

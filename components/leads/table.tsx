@@ -12,6 +12,7 @@ import { Avatar } from '@/components/om/avatar'
 import { displayDate, isOverdue, money } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './table.module.css'
 
 export type ColumnKey =
@@ -125,6 +126,10 @@ export function LeadsTable({
 
   const visible = columns.filter((c) => c.visible)
   const minWidth = visible.reduce((w, c) => w + WIDTHS[c.key], 0)
+  /* (REG-310) On a touch tablet the hover actions are an in-flow last cell (table.module.css, `hover: none`), 134 wide:
+     the table's floor grows by that band so every row — and the head's spacer — has room for it, and the column scale
+     below is still measured off the columns alone. Server snapshot = no band, as the mock. */
+  const band = useMediaQuery(TOUCH_TABLET) ? 134 : 0
   // Pinned columns stack from the left; only the LAST one carries the 2px divider + shadow (user rule 2026-08-27).
   const pinOffset: Partial<Record<ColumnKey, number>> = {}
   let pinAcc = 0
@@ -150,7 +155,7 @@ export function LeadsTable({
   useEffect(() => {
     const el = tableEl.current
     if (!el) return
-    const apply = (w: number) => el.style.setProperty('--col-scale', String(Math.max(1, w / minWidth)))
+    const apply = (w: number) => el.style.setProperty('--col-scale', String(Math.max(1, (w - band) / minWidth)))
     if (typeof ResizeObserver === 'undefined') { apply(el.clientWidth); return }
     // The first notification carries the initial size and is delivered before paint, so the scale is never a frame late.
     const ro = new ResizeObserver(([entry]) => {
@@ -159,7 +164,7 @@ export function LeadsTable({
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [minWidth])
+  }, [minWidth, band])
   const sorted = useMemo(() => {
     if (!sort) return rows
     const out = [...rows].sort((a, b) => {
@@ -308,7 +313,7 @@ export function LeadsTable({
     <div className={styles.card}>
       <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
         <div ref={tableEl} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
-             style={{ minWidth }}>
+             style={{ minWidth: minWidth + band }}>
           <div className={styles.headRow} role="row">
             {visible.map((col, i) => (
               <div

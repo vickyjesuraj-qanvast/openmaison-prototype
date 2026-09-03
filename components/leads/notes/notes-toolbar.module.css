@@ -4,6 +4,8 @@
    Sources: components/leads/tasks/tasks-toolbar.module.css · components/leads/toolbar.module.css. */
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
 .left { flex: 1; min-width: 0; display: flex; position: relative; }
+/* (REG-318) The title — the sibling toolbars' own (tasks-toolbar.module.css .title). */
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
 
 /* "All Notes (2)" pill: h36, border ccc, r4, pl-16 pr-12, gap-8 (toolbar.module.css .chip). */
@@ -35,7 +37,7 @@
 /* (REG-273) Touch ergonomics: the 36px control keeps its drawn size and grows only its hit area. */
 @media (hover: none) {
   .touchTarget { position: relative; }
-  .touchTarget::after { content: ''; position: absolute; inset: -2px; }
+  .touchTarget::after { content: ''; position: absolute; inset: -4px; }
 }
 
 /* ── Responsive (REG-269) ── the sibling toolbars' own rule: below 768 the row wraps to two lines and the
@@ -49,17 +51,18 @@
 }
 
 /* ── Touch ergonomics (REG-273), carried over with the controls this row took from the list column (REG-293).
-   Every box reaches 40px; the marks, the type and the 1px strokes keep the mock's sizes. */
-@media (max-width: 767px) {
-  .chip { height: auto; min-height: 40px; }
-  .menuWrap > :global(button) { min-height: 40px; }
+   Every box reaches 44px; the marks, the type and the 1px strokes keep the mock's sizes.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .chip { height: auto; min-height: 44px; }
+  .menuWrap > :global(button) { min-height: 44px; }
   /* Both menus draw 36px rows, and a menu on a phone is a list of finger targets. */
   .left :global([role='menuitemradio']),
-  .menuWrap :global([role='menuitem']) { min-height: 40px; }
+  .menuWrap :global([role='menuitem']) { min-height: 44px; }
 }
-/* The DS md SearchBar is 36 tall and a fingertip wants 40, so the BOX stands up — the 20px glyph, the subheading
+/* The DS md SearchBar is 36 tall and a fingertip wants 44, so the BOX stands up — the 20px glyph, the subheading
    type and the stroke are the DS's, untouched. The selector carries the DS's own `[data-size]` inside the wrapper
    so it outweighs `._searchBar[data-size=md] { height: 36px }` whichever order the stylesheets land in. */
 @media (max-width: 767px), (hover: none) {
-  .searchWrap .search[data-size='md'] { height: 40px; }
+  .searchWrap .search[data-size='md'] { height: 44px; }
 }

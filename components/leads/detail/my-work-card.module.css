@@ -72,22 +72,24 @@ button.groupLabel:hover .toggleIcon { background: var(--om-color-hover-08p); }  
    chevron never leaves the row — but the meta line ("Follow-up · Mon, 25 Aug · (3d overdue)") was `nowrap`
    under `overflow: hidden`, i.e. cut mid-word with no ellipsis to admit it. At a ~248px row it wraps between
    its own tokens instead: every token stays whole, the row grows the way a wrapped title already does. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .meta { flex-wrap: wrap; overflow: visible; row-gap: 0; }
 }
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
    A task row carries two bare 20px controls — the radio that completes the task and the chevron that opens
    it — one at each end of a 56px row. Both marks stay 20px in their mocked places; the invisible ::after
-   around each grows to a full 40×40, which the 56px row swallows whole (the row's own 8px padding and the
-   8px gap to the text absorb the overhang, and the text between them is not a control, so nothing is stolen).
-   The expanded "Upcoming" label is also a button and only 32 tall at rest — it takes a 44px box. */
-@media (max-width: 767px) {
+   around each grows to a full 44×44, which the 56px row swallows whole (the 12px overhang lands on the row's own
+   8px padding plus the list's 12px side padding on the outside and on the 8px gap to the text on the inside —
+   the text between them is not a control, so nothing is stolen).
+   The expanded "Upcoming" label is also a button and only 32 tall at rest — it takes a 44px box.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .radio, .chev { position: relative; }
-  .radio::after, .chev::after { content: ''; position: absolute; inset: -10px; }
+  .radio::after, .chev::after { content: ''; position: absolute; inset: -12px; }
   button.groupLabel { min-height: 44px; align-items: center; }
 }
 
-/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the MY WORK card's task radio draws at 20px. */
+/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the MY WORK card's task radio draws at 20px. */
 @media (hover: none) {
-  .radio { width: 40px; height: 40px; margin: -10px; display: inline-flex; align-items: center; justify-content: center; }
+  .radio { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }

@@ -49,7 +49,7 @@
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    Tablet-and-down every dialog clamps to the viewport and its body scrolls (callers pass raw px widths).
    ≤767 the form/modal sizes become full-screen sheets — the compact/standard alerts stay centred cards. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .dialog { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
   .body { overflow-y: auto; }
 }
@@ -61,4 +61,10 @@
     border-radius: 0;
   }
   .dialog[data-size='form'] .body, .dialog[data-size='modal'] .body { flex: 1; }
+  /* (REG-308) The sheet reaches under the status bar and the home indicator (viewport-fit=cover): the head pads below
+     the one (form 24 · modal 20 kept) and the pinned footer past the other (form 24 · modal 16 kept) — no-ops where env() is 0. */
+  .dialog[data-size='form'] .head { padding-top: calc(var(--om-spacing-6) + env(safe-area-inset-top, 0px)); }
+  .dialog[data-size='modal'] .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
+  .dialog[data-size='form'] .foot { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
+  .dialog[data-size='modal'] .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
 }

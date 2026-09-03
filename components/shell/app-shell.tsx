@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { AppRail } from '@/components/shell/app-rail'
-import { MobileTopBar } from '@/components/shell/mobile-nav'
+import { MobileChrome } from '@/components/shell/mobile-nav'
 import { SnackbarProvider } from '@/components/om/snackbar'
 import styles from './app-shell.module.css'
 
@@ -8,7 +8,7 @@ import styles from './app-shell.module.css'
  * Shared frame for every page: canvas, side rail and snackbar host live here so
  * they persist across navigations and stay put while a route's `loading.tsx`
  * ghost is on screen. Each route group's layout renders this once.
- * ≤767 (REG-269) the rail hides and MobileTopBar's bar + drawer take over.
+ * ≤767 (REG-298, mock 1082:23305) the rail hides and MobileChrome's top bar, bottom dock and More drawer take over.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             and the page header that repeat ahead of the content on every route. Off screen until it is focused
             (the .visually-hidden technique from globals.css) and out of flow in both states — nothing is drawn. */}
         <a className={styles.skip} href="#om-main">Skip to content</a>
-        <MobileTopBar />
+        <MobileChrome />
         <div className={styles.main}>
           <AppRail />
           {/* (REG-286) The `main` landmark every route's content lives in — and the skip link's target, hence

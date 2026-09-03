@@ -11,10 +11,11 @@ import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateTimeDot, displayDateWeekday, formatInputDateTime } from '@/lib/format'
-import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, nextStepFor, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
+import { displayDateTimeDot, formatInputDateTime } from '@/lib/format'
+import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
 import type { LeadNotesData } from '@/lib/leads/notes'
 import { filterByQuery } from '@/lib/search'
+import { reminderTaskTitle } from '@/lib/leads/enums'
 import { createNote, deleteNote, setNoteAttachments, updateNote } from '@/app/leads/notes-actions'
 import { createTask } from '@/app/leads/tasks-actions'
 import { NotesList } from './notes-list'
@@ -54,7 +55,7 @@ const same = (a: NoteDraft, b: NoteDraft) => JSON.stringify(fieldsOf(a)) === JSO
 const draftDirty = (d: DraftItem) => d.fileIds.length > 0 || !same(d, emptyDraft(d.kind))
 /** What gets persisted — the exact shape the row reads back after the refresh: the title trimmed (notes-actions `columns`
  *  trims it too, so the stored edit equals the saved row) and the next-step fields only with an outcome that has a next step. */
-const normalise = (d: NoteDraft): NoteDraft => ({ ...fieldsOf(d), title: d.title.trim(), ...(nextStepFor(d.outcome) ? {} : { nextStepWhen: '', nextStepMode: '' }) })
+const normalise = (d: NoteDraft): NoteDraft => ({ ...fieldsOf(d), title: d.title.trim() })   // (REG-319) the schedule pair stays whatever the outcome
 const without = <T,>(set: Set<T>, ids: T[]) => { const s = new Set(set); ids.forEach((id) => s.delete(id)); return s }
 const withId = <T,>(set: Set<T>, id: T) => new Set(set).add(id)
 
@@ -148,14 +149,6 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
      plain text: the secondary line IS the body's first line, so a body hit is what the row summarises. `bodyText`
      strips the rich markup (REG-252) so "div" matches nothing. Rows carry their live fields (an unsaved edit
      included) so the search reads the same words the item shows. No phone column here — notes hold no numbers. */
-  /* (REG-293) The scope pill's totals — every item the list can hold, before the scope and the query, the draft
-     included (it is in the list and never filtered out). The listing's stage counts read the same way. */
-  const kinds = [...notes.map((n) => (edits[n.id] ?? draftFrom(n)).kind), ...(draft ? [draft.kind] : [])]
-  const counts: Record<NoteFilter, number> = {
-    all: kinds.length,
-    note: kinds.filter((k) => k === 'note').length,
-    contact: kinds.filter((k) => k === 'contact').length,
-  }
   const rows = filterNotes(notes, filter).map((n) => ({ note: n, cur: edits[n.id] ?? draftFrom(n) }))
   const matched = filterByQuery(rows, query, ({ note, cur }) => ({
     fields: [listTitle(cur), listSecondary(cur), bodyText(cur.body), displayDateTimeDot(note.createdAt)],
@@ -226,6 +219,13 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
      (leaving the tab flushes exactly what the timer was about to send), and `savingId` cannot stop the second —
      it is state the flush's closure has not seen yet. The ref is read in handlers and effect cleanups only. */
   const inflight = useRef<Set<string>>(new Set())
+  /* (REG-319, mock 781:58313: "If you wish to be reminded, a task will be created.") A contact log saved with a schedule
+     opens Add tasks with the reminder auto-added — the Move stage window's own journey — so the helper's promise holds
+     here too. Cancel there adds nothing; the log is already saved. */
+  const offerReminder = (id: string, d: NoteDraft) => {
+    if (d.kind !== 'contact' || !d.nextStepWhen) return
+    setTasksFor({ id, autoAdded: reminderTaskTitle(d.nextStepWhen, d.nextStepMode), picked: new Set() })
+  }
   const save = async (id: string) => {
     if (inflight.current.has(id)) return
     const cur = currentOf(id); if (!cur) return
@@ -247,7 +247,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
       if (savedDraftId) return
       const fileIds = draft?.fileIds ?? []
       inflight.current.add(id); setSavingId(id)
-      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (done) snackbar({ message: done }) }
+      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (done) snackbar({ message: done }); offerReminder(id, d) }
       catch { fail(`save the ${noun}`) }
       finally { inflight.current.delete(id); setSavingId(null) }
       return
@@ -255,7 +255,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const n = byId.get(id); if (!n) return
     if (same(d, draftFrom(n))) { clearEdit(id); return }   // nothing changed — just leave editing
     inflight.current.add(id); setSavingId(id)
-    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (done) snackbar({ message: done }) }
+    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (done) snackbar({ message: done }); offerReminder(id, d) }
     catch { fail(`save the ${noun}`) }
     finally { inflight.current.delete(id); setSavingId(null) }
   }
@@ -285,11 +285,11 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const at = new Date()   // the clock is read in the handler, never in render
     const next = new Date(at); next.setDate(next.getDate() + AUTO_FILL_DAYS); next.setHours(AUTO_FILL_HOUR, 0, 0, 0)
     change(id, { channel: 'WhatsApp', when: formatInputDateTime(at), outcome: 'Connected', nextStepWhen: formatInputDateTime(next), nextStepMode: 'In person', body: AUTO_FILL_BODY })
-    setTasksFor({ id, autoAdded: `Schedule a meeting with the client for ${displayDateWeekday(next)} at 7PM`, picked: new Set() })
+    setTasksFor({ id, autoAdded: reminderTaskTitle(formatInputDateTime(next), 'In person'), picked: new Set() })   // (REG-319) the same reminder title everywhere
   }
   const addTasks = () => {
     const t = tasksFor; setTasksFor(null); if (!t) return
-    const titles = [t.autoAdded, ...SUGGESTIONS.filter((s) => t.picked.has(s))]
+    const titles = [t.autoAdded, ...SUGGESTIONS.filter((s) => t.picked.has(s))].filter(Boolean)
     void run('add the tasks', async () => { for (const title of titles) await createTask(leadId, title) }, titles.length === 1 ? '1 task added' : `${titles.length} tasks added`)
   }
 
@@ -362,7 +362,6 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
       {/* (REG-293) The tab's own row, as every sibling has: the "All Notes & Logs (n) ▾" scope pill (the kind chips'
           successor) and the search on the left, New ▾ on the right — the lead listing's bar over one list. */}
       <NotesToolbar
-        filter={filter} onFilter={setFilter} counts={counts}
         query={query} onQuery={setQuery}
         /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
         onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
@@ -376,6 +375,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           onClearAll={() => { setQuery(''); setFilter('all') }}
           selectedId={selectedId} onSelect={select}
           onItemMenu={itemMenu}
+          filter={filter} onFilter={setFilter}
         />
       </div>
       <div className={styles.pane}>

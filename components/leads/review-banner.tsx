@@ -19,11 +19,26 @@ export function ReviewBanner({ count, duplicates, onOpen }: { count: number; dup
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  /* (REG-302) The banner owns `--bottom-dock`, the offset every bottom-docked overlay (FAB, snackbar, bulk bars,
+     AI sheet, upload toast) lifts by while it shows. It used to be a constant 56 = the desktop banner's 50 + 6,
+     which put the FAB INTO the banner at mobile, where the title and the duplicates tag wrap onto two lines. The
+     banner's real height, measured and re-measured as it wraps, keeps the 50 → 56 desktop number to the pixel. */
+  const banner = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const el = banner.current
+    if (!el) return
+    const root = document.documentElement.style
+    const write = () => root.setProperty('--bottom-dock', `${Math.round(el.offsetHeight) + 6}px`)
+    write()
+    const ro = new ResizeObserver(write)
+    ro.observe(el)
+    return () => { ro.disconnect(); root.removeProperty('--bottom-dock') }
+  }, [])
   return (
     <>
     {/* Canvas strip under the floating banner — a sibling behind it so the banner's shadow stays visible. */}
     <span className={styles.strip} data-stuck={stuck || undefined} aria-hidden />
-    <motion.button type="button" className={styles.banner} data-stuck={stuck || undefined} variants={snackbarRise} initial="initial" animate="animate" exit="exit"
+    <motion.button ref={banner} type="button" className={styles.banner} data-stuck={stuck || undefined} variants={snackbarRise} initial="initial" animate="animate" exit="exit"
                    onClick={onOpen} aria-label={`Review imported leads (${count})${duplicates > 0 ? `, ${duplicates} duplicate${duplicates === 1 ? '' : 's'}` : ''}`}>
       <span className={styles.lead}>
         <span className={styles.title}>Review imported leads ({count})</span>

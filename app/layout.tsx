@@ -14,7 +14,9 @@ export const metadata: Metadata = {
   title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
 }
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 5 }
+/* (REG-308) viewportFit 'cover' lets the page reach under the notch / home indicator; the mobile chrome pads itself
+   back out with env(safe-area-inset-*) (app/globals.css, components/shell/mobile-nav.module.css). */
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 5, viewportFit: 'cover' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

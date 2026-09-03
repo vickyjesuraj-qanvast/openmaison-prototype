@@ -96,7 +96,7 @@
    screen put Clear All / Apply off-screen). The 160px tab rail stays — it is the mock's navigation — and
    the group side takes the mobile content padding (24 → 16) plus the two rows that were drawn at a fixed
    width: the sort row and the two-up date range, both now full width. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
@@ -110,22 +110,23 @@
   .sortRow { width: 100%; }
   .dateRow { flex-direction: column; }
   .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Four controls in this modal are smaller than a fingertip. Each keeps its drawn size and grows only its
    BOX, so the mock's 64px heading, 44px rows and 32px chips all measure the same:
-   · close — a bare 24px glyph: padding out to 40, the same 8px handed back as margin;
+   · close — a bare 24px glyph: padding out to 44, the same 10px handed back as margin;
    · Choice chips (32 tall) and the footer's 36px DS buttons: a transparent ring, which takes no space;
    · the Sort radios — a DS Radio's own label is only as big as its mark plus its text, so the label is
      stretched over the whole 44px row (the row's padding moves onto the label; nothing shifts).
    The status rows already answer a press anywhere on their 44px box; they only stop clamping their
-   checkbox, which globals grows to 40 on touch. A mouse never sees any of this. */
+   checkbox, which globals grows to 44 on touch. A mouse never sees any of this. */
 @media (hover: none) {
-  .close { padding: var(--om-spacing-2); margin: calc(var(--om-spacing-2) * -1); }
+  .close { padding: 10px; margin: -10px; }
   .chip, .footer button { position: relative; }
-  .chip::after { content: ''; position: absolute; inset: -4px 0; }         /* 32 → 40 tall, same width */
-  .footer button::after { content: ''; position: absolute; inset: -2px; }  /* 36 → 40 */
+  .chip::after { content: ''; position: absolute; inset: -6px 0; }         /* 32 → 44 tall, same width */
+  .footer button::after { content: ''; position: absolute; inset: -4px; }  /* 36 → 44 */
   .sortRow { padding-block: 0; }
   .sortRow label { min-block-size: 44px; inline-size: 100%; }
   .row { height: auto; min-height: 44px; }

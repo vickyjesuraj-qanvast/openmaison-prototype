@@ -56,7 +56,7 @@
 }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   768–1199: the list column narrows to 280 so the pane keeps a usable editor.
+   768–1024: the list column narrows to 280 so the pane keeps a usable editor.
    ≤767: master-detail PUSH — the card is the viewport-tall screen and shows the LIST until an item is
    chosen (data-pane), then the PANE with its back affordance. Both stay mounted; only display swaps. */
 .back { display: none; }
@@ -69,7 +69,7 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
 }
-@media (min-width: 768px) and (max-width: 1199px) {
+@media (min-width: 768px) and (max-width: 1024px) {
   .list { flex: 0 0 280px; width: 280px; }
 }
 @media (max-width: 767px) {

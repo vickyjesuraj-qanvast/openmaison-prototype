@@ -1,6 +1,5 @@
 import type { LeadNote } from '@/lib/db/schema'
 import { MSG } from '@/lib/forms'
-import { NEXT_STEP_BY_OUTCOME } from '@/lib/leads/enums'
 import { formatInputDateTime, parseInputDateTime } from '@/lib/format'
 
 /* Lead Details › Notes (931-44865) — pure model shared by the list, the editors and the actions. */
@@ -36,7 +35,8 @@ export const draftFrom = (n: LeadNote): NoteDraft => ({
   nextStepMode: n.nextStepMode ?? '',
 })
 
-export const nextStepFor = (outcome: string): string | undefined => NEXT_STEP_BY_OUTCOME[outcome]
+/** (REG-319) Every outcome may carry a schedule now — kept for the callers that still ask, always true. */
+export const nextStepFor = (_outcome: string): boolean => true
 
 /** Contact-log rules = the Move stage window's Contacted log (lib/leads/stage-data.ts validateStage), minus the mandatory screenshot. */
 export function validateDraft(d: NoteDraft): Record<string, string> {
@@ -45,10 +45,8 @@ export function validateDraft(d: NoteDraft): Record<string, string> {
   if (!d.channel) e.channel = MSG.choose
   if (!d.when) e.when = MSG.required; else if (!parseInputDateTime(d.when)) e.when = MSG.dateTime
   if (!d.outcome) e.outcome = MSG.required
-  if (nextStepFor(d.outcome)) {
-    if (!d.nextStepWhen) e.nextStepWhen = MSG.required; else if (!parseInputDateTime(d.nextStepWhen)) e.nextStepWhen = MSG.dateTime
-    if (!d.nextStepMode) e.nextStepMode = MSG.required
-  }
+  // (REG-319) The schedule pair is optional for every outcome; a date that IS entered must parse.
+  if (d.nextStepWhen && !parseInputDateTime(d.nextStepWhen)) e.nextStepWhen = MSG.dateTime
   return e
 }
 

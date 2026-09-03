@@ -51,26 +51,33 @@
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3); flex-shrink: 0; position: relative; }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   ≤1199: the chip row gives way (scrolls) before anything clips. ≤767: the header leaves the sticky stack
+   ≤1024: the chip row gives way (scrolls) before anything clips. ≤767: the header leaves the sticky stack
    (only the mobile bar and the tabs dock — the 124px desktop stack is too tall for a 844px viewport),
    goes auto-height, and the chips take their own scrollable line under the title. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 767px) {
-  .header { position: static; height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
-  .header::after { border-radius: 0; }
+  /* (REG-301, bug) `relative`, not `static`: the two absolutely positioned plates below belong to this header. A
+     static header is not their containing block, so they positioned against the page-reveal container and painted
+     the WHOLE detail page blank under the header at ≤767 — every Lead Details tab, since REG-269. Relative keeps
+     them inside the header and still takes it out of the sticky stack, which is all "static" was for. */
+  .header { position: relative; height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
+  /* (REG-298, 1082:23387) The mobile header block lifts on level-1, as the L1 header does. */
+  .header::after { border-radius: 0; box-shadow: var(--om-elevation-level-1); }
   .header::before { top: 0; }
   .chips { flex-basis: 100%; order: 4; justify-content: flex-start; }
   /* The action cluster (stage pill + primary + kebab ≈ 374px) is wider than a 390 screen's content box, and
-     only .header was wrapping — so the kebab clipped. L1's .actions already wraps; L2's now does too. */
-  .actions { flex-wrap: wrap; justify-content: flex-end; }
+     only .header was wrapping — so the kebab clipped. (REG-306) The cluster takes its own full line under the
+     title, left-aligned, and wraps within it, so nothing is cut at 320 either (the responsive audit found the
+     primary sliced at 320 and the kebab at 360). */
+  .actions { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; }
 }
 
 /* Touch ergonomics (REG-273): the back arrow is a 24px glyph and the only way out of a detail screen on a
-   phone. The box becomes 40 with the glyph still centred at 24; the extra is given back as margin so the
+   phone. The box becomes 44 with the glyph still centred at 24; the extra is given back as margin so the
    header row is unchanged. */
 @media (hover: none) {
-  .back { width: 40px; height: 40px; margin: -8px; }
+  .back { width: 44px; height: 44px; margin: -10px; }
 }

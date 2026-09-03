@@ -86,7 +86,7 @@
    Template (600) and Save as Template (400) opened wider than a 390 screen. The modal rule for s / m
    (design-source/context/responsive.md): clamp to the viewport rather than go full-screen — Save is
    height-to-content and the overlay centres both, so a sheet would only stretch it. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
@@ -96,11 +96,11 @@
 }
 
 /* Touch ergonomics (REG-273): the two bare glyphs (the heading's close 24, the banner's dismiss 20) keep
-   their mocked sizes and take a 40 box, each handing back exactly half the difference — the 64 heading and
+   their mocked sizes and take a 44 box, each handing back exactly half the difference — the 64 heading and
    the 58 banner do not move. The template rows are 66 tall and the footer buttons are full DS buttons, both
-   already past 40. */
+   already past 44. */
 @media (max-width: 767px), (hover: none) {
-  .close, .bannerClose { width: 40px; height: 40px; align-items: center; justify-content: center; }
-  .close { margin: -8px; }
-  .bannerClose { margin: -10px; }
+  .close, .bannerClose { width: 44px; height: 44px; align-items: center; justify-content: center; }
+  .close { margin: -10px; }
+  .bannerClose { margin: -12px; }
 }

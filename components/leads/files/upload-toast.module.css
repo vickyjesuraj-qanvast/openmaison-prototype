@@ -46,8 +46,13 @@
    (components/om/snackbar.module.css): 360 fixed at right 24 left 6px of a 390 screen. It keeps its
    place in the bottom band — the dock offset above the FAB and `--bottom-dock` are unchanged. */
 @media (max-width: 767px) {
-  .toast { left: var(--om-spacing-4); right: var(--om-spacing-4); width: auto; }
-  /* Touch ergonomics (REG-273): the head's collapse and dismiss marks keep their 24px glyphs inside 40px
+  /* (REG-298) 16 above the FAB, which itself sits 16 above the dock. */
+  .toast { left: var(--om-spacing-4); right: var(--om-spacing-4); width: auto; bottom: calc(var(--app-mobile-dock-height) + 16px + 48px + var(--om-spacing-4) + var(--bottom-dock, 0px)); }
+}
+
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  /* Touch ergonomics (REG-273): the head's collapse and dismiss marks keep their 24px glyphs inside 44px
      boxes; the extra is handed back as margin so the 56px head, its 16px gaps and the title all hold. */
-  .toastBtn { width: 40px; height: 40px; align-items: center; justify-content: center; margin: -8px; }
+  .toastBtn { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
 }

@@ -41,10 +41,11 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Both writing surfaces are bare — no box is drawn, so the only thing to tap is the text itself: the title
-   line is 28 tall and an empty body is one 24px line. The boxes grow to the 40px target; the 20/Bold title
+   line is 28 tall and an empty body is one 24px line. The boxes grow to the 44px target; the 20/Bold title
    and the 16/Regular body keep their sizes, and the column's own 24px rhythm is unchanged. A read-only body
-   (a contact log before Edit) has no placeholder and is not a target, so it keeps the mock's height. */
-@media (max-width: 767px) {
-  .title { min-height: 40px; }
-  .rich[data-placeholder] { min-height: 40px; }
+   (a contact log before Edit) has no placeholder and is not a target, so it keeps the mock's height.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .title { min-height: 44px; }
+  .rich[data-placeholder] { min-height: 44px; }
 }

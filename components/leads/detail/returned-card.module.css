@@ -52,20 +52,23 @@
    only when it would be crushed, which is the tablet card. The row height becomes a floor so a wrapped value or
    a second chip row grows it instead of being cut, and the chips wrap among themselves. Single-line values keep
    their ENDING ellipsis and their `title` — mock parity, and the whole text is on the row's tooltip. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .row { flex-wrap: wrap; height: auto; min-height: 36px; }
   .val { flex: 1 1 150px; }
   .chips { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
 }
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
-   "View Details ›" is the card's only control and sits on a 20px footer line — the footer becomes 40 and the
+   "View Details ›" is the card's only control and sits on a 20px footer line — the footer becomes 44 and the
    link stretches into it, so the target clears the floor without the label or the chevron changing size.
    The value cells carry their full text in a `title` attribute behind an ENDING ellipsis; a native title is
    a hover tooltip, so on touch the cut-off half of "Homeowner did not shortlist ID to pro…" was unreachable.
    At mobile the value wraps instead — the whole reason is on the card, which is the second channel. */
 @media (max-width: 767px) {
-  .footer { height: 40px; }
-  .view { align-self: stretch; }
   .name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+}
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .footer { height: 44px; }
+  .view { align-self: stretch; }
 }

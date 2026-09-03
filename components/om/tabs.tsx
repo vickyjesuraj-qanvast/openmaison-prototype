@@ -37,10 +37,10 @@ export function Tabs({
 
   const hasActive = items.some((t) => t.href === activeHref)
 
-  /* When the row scrolls (≤1199, REG-269) the active tab centres itself — otherwise a tab past the fold is
+  /* When the row scrolls (≤1024, REG-269) the active tab centres itself — otherwise a tab past the fold is
      selected invisibly. The row's OWN scrollLeft is set directly: `scrollIntoView` also scrolls ancestors,
      and on this sticky row that displaced the whole tab strip by its dock offset at desktop. No-op where the
-     row does not overflow, so ≥1200 never moves. */
+     row does not overflow, so ≥1025 never moves. */
   const listRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const list = listRef.current

@@ -44,13 +44,14 @@
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The head's close is a bare 24px glyph. At ≤767 it takes a 40px box and hands the extra back as margin, so
+   The head's close is a bare 24px glyph. At ≤767 it takes a 44px box and hands the extra back as margin, so
    the heading keeps the mock's 16px inset and the title stays put. The member rows are already 64px tall
-   (40px avatar + 12px padding) and their checkbox gets its touch box centrally (app/globals.css). */
-@media (max-width: 767px) {
+   (40px avatar + 12px padding) and their checkbox gets its touch box centrally (app/globals.css).
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same box. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -8px;   /* 40 − 16 = the 24px glyph box the heading laid out */
+    margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
   }
 }

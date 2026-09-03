@@ -40,3 +40,8 @@
   transition: background-color var(--motion-hover), color var(--motion-hover);
 }
 .reset:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+
+/* (REG-298) ≤767 the sheet keeps its 12px seat above the FAB, which now floats 16 above the bottom dock (FAB right 16 there). */
+@media (max-width: 767px) {
+  .sheet { right: 16px; bottom: calc(var(--app-mobile-dock-height) + 16px + 48px + 12px + var(--bottom-dock, 0px)); }
+}

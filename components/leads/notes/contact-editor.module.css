@@ -17,6 +17,9 @@
 /* Next step 654×92, V g24: "Next step: …" 14/Semi Bold (= move-stage `.sectionLabel`) + the field pair. */
 .nextStep { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
 .sectionLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+/* (REG-319) Heading + helper, V g4 — the Move stage window's own (fields.module.css). */
+.sectionHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 100%; }
+.sectionHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* View rows (931:45383): H g24 → labels column 104 (V g16, 14/Regular secondary) · values column fills (V g16, 14/Regular ink); rows 20 tall. */
 .rows { display: flex; gap: var(--om-spacing-6); width: 100%; }

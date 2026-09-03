@@ -74,7 +74,7 @@
 .tableInner[data-min='1410'] { min-width: 1410px; }
 .tableInner[data-min='1316'] { min-width: 1316px; }
 
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   /* The real tables KEEP every column and scroll sideways inside their own box below the desktop width
      (table.module.css .scroller · imports.module.css .card · qanvast-leads.module.css .card), so the bones
      scroll too: squashing them to the viewport would cross-fade into a table twice as wide. */
@@ -91,7 +91,7 @@
     border-right: var(--om-border-1) solid var(--om-color-surface-variant);
   }
   .nameCol.pinCol { justify-content: center; }   /* the column-direction cell re-centres its bones once stretched */
-  /* om Tabs at ≤1199 (om/tabs.module.css): tighter rhythm, scrollbar hidden, the cut-off tab is the affordance. */
+  /* om Tabs at ≤1024 (om/tabs.module.css): tighter rhythm, scrollbar hidden, the cut-off tab is the affordance. */
   .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   /* Settings: the section rail narrows to 200 (settings.module.css .nav) and the panel loses its cap. */
@@ -106,17 +106,13 @@
   /* L1 header wraps — title row, then actions (page-header.module.css ≤767: p12/16, row-gap 8). */
   .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
   .headerActions { flex-wrap: wrap; }
-  /* Toolbars wrap, and the right cluster takes a full-width row of its own — both real ones do
-     (toolbar.module.css ≤767 .bar / .right · imports.module.css ≤767 .toolbar / .toolRight). Where the search
-     lands then differs by page, so the two ghosts carry different search bones:
-       · listing — the search has a whole row to itself (.search { flex-basis: 100% }), so chip / search /
-         filters = 3 × 36 + 2 × 12 = the 132 the row-count math in skeleton.tsx assumes;
-       · imports — the search fills the rest of its row beside the filter (.toolRight label { flex: 1 }), so
-         the section title and that one row = 20 + 12 + 36.
-     flex-basis is what beats the bone's inline width inside a flex row. */
+  /* Toolbars wrap, and the right cluster takes a full-width row of its own — the real ones do (toolbar.module.css
+     ≤767 .bar / .right · imports.module.css ≤767 .toolbar / .toolRight). The imports search fills the rest of its
+     row beside the filter (.toolRight label { flex: 1 }), so the section title and that one row = 20 + 12 + 36;
+     flex-basis is what beats the bone's inline width inside a flex row. The listing's own desktop toolbar is hidden
+     here (REG-309, below): the cards ghost draws the mock's pill + filter glyph in its place. */
   .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .toolbarRight { flex: 1 1 100%; }
-  .searchBone { flex: 1 1 100%; }
   .searchGrow { flex: 1 1 auto; min-width: 0; }
   /* Settings stacks and the 240 rail becomes the nav's own chip row — same grey track, 4px inset, 44px pills
      scrolled sideways with the scrollbar hidden (settings.module.css ≤767 .content / .nav / .tab). */
@@ -129,4 +125,35 @@
   .settingsNav::-webkit-scrollbar { display: none; }
   .settingsNavItem { flex: 0 0 auto; height: 44px; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); }
   .settingsCard { padding: var(--om-spacing-4); }
+}
+
+/* ── The listing's mobile cards (REG-309: 1082:23305 → "Card / Desktop / Leads" 1082:25585, lead-cards.module.css) ──
+   `loading.tsx` is server-rendered and cannot know the width, so LeadsSkeleton ships BOTH layouts and this stylesheet
+   picks: `.notMobile` blocks are the table ghost (untouched ≥768), `.mobileOnly` blocks are the cards. Doubled classes
+   so module order can never decide it (the REG-269 lesson). */
+.mobileOnly.mobileOnly { display: none; }
+.cards { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.card {
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-2);
+  box-shadow: var(--om-elevation-level-1);
+  padding: var(--om-spacing-4);
+  display: flex; flex-direction: column; gap: var(--om-spacing-3);
+}
+/* The rows hold the real rows' heights so the card is the real 199: head = heading/h4's 24 line, info = body/m's 20,
+   the task box 38, the rule 1, foot = the 36 stage button. */
+.cardHead, .cardInfo, .cardFoot { display: flex; align-items: center; }
+.cardHead { justify-content: space-between; height: 24px; }
+.cardInfo { height: 20px; }
+.cardFoot { justify-content: space-between; }
+.cardMembers { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
+
+@media (max-width: 767px) {
+  .notMobile.notMobile { display: none; }
+  .mobileOnly.mobileOnly { display: flex; }
+  /* Cards sit on the surface/bg canvas and the white sheet is the header's plate only (leads.module.css ≤767
+     .body[data-view='cards'] · page-header.module.css ≤767 ::after). The plate is positioned so its level-1 lift
+     paints over the canvas, as the real sticky header's does — no z-index, which would lift it above the sheet's sweep. */
+  .headerPlate { position: relative; background: var(--om-color-surface-default); min-height: 0; }
+  .cardsCanvas { background: var(--om-color-surface-bg); }
 }

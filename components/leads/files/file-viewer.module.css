@@ -149,14 +149,14 @@
 .mobileItem { display: none; }
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
-   Tablet (768–1199): the letterbox padding gives way first — 100/120 becomes 24/40 (24 beside an open
+   Tablet (768–1024): the letterbox padding gives way first — 100/120 becomes 24/40 (24 beside an open
    panel) with the zoom bar's band (22 + 50 + 8 = 80) still kept clear of the image as p100 keeps it at
    desktop — and the panel narrows to 320 but stays docked, so a 692px column keeps 372 of canvas.
    Mobile (≤767): the sheet runs edge-to-edge under the 56px app bar, the canvas takes the whole screen
    and the panels become full-screen overlays above it (their own 64px head and close button unchanged);
-   the zoom bar compacts to 40px targets; Download folds into the mock's own kebab menu so the 56px
+   the zoom bar compacts to 44px targets; Download folds into the mock's own kebab menu so the 56px
    header row still holds the file name. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .canvas { padding: var(--om-spacing-6) var(--om-spacing-10) var(--om-spacing-20); }
   .canvas[data-panel] { padding: var(--om-spacing-6) var(--om-spacing-6) var(--om-spacing-20); }
   .panel { width: 320px; }
@@ -174,29 +174,38 @@
   .actionDownload { display: none; }
   .mobileItem { display: contents; }                           /* the wrapper vanishes; its DropdownItem is a menu row */
   /* The stage is the viewport under the app bar and this header — no shell gutters at mobile. */
-  .stage { height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 56px); }
-  /* Content padding 24 → 16, with the compact zoom bar's band (22 + 56 + 8) kept clear of the image. */
-  .canvas, .canvas[data-panel] { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 56px + var(--om-spacing-2)); }
+  .stage { height: calc(100dvh - var(--app-mobile-bar-height) - 56px); }
+  /* Content padding 24 → 16, with the compact zoom bar's band (22 + 60 + 8) kept clear of the image. */
+  .canvas, .canvas[data-panel] { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 60px + var(--om-spacing-2)); }
   /* Full-screen overlay over the canvas: above the FAB (90) and the app bar (80), below every modal (100). */
   .panel { position: fixed; inset: 0; z-index: 95; width: auto; box-shadow: none; }
-  /* Same bar (r8, level-3, surface-variant stroke), 40px targets: 8 + 3 × 40 + 8 + the 1px sides = 138 × 56. */
-  .zoomBar { width: auto; height: 56px; gap: 0; padding: var(--om-spacing-2); }
-  .zoomBtn { width: 40px; height: 40px; }
+}
+
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  /* Same bar (r8, level-3, surface-variant stroke), 44px targets: 8 + 3 × 44 + 8 + the 1px sides = 150 × 60. */
+  .zoomBar { width: auto; height: 60px; gap: 0; padding: var(--om-spacing-2); }
+  .zoomBtn { width: 44px; height: 44px; }
+  /* (REG-307) The room under the image for the grown bar's band (22 + 60 + 8) travels with it: the ≤1024 block
+     leaves 80 (the 50px bar's band), and ≤767 this repeats the bottom value the layout block sets above. */
+  .canvas, .canvas[data-panel] { padding-bottom: calc(22px + 60px + var(--om-spacing-2)); }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The header's bare 24px marks (arrow_back and the comment / info / more_vert actions) are the smallest
-   controls on this page. ≤767 each keeps its 24px glyph and grows a 40px box around it, the extra handed
+   controls on this page. ≤767 each keeps its 24px glyph and grows a 44px box around it, the extra handed
    back as margin so the 56px row, its 16px gaps and the file name all stay exactly where the layout pass
-   left them: three 40px boxes end up edge to edge with no visual change at all.
-   The zoom bar (40px targets, above) and prev / next (48×48, mocked) already clear 40. */
-@media (max-width: 767px) {
-  .back, .iconBtn { width: 40px; height: 40px; margin: -8px; }
+   left them: three 44px boxes overlap by 4px at the 16 gap (the later button wins that strip; each keeps
+   40 of its own) with no visual change at all.
+   The zoom bar (44px targets, above) and prev / next (48×48, mocked) already clear 44.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .back, .iconBtn { width: 44px; height: 44px; margin: -10px; }
 
   /* Second channel for a tooltip (REG-273): remove / add read as zoom on sight, but arrows_output does not —
      and the DS Tooltip suppresses touch pointers, so its label was unreachable. The button carries the
      tooltip's own words (no new copy) as a 12/Medium caption; it widens, the bar re-centres itself, and the
-     other two keep their 40px squares. */
+     other two keep their 44px squares. */
   .zoomFit { width: auto; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-3); }
   .zoomLabel { display: inline; font: var(--om-type-caption-s); white-space: nowrap; }
 }

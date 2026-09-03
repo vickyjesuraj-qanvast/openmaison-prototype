@@ -9,16 +9,42 @@
 @import '@openmaison/tokens/css/theme-dark.css';
 
 :root {
-  /* Responsive system (REG-269, design-source/context/responsive.md): mobile ≤767 · tablet 768–1199 ·
-     desktop ≥1200 (the mocked design, unchanged). Media queries cannot read custom properties, so every
-     stylesheet writes the literals `(max-width: 767px)` and `(max-width: 1199px)`. The stale --app-*
+  /* Responsive system (REG-269, design-source/context/responsive.md): mobile ≤767 · tablet 768–1024 ·
+     desktop ≥1025 (the mocked design, unchanged). Media queries cannot read custom properties, so every
+     stylesheet writes the literals `(max-width: 767px)` and `(max-width: 1024px)`. The stale --app-*
      constants that disagreed with the real shell (rail 52/216) were removed with them. */
-  --app-mobile-bar-height: 56px;   /* mobile-nav.module.css .bar — sticky offsets below it derive from this */
+  /* (REG-308) Both chrome heights carry the iOS safe-area inset (viewport-fit=cover, app/layout.tsx): the drawn bar stays 60
+     and the dock 70; the status-bar / home-indicator band is added on top, and everything that derives from the tokens
+     (sticky offsets, the FAB, the snackbar, page clearance) moves with it. env() resolves to 0px everywhere else. */
+  --app-mobile-bar-height: calc(60px + env(safe-area-inset-top, 0px));      /* mobile-nav.module.css .bar (1082:23389, REG-298) — sticky offsets below it derive from this */
+  --app-mobile-dock-height: calc(70px + env(safe-area-inset-bottom, 0px));  /* mobile-nav.module.css .dock (1082:24937) — the FAB, the snackbar and page clearance sit above it */
   /* Space every page keeps below its last content so the Maison AI FAB (48px, 24px inset) never overlaps it: 24 + 48 + 16. */
   --fab-clearance: 88px;
   /* Modal widths (designer rule, 2026-08-29): s 400 · m 600 · l 800 · xl 1200; height follows content (capped to the viewport).
      xxl is fluid: no set width, a 48px margin on every side (viewport − 96 both ways), centred. */
   --om-modal-s: 400px; --om-modal-m: 600px; --om-modal-l: 800px; --om-modal-xl: 1200px; --om-modal-xxl-margin: 48px;
+}
+/* (REG-298) ≤767 the dock takes the bottom 70px: the FAB floats 16 above it (mock: 86 from the edge) and a page's last
+   content clears dock + gap + FAB + gap = 70 + 16 + 48 + 16 — plus the home-indicator inset the dock grew by (REG-308). */
+@media (max-width: 767px) {
+  :root { --fab-clearance: calc(150px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* (REG-314, owner 2026-09-02 — the responsive brief's "minimum readable body text of 16px on mobile", chosen over the
+   mobile mock's 14) ≤767 the DS body/m token reads at font-size l (16) on a 24 line; every value, paragraph, input
+   and list line that composes body/m follows. body/s, captions, labels and headings keep their sizes. */
+@media (max-width: 767px) {
+  :root { --om-type-body-m: var(--om-font-weight-regular) var(--om-font-size-l)/24px var(--om-font-family-inter); }
+}
+
+/* (REG-306) iOS Safari zooms the page when a focused field's text is under 16px, and the DS fields set 14. On iOS only
+   (`-webkit-touch-callout` exists in no other engine), at mobile widths, form controls type at 16px — the box, the label
+   and every layout token stay as drawn; only the typed text steps up, so a tap into Search never zooms the demo. Pinch
+   zoom is untouched (no `maximum-scale` clamp). Playwright cannot exercise this; verify on a device. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px; }
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -172,13 +198,13 @@ svg {
 label:has(input[type='checkbox']) svg { inline-size: 18px; block-size: 18px; margin: 3px; }
 
 /* Touch ergonomics (REG-273): the checkbox's own label is a 24px box — half a fingertip. On a touch pointer
-   the label becomes a 40px target with the glyph still centred at its mocked 18px, and the extra is given
+   the label becomes a 44px target with the glyph still centred at its mocked 18px, and the extra is given
    back as margin so no row shifts. A mouse (hover: hover) never sees this rule. */
 @media (hover: none) {
   label:has(input[type='checkbox']) {
-    min-inline-size: 40px; min-block-size: 40px;
+    min-inline-size: 44px; min-block-size: 44px;
     display: inline-flex; align-items: center; justify-content: center;
-    margin: -8px;
+    margin: -10px;
   }
 }
 
@@ -203,40 +229,40 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
    touch pointer: a DS Link is text-height (~20px) and a `sm` Button is 24px. The type and the drawn button
    keep their sizes; the box grows around them and the extra is given back as margin, so no row reflows. */
 @media (hover: none) {
-  [class*='_link_'] { min-block-size: 40px; }
-  /* The DS SearchBar's shell is 36-40px but its <input> is only ~22px tall, so the bands above and below the
+  [class*='_link_'] { min-block-size: 44px; }
+  /* The DS SearchBar's shell is 36-44px but its <input> is only ~22px tall, so the bands above and below the
      text did not focus it. The input fills its shell on touch; the bar's drawn geometry is unchanged. */
   [class*='_searchBar_'] input { block-size: 100%; }
   /* The DS's `md` control height is 36 — comfortable with a mouse, under both Apple's 44pt and Android's
-     48dp with a finger. On a touch pointer every md control stands up to 40: the type, padding rhythm and
-     radius are untouched, so the design language is the desktop's, four pixels taller. Covers DS Buttons and
+     48dp with a finger. On a touch pointer every md control stands up to 44: the type, padding rhythm and
+     radius are untouched, so the design language is the desktop's, eight pixels taller. Covers DS Buttons and
      SearchBars, the om 36px IconButton and the segmented control. */
   [class*='_button_'][data-size='md'],
   [class*='_searchBar_'],
   [class*='icon-button'][data-size='36'],
-  [class*='segmented'] button { min-block-size: 40px; min-inline-size: 44px; }
-  /* A touch TABLET (768–1199) is still a finger. Several surfaces grew their controls under
+  [class*='segmented'] button { min-block-size: 44px; min-inline-size: 44px; }
+  /* A touch TABLET (768–1024) is still a finger. Several surfaces grew their controls under
      `max-width: 767px`, which a 10" tablet never matches — so the same small-control families are lifted here
      by pointer capability instead of width. CSS-module class names keep their authored suffix
      (`…-module__HASH__hSort`), which is what these substring selectors match. Height only, so no row reflows;
      the drawn control and its type are untouched. */
   [class*='hSort'], [class*='statusBtn'], [class*='dueBtn'], [class*='tagsBtn'],
-  [class*='assignLink'], [class*='addLink'], [class*='searchInput'] { min-block-size: 40px; }
+  [class*='assignLink'], [class*='addLink'], [class*='searchInput'] { min-block-size: 44px; }
   /* The Tasks row's status circle — the most-tapped control on that tab — draws at 24. */
-  [class*='tasks-table-module'][class*='glyph'] { min-inline-size: 40px; min-block-size: 40px; }
+  [class*='tasks-table-module'][class*='glyph'] { min-inline-size: 44px; min-block-size: 44px; }
   /* The rest of the small-control families, always scoped to BUTTONS so label chips (DS Tag, meta chip) are
      never inflated: the quick-links strip's glyph tiles, the comment-count chips that open a panel, the
      column-tune and bare icon buttons, and the review banner's open affordance. */
   button[class*='quick-links-module'][class*='glyph'],
   button[class*='chip'], button[class*='iconBtn'], button[class*='hTune'],
-  button[class*='review-banner-module'][class*='open'] { min-inline-size: 40px; min-block-size: 40px; }
+  button[class*='review-banner-module'][class*='open'] { min-inline-size: 44px; min-block-size: 44px; }
   /* Back arrows, chevrons, open affordances and button-shaped links, wherever a module named them. */
   button[class*='back'], button[class*='chev'], button[class*='open'], button[class*='link']
-    { min-inline-size: 40px; min-block-size: 40px; }
+    { min-inline-size: 44px; min-block-size: 44px; }
   /* NOT lifted, deliberately: an inline link inside a sentence (the Activity timeline's whole row text, a
      brief's inline action). Growing those would break the prose line rhythm, and WCAG 2.2's target-size rule
      exempts links in a block of text for exactly that reason. */
-  [class*='_button_'][data-size='sm'] { min-block-size: 40px; margin-block: -8px; }
+  [class*='_button_'][data-size='sm'] { min-block-size: 44px; margin-block: -10px; }
 }
 
 /* Micro-motion (Figma: 50ms ease-out) applied by primitives via this token. */

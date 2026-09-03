@@ -1,7 +1,8 @@
 'use client'
 
-import { useId, type ReactNode } from 'react'
-import { useFlagPref } from '@/lib/prefs'
+import { useId, useSyncExternalStore, type ReactNode } from 'react'
+import { setFlagPref, useFlagPref } from '@/lib/prefs'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import { displayDate, groupDigits, money } from '@/lib/format'
@@ -16,7 +17,53 @@ import styles from './info-column.module.css'
  *
  * 360 wide, 24 padding, 1px surface-variant right rule. Flow (gap 24): identity block · rule · Collaborators ·
  * rule · Lead info · rule · Property info · rule · Other info. Every section is collapsible to its 20px head row.
+ *
+ * (REG-304, user 2026-09-02) The WHOLE column collapses too — the Create strip's twin (quick-links.tsx), on the left:
+ *   ≥768 collapsed = a 72px strip: the toggle, a 24×1 rule, one 24px glyph per block (contact · Collaborators ·
+ *        Lead info · Property info · Other info); a glyph expands the column, opens that section and scrolls to it.
+ *   ≤767 collapsed = the identity block alone, the sections folded under it (the column stacks there, so the fold is
+ *        vertical and the toggle wears the sections' own up/down chevron instead of the panel glyph).
+ * Remembered per browser (`om.detail.infoColumn`) through the quick-links store pattern; the default is the mock's
+ * expanded column on desktop and tablet, collapsed on a phone (the column sits above the content there). The width
+ * animates on the rail's timing only after a toggle — never on load.
  */
+type ColumnState = 'expanded' | 'collapsed'
+const KEY = 'om.detail.infoColumn'
+let cached: ColumnState | null = null
+const listeners = new Set<() => void>()
+const subscribe = (cb: () => void) => {
+  listeners.add(cb)
+  window.addEventListener('storage', cb)
+  const mq = window.matchMedia(MOBILE)   // the default flips with the breakpoint, so a resize re-reads it
+  mq.addEventListener('change', cb)
+  return () => { listeners.delete(cb); window.removeEventListener('storage', cb); mq.removeEventListener('change', cb) }
+}
+const read = (): ColumnState => {
+  if (cached) return cached
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw === 'expanded' || raw === 'collapsed') return raw
+  } catch {}
+  return window.matchMedia(MOBILE).matches ? 'collapsed' : 'expanded'
+}
+const write = (s: ColumnState) => {
+  cached = s
+  try { localStorage.setItem(KEY, s) } catch {}
+  listeners.forEach((l) => l())
+}
+const serverSnapshot = (): ColumnState => 'expanded'
+
+/** The strip's glyphs, one per block, in the column's own order. `section` names the remembered flag + scroll target. */
+const BLOCKS: { icon: string; label: string; section: string | null }[] = [
+  { icon: 'person', label: 'Contact', section: null },
+  { icon: 'people_alt', label: 'Collaborators', section: 'Collaborators' },
+  { icon: 'info', label: 'Lead info', section: 'Lead info' },
+  { icon: 'home', label: 'Property info', section: 'Property info' },
+  { icon: 'sticky_note_2', label: 'Other info', section: 'Other info' },
+]
+const slug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
+const sectionId = (title: string) => `info-section-${slug(title)}`
+
 export type InfoColumnProps = {
   lead: LeadRow
   /** The studio's members — resolves the Owner row ("You" = the member with `isYou`). Falls back to `lead.assignees`. */
@@ -39,17 +86,64 @@ export function InfoColumn({
   const youKnown = (team ?? []).some((m) => m.isYou) || assignees.some((m) => m.isYou)
   const owner = youKnown ? 'You' : assignees[0]?.name ?? DASH
 
+  /* (REG-304) Whole-column state — see the file comment. */
+  const mobile = useMediaQuery(MOBILE)
+  const state = useSyncExternalStore(subscribe, read, serverSnapshot)
+  const animate = useSyncExternalStore(subscribe, () => cached !== null, () => false)
+  const expanded = state === 'expanded'
+  const toggle = () => write(expanded ? 'collapsed' : 'expanded')
+  /** A strip glyph: expand, open that section, and land on it (the checklist's "opens ON that row"). */
+  const reveal = (section: string | null) => {
+    if (section) setFlagPref(`om.detail.section.${slug(section)}`, true)
+    write('expanded')
+    requestAnimationFrame(() => {
+      const el = section ? document.getElementById(sectionId(section)) : null
+      el?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    })
+  }
+
+  if (!expanded && !mobile) {
+    return (
+      <aside className={styles.column} aria-label="Lead info" data-state="collapsed" data-animate={animate || undefined}>
+        <Tooltip label="Expand lead details" side="right">
+          <button type="button" className={styles.stripToggle} aria-label="Expand lead details" aria-expanded={false} onClick={toggle}>
+            <Icon name="left_panel_open" size={20} weight={300} />
+          </button>
+        </Tooltip>
+        <div className={styles.divider} />
+        <div className={styles.glyphs}>
+          {BLOCKS.map((b) => (
+            <Tooltip key={b.label} label={b.label} side="right">
+              <button type="button" className={styles.glyph} aria-label={b.label} onClick={() => reveal(b.section)}>
+                <Icon name={b.icon} size={24} weight={300} />
+              </button>
+            </Tooltip>
+          ))}
+        </div>
+      </aside>
+    )
+  }
+
+  const toggleLabel = expanded ? 'Collapse lead details' : 'Expand lead details'
   return (
-    <aside className={styles.column} aria-label="Lead info">
+    <aside className={styles.column} aria-label="Lead info" data-state={expanded ? 'expanded' : 'collapsed'} data-animate={animate || undefined}>
       {/* Identity block (858:24788): name row · phone · email · address, 4 apart */}
       <div className={styles.identity}>
         <div className={styles.nameRow}>
           <p className={styles.name}>{lead.name}</p>
-          <Tooltip label="Edit lead">
-            <button type="button" className={styles.iconBtn} aria-label="Edit lead" onClick={onEdit}>
-              <Icon name="edit" size={20} weight={300} />
-            </button>
-          </Tooltip>
+          <span className={styles.nameActions}>
+            <Tooltip label="Edit lead">
+              <button type="button" className={styles.iconBtn} aria-label="Edit lead" onClick={onEdit}>
+                <Icon name="edit" size={20} weight={300} />
+              </button>
+            </Tooltip>
+            {/* (REG-304) The column's own toggle beside the pencil: the panel glyph ≥768 (the rail's), the chevron ≤767. */}
+            <Tooltip label={toggleLabel}>
+              <button type="button" className={styles.iconBtn} aria-label={toggleLabel} aria-expanded={expanded} onClick={toggle}>
+                <Icon name={mobile ? (expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down') : 'left_panel_close'} size={20} weight={300} />
+              </button>
+            </Tooltip>
+          </span>
         </div>
         <div className={styles.contact}>
           <div className={styles.contactRow}>
@@ -93,6 +187,7 @@ export function InfoColumn({
         </div>
       </div>
 
+      {expanded ? (<>
       <div className={styles.rule} />
 
       <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
@@ -157,6 +252,7 @@ export function InfoColumn({
           <Row k="Remarks" text={lead.notes ?? DASH} />
         </KVList>
       </Section>
+      </>) : null}
     </aside>
   )
 }
@@ -168,10 +264,10 @@ function Section({ title, link, children }: {
   children: ReactNode
 }) {
   // Collapsed sections are remembered per browser, like the listing's table/kanban choice (lib/prefs.ts).
-  const [open, setOpen] = useFlagPref(`om.detail.section.${title.toLowerCase().replace(/\s+/g, '-')}`, true)
+  const [open, setOpen] = useFlagPref(`om.detail.section.${slug(title)}`, true)
   const bodyId = useId()
   return (
-    <section className={styles.section} aria-label={title}>
+    <section id={sectionId(title)} className={styles.section} aria-label={title}>
       <div className={styles.sectionHead}>
         <h2 className={styles.sectionTitle}>{title}</h2>
         {link ? (

@@ -25,9 +25,9 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The two CTAs are DS buttons at the mock's 36. On a touch pointer each keeps its drawn size and gains a
-   transparent 2px ring, so the target is 40px, the pair stays centred on the mock's 12px gap (8px clear
+   transparent 4px ring, so the target is 44px, the pair stays centred on the mock's 12px gap (4px clear
    between targets) and the card is unchanged. A mouse never sees this rule. */
 @media (hover: none) {
   .buttons button { position: relative; }
-  .buttons button::after { content: ''; position: absolute; inset: -2px; }
+  .buttons button::after { content: ''; position: absolute; inset: -4px; }
 }

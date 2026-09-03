@@ -265,7 +265,8 @@ export function LeadFormModal({
         <motion.div
           className={styles.overlay}
           variants={overlayFade} initial="initial" animate="animate" exit="exit"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+          /* (REG-321, user 2026-09-02) No scrim dismiss here: the lead form holds the lead's own details, so only the X, Cancel
+             or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
           <motion.div ref={panel} className={styles.panel} variants={modalPanel} role="dialog" aria-modal tabIndex={-1}
                       /* focus lands on the panel on open; the ring belongs to its controls (om/dialog.module.css) */

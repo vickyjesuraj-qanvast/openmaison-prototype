@@ -68,7 +68,7 @@
    row is the shared menu's 36 and Cancel / Save are the mock's 36. On a touch pointer each keeps its
    drawn size (the mark, the type and the mock's 52 head / 68 answer block are all unchanged) and grows
    only its target:
-   · Answer — globals already gives every DS Link a 40px box on touch; the head keeps its mocked 52 by
+   · Answer — globals already gives every DS Link a 44px box on touch; the head keeps its mocked 52 by
      handing the extra back as margin, and the link gets 8px of side padding back the same way;
    · edit (20) and Cancel / Save (36) — a transparent ring, which takes no space at all;
    · option rows — 44 tall, per the brief's floor for a list of choices; the 20px glyph and the label do
@@ -76,18 +76,18 @@
    A mouse always reports `hover: hover`, so desktop never sees any of it. */
 @media (hover: none) {
   .head [class*='_link_'] {
-    margin-block: -10px;                                     /* 20 → 40 box, head stays 52 */
+    margin-block: -12px;                                     /* 20 → 44 box, head stays 52 */
     padding-inline: var(--om-spacing-2);
     margin-inline: calc(var(--om-spacing-2) * -1);           /* wider target, the word does not move */
   }
   .iconBtn { position: relative; }
-  .iconBtn::after { content: ''; position: absolute; inset: -10px; }   /* 20 → 40 */
+  .iconBtn::after { content: ''; position: absolute; inset: -12px; }   /* 20 → 44 */
   .actions button { position: relative; }
-  .actions button::after { content: ''; position: absolute; inset: -2px; }   /* 36 → 40 */
+  .actions button::after { content: ''; position: absolute; inset: -4px; }   /* 36 → 44 */
   .option { min-height: 44px; }
 }
 
-/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the question card's inline glyphs draws at 20px. */
+/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the question card's inline glyphs draws at 20px. */
 @media (hover: none) {
-  .iconBtn { width: 40px; height: 40px; margin: -10px; display: inline-flex; align-items: center; justify-content: center; }
+  .iconBtn { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
 }

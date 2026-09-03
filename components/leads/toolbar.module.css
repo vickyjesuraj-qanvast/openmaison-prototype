@@ -39,31 +39,32 @@
   box-sizing: content-box;
 }
 
-/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
-   is clipped (the audit measured the row ~85px wider than a 390 screen). */
+.viewWrap { display: inline-flex; }
+
+/* ── Mobile (1082:25269, REG-298/299) ─────────────────────────────────────────────────────────────────
+   The mocked row is the pill on the left and the filter glyph on the right, both 36 — search moved to the top
+   bar and the view toggle is gone (one view: cards). `.right` dissolves into the bar so the filter can sit at
+   the far edge with the pill's box taking the rest; the search box, when the bar's glyph reveals it, wraps
+   onto its own full-width line beneath. The pill keeps the mock's 36 and gets a 44px touch box (REG-273). */
 @media (max-width: 767px) {
-  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
-  .search, .searchWrap { width: 100%; flex-basis: 100%; }
-  .right, .actions { flex-wrap: wrap; }
+  .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .right { display: contents; }
+  .searchWrap { display: none; order: 3; }
+  .searchWrap[data-open] { display: inline-flex; flex-basis: 100%; }
+  .search { width: 100%; }
+  .viewWrap { display: none; }
+}
+/* (REG-307) Touch ergonomics (REG-273) — the pill keeps the mock's 36 and gets a 44px touch box; also on a touch pointer up to 1024, so an iPad gets the same box. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .chip::after { content: ''; position: absolute; inset: -4px; }
+}
+/* (REG-307) Parity with the Notes toolbar's twin (notes-toolbar.module.css): the DS md SearchBar is 36 tall and a
+   fingertip wants 44, so the BOX stands up on a touch pointer — the glyph, the type and the stroke are the DS's. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .searchWrap .search[data-size='md'] { height: 44px; }
 }
 
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The two hand-rolled controls in this row were drawn at the mock's 36px, and the clear-search glyph is an
-   18px mark with no box at all. At ≤767 the scope pill and the search field stand up to 40 and the clear
-   glyph gets the whole 40px height as its target — sizes only, no new copy and no re-ordering. The DS/om
-   controls beside them (the 36px filter IconButton, the segmented view toggle) are left exactly as drawn:
-   36px is a comfortable target and the design system owns their geometry. */
-@media (max-width: 767px) {
-  .chip { height: 40px; }
-  .search { height: 40px; }
-  .searchClear {
-    min-width: 40px; min-height: 40px;
-    align-items: center; justify-content: center;
-    margin-right: -4px;   /* the glyph keeps its 8px inset from the field's edge */
-  }
-}
-
-/* (REG-273) Touch: the box takes the 40px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
+/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
 @media (hover: none) {
   .searchInput { block-size: 100%; }
 }

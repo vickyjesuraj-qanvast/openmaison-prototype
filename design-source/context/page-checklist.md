@@ -88,15 +88,20 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
       FAB 90 · modals 100 · nested 110 · snackbar 120 · PortalMenu 130 · tooltip 140).
 
 ## Responsive (REG-269 — the system is `design-source/context/responsive.md`)
-- [ ] Rules live in `@media (max-width: 767px)` (mobile) / `@media (max-width: 1199px)` (tablet-and-down) —
-      those two literals only, mobile layering on top of tablet. **Desktop ≥1200 must stay pixel-identical.**
+- [ ] Rules live in `@media (max-width: 767px)` (mobile) / `@media (max-width: 1024px)` (tablet-and-down, REG-315) —
+      those two literals only, mobile layering on top of tablet. **Desktop ≥1025 must stay pixel-identical at 1440.**
 - [ ] The PAGE never scrolls horizontally: wide content (tables, tab rows, chip rows) scrolls inside its own
       `overflow-x` container, with the first column sticky where a table scrolls.
-- [ ] No fixed px width survives below 1200 unclamped — dialogs/drawers clamp (`max-width: 100vw`), fixed
+- [ ] No fixed px width survives below 1025 unclamped — dialogs/drawers clamp (`max-width: 100vw`), fixed
       overlays are not anchored to `--rail-w`, and JS-positioned popovers clamp to the real viewport.
-- [ ] Mobile chrome: the rail is the `MobileTopBar` drawer; sticky offsets derive from
-      `--app-mobile-bar-height`, never from the desktop 72px header.
-- [ ] The route's ghost mirrors the responsive layout at each breakpoint (the PageReveal crossfade lands in place).
+- [ ] Mobile chrome is `MobileChrome` (mock 1082:23305 / 1082:24995 — 60px top bar, 70px bottom dock, More sheet);
+      sticky offsets derive from `--app-mobile-bar-height`, bottom-anchored things (FAB, snackbar, page clearance)
+      from `--app-mobile-dock-height` — never from the desktop 72px header or a hard-coded 24.
+- [ ] The route's ghost mirrors the responsive layout at each breakpoint (the PageReveal crossfade lands in place;
+      the listing's card ghost ≤767 is the pattern — both layouts rendered, CSS picks one, REG-309).
+- [ ] Touch-growth rules (REG-273) carry `@media (max-width: 767px), (hover: none) and (max-width: 1024px)` so a
+      touch tablet gets them too (REG-307); mobile LAYOUT rules stay on the bare 767 query. Bottom-anchored chrome
+      reads `--app-mobile-dock-height`, which already includes the safe-area inset (REG-308).
 
 ## Verification
 - [ ] 1440×1024 Playwright pass against the Figma frame; screenshots banked in `design-source/verify/`.

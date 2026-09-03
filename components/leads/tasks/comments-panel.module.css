@@ -39,13 +39,13 @@
 .privacy { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
 
 /* Touch ergonomics (REG-273): the per-comment kebab is a 20px box — half a fingertip. It keeps its 20px
-   glyph AND its 20px hover wash (a 40px wash would read as a grey tile on a comment); the target alone grows
-   to 40 through a transparent overlay, inside the drawer body's own 24 padding. The meta row stays 20 tall.
-   Composer / edit buttons are DS controls: app/globals.css already lifts the `sm` Cancel · Save to 40 on a
+   glyph AND its 20px hover wash (a 44px wash would read as a grey tile on a comment); the target alone grows
+   to 44 through a transparent overlay, inside the drawer body's own 24 padding. The meta row stays 20 tall.
+   Composer / edit buttons are DS controls: app/globals.css already lifts the `sm` Cancel · Save to 44 on a
    touch pointer, and their 8 gap is horizontal, so nothing collides. Desktop with a mouse never matches. */
 @media (max-width: 767px), (hover: none) {
   .kebab { position: relative; }
-  .kebab::after { content: ''; position: absolute; inset: -10px; }
+  .kebab::after { content: ''; position: absolute; inset: -12px; }
 }
 
 /* Avatar 36 r4, initial 14/Medium (spec: "H" 14/Medium on #387e47).

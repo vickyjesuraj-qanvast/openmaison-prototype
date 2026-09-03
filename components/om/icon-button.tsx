@@ -21,8 +21,9 @@ export function IconButton({
   /** Accessible name — required: these buttons are icon-only. */
   label: string
   size?: 36 | 24
-  /** bare = the "Link icon" of interaction-states.md: no border, 8% wash on hover, radius 4 — every modal / drawer / row icon (close X, chevrons, deletes). */
-  variant?: 'secondary' | 'primary' | 'bare'
+  /** bare = the "Link icon" of interaction-states.md: no border, 8% wash on hover, radius 4 — every modal / drawer / row icon (close X, chevrons, deletes).
+   *  filled = the primary Button as a square (1082:25135, the mobile listing header's Add Lead): primary plate, on-primary glyph (REG-299). */
+  variant?: 'secondary' | 'primary' | 'bare' | 'filled'
   selected?: boolean
   iconSize?: number
   iconWeight?: 300 | 400

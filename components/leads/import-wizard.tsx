@@ -11,6 +11,7 @@ import menuStyles from '@/components/leads/menus.module.css'
 import { modalPanel, overlayFade, duration, ease } from '@/lib/motion'
 import { parseCsv } from '@/lib/csv'
 import { IMPORT_FIELDS, IGNORE, PREVIEW_COLUMNS, autoMap, toRecord, type ImportField, type Mapping } from '@/lib/leads/import-fields'
+import { MSG } from '@/lib/forms'
 import styles from './import-wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -27,9 +28,11 @@ export type ImportResult = { importId: string; total: number; imported: number; 
 
 type Parsed = { name: string; headers: string[]; rows: string[][] }
 
+/** (REG-317) `usedBy`: OpenMaison field → the imported column that already holds it. A taken field is disabled here and
+ *  says which column has it; Ignore is never taken, and the row's own current value stays selectable. */
 function FieldSelect({
-  value, error, onChange, used,
-}: { value: Mapping[number]; error?: boolean; onChange: (v: Mapping[number]) => void; used: Set<string> }) {
+  value, error, onChange, usedBy,
+}: { value: Mapping[number]; error?: boolean; onChange: (v: Mapping[number]) => void; usedBy: Map<string, string> }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   return (
@@ -39,13 +42,16 @@ function FieldSelect({
         <span className={styles.chev}><Icon name="expand_more" size={16} /></span>
       </button>
       <PortalMenu open={open} anchor={ref} onClose={() => setOpen(false)}>
-        {[IGNORE, ...IMPORT_FIELDS].map((o) => (
-          <button key={o} type="button" role="option" aria-selected={o === value} className={menuStyles.item}
-                  style={o !== IGNORE && used.has(o) && o !== value ? { color: 'var(--om-color-on-surface-secondary)' } : undefined}
-                  onClick={() => { onChange(o); setOpen(false) }}>
-            {o}
-          </button>
-        ))}
+        {[IGNORE, ...IMPORT_FIELDS].map((o) => {
+          const taken = o !== IGNORE && o !== value && usedBy.has(o)
+          return (
+            <button key={o} type="button" role="option" aria-selected={o === value} aria-disabled={taken || undefined}
+                    className={menuStyles.item} onClick={taken ? undefined : () => { onChange(o); setOpen(false) }}>
+              <span className={styles.optionLabel}>{o}</span>
+              {taken ? <span className={styles.mappedTo}>Mapped to {usedBy.get(o)}</span> : null}
+            </button>
+          )
+        })}
       </PortalMenu>
     </div>
   )
@@ -71,6 +77,8 @@ export function ImportWizard({
   const [destOpen, setDestOpen] = useState(false)
   const [destination, setDestination] = useState<ImportDestination | null>(null)   // no default — the user chooses (821:23969)
   const [mapping, setMapping] = useState<Mapping>([])
+  /* (REG-317) Next was pressed with unmapped columns: from then on every unmapped row shows its error until it is mapped or ignored. */
+  const [mapErrors, setMapErrors] = useState(false)
   const [autoMapped, setAutoMapped] = useState<Mapping>([])   // what auto-match proposed, to label rows
   const [autoCount, setAutoCount] = useState(0)
   const [errorRow, setErrorRow] = useState<number | null>(null)
@@ -86,7 +94,7 @@ export function ImportWizard({
     setWasOpen(open)
     if (open) {
       setStep(1); setParsed(null); setToast(null); setToastCollapsed(false); setOver(false)
-      setConfirmClose(false); setDestOpen(false); setDestination(null); setMapping([]); setAutoMapped([]); setAutoCount(0); setErrorRow(null); setBusy(false); setResult(null)
+      setConfirmClose(false); setDestOpen(false); setDestination(null); setMapping([]); setAutoMapped([]); setAutoCount(0); setErrorRow(null); setMapErrors(false); setBusy(false); setResult(null)
     }
   }
   // Reset the in-flight guard on open; kill a pending upload timer on close.
@@ -157,13 +165,22 @@ export function ImportWizard({
   }
 
   const goNextFromMap = () => {
-    const hasName = mapping.some((f) => f === 'Lead Name')
-    if (!hasName) {
-      const idx = mapping.findIndex((f) => f === null)
-      setErrorRow(idx === -1 ? 0 : idx)
+    /* (REG-317) Every imported column must be mapped or ignored before the mapping is taken further: the first
+       unmapped row is scrolled into view and every unmapped row shows its inline error (clearing live as it is
+       resolved). Then the standing rule — one column must be Lead Name. */
+    const headers = parsed?.headers ?? []
+    const firstMissing = headers.findIndex((_, i) => (mapping[i] ?? null) === null)
+    if (firstMissing !== -1) {
+      setMapErrors(true); setErrorRow(null)
+      requestAnimationFrame(() => document.querySelector(`[data-map-row="${firstMissing}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }))
       return
     }
-    setErrorRow(null)
+    const hasName = mapping.some((f) => f === 'Lead Name')
+    if (!hasName) {
+      setErrorRow(0)
+      return
+    }
+    setErrorRow(null); setMapErrors(false)
     setStep(3)
   }
 
@@ -188,6 +205,9 @@ export function ImportWizard({
   }
 
   const used = new Set(mapping.filter((f): f is ImportField => !!f && f !== IGNORE))
+  /* (REG-317) Which imported column holds each OpenMaison field — the picker disables those and names the column. */
+  const usedBy = new Map<string, string>()
+  mapping.forEach((f, i) => { if (f && f !== IGNORE) usedBy.set(f, parsed?.headers[i] || `Column ${i + 1}`) })
   // The preview shows the columns the user just mapped, not every OpenMaison field: PREVIEW_COLUMNS is
   // the label/width/order lookup, the mapping decides which of them appear. The shipped template maps
   // all 14, so 779:26144 still draws 120/171/124/…/200; a file that maps 7 no longer scrolls past 7 blanks.
@@ -296,14 +316,14 @@ export function ImportWizard({
                       </div>
                       <div className={styles.mapTable} onScroll={(e) => { e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0) }}>
                         <div className={styles.mapHead}>
-                          <div className={`${styles.mapCell} ${styles.colName} ${styles.hLabel}`}>Column Name</div>
+                          <div className={`${styles.mapCell} ${styles.colName} ${styles.hLabel}`}>Imported Column Name</div>
                           <div className={`${styles.mapCell} ${styles.colReview} ${styles.hLabel}`}>Content Review</div>
                           <div className={`${styles.mapCell} ${styles.colSelect} ${styles.hLabel}`}>Select OpenMaison Field Name</div>
                         </div>
                         {parsed.headers.map((h, i) => {
                           const samples = parsed.rows.map((r) => r[i] ?? '').filter((v) => v.trim()).slice(0, 3)
                           return (
-                            <div key={`${h}-${i}`} className={styles.mapRow}>
+                            <div key={`${h}-${i}`} className={styles.mapRow} data-map-row={i}>
                               <div className={`${styles.mapCell} ${styles.colName}`}>
                                 <span className={styles.colNameText}>{h || `Column ${i + 1}`}</span>
                                 {/* Row status (user 2026-08-28): auto-matched / mapped / not mapped / ignored */}
@@ -321,8 +341,16 @@ export function ImportWizard({
                               </div>
                               <div className={`${styles.mapCell} ${styles.colSelect}`}>
                                 <span className={styles.stackLabel}>Select OpenMaison Field Name</span>
-                                <FieldSelect value={mapping[i] ?? null} used={used} error={errorRow === i && nameMissing} onChange={(v) => setField(i, v)} />
-                                {errorRow === i && nameMissing ? <span className={styles.required}>Required</span> : null}
+                                {(() => {
+                                  const missing = mapErrors && (mapping[i] ?? null) === null   // (REG-317) shown after Next, gone once mapped or ignored
+                                  const nameErr = errorRow === i && nameMissing
+                                  return (
+                                    <>
+                                      <FieldSelect value={mapping[i] ?? null} usedBy={usedBy} error={missing || nameErr} onChange={(v) => setField(i, v)} />
+                                      {missing ? <span className={styles.required}>{MSG.mapField}</span> : nameErr ? <span className={styles.required}>Required</span> : null}
+                                    </>
+                                  )
+                                })()}
                               </div>
                             </div>
                           )
@@ -338,7 +366,7 @@ export function ImportWizard({
                         </div>
                       </div>
                       {/* data-scrolled = down (sticky head shadow); data-scrolled-x = sideways (the frozen
-                          SL No column's shadow below 1200, REG-269/REG-144). */}
+                          SL No column's shadow below 1025, REG-269/REG-144). */}
                       <div className={styles.previewWrap}
                            onScroll={(e) => {
                              e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0)

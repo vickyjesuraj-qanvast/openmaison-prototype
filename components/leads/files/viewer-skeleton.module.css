@@ -10,13 +10,13 @@
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    The ghost tracks the viewer's own breakpoints (file-viewer.module.css): tablet trims the letterbox,
    mobile drops the shell gutters for the 56px app bar, pads 16 and loses the folded Download bone. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .canvas { padding: var(--om-spacing-6) var(--om-spacing-10) var(--om-spacing-20); }
 }
 @media (max-width: 767px) {
   .header { padding: var(--om-spacing-4); }
   .actions { gap: var(--om-spacing-4); }
   .actions > :nth-child(2) { display: none; }   /* Download folds into the kebab ≤767 — three icons, not four */
-  .stage { height: calc(100dvh - var(--app-mobile-bar-height, 56px) - 56px); }
-  .canvas { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 56px + var(--om-spacing-2)); }
+  .stage { height: calc(100dvh - var(--app-mobile-bar-height) - 56px); }
+  .canvas { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 60px + var(--om-spacing-2)); }
 }

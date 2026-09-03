@@ -29,6 +29,9 @@
    padding 24 → 16, the mobile inset the whole system uses. */
 @media (max-width: 767px) {
   .body { border-radius: 0; }
+  /* (REG-299, 1082:23305) The mobile listing is cards on the surface/bg canvas — the white sheet is the header's
+     plate only (page-header.module.css paints it), the toolbar and the cards sit on grey. */
+  .body[data-view='cards'] { background: var(--om-color-surface-bg); }
   .body[data-view='kanban'] { height: calc(100dvh - var(--app-mobile-bar-height)); }
-  .content { padding: var(--om-spacing-4); }
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
 }

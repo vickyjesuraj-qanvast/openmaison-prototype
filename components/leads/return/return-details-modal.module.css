@@ -137,10 +137,10 @@
 .tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* "Q-101" 14/Semi Bold */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   Desktop (≥1200) is the mock and is untouched. Tablet keeps the centred 620 card (it fits from 768 up)
+   Desktop (≥1025) is the mock and is untouched. Tablet keeps the centred 620 card (it fits from 768 up)
    and only swaps the height cap for dvh; mobile is the full-screen sheet, and the label / value rows
    stack — a fixed 200px label left the value about 30px wide, one or two characters a line. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   /* dvh, not vh: a mobile browser's shrinking chrome must never sit over the bottom of the card. */
   .panel { max-width: calc(100vw - var(--om-modal-xxl-margin)); max-height: calc(100dvh - 96px); }
 }
@@ -164,16 +164,23 @@
   /* 4) Label above value, the fixed 200 column released. */
   .row { flex-direction: column; gap: var(--om-spacing-1); }
   .rowLabel { width: auto; }
+  /* (REG-308) No footer here: the scroll end clears the home indicator (viewport-fit=cover); env() is 0 elsewhere. */
+  .body { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+}
 
+/* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────
      5) The three bare 24px controls — the heading's info and close, and each attachment tile's trash — keep
-     their marks and their places; the invisible ::after around each grows the target to 40×40. info and
-     close sit 16 apart and grow 8 each, so their targets meet without overlapping; the trash grows into the
-     tile's own 4px padding and over the tile face, whose own button (.tileMain) stops at the caption's
-     reserved right slot, so the two never fight for the same tap.
+     their marks; the invisible ::after around each grows the target to 44×44 (REG-312). info and close grow
+     10 each, so the heading's mocked 16 gap opens to 20 — the smallest gap that keeps two 24px marks a full
+     44px apart (info alone moves, 4px left) — and their targets meet without overlapping; the trash grows
+     into the tile's own 4px padding and over the tile face, whose own button (.tileMain) stops at the
+     caption's reserved right slot, so the two never fight for the same tap.
      The tile face itself is 134×158 and the appeal banner is 72 tall — both already past the floor. */
   .iconBtn { position: relative; }
-  .iconBtn::after { content: ''; position: absolute; inset: -8px; }
+  .iconBtn::after { content: ''; position: absolute; inset: -10px; }
+  .heading { gap: var(--om-spacing-5); }
   .tileDelete { position: relative; }
-  .tileDelete::after { content: ''; position: absolute; inset: -8px; }
+  .tileDelete::after { content: ''; position: absolute; inset: -10px; }
 }

@@ -145,7 +145,7 @@ export function ReviewSheet({
               </Button>
             </div>
 
-            {/* Responsive (REG-269): below 1200 the queue and the detail are two screens — data-pane says
+            {/* Responsive (REG-269): below 1025 the queue and the detail are two screens — data-pane says
                 which one is showing. At desktop both panes render side by side exactly as the mock draws them. */}
             <div className={styles.body} data-pane={selectedId ? 'detail' : 'list'}>
               <div className={styles.list} role="list">
@@ -189,7 +189,7 @@ export function ReviewSheet({
               </div>
 
               <div className={styles.detail}>
-                {/* ≤1199 only (display:none above): returns the queue to the screen. */}
+                {/* ≤1024 only (display:none above): returns the queue to the screen. */}
                 <button type="button" className={styles.backBar} onClick={() => setSelectedId(null)}>
                   <Icon name="arrow_back" size={20} weight={300} />Back to queue
                 </button>

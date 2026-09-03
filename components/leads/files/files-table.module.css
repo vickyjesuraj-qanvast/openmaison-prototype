@@ -123,11 +123,11 @@
 .touchBtn { flex-shrink: 0; }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
-   ≤1199 the table scrolls sideways inside its own card instead of being clipped by the page sheet's
+   ≤1024 the table scrolls sideways inside its own card instead of being clipped by the page sheet's
    `overflow: clip` (the audit's silent-truncation failure: content measured ~2.5× its container with
    overflow-x visible, so columns were unreachable). Rows size to their content and still fill a wide
-   card, so desktop ≥1200 is untouched. */
-@media (max-width: 1199px) {
+   card, so desktop ≥1025 is untouched. */
+@media (max-width: 1024px) {
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
   /* The Title track is `minmax(0, 1fr)`: once the 824px of fixed tracks overflow the card there is no free
@@ -166,28 +166,29 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The permanently visible kebab (the block above) floats over the row's last column, so inside the
-   ≤1199 scroller the "Attached to" tag would sit under it for good. The last cell reserves the button's
-   band instead (its 40px touch box + the 24 inset + a 16 gap) — the row is inside its own horizontal
-   scroller, so the extra width costs the page nothing. Scoped to a touch pointer AND ≤1199: the desktop
+   ≤1024 scroller the "Attached to" tag would sit under it for good. The last cell reserves the button's
+   band instead (its 44px touch box + the 24 inset + a 16 gap) — the row is inside its own horizontal
+   scroller, so the extra width costs the page nothing. Scoped to a touch pointer AND ≤1024: the desktop
    mock, which only shows the kebab on hover, keeps its mocked column padding. */
-@media (max-width: 1199px) and (hover: none) {
-  .cell.colAttached { padding-right: 80px; }
+@media (max-width: 1024px) and (hover: none) {
+  .cell.colAttached { padding-right: 84px; }
 }
 
-/* ≤767 every mark keeps its mocked size and only its tappable box grows to 40. The head (56) and the
-   rows (60) are taller than that, so the grown boxes sit inside them and nothing reflows. */
-@media (max-width: 767px) {
-  /* Sort buttons: the 12/Medium label + unfold_more 16 draw a ~20px line — the button becomes a 40px box
+/* ≤767 every mark keeps its mocked size and only its tappable box grows to 44. The head (56) and the
+   rows (60) are taller than that, so the grown boxes sit inside them and nothing reflows.
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  /* Sort buttons: the 12/Medium label + unfold_more 16 draw a ~20px line — the button becomes a 44px box
      around them (it answers "coming soon", the second channel a tooltip could never give a touch pointer). */
-  .hSort { min-height: 40px; }
-  /* The name is the row's open affordance: a 40px line box, still ellipsised (line-height, not flex, so
+  .hSort { min-height: 44px; }
+  /* The name is the row's open affordance: a 44px line box, still ellipsised (line-height, not flex, so
      text-overflow keeps working), centred in the 60px row exactly where the mock draws it. */
-  .name { min-height: 40px; line-height: 40px; }
-  /* Comment chip 34×24: the drawn chip stays the mock's; ±8 above and below takes the target to 40. */
+  .name { min-height: 44px; line-height: 44px; }
+  /* Comment chip 34×24: the drawn chip stays the mock's; ±10 above and below takes the target to 44. */
   .chip { position: relative; }
-  .chip::after { content: ''; position: absolute; inset: -8px 0; }
-  /* Row kebab: the DS 36px button (and the white plate behind it) become a 40px box, re-centred in the
+  .chip::after { content: ''; position: absolute; inset: -10px 0; }
+  /* Row kebab: the DS 36px button (and the white plate behind it) become a 44px box, re-centred in the
      60px row — `min-*` beats the DS `width/height: 36px` whatever the selector's specificity. */
-  .touchBtn { min-width: 40px; min-height: 40px; }
-  .actions { top: 10px; }
+  .touchBtn { min-width: 44px; min-height: 44px; }
+  .actions { top: 8px; }
 }

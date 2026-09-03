@@ -52,60 +52,82 @@ const ERR_W = [72, 210, 72, 168, 72, 240]
  * not a lazy initialiser: `loading.tsx` is server-rendered, and the server snapshot (the mock's eight) keeps
  * hydration honest (quick-links.tsx does the same).
  *
- * TABLE_TOP is per breakpoint, not per mock (REG-269): the desktop 217 is 8 page pad + 68 header + 24 content pad +
- * 36 toolbar + 24 gap + 1 border + 56 head, and ≤767 that stack is a different shape — the shell trades its 8px
- * gutter for a 56px bar (--app-mobile-bar-height, mobile-nav.module.css), the header wraps to title over actions
- * (12 + 28 title bone + 8 + 36 + 12 = 96, page-header.module.css) and the toolbar wraps to chip / search /
- * filters (3 × 36 + 2 × 12 = 132, toolbar.module.css and this sheet's own ≤767 rules), so
- * 56 + 0 + 96 + 24 + 132 + 24 + 1 + 56 = 389. At 390×844 that is six rows; the desktop constant drew nine and ran
- * the ghost ~190px past where the real table stops. 768–1199 keeps the desktop stack (nothing wraps there, and
- * the rail stays collapsed), so it keeps the desktop constant.
+ * TABLE_TOP is the desktop stack — 8 page pad + 68 header + 24 content pad + 36 toolbar + 24 gap + 1 border + 56 head —
+ * and it serves 768–1024 too (nothing wraps there, and the rail stays collapsed). ≤767 the table block is hidden
+ * (REG-309: the ghost is the mock's cards there, CARDS_TOP below), so the table count is never seen at that width.
+ *
+ * The cards (REG-309, 1082:23305): the first card starts CARDS_TOP down — the 60px bar (--app-mobile-bar-height,
+ * safe-area inset aside) + a 60 header (12 + 36 + 12: the title and the three 36 squares share one row,
+ * page-header.module.css) + 16 content pad + 36 toolbar + 16 gap = 188 — and each card is CARD_H = 199 (16 + 24 head +
+ * 12 + 20 info + 12 + 38 task box + 12 + 1 rule + 12 + 36 foot + 16, lead-cards.module.css) with 16 between; the page's
+ * bottom clearance is 150 there (globals.css). At 390×844 that is three cards, so MIN_CARDS = 4 keeps the last one
+ * running under the fold as the real column does; the server snapshot draws that floor.
  */
 const ROW_H = 64
 const TABLE_TOP = 217
-const TABLE_TOP_MOBILE = 389
-const MOBILE_MAX = 767
 const FAB_CLEARANCE = 88
 const MOCK_ROWS = 8
+const CARDS_TOP = 188
+const CARD_H = 199
+const CARD_GAP = 16
+const FAB_CLEARANCE_MOBILE = 150
+const MIN_CARDS = 4
 const subscribeViewport = (cb: () => void) => {
   window.addEventListener('resize', cb)
   return () => window.removeEventListener('resize', cb)
 }
-const viewportRows = () => {
-  const top = window.innerWidth <= MOBILE_MAX ? TABLE_TOP_MOBILE : TABLE_TOP
-  return Math.max(1, Math.ceil((window.innerHeight - top - FAB_CLEARANCE) / ROW_H))
-}
+const viewportRows = () => Math.max(1, Math.ceil((window.innerHeight - TABLE_TOP - FAB_CLEARANCE) / ROW_H))
 const mockRows = () => MOCK_ROWS
 const useRowCount = () => useSyncExternalStore(subscribeViewport, viewportRows, mockRows)
+const viewportCards = () => Math.max(MIN_CARDS, Math.ceil((window.innerHeight - CARDS_TOP - FAB_CLEARANCE_MOBILE) / (CARD_H + CARD_GAP)))
+const minCards = () => MIN_CARDS
+const useCardCount = () => useSyncExternalStore(subscribeViewport, viewportCards, minCards)
 
-/** Leads listing (779:19690 table variant): header · toolbar · table with the default columns. */
+/**
+ * Leads listing (779:19690 table variant): header · toolbar · table with the default columns — and, ≤767, the mock's
+ * cards (1082:23305, REG-309). Both blocks ship and skeleton.module.css picks one by breakpoint: `loading.tsx` is
+ * server-rendered, so no JS can know the width when the bones first paint, and a ghost that fades into a
+ * differently-shaped page is the REG-74 failure. ≥768 nothing here differs from the table-only ghost.
+ */
 export function LeadsSkeleton() {
   const rows = useRowCount()
+  const cards = useCardCount()
   return (
     <GhostSheet label="Loading leads">
-      <div className={styles.header}>
+      <div className={`${styles.header} ${styles.headerPlate}`}>
         <Bone w={72} h={28} />
-        <div className={styles.headerActions}>
+        {/* ≥768 the mock's Add Lead · Insights · kebab; ≤767 the three 36 squares of 1082:25131 (workspace.tsx). */}
+        <div className={`${styles.headerActions} ${styles.notMobile}`}>
           <Bone w={116} h={36} r="var(--om-radius-1)" />
           <Bone w={126} h={36} r="var(--om-radius-1)" />
           <Bone w={36} h={36} r="var(--om-radius-1)" />
         </div>
+        <div className={`${styles.headerActions} ${styles.mobileOnly}`}>
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+        </div>
       </div>
-      <div className={pageStyles.content}>
-        <div className={styles.toolbar}>
+      <div className={`${pageStyles.content} ${styles.cardsCanvas}`}>
+        <div className={`${styles.toolbar} ${styles.notMobile}`}>
           <Bone w={132} h={36} r="var(--om-radius-1)" />
           <div className={styles.toolbarRight}>
-            <Bone w={280} h={36} r="var(--om-radius-1)" className={styles.searchBone} />
+            <Bone w={280} h={36} r="var(--om-radius-1)" />
             <Bone w={36} h={36} r="var(--om-radius-1)" />
             <Bone w={72} h={36} r="var(--om-radius-1)" />
           </div>
         </div>
-        <div className={styles.tableWrap}>
-          {/* data-min carries the desktop track width (a media query cannot reach an inline style); ≤1199 the
+        {/* ≤767 the toolbar is the pill and the filter glyph only (1082:25269, toolbar.module.css). */}
+        <div className={`${styles.toolbar} ${styles.mobileOnly}`}>
+          <Bone w={132} h={36} r="var(--om-radius-1)" />
+          <Bone w={36} h={36} r="var(--om-radius-1)" />
+        </div>
+        <div className={`${styles.tableWrap} ${styles.notMobile}`}>
+          {/* data-min carries the desktop track width (a media query cannot reach an inline style); ≤1024 the
               tracks hold and the wrap scrolls, exactly as the real table does (REG-269). */}
           <div className={styles.tableInner} data-min="1410">
           <div className={styles.headRow}>
-            {/* Lead Name is the listing's frozen column (table.module.css .pin) — the ghost freezes it too ≤1199. */}
+            {/* Lead Name is the listing's frozen column (table.module.css .pin) — the ghost freezes it too ≤1024. */}
             <span className={`${styles.col} ${styles.pinCol}`} style={{ flex: '240 0 240px' }}><Bone w={72} h={12} /></span>
             <span className={styles.col} style={{ flex: '146 0 146px' }}><Bone w={40} h={12} /></span>
             <span className={styles.col} style={{ flex: '321 0 321px' }}><Bone w={40} h={12} /></span>
@@ -135,6 +157,24 @@ export function LeadsSkeleton() {
             )
           })}
           </div>
+        </div>
+        {/* ≤767 the listing is the mock's cards (1082:23305 → "Card / Desktop / Leads" 1082:25585, lead-cards.tsx): p16
+            gap12 r8 level-1 on the surface/bg canvas — head (name · age), the info line, the task box, a rule, then members
+            (avatar + the 24px person_add) and the stage button. The rows hold the real rows' heights (24 · 20 · 38 · 1 · 36)
+            so each card is the real 199 and the crossfade lands card over card. Names cycle the table's eight widths. */}
+        <div className={`${styles.cards} ${styles.mobileOnly}`}>
+          {Array.from({ length: cards }, (_, i) => (
+            <div key={i} className={styles.card}>
+              <div className={styles.cardHead}><Bone w={NAME_W[i % NAME_W.length] ?? 128} h={16} /><Bone w={40} h={12} /></div>
+              <div className={styles.cardInfo}><Bone w={200} h={14} /></div>
+              <Bone w="100%" h={38} r="var(--om-radius-1)" />
+              <Bone w="100%" h={1} r={0} />
+              <div className={styles.cardFoot}>
+                <span className={styles.cardMembers}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="var(--om-radius-1)" /></span>
+                <Bone w={90} h={36} r="var(--om-radius-1)" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </GhostSheet>

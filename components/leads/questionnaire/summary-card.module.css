@@ -33,9 +33,9 @@
 .legend { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 16px; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 .legend span:last-child { flex: 1; text-align: right; }
 
-/* Responsive (REG-269): ≤1199 the card stacks under the questions column and goes fluid — full width,
+/* Responsive (REG-269): ≤1024 the card stacks under the questions column and goes fluid — full width,
    content-driven height (the mock's 480×136 is a desktop-only design size). */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .card { width: 100%; height: auto; }
 }
 /* Responsive (REG-269): mobile — the two legend labels may wrap instead of colliding on very narrow cards. */

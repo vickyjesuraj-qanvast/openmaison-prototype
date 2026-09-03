@@ -22,6 +22,6 @@
    318 inside), but on the tablet card (~192 inside) the fixed 16px height would have cut the second one as it
    shrank. The pair wraps to a second line there and the height becomes a floor. The 8px row gap comes from the
    same spacing scale as the legend's own column gap. */
-@media (max-width: 1199px) {
+@media (max-width: 1024px) {
   .legend { flex-wrap: wrap; height: auto; min-height: 16px; row-gap: var(--om-spacing-2); }
 }

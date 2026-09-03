@@ -105,14 +105,14 @@
 .danger { color: var(--om-color-tertiary-red-default); }   /* "Delete" (red) — as the row kebab in components/leads/table.tsx */
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
-   "+ Add Tag" is 20px of link text and person_add is the DS 36 — both under a fingertip's 40. The type and
+   "+ Add Tag" is 20px of link text and person_add is the DS 36 — both under a fingertip's 44. The type and
    the drawn button keep their mocked sizes; the box grows around them and the extra comes back as margin,
    so the 20px Tags head row and the assignee row do not move. The panel's own head actions (comment ·
    attach_file · more_vert · close) are om icon buttons at 24 and are already grown by
-   components/om/icon-button.module.css on a touch pointer; the drawer head's 16 gaps leave their 40 boxes
-   exactly touching, so nothing here has to compensate. Desktop with a mouse matches neither arm. */
+   components/om/icon-button.module.css on a touch pointer; the drawer head's 16 gaps leave their 44 boxes
+   4 over each other — the drawer's own arithmetic, so nothing here has to compensate. Desktop with a mouse matches neither arm. */
 @media (max-width: 767px), (hover: none) {
-  .link { min-height: 40px; padding-block: 10px; margin-block: -10px; }
+  .link { min-height: 44px; padding-block: 12px; margin-block: -12px; }
   .touchTarget { position: relative; }
-  .touchTarget::after { content: ''; position: absolute; inset: -2px; }
+  .touchTarget::after { content: ''; position: absolute; inset: -4px; }
 }

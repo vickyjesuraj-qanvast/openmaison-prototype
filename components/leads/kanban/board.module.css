@@ -193,22 +193,23 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The card's own controls are the table's, drawn small: the kebab is a bare 20px glyph, the task box is 36px
-   tall and "Add task" / "Assign" are single text lines. At ≤767 each takes a 40px box while the glyph, the
+   tall and "Add task" / "Assign" are single text lines. At ≤767 each takes a 44px box while the glyph, the
    type and the card's 16px padding stay the mock's. The kebab gives its extra back as margin so the card head
    (name · "2d ago" · kebab) keeps its drawn rhythm; the task box and the links simply stand up, which the
    card's column layout absorbs. Nothing on a card is hover-revealed — the kebab, the task box and the
    assignee row are all painted at rest — so there is nothing to un-hide here (the row-level hover work lives
-   in table.module.css). Tablet keeps the desktop board as drawn (responsive.md). */
-@media (max-width: 767px) {
+   in table.module.css). Tablet keeps the desktop board as drawn (responsive.md).
+   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes — the board's layout above stays the desktop one there. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* The card's name is its link to the lead — one 24px text line. It grows by padding (never by becoming a
      flex box, which would cost it its ellipsis) and the head stands up with it. */
-  .cardName { padding-block: var(--om-spacing-2); }
+  .cardName { padding-block: 10px; }
   .cardKebab {
-    min-width: 40px; min-height: 40px;
+    min-width: 44px; min-height: 44px;
     align-items: center; justify-content: center;
-    margin: -10px;   /* 40 − 20 = the glyph box the card head laid out: the kebab does not move */
+    margin: -12px;   /* 44 − 24 = the glyph box the card head laid out: the kebab does not move */
   }
-  .cardTask { min-height: 40px; }
-  .assignLink { min-height: 40px; }
-  .clearLink { min-height: 40px; }
+  .cardTask { min-height: 44px; }
+  .assignLink { min-height: 44px; }
+  .clearLink { min-height: 44px; }
 }

@@ -25,9 +25,9 @@
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The Quotes twin's rule: the two CTAs are DS buttons at the mock's 36, so on a touch pointer each keeps
-   its drawn size and gains a transparent 2px ring — a 40px target that takes no space, so the pair stays
+   its drawn size and gains a transparent 4px ring — a 44px target that takes no space, so the pair stays
    centred on the mock's 12px gap. A mouse never sees this rule. */
 @media (hover: none) {
   .buttons button { position: relative; }
-  .buttons button::after { content: ''; position: absolute; inset: -2px; }
+  .buttons button::after { content: ''; position: absolute; inset: -4px; }
 }

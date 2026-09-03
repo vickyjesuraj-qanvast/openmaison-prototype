@@ -58,7 +58,12 @@
    would show through beside the banner. The banner itself keeps its 8px inset, its fill and its chevron; only
    the title + duplicates tag are let out of one nowrap line, which a 390px screen cannot hold. */
 @media (max-width: 767px) {
-  .strip { left: 0; right: 0; }
-  .lead { flex-wrap: wrap; row-gap: var(--om-spacing-2); min-width: 0; }
-  .title { white-space: normal; }
+  /* (REG-298) The banner and its skirt rest above the bottom dock, the same 16 the FAB keeps. */
+  .banner { bottom: calc(var(--app-mobile-dock-height) + var(--om-spacing-4)); }
+  .strip { left: 0; right: 0; bottom: var(--app-mobile-dock-height); }
+  /* (REG-303, user 2026-09-02) One line at mobile: the duplicates tag goes (the count stays in the button's
+     accessible name) and the title keeps to its line — the banner is the desktop's 50 again. */
+  .lead { flex-wrap: nowrap; min-width: 0; }
+  .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .tag { display: none; }
 }

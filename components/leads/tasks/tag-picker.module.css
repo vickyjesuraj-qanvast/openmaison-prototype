@@ -82,16 +82,16 @@
 .link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
-   "Manage Tags" is 20px of link text and a picked chip is a 24-tall button: both grow to a 40 target with
+   "Manage Tags" is 20px of link text and a picked chip is a 24-tall button: both grow to a 44 target with
    their type and chips drawn exactly as the mock draws them. The chip's target is a transparent overlay, so
-   the field opens its rows to 16 first — otherwise a chip's target would reach the input above it (and the
+   the field opens its rows to 20 first — otherwise a chip's target would reach the input above it (and the
    next row of chips) and steal the tap. The 36px list rows are left as the mock measures them: they are
    352 wide, comfortable to hit, and their height is what the picker's anchor clamp measures
    (`tagsPos` in components/leads/tasks/lead-tasks.tsx). Desktop with a mouse matches neither arm. */
 @media (max-width: 767px), (hover: none) {
-  .field { gap: var(--om-spacing-4); }
-  .picked { gap: var(--om-spacing-4); }
+  .field { gap: var(--om-spacing-5); }
+  .picked { gap: var(--om-spacing-5); }
   .chip { position: relative; }
-  .chip::after { content: ''; position: absolute; inset: -8px -4px; }
-  .link { min-height: 40px; padding-block: 10px; margin-block: -10px; }
+  .chip::after { content: ''; position: absolute; inset: -10px -4px; }
+  .link { min-height: 44px; padding-block: 12px; margin-block: -12px; }
 }
