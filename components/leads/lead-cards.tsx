@@ -43,6 +43,9 @@ export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick,
         const extra = row.tasks.length - 1
         return (
           <article key={row.id} className={styles.card}>
+            {/* (REG-344, 1082:25586 "CellDataGroup") The name row and the info line are ONE block 4px apart, not two
+                children of the card's 12px rhythm — the mock's 48-tall group above the task row. */}
+            <div className={styles.identity}>
             <button type="button" className={styles.head} onClick={() => onOpen(row)}>
               <span className={styles.name}>{highlightMatch(row.name, query)}</span>
               <span className={styles.meta}>
@@ -58,6 +61,7 @@ export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick,
               <span className={styles.dot} aria-hidden>·</span>
               <span>{highlightMatch(row.source, query)}</span>
             </p>
+            </div>
             {first ? (
               <button type="button" className={styles.taskBox} onClick={(e) => onTaskClick(row, e.currentTarget)}>
                 <span className={styles.taskText}>{highlightMatch(first.title, query)}</span>

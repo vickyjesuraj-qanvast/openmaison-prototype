@@ -13,6 +13,10 @@
 }
 
 /* Head: name (heading/h4, truncates) · "1d ago" (body/s) · chevron 20 Light, all secondary but the name. */
+/* (REG-344, 1082:25586) Name row + info line = the mock's CellDataGroup: 48 tall, its two rows 4 apart, and the
+   card's 12px rhythm applies to the group as a whole. */
+.identity { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+
 .head {
   display: flex; align-items: center; gap: var(--om-spacing-2);
   width: 100%; border: 0; background: none; cursor: pointer; text-align: left;

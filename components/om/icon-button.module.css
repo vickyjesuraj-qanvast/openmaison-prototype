@@ -41,34 +41,19 @@
 }
 .btn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   On a touch pointer the 24px variant is half a fingertip. The BOX grows to 44 and the drawn control keeps
-   its size: the 24px border/fill is painted by ::before at the mocked geometry, centred, while the button
-   itself is the 44px target. `hover: none` means this never reaches a mouse — desktop is untouched — and it
-   applies at every width, so a touch tablet gets it too.
-   The 36px variant is already a comfortable target; only its margin-free neighbours needed room, which the
-   surfaces handle in their own rows. */
+/* ── Touch ergonomics (REG-273, rebuilt REG-344) ──────────────────────────────────────────────────────
+   A fingertip wants 44; the mock draws 36 and 24. Growing the button to 44 (and giving the space back as a
+   negative margin) drew the WRONG square — the border and fill sat on the 44 box, so the mobile listing's
+   header buttons, filter and card rows all rendered fatter than 1082:23305 and pushed everything below them
+   down. The drawn square now keeps the mock's size and an invisible overlay carries the target, so touch
+   changes nothing about layout. `hover: none` keeps it off a mouse; it applies at every width, so a touch
+   tablet gets it too. */
 @media (hover: none) {
-  /* The 36 variant stands up to 44 on touch — the drawn square keeps its radius and glyph, the box is the
-     target (REG-273; the earlier note that 36 was already comfortable was measured against a mouse). */
-  .btn[data-size='36'] { width: 44px; height: 44px; margin: -4px; }
-  .btn[data-size='24'] {
-    position: relative;
-    width: 44px; height: 44px;
-    border-color: transparent; background: transparent;
-    /* the row keeps the mock's rhythm: the extra 10px each side is given back as margin */
-    margin: -10px;
-  }
-  .btn[data-size='24']::before {
+  .btn { position: relative; }
+  .btn::after {
     content: '';
-    position: absolute; left: 50%; top: 50%; width: 24px; height: 24px;
+    position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    border: inherit; border-color: var(--om-color-on-surface-border);
-    border-radius: var(--om-radius-1);
-    background: inherit;
-    pointer-events: none;
+    width: max(100%, 44px); height: max(100%, 44px);
   }
-  .btn[data-size='24'][data-variant='primary']::before { border-color: var(--om-color-primary-default); }
-  .btn[data-size='24'][data-variant='bare']::before { border: 0; }
-  .btn[data-size='24'][data-selected='true']::before { background: var(--om-color-primary-variant); }
 }
