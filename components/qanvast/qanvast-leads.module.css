@@ -223,3 +223,13 @@
   .search button { position: relative; }
   .search button::after { content: ''; position: absolute; inset: -12px; }
 }
+
+/* ── ≤767: the board is a list (REG-346) ──────────────────────────────────────────────────────────────
+   The grid's tracks are a desktop table's; on a phone each lead becomes a block — name and phone, then
+   its columns underneath as label-less values, with the row actions always reachable (no hover). */
+@media (max-width: 767px) {
+  .head { display: none; }
+  .row { grid-template-columns: 1fr; grid-column: 1 / -1; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-1); }
+  .cell { padding: 0; border: 0; }
+  .actions { opacity: 1; pointer-events: auto; }
+}

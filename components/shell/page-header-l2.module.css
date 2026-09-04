@@ -71,11 +71,16 @@
   .header::after { border-radius: 0; box-shadow: var(--om-elevation-level-1); }
   .header::before { top: 0; }
   .chips { flex-basis: 100%; order: 4; justify-content: flex-start; }
+  /* (REG-345) Only the tab that shows the lead carries its identity chips; the rest give the room to their own content. */
+  .header[data-compact] .chips { display: none; }
   /* The action cluster (stage pill + primary + kebab ≈ 374px) is wider than a 390 screen's content box, and
      only .header was wrapping — so the kebab clipped. (REG-306) The cluster takes its own full line under the
      title, left-aligned, and wraps within it, so nothing is cut at 320 either (the responsive audit found the
      primary sliced at 320 and the kebab at 360). */
   .actions { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; }
+  /* (REG-345) A compact header's cluster is the kebab alone — 36px, which fits beside the name, so it keeps
+     the title's row instead of taking one of its own. */
+  .header[data-compact] .actions { flex: 0 0 auto; justify-content: flex-end; }
 }
 
 /* Touch ergonomics (REG-273): the back arrow is a 24px glyph and the only way out of a detail screen on a

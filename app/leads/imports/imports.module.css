@@ -52,6 +52,7 @@
 .headRow, .row { display: flex; align-items: stretch; }
 .headRow { height: 56px; }
 .row { height: 44px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hCell, .cell { flex: var(--col) 0 calc(var(--col) * 1px); }
 .hCell, .cell {
   flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1);
   padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4);
@@ -156,3 +157,21 @@
    that file's hand-rolled search retired (REG-276). 280 is the width every list toolbar uses. */
 .searchWrap { display: inline-flex; flex: 1; min-width: 0; }
 .search { width: 280px; max-width: 100%; }
+
+/* ── ≤767: the history is a list (REG-346) ────────────────────────────────────────────────────────────
+   Six columns need 1316px; on a phone the card scrolled sideways and every row read as a fragment. The
+   file name leads, the date and the counts sit under it, and the skipped-records link closes the row. */
+@media (max-width: 767px) {
+  .table { min-width: 0; }
+  .headRow { display: none; }
+  .row { height: auto; flex-wrap: wrap; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); }
+  .cell { flex: 0 0 auto; padding: 0; }
+  .cell:nth-child(2) { flex: 1 1 100%; font: var(--om-type-subheading-m); order: 1; }   /* file name leads */
+  .cell:nth-child(1) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 2; }
+  .cell:nth-child(3), .cell:nth-child(4) { color: var(--om-color-on-surface-secondary); }
+  .cell:nth-child(3)::before { content: 'of '; }
+  .cell:nth-child(4)::before { content: ' — '; white-space: pre; }
+  .cell:nth-child(4)::after { content: ' imported'; }
+  .cell:nth-child(5) { flex: 1 1 100%; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); }
+  .cell:nth-child(6) { flex: 1 1 100%; }
+}

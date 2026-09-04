@@ -50,6 +50,9 @@
 
 /* Stage pill + kebab live in the header's actions slot; menus anchor to these wrappers. */
 .anchor { position: relative; display: inline-flex; }
+/* (REG-345) The stage pill and Convert to Project belong to the lead, so ≤767 they stay on Overview and the other
+   tabs give the row back to their own content — the header there is the back arrow, the name and the kebab. */
+@media (max-width: 767px) { .leadActionOnly { display: none; } }
 
 /* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
    Tablet and down: the card grid drops to one column. The two stacks keep their DOM order — MY WORK / QUOTES /

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, SearchBar } from '@/components/ds'
 import { PageReveal } from '@/components/shell/page-reveal'
@@ -147,7 +147,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                 <div className={styles.table} role="table" aria-label="Import history">
                   <div className={styles.headRow} role="row">
                     {COLS.map((c) => (
-                      <div key={c.key} className={styles.hCell} style={{ flex: `${c.width} 0 ${c.width}px` }} role="columnheader">
+                      <div key={c.key} className={styles.hCell} style={{ '--col': c.width } as CSSProperties} role="columnheader">
                         {'sortable' in c && c.sortable ? (
                           <button type="button" className={styles.hSort} data-sorted={dateDir !== 'none' || undefined}
                                   onClick={() => setDateDir((d) => (d === 'none' ? 'desc' : d === 'desc' ? 'asc' : 'none'))}>
@@ -164,12 +164,12 @@ function View({ imports }: { imports: ImportBatch[] }) {
                        so a screen reader saw rows of generic children and dropped out of table mode — no column
                        announcements, no cell navigation. Additive only; nothing here is styled by role. */
                     <div key={b.id} className={styles.row} role="row">
-                      <div className={styles.cell} style={{ flex: '141 0 141px' }} role="cell"><span>{displayDate(b.createdAt)}</span></div>
-                      <div className={`${styles.cell} ${styles.fileName}`} style={{ flex: '285 0 285px' }} role="cell"><span>{b.fileName}</span></div>
-                      <div className={styles.cell} style={{ flex: '118 0 118px' }} role="cell"><span>{b.totalRows}</span></div>
-                      <div className={styles.cell} style={{ flex: '142 0 142px' }} role="cell"><span>{b.importedRows}</span></div>
-                      <div className={styles.cell} style={{ flex: '396 0 396px' }} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
-                      <div className={styles.cell} style={{ flex: '234 0 234px' }} role="cell">
+                      <div className={styles.cell} style={{ '--col': 141 } as CSSProperties} role="cell"><span>{displayDate(b.createdAt)}</span></div>
+                      <div className={`${styles.cell} ${styles.fileName}`} style={{ '--col': 285 } as CSSProperties} role="cell"><span>{b.fileName}</span></div>
+                      <div className={styles.cell} style={{ '--col': 118 } as CSSProperties} role="cell"><span>{b.totalRows}</span></div>
+                      <div className={styles.cell} style={{ '--col': 142 } as CSSProperties} role="cell"><span>{b.importedRows}</span></div>
+                      <div className={styles.cell} style={{ '--col': 396 } as CSSProperties} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
+                      <div className={styles.cell} style={{ '--col': 234 } as CSSProperties} role="cell">
                         {b.skippedRows > 0 ? (
                           <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download Skipped Records</a>
                         ) : <span style={{ color: 'var(--om-color-on-surface-secondary)' }}>—</span>}

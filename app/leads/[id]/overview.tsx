@@ -210,6 +210,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       <div className={styles.body}>
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the level-1 (REG-331) */
+          compact={tab !== ''}   /* (REG-345) ≤767 only Overview carries the chips and the stage / Convert pair */
         backHref={origin === 'qanvast' ? '/qanvast-ops' : '/leads'}
           crumb={origin === 'qanvast' ? 'Qanvast Ops / Leads' : 'Leads'}
           title={lead.name}
@@ -232,7 +233,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           }
           actions={
             <>
-              <span className={styles.anchor} ref={stagePillRef}>
+              <span className={tab === '' ? styles.anchor : `${styles.anchor} ${styles.leadActionOnly}`} ref={stagePillRef}>
                 <Button variant="secondary" appearance="outlined" iconEnd={<Icon name="keyboard_arrow_down" size={20} />} aria-haspopup="menu" aria-expanded={!!stageMenu}
                         onPress={() => { const el = stagePillRef.current; if (!el) return; setStageMenu((s) => (s ? null : { el, ...stagePos(el) })) }}>
                   Stage: {lead.stage}
@@ -240,7 +241,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
               </span>
               {/* The lock glyph is the locked-until-Won cue (REG-168); a Won lead's button is actionable and drops it (REG-204). */}
               <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : 'Available once the lead is Won'}>
-                <span className={styles.anchor}>
+                <span className={tab === '' ? styles.anchor : `${styles.anchor} ${styles.leadActionOnly}`}>
                   <Button variant="primary" iconStart={lead.stage === 'Won' ? undefined : <Icon name="lock" size={20} />} onPress={() => (lead.stage === 'Won' ? comingSoon() : snackbar({ message: 'Win the lead first — Won creates the project' }))}>
                     Convert to Project
                   </Button>

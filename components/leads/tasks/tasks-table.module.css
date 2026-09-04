@@ -327,3 +327,31 @@ button.doneFilled[data-variant='primary']:hover {
   .head::after, .row::after { content: ''; flex: 0 0 150px; }
   .head, .row { min-width: calc(1244px + 150px); }   /* the band is part of the floor, so the title never absorbs it */
 }
+
+/* ── ≤767: the table is a list (REG-346) ──────────────────────────────────────────────────────────────
+   Seven columns inside 375 left the title a few characters and pushed Creator, Status and Tags off the
+   screen. The row becomes the ideated list instead: the status ring and the title lead, the due date sits
+   under the title, and the member and the row kebab close it. Creator, status text, tags and the select
+   column are the desktop table's — the kebab still reaches every one of their actions. The hover-only row
+   actions become permanent, because a finger has no hover and could never raise them. */
+@media (max-width: 767px) {
+  .head { display: none; }
+  /* The separator belongs to the row now: on the desktop table every cell draws it, which turned each wrapped
+     row into two ruled bands. */
+  /* The list wraps to the screen, so the desktop column floor that made the card scroll sideways is dropped. */
+  .head, .row { min-width: 0; }
+  .row { height: auto; min-height: 64px; flex-wrap: wrap; align-items: center; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .cell { padding: 0; border-top: 0; }
+  .colSel, .colCreator, .colStatus, .colTags { display: none; }
+  /* Line 1: the ring, the title and whoever it is assigned to. Line 2: the due date, indented past the ring.
+     The kebab is pinned right and the row reserves its width, so nothing runs under it. */
+  .row { padding-right: 44px; }
+  .colTitle { flex: 1 1 100%; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) var(--om-spacing-4); }
+  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 52px; }
+  .cell.colMember { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
+  .actions { opacity: 1; pointer-events: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
+  .actions > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */
+  .float { box-shadow: none; background: transparent; }
+  /* A list row's kebab is a bare glyph, not an outlined button. */
+  .actions button[class*='icon-button'] { border-color: transparent; }
+}
