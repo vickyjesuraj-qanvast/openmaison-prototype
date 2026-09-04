@@ -188,10 +188,20 @@ Stored in minor units (paise) as integers — never floats. Formatted with
 | `pnpm ds:build`                    | Rebuild the sibling design system (icons, tokens, react) |
 | `pnpm db:generate`                 | Generate SQL migrations from the Drizzle schema          |
 | `pnpm db:migrate` / `pnpm db:seed` | Apply migrations / load demo data                        |
+| `pnpm db:repair`                   | Make the demo data consistent (run after any seeding)    |
+| `pnpm db:baseline`                 | Snapshot the curated state to `fixtures/baseline.json`   |
 | `pnpm db:reset`                    | Drop the local DB and rebuild it from scratch            |
 | `pnpm setup`                       | `.env.local` + `AUTH_SECRET` + migrate + seed            |
 
 ## Database
+
+**After every `git pull`, run `pnpm db:migrate`.** `local.db` is yours and is not in
+git, so a schema change that arrives with new code has to be applied to your own file.
+Skipping it shows up as a runtime error naming a column the query wants and your
+database does not have. The command is safe to run any time and does nothing when
+there is nothing to apply. To take the freshly curated demo data as well, migrate
+first, then use Maison AI › **Reset prototype to base** (or `pnpm db:repair` to bring
+your own rows in line without discarding them).
 
 libSQL — a local `local.db` file by default, zero setup. Point `DATABASE_URL` at a
 Turso URL (plus `DATABASE_AUTH_TOKEN`) to use the hosted variant; no code changes.
