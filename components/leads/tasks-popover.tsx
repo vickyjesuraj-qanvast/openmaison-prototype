@@ -51,6 +51,9 @@ function TaskRow({
       layout
       className={styles.row}
       data-overdue={overdue || undefined}
+      /* (REG-328) The card itself opens the task; a press on one of its own controls — the radio, Set Due Date, the chevron —
+         or inside the date picker is theirs. Keyboard users keep the chevron button, so the card takes no tab stop of its own. */
+      onClick={(e) => { const t = e.target as HTMLElement; if (t.closest('button, a') || !e.currentTarget.contains(t)) return; onOpen(task) }}   /* the date picker is portalled: its presses reach here through React but sit outside the card */
       initial={false}
       exit={{ opacity: 0, height: 0, transition: { duration: duration.step, ease: ease.standard } }}
     >

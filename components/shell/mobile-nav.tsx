@@ -92,7 +92,7 @@ export function MobileChrome() {
           <button type="button" className={styles.barIcon} aria-label="Notifications" onClick={comingSoon}>
             <Icon name="notifications" size={24} weight={300} />
           </button>
-          <button type="button" className={styles.avatarBtn} aria-label="Dane Wong" onClick={comingSoon}>
+          <button type="button" className={styles.avatarBtn} aria-label="Dane Bruce Lee" onClick={comingSoon}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/figma-assets/avatar-user.png" alt="" />
           </button>

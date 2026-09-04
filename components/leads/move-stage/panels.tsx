@@ -30,7 +30,7 @@ export function NewPanel({
         <SectionRow label="Members" />
         {team.map((m) => (
           <div key={m.id} className={styles.memberRow}>
-            <Avatar name={m.name} color={m.color} size={40} />
+            <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
             <span className={styles.memberText}>
               <span className={styles.memberName}>{m.name}</span>
               <span className={styles.memberRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
@@ -182,7 +182,7 @@ export function ContactedPanel({
   )
 }
 
-/** Met (780:90234): the same log list — Where · Date & Time / divider / meeting documents / divider / notes. */
+/** Met (780:90234, updated 2026-09-04): the same log list — Where · Date & Time / Remarks / rule / meeting documents (REG-325). */
 function MeetingCard({
   index, log, onChange, onAutoFill, onEdit, onDelete, readOnly, errors, today,
 }: {
@@ -205,10 +205,15 @@ function MeetingCard({
         <DateTimeField label="Date & Time" value={log.when} today={today}
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
       </div>
+      {/* (REG-325, 780:90234 updated) Remarks before the rule; the Attach row is the log's last section, its link "Attach". */}
+      <div className={styles.stack12}>
+        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
+        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
+      </div>
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach meeting documents"
-                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
+                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
         {log.files.length ? (
           <div className={styles.tiles}>
             {log.files.map((f, i) => (
@@ -217,11 +222,6 @@ function MeetingCard({
           </div>
         ) : null}
         <FieldError message={err('files')} />
-      </div>
-      <Divider />
-      <div className={styles.stack12}>
-        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
-        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>
   )
@@ -365,7 +365,7 @@ export function QuoteSentPanel({
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach meeting documents"
-                    action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
+                    action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach</LinkButton>} />
         {meetingFiles.length ? (
           <div className={styles.tiles}>
             {meetingFiles.map((f, i) => (
@@ -377,7 +377,7 @@ export function QuoteSentPanel({
       <Divider />
       <div className={styles.stack12}>
         <SectionRow label="Attach render (optional)"
-                    action={<LinkButton icon="attach_file" onClick={() => setRenderFiles((f) => [...f, 'Q-101'])}>Attach Files</LinkButton>} />
+                    action={<LinkButton icon="attach_file" onClick={() => setRenderFiles((f) => [...f, 'Q-101'])}>Attach</LinkButton>} />
         {renderFiles.length ? (
           <div className={styles.tiles}>
             {renderFiles.map((f, i) => (

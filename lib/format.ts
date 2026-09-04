@@ -178,3 +178,12 @@ export function formatInputDateTime(d: Date): string {
   h = h % 12 || 12
   return `${inputDate(d)}, ${h}:${String(d.getMinutes()).padStart(2, '0')} ${am}`
 }
+
+/**
+ * (REG-329, user 2026-09-04: "whatever case the user types, make sure it's always … first letter in caps") A person's
+ * name as the product shows it: every word capitalised, the rest lowered — "farah ahmad" and "FARAH AHMAD" both save
+ * as "Farah Ahmad". A word starts after a space, a hyphen or an apostrophe (Jean-Luc, D’Souza). Whitespace is collapsed.
+ */
+export function titleCaseName(input: string): string {
+  return input.trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase())
+}

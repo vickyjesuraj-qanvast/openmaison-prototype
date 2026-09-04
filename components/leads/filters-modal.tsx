@@ -163,7 +163,7 @@ export function FiltersModal({
                       {team.map((m) => (
                         <div key={m.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('assignees', m.id)}
                              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('assignees', m.id) } }}>
-                          <Avatar name={m.name} color={m.color} size={40} />
+                          <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
                           <span className={styles.rowText}>
                             <span className={styles.rowName}>{m.name}</span>
                             <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>

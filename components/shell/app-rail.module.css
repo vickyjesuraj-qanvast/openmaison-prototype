@@ -23,11 +23,22 @@
   display: flex; flex-direction: column;
   padding: var(--om-spacing-2);
   overflow: hidden;
-
+}
+/* (REG-329, revised: "let the whole thing be scrollable", then "fix the logo on scroll and add the shadow only … when there is
+   scroll") The logo row is the rail's fixed head; .scroller holds Search, the nav, Upgrade, the bottom items and the studio row
+   and scrolls as one on a short viewport. Both bleed into the panel's 8px padding so the head spans the rail and the scrollbar
+   runs its edge; the head takes level-1 only while the body is scrolled under it. */
+.head { flex-shrink: 0; margin: -8px -8px 0; padding: 8px 8px 0; background: var(--om-color-surface-default); position: relative; z-index: 1; transition: box-shadow var(--motion-toggle); }
+.head[data-scrolled] { box-shadow: var(--om-elevation-level-1); }
+.scroller {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  margin: 0 -8px -8px; padding: 0 8px 8px;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
 }
 .panel[data-expanded] { width: 216px; }
 
-.top { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.top { flex: 1 0 auto; display: flex; flex-direction: column; }   /* grows to push the bottom block down; never shrinks — the panel scrolls instead (REG-329) */
+.logoRow, .searchBlock, .bottom, .avatarRow { flex-shrink: 0; }
 .logoRow { position: relative; height: 36px; padding: 0; margin: var(--om-spacing-2) 0 var(--om-spacing-5); }
 /* Expanded header (lockup + collapse) and collapsed header (logo tile) are stacked and crossfade on the toggle timing,
    in step with the width transition — neither pops in. */
@@ -100,7 +111,8 @@
 }
 .panel[data-expanded] .kbd { display: inline-flex; }
 
-.items { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.items { display: flex; flex-direction: column; gap: var(--om-spacing-2); flex-shrink: 0; }
+.items .item { flex-shrink: 0; }
 .item {
   text-decoration: none;
   width: 36px; height: 36px;
@@ -117,7 +129,7 @@
 .label { font: var(--om-type-subtitle-m); color: inherit; opacity: 0; transition: opacity var(--motion-toggle); }
 .panel[data-expanded] .label { opacity: 1; }
 
-.bottom { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.bottom { display: flex; flex-direction: column; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); }   /* (REG-329) the same 8 as between items: compact, the two blocks used to touch — Qanvast Ops against Upgrade */
 /* No token — the Upgrade gradients are the mock's literals (779:19690: coral → raspberry at 10%, and the gem's #b42c69 → #eb802b);
    logged with the other literal exceptions in REGISTER.md (audit 2026-08-30). */
 .upgrade { background: linear-gradient(90deg, rgba(214, 97, 66, 0.1), rgba(189, 58, 95, 0.1)); }
@@ -171,6 +183,11 @@
   .wrap .logoRow[data-expanded] .headerCollapsed { opacity: 1; pointer-events: auto; }
   .wrap .expandGlyph { display: none; }               /* the tile stays the logo — no pin here */
   .wrap .logoTile[data-icon] { background: transparent; color: var(--om-color-on-surface-secondary); }
+  /* (REG-330) The rail never expands here, whatever om.rail.expanded remembers from desktop: the component renders it collapsed
+     (app-rail.tsx), and these keep the expanded styling off even before the media query resolves on the first client paint. */
+  .wrap .panel[data-expanded] .item, .wrap .panel[data-expanded] .searchTile { width: 36px; }
+  .wrap .panel[data-expanded] .label, .wrap .panel[data-expanded] .searchLabel, .wrap .panel[data-expanded] .studio { opacity: 0; }
+  .wrap .panel[data-expanded] .kbd { display: none; }
 }
 
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The rail is the app's primary navigation on a tablet, where it stays collapsed.

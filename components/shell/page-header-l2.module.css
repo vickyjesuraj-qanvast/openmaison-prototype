@@ -22,6 +22,9 @@
   background: var(--om-color-surface-default); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; pointer-events: none;
   box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);   /* the 1px INSIDE bottom stroke, on the plate so it sits under the content */
 }
+/* (REG-331) Level-1 joins the stroke only while the page is scrolled under the header (and only where no sticky tab strip follows). */
+.header[data-scrolled]::after { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant), var(--om-elevation-level-1); }
+.header::after { transition: box-shadow var(--motion-toggle); }
 
 /* Back arrow (icon arrow_back 24/Light on-surface) — a routed link, 24×24 inside the 40px row. */
 .back {

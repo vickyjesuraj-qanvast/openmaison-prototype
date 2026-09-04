@@ -134,7 +134,7 @@ export function TaskPanel({
           {task.creator ? (
             <>
               {/* (REG-287) om/avatar ships 20 — the mock's "Generic 20" is the component's own size, not a resized 24. */}
-              <Avatar name={task.creator.name} color={task.creator.color} size={20} />
+              <Avatar name={task.creator.name} color={task.creator.color} size={20} tooltip={false} />
               <span>{task.creator.name}</span>
             </>
           ) : '—'}

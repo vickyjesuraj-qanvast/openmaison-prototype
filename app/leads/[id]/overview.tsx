@@ -213,7 +213,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     <PageReveal skeleton={<DetailSkeleton wide={wide} />}>
       <div className={styles.body}>
         <PageHeaderL2
-          backHref={origin === 'qanvast' ? '/qanvast-ops' : '/leads'}
+          scrollShadow={false}   /* the sticky tab strip below carries the level-1 (REG-331) */
+        backHref={origin === 'qanvast' ? '/qanvast-ops' : '/leads'}
           crumb={origin === 'qanvast' ? 'Qanvast Ops / Leads' : 'Leads'}
           title={lead.name}
           chips={

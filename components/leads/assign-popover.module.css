@@ -22,6 +22,7 @@
   width: 100%;
   border: 0; background: none; cursor: pointer; text-align: left;
 }
+.row:hover { background: var(--om-color-hover-04p); }   /* (REG-329) the DS hover overlay, as menu items — the rows answered a pointer with nothing */
 .rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .rowRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

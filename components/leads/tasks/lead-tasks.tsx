@@ -211,7 +211,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           onAddCancel={() => setAdding(false)}
           onAddClick={startAdd}
           renaming={renaming}
-          onRenameSubmit={(id, title) => { setRenaming(null); if (title.trim()) void run('rename the task', () => updateTask(id, { title: title.trim() })) }}
+          onRenameSubmit={(id, title) => { setRenaming(null); if (title.trim()) void run('rename the task', () => updateTask(id, { title: title.trim() }), 'Task updated') }}   /* (REG-329) the inline rename confirms as the panel does (REG-326) */
           onRenameCancel={() => setRenaming(null)}
           onOpen={(task) => open(task)}
           onOpenComments={(task) => { setOpenId(task.id); setPanelView('comments') }}
@@ -233,13 +233,13 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           onComments={() => setPanelView('comments')}
           onAttach={() => setAttachFor(openTask.id)}
           onMenu={(action) => (action === 'template' ? setSaveTemplateFor([openTask.id]) : setDeleting({ ids: [openTask.id], all: false }))}
-          onChange={(patch) => { void run('save the task', () => updateTask(openTask.id, patch)) }}
+          onChange={(patch) => { void run('save the task', () => updateTask(openTask.id, patch), 'Task updated') }}   /* (REG-326) the blur-saved fields confirm, as Members do */
           onAssign={(anchor) => openAssign(openTask, anchor)}
-          onTags={(tagIds) => { void run('update the tags', () => setTaskTags(openTask.id, tagIds)) }}
+          onTags={(tagIds) => { void run('update the tags', () => setTaskTags(openTask.id, tagIds), 'Tags updated') }}
           onCreateTag={(name) => { void createAndTag(openTask, name) }}
           onManageTags={() => setManageTags(true)}
           onToggleDone={() => { void toggleDone(openTask) }}
-          onDetach={(fileId) => { void run('remove the file', () => detachFile(openTask.id, fileId)) }}
+          onDetach={(fileId) => { void run('remove the file', () => detachFile(openTask.id, fileId), 'File removed') }}
         />
       ) : null}
       {openTask && panelView === 'comments' ? (
@@ -275,7 +275,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           open={!!tagsFor}
           tags={tags}
           value={tagsTask?.tags.map((g) => g.id) ?? []}
-          onChange={(ids) => { const t = tagsTask; if (t) void run('update the tags', () => setTaskTags(t.id, ids)) }}
+          onChange={(ids) => { const t = tagsTask; if (t) void run('update the tags', () => setTaskTags(t.id, ids), 'Tags updated') }}
           onCreate={(name) => { void createAndTag(tagsTask ?? null, name) }}
           onManage={() => { setTagsFor(null); setManageTags(true) }}
           onClose={() => setTagsFor(null)}
@@ -290,7 +290,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         value={dueTask?.dueAt ?? null}
         today={new Date(now)}
         label="Due date"
-        onSelect={(date) => { const t = dueTask; setDueFor(null); if (t) void run('set the due date', () => updateTask(t.id, { dueAt: date })) }}
+        onSelect={(date) => { const t = dueTask; setDueFor(null); if (t) void run('set the due date', () => updateTask(t.id, { dueAt: date }), 'Due date updated') }}
         onClose={() => setDueFor(null)}
       />
       <ManageTagsDialog

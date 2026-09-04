@@ -9,7 +9,7 @@ import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { ALL_STAGES } from '@/lib/leads/enums'
 // (REG-287) The app's one phone rule and one strict d/m/yyyy parser — the CSV import used to carry private copies
 // of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
-import { digitsOnly, parseInputDate, phoneDigits } from '@/lib/format'
+import { digitsOnly, parseInputDate, phoneDigits, titleCaseName } from '@/lib/format'
 import { revalidateEveryLead, revalidateLead, revalidateLeadListings } from '@/lib/leads/queries'
 
 const ME = SESSION_MEMBER_ID   // (REG-286) one stand-in for the signed-in member, shared by every module that stamps a write
@@ -115,7 +115,7 @@ function leadColumns(input: LeadFormInput) {
   // (REG-287) One phone rule (`phoneDigits`) and one date parser (`parseInputDate`, strict) — the hand-written
   // `digits(input.phone)` and the lax inline d/m/yyyy regex that stood here were two more copies of both.
   return {
-    name: input.name.trim(),
+    name: titleCaseName(input.name),   // (REG-329) typed in any case, saved as "Farah Ahmad"
     phone: phoneDigits(input.phone),
     source: input.source || 'Others',
     propertyType: input.propertyType || 'Others',
@@ -318,7 +318,7 @@ async function leadFromImport(data: Record<string, string>) {
   }
   const now = new Date()
   return {
-    name: (data['Lead Name'] ?? '').trim(),
+    name: titleCaseName(data['Lead Name'] ?? ''),   // (REG-329) imported in any case, saved as "Farah Ahmad"
     phone: phoneDigits(data['Lead Phone Number'] ?? ''),
     email: (data['Lead Email'] ?? '').trim() || null,
     source: pick(data['Lead Source'], SOURCES, 'Others'),

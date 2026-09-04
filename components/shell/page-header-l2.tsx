@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import styles from './page-header-l2.module.css'
+import { useWindowScrolled } from './use-window-scrolled'
 
 /**
  * Page Header / Leads - L2 (858:24783) — 72px: back arrow → `backHref`, then "{crumb} / " over the title with
@@ -12,12 +13,15 @@ import styles from './page-header-l2.module.css'
  * Spec: design-source/context/lead-overview/01-header-tabs-quicklinks.txt.
  */
 export function PageHeaderL2({
+  scrollShadow = true,
   backHref,
   crumb,
   title,
   chips,
   actions,
 }: {
+  /** (REG-331) Level-1 while the page is scrolled under the header. Off where a sticky tab strip follows it — the strip carries the mock's own level-1 (858:24784). */
+  scrollShadow?: boolean
   backHref: string
   /** Breadcrumb parent, rendered as "{crumb} / " (mock: "Leads / "). */
   crumb: string
@@ -26,8 +30,9 @@ export function PageHeaderL2({
   chips?: ReactNode
   actions?: ReactNode
 }) {
+  const scrolled = useWindowScrolled()
   return (
-    <header className={styles.header}>
+    <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined}>
       <Tooltip label={`Back to ${crumb}`}>
         <Link href={backHref} className={styles.back} aria-label={`Back to ${crumb}`}>
           <Icon name="arrow_back" size={24} weight={300} />

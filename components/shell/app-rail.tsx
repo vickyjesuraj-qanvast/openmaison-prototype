@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useFlagPref } from '@/lib/prefs'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
@@ -36,12 +37,17 @@ export function AppRail() {
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
      Settings or Qanvast Ops remounted the rail and dropped the choice (user 2026-08-31). `animate` keeps the width
      transition for the viewer's own toggle and suppresses it on load, so a remembered rail never plays an entrance. */
-  const [expanded, setExpanded, animate] = useFlagPref('om.rail.expanded', false)
+  const [pinned, setExpanded, animate] = useFlagPref('om.rail.expanded', false)
+  /* (REG-330) Tablet-and-down the rail is collapsed whatever the preference remembers: it neither expands nor collapses
+     there, and the saved choice simply resumes at ≥1025. */
+  const tabletDown = useMediaQuery(TABLET_DOWN)
+  const expanded = pinned && !tabletDown
   const [railHover, setRailHover] = useState(false)     // logo tile → expand icon (795:22541)
+  const [scrolled, setScrolled] = useState(false)   // (REG-329) the rail body has scrolled under the logo → the head takes a shadow
 
   const onEnter = () => setRailHover(true)
   const onLeave = () => setRailHover(false)
-  const togglePin = () => { setExpanded(!expanded); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
+  const togglePin = () => { if (tabletDown) return; setExpanded(!pinned); setRailHover(false) }   // collapse lands on the logo; the expand icon waits for a fresh hover
   // Fixed overlays (review banner strip, snackbar host) follow the rail width through this variable.
   useEffect(() => {
     document.documentElement.style.setProperty('--rail-w', expanded ? '216px' : '52px')
@@ -87,7 +93,8 @@ export function AppRail() {
       <nav className={styles.panel} data-expanded={expanded || undefined} data-pinned={expanded || undefined}
            data-animate={animate || undefined}
            aria-label="Workspace" onMouseEnter={onEnter} onMouseLeave={onLeave}>
-        <div className={styles.top}>
+        {/* The logo row stays put; everything below it scrolls in .scroller when the viewport is short (REG-329). */}
+        <div className={styles.head} data-scrolled={scrolled || undefined}>
           <div className={styles.logoRow} data-expanded={expanded || undefined}>
             {/* Both headers stay mounted and crossfade with the width change — no pop when collapsing / expanding. */}
             <div className={styles.headerExpanded} aria-hidden={!expanded} inert={!expanded}>
@@ -104,8 +111,8 @@ export function AppRail() {
               </Tooltip>
             </div>
             <div className={styles.headerCollapsed} aria-hidden={expanded} inert={expanded}>
-              <Tooltip label="Expand navigation" side="right" disabled={expanded}>
-                <button type="button" className={styles.logoTile} data-icon={(railHover && !expanded) || undefined} onClick={togglePin}
+              <Tooltip label="Expand navigation" side="right" disabled={expanded || tabletDown}>
+                <button type="button" className={styles.logoTile} data-icon={(railHover && !expanded && !tabletDown) || undefined} onClick={togglePin}
                         aria-label="Expand navigation" tabIndex={expanded ? -1 : 0}>
                   {/* Both layers stay mounted so the swap is a crossfade, not a pop. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -117,6 +124,9 @@ export function AppRail() {
               </Tooltip>
             </div>
           </div>
+        </div>
+        <div className={styles.scroller} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}>
+        <div className={styles.top}>
           <div className={styles.searchBlock}>
             <Tooltip label="Search" side="right" disabled={expanded}>
               <button type="button" className={styles.searchTile} aria-label="Search" onClick={requestSearchFocus}>
@@ -139,8 +149,9 @@ export function AppRail() {
           </Tooltip>
           <span className={styles.studio}>
             <span className={styles.studioName}>Demo Studio</span>
-            <span className={styles.studioOwner}>Dane Wong</span>
+            <span className={styles.studioOwner}>Dane Bruce Lee</span>
           </span>
+        </div>
         </div>
       </nav>
     </div>

@@ -138,7 +138,7 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
               <section className={styles.card} aria-label="Return" data-testid="return-card">
                 {me ? (
                   <div className={styles.twoLine}>
-                    <Avatar name={me.name} color={me.color} size={40} />
+                    <Avatar name={me.name} color={me.color} size={40} tooltip={false} />
                     <span className={styles.twoLineText}>
                       <span className={styles.twoLineName}>{me.name}</span>
                       <span className={styles.twoLineSub}>{me.isYou ? `${me.role} (you)` : me.role}</span>

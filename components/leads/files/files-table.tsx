@@ -178,7 +178,7 @@ function FileRowView({
       <div className={`${styles.cell} ${styles.colOwner}`} role="cell">
         {row.owner ? (
           <>
-            <Avatar name={row.owner.name} color={row.owner.color} size={24} />
+            <Avatar name={row.owner.name} color={row.owner.color} size={24} tooltip={false} />
             <span className={styles.oneLine}>{row.owner.name}</span>
           </>
         ) : '--'}

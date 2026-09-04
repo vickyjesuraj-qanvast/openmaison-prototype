@@ -386,7 +386,7 @@ function TaskRowView({
       <div className={`${styles.cell} ${styles.colCreator}`} role="cell">
         {task.creator ? (
           <>
-            <Avatar name={task.creator.name} color={task.creator.color} size={24} />
+            <Avatar name={task.creator.name} color={task.creator.color} size={24} tooltip={false} />
             <span className={styles.creatorName}>{task.creator.name}</span>
           </>
         ) : (

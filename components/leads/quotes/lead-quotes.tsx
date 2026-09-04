@@ -112,7 +112,7 @@ export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: L
         value={dueQuote?.dueAt ?? null}
         today={new Date(now)}
         label="Due date"
-        onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date)) }}
+        onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }}   /* (REG-329) as the Tasks due picker */
         onClose={() => setDueFor(null)}
       />
       <QuotesFiltersModal

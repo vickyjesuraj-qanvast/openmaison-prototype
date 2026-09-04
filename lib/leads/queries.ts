@@ -1,4 +1,5 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
+import { titleCaseName } from '@/lib/format'
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
@@ -91,6 +92,7 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets }: RowPart
   }
   return rows.map((l) => ({
     ...l,
+    name: titleCaseName(l.name),   // (REG-329) every surface reads the name as "Farah Ahmad", whatever case it was saved in
     tasks: tasks.filter((t) => t.leadId === l.id && !t.done),
     assignees: links
       .filter((a) => a.leadId === l.id)

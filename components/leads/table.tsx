@@ -235,12 +235,15 @@ export function LeadsTable({
       case 'stage':
         return (
           <div key={col.key} {...cellProps(col, styles.cell)} data-open={row.id === openStageId || undefined}>
+            {/* (REG-329) An On Hold row names its follow-up in the DS tooltip; it used to be the browser's own title bubble. */}
+            <Tooltip label={row.onHoldFollowUp ? `Next follow up: ${displayDate(new Date(row.onHoldFollowUp))}` : ''}
+                     disabled={!row.onHoldFollowUp || row.id === openStageId}>
             <button type="button" className={styles.stageBtn}
-                    title={row.onHoldFollowUp ? `Next follow up: ${displayDate(new Date(row.onHoldFollowUp))}` : undefined}
                     onClick={(e) => onStageClick(row, e.currentTarget.parentElement as HTMLElement) /* anchor = the cell (780:86452) */}>
               {hit(row.stage)}
               <span className={styles.chev}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>
+            </Tooltip>
           </div>
         )
       case 'tasks': {

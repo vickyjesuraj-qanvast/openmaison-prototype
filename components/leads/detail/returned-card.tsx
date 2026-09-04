@@ -67,7 +67,7 @@ export function LeadReturnedCard({ ret, returnedBy, onView, onAppeal, onOpenTab 
       { key: 'Returned by', value: returnedBy ? (
         <>
           {/* Avatar Generic 20 r4 (858:25188) — om/avatar size 20 */}
-          <Avatar name={returnedBy.name} color={returnedBy.color} size={20} />
+          <Avatar name={returnedBy.name} color={returnedBy.color} size={20} tooltip={false} />
           <span className={styles.name}>{returnedBy.name}</span>
         </>
       ) : null },

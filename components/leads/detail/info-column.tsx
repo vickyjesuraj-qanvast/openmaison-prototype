@@ -198,7 +198,7 @@ export function InfoColumn({
               <div className={styles.assignees}>
                 {assignees.map((m) => (
                   <div key={m.id} className={styles.assignee}>
-                    <Avatar name={m.name} color={m.color} size={20} />
+                    <Avatar name={m.name} color={m.color} size={20} tooltip={false} />
                     <span className={styles.assigneeName}>{m.name}</span>
                     <Tooltip label="Member actions">
                       <button type="button" className={styles.iconBtn} aria-label={`Actions for ${m.name}`}

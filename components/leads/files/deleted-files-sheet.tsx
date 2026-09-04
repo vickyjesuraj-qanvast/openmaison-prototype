@@ -164,7 +164,7 @@ export function DeletedFilesSheet({
                       <div className={`${styles.cell} ${styles.colOwner}`} role="cell">
                         {f.owner ? (
                           <>
-                            <Avatar name={f.owner.name} color={f.owner.color} size={24} />
+                            <Avatar name={f.owner.name} color={f.owner.color} size={24} tooltip={false} />
                             <span className={styles.plain}>{f.owner.name}</span>
                           </>
                         ) : <span className={styles.plain}>--</span>}

@@ -73,9 +73,11 @@
   background: var(--om-color-primary-default); z-index: 3;
 }
 
-.nameCell { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--om-spacing-1); }
+.nameCell { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--om-spacing-1); padding-block: 0; }   /* (REG-327) the column centres its 40px block itself: with the 12/12 padding under the 1px rule only 39 remained */
+.nameCell > .accent { position: absolute; }   /* (REG-327) out of the column's flow — in it, the empty bar still cost a 4px gap and the name shrank to 15px, clipping descenders */
 .name {
   font: var(--om-type-heading-h5);   /* 779:24446: 14 bold / 20 */
+  flex-shrink: 0;   /* never below its 20px line — overflow:hidden lets a flex item shrink to nothing (REG-327) */
   cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
   transition: color var(--motion-hover);
@@ -190,7 +192,7 @@
 .menuWrap { position: relative; display: inline-flex; }
 
 /* Copy-phone affordance in the hovered name cell (779:24696). */
-.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
 .copyBtn {
   border: 0; background: none; padding: 0; cursor: pointer;
   display: inline-flex;
