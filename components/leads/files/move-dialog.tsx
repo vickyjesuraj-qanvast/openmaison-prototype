@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -65,6 +66,7 @@ export function MoveDialog({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   // Render-phase adjust: every opening browses from the root with no Create Folder form.
   if (open !== wasOpen) {
@@ -150,7 +152,7 @@ export function MoveDialog({
                 </div>
               ) : null}
 
-              <div className={styles.list} role="list" aria-label={here ? here.name : 'All Files'}>
+              <div ref={scrollRef} className={styles.list} role="list" aria-label={here ? here.name : 'All Files'}>
                 {folders.map((f) => (
                   <div key={f.id} className={styles.folderRow} role="listitem" tabIndex={0}
                        onClick={() => drill(f)}
@@ -189,7 +191,7 @@ export function MoveDialog({
               ) : null}
             </div>
 
-            <div className={styles.footer}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               {creating ? null : (
                 <Button variant="primary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />}
                         onPress={() => setCreating(true)}>

@@ -59,7 +59,7 @@ DS library components (OpenMaison Components): Text Field set key `35b2a7b3a07d5
 - Colour, type, spacing, radius and elevation come from `@openmaison/react` as `--om-*` variables (never literals — the two exceptions are logged: snackbar action `#CCB2FF`, merged-column tint fallback).
 - Radii: **4** fields/buttons/menus · **8** cards/panels · **12** modals (REG-107). Elevation level-1 headers/column heads · level-3 menus/popovers · level-5 modals.
 - Type roles used: heading-h3 (modal titles 20/24), h4 (panel titles), subheading-m/s (labels, buttons, links), body-m/s, caption-s (table headers, uppercase, 12/500).
-- **Modal scale:** s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`); height to content, capped to the viewport; **xxl = fluid, 48px margin every side**. Fixed heights kept where the mock fixes them (Filters 600, Import wizard / Deleted 928).
+- **Modal scale:** s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`); height to content, capped to the viewport; **xxl = fluid, 48px margin every side**. Fixed heights kept where the mock fixes them (Filters 600, Import wizard / Deleted 928). Footers: top rule always, the `--om-shadow-modal-footer` shadow only while the body scrolls (REG-322).
 - **Motion** (`lib/motion.ts`, from the designer's Figma reactions): hover 50ms ease-out; toggles 150ms standard; menus 150/100; modals 200/140; sheets 280/180; springs `settle` (380/30) and `pop` — springs take **two** keyframes max. Ambient: the rail's Upgrade gem turns once every 8s (REG-164).
 
 ## 3 · Component specs (as built, mock-faithful)

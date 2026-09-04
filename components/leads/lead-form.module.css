@@ -70,7 +70,7 @@
   flex-shrink: 0;
   transition: box-shadow var(--motion-toggle);
 }
-.footer[data-shadow] { box-shadow: 0 -12px 24px -12px rgba(0, 0, 0, 0.25); }
+.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    This panel predates components/om/dialog and carries its own overlay, so it repeats that shell's rules:

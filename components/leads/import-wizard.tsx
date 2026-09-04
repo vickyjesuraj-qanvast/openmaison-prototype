@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { useSnackbar } from '@/components/om/snackbar'
 import { PortalMenu } from '@/components/leads/move-stage/fields'
 import menuStyles from '@/components/leads/menus.module.css'
@@ -133,6 +134,7 @@ export function ImportWizard({
   const escClose = useCallback(() => { closeRef.current() }, [])
   useEscapeLayer(open, panelRef, escClose)
   useDialogFocus(open, panelRef)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   const acceptFile = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase()
@@ -245,7 +247,7 @@ export function ImportWizard({
                             initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
                             transition={{ duration: duration.step, ease: ease.standard }}>
                   {step === 1 ? (
-                    <div className={styles.step1}>
+                    <div ref={scrollRef} className={styles.step1}>
                       <div className={styles.tips}>
                         <div className={styles.tipBlock}>
                           <span className={styles.tipTitle}>Tips on Importing</span>
@@ -461,7 +463,7 @@ export function ImportWizard({
             </Dialog>
             <ConfirmDialog open={confirmClose} title="Are you sure you want to close?" message="Your file and column mapping won't be saved."
                            confirmLabel="Close window" onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose() }} />
-            <div className={styles.footer}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               {step === 1 ? (
                 <>
                   <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>

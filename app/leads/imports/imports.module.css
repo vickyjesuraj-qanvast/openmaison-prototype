@@ -41,7 +41,10 @@
 .toolRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
 .tableWrap {
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  /* The mock's rule is an inside stroke: the columns sum to the wrapper's full 1316 at 1440. As a border it took 2px
+     off the content box and the table scrolled sideways by exactly that (REG-323) — an inset outline draws the same
+     line without taking width. */
+  outline: var(--om-border-1) solid var(--om-color-surface-variant); outline-offset: calc(-1 * var(--om-border-1));
   border-radius: var(--om-radius-2);
   overflow-x: auto;
 }

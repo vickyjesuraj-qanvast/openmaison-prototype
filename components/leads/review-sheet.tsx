@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { overlayFade, modalPanel } from '@/lib/motion'
 import { displayDate, relativeTime } from '@/lib/format'
 import type { ReviewRow } from '@/lib/leads/queries'
@@ -61,6 +62,7 @@ export function ReviewSheet({
   const escClose = useCallback(() => { if (!busyRef.current) onClose() }, [onClose])
   useEscapeLayer(open, panelRef, escClose)
   useDialogFocus(open, panelRef)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   const duplicates = rows.filter((r) => r.row.status === 'duplicate')
   const clean = rows.filter((r) => r.row.status === 'pending')
@@ -197,7 +199,7 @@ export function ReviewSheet({
                   <div className={styles.emptyDetail}>Select a lead to review it.</div>
                 ) : selected.row.status === 'duplicate' && selected.existing ? (
                   <>
-                    <div className={styles.detailBody}>
+                    <div ref={scrollRef} className={styles.detailBody}>
                       <span className={styles.detailTitle}>Merge with existing lead</span>
                       <div className={styles.table} role="table" onScroll={markScroll} aria-label="Merge fields">
                         <div className={styles.tr} role="row">
@@ -255,7 +257,7 @@ export function ReviewSheet({
                         })}
                       </div>
                     </div>
-                    <div className={styles.footer}>
+                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
                       <span className={styles.note}>Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.</span>
                       <span className={styles.spacer} />
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject New</Button>
@@ -271,7 +273,7 @@ export function ReviewSheet({
                 ) : selected.row.status === 'duplicate' && selected.twin ? (
                   <>
                     {/* In-file duplicate (user 2026-08-29: the match was never shown): the row it collided with, side by side. */}
-                    <div className={styles.detailBody}>
+                    <div ref={scrollRef} className={styles.detailBody}>
                       <span className={styles.detailTitle}>{selected.twin.sameFile ? 'Duplicate of another row in this file' : 'Duplicate of a row already in the queue'}</span>
                       <span className={styles.note}>{selected.twin.sameFile ? 'Both rows came in the same file' : `The same lead was imported earlier (${selected.twin.fileName})`} — there is no existing lead to merge into. Keep both as separate leads, or reject this one.</span>
                       {/* data-stack: at ≤767 this comparison stacks its two records one above the other (REG-269) —
@@ -304,7 +306,7 @@ export function ReviewSheet({
                         })}
                       </div>
                     </div>
-                    <div className={styles.footer}>
+                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
                       <span className={styles.spacer} />
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
                       <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
@@ -312,7 +314,7 @@ export function ReviewSheet({
                   </>
                 ) : (
                   <>
-                    <div className={styles.detailBody}>
+                    <div ref={scrollRef} className={styles.detailBody}>
                       <span className={styles.detailTitle}>{selected.row.status === 'duplicate' ? 'Duplicate of an earlier row in this file' : 'New lead'}</span>
                       {selected.row.status === 'duplicate' ? <span className={styles.note}>No existing lead to merge with — approve to keep it as a separate lead, or reject it.</span> : null}
                       <div className={styles.table} role="table" onScroll={markScroll} aria-label="New lead details">
@@ -328,7 +330,7 @@ export function ReviewSheet({
                         ))}
                       </div>
                     </div>
-                    <div className={styles.footer}>
+                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
                       <span className={styles.spacer} />
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
                       <Button className={styles.toneGreen} isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Approve</Button>

@@ -78,8 +78,10 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
+  transition: box-shadow var(--motion-toggle);
   flex-shrink: 0;
 }
+.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 .footerStart { margin-right: auto; }
 
 /* Responsive (REG-269, added under REG-273): both panels kept their mocked widths at every size, so Choose

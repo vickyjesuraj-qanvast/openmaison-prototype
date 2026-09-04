@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -58,6 +59,7 @@ export function MoveStageWizard({
   const railRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(true, panelRef, onClose)
   useDialogFocus(true, panelRef)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
   // On Hold / Lost leads resume from the stage they left; a lead with no history starts before New.
   const fromIdx = STAGES.indexOf((STAGES as readonly string[]).includes(lead.stage) ? lead.stage as (typeof STAGES)[number] : lead.resumeStage as (typeof STAGES)[number])
   const [active, setActive] = useState<Stage>(targetStage)
@@ -275,6 +277,7 @@ export function MoveStageWizard({
               <AnimatePresence mode="popLayout" custom={dir}>
                 <motion.div
                   key={active}
+                  ref={scrollRef}
                   className={styles.panel}
                   style={{ height: '100%' }}
                   initial={{ opacity: 0, x: dir * 16 }}
@@ -287,7 +290,7 @@ export function MoveStageWizard({
               </AnimatePresence>
             </div>
           </div>
-          <div className={styles.foot}>
+          <div className={styles.foot} data-shadow={bodyScrolls || undefined}>
             {showErrors && Object.keys(errors).length ? (
               <motion.span className={styles.footError}
                            initial={{ x: 0 }}

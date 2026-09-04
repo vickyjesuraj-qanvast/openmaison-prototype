@@ -69,14 +69,14 @@
   display: flex; overflow: hidden;
 }
 .list {
-  width: 288px; flex-shrink: 0;   /* 16 + 256 card + 16 (mock) */
+  width: 288px; flex-shrink: 0;   /* 16 + 256 card + 16 (mock) — the 1px divider is inside the 288, so the card is 255 (REG-323) */
   background: var(--om-color-surface-bg);
   padding: var(--om-spacing-4);   /* the list keeps its 16px (user 2026-08-29) */
   display: flex; flex-direction: column; gap: var(--om-spacing-3);
   overflow-y: auto;
   border-right: var(--om-border-1) solid var(--om-color-surface-variant); overscroll-behavior: contain; }
 .card {
-  width: 256px; text-align: left;
+  width: auto; text-align: left;   /* stretches to the column (the mock's 256 less the divider); a fixed 256 overflowed by 1px and scrolled sideways (REG-323) */
   background: var(--om-color-surface-default);
   border: var(--om-border-2) solid transparent;
   border-radius: var(--om-radius-2);
@@ -164,8 +164,10 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
+  transition: box-shadow var(--motion-toggle);
   flex-shrink: 0;
 }
+.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .emptyDetail { flex: 1; display: flex; align-items: center; justify-content: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
@@ -199,7 +201,6 @@
   .body[data-pane='detail'] .list { display: none; }
   .body[data-pane='list'] .detail { display: none; }
   .list { width: auto; flex: 1 1 auto; border-right: 0; }
-  .card { width: auto; }
   .backBar { display: inline-flex; }
 
   /* Frozen edges come down so the scrolling middle keeps a real window at 768 (was 404 of 384). */

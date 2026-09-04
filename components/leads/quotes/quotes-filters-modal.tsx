@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -75,6 +76,7 @@ export function QuotesFiltersModal({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   // Render-phase adjust: every opening starts from the applied value on the Sort pane.
   if (open !== wasOpen) {
@@ -125,7 +127,7 @@ export function QuotesFiltersModal({
                   </button>
                 ))}
               </div>
-              <div className={styles.content} role="tabpanel">
+              <div ref={scrollRef} className={styles.content} role="tabpanel">
                 {tab === 'sort' ? (
                   <>
                     <span className={styles.sectionTitle}>Sort by</span>
@@ -185,7 +187,7 @@ export function QuotesFiltersModal({
                 )}
               </div>
             </div>
-            <div className={styles.footer}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_QUOTE_FILTERS)}>Clear All</Button>
               <Button onPress={() => { if (rangeBad) return; onApply(draft); onClose() }} isDisabled={rangeBad}>Apply</Button>
             </div>

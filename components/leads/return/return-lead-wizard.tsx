@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Link, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { DateTimeField } from '@/components/om/date-field'
@@ -96,6 +97,7 @@ export function ReturnLeadWizard({
   const panelRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panelRef, onClose)
   useDialogFocus(open, panelRef)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   // Render-phase adjust: every opening starts fresh on step 1.
   if (open !== wasOpen) {
@@ -194,7 +196,7 @@ export function ReturnLeadWizard({
               <div className={styles.steps}>
               <AnimatePresence mode="popLayout" initial={false} custom={dir}>
               {step === 'reason' ? (
-                <motion.div key="reason" className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
+                <motion.div key="reason" ref={scrollRef} className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
                   <div className={styles.columns}>
                     <div className={styles.form}>
                       {/* Text Field 48 select "Select a reason" (expand_more) */}
@@ -289,7 +291,7 @@ export function ReturnLeadWizard({
                 </motion.div>
               ) : (
                 /* Step 2 (207): the Terms card 752×380 — "Term of service" 20/Semi Bold + the sentence 14 centred */
-                <motion.div key="terms" className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
+                <motion.div key="terms" ref={scrollRef} className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
                   <div className={styles.terms}>
                     <div className={styles.termsInner}>
                       <span className={styles.termsTitle}>Term of service</span>
@@ -302,7 +304,7 @@ export function ReturnLeadWizard({
               </div>
 
               {/* Footer 68: Cancel · Submit (reads Next once a reason is chosen) — step 2: Back · Confirm */}
-              <div className={styles.footer}>
+              <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
                 {step === 'reason' ? (
                   <>
                     <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>

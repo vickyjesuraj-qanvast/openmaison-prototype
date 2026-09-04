@@ -7,6 +7,7 @@ import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
+import { useOverflow } from './use-overflow'
 import styles from './dialog.module.css'
 
 export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
@@ -34,6 +35,7 @@ export function Dialog({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
   return (
     <AnimatePresence>
       {open ? (
@@ -51,8 +53,8 @@ export function Dialog({
                 <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" className={styles.close} onClick={onClose} />
               </Tooltip>
             </div>
-            <div className={styles.body}>{children}</div>
-            <div className={styles.foot}>{footer}</div>
+            <div ref={scrollRef} className={styles.body}>{children}</div>
+            <div className={styles.foot} data-shadow={bodyScrolls || undefined}>{footer}</div>
           </motion.div>
         </motion.div>
       ) : null}

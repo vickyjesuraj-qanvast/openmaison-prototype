@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Radio, RadioGroup, SearchBar, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -28,6 +29,7 @@ function TemplateShell({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
   return (
     <AnimatePresence>
       {open ? (
@@ -46,8 +48,8 @@ function TemplateShell({
                 </button>
               </Tooltip>
             </div>
-            <div className={styles.body}>{children}</div>
-            <div className={styles.footer}>{footer}</div>
+            <div ref={scrollRef} className={styles.body}>{children}</div>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>{footer}</div>
           </motion.div>
         </motion.div>
       ) : null}

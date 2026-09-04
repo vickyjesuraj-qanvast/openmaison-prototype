@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, SearchBar } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -65,6 +66,7 @@ export function AttachFilesModal({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   // Fresh state per opening (render-phase adjust): selection = what the task already has.
   if (open !== wasOpen) {
@@ -143,7 +145,7 @@ export function AttachFilesModal({
               </Tooltip>
             </div>
 
-            <div className={styles.body}>
+            <div ref={scrollRef} className={styles.body}>
               {/* Upload block (V g12): title 16/Semi Bold + dropzone 140 (p40, 2px dashed #cccccc on surface-bg). */}
               <div className={styles.uploadBlock}>
                 <span className={styles.blockTitle}>Upload from your local files</span>
@@ -271,7 +273,7 @@ export function AttachFilesModal({
             </div>
 
             {/* Footer 68 (p16/24, top rule): Cancel (secondary outlined) · Attach n File(s) (primary; "Attach Files" disabled at 0). */}
-            <div className={styles.footer}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <Button isDisabled={count === 0} onPress={() => onAttach(picks)}>{attachLabel}</Button>
             </div>

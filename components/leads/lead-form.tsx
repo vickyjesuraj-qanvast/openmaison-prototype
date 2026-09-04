@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { AssigneeField } from './assignee-field'
 import { DateField } from '@/components/om/date-field'
@@ -229,6 +230,7 @@ export function LeadFormModal({
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
   const set = <K extends keyof LeadFormData>(k: K) => (v: LeadFormData[K]) =>
     setData((d) => ({ ...d, [k]: v }))
@@ -281,7 +283,7 @@ export function LeadFormModal({
               </Tooltip>
             </div>
 
-            <div className={styles.body}>
+            <div ref={scrollRef} className={styles.body}>
               <div className={styles.section}>
                 <div className={styles.fieldWrap} data-field="name">
                   <TextField label="Lead name*" value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef} />
@@ -355,7 +357,7 @@ export function LeadFormModal({
               </div>
             </div>
 
-            <div className={styles.footer} data-shadow={expanded || undefined}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={submitting}>Cancel</Button>
               <Button onPress={() => { void submit() }} isDisabled={submitting}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
             </div>

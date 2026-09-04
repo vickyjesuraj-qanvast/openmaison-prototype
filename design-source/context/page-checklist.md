@@ -42,6 +42,7 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - Modal widths come from the scale only: s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`), or xxl = fluid with a 48px margin on every side; height follows content, capped to the viewport; radius 12; centred overlay. Full-page overlays are not used — Review imported leads is an XXL modal.
 - [ ] Closing a multi-step flow or discarding edits asks first via the shared `ConfirmDialog` (`components/om/confirm-dialog.tsx`).
 - [ ] Modals / sheets / dialogs call `useScrollLock(open)` and their overlays contain overscroll; any table inside a scrolling surface has a sticky header.
+- [ ] A modal footer keeps its top rule; its shadow appears only while the body scrolls — attach `useOverflow` (components/om/use-overflow.ts) to the scrolling body and give the footer `data-shadow` (REG-322).
 
 ## Rows that can overflow
 - Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).

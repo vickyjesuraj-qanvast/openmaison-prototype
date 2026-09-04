@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { PROPERTY_TYPE_GROUPS, SOURCES } from '@/lib/leads/enums'
@@ -46,6 +47,7 @@ export function FiltersModal({
   const panelRef = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panelRef, onClose)
   useDialogFocus(open, panelRef)
+  const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
   const [tab, setTab] = useState<Tab>('sort')
   const [draft, setDraft] = useState<LeadFilters>(value)
   const [q, setQ] = useState('')
@@ -102,7 +104,7 @@ export function FiltersModal({
                   </button>
                 ))}
               </div>
-              <div className={styles.content} role="tabpanel">
+              <div ref={scrollRef} className={styles.content} role="tabpanel">
                 {tab === 'sort' ? (
                   <>
                     <span className={styles.sectionTitle}>Sort by</span>
@@ -197,7 +199,7 @@ export function FiltersModal({
                 )}
               </div>
             </div>
-            <div className={styles.footer}>
+            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
               <Button onPress={() => { if (dateInvalid) return; onApply(draft); onClose() }} isDisabled={dateInvalid}>Apply</Button>
             </div>

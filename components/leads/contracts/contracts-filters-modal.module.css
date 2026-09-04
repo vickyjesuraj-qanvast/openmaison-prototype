@@ -86,9 +86,10 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
-  box-shadow: var(--om-shadow-modal-footer);   /* app/globals.css, same value (REG-286) */
+  transition: box-shadow var(--motion-toggle);
   flex-shrink: 0;
 }
+.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    The Quotes twin's block, which is itself the listing filters modal's (components/leads/filters-modal.module.css)
