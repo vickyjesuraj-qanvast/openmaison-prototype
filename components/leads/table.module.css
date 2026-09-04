@@ -92,6 +92,7 @@
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
+.stageCell { cursor: pointer; }   /* (REG-332) the whole cell opens the stage menu */
 .stageBtn {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   border: 0; background: none; padding: 0; cursor: pointer;

@@ -41,6 +41,9 @@
 .divider { width: 24px; height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }
 
 /* Eight 24px Light on-surface glyphs, 24 apart (y 93, 141, 189 … = 48 pitch). */
+/* (REG-338, user 2026-09-04) Both lists scroll inside the sticky column when the viewport is shorter than they are; the 2px keep the focus rings in. */
+.glyphs, .tiles { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 2px; margin: -2px; }
+.glyphs > *, .tiles > * { flex-shrink: 0; }
 .glyphs { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .glyph {
   width: 24px; height: 24px;

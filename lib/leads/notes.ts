@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadNotes, members, noteAttachments, stageLogs, type LeadFile, type LeadNote, type Member } from '@/lib/db/schema'
 import { parseInputDateTime } from '@/lib/format'
+import { isWizardPayload } from '@/lib/leads/stage-data'
 
 /* Lead Details › Notes (931-44865) — one loader for the tab. */
 
@@ -35,12 +36,15 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
   }))
 
   /* The Contacted stage's own logs appear here too (REG-265, user 2026-09-01: "it was part of contact stage
-     log and not user added under notes") — derived read-only from the LATEST Contacted stage_log's payload
-     (each save carries the full list, so only the newest row counts; deriving every row would duplicate).
+     log and not user added under notes") — derived read-only from the LATEST Contacted stage_log WRITTEN BY THE
+     WIZARD (each save carries the full list, so only the newest such row counts; deriving every row would duplicate).
+     (REG-339) Not merely the latest row into Contacted: a "Resume at Contacted?" from On Hold / Lost writes a
+     `{quick:true}` row with no logs, and taking that one hid every contact log the wizard's row still holds.
      Single source of truth stays the Move stage window: no dual write, nothing to drift. */
-  const [stageRow] = await db.select().from(stageLogs)
+  const contactedRows = await db.select().from(stageLogs)
     .where(and(eq(stageLogs.leadId, leadId), eq(stageLogs.toStage, 'Contacted')))
-    .orderBy(desc(stageLogs.createdAt)).limit(1)
+    .orderBy(desc(stageLogs.createdAt))
+  const stageRow = contactedRows.find((r) => isWizardPayload(r.payload))
   type PayloadLog = { channel?: string | null; when?: string; outcome?: string; nextStepWhen?: string; nextStepMode?: string; notes?: string }
   const stageNotes: NoteRow[] = ((stageRow?.payload as { logs?: PayloadLog[] } | null)?.logs ?? []).map((l, i) => ({
     id: `stage-${stageRow!.id}-${i}`,

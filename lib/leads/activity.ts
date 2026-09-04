@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 import { parseInputDateTime } from '@/lib/format'
@@ -34,7 +34,7 @@ const ME = SESSION_MEMBER_ID
 export async function fetchLeadActivity(leadId: string): Promise<LeadActivityData> {
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId))
   if (!lead) return { events: [], now: Date.now() }
-  const [team, logs, tasks, qs, cs, files, notes, qns, rets] = await Promise.all([
+  const [team, logs, tasks, qs, cs, files, notes, qns, rets, assigned] = await Promise.all([
     db.select().from(members),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, leadId)).orderBy(asc(stageLogs.createdAt)),
     db.select().from(leadTasks).where(eq(leadTasks.leadId, leadId)),
@@ -44,6 +44,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(leadNotes).where(eq(leadNotes.leadId, leadId)),
     db.select().from(questions).where(eq(questions.leadId, leadId)),
     db.select().from(leadReturns).where(eq(leadReturns.leadId, leadId)),
+    db.select().from(leadAssignees).where(eq(leadAssignees.leadId, leadId)),
   ])
   const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id)
   const [tComments, fComments] = await Promise.all([
@@ -61,6 +62,9 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   // imported lead keeps the sheet's own source (Facebook, Others, …), so it reads as yours too.
   push({ id: `lead-${lead.id}`, at: lead.createdAt, icon: 'person', text: `Lead created from ${lead.source}.`, link: { label: 'See Overview', href: base }, actor: lead.source === 'Qanvast' ? 'System' : 'You' })
   const overview = { label: 'See Overview', href: base }
+  // (REG-335, user 2026-09-04: "the activity include the member assigned") Every member on the lead, from the row's own stamp;
+  // rows older than the column read as assigned when the lead was created. A removal leaves no row, so it cannot appear.
+  for (const a of assigned) push({ id: `assign-${a.id}`, at: a.assignedAt ?? lead.createdAt, icon: 'person_add', text: `You assigned ${a.memberId === ME ? 'yourself' : who(a.memberId)} to this lead.`, link: overview, actor: 'You' })
   // The Lost move on a return is returnLead's own side effect, named by `leadReturns.stageLogId` (seeded returns carry only the
   // payload reason) — "You marked the lead as lost." claimed a move nobody made, next to the return row that already tells it.
   const returnLogIds = new Set(rets.map((r) => r.stageLogId).filter((id): id is string => !!id))

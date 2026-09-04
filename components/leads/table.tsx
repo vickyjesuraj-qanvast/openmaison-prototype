@@ -233,13 +233,16 @@ export function LeadsTable({
           </div>
         )
       case 'stage':
+        // (REG-332, user 2026-09-04) The whole cell opens the stage menu, and the cell is the menu's anchor (780:86452).
+        // The button inside stays for the keyboard — its click bubbles up to the cell, so nothing fires twice.
         return (
-          <div key={col.key} {...cellProps(col, styles.cell)} data-open={row.id === openStageId || undefined}>
+          <div key={col.key} {...cellProps(col, `${styles.cell} ${styles.stageCell}`)} data-open={row.id === openStageId || undefined}
+               data-stage-anchor={row.id === openStageId || undefined}
+               onClick={(e) => onStageClick(row, e.currentTarget)}>
             {/* (REG-329) An On Hold row names its follow-up in the DS tooltip; it used to be the browser's own title bubble. */}
             <Tooltip label={row.onHoldFollowUp ? `Next follow up: ${displayDate(new Date(row.onHoldFollowUp))}` : ''}
                      disabled={!row.onHoldFollowUp || row.id === openStageId}>
-            <button type="button" className={styles.stageBtn}
-                    onClick={(e) => onStageClick(row, e.currentTarget.parentElement as HTMLElement) /* anchor = the cell (780:86452) */}>
+            <button type="button" className={styles.stageBtn} aria-haspopup="menu" aria-expanded={row.id === openStageId}>
               {hit(row.stage)}
               <span className={styles.chev}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>

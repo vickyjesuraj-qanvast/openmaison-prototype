@@ -6,6 +6,8 @@ import { db } from '@/lib/db'
 import { leads, quotes } from '@/lib/db/schema'
 import { revalidateLead } from '@/lib/leads/queries'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { fetchLeadQuotes } from '@/lib/leads/quotes'
+import { fetchLeadContracts } from '@/lib/leads/contracts'
 
 /* Lead Details › Quotes (910-36240). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
@@ -66,6 +68,29 @@ export async function archiveQuote(quoteId: string, restore = false): Promise<vo
   const leadId = await leadOf(quoteId); if (!leadId) return
   await db.update(quotes).set({ archivedAt: restore ? null : new Date() }).where(eq(quotes.id, quoteId))
   touch(leadId)
+}
+
+/** (REG-340) What the Move stage window's From System lists read: the lead's live quotes and contracts, dates as epoch ms. */
+export type StageDocuments = {
+  quotes: { id: string; number: string; title: string; amountMinor: number; status: string; approvedAt: number | null; signedAt: number | null }[]
+  contracts: { id: string; title: string; status: string; signedAt: number | null; signedCopy: string | null }[]
+}
+
+/**
+ * (REG-340) The Move stage window opens on the client from the listing and the Overview, neither of which loads the
+ * lead's quotes; the window asks for them itself when it opens. Archived / deleted rows leave the lists, as on the tabs.
+ * A quote has no signed stamp of its own: the Signed move stamps `updatedAt` (setQuoteStatus), so that is its signed date.
+ */
+export async function fetchStageDocuments(leadId: string): Promise<StageDocuments> {
+  const [q, c] = await Promise.all([fetchLeadQuotes(leadId), fetchLeadContracts(leadId)])
+  return {
+    quotes: q.quotes.map((x) => ({
+      id: x.id, number: x.number, title: x.title, amountMinor: x.amountMinor, status: x.status,
+      approvedAt: x.approvedAt?.getTime() ?? null,
+      signedAt: x.status === 'Signed' ? (x.updatedAt ?? x.approvedAt ?? x.createdAt).getTime() : null,
+    })),
+    contracts: c.contracts.map((x) => ({ id: x.id, title: x.title, status: x.status, signedAt: x.signedAt?.getTime() ?? null, signedCopy: x.signedCopy })),
+  }
 }
 
 /** Row kebab › Delete / bulk Delete — soft, so "Deleted Quotes" (header kebab) can list them later. */

@@ -131,6 +131,8 @@ export const leadAssignees = sqliteTable(
     id: text('id').primaryKey(),
     leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
     memberId: text('member_id').notNull().references(() => members.id, { onDelete: 'cascade' }),
+    /** (REG-335) When the member was assigned — the Activity feed's "You assigned X to this lead." Null on rows from before the column: read as the lead's creation. */
+    assignedAt: integer('assigned_at', { mode: 'timestamp' }),
   },
   (t) => [unique('lead_assignees_unique').on(t.leadId, t.memberId),
           index('lead_assignees_lead_idx').on(t.leadId)],

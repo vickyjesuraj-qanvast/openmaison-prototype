@@ -265,10 +265,13 @@ function Section({ title, link, children }: {
 }) {
   // Collapsed sections are remembered per browser, like the listing's table/kanban choice (lib/prefs.ts).
   const [open, setOpen] = useFlagPref(`om.detail.section.${slug(title)}`, true)
+  const blockIcon = BLOCKS.find((b) => b.section === title)?.icon
   const bodyId = useId()
   return (
     <section id={sectionId(title)} className={styles.section} aria-label={title}>
       <div className={styles.sectionHead}>
+        {/* (REG-342, user 2026-09-04) The expanded block carries the same glyph its collapsed strip tile shows. */}
+        {blockIcon ? <Icon name={blockIcon} size={20} weight={300} className={styles.sectionIcon} /> : null}
         <h2 className={styles.sectionTitle}>{title}</h2>
         {link ? (
           <button type="button" className={styles.headLink} onClick={(e) => link.onClick(e.currentTarget)}>{link.label}</button>

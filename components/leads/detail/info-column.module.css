@@ -23,7 +23,7 @@
   flex: 1; min-width: 0; margin: 0;
   font: var(--om-type-heading-h2);   /* 24 / Bold / 32 */
   color: var(--om-color-on-surface-default);
-  overflow-wrap: anywhere;   /* a long name wraps rather than truncating (user 2026-08-30) */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;   /* (REG-336, user 2026-09-04) a long name truncates on one line — it used to wrap (2026-08-30) */
 }
 .contact { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 /* The row keeps the mock's 20px height for one-liners but grows when the value wraps; the icons stay on the first line. */
@@ -81,6 +81,7 @@
 /* (REG-304) A strip glyph scrolls its section to the top: land it under the sticky header + tabs (+ the column's padding). */
 .section { scroll-margin-top: calc(var(--om-spacing-2) + 72px + 44px + var(--om-spacing-6)); }
 .sectionHead { display: flex; align-items: center; gap: var(--om-spacing-3); height: 20px; }
+.sectionIcon { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-default); }   /* (REG-342) the strip's glyph beside the title, at the head's 20 */
 .sectionTitle {
   flex: 1; min-width: 0; margin: 0;
   font: var(--om-type-subheading-m);   /* 14 / Semi Bold / 20 */

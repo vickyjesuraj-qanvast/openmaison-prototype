@@ -11,7 +11,7 @@ import { Card, CardEmpty, CardRule } from './card'
 import styles from './my-work-card.module.css'
 
 /**
- * MY WORK card (858:24989 full · 858:24505 due-today only · 858:24171 empty).
+ * MY TASKS card (858:24989 full · 858:24505 due-today only · 858:24171 empty).
  * Open tasks grouped Overdue → Due today → Upcoming, Upcoming collapsed. Each group lists every task it counts:
  * the label prints the real total, so the two rows per group in the mock are its data, not a cap (user 2026-08-30).
  * Spec: design-source/context/lead-overview/05-*.txt.
@@ -53,7 +53,7 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
 
   return (
     <Card
-      title="MY WORK"
+      title="MY TASKS"
       headGap={8}
       meta={(
         <span className={styles.headMeta}>
@@ -63,7 +63,7 @@ export function MyWorkCard({ tasks, now, onCreate, onComplete, onOpenTask, onOpe
       )}
       metaRight={metaRight}
       onOpen={onOpenTab}
-      openLabel="Open my work"
+      openLabel="Open my tasks"
       testId="my-work"
     >
       {open.length === 0 ? (

@@ -20,6 +20,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:repair": "tsx scripts/repair-demo-data.ts",
     "db:baseline": "tsx scripts/snapshot-baseline.ts",
     "db:reset": "rm -f local.db local.db-shm local.db-wal && pnpm db:migrate",
     "setup": "tsx scripts/bootstrap.ts && pnpm db:migrate"

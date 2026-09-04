@@ -145,6 +145,13 @@
 .quoteMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); flex-wrap: wrap; }
 .quoteRow[data-file-row='true'] { cursor: default; padding: var(--om-spacing-3); }   /* 780:91468: 52 tall = 2px border + 12 + 24 icon */
 .pdfBadge { width: 24px; height: 24px; flex-shrink: 0; display: block; }   /* DS File Format / pdf (780:91468) */
+/* (REG-340) From System with nothing to list (780:90472): a 146-tall body (the tab body's 16px padding included) with the
+   sentence centred and the Create link, chevron trailing, 8px under it. */
+.systemEmpty {
+  min-height: calc(146px - 2 * var(--om-spacing-4));
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center;
+}
 
 /* Milestones (512w card) */
 .msCard { width: 512px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); overflow: hidden; }

@@ -1,0 +1,1 @@
+ALTER TABLE `lead_assignees` ADD `assigned_at` integer;

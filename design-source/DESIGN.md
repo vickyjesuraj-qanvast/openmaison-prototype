@@ -80,7 +80,7 @@ DS library components (OpenMaison Components): Text Field set key `35b2a7b3a07d5
 ## 4 · Interaction rules (product)
 
 - Stage movement policy (Linear / Flexible), no moving backwards, owner before leaving New, resume from On Hold/Lost with a confirm — see REG-111…132.
-- Move stage window: log-list stages (Contacted, Met) with per-log read-only + Edit; Add Log opens only the new log; delete on extra logs; New never editable; Won captures signed quote · signed contract · payment split (100%). Validation after first Save, inline, live-clearing (`lib/forms.ts` MSG).
+- Move stage window: log-list stages (Contacted, Met) with per-log read-only + Edit; Add Log opens only the new log; delete on extra logs; New editable only while the lead is still in New (REG-334); Won captures signed quote · signed contract · payment split (100%). Validation after first Save, inline, live-clearing (`lib/forms.ts` MSG).
 - Review imported leads: source chips count what the duplicates toggle shows; queue duplicates show their twin row; merge table = single-line rows, frozen label + frozen merged result, equal data columns.
 - From System lists (Quote Sent quote, Won signed quote + contract) open with the first system file selected.
 - Upload flow (Quote Sent / Won): any picked or dropped file → "Uploading..." → the mock's file appears as a selected row under the dropzone; **Quote amount (S$)** is asked only in the upload flow (a system quote knows its amount) and is focused as soon as the file lands; in Won the payment split follows the signed quote's source — uploaded file → every milestone 0% (split unknown); system quote → the recorded 10/30/30/30 comes back (also on Reset to default / removing the upload).

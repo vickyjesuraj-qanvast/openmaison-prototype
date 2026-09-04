@@ -33,11 +33,13 @@ type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
  * field (REG-231) — and de-duplicated, because `lead_assignees` carries unique(leadId, memberId).
  */
 async function writeAssignees(tx: Tx, leadId: string, memberIds: string[]): Promise<void> {
-  await tx.delete(leadAssignees).where(eq(leadAssignees.leadId, leadId))
+  // (REG-335) A diff, not a wipe: members who stay keep their assigned_at, newcomers are stamped now, the rest go.
   const ids = [...new Set(memberIds)]
-  if (ids.length) {
-    await tx.insert(leadAssignees).values(ids.map((m) => ({ id: randomUUID(), leadId, memberId: m })))
-  }
+  const have = (await tx.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId))).map((r) => r.memberId)
+  const gone = have.filter((m) => !ids.includes(m))
+  const fresh = ids.filter((m) => !have.includes(m))
+  if (gone.length) await tx.delete(leadAssignees).where(and(eq(leadAssignees.leadId, leadId), inArray(leadAssignees.memberId, gone)))
+  if (fresh.length) await tx.insert(leadAssignees).values(fresh.map((m) => ({ id: randomUUID(), leadId, memberId: m, assignedAt: new Date() })))
 }
 
 export async function assignMembers(leadId: string, memberIds: string[]): Promise<void> {
@@ -173,16 +175,20 @@ async function leadOfTask(taskId: string): Promise<string | null> {
   return t?.leadId ?? null
 }
 
+/* (REG-339) Both popover writes stamp `updated_at`, as the Tasks tab's updateTask does on every edit: the Activity
+   feed reads "You completed the task …" / "You updated the task …" only when updated_at sits more than a minute past
+   created_at, so a completion or a due date set from the listing's Tasks popover or the Overview's My Tasks card used
+   to leave no trace there. */
 export async function completeTask(taskId: string): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
-  await db.update(leadTasks).set({ done: true }).where(eq(leadTasks.id, taskId))
+  await db.update(leadTasks).set({ done: true, updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
   const leadId = await leadOfTask(taskId)
   if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }
 
 export async function setTaskDue(taskId: string, due: Date): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
-  await db.update(leadTasks).set({ dueAt: due }).where(eq(leadTasks.id, taskId))
+  await db.update(leadTasks).set({ dueAt: due, updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
   const leadId = await leadOfTask(taskId)
   if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }

@@ -9,7 +9,8 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Avatar } from '@/components/om/avatar'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
-import { moneySGD } from '@/lib/format'
+import { displayDate, moneySGD } from '@/lib/format'
+import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { Member } from '@/lib/db/schema'
 import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
 import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
@@ -21,8 +22,12 @@ import fieldStyles from './fields.module.css'
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
-  team, data,
-}: { team: Member[]; data: WizardData; update?: (patch: Partial<WizardData>) => void }) {
+  team, data, update, editable = false, error,
+}: { team: Member[]; data: WizardData; update?: (patch: Partial<WizardData>) => void
+  /** (REG-334) True while the lead is still in New: the checkboxes assign; otherwise they only show. */
+  editable?: boolean
+  /** validateStage's `assignees` message after a Save with nobody ticked. */
+  error?: string }) {
   return (
     <>
       <p className={styles.panelTitle}>New</p>
@@ -35,9 +40,11 @@ export function NewPanel({
               <span className={styles.memberName}>{m.name}</span>
               <span className={styles.memberRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
             </span>
-            <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled aria-label={`Assigned: ${m.name}`} />
+            <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled={!editable} aria-label={`Assigned: ${m.name}`}
+                      onChange={(on) => update?.({ assignees: on ? [...data.assignees, m.id] : data.assignees.filter((id) => id !== m.id) })} />
           </div>
         ))}
+        <FieldError message={error} />
       </div>
     </>
   )
@@ -266,13 +273,58 @@ function useUploadSim(ms = 1400) {
   return { uploading, start }
 }
 
+/** One From System row (780:91468): the document's name, its meta line, and the amount a signed quote carries for the split. */
+export type SystemRow = { id: string; name: string; meta: string[]; amountMinor?: number }
+
+/* (REG-340) The From System lists read the lead's own records instead of the demo's fixed pair. The payload keeps
+   storing the row's NAME (a quote's title, a contract's signed copy) — the shape every stage log already holds. */
+/** Quote Sent (780:90472): quotes the studio has approved or sent out — "OM-10002 · S$58,000 · Approved on 26 Aug ’26". */
+export function approvedQuoteRows(docs: StageDocuments): SystemRow[] {
+  return docs.quotes
+    .filter((q) => q.status === 'Approved' || q.status === 'Sent to Client')
+    .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor,
+                   meta: [q.number, moneySGD(q.amountMinor), q.approvedAt ? `Approved on ${displayDate(new Date(q.approvedAt))}` : q.status] }))
+}
+/** Won (780:92744): the quotes the client signed. */
+export function signedQuoteRows(docs: StageDocuments): SystemRow[] {
+  return docs.quotes
+    .filter((q) => q.status === 'Signed')
+    .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor,
+                   meta: [q.number, moneySGD(q.amountMinor), q.signedAt ? `Signed on ${displayDate(new Date(q.signedAt))}` : q.status] }))
+}
+/** Won: contracts with a signed stamp, named by their signed copy (setContractStatus names it "<title>.pdf"). */
+export function signedContractRows(docs: StageDocuments): SystemRow[] {
+  return docs.contracts
+    .filter((c) => c.status === 'Signed' && c.signedAt !== null)
+    .map((c) => ({ id: c.id, name: c.signedCopy ?? `${c.title}.pdf`, meta: [`Signed on ${displayDate(new Date(c.signedAt!))}`] }))
+}
+
+/** (REG-340, 780:90472) From System with nothing to list: the sentence, then "Create Quote ›". Read-only hides the link like every other affordance. */
+function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreate?: () => void }) {
+  const ro = useReadOnly()
+  return (
+    <div className={styles.systemEmpty}>
+      <span>No system generated {noun}.</span>
+      {onCreate && !ro ? (
+        <button type="button" className={fieldStyles.link} onClick={onCreate}>
+          {noun === 'quotes' ? 'Create Quote' : 'Create Contract'}
+          <Icon name="chevron_right" size={20} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 export function AttachTabs({
-  tab, onTab, selected, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes,
+  tab, onTab, selected, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty,
 }: {
   tab: 'system' | 'upload'; onTab: (t: 'system' | 'upload') => void
   selected: string | null; onSelect: (name: string) => void
   uploaded: string | null; uploading?: boolean; onUpload: () => void; onRemoveUpload: () => void
-  quotes: { name: string; meta: string[] }[]
+  /** The lead's own rows; null while the window is still reading them (nothing is drawn — never a flash of the empty state). */
+  quotes: SystemRow[] | null
+  /** What From System shows once the rows are known to be none. */
+  empty?: ReactNode
 }) {
   const ro = useReadOnly()          // read-only stage: the uploaded file keeps its row but loses its delete (REG-126)
   const comingSoon = useComingSoon()
@@ -288,8 +340,8 @@ export function AttachTabs({
       </div>
       <div className={styles.tabBody}>
         {tab === 'system' ? (
-          quotes.map((q) => (
-            <button key={q.name} type="button" className={styles.quoteRow}
+          quotes === null ? null : quotes.length === 0 ? empty : quotes.map((q) => (
+            <button key={q.id} type="button" className={styles.quoteRow}
                     data-selected={selected === q.name || undefined}
                     onClick={() => onSelect(q.name)}>
               <span className={styles.quoteRadio}>
@@ -332,15 +384,16 @@ export function AttachTabs({
 }
 
 export function QuoteSentPanel({
-  data, update, errors, leadBudgetMinor,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number }) {
+  data, update, errors, docs, onCreateQuote,
+}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors
+  /** (REG-340) The lead's quotes, read when the window opened; null until they land. */
+  docs: StageDocuments | null
+  /** The empty state's "Create Quote ›" — the lead's Quotes tab with a fresh draft. */
+  onCreateQuote: () => void }) {
   // Attach rows (mock: dead buttons) — local tiles like the other stages; not persisted, no validation key.
   const [meetingFiles, setMeetingFiles] = useState<string[]>([])
   const [renderFiles, setRenderFiles] = useState<string[]>([])
-  const quotes = [
-    { name: SYSTEM_QUOTE, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Approved on 19 Aug'] },
-    { name: `${SYSTEM_QUOTE}-v1`, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Approved on 19 Aug'] },
-  ]
+  const quotes = docs ? approvedQuoteRows(docs) : null
   const upload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)   // focus Quote amount once the file lands (user 2026-08-29)
   return (
@@ -353,7 +406,7 @@ export function QuoteSentPanel({
           uploaded={data.quoteUploaded} uploading={upload.uploading}
           onUpload={() => upload.start(() => { update({ quoteUploaded: SYSTEM_QUOTE }); setJustUploaded(true) })}   // 780:91468: the mock's file, whatever was picked
           onRemoveUpload={() => update({ quoteUploaded: null })}
-          quotes={quotes}
+          quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
         />
         <FieldError message={errors.quote} />
       </div>
@@ -401,20 +454,23 @@ function signedContractName(leadName: string): string {
 }
 
 export function WonPanel({
-  data, update, errors, leadBudgetMinor, leadName,
-}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string }) {
-  const quotes = [{ name: SYSTEM_QUOTE, meta: ['OM-10001', moneySGD(leadBudgetMinor), 'Signed on 19 Aug'] }]
+  data, update, errors, leadBudgetMinor, leadName, docs, onCreateQuote, onCreateContract,
+}: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors; leadBudgetMinor: number; leadName: string
+  /** (REG-340) The lead's quotes and contracts, read when the window opened; null until they land. */
+  docs: StageDocuments | null
+  onCreateQuote: () => void; onCreateContract: () => void }) {
+  const quotes = docs ? signedQuoteRows(docs) : null
+  const contracts = docs ? signedContractRows(docs) : null
+  // The upload flow's file keeps the mock's convention: a signed contract named for this lead (780:92744).
   const contractName = signedContractName(leadName)
-  const contracts = [{ name: contractName, meta: ['Signed on 19 Aug'] }]
-  // The pre-selection emptyWizardData stores is the mock's own file name (REG-149: a From System list opens selected),
-  // so read that default as "the system contract" — the row this lead's name produces is the one that starts checked.
-  const selectedContract = data.wonContract === SYSTEM_CONTRACT ? contractName : data.wonContract
   const quoteUpload = useUploadSim()
   const contractUpload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)
   const uploadedQuote = data.wonQuoteTab === 'upload'
-  // The split is computed on the signed quote's amount: the system quote's, or the amount typed for an upload (780:92744 total).
-  const basisMinor = uploadedQuote ? amountMinor(data.wonQuoteAmount) : leadBudgetMinor
+  // The split is computed on the signed quote's amount: the selected system quote's own total, or the amount typed for an
+  // upload (780:92744 total). The lead's budget stands in only until the quotes have loaded.
+  const basisMinor = uploadedQuote ? amountMinor(data.wonQuoteAmount)
+    : quotes?.find((q) => q.name === data.wonQuote)?.amountMinor ?? leadBudgetMinor
   const totalPct = data.milestones.reduce((s, m) => s + (m.pct || 0), 0)
   const setPct = (i: number, pct: number) =>
     update({ milestones: data.milestones.map((m, j) => (j === i ? { ...m, pct } : m)) })
@@ -431,7 +487,7 @@ export function WonPanel({
           uploaded={data.wonQuoteUploaded} uploading={quoteUpload.uploading}
           onUpload={() => quoteUpload.start(() => { update({ wonQuoteUploaded: SYSTEM_QUOTE, milestones: zeroMilestones() }); setJustUploaded(true) })}
           onRemoveUpload={() => update({ wonQuoteUploaded: null, wonQuoteAmount: '', milestones: defaultMilestones() })}
-          quotes={quotes}
+          quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
         />
         <FieldError message={errors.wonQuote} />
       </div>
@@ -444,11 +500,11 @@ export function WonPanel({
         <SectionRow label="Attach client signed contract" />
         <AttachTabs
           tab={data.wonContractTab} onTab={(t) => update({ wonContractTab: t })}
-          selected={selectedContract} onSelect={(n) => update({ wonContract: n })}
+          selected={data.wonContract} onSelect={(n) => update({ wonContract: n })}
           uploaded={data.wonContractUploaded} uploading={contractUpload.uploading}
           onUpload={() => contractUpload.start(() => update({ wonContractUploaded: contractName }))}
           onRemoveUpload={() => update({ wonContractUploaded: null })}
-          quotes={contracts}
+          quotes={contracts} empty={<SystemEmpty noun="contracts" onCreate={onCreateContract} />}
         />
         <FieldError message={errors.wonContract} />
       </div>

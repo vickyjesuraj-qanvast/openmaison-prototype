@@ -43,10 +43,10 @@ import { returnLead, undoReturn, type ReturnInput } from '@/app/leads/return-act
 import type { LeadFile } from '@/lib/db/schema'
 import type { LeadDetail } from '@/lib/leads/detail'
 import { returnTags } from '@/lib/leads/return-tags'
-import { STAGES, type Stage } from '@/lib/leads/enums'
+import { type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
 import { displayDate, moneyCompact, phoneDigits, phoneDisplay } from '@/lib/format'
-import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, isActiveStage, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
+import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import styles from './overview.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
@@ -124,14 +124,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       case 'quick': void quickMove(intent.stage); return
     }
   }
-  /** Create quick links (Contact Log / Meeting): the stage the lead is in or has already passed opens its window straight —
-   *  that is REG-168's "add another log". Anything ahead goes through the gate, so a quick link can no longer skip
-   *  Contacted the way the pill refuses to, or resume a parked lead without its confirm. */
-  const openStageLog = (stage: Stage) => {
-    if (isActiveStage(lead.stage) && STAGES.indexOf(stage as (typeof STAGES)[number]) <= journeyIdx(lead)) setWizard(stage)
-    else requestStageChange(stage)
-  }
-
   /** A LEAD STAGES row, and the card's head arrow at the lead's current position (REG-259): the Move stage
       window for a reached stage, the resume flow for a parked lead, the guarded request for a future one. */
   const openStageStep = (stage: string) => {
@@ -198,6 +190,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
+  /** (REG-337, user 2026-09-04) Create quick links › Contact Log and Meeting: a contact-log draft on the Notes tab, the way Task and Note
+   *  hand off — they used to open the Move stage window at Contacted / Met, which is a stage move, not a record. Notes has no meeting
+   *  kind yet (the Meetings tab waits for mocks), so Meeting starts a contact log too. */
+  const onNewContactLog = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'contact' } })); else router.push(href('notes', 'new=contact')) }
   const tabItems = DETAIL_TABS.map((t) => ({ label: t.label, href: href(t.slug) }))
   const activeTab = DETAIL_TABS.find((t) => t.slug === tab) ?? DETAIL_TABS[0]
   const returnedBy = ret ? team.find((m) => m.id === ret.returnedById) ?? null : null
@@ -345,13 +341,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
 
           <QuickLinks
             /* Same shape as Quote / Note / Question above: in place on its own tab, otherwise land on the Tasks tab
-               with the add row already open. It used to open the MY WORK popover, whose anchor only exists on the
+               with the add row already open. It used to open the MY TASKS popover, whose anchor only exists on the
                Overview — so from Quotes, Files, Notes … the link did nothing at all (user 2026-08-30). */
             onTask={() => { if (tab === 'tasks') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.tasks)); else router.push(href('tasks', 'new=1')) }}
             onQuote={onNewQuote}
-            onCallLog={() => openStageLog('Contacted')}
+            onCallLog={onNewContactLog}
             onNote={onNewNote}
-            onMeeting={() => openStageLog('Met')}
+            onMeeting={onNewContactLog}
             onOther={() => comingSoon()}
           />
         </div>
@@ -387,19 +383,23 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           targetStage={wizard}
           mode={stageMovement}
           onClose={() => setWizard(null)}
+          /* (REG-340) The From System empty states hand off the way the Create column does, keeping the Qanvast origin. */
+          onCreateQuote={() => { setWizard(null); onNewQuote() }}
+          onCreateContract={() => { setWizard(null); if (tab === 'contracts') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.contracts)); else router.push(href('contracts', 'new=1')) }}
           onUpdate={({ stage, data }) => {
             setWizard(null)
             void run(async () => {
-              await updateStageDetails({ leadId: lead.id, stage, data })
-              snackbar({ message: `${stage} details updated` })
+              if (stage === 'New') { await assignMembers(lead.id, data.assignees); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+              else { await updateStageDetails({ leadId: lead.id, stage, data }); snackbar({ message: `${stage} details updated` }) }
               refresh()
             }, 'Couldn’t save the stage details — please try again')
           }}
-          onSave={({ toStage, data, tasks }) => {
+          onSave={({ toStage, data, tasks, quoteNumber }) => {
             setWizard(null)
             void run(async () => {
               await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
-              if (toStage === 'Won') snackbar({ message: `Project created for ${lead.name} · OM-10001`, actionLabel: 'View', onAction: comingSoon })
+              // (REG-340) The number is the signed system quote's own; an uploaded quote has none to print.
+              if (toStage === 'Won') snackbar({ message: `Project created for ${lead.name}${quoteNumber ? ` · ${quoteNumber}` : ''}`, actionLabel: 'View', onAction: comingSoon })
               else snackbar({ message: `Moved to ${toStage}` })
               refresh()
             }, 'Couldn’t move the lead — please try again')

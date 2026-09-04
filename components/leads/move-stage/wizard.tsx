@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -12,12 +13,14 @@ import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
 import { STAGES, type Stage, reminderTaskTitle } from '@/lib/leads/enums'
 import type { LeadRow } from '@/lib/leads/queries'
+import { detailHref } from '@/lib/leads/stage-policy'
+import { fetchStageDocuments, type StageDocuments } from '@/app/leads/quotes-actions'
 import type { Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
-import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel } from './panels'
+import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel, approvedQuoteRows, signedContractRows, signedQuoteRows } from './panels'
 import { AutoFillDialog, SuggestedTasksDialog } from './dialogs'
 import { LinkButton } from './fields'
-import { emptyLog, emptyMeeting, emptyWizardData, validateStage, type StageErrors, type WizardData } from './types'
+import { emptyLog, emptyMeeting, emptyWizardData, validateStage, SYSTEM_CONTRACT, SYSTEM_QUOTE, type StageErrors, type WizardData } from './types'
 import styles from './wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -35,16 +38,21 @@ type RailState = 'done' | 'active' | 'todo' | 'locked'
  * window for Won (it creates the project), with the same rail.
  */
 export function MoveStageWizard({
-  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate,
+  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate, onCreateQuote, onCreateContract,
 }: {
   lead: LeadRow
   team: Member[]
   targetStage: Stage
   mode?: StageMovement
   onClose: () => void
-  onSave: (payload: { toStage: Stage; data: WizardData; tasks: string[] }) => void
+  /** `quoteNumber` (REG-340): the signed system quote's "OM-nnnnn" on a Won move, for the "Project created" snackbar; null for an upload. */
+  onSave: (payload: { toStage: Stage; data: WizardData; tasks: string[]; quoteNumber: string | null }) => void
   /** Saving edits to a stage the lead has already completed — no move. */
   onUpdate: (payload: { stage: Stage; data: WizardData }) => void
+  /** (REG-340) The From System empty states' "Create Quote ›" / "Create Contract ›". Default: the lead's tab with `?new=1`;
+   *  the Overview passes its own so the Qanvast origin rides along. */
+  onCreateQuote?: () => void
+  onCreateContract?: () => void
 }) {
   useScrollLock(true)   // the page never scrolls behind this surface
   /* (REG-273) Touch: a locked stage explains itself through a Tooltip, and the DS Tooltip never fires for a
@@ -69,6 +77,36 @@ export function MoveStageWizard({
     assignees: lead.assignees.map((m) => m.id),
   }))
   const [dir, setDir] = useState(1)
+  /* (REG-340) The From System lists are the lead's own quotes and contracts, read once when the window opens (the listing
+     and the Overview never load them). Until they land the lists draw nothing; a failed read lists nothing, which leaves
+     Upload as the way through. The stored selection is a document NAME: the untouched defaults (SYSTEM_QUOTE / SYSTEM_CONTRACT,
+     what emptyWizardData and every earlier stage log hold) resolve to the first row this lead actually has — or to nothing,
+     so a lead without an approved quote is asked to choose or upload (validateStage), never let through on a name it lacks. */
+  const [docs, setDocs] = useState<StageDocuments | null>(null)
+  useEffect(() => {
+    let live = true
+    void fetchStageDocuments(lead.id).then(
+      (d) => {
+        if (!live) return
+        setDocs(d)
+        setData((cur) => {
+          const resolve = (stored: string | null, sentinel: string, names: string[]) =>
+            stored === sentinel && !names.includes(sentinel) ? names[0] ?? null : stored
+          return {
+            ...cur,
+            quoteSelected: resolve(cur.quoteSelected, SYSTEM_QUOTE, approvedQuoteRows(d).map((r) => r.name)),
+            wonQuote: resolve(cur.wonQuote, SYSTEM_QUOTE, signedQuoteRows(d).map((r) => r.name)),
+            wonContract: resolve(cur.wonContract, SYSTEM_CONTRACT, signedContractRows(d).map((r) => r.name)),
+          }
+        })
+      },
+      () => { if (live) setDocs({ quotes: [], contracts: [] }) },
+    )
+    return () => { live = false }
+  }, [lead.id])
+  const router = useRouter()
+  const createQuote = onCreateQuote ?? (() => { onClose(); router.push(`${detailHref(lead.id, 'quotes')}?new=1`) })
+  const createContract = onCreateContract ?? (() => { onClose(); router.push(`${detailHref(lead.id, 'contracts')}?new=1`) })
   // A completed stage is read-only until Edit (user 2026-08-29). Log stages unlock per log ('logs.0', 'meetings.1'); other stages as a whole ('stage').
   const [unlocked, setUnlocked] = useState<Set<string>>(() => new Set())
   const unlock = (k: string) => setUnlocked((u) => new Set(u).add(k))
@@ -101,8 +139,11 @@ export function MoveStageWizard({
 
   const activeIdx = STAGES.indexOf(active as (typeof STAGES)[number])
   const editing = activeIdx <= fromIdx           // a completed stage is open
+  /* (REG-334, user 2026-09-04) A lead still in New owns its members here: the New panel is editable and Save assigns them.
+     Past New the panel stays read-only (members move through the Assign popover), as before. */
+  const newOpen = active === 'New' && fromIdx === 0
   const logKey = active === 'Contacted' ? 'logs' : active === 'Met' ? 'meetings' : null   // stages that are a list of logs (780:89150 / 780:90234)
-  const stageLocked = editing && !logKey && !unlocked.has('stage')   // whole-stage read-only (Quote Sent / Won); New never becomes editable here
+  const stageLocked = editing && !logKey && !unlocked.has('stage') && !newOpen   // whole-stage read-only (Quote Sent / Won); New only while the lead has left it (REG-334)
   const lockedLog = (i: number) => editing && !unlocked.has(`${logKey}.${i}`)
   // Removing a log shifts the later ones down — their unlock keys move with them.
   const deleteLog = (i: number) => {
@@ -115,7 +156,7 @@ export function MoveStageWizard({
       return n === i ? [] : n > i ? [`${logKey}.${n - 1}`] : [k]
     })))
   }
-  const anyOpen = !editing || unlocked.size > 0
+  const anyOpen = !editing || unlocked.size > 0 || newOpen
   // Reviewing a completed stage never locks the stage being entered — it stays open ('todo') to come back to.
   const railState = (stage: Stage, i: number): RailState => {
     if (stage === active) return 'active'
@@ -123,7 +164,8 @@ export function MoveStageWizard({
     if (stage === targetStage || i === fromIdx + 1) return 'todo'   // the next stage stays reachable even when a done stage was opened for viewing
     return 'locked'
   }
-  const isDone = (i: number) => i <= fromIdx
+  // (REG-334) New is complete only once someone owns the lead (REG-130): a member-less lead in New shows New open, not checked.
+  const isDone = (i: number) => i < fromIdx || (i === fromIdx && (i > 0 || data.assignees.length > 0))
   const railIcon = (state: RailState, done: boolean) => done ? 'check_circle' : state === 'locked' ? 'lock' : 'circle'
   // Same phrase as the listing's blockedReason (workspace.tsx): the lead's next stage is the gate.
   const lockReason = (i: number) =>
@@ -187,9 +229,14 @@ export function MoveStageWizard({
       setSuggestOpen(true)
       return
     }
-    onSave({ toStage: active, data, tasks: [] })
+    onSave({ toStage: active, data, tasks: [], quoteNumber: signedQuoteNumber() })
   }
-  const finishWithTasks = (tasks: string[]) => { setSuggestOpen(false); onSave({ toStage: active, data, tasks }) }
+  const finishWithTasks = (tasks: string[]) => { setSuggestOpen(false); onSave({ toStage: active, data, tasks, quoteNumber: null }) }
+  /** The number of the system quote a Won move selected — an uploaded quote has none the window could know. */
+  const signedQuoteNumber = () =>
+    active === 'Won' && data.wonQuoteTab === 'system'
+      ? docs?.quotes.find((q) => q.status === 'Signed' && q.title === data.wonQuote)?.number ?? null
+      : null
 
   const panelTitle = editing ? `${active} details` : `Moving to ${active}`
   const editLink = stageLocked && active !== 'New' ? (
@@ -215,11 +262,11 @@ export function MoveStageWizard({
   )
   const panel = () => {
     switch (active) {
-      case 'New': return <NewPanel team={team} data={data} update={update} />
+      case 'New': return <NewPanel team={team} data={data} update={update} editable={newOpen} error={errors.assignees} />
       case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
-      case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} />
-      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} />
+      case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} onCreateQuote={createQuote} />
+      case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} docs={docs} onCreateQuote={createQuote} onCreateContract={createContract} />
       default: return null
     }
   }

@@ -7,7 +7,7 @@ import styles from './tasks-empty.module.css'
 /**
  * Lead Details › Tasks — empty state (audit 2026-08-30, T9; the Tasks section 902-36216 mocks no empty frame, so this is
  * the Quotes / Contracts tabs' 784px card (components/leads/quotes/quotes-empty.tsx, 910:36266) carrying the copy of the
- * Overview MY WORK card's mocked empty state (858:24171: "Add your first task" · "Stay organised — …" · "Create New Task")
+ * Overview MY TASKS card's mocked empty state (858:24171: "Add your first task" · "Stay organised — …" · "Create New Task")
  * plus the Add Task menu's second item, "Use Template", as the secondary button.
  */
 export function TasksEmpty({ onCreate, onTemplate }: { onCreate: () => void; onTemplate: () => void }) {

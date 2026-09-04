@@ -385,7 +385,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 query={query}
                 openStageId={stageMenu?.id ?? null}
                 onOpen={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
-                onStageClick={(row, anchor) => setStageMenu({ id: row.id, el: anchor, ...stagePos(anchor) })}
+                onStageClick={(row, anchor) => setStageMenu((m) => (m?.id === row.id ? null : { id: row.id, el: anchor, ...stagePos(anchor) }))}   /* toggles on its own cell (REG-153 / REG-332) */
                 onTaskClick={openTasks}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
               />
@@ -423,9 +423,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onRowSeen={markSeen}
                 onNameClick={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
                 openStageId={stageMenu?.id ?? null}
-                onStageClick={(row, anchor) => {
-                  setStageMenu({ id: row.id, el: anchor, ...stagePos(anchor) })
-                }}
+                onStageClick={(row, anchor) => setStageMenu((m) => (m?.id === row.id ? null : { id: row.id, el: anchor, ...stagePos(anchor) }))}   /* toggles on its own cell (REG-153 / REG-332) */
                 onTaskClick={openTasks}
                 now={nowTick}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
@@ -505,16 +503,17 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             onUpdate={({ stage, data }) => {
               setWizard(null); setPendingDrop(null)
               void run('update the details', async () => {
-                await updateStageDetails({ leadId: lead.id, stage, data })
-                snackbar({ message: `${stage} details updated` })
+                if (stage === 'New') { await assignMembers(lead.id, data.assignees); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
+                else { await updateStageDetails({ leadId: lead.id, stage, data }); snackbar({ message: `${stage} details updated` }) }
               })
             }}
-            onSave={({ toStage, data, tasks }) => {
+            onSave={({ toStage, data, tasks, quoteNumber }) => {
               setWizard(null)
               void run('move the lead', async () => {
                 await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
                 if (toStage === 'Won') {
-                  snackbar({ message: `Project created for ${lead.name} · OM-10001`, actionLabel: 'View', onAction: comingSoon })
+                  // (REG-340) The number is the signed system quote's own; an uploaded quote has none to print.
+                  snackbar({ message: `Project created for ${lead.name}${quoteNumber ? ` · ${quoteNumber}` : ''}`, actionLabel: 'View', onAction: comingSoon })
                 } else {
                   snackbar({ message: `Moved to ${toStage}` })
                 }

@@ -8,7 +8,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
 import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 import { modalPanel, overlayFade } from '@/lib/motion'
-import { displayDate, money } from '@/lib/format'
+import { displayDate, money, titleCaseName } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
 import styles from './deleted-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -108,8 +108,10 @@ export function DeletedLeadsSheet({
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleAll = () => setSelected(liveSelected.size === deleted.length ? new Set() : new Set(deleted.map((l) => l.id)))
 
-  const confirmName = confirm?.kind === 'forever' && confirm.ids.length === 1
-    ? deleted.find((l) => l.id === confirm.ids[0])?.name : undefined
+  // (REG-339) The sheet renders the Lead row itself, bypassing buildLeadRows — so it applies REG-329's read-time
+  // title case here, wherever the name is printed, and a lead saved as "test" reads "Test" as it does in the listing.
+  const confirmLead = confirm?.kind === 'forever' && confirm.ids.length === 1 ? deleted.find((l) => l.id === confirm.ids[0]) : undefined
+  const confirmName = confirmLead ? titleCaseName(confirmLead.name) : undefined
 
   return (
     <>
@@ -187,11 +189,11 @@ export function DeletedLeadsSheet({
                     ) : rows.map((l) => (
                       <div key={l.id} className={styles.row} role="row" data-selected={liveSelected.has(l.id) || undefined}>
                         <span className={styles.selCell} role="cell">
-                          <Checkbox isSelected={liveSelected.has(l.id)} onChange={() => toggle(l.id)} aria-label={`Select ${l.name}`} />
+                          <Checkbox isSelected={liveSelected.has(l.id)} onChange={() => toggle(l.id)} aria-label={`Select ${titleCaseName(l.name)}`} />
                         </span>
                         <div className={`${styles.cell} ${styles.pin}`} style={{ width: 176 }} role="cell">
                           <span className={styles.twoLine}>
-                            <span className={styles.name}>{l.name}</span>
+                            <span className={styles.name}>{titleCaseName(l.name)}</span>
                             <span className={styles.phone}>{l.phone}</span>
                           </span>
                         </div>

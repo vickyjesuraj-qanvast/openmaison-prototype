@@ -57,7 +57,7 @@ export function StageDropdown({
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
-      if (t instanceof Element && t.closest('[aria-haspopup][aria-expanded="true"]')) return   // the open trigger toggles (REG-153)
+      if (t instanceof Element && t.closest('[aria-haspopup][aria-expanded="true"], [data-stage-anchor]')) return   // the open trigger — or the listing cell that is its anchor (REG-332) — toggles (REG-153)
       if (ref.current && !ref.current.contains(t)) onClose()
     }
     document.addEventListener('keydown', onKey)
