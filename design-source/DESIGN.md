@@ -38,7 +38,7 @@ is the audit trail. Screens proven in the build are banked as screenshots in `ve
 | Stage filter pill dropdown | 780:93630 | live counts |
 | No results (table) | 780:95559 | |
 | Move stage window | 780:83579 (flow) · error state 780:91593 | l (800), rail 240 |
-| Contacted panel · Auto Fill | 780:89150 · icon 780:89214 | title row = Add Log; log card = Log n · Auto Fill · chevron |
+| Contacted panel · Auto Fill | 780:89150 (empty) · 781:58313 (filled) · icon 780:89214 | title row = Add Log; log card = Log n · Auto Fill · chevron; body = chips · Date & Time + Outcome · schedule block once an outcome is chosen · Remarks (optional) · rule · Attach row ("Attach", REG-324) |
 | Met panel | 780:90234 | same log-list structure, dividers |
 | Attached-file tile | 781:58405 | 146w · 138×105 preview · filled pdf icon · name · delete — every attachment |
 | Upload flow (Quote Sent) | empty 780:90940 · uploading 780:91263 · uploaded 780:91468 | dropzone stays above the uploaded file row; Quote amount (S$) only after an upload |

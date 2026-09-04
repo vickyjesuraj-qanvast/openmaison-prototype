@@ -20,7 +20,7 @@
 .dialog[data-size='compact'] .title { font: var(--om-type-heading-h4); }
 .close { flex-shrink: 0; }
 .body { padding: 0 var(--om-spacing-6) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-.foot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); transition: box-shadow var(--motion-toggle); }
+.foot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; z-index: 1; transition: box-shadow var(--motion-toggle); }   /* positioned: above a body that scrolls or animates (REG-322) */
 .foot[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 /* Standard dialog (821:23969): radius-1 + border + level-3, 56px heading with divider, 24px body. */
 .dialog[data-size='standard'] { border-radius: var(--om-radius-3); border: var(--om-border-1) solid var(--om-color-surface-variant); box-shadow: var(--om-elevation-level-3); }   /* 12px = the standard modal radius (designer, 2026-08-28) */

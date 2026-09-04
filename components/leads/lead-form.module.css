@@ -68,6 +68,7 @@
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
   flex-shrink: 0;
+  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
   transition: box-shadow var(--motion-toggle);
 }
 .footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */

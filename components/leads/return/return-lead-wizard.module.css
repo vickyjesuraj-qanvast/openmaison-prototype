@@ -167,6 +167,7 @@
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   background: var(--om-color-surface-default);
+  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
   transition: box-shadow var(--motion-toggle);
   flex-shrink: 0;
 }

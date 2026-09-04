@@ -117,23 +117,32 @@ function LogCard({
         <TextField label="Outcome" value={log.outcome} mode="select" options={OUTCOMES}
                    onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
       </div>
-      {/* (REG-319, mock 781:58313) One optional schedule block for every outcome: heading + helper (V g4), then the pair. */}
-      <div className={styles.stack24}>
-        <div className={fieldStyles.sectionHead}>
-          <span className={fieldStyles.sectionLabel}>{SCHEDULE.heading}</span>
-          <span className={fieldStyles.sectionHelper}>{SCHEDULE.helper}</span>
+      {/* (REG-319 / REG-324, mock 781:58313) The optional schedule block — heading + helper (V g4), then the pair — appears
+          once an outcome is chosen; the empty log (780:89150) offers no schedule yet. */}
+      {log.outcome ? (
+        <div className={styles.stack24}>
+          <div className={fieldStyles.sectionHead}>
+            <span className={fieldStyles.sectionLabel}>{SCHEDULE.heading}</span>
+            <span className={fieldStyles.sectionHelper}>{SCHEDULE.helper}</span>
+          </div>
+          <div className={styles.fieldPair}>
+            <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
+                           onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
+            <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
+                       onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
+          </div>
         </div>
-        <div className={styles.fieldPair}>
-          <DateTimeField label="Date & Time" value={log.nextStepWhen} today={today}
-                         onChange={(v) => onChange({ nextStepWhen: v })} error={err('nextStepWhen')} />
-          <TextField label="Preferred mode" value={log.nextStepMode} mode="select" options={[...CONTACT_MODES]}
-                     onChange={(v) => onChange({ nextStepMode: v })} error={err('nextStepMode')} />
-        </div>
+      ) : null}
+      {/* (REG-324, 780:89150) Remarks comes before the rule; the Attach row is the log's last section. */}
+      <div className={styles.stack12}>
+        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
+        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
       <Divider />
       <div className={styles.stack12}>
+        {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). */}
         <SectionRow label="Attach screenshots of your call attempts"
-                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach Files</LinkButton>} />
+                    action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
         {log.files.length ? (
           <div className={styles.tiles}>
             {log.files.map((f, i) => (
@@ -143,11 +152,6 @@ function LogCard({
           </div>
         ) : null}
         <FieldError message={err('files')} />
-      </div>
-      <Divider />
-      <div className={styles.stack12}>
-        <span className={fieldStyles.sectionLabel}>Remarks (optional)</span>
-        <NotesArea value={log.notes} onChange={(v) => onChange({ notes: v })} />
       </div>
     </LogShell>
   )

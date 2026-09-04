@@ -424,6 +424,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
                   key={editorKey}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
+                  onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
                   errors={errorsFor(selectedId, selected)}
                   editing={isEditing(selectedId)}
                   autoFocus={mayFocusEditor}
