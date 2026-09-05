@@ -194,7 +194,11 @@ export function LeadsTable({
     switch (col.key) {
       case 'name':
         return (
-          <div key={col.key} {...cellProps(col, `${styles.cell} ${styles.nameCell}`)}>
+          /* (REG-349, user 2026-09-05) The whole cell opens the lead, not just the name — the phone line and the space
+             beside it were dead. Its own controls (the checkbox, Copy phone number) keep their actions: their click
+             bubbles here, so the guard below lets them through. */
+          <div key={col.key} {...cellProps(col, `${styles.cell} ${styles.nameCell}`)}
+               onClick={(e) => { if ((e.target as HTMLElement).closest('button, a, input, [role="checkbox"]')) return; onNameClick(row) }}>
             {/* Accent bar + selection checkbox are children of the pinned cell so they stay put on horizontal scroll. */}
             <span className={styles.accent} />
             {selectable ? (
