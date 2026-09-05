@@ -126,7 +126,22 @@
 
 /* Name "Cell / Two line": V g4 — "Jasmine Lee" 14/Bold + "9123 4567" 12/Regular secondary (quotes-table.module.css .titleData/.title/.sub). */
 .nameData { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; flex: 1; }
-.name { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* (REG-351) The listing's name cell, to the rule (components/leads/table.module.css): the whole cell navigates, the
+   name reads as a link on hover — primary + underline, from the ROW's hover, not just its own — and the phone keeps a
+   copy affordance that appears with the row. */
+.colName { cursor: pointer; }
+.name { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover); }
+.row:hover .name, .name:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.phoneRow { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
+.copyBtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex;
+  color: var(--om-color-on-surface-secondary);
+  opacity: 0;
+  transition: opacity var(--motion-hover), color var(--motion-hover);
+}
+.row:hover .copyBtn, .copyBtn:focus-visible { opacity: 1; }
+.copyBtn:hover { color: var(--om-color-on-surface-default); }
 .phone { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 
 /* Status: DS Tag outlined 20 tall, two tags H g8 (spec 02). */

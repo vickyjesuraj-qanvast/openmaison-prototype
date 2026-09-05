@@ -26,7 +26,7 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
  * Tooltip (REG-75); sorting and customise are inert (coming soon); the row hover floats "View Lead" at the right — and
  * "Lead Return Updates" before it on a returned row (931:49435; coming soon until the flow is specified, audit 2026-08-30).
  */
-export function QanvastTable({ rows, onView }: { rows: QanvastLeadRow[]; onView: (id: string) => void }) {
+export function QanvastTable({ rows, onView, onCopyPhone }: { rows: QanvastLeadRow[]; onView: (id: string) => void; onCopyPhone: (row: QanvastLeadRow) => void }) {
   const comingSoon = useComingSoon()
   return (
     /* data-scrolled drives the frozen Name column's shadow ≤1024 (REG-269) — the listing's own handler
@@ -57,10 +57,22 @@ export function QanvastTable({ rows, onView }: { rows: QanvastLeadRow[]; onView:
       {rows.map((row) => (
         <div key={row.id} className={styles.row} role="row" data-testid="qanvast-row">
           {/* Name "Cell / Two line": "Jasmine Lee" 14/Bold + the phone 12 secondary — eight unbroken digits everywhere (REG-162; the mock's 4+4 space is not reproduced). */}
-          <div className={`${styles.cell} ${styles.colName}`} role="cell">
+          {/* (REG-351) The listing's name cell, exactly: the whole cell opens the lead, the name reads as a link on
+              hover, and the phone carries the same copy affordance. Its own controls keep their click. */}
+          <div className={`${styles.cell} ${styles.colName}`} role="cell"
+               onClick={(e) => { if ((e.target as HTMLElement).closest('button, a')) return; onView(row.id) }}>
             <div className={styles.nameData}>
-              <span className={styles.name}>{row.name}</span>
-              <span className={styles.phone}>{row.phone}</span>
+              <span className={styles.name} role="link" tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && onView(row.id)}>{row.name}</span>
+              <span className={styles.phoneRow}>
+                <span className={styles.phone}>{row.phone}</span>
+                <Tooltip label="Copy phone number">
+                  <button type="button" className={styles.copyBtn} aria-label={`Copy ${row.name}'s phone number`}
+                          onClick={() => onCopyPhone(row)}>
+                    <Icon name="content_copy" size={14} weight={300} />
+                  </button>
+                </Tooltip>
+              </span>
             </div>
           </div>
           {/* Credits "200" · Budget (S$) "70,500" (no S$ prefix — the head carries it) · Property type · created "17 Jul ’26". */}

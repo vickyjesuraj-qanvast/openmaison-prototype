@@ -11,7 +11,7 @@ import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { Icon } from '@/components/om/icon'
 import { AppliedDot } from '@/components/om/applied-dot'
 import { IconButton } from '@/components/om/icon-button'
-import { useComingSoon } from '@/components/om/snackbar'
+import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Tabs } from '@/components/om/tabs'
 import { Tooltip } from '@/components/om/tooltip'
 import { MaisonFab } from '@/components/shell/maison-fab'
@@ -19,7 +19,7 @@ import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { useSearchTarget } from '@/components/shell/search-focus'
 import { QanvastSkeleton } from '@/components/shell/skeleton'
-import { displayDate, money } from '@/lib/format'
+import { displayDate, money, phoneDisplay } from '@/lib/format'
 import { INACTIVE_STAGES, STAGES } from '@/lib/leads/enums'
 import type { QanvastLeadsData } from '@/lib/leads/qanvast'
 import { RETURN_FILTERS } from '@/lib/leads/return-tags'
@@ -51,6 +51,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   const { rows, counts } = data
   const router = useRouter()
   const comingSoon = useComingSoon()
+  const snackbar = useSnackbar()
 
   /* ── status scope: null = All Leads · a stage name · a return label (RETURN_FILTERS) ── */
   const [scope, setScope] = useState<string | null>(null)
@@ -180,7 +181,12 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
           {nothingMatches ? (
             <TabSearchEmpty noun="leads" searching={query.trim() !== ''} onClearAll={clearAll} />
           ) : (
-            <QanvastTable rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)} />
+            <QanvastTable rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)}
+                          onCopyPhone={async (row) => {
+                            // (REG-351) The listing's own handler: one copy format (phoneDisplay), one confirmation.
+                            try { await navigator.clipboard.writeText(phoneDisplay(row.phone)); snackbar({ message: 'Copied to clipboard' }) }
+                            catch { snackbar({ message: phoneDisplay(row.phone) }) }
+                          }} />
           )}
         </div>
       </div>
