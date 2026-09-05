@@ -3,7 +3,9 @@
    `size="modal"` (the 64px head, body p24, level-5 — T7); it has no "no footer" mode, so the .host wrapper only fixes the
    height, the body's V g20 (the modal body gaps 24) and hides the empty footer (head · body · foot are the dialog's three
    children); nothing in the shell is edited. */
-.host [role='dialog'] { height: 600px; max-height: calc(100vh - 96px); }   /* the mock fixes 600 (as the Filters modal); viewport-capped */
+/* (REG-347) Scoped to the desktop/tablet case: at ≤767 the shared shell makes this a full-screen sheet, and the
+   hard height left it stranded at half the screen. */
+@media (min-width: 768px) { .host [role='dialog'] { height: 600px; max-height: calc(100vh - 96px); } }   /* the mock fixes 600 (as the Filters modal); viewport-capped */
 .host [role='dialog'] > div:nth-child(2) { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; gap: var(--om-spacing-5); }
 .host [role='dialog'] > div:last-child { display: none; }
 

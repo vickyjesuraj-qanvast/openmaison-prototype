@@ -66,7 +66,7 @@ const clampPos = (el: HTMLElement, w: number, h: number) => {
   const r = el.getBoundingClientRect()
   return { top: clampAxis(r.bottom + 4, h, usableViewportHeight()), left: clampAxis(r.left, w, window.innerWidth) }
 }
-const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 356, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
+const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 400, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
 const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
 /* Customise your view is the tall surface (752 at the mock's eight columns), so it clamps against its own

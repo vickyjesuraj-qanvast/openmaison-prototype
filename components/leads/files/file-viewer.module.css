@@ -174,7 +174,9 @@
   .actionDownload { display: none; }
   .mobileItem { display: contents; }                           /* the wrapper vanishes; its DropdownItem is a menu row */
   /* The stage is the viewport under the app bar and this header — no shell gutters at mobile. */
-  .stage { height: calc(100dvh - var(--app-mobile-bar-height) - 56px); }
+  /* (REG-347) The dock is fixed over this page too: without subtracting it the zoom bar sat behind the dock and
+     none of its three buttons could be reached. */
+  .stage { height: calc(100dvh - var(--app-mobile-bar-height) - 56px - var(--app-mobile-dock-height)); }
   /* Content padding 24 → 16, with the compact zoom bar's band (22 + 60 + 8) kept clear of the image. */
   .canvas, .canvas[data-panel] { padding: var(--om-spacing-4) var(--om-spacing-4) calc(22px + 60px + var(--om-spacing-2)); }
   /* Full-screen overlay over the canvas: above the FAB (90) and the app bar (80), below every modal (100). */

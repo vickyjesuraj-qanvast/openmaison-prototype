@@ -31,6 +31,15 @@ export function Dropdown({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   useMenuKeyboard(open, ref, onClose)   // (REG-286) keyboard reach — see the note above
+  /* (REG-347) A menu opened low on a phone ran past the viewport and its last items were drawn under the fixed
+     dock — the ≤767 cap in menus.module.css was a constant that could not know where the anchor sat. The menu
+     reports its own top once it is on screen; the stylesheet subtracts that and the dock from the cap. Layout is
+     read in an effect, after paint, never during render. */
+  useEffect(() => {
+    const el = ref.current
+    if (!open || !el) return
+    el.style.setProperty('--menu-top', `${Math.max(0, Math.round(el.getBoundingClientRect().top))}px`)
+  }, [open])
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {

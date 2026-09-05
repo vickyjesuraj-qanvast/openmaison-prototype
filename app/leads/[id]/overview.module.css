@@ -79,6 +79,11 @@
 
 /* Notes (931:44882): the tab is one fixed 844px card that never scrolls under the FAB, so the mock's 24 bottom padding stands (the FAB overlaps the card corner in the mock). */
 .centre[data-tab='notes'] { --fab-clearance: var(--om-spacing-6); }
+/* (REG-347) …but only where that card really does not scroll. On a phone the tab scrolls and 24px left the
+   contact-log editor's Cancel / Save under the fixed dock at maximum scroll. */
+@media (max-width: 767px) {
+  .centre[data-tab='notes'] { --fab-clearance: calc(var(--app-mobile-dock-height) + var(--om-spacing-6)); }
+}
 /* An empty tab is one card that fills the body, and the mock pads 24 under it, not the FAB's 88 (910:36266 · 931:38634 ·
    931:40340 · 931:46792 all measure 24 + 36 toolbar + 24 gap + 784 card + 24 = the 892 section). The 784 is that rule's
    OUTPUT, not a constant — with the FAB band the card fell 64px short and the page grew a pointless scroll. The FAB then

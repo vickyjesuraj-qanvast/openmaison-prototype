@@ -49,6 +49,9 @@
 /* Responsive (REG-269): the bar is content-sized with nowrap actions (~440px on Files) and fixed at left 50%
    — at 390 it ran off both edges. It now fits the viewport and wraps its actions onto a second line. */
 @media (max-width: 767px) {
+  /* (REG-347) It was told to wrap while keeping height: 50px, so every wrapped action sat outside the bar —
+     "Clear selection" ended up below the viewport entirely. */
+  .bar { height: auto; min-height: 50px; }
   .bar { bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px)); max-width: calc(100vw - 32px); flex-wrap: wrap;   /* (REG-298) above the dock */ row-gap: var(--om-spacing-3); justify-content: center; padding: var(--om-spacing-3) var(--om-spacing-4); }
 }
 

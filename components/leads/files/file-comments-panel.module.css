@@ -97,6 +97,10 @@
    head / body / footer keep their rows and take the mobile content padding (24 → 16). The head's 64px,
    the 20/Bold title and the close button are untouched — the way out of the overlay stays where it is. */
 @media (max-width: 767px) {
+  /* (REG-347) Alone among the full-screen sheets these added no safe-area padding, so on a notched phone the head
+     sat under the status bar and the composer under the home indicator. */
+  .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
+  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
   .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-4); }
   .footer { padding: var(--om-spacing-4); }

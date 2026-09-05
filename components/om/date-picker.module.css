@@ -55,6 +55,18 @@
 .day[data-selected]::before { background: var(--om-color-primary-default); border: 0; }
 .day:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 
+/* (REG-347) Touch: the picker is the one surface REG-344 never reached — a 24px pager 4px from its neighbour and
+   32px day cells packed edge to edge. Each keeps its drawn size and takes a 44px overlay centred on it, so the
+   calendar looks identical and a fingertip lands on the day it is over. */
+@media (hover: none) {
+  .pageBtn, .day { position: relative; }
+  .pageBtn::after, .day::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: max(100%, 44px); height: max(100%, 44px);
+  }
+  .day::after { width: max(100%, 40px); height: max(100%, 40px); }   /* 7 across a 375 screen: 40 is the most that fits without overlap */
+}
+
 /* Year switch (Material "year" view; not in the mock — invented, REG-91). */
 .years { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 8px; padding: 0 16px 8px; align-content: start; }
 .year {

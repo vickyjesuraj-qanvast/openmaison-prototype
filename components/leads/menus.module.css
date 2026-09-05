@@ -37,7 +37,14 @@
    viewport, so ≤767 it clamps its own width and lets a long menu scroll rather than run off the screen.
    (The portalled PortalMenu / DatePicker clamp their x in JS; this covers the in-flow menus.) */
 @media (max-width: 767px) {
-  .menu { max-width: calc(100vw - 32px); max-height: calc(100dvh - 160px); overflow-y: auto; }
+  /* (REG-347) The cap was a constant, so a menu opened low on the page ran past the viewport and its last items
+     were drawn under the fixed dock. It now measures from the menu's own top — `--menu-top`, set by the anchoring
+     helper — and always stops short of the dock. */
+  .menu {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - var(--menu-top, 160px) - var(--app-mobile-dock-height, 70px) - 16px);
+    overflow-y: auto;
+  }
 }
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {

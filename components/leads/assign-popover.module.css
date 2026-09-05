@@ -1,5 +1,6 @@
 .card {
-  position: fixed; z-index: 70;   /* anchored to its cell and following it on scroll, like the other popovers (REG-129) */
+  /* (REG-347) The FAB (z 90) painted over this card (z 70) and covered the fifth member's checkbox. */
+  position: fixed; z-index: 95;   /* anchored to its cell and following it on scroll, like the other popovers (REG-129) */
   width: 400px;
   background: var(--om-color-surface-default);
   border: var(--om-border-1) solid var(--om-color-surface-variant);

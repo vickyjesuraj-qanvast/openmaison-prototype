@@ -257,6 +257,9 @@
 }
 
 @media (max-width: 767px) {
+  /* (REG-347) Stretched across the sheet, the toast sat on the success card and covered "Re-upload File" — a user
+     who picked the wrong file could not pick another. It sits at the foot of the sheet instead. */
+  .toast { left: var(--om-spacing-4); right: var(--om-spacing-4); bottom: var(--om-spacing-4); width: auto; height: auto; }
   .overlay { padding: 0; }
   .panel {
     width: 100vw; max-width: 100vw;

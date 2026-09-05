@@ -98,6 +98,10 @@
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
+  /* (REG-347) The rail gives way before the pane it sits beside, and a long member name truncates rather than
+     wrapping into a column two characters wide. */
+  .rail { width: min(160px, 40%); }
+  .rowName, .rowRole { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
   .panel {
     width: 100vw; max-width: 100vw;

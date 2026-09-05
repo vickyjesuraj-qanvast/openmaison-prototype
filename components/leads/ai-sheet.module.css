@@ -40,8 +40,18 @@
   transition: background-color var(--motion-hover), color var(--motion-hover);
 }
 .reset:hover { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+/* (REG-347) The sheet's only controls draw 38 and 36 tall and REG-344 never matched them. */
+@media (hover: none) {
+  .suggestion, .reset { position: relative; }
+  .suggestion::after, .reset::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; height: max(100%, 44px);
+  }
+}
 
 /* (REG-298) ≤767 the sheet keeps its 12px seat above the FAB, which now floats 16 above the bottom dock (FAB right 16 there). */
 @media (max-width: 767px) {
+  /* (REG-347) A hard 320 anchored 16 from the right starts at x=-16 on a 320 screen. */
+  .sheet { width: min(320px, calc(100vw - 32px)); }
   .sheet { right: 16px; bottom: calc(var(--app-mobile-dock-height) + 16px + 48px + 12px + var(--bottom-dock, 0px)); }
 }

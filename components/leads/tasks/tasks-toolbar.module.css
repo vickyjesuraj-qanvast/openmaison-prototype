@@ -33,6 +33,9 @@
 /* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
    is clipped (the audit measured the row ~85px wider than a 390 screen). */
 @media (max-width: 767px) {
+  /* (REG-347) The row wraps, so the kebab fell to the LEFT of the second line and its right-aligned 200px menu
+     was thrown off the screen edge. Pushed flush right, the menu opens back into the page. */
+  .actions > *:last-child { margin-left: auto; }
   .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
   .search, .searchWrap { width: 100%; flex-basis: 100%; }
   .right, .actions { flex-wrap: wrap; }

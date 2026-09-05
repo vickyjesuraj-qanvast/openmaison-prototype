@@ -248,7 +248,18 @@
 
   /* Queue duplicates: the two records stack, each carrying its own column heading. */
   .stackLabel { display: block; }
-  .table[data-stack] { overflow-x: hidden; }
+  /* (REG-347) The merge table froze a label column left and "Merged result" right; at 375 those two edges are
+     wider than the box, leaving a ~113px window on a 130px column — the New column could not be brought into
+     view at any scroll offset. Every comparison table stacks here, which is what the twin table already did. */
+  .table, .table[data-stack] { overflow-x: hidden; }
+  .table .tr, .table[data-stack] .tr { flex-direction: column; align-items: stretch; }
+  .table .tr:first-child { display: none; }
+  .table .td { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .table .tr:nth-child(2) .cLabel { border-top: 0; }
+  .table .cLabel, .table .cMerged { width: auto; position: static; min-height: 40px; border-right: 0; box-shadow: none; }
+  .table .cCol, .table .cMerged { flex: 1 1 auto; min-width: 0; min-height: 0; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
+  /* The pane scrolls, so the table keeps its own height instead of being squeezed shorter than its rows. */
+  .table { flex-shrink: 0; }
   .table[data-stack] .tr { flex-direction: column; align-items: stretch; }
   .table[data-stack] .tr:first-child { display: none; }   /* the head row's labels moved into the cells */
   .table[data-stack] .td { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

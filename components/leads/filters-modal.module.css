@@ -115,6 +115,11 @@
    44 tall but whose LABEL (the actual control) is one text line. Each gets a 44px box; the chip keeps its
    fill, stroke, radius and type, and the radios keep the DS mark.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
+@media (max-width: 374px) {
+  /* (REG-347) The 160px rail is the mock's, but at the 320 floor it leaves the option column 128px and the member
+     names collapse to a few characters. The rail gives way first. */
+  .rail { width: 120px; }
+}
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
     min-width: 44px; min-height: 44px;

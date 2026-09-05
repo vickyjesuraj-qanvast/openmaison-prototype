@@ -46,6 +46,14 @@
 }
 .dangerButton:hover { filter: brightness(0.92); }
 .dangerButton:disabled { opacity: 0.5; cursor: default; }
+/* (REG-347) The one control in these footers REG-344 never matched: it keeps its 36px box and takes the 44 overlay. */
+@media (max-width: 767px), (hover: none) {
+  .dangerButton { position: relative; }
+  .dangerButton::after {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; height: max(100%, 44px);
+  }
+}
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    Tablet-and-down every dialog clamps to the viewport and its body scrolls (callers pass raw px widths).

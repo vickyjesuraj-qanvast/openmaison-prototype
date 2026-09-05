@@ -93,6 +93,10 @@
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
+  /* (REG-347) Three buttons on one nowrap row need ~404px inside a 343px sheet, so "Manage Templates" was pushed
+     off the left edge. The row wraps and the left-hand link takes its own line. */
+  .footer { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .footerStart { flex: 1 0 100%; margin-right: 0; }
   .panel { max-width: calc(100vw - 32px); }
   .panel[data-kind='choose'] { width: min(var(--om-modal-m), calc(100vw - 32px)); height: min(600px, calc(100dvh - 96px)); }
   .panel[data-kind='save'] { width: min(var(--om-modal-s), calc(100vw - 32px)); }

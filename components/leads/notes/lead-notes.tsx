@@ -172,6 +172,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const at = Date.now()
     setDraft((prev) => (prev && draftDirty(prev) ? prev : freshDraft(kind, at)))
     setSelectedId(DRAFT_ID)
+    setMobilePane(true)   // (REG-347) ≤767 the pane takes the screen, as select() does — without it New ▾ looked inert
     setMayFocusEditor(true)   // New ▾ exists to start typing (REG-294)
   }, [])
 

@@ -63,7 +63,9 @@
    is under half a fingertip, and the bar's mocked 24px side padding left it 12px wider than the card anyway.
    The marks keep their sizes and their 16px rhythm; only the boxes around them grow. Desktop is untouched. */
 @media (max-width: 767px) {
-  .toolbar {
+  /* (REG-347) These rules named `.toolbar`, which the markup stopped using when the pane header was introduced
+     (REG-292) — so they never applied and the Maison AI chip overflowed the card and was clipped. */
+  .header {
     height: auto; min-height: 68px;
     padding: var(--om-spacing-4);            /* 24 → 16 (responsive.md ground rule) — the 8px the row needs */
     flex-wrap: wrap; row-gap: var(--om-spacing-3);   /* the tools wrap rather than squeeze at 390 */

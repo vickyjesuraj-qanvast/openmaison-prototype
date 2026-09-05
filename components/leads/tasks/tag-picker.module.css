@@ -89,6 +89,8 @@
    352 wide, comfortable to hit, and their height is what the picker's anchor clamp measures
    (`tagsPos` in components/leads/tasks/lead-tasks.tsx). Desktop with a mouse matches neither arm. */
 @media (max-width: 767px), (hover: none) {
+  /* (REG-347) Four contiguous 36px rows put a fingertip one row off more often than not. */
+  .row { height: auto; min-height: 44px; }
   .field { gap: var(--om-spacing-5); }
   .picked { gap: var(--om-spacing-5); }
   .chip { position: relative; }

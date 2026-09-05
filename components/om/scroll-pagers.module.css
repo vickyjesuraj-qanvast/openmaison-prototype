@@ -19,3 +19,6 @@
 .arrowLeft { left: 0; }
 .arrowRight { right: 0; }
 .arrow:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (REG-347) On touch the rail is swiped, and the 28px arrow sits ON the last chip — it is both under the floor and
+   steals that chip's tap. The rail keeps its own overflow-x, so hiding the arrows loses nothing. */
+@media (hover: none) { .arrow { display: none; } }
