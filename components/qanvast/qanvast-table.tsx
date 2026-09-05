@@ -88,19 +88,16 @@ export function QanvastTable({ rows, onView, onCopyPhone }: { rows: QanvastLeadR
             </span>
           </div>
 
-          {/* Row hover (209): ["Lead Return Updates" ·] "View Lead" — the LISTING's hover pair, primary outlined 36,
-              12 apart, floating at right 24. REG-199 read secondary off the 931:49435 render; the owner's rule is that
-              a row's hover actions look the same on every table, and the listing is the reference (user 2026-08-30). */}
-          <span className={styles.actions}>
-            {row.ret ? (
+          {/* Row hover (209): "Lead Return Updates" on a returned lead, and nothing else. "View Lead" stood here until
+              the Name cell itself became the way in (REG-351) — two controls for one destination, one of them only
+              reachable with a mouse (user 2026-09-05). A row with no return raises no hover bar at all now. */}
+          {row.ret ? (
+            <span className={styles.actions}>
               <span className={styles.float}>
                 <Button appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead Return Updates</Button>
               </span>
-            ) : null}
-            <span className={styles.float}>
-              <Button appearance="outlined" onPress={() => onView(row.id)} aria-label={`View lead ${row.name}`}>View Lead</Button>
             </span>
-          </span>
+          ) : null}
         </div>
       ))}
     </div>
