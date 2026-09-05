@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
+import { useEscapeLayer } from '@/components/om/surface'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -54,6 +55,10 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const landing = useSearchParams().get('panel')
   const [panel, setPanel] = useState<Panel>(landing === 'comments' ? 'comments' : null)
   const [kebabOpen, setKebabOpen] = useState(false)
+  /* (REG-348) The side panels are full-screen sheets at ≤767 and every other sheet in the app closes on Escape;
+     these two closed only from their own X. One ref for whichever is open — they are never open together. */
+  const panelRef = useRef<HTMLElement>(null)
+  useEscapeLayer(panel !== null, panelRef, () => setPanel(null))
   const [deletingComment, setDeletingComment] = useState<string | null>(null)   // every destructive action confirms (REG-264)
   const [renaming, setRenaming] = useState(false)
   const [trashing, setTrashing] = useState(false)
@@ -183,7 +188,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
           </div>
 
           {panel === 'comments' ? (
-            <aside className={styles.panel} aria-label="Comments">
+            <aside ref={panelRef} className={styles.panel} aria-label="Comments" tabIndex={-1}>
               <FileCommentsPanel
                 comments={comments}
                 me={me}
@@ -195,7 +200,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
               />
             </aside>
           ) : panel === 'info' ? (
-            <aside className={styles.panel} aria-label="Information">
+            <aside ref={panelRef} className={styles.panel} aria-label="Information" tabIndex={-1}>
               <FileInfoPanel file={file} folder={folder} me={me} onClose={() => setPanel(null)} />
             </aside>
           ) : null}
