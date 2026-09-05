@@ -79,17 +79,16 @@
 .nameCell { cursor: pointer; }
 .name {
   font: var(--om-type-heading-h5);   /* 779:24446: 14 bold / 20 */
-  /* (REG-349, user 2026-09-05: "underline the name to make it more obvious") The one cell that navigates says so,
-     rather than relying on a hover colour a touch pointer never sees. */
-  text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px;
-  text-decoration-color: var(--om-color-on-surface-border);
+  /* (REG-349) The name underlines on hover, not at rest (user 2026-09-05) — the resting row stays quiet and the
+     underline joins the primary colour as the "this navigates" cue. */
+  text-decoration: none; text-underline-offset: 2px; text-decoration-thickness: 1px;
   flex-shrink: 0;   /* never below its 20px line — overflow:hidden lets a flex item shrink to nothing (REG-327) */
   cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
   transition: color var(--motion-hover);
 }
 /* Row hover turns the name primary (user 2026-08-27) — not just hovering the name itself. */
-.row:hover .name, .name:hover { color: var(--om-color-primary-default); text-decoration-color: currentColor; }
+.row:hover .name, .name:hover { color: var(--om-color-primary-default); text-decoration: underline; }
 /* The value is data-length: an On Hold row appends " · On hold till: 31 Oct '26" (table.tsx), ~210px of content in the
    200px name cell at the column's 240px floor — it wrapped to a second line and the 64px row sliced name and phone.
    One line, ellipsised; the full date stays on the stage cell's title. The mock's phone-only value is ~58px, untouched. */

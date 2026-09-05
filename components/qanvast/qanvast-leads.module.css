@@ -68,7 +68,10 @@
     minmax(240px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
     minmax(158px, 158fr) minmax(115px, 115fr) 369px;
   width: 100%;
-  overflow-x: auto;
+  /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
+     sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
+     vertically (the row actions sit inside their row; the customise popover is position: fixed). */
+  overflow-x: auto; overflow-y: hidden;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay full width */
   border-radius: var(--om-radius-2);
