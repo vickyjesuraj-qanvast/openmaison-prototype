@@ -1,10 +1,13 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Button, SearchBar } from '@/components/ds'
+import { useState } from 'react'
+import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
-import { useSearchTarget } from '@/components/shell/search-focus'
+import { IconButton } from '@/components/om/icon-button'
+import { Tooltip } from '@/components/om/tooltip'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
+import { useSheetLayout } from '@/components/om/sheet'
 import type { NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-toolbar.module.css'
 
@@ -30,11 +33,7 @@ export type NotesToolbarProps = {
  */
 export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
   const [menu, setMenu] = useState<'new' | null>(null)
-  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
-  // owns its <input>, so the target is resolved from the wrapper once it mounts (tasks-toolbar.tsx).
-  const searchInput = useRef<HTMLInputElement | null>(null)
-  useSearchTarget(searchInput)
-
+  const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   return (
     <div className={styles.bar}>
       {/* (REG-318, user 2026-09-02) The tab's title, as every sibling has ("All Tasks", "All Quotes"): the REG-293 scope
@@ -44,29 +43,32 @@ export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
       <div className={styles.right}>
         <span className={styles.menuWrap}>
           {/* touchTarget: the 36px DS control takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
-          <Button
-            variant="primary" appearance="outlined" className={styles.touchTarget}
-            iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-            aria-haspopup="menu" aria-expanded={menu === 'new'}
-            onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
-          >
-            New
-          </Button>
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="right" width={140}>
+          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
+              the menu, its title and every action behind it are the same. */}
+          {sheet ? (
+            <Tooltip label="New">
+              <IconButton icon="add" label="New" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
+            </Tooltip>
+          ) : (
+            <Button
+              variant="primary" appearance="outlined" className={styles.touchTarget}
+              iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
+            >
+              New
+            </Button>
+          )}
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="New">
             <DropdownItem onSelect={() => { setMenu(null); onNew('note') }}>Note</DropdownItem>
             <DropdownItem onSelect={() => { setMenu(null); onNew('contact') }}>Contact Log</DropdownItem>
           </Dropdown>
         </span>
-        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
-          {/* (REG-275) The box matches what a row SHOWS — title, secondary line, the printed date — plus the note's
-              body as plain text. The placeholder names the fields people reach for; the aria-label is the plain name. */}
-          <SearchBar
-            appearance="outlined" size="md"
-            placeholder="Search title, note, outcome…" aria-label="Search notes"
-            value={query} onChange={onQuery}
-            className={styles.search}
-          />
-        </span>
+        {/* (REG-275) The box matches what a row SHOWS — title, secondary line, the printed date — plus the note's
+            body as plain text. The placeholder names the fields people reach for; the aria-label is the plain name. */}
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, note, outcome…" label="Search notes" />
       </div>
     </div>
   )

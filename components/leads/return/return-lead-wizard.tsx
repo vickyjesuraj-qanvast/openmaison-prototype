@@ -253,7 +253,7 @@ export function ReturnLeadWizard({
                                           </button>
                                         </Tooltip>
                                         {/* Not mocked: one item, at the Notes menus' 140 width (attachments-column.tsx). */}
-                                        <Dropdown open={menuOpen} onClose={() => setMenu(null)} align="right" width={140}>
+                                        <Dropdown open={menuOpen} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="Attachment">
                                           <DropdownItem onSelect={() => { setMenu(null); setTiles((t) => t.filter((x) => x.id !== f.id)) }}>Remove</DropdownItem>
                                         </Dropdown>
                                       </span>

@@ -1,12 +1,13 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Button, SearchBar } from '@/components/ds'
+import { useState } from 'react'
+import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { useSearchTarget } from '@/components/shell/search-focus'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
+import { useSheetLayout } from '@/components/om/sheet'
 import styles from './tasks-toolbar.module.css'
 
 export type TasksToolbarProps = {
@@ -28,11 +29,7 @@ export type TasksToolbarProps = {
  */
 export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onMenu }: TasksToolbarProps) {
   const [menu, setMenu] = useState<'add' | 'more' | null>(null)
-  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
-  // owns its <input>, so the target is resolved from the wrapper once it mounts.
-  const searchInput = useRef<HTMLInputElement | null>(null)
-  useSearchTarget(searchInput)
-
+  const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
 
   return (
@@ -41,31 +38,30 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onM
       <div className={styles.actions}>
         <span className={styles.menuWrap}>
           {/* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */}
-          <Button
-            variant="primary" appearance="outlined" className={styles.touchTarget}
-            iconEnd={<span className={styles.chev} data-open={menu === 'add' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-            aria-haspopup="menu" aria-expanded={menu === 'add'}
-            onPress={() => setMenu((m) => (m === 'add' ? null : 'add'))}
-          >
-            Add Task
-          </Button>
-          <Dropdown open={menu === 'add'} onClose={() => setMenu(null)} align="left">
+          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
+              the menu, its title and every action behind it are the same. */}
+          {sheet ? (
+            <Tooltip label="Add Task">
+              <IconButton icon="add" label="Add Task" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'add'}
+                          onClick={() => setMenu((m) => (m === 'add' ? null : 'add'))} />
+            </Tooltip>
+          ) : (
+            <Button
+              variant="primary" appearance="outlined" className={styles.touchTarget}
+              iconEnd={<span className={styles.chev} data-open={menu === 'add' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+              aria-haspopup="menu" aria-expanded={menu === 'add'}
+              onPress={() => setMenu((m) => (m === 'add' ? null : 'add'))}
+            >
+              Add Task
+            </Button>
+          )}
+          <Dropdown open={menu === 'add'} onClose={() => setMenu(null)} align="left" sheetTitle="Add Task">
             <DropdownItem onSelect={pick(() => onAdd('new'))}>Create New Task</DropdownItem>
             <DropdownItem onSelect={pick(() => onAdd('template'))}>Use Template</DropdownItem>
           </Dropdown>
         </span>
-        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
-          {/* (REG-275) The box matches title, assignee, creator, due date, status and tags — and now the
-              description (lead-tasks.tsx), which the row marks with an "In description" chip when the
-              description is the only hit. The placeholder names the three fields people reach for; the
-              aria-label stays the plain name of the control. */}
-          <SearchBar
-            appearance="outlined" size="md"
-            placeholder="Search title, member, tag…" aria-label="Search tasks"
-            value={query} onChange={onQuery}
-            className={styles.search}
-          />
-        </span>
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, member, tag…" label="Search tasks" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters">
             <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
@@ -81,7 +77,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onM
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right">
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Tasks">
             <DropdownItem onSelect={pick(() => onMenu('saveAll'))}>Save all as Template</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('manage'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('export'))}>Export all as...</DropdownItem>

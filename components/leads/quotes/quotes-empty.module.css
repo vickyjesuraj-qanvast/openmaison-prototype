@@ -31,3 +31,11 @@
   .buttons button { position: relative; }
   .buttons button::after { content: ''; position: absolute; inset: -4px; }
 }
+
+/* (REG-377, canvas 2g / 3i) The two CTAs stack full-width on a phone instead of sharing a row at 36px — a pair of
+   half-width buttons under a centred illustration reads as a desktop dialog, and the canvas draws them stacked. */
+@media (max-width: 767px) {
+  .buttons { flex-direction: column; align-items: stretch; width: 100%; gap: var(--om-spacing-3); }
+  .buttons > * { width: 100%; }
+  .buttons button { width: 100%; }
+}

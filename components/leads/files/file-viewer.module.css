@@ -167,7 +167,9 @@
      the rounded ::after plate that carries the header's bottom rule is absolute against it, and going
      static would re-anchor both plates to the page and lose the divider. */
   .body { border-radius: 0; }
-  .header { position: relative; top: 0; padding: var(--om-spacing-4); border-radius: 0; }
+  /* (REG-374) No mobile bar above it (REG-362), so this header IS the top of the screen and spends the status-bar
+     inset itself, as page-header-l2 and the imports header do (viewport-fit=cover; env() is 0 everywhere else). */
+  .header { position: relative; top: 0; padding: var(--om-spacing-4); padding-top: calc(var(--om-spacing-4) + env(safe-area-inset-top, 0px)); border-radius: 0; }
   .header::before { top: 0; }
   .header::after { border-radius: 0; }
   .actions { gap: var(--om-spacing-4); }                       /* 24 → 16: three icons + the name fit one 56px row */

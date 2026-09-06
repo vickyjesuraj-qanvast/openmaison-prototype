@@ -33,7 +33,6 @@
    is clipped (the audit measured the row ~85px wider than a 390 screen). */
 @media (max-width: 767px) {
   .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
-  .search, .searchWrap { width: 100%; flex-basis: 100%; }
   .right, .actions { flex-wrap: wrap; }
 }
 
@@ -49,4 +48,16 @@
   .menuWrap > button::after, .menuWrap > span > button::after, .filterWrap button::after {
     content: ''; position: absolute; inset: -4px;
   }
+}
+
+/* (REG-354) The mobile canvas' toolbar is ONE row — the section title and the glyphs (2b · 2n · 3f · 3i · 3d).
+   The 280px search box folds into one of those glyphs (components/om/toolbar-search.tsx) and, when it is asked
+   for, takes the row on its own: the title steps aside for it rather than squeezing it to a few characters. */
+@media (max-width: 767px) {
+  .bar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  /* (REG-377) The glyph cluster is content-sized: `flex: 1 1 auto` let it claim half the row and ellipsised the
+     section title ("All Cont…" at 390, "All …" at 320) even though the row had space for both. */
+  .actions { flex: 0 0 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }

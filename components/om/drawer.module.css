@@ -48,3 +48,34 @@
    footer past the home indicator, keeping their own 20 / 16 — env() is 0 off-iOS, so nothing moves on the desktop. */
 .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
 .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+
+/* ── Mobile bottom sheet (REG-353) ────────────────────────────────────────────────────────────────────
+   The canvas presents the side panel as a bottom sheet at ≤767 (2c Task · 2d Task comments): full width on
+   the bottom edge, rounded on top, as tall as its content up to 88dvh, over a scrim. Above the dock (85). */
+@media (max-width: 767px) {
+  .scrim { position: fixed; inset: 0; z-index: 99; background: var(--om-color-overlay-60p); }
+  .drawer {
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: auto !important; max-width: 100vw;
+    max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  }
+  .grabber {
+    flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full);
+    background: var(--om-color-surface-variant);
+  }
+  /* The sheet starts below the status bar, so the head keeps its own 20 and the grabber takes that clearance. */
+  .head { padding-top: var(--om-spacing-3); }
+}
+
+/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
+   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
+   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
+   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
+   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
+   with each other. Vertical padding is untouched. */
+@media (max-width: 767px) {
+  .head, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+}

@@ -450,7 +450,7 @@ function TaskRowView({
                             aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
               </Tooltip>
             </span>
-            <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide}>
+            <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide} sheetTitle={task.title}>
               {/* "Mark as Completed" only — the mock has no reopen item, so it is hidden for completed tasks. */}
               {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as Completed</DropdownItem>}
               <DropdownItem onSelect={pick('rename')}>Rename</DropdownItem>

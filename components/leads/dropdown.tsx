@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from '@/components/om/surface'
+import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
 import styles from './menus.module.css'
 
 /**
@@ -20,6 +21,8 @@ export function Dropdown({
   side = 'down',
   children,
   width = 200,
+  sheetTitle,
+  sheetSubtitle,
 }: {
   open: boolean
   onClose: () => void
@@ -28,8 +31,13 @@ export function Dropdown({
   side?: 'down' | 'up'
   children: ReactNode
   width?: number
+  /** ≤767 the menu is a bottom sheet and takes a heading (REG-353) — the canvas titles it after what it acts on
+   *  ("Add Lead" 1f, the task's own name 2f). Ignored on the desktop, where the menu stays anchored. */
+  sheetTitle?: string
+  sheetSubtitle?: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const sheet = useSheetLayout()
   useMenuKeyboard(open, ref, onClose)   // (REG-286) keyboard reach — see the note above
   /* (REG-347) A menu opened low on a phone ran past the viewport and its last items were drawn under the fixed
      dock — the ≤767 cap in menus.module.css was a constant that could not know where the anchor sat. The menu
@@ -37,11 +45,11 @@ export function Dropdown({
      read in an effect, after paint, never during render. */
   useEffect(() => {
     const el = ref.current
-    if (!open || !el) return
+    if (!open || !el || sheet) return   // a sheet is bottom-anchored: it has no anchor top to measure (REG-353)
     el.style.setProperty('--menu-top', `${Math.max(0, Math.round(el.getBoundingClientRect().top))}px`)
-  }, [open])
+  }, [open, sheet])
   useEffect(() => {
-    if (!open) return
+    if (!open || sheet) return   // the sheet owns Esc and its own scrim press (components/om/sheet.tsx)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
     }
@@ -58,7 +66,18 @@ export function Dropdown({
     document.addEventListener('keydown', onKey, true)   // capture: the open menu owns Esc before its host (Drawer / dialog) — as PortalMenu / TagPicker do (REG-4, REG-124)
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)
     return () => { document.removeEventListener('keydown', onKey, true); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
-  }, [open, onClose])
+  }, [open, onClose, sheet])
+
+  /* (REG-353) ≤767 the canvas draws this menu as a bottom sheet — full width over the dock, under a scrim,
+     with the grabber and a heading — instead of a 200px card anchored to a trigger that can sit anywhere. */
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title={sheetTitle} subtitle={sheetSubtitle} label={sheetTitle ?? 'Menu'}
+             role="menu" bodyClassName={sheetMenuBody}>
+        {children}
+      </Sheet>
+    )
+  }
 
   return (
     <AnimatePresence>

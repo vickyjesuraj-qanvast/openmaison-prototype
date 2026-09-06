@@ -2,10 +2,11 @@
 
 import { useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { duration, ease } from '@/lib/motion'
+import { bottomSheet, duration, ease, overlayFade } from '@/lib/motion'
 import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useDialogFocus, useEscapeLayer } from './surface'
+import { useSheetLayout } from './sheet'
 import styles from './drawer.module.css'
 
 /**
@@ -34,21 +35,33 @@ export function Drawer({
   const panel = useRef<HTMLElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel, { trap: false })
+  /* (REG-353) ≤767 the canvas draws this panel as a bottom sheet (2c Task · 2d Task comments): it comes up off the
+     bottom edge under a scrim instead of sliding in from a right edge the phone does not have, and wears the grabber. */
+  const sheet = useSheetLayout()
+  const slide = {
+    initial: { x: width, opacity: 0.6 },
+    animate: { x: 0, opacity: 1, transition: { duration: duration.modal, ease: ease.decelerate } },
+    exit: { x: width, opacity: 0.6, transition: { duration: duration.modalExit, ease: ease.standard } },
+  }
 
   return (
     <AnimatePresence>
       {open ? (
+        <>
+        {sheet ? (
+          <motion.div className={styles.scrim} variants={overlayFade} initial="initial" animate="animate" exit="exit" onMouseDown={onClose} />
+        ) : null}
         <motion.aside
           ref={panel}
           className={styles.drawer}
-          style={{ width }}
+          style={sheet ? undefined : { width }}
           role="dialog"
           aria-label={label ?? title}
           tabIndex={-1}
-          initial={{ x: width, opacity: 0.6 }}
-          animate={{ x: 0, opacity: 1, transition: { duration: duration.modal, ease: ease.decelerate } }}
-          exit={{ x: width, opacity: 0.6, transition: { duration: duration.modalExit, ease: ease.standard } }}
+          variants={sheet ? bottomSheet : slide}
+          initial="initial" animate="animate" exit="exit"
         >
+          {sheet ? <span className={styles.grabber} aria-hidden /> : null}
           <header className={styles.head} data-crumb={crumb ? '' : undefined}>
             {crumb && onBack ? (
               <Tooltip label="Back">
@@ -69,6 +82,7 @@ export function Drawer({
           <div className={styles.body}>{children}</div>
           {footer ? <footer className={styles.footer}>{footer}</footer> : null}
         </motion.aside>
+        </>
       ) : null}
     </AnimatePresence>
   )

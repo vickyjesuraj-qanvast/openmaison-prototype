@@ -134,7 +134,7 @@ function ContractRowView({
             {contract.status}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          <Dropdown open={statusOpen} onClose={onStatusClose} align="left">
+          <Dropdown open={statusOpen} onClose={onStatusClose} align="left" sheetTitle="Status">
             {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
                 aria-current + the "current" meta — DropdownItem takes no attributes. */}
             {CONTRACT_STATUSES.map((s) => {
@@ -175,7 +175,7 @@ function ContractRowView({
                           aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
-          <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide}>
+          <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide} sheetTitle={contract.title}>
             {/* Quotes row kebab 910:36723 — verbatim order (REG-177). */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
             <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>

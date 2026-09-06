@@ -1,0 +1,65 @@
+/* Mobile bottom sheet (REG-353) — the mobile canvas' presentation for every menu, popover and picker at ≤767
+   (1d Move stage · 1f Add Lead · 1i Open tasks · 2c Task · 2f row menu · 3e contact log · 3g Move file · 3k return).
+   The surface leaves the anchor it had on the desktop and comes up off the bottom edge, over the dock, under a
+   scrim: grabber, then an optional heading (title + one-line subtitle + a bare close), then the scrolling body. */
+.scrim {
+  position: fixed; inset: 0; z-index: 115;
+  background: var(--om-color-overlay-60p);
+  display: flex; align-items: flex-end; justify-content: stretch;
+}
+.sheet {
+  width: 100%;
+  max-height: min(88dvh, calc(100dvh - 56px));
+  display: flex; flex-direction: column;
+  background: var(--om-color-surface-default);
+  border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  box-shadow: var(--om-elevation-level-5);
+  overflow: hidden;
+  outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
+  padding-bottom: env(safe-area-inset-bottom, 0px);   /* the sheet reaches the home indicator (viewport-fit=cover) */
+}
+/* Grabber: 56x4 on the surface-variant rule, 8 above / 4 below (canvas 1d…3k). It is decoration — the sheet is
+   dismissed by the close, the scrim or Esc, so nothing is dragged. */
+.grabber {
+  flex-shrink: 0; align-self: center;
+  width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+  border-radius: var(--om-radius-full);
+  background: var(--om-color-surface-variant);
+}
+/* Heading: the modal header standard read for a sheet — 20/Bold title over a 14 secondary line, bare 24 close,
+   1px rule under it (canvas 1i "Olivia Martinez / 9123 4567 · Current stage: Contacted"). */
+.head {
+  flex-shrink: 0;
+  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-4);
+  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+.titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.close { flex-shrink: 0; margin-top: 2px; }
+.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+/* Action row pinned under the body, on the modal footer's own 16/24 (canvas 1i "Add Task", 3e "Save"). Right-aligned,
+   as every other footer in the app is — Dialog, the Move stage window, the filter modals (user 2026-09-06: "right
+   align buttons in the mobile screens"). */
+.foot {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+}
+/* A menu inside a sheet is the full-width list of the canvas (1f, 2f): rows run the sheet's width on the modal's
+   own 24px gutter, and the group rules stay full-bleed. No card border, no radius, no cap of its own. */
+.menuBody { padding: var(--om-spacing-2) 0; }
+.menuBody > * { border-radius: 0; }
+.menuBody > button { padding-left: var(--om-spacing-6); padding-right: var(--om-spacing-6); }
+
+/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
+   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
+   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
+   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
+   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
+   with each other. Vertical padding is untouched. */
+.head { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+.foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+.menuBody > button { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }

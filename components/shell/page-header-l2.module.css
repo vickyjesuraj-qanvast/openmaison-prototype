@@ -41,6 +41,8 @@
 .titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+/* (REG-355) The header's kebab: last in the row, where it has always been drawn at the end of the action cluster. */
+.titleActions { display: flex; align-items: center; flex-shrink: 0; }
 .title {
   margin: 0;
   font: var(--om-type-heading-h3);
@@ -65,22 +67,47 @@
   /* (REG-301, bug) `relative`, not `static`: the two absolutely positioned plates below belong to this header. A
      static header is not their containing block, so they positioned against the page-reveal container and painted
      the WHOLE detail page blank under the header at ≤767 — every Lead Details tab, since REG-269. Relative keeps
-     them inside the header and still takes it out of the sticky stack, which is all "static" was for. */
-  .header { position: relative; height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
-  /* (REG-298, 1082:23387) The mobile header block lifts on level-1, as the L1 header does. */
-  .header::after { border-radius: 0; box-shadow: var(--om-elevation-level-1); }
-  .header::before { top: 0; }
-  .chips { flex-basis: 100%; order: 4; justify-content: flex-start; }
-  /* (REG-345) Only the tab that shows the lead carries its identity chips; the rest give the room to their own content. */
-  .header[data-compact] .chips { display: none; }
-  /* The action cluster (stage pill + primary + kebab ≈ 374px) is wider than a 390 screen's content box, and
-     only .header was wrapping — so the kebab clipped. (REG-306) The cluster takes its own full line under the
-     title, left-aligned, and wraps within it, so nothing is cut at 320 either (the responsive audit found the
-     primary sliced at 320 and the kebab at 360). */
-  .actions { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; }
-  /* (REG-345) A compact header's cluster is the kebab alone — 36px, which fits beside the name, so it keeps
-     the title's row instead of taking one of its own. */
-  .header[data-compact] .actions { flex: 0 0 auto; justify-content: flex-end; }
+     them inside the header and still takes it out of the sticky stack, which is all "static" was for.
+     (REG-368, user 2026-09-06) …but it kept the sticky rule's `z-index: 20` while the tab strip carries 19, so a
+     header that no longer sticks still painted OVER the strip stuck beneath it: scrolling slid the strip's top
+     edge in behind the header and cut the tabs' first pixels off. It claims no layer here. */
+  /* p16, rows 12 apart (mock 1186:2453). (REG-362) With no bar above it this header is the top of the screen, so
+     it spends the status-bar inset itself (viewport-fit=cover; env() is 0 everywhere else). */
+  /* (REG-373) The seam between this header and the tab strip — the 1px the mock draws inside the block (1186:2554)
+     — never painted at ≤767, for two compounding reasons. The base rule is `position: sticky; top: 8px; z-index: 20`:
+     switching to `relative` here (REG-301) left the 8px behind as a downward PAINT offset, so the header drew 8-124
+     against a layout box of 0-116 and its stroke landed inside the strip; and REG-368 dropped the z-index to stop the
+     header painting over the stuck strip, which also dissolved its stacking context, so the `z-index: -1` plates
+     escaped to the root and hid behind the page body's white background.
+     Rather than restore a stacking context — which would trap any overlay rendered INSIDE the header (the Tooltip
+     is `position: fixed` but renders inline) under the strip — the header simply paints its own background and its
+     own bottom border here and the plates step aside. They exist for the desktop's rounded sticky treatment, and at
+     ≤767 there is no radius and no canvas gutter for them to cover. */
+  .header {
+    position: relative; top: auto; z-index: auto; height: auto; flex-wrap: wrap;
+    padding: var(--om-spacing-4); padding-top: calc(var(--om-spacing-4) + env(safe-area-inset-top, 0px));
+    row-gap: var(--om-spacing-3); border-radius: 0;
+    background: var(--om-color-surface-default);
+    border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  .header::before, .header::after { display: none; }
+  /* A header that owns its block's bottom edge lifts on level-1 there instead of the hairline (REG-298 / REG-369). */
+  .header[data-owns-shadow] { border-bottom: 0; box-shadow: var(--om-elevation-level-1); }
+  /* (REG-369, mock 1186:2554) The header + tabs block carries ONE level-1, under whichever piece is at its bottom
+     edge. Where a tab strip follows this header the strip owns it — at rest AND once the header has scrolled away
+     (1186:2813 "Onscroll"), which is the same shadow either way — and the header keeps the 1px bottom stroke its
+     plate already draws. A header with no strip under it is the block's bottom edge and lifts itself (REG-298). */
+  /* (REG-359, mock 1186:2453) The updated header is two rows and nothing else: the back arrow, the lead's name and
+     the kebab; then the stage pill and Convert to Project. The breadcrumb and the meta chips are not in it — the
+     chips used to share the title's row and cut a name to four characters plus an ellipsis (REG-355), and the mock
+     answers that by dropping them here rather than wrapping them under it. The kebab keeps the title's line through
+     `order`, since the action row claims the whole second one. */
+  .crumb, .chips { display: none; }
+  .title { flex: 1 1 100%; }
+  .titleActions { order: 1; }
+  /* The action row takes the whole second line and stays ONE line: the stage pill hugs its own text and the
+     primary fills the rest (app/leads/[id]/overview.module.css sizes the two). */
+  .actions { order: 2; flex: 1 1 100%; flex-wrap: nowrap; justify-content: flex-start; gap: var(--om-spacing-3); min-width: 0; }
 }
 
 /* Touch ergonomics (REG-273): the back arrow is a 24px glyph and the only way out of a detail screen on a

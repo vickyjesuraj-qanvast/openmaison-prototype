@@ -124,3 +124,22 @@
 @media (hover: none) {
   .rowMove { opacity: 1; pointer-events: auto; }
 }
+
+/* (REG-377) The canvas draws Move file as a bottom sheet; it opened as a full-screen white page with ~400px of
+   empty white under the last row. Same conversion the shared Dialog performs (components/om/dialog.module.css),
+   with the grabber drawn by the panel itself so no markup changes, and head / body / footer on the REG-372 16. */
+@media (max-width: 767px) {
+  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
+  .panel {
+    width: 100vw; max-width: 100vw; height: auto;
+    max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  }
+  .panel::before {
+    content: ''; flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full); background: var(--om-color-surface-variant);
+  }
+  .heading, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .heading { padding-top: var(--om-spacing-3); }
+}

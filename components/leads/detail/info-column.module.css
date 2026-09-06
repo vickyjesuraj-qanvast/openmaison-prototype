@@ -153,13 +153,14 @@
   .column {
     flex: none; width: 100%;
     align-self: auto; min-height: 0;
+    gap: var(--om-spacing-4);   /* (REG-365) 16 from the identity block to the View Client Info button */
     padding: var(--om-spacing-4);
     border-right: 0;
     border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
   }
   /* (REG-304) Collapsed at mobile is the identity block on the full width — the strip geometry is for ≥768. */
   .column[data-state='collapsed'] { flex: none; width: 100%; overflow: visible; align-items: stretch; }   /* the strip's flex-start would hug the name row to its text */
-  .section { scroll-margin-top: calc(var(--app-mobile-bar-height) + 44px + var(--om-spacing-4)); }
+  .section { scroll-margin-top: calc(var(--app-mobile-bar-height) + 48px + var(--om-spacing-4)); }
   /* The key/value rows KEEP the mock's two-column read (REG-269, measured before deciding): full width at 390
      the column is 358 inside, so a 120px key + 12 gap leaves the value 226 — WIDER than the 210 it gets in the
      desktop mock's own 360px column. Nothing is crushed, so nothing is restacked: the label/value pair reads
@@ -183,8 +184,31 @@
   .iconBtn::after { content: ''; position: absolute; inset: -12px; }
   .iconBtn[data-size='16']::after { inset: -14px; }
 
-  .identity { gap: var(--om-spacing-2); }
-  .contactRow { min-height: 44px; align-items: center; gap: calc(var(--om-spacing-6) + var(--om-spacing-1)); }
+  /* (REG-365, user 2026-09-06: "the vertical padding … looks too much"; then "let's change it to 8px only between
+     these 3 items") Every element keeps its own drawn height: the 32px name row, the 20px phone row and the 20px
+     email row sit 8 apart, and the View Client Info button 16 below them. The rows had been grown to 44 for the
+     icons inside them, which set a 44 pitch — more than double the block's own rhythm.
+     Those icons therefore take a target that fits the gap: ±4 vertically, so two neighbouring targets exactly meet
+     and never overlap, and the full ±12 horizontally where there is room. Below REG-273's 44 floor by the owner's
+     call — a predictable target beats a nominal 44 that fires on the row above. */
+  .identity, .contact { gap: var(--om-spacing-2); }
+  .nameRow { min-height: 0; align-items: center; }
+  .nameRow .iconBtn { margin-top: 0; }
+  /* (user 2026-09-06: "check the desktop spacing between these items — it needs to be the same in the mobile as
+     well") The value and its icons keep the mock's own 8, as the desktop column draws them; the 28 they had was
+     REG-273 spreading the two 16px marks so their 44px targets could not touch. */
+  .contactRow { min-height: 0; align-items: center; gap: var(--om-spacing-2); }
+  /* The shared touch rule at the foot of this file gives every `.iconBtn` a 44px box and hands the space back as
+     `margin: -12px` — which assumes a 44px box. A `data-size="16"` button keeps 16, so −12 each side left it an
+     outer box of −8: the copy mark and WhatsApp were laid out ON TOP of each other, masked only by the 28px gap
+     that has just gone. Inside the identity block each mark is simply its own drawn size.
+     Which caps their targets: ±4 all round, so two neighbours — the copy mark and WhatsApp 8 apart, and the row
+     below 8 down — exactly meet and never overlap. Under REG-273's 44 floor, the cost of the mock's spacing. The
+     pencil has nothing beside it, so it keeps the full 44. */
+  .identity .iconBtn { width: 20px; height: 20px; margin: 0; }
+  .identity .iconBtn[data-size='16'] { width: 16px; height: 16px; }
+  .identity .iconBtn::after { inset: -4px; }
+  .nameRow .iconBtn::after { inset: -12px; }
 
   .sectionHead { height: auto; min-height: 44px; gap: var(--om-spacing-4); }
   .headLink { position: relative; }
@@ -199,4 +223,18 @@
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the info column's copy / WhatsApp glyphs draws at 20px. */
 @media (hover: none) {
   .iconBtn { width: 44px; height: 44px; margin: -12px; display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* (REG-366) The phone's "View Client Info" button and the sheet it opens. The button sits under the identity
+   block on the column's own 16 rhythm and runs the full width, as the tab's other full-width primaries do; the
+   sheet's body carries the column's 24 padding and the 24 between its sections, so the four blocks read exactly
+   as they do in the desktop column. */
+@media (max-width: 767px) {
+  .viewInfo { display: flex; }
+  .viewInfo > * { flex: 1; }
+  .viewInfo button { width: 100%; }
+}
+.infoSheet {
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+  padding: var(--om-spacing-4);   /* (REG-372) the sheet gutter — 16, like every other sheet's body */
 }

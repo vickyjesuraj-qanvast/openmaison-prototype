@@ -14,7 +14,7 @@ import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 export function DeleteContractsDialog({ open, count, onNo, onYes }: { open: boolean; count: number; onNo: () => void; onYes: () => void }) {
   const many = count > 1
   return (
-    <Dialog open={open} onClose={onNo} title={many ? 'Delete Contracts' : 'Delete Contract'} width={400} size="form"
+    <Dialog open={open} onClose={onNo} title={many ? 'Delete Contracts' : 'Delete Contract'} width={400} size="form" alert
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onNo}>No</Button>
               <DangerButton onClick={onYes}>Yes</DangerButton>

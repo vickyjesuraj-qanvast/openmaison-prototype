@@ -59,6 +59,14 @@ export const sheetRise = {
   exit: { opacity: 0, y: 18, transition: { duration: duration.sheetExit, ease: ease.standard } },
 }
 
+/** Mobile bottom sheet (REG-353): the surface slides up off the bottom edge and back down — the canvas'
+ *  presentation for every menu, popover, picker and form modal at ≤767 (screens 1d…3k). */
+export const bottomSheet = {
+  initial: { y: '100%' },
+  animate: { y: 0, transition: { duration: duration.sheet, ease: ease.decelerate } },
+  exit: { y: '100%', transition: { duration: duration.sheetExit, ease: ease.standard } },
+}
+
 export const snackbarRise = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0, transition: { duration: duration.snackbar, ease: ease.decelerate } },

@@ -64,16 +64,45 @@
 }
 @media (max-width: 767px) {
   .dialog { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
-  .overlay:has(.dialog[data-size='form']), .overlay:has(.dialog[data-size='modal']) { align-items: stretch; justify-content: stretch; }
-  .dialog[data-size='form'], .dialog[data-size='modal'] {
-    width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh;
-    border-radius: 0;
+  /* (REG-353) The form / modal sizes are the mobile canvas' bottom sheets (1e, 1g, 1k, 2i…2m, 3e, 3g, 3k): full
+     width on the bottom edge, rounded on top only, as tall as their content up to 88dvh — the page stays visible
+     under the scrim above them. They used to take the whole screen, which left a form like Create New Lead with a
+     column of empty white under its last field. The compact / standard alerts stay centred cards (canvas 2e). */
+  .overlay:has(.dialog[data-size='form']:not([data-alert])), .overlay:has(.dialog[data-size='modal']:not([data-alert])) { align-items: flex-end; justify-content: stretch; }
+  .dialog[data-size='form']:not([data-alert]), .dialog[data-size='modal']:not([data-alert]) {
+    width: 100vw; max-width: 100vw;
+    max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
-  .dialog[data-size='form'] .body, .dialog[data-size='modal'] .body { flex: 1; }
-  /* (REG-308) The sheet reaches under the status bar and the home indicator (viewport-fit=cover): the head pads below
-     the one (form 24 · modal 20 kept) and the pinned footer past the other (form 24 · modal 16 kept) — no-ops where env() is 0. */
-  .dialog[data-size='form'] .head { padding-top: calc(var(--om-spacing-6) + env(safe-area-inset-top, 0px)); }
-  .dialog[data-size='modal'] .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
-  .dialog[data-size='form'] .foot { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
-  .dialog[data-size='modal'] .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  /* Grabber: 56x4 on the surface-variant rule, 8 above / 4 below — the same mark the anchored surfaces' sheet wears
+     (components/om/sheet.module.css). It is decoration: the close, the scrim and Esc dismiss the sheet. */
+  .grabber {
+    flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full);
+    background: var(--om-color-surface-variant);
+  }
+  /* (REG-308) The sheet reaches the home indicator (viewport-fit=cover): the pinned footer pads past it, keeping
+     its own 24 (form) / 16 (modal) — a no-op where env() is 0. The head no longer clears a status bar: the sheet
+     starts below it, and the grabber sits where that padding was. */
+  .dialog[data-size='form']:not([data-alert]) .head { padding-top: var(--om-spacing-4); }
+  .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
+  .dialog[data-size='form']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
+  .dialog[data-size='modal']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  /* (REG-376) A confirmation stays the canvas' centred card (2e): 24px margins either side, height to content. */
+  .dialog[data-alert] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
+}
+
+/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
+   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
+   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
+   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
+   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
+   with each other. Vertical padding is untouched. */
+@media (max-width: 767px) {
+  .dialog[data-size='form']:not([data-alert]) .head, .dialog[data-size='modal']:not([data-alert]) .head,
+  .dialog[data-size='form']:not([data-alert]) .body, .dialog[data-size='modal']:not([data-alert]) .body,
+  .dialog[data-size='form']:not([data-alert]) .foot, .dialog[data-size='modal']:not([data-alert]) .foot {
+    padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4);
+  }
 }

@@ -14,7 +14,7 @@ import type { NoteKind } from '@/lib/leads/note-model'
 export function DeleteNoteDialog({ open, kind, onNo, onYes }: { open: boolean; kind: NoteKind; onNo: () => void; onYes: () => void }) {
   const log = kind === 'contact'
   return (
-    <Dialog open={open} onClose={onNo} title={log ? 'Delete Contact Log' : 'Delete Note'} width={400} size="form"
+    <Dialog open={open} onClose={onNo} title={log ? 'Delete Contact Log' : 'Delete Note'} width={400} size="form" alert
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onNo}>No</Button>
               <DangerButton onClick={onYes}>Yes</DangerButton>

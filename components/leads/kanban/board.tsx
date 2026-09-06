@@ -272,7 +272,7 @@ function KanbanCard({
                 <Icon name="more_vert" size={20} weight={300} />
               </button>
             </Tooltip>
-            <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide}>
+            <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide} sheetTitle={lead.name}>
               <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem>
               {canReturnLead(lead) ? (
                 /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */

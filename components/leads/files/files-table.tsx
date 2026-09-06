@@ -207,8 +207,8 @@ function FileRowView({
             </Tooltip>
           </span>
           {folder
-            ? <FolderMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} />
-            : <FileMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} />}
+            ? <FolderMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} />
+            : <FileMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} />}
         </span>
       </span>
     </div>

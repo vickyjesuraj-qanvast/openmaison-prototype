@@ -107,7 +107,7 @@ export function TaskPanel({
       <span className={styles.menuHost}>
         <DrawerAction icon="more_vert" label="More" expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)} />
         {/* Panel kebab (frame 160): 200-wide menu → "Save as Template" · "Delete" (red). One phrase everywhere (build plan). */}
-        <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={200}>
+        <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={200} sheetTitle="Task">
           <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('template') }}>Save as Template</DropdownItem>
           <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('delete') }}><span className={styles.danger}>Delete</span></DropdownItem>
         </Dropdown>

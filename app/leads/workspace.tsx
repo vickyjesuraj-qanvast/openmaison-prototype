@@ -290,7 +290,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
   const addMenu = (
-    <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right">
+    <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right" sheetTitle="Add Lead">
       <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }}>Create New Lead</DropdownItem>
       <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
       <DropdownDivider />
@@ -300,7 +300,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     </Dropdown>
   )
   const kebabMenu = (
-    <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
+    <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Leads">
       <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
       <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportOpen(true) }}>Export all as…</DropdownItem>
       <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
@@ -465,6 +465,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           return row ? blockedReason(row, stage, stageMovement) : null
         }}
         current={rows.find((r) => r.id === stageMenu?.id)?.stage as Stage | undefined ?? null}
+        subject={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? `${row.name} · ${row.phone}` : undefined })()}
         doneThrough={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? journeyIdx(row) : -1 })()}
         onSelect={(stage) => {
           const leadId = stageMenu!.id

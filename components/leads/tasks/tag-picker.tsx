@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Tag as TagChip } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { anchoredSurface } from '@/lib/motion'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import type { Tag } from '@/lib/db/schema'
 import styles from './tag-picker.module.css'
 
@@ -34,6 +35,7 @@ export function TagPicker({
   position?: { top: number; left: number } | null
 }) {
   const [query, setQuery] = useState('')
+  const sheet = useSheetLayout()   // (REG-378) ≤767 the picker is a bottom sheet
   const [focused, setFocused] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   const ref = useRef<HTMLDivElement>(null)
@@ -82,13 +84,8 @@ export function TagPicker({
     setQuery('')
   }
 
-  return (
-    <AnimatePresence>
-      {open && position !== null ? (
-        <motion.div ref={ref} className={styles.picker} role="dialog" aria-label="Add Tag"
-                    data-fixed={position ? '' : undefined}
-                    style={position ? { position: 'fixed', top: position.top, left: position.left, width: 352 } : undefined}
-                    variants={anchoredSurface} initial="initial" animate="animate" exit="exit">
+  const body = (
+    <>
           <div className={styles.field} data-active={focused || undefined} onMouseDown={(e) => { if (e.target === e.currentTarget) { e.preventDefault(); inputRef.current?.focus() } }}>
             {/* The input holds the top line and the picked tags flow beneath it, so the field grows downwards instead
                 of squeezing the input further right with every tag added (user 2026-08-30). */}
@@ -131,6 +128,29 @@ export function TagPicker({
               <button type="button" className={styles.link} onClick={onManage}>Manage Tags</button>
             </div>
           </div>
+    </>
+  )
+
+  /* (REG-378) ≤767 this is a bottom sheet like every other anchored surface (REG-353). Anchored inside the task
+     panel's scrolling body it had no heading, no close, and its own footer fell below the fold; the Sheet portals
+     to the document so nothing can clip it. ≥768 keeps the anchored picker byte-for-byte. */
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title="Tags"
+             footer={<button type="button" className={styles.link} onClick={onManage}>Manage Tags</button>}>
+        <div className={styles.sheetBody}>{body}</div>
+      </Sheet>
+    )
+  }
+
+  return (
+    <AnimatePresence>
+      {open && position !== null ? (
+        <motion.div ref={ref} className={styles.picker} role="dialog" aria-label="Add Tag"
+                    data-fixed={position ? '' : undefined}
+                    style={position ? { position: 'fixed', top: position.top, left: position.left, width: 352 } : undefined}
+                    variants={anchoredSurface} initial="initial" animate="animate" exit="exit">
+          {body}
         </motion.div>
       ) : null}
     </AnimatePresence>

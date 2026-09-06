@@ -119,7 +119,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                           <Icon name="more_vert" size={24} weight={300} />
                         </button>
                       </Tooltip>
-                      <FolderMenu open={open} onClose={() => setMenu(null)} onPick={(a) => { setMenu(null); onFolderMenu(f, a) }} />
+                      <FolderMenu open={open} onClose={() => setMenu(null)} name={f.name} onPick={(a) => { setMenu(null); onFolderMenu(f, a) }} />
                     </span>
                   </div>
                 )
@@ -197,7 +197,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                           <Icon name="more_vert" size={24} weight={300} />
                         </button>
                       </Tooltip>
-                      <FileMenu open={open} onClose={() => setMenu(null)} onPick={(a) => { setMenu(null); onFileMenu(f, a) }} />
+                      <FileMenu open={open} onClose={() => setMenu(null)} name={f.name} onPick={(a) => { setMenu(null); onFileMenu(f, a) }} />
                     </span>
                   </div>
                 )
@@ -213,9 +213,9 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
 /* ---------------------------------------------------------------------------------------------- */
 
 /** Folder kebab menu 931:40130 (200×154) — verbatim order; Delete #db382a. Shared with the list's folder rows. */
-export function FolderMenu({ open, onClose, onPick, side = 'down' }: { open: boolean; onClose: () => void; onPick: (a: FolderAction) => void; side?: 'down' | 'up' }) {
+export function FolderMenu({ open, onClose, onPick, side = 'down', name }: { open: boolean; onClose: () => void; onPick: (a: FolderAction) => void; side?: 'down' | 'up'; name?: string }) {
   return (
-    <Dropdown open={open} onClose={onClose} align="right" side={side}>
+    <Dropdown open={open} onClose={onClose} align="right" side={side} sheetTitle={name ?? 'Folder'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('rename')}>Rename</DropdownItem>
@@ -225,9 +225,9 @@ export function FolderMenu({ open, onClose, onPick, side = 'down' }: { open: boo
 }
 
 /** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared with the list's file rows. */
-export function FileMenu({ open, onClose, onPick, side = 'down' }: { open: boolean; onClose: () => void; onPick: (a: FileAction) => void; side?: 'down' | 'up' }) {
+export function FileMenu({ open, onClose, onPick, side = 'down', name }: { open: boolean; onClose: () => void; onPick: (a: FileAction) => void; side?: 'down' | 'up'; name?: string }) {
   return (
-    <Dropdown open={open} onClose={onClose} align="right" side={side}>
+    <Dropdown open={open} onClose={onClose} align="right" side={side} sheetTitle={name ?? 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('duplicate')}>Duplicate</DropdownItem>

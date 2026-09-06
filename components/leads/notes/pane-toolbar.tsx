@@ -118,7 +118,7 @@ export function PaneToolbar({ title, onAttach, onRefine, onFormat, formattingDis
         </Tooltip>
         {/* The bar is back at the pane's TOP (REG-277), so the menu hangs downward again — REG-255's upward
             flip existed only because the bar had moved to the foot. */}
-        <Dropdown open={aiOpen} onClose={() => setAiOpen(false)} align="left" width={140}>
+        <Dropdown open={aiOpen} onClose={() => setAiOpen(false)} align="left" width={140} sheetTitle="Maison AI">
           <DropdownItem onSelect={() => { setAiOpen(false); onRefine() }}>Refine</DropdownItem>
         </Dropdown>
       </span>

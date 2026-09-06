@@ -10,7 +10,8 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
-import { modalPanel, overlayFade } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
+import { useSheetLayout } from '@/components/om/sheet'
 import { displayDateTimeTight } from '@/lib/format'
 import { returnTags } from '@/lib/leads/return-tags'
 import type { ReturnDetail } from '@/lib/leads/returns'
@@ -50,6 +51,8 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
      dialog above this panel owns it first (components/om/surface.ts), which is what the hand-rolled
      `!e.defaultPrevented` window listener this replaces was reaching for. */
   const panel = useRef<HTMLDivElement>(null)
+  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
+  const sheet = useSheetLayout()
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
 
@@ -89,8 +92,9 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
           {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
               focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
               surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label={leadName} tabIndex={-1} data-testid="return-details">
+            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.heading}>
               <div className={styles.titleWrap}>
                 <span className={styles.title}>{leadName}</span>

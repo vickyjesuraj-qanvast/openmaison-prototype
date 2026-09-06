@@ -63,7 +63,7 @@ export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumn
                 </button>
               </Tooltip>
               {/* Not mocked: one item, at the Notes menus' 140 width (931:45488 / 931:45009). */}
-              <Dropdown open={open} onClose={() => setMenu(null)} align="right" width={140}>
+              <Dropdown open={open} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="Attachment">
                 <DropdownItem onSelect={() => { setMenu(null); onRemove(f.id) }}>Remove</DropdownItem>
               </Dropdown>
             </span>

@@ -101,7 +101,7 @@ export function CommentsPanel({
                         <Icon name="more_horiz" size={20} />
                       </button>
                     </Tooltip>
-                    <Dropdown open={menuFor === c.id} onClose={() => setMenuFor(null)} align="right">
+                    <Dropdown open={menuFor === c.id} onClose={() => setMenuFor(null)} align="right" sheetTitle="Comment">
                       {mine ? (
                         <DropdownItem onSelect={() => { setMenuFor(null); setEditing({ id: c.id, body: c.body }) }}>Edit</DropdownItem>
                       ) : null}

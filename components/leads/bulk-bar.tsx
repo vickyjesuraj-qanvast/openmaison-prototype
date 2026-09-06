@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -22,10 +23,27 @@ export function BulkBar({
   /** Render inside a modal panel (absolute, bottom 24) instead of fixed to the viewport. */
   inset?: boolean
 }) {
+  /* (REG-358, user 2026-09-06: "when this is revealed push the fab button top") The bar and the Maison AI FAB
+     both live on the bottom-right of a phone screen, and the bar covered it. It publishes its own height and
+     its presence on the document while it is up; the FAB's stylesheet lifts itself over that (maison-fab.module.css).
+     Layout is read in an effect, after paint — never during render. */
+  const bar = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = bar.current
+    if (count <= 0 || !el) return
+    document.documentElement.style.setProperty('--app-bulk-bar-height', `${Math.round(el.getBoundingClientRect().height)}px`)
+    document.body.setAttribute('data-om-bulk-bar', '')
+    return () => {
+      document.body.removeAttribute('data-om-bulk-bar')
+      document.documentElement.style.removeProperty('--app-bulk-bar-height')
+    }
+  }, [count])
+
   return (
     <AnimatePresence>
       {count > 0 ? (
         <motion.div
+          ref={bar}
           className={styles.bar}
           data-inset={inset || undefined}
           variants={snackbarRise}

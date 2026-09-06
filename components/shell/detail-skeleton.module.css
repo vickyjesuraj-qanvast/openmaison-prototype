@@ -1,4 +1,4 @@
-/* Bones follow the Lead Details frame (858:24772): 72px header, 44px tabs, 360 · fluid · 72 row. */
+/* Bones follow the Lead Details frame (858:24772): 72px header, 48px tabs, 360 · fluid · 72 row. */
 .header { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); height: 72px; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .titleCol { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .titleRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
@@ -7,8 +7,8 @@
    flex items of .titleRow — while giving the ≤767 rule below something to move. (REG-269) */
 .chips { display: contents; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 44px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
-.row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 44px); }
+.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
+.row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 48px); }
 .info { width: 360px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
 .rule { height: 1px; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
 .centre { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
@@ -56,16 +56,21 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
 }
 
 @media (max-width: 767px) {
-  /* L2 header leaves the sticky stack, goes auto-height and wraps (page-header-l2.module.css ≤767: p12/16,
-     row-gap 8); its chips take their own line under the title. */
-  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
-  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
-  .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-basis: 100%; overflow-x: auto; scrollbar-width: none; }
-  .chips::-webkit-scrollbar { display: none; }
+  /* (REG-374) The ghost draws the header the page actually draws (page-header-l2.module.css ≤767 — p16, rows 12
+     apart, no crumb and no chips since REG-359), so the crossfade lands in place. It was still on the pre-REG-359
+     header — p12/16 with the chips row — which made the ghost block 137 tall against the real 117 and moved the
+     seam 20px at the swap. */
+  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); }
+  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .crumb, .chips { display: none; }
+  /* The strip is the one shrinkable child of an absolutely-positioned ghost whose row keeps a min-height that does
+     not subtract the header, so flex crushed it from 48 to 28 — the height the user actually looks at for the
+     ghost beat. It never shrinks. */
+  .tabs { flex-shrink: 0; }
   /* The three-part row stacks: info column full width above the centre, quick-links strip gone — exactly what
      overview.module.css and info-column.module.css do at ≤767, down to the right rule becoming a bottom rule
      and the 24 → 16 content padding. The row keeps the real min-height so the ghost is not short of the fold. */
-  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height) - 44px); }
+  .row { flex-direction: column; min-height: calc(100dvh - var(--app-mobile-bar-height) - 48px); }
   .info {
     flex: none; width: 100%;
     padding: var(--om-spacing-4);

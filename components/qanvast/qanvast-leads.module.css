@@ -188,16 +188,17 @@
 /* Responsive (REG-269): ≤767 the toolbar wraps — the scope pill takes the first row and Request Leads ·
    search · filter drop to their own row (the listing toolbar's rule, components/leads/toolbar.module.css:
    the pill's 151 + the right cluster's 229 measure ~396 against ~342 of content at 390). */
+/* (REG-354) The mobile canvas' toolbar is ONE row — the scope pill on the left, the search and filter glyphs on
+   the right (3j). The 280px box folds into the search glyph (components/om/toolbar-search.tsx) and takes a row of
+   its own only when it is asked for; Request Leads, which the canvas does not draw, follows underneath. */
 @media (max-width: 767px) {
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
-  .left { flex: 1 0 100%; }
-  .right { flex-wrap: wrap; }
-  /* REG-275: the 280 search cannot share a 390 row with Request Leads (133) and the filter (36) — it takes a
-     full-width row of its own, the sibling toolbars' rule (quotes / contracts: `.search, .searchWrap { width:
-     100%; flex-basis: 100% }`). `order` puts it AFTER the two buttons so the wrapped group is two rows, not
-     three; the buttons keep their own order. */
-  .searchWrap, .search { width: 100%; flex-basis: 100%; }
-  .searchWrap { order: 1; }
+  /* The right group dissolves into the bar (`display: contents`), so the pill and the two glyphs are ONE wrapping
+     row — a nested group would have been laid out on its own whole-content width and thrown to a second line. */
+  .left { flex: 0 1 auto; min-width: 0; margin-right: auto; }
+  .right { display: contents; }
+  /* Request Leads is not in the canvas' row: it takes the full width under the glyphs. */
+  .right > button:first-child { order: 3; flex-basis: 100%; }
 }
 
 /* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
@@ -251,10 +252,15 @@
   .head { display: none; }
   /* The rows are subgrid children, so collapsing the row alone changed nothing — the card's own six tracks won.
      Both collapse together, and the card stops scrolling sideways. */
-  .card { grid-template-columns: 1fr; overflow-x: visible; }
+  .card { grid-template-columns: 1fr; overflow-x: visible; }   /* the card stops scrolling sideways */
   /* The desktop row is a fixed 64px; stacked, its cells need whatever they need, or each row draws over the next. */
-  .row { grid-template-columns: 1fr; grid-column: 1 / -1; height: auto; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-1);
-         border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  /* (REG-354) The canvas draws each lead as a card, not a row in a rule-separated list (3j): the card holds the
+     name, the phone and the status tags, 12 apart on the page's own ground. The desktop row is a fixed 64px;
+     stacked, its cells need whatever they need, or each row draws over the next. */
+  .row { grid-template-columns: 1fr; grid-column: 1 / -1; height: auto; padding: var(--om-spacing-4); row-gap: var(--om-spacing-1);
+         border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+         background: var(--om-color-surface-default); }
+  .card { background: none; border: 0; box-shadow: none; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
   /* Each cell is pinned to its own desktop track (.colCredits → column 2 and so on); with one track those pins
      put the cell outside the card. Released here, every cell simply stacks. */
   .cell, .colName, .colCredits, .colBudget, .colType, .colCreated, .colStatus { grid-column: 1; }
@@ -266,4 +272,16 @@
   .colBudget::before { content: 'Budget\00a0\00b7\00a0S$'; }
   .cell > * { max-width: 100%; }
   .actions { opacity: 1; pointer-events: auto; }
+}
+
+/* (REG-368, user 2026-09-06: "the tab header sticky in the leads detail page is correct but it's not the same in
+   the Qanvast Ops tabs header — fix this like the leads details page") The strip sticks under this page's own
+   header, exactly as Lead Details' does under its L2 (app/leads/[id]/overview.module.css): the L1 header is 68
+   tall and sticks 8 below the canvas top on the desktop, and 60 tall under the 60px bar on a phone. Doubled
+   class = specificity 0,2,0, so om/tabs' own `position: relative` — and its own single-class media rules —
+   cannot win it back (the lesson REG-269 / REG-367 left twice). */
+.tabsHost { display: contents; }
+.stickyTabs.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 68px); z-index: 19; }
+@media (max-width: 767px) {
+  .stickyTabs.stickyTabs { top: calc(var(--app-mobile-bar-height) + 60px); }
 }

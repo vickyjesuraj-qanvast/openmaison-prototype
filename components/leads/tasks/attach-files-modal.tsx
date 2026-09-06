@@ -12,7 +12,8 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Dropzone } from '@/components/leads/move-stage/fields'
-import { modalPanel, overlayFade, snackbarRise } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade, snackbarRise } from '@/lib/motion'
+import { useSheetLayout } from '@/components/om/sheet'
 import { displayDate, startOfDay } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 import type { LeadFile } from '@/lib/db/schema'
@@ -64,6 +65,8 @@ export function AttachFilesModal({
      first), focus moves onto the panel on open — unless a field inside already autofocused — Tab cycles inside it, and
      focus returns to the opener on close. */
   const panel = useRef<HTMLDivElement>(null)
+  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
+  const sheet = useSheetLayout()
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
@@ -133,8 +136,9 @@ export function AttachFilesModal({
           {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
               focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
               surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label="Attach files" tabIndex={-1}>
+            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             {/* Heading 64 (p20/24): title 20/Bold · bare 24px close · 1px rule — the modal header standard (779:26016). */}
             <div className={styles.heading}>
               <span className={styles.title}>Attach files</span>

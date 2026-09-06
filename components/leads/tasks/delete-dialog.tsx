@@ -14,7 +14,7 @@ import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 export function DeleteTasksDialog({ open, all, count = 1, onNo, onYes }: { open: boolean; all: boolean; count?: number; onNo: () => void; onYes: () => void }) {
   const many = !all && count > 1
   return (
-    <Dialog open={open} onClose={onNo} title={all ? 'Delete all Tasks' : many ? 'Delete Tasks' : 'Delete Task'} width={400} size="form"
+    <Dialog open={open} onClose={onNo} title={all ? 'Delete all Tasks' : many ? 'Delete Tasks' : 'Delete Task'} width={400} size="form" alert
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onNo}>No</Button>
               <DangerButton onClick={onYes}>Yes</DangerButton>

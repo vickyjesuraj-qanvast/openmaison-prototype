@@ -14,17 +14,16 @@ import { useWindowScrolled } from './use-window-scrolled'
  */
 export function PageHeaderL2({
   scrollShadow = true,
-  compact = false,
   backHref,
   crumb,
   title,
   chips,
   actions,
+  titleActions,
 }: {
-  /** (REG-345) ≤767 a tab other than Overview drops the chips: the identity block belongs to the tab that shows the lead,
-   *  and four rows of chrome left barely a screen for the tab's own content. Desktop always shows them. */
-  compact?: boolean
-  /** (REG-331) Level-1 while the page is scrolled under the header. Off where a sticky tab strip follows it — the strip carries the mock's own level-1 (858:24784). */
+  /** (REG-331 · REG-369) This header owns its block's shadow. Off where a sticky tab strip follows it: the mock draws
+   *  ONE level-1 under the header + tabs block (1186:2554), carried by whichever piece is at its bottom edge — the
+   *  strip here. Desktop shows it only while the page is scrolled under the header; ≤767 it is always on. */
   scrollShadow?: boolean
   backHref: string
   /** Breadcrumb parent, rendered as "{crumb} / " (mock: "Leads / "). */
@@ -33,16 +32,20 @@ export function PageHeaderL2({
   /** `MetaChip`s, 8 apart, centred on the title line. */
   chips?: ReactNode
   actions?: ReactNode
+  /** (REG-355) The header's own kebab. Last in the row on the desktop — where it has always sat, at the end of the
+   *  action cluster — and ≤767 pinned to the title's line, so the lead's name keeps the width the canvas gives it (2a). */
+  titleActions?: ReactNode
 }) {
   const scrolled = useWindowScrolled()
   return (
-    <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined} data-compact={compact || undefined}>
+    <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined}
+            data-owns-shadow={scrollShadow || undefined}>
       <Tooltip label={`Back to ${crumb}`}>
         <Link href={backHref} className={styles.back} aria-label={`Back to ${crumb}`}>
           <Icon name="arrow_back" size={24} weight={300} />
         </Link>
       </Tooltip>
-      <div className={styles.titleBlock}>
+      <div className={styles.titleBlock} data-pinned={titleActions ? '' : undefined}>
         <span className={styles.crumb}>{crumb} / </span>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{title}</h1>
@@ -50,6 +53,7 @@ export function PageHeaderL2({
         </div>
       </div>
       {actions ? <div className={styles.actions}>{actions}</div> : null}
+      {titleActions ? <div className={styles.titleActions}>{titleActions}</div> : null}
     </header>
   )
 }

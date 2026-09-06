@@ -101,9 +101,10 @@
 
 @media (max-width: 767px) {
   .header {
-    top: var(--app-mobile-bar-height);   /* the sticky header sits under the 60px bar (+ safe-area inset) */
+    top: var(--app-mobile-bar-height);   /* (REG-362) zero off a level-1 page — this header IS the top of the screen there */
     flex-wrap: wrap; row-gap: var(--om-spacing-2);
     padding: var(--om-spacing-3) var(--om-spacing-4);
+    padding-top: calc(var(--om-spacing-3) + env(safe-area-inset-top, 0px));
     border-radius: 0;
   }
   .header::before { top: 0; }            /* no 8px canvas gutter to cover: the page sheet is edge to edge */

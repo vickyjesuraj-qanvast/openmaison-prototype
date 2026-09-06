@@ -390,7 +390,7 @@ export function LeadsTable({
                                     }} />
                       </Tooltip>
                     </span>
-                    <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right" side={menuSide}>
+                    <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right" side={menuSide} sheetTitle={row.name}>
                       <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem>
                       {canReturnLead(row) ? (
                         /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */

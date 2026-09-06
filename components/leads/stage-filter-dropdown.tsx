@@ -26,7 +26,7 @@ export function StageFilterDropdown({
     </button>
   )
   return (
-    <Dropdown open={open} onClose={onClose} align="left">
+    <Dropdown open={open} onClose={onClose} align="left" sheetTitle="Lead Status">
       {item('All Leads', counts.all, null)}
       <div className={styles.divider} />
       <div className={dd.groupTitle} data-tone="green"><span className={dd.dot} data-tone="green" />Active</div>

@@ -7,6 +7,7 @@ import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
+import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
 import styles from './menus.module.css'
 import ddStyles from './stage-dropdown.module.css'
 
@@ -19,7 +20,7 @@ import ddStyles from './stage-dropdown.module.css'
 const isTouchPointer = () => typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
 export function StageDropdown({
-  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1,
+  open, onClose, onSelect, position, blocked, current = null, doneThrough = -1, subject,
 }: {
   open: boolean
   onClose: () => void
@@ -31,8 +32,11 @@ export function StageDropdown({
   current?: Stage | null
   /** Index (in STAGES) of the last completed active stage — On Hold / Lost leads keep the checks of where they left. */
   doneThrough?: number
+  /** ≤767 this is the canvas' "Move stage" sheet (1d) and names the lead it moves: "Olivia Martinez · 9123 4567". */
+  subject?: string
 }) {
   const snackbar = useSnackbar()
+  const sheet = useSheetLayout()
   // aria-disabled rather than `disabled`: disabled buttons swallow pointer events, and the tooltip explains the lock
   // (on touch, where no tooltip fires, the tap answers with the same sentence in the snackbar — REG-273).
   const item = (s: Stage) => {
@@ -65,23 +69,40 @@ export function StageDropdown({
     return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
   }, [open, onClose])
 
+  const groups = (
+    <>
+      <div className={ddStyles.groupTitle} data-tone="green">
+        <span className={ddStyles.dot} data-tone="green" />
+        Active
+      </div>
+      {STAGES.map(item)}
+      <div className={ddStyles.rule} role="separator" />
+      <div className={ddStyles.groupTitle} data-tone="orange">
+        <span className={ddStyles.dot} data-tone="orange" />
+        Inactive
+      </div>
+      {INACTIVE_STAGES.map(item)}
+    </>
+  )
+
+  /* (REG-353) ≤767 the canvas presents this as the "Move stage" bottom sheet (1d): the same two groups and the
+     same locks, off the bottom edge under a scrim, with the lead and its current stage named in the heading. */
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title="Move stage" role="menu" bodyClassName={sheetMenuBody}
+             subtitle={[subject, current ? `Current stage: ${current}` : null].filter(Boolean).join(' · ') || undefined}>
+        {groups}
+      </Sheet>
+    )
+  }
+
   return (
     <AnimatePresence>
       {open && position ? (
         <motion.div ref={ref} className={styles.menu} role="menu"
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
                     style={{ position: 'fixed', top: position.top, left: position.left, transformOrigin: 'top left', width: 200 }}>
-          <div className={ddStyles.groupTitle} data-tone="green">
-            <span className={ddStyles.dot} data-tone="green" />
-            Active
-          </div>
-          {STAGES.map(item)}
-          <div className={ddStyles.rule} role="separator" />
-          <div className={ddStyles.groupTitle} data-tone="orange">
-            <span className={ddStyles.dot} data-tone="orange" />
-            Inactive
-          </div>
-          {INACTIVE_STAGES.map(item)}
+          {groups}
         </motion.div>
       ) : null}
     </AnimatePresence>

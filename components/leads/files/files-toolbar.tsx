@@ -1,13 +1,14 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Button, SearchBar } from '@/components/ds'
+import { useState } from 'react'
+import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { Tooltip } from '@/components/om/tooltip'
-import { useSearchTarget } from '@/components/shell/search-focus'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
+import { useSheetLayout } from '@/components/om/sheet'
 import type { FileRow } from '@/lib/leads/file-model'
 import styles from './files-toolbar.module.css'
 
@@ -43,11 +44,7 @@ export type FilesToolbarProps = {
  */
 export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onNew, onFilter, view, onView, onMenu }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
-  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
-  // owns its <input>, so the target is resolved from the wrapper once it mounts.
-  const searchInput = useRef<HTMLInputElement | null>(null)
-  useSearchTarget(searchInput)
-
+  const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
 
   return (
@@ -77,7 +74,7 @@ export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onN
                 <Icon name="more_vert" size={20} weight={300} />
               </button>
             </Tooltip>
-            <Dropdown open={menu === 'folder'} onClose={() => setMenu(null)} align="left">
+            <Dropdown open={menu === 'folder'} onClose={() => setMenu(null)} align="left" sheetTitle="New Folder">
               {/* Folder menu 200×118 (frame 91 @339,176) — verbatim order. */}
               <DropdownItem onSelect={pick(() => onFolderMenu('move'))}>Move</DropdownItem>
               <DropdownItem onSelect={pick(() => onFolderMenu('rename'))}>Rename</DropdownItem>
@@ -90,32 +87,34 @@ export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onN
       )}
       <div className={styles.actions}>
         <span className={styles.menuWrap}>
-          <Button
-            variant="primary" appearance="outlined"
-            iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-            aria-haspopup="menu" aria-expanded={menu === 'new'}
-            onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
-          >
-            New File
-          </Button>
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left">
+          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
+              the menu, its title and every action behind it are the same. */}
+          {sheet ? (
+            <Tooltip label="New File">
+              <IconButton icon="upload_file" label="New File" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
+            </Tooltip>
+          ) : (
+            <Button
+              variant="primary" appearance="outlined"
+              iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
+            >
+              New File
+            </Button>
+          )}
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New File">
             {/* New File menu 931:40128 (200×118) — verbatim order. */}
             <DropdownItem onSelect={pick(() => onNew('local'))}>From Local Files</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('company'))}>From Company Files</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('drive'))}>From Google Drive</DropdownItem>
           </Dropdown>
         </span>
-        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
-          {/* (REG-275) The box matches the file name, its owner, its type label and what it is attached to
-              (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain
-              name of the control. */}
-          <SearchBar
-            appearance="outlined" size="md"
-            placeholder="Search name, owner, type…" aria-label="Search files"
-            value={query} onChange={onQuery}
-            className={styles.search}
-          />
-        </span>
+        {/* (REG-275) The box matches the file name, its owner, its type label and what it is attached to
+            (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain name. */}
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />
         {/* (REG-273) `touchBtn` / `viewToggle` grow these 36px boxes to 40 at ≤767 — the icons keep their size. */}
         <Tooltip label="Filters">
           <IconButton icon="filter_list" label="Filters" className={styles.touchBtn} onClick={onFilter} />
@@ -137,7 +136,7 @@ export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onN
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right">
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Files">
             {/* Header kebab 931:40139 (200×46): the single item. */}
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Files</DropdownItem>
           </Dropdown>

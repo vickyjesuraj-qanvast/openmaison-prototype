@@ -11,7 +11,8 @@ import { DateField } from '@/components/om/date-field'
 import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
 import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
-import { modalPanel, overlayFade, ease, duration } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade, ease, duration } from '@/lib/motion'
+import { useSheetLayout } from '@/components/om/sheet'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
 import { parseInputDate, groupDigits, inputDate, phoneDigits } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
@@ -228,6 +229,8 @@ export function LeadFormModal({
      PortalMenu and the date picker each render after this panel and own Esc first, which is what the hand-rolled
      `!e.defaultPrevented` listener this replaces was reaching for. */
   const panel = useRef<HTMLDivElement>(null)
+  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
+  const sheet = useSheetLayout()
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
@@ -270,10 +273,11 @@ export function LeadFormModal({
           /* (REG-321, user 2026-09-02) No scrim dismiss here: the lead form holds the lead's own details, so only the X, Cancel
              or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
-          <motion.div ref={panel} className={styles.panel} variants={modalPanel} role="dialog" aria-modal tabIndex={-1}
+          <motion.div ref={panel} className={styles.panel} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
                       /* focus lands on the panel on open; the ring belongs to its controls (om/dialog.module.css) */
                       style={{ outline: 'none' }}
                       aria-label={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}>
+            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.heading}>
               <span className={styles.title}>{form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}</span>
               <Tooltip label="Close">

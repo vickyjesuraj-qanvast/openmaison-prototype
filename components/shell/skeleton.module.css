@@ -32,8 +32,13 @@
 .titleBlock { display: flex; flex-direction: column; gap: 6px; }
 .headerActions { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
-/* Mirrors the om Tabs row (components/om/tabs.module.css .tabs: 44px, H g24 p0/24, level-1 shadow) — detail-skeleton.module.css .tabs. */
-.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 44px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
+/* (REG-369) Where a tab strip follows the header — the Qanvast ghost — the STRIP is the block's bottom edge and
+   owns the one level-1; the ghost header drops its own, exactly as the live page does (`scrollShadow={false}`).
+   The ghost drew both, which is the doubled shadow REG-369 removed from the real page. */
+.header:has(+ .tabs) { box-shadow: none; }
+
+/* Mirrors the om Tabs row (components/om/tabs.module.css .tabs: 48px, H g24 p0/24, level-1 shadow) — detail-skeleton.module.css .tabs. */
+.tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
 
 /* Mirrors LeadsToolbar / imports toolbar. */
 .toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
@@ -156,4 +161,14 @@
      paints over the canvas, as the real sticky header's does — no z-index, which would lift it above the sheet's sweep. */
   .headerPlate { position: relative; background: var(--om-color-surface-default); min-height: 0; }
   .cardsCanvas { background: var(--om-color-surface-bg); }
+}
+
+/* (REG-374) ≤767 the Qanvast ghost's action bones are the page's own mobile set — three 36px squares (REG-361) —
+   not the desktop 110 + 121 + 36, which wrapped to a second row and put the ghost's tab strip 36px below where the
+   real one lands. The listing ghost already matched, because its header is icon-only at both widths. */
+@media (max-width: 767px) {
+  .headerActions > * { width: 36px !important; flex: 0 0 36px; }
+  /* …and the ghost header takes the real one's mobile box: p12/16 round a 36px row = 60, not the desktop 68
+     (page-header.module.css ≤767). Eight pixels of header is eight pixels of seam. */
+  .header { min-height: 60px; padding: var(--om-spacing-3) var(--om-spacing-4); }
 }

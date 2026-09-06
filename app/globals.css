@@ -288,3 +288,15 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
 
 /* Modal surfaces never chain their scroll to the page (pairs with useScrollLock). Scoped to the actual scroll
    containers — a blanket `[aria-modal] *` rule stops wheel scrolling inside nested scrollers in Chrome. */
+
+/* (REG-362) Off a level-1 page neither the ≤767 top bar nor the bottom dock is rendered
+   (components/shell/mobile-nav.module.css), so the heights every sticky offset and viewport calc derives from them
+   are zero — the detail header, the tab strip and the full-height panes move up by the 60 the bar took, and the FAB,
+   the snackbar, the bulk bar and the pages' own bottom clearance drop by the 70 the dock took. The dock's height
+   keeps the home-indicator inset, which the bottom-anchored chrome still has to clear (viewport-fit=cover). */
+@media (max-width: 767px) {
+  body:not(:has([data-om-l1-header])) {
+    --app-mobile-bar-height: 0px;
+    --app-mobile-dock-height: env(safe-area-inset-bottom, 0px);
+  }
+}

@@ -115,7 +115,7 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
                       <Icon name="more_vert" size={20} weight={300} />
                     </button>
                   </Tooltip>
-                  <Dropdown open={open} onClose={close} align="right" width={140}>
+                  <Dropdown open={open} onClose={close} align="right" width={140} sheetTitle="Note">
                     {/* A stage-logged record keeps its items visible but inert (REG-265) — the title says why. */}
                     <DropdownItem disabled={it.locked} title={it.locked ? 'Logged by the Contacted stage — edit it in the Move stage window' : undefined}
                                   onSelect={() => { close(); onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>

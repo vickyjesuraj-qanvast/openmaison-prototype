@@ -116,14 +116,19 @@
 .tabBar { background: var(--om-color-surface-bg); display: flex; gap: var(--om-spacing-6); padding: 0 var(--om-spacing-4); }
 .tab {
   position: relative;
-  display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2);
-  padding-top: var(--om-spacing-3); min-width: 48px;
+  /* (REG-364) 12 above the label and 12 to the ink, as components/om/tabs.module.css — the two rows are the same
+     DS Tab Item and must not drift. */
+  display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3);
+  /* (REG-373) `padding-bottom: 0` explicitly: this tab is a <button>, and Chrome's UA `padding-block: 1px` made the
+     selected one 49 tall with the ink a pixel off the row's bottom edge — the shared strip's is flush (REG-364).
+     The enabled tab's own 16 wins on specificity, so it still measures 12 + 20 + 16 = 48. */
+  padding-top: var(--om-spacing-3); padding-bottom: 0; min-width: 48px;
   border: 0; background: none; cursor: pointer;
   font: var(--om-type-subheading-m);
   color: var(--om-color-on-surface-secondary);
 }
 .tab[aria-selected='true'] { color: var(--om-color-primary-default); }
-.tab:not([aria-selected='true']) { padding-bottom: var(--om-spacing-3); }
+.tab:not([aria-selected='true']) { padding-bottom: var(--om-spacing-4); }   /* 12 + 20 + 16 = the selected tab's 12 + 20 + 12 + 4 (REG-364) */
 .tab:focus-visible { outline-offset: -2px; }   /* the tab card clips; keep the ring inside */
 .tabInk { height: 4px; width: 100%; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; background: var(--om-color-primary-default); }
 .tabBody { padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-3); }

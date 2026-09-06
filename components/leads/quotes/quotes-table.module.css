@@ -180,3 +180,48 @@
   .card { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
   .card[data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
 }
+
+/* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
+   Nine desktop columns inside a 358px card meant a 1030px row behind a horizontal scroll: the title cut to
+   "Whole-h…", the number clipped mid-value, the amount sliced by the card's right edge and the row's own
+   controls off-screen. The canvas draws each quote as a CARD instead — title and kebab on line 1, the
+   "OM-10001 · Private" line under it, then the status pill left and the amount right. Same markup, same actions: the two
+   grids collapse together (a card track would otherwise win the row's subgrid), every per-cell `grid-column`
+   pin is released and re-placed onto those three lines, and the columns the canvas does not draw step out.
+   Declared after the ≤1024 blocks above, so the tablet scroller and ≥1025 are untouched. */
+@media (max-width: 767px) {
+  .head { display: none; }
+  .card, .card[data-no-approval] {
+    display: flex; flex-direction: column; gap: var(--om-spacing-3);
+    grid-template-columns: 1fr; overflow-x: visible;
+    background: none; border: 0; box-shadow: none; border-radius: 0;
+  }
+  .row {
+    display: grid; grid-column: 1 / -1; height: auto;
+    grid-template-columns: auto 1fr auto;
+    padding: var(--om-spacing-4);
+    row-gap: var(--om-spacing-2); column-gap: var(--om-spacing-3);
+    grid-template-rows: auto auto;   /* two content-sized lines — an implicit track was inheriting the desktop row's height */
+    align-content: start; align-items: center;
+    background: var(--om-color-surface-default);
+    border: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-radius: var(--om-radius-2);
+  }
+  .row:hover { background: var(--om-color-surface-default); }   /* a finger has no hover; the fill only muddied the card */
+  .cell { padding: 0; border-top: 0; border-right: 0; min-width: 0; }
+  /* (REG-348's lesson) The select column stays — hidden, multi-select and the bulk bar's actions have no entry
+     point at all on a phone. It leads the card and spans the two text lines. */
+  .cell.colSel { grid-column: 1; grid-row: 1 / span 2; align-items: flex-start; padding: 0; }
+  /* The whole padding, not just the right: `.cell.colTitle` carries the desktop 23/24 at specificity 0,2,0 and
+     beat the `.cell { padding: 0 }` above it, leaving 47px of dead height inside the card. 40 on the right
+     clears the kebab pinned to the card's top corner. */
+  .cell.colTitle { grid-column: 2 / -1; grid-row: 1; padding: 0 40px 0 0; }
+  .cell.colStatus { grid-column: 2; grid-row: 2; }
+  .cell.colTotal { grid-column: 3; grid-row: 2; justify-content: flex-end; font: var(--om-type-heading-h5); }
+  .colDue, .colCreated, .colSent, .colUpdated, .colApproval { display: none; }
+  /* A finger cannot hover, so the row's controls are always up, pinned to the card's top-right corner. */
+  .actions { opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
+  /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a
+     `.menuWrap` and is the first `.float` of THAT, so a descendant selector hides both (the REG-346 lesson). */
+  .actions > .float:first-child { display: none; }
+}

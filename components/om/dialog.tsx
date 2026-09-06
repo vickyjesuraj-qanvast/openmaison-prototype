@@ -2,12 +2,13 @@
 
 import { useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { modalPanel, overlayFade } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
 import { useOverflow } from './use-overflow'
+import { useSheetLayout } from './sheet'
 import styles from './dialog.module.css'
 
 export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
@@ -19,7 +20,7 @@ export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
  * open, Tab stays inside, and returns to the opener on close (components/om/surface.ts).
  */
 export function Dialog({
-  open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false,
+  open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
   width?: number; children: ReactNode; footer: ReactNode
@@ -30,20 +31,29 @@ export function Dialog({
   size?: DialogSize
   /** Second scrim over an open modal: overlay/20p instead of the page scrim's overlay/60p. */
   nested?: boolean
+  /** (REG-376) A confirmation, not a form. It borrows the `form` / `modal` chrome for its 72/84 shell but stays a
+   *  CENTRED CARD at ≤767 — the canvas draws every alert that way (2e Delete Task) and REG-353 says so. */
+  alert?: boolean
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
+  /* (REG-353) ≤767 the canvas draws the form / modal sizes as bottom sheets (1e Create New Lead, 1g Filters,
+     2i…2m, 3e, 3g): they rise off the bottom edge instead of scaling in the middle, and wear the grabber.
+     The compact / standard alerts stay centred cards there (canvas 2e Delete Task). */
+  const asSheet = useSheetLayout() && !alert && (size === 'form' || size === 'modal')
   return (
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} data-nested={nested || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div ref={panel} className={styles.dialog} style={{ width }} variants={modalPanel} data-size={size}
+          <motion.div ref={panel} className={styles.dialog} style={{ width }} variants={asSheet ? bottomSheet : modalPanel} data-size={size}
                       initial="initial" animate="animate" exit="exit"
+                      data-alert={alert || undefined}
                       role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+            {asSheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.head}>
               <div className={styles.headText}>
                 <span className={styles.title}>{title}</span>

@@ -6,7 +6,7 @@ import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
-import { modalPanel, overlayFade } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { PROPERTY_TYPE_GROUPS, SOURCES } from '@/lib/leads/enums'
 import { EMPTY_FILTERS, activeGroups, parseDMY, type DatePreset, type LeadFilters } from '@/lib/leads/filters'
 import { DateField } from '@/components/om/date-field'
@@ -14,6 +14,7 @@ import type { Member } from '@/lib/db/schema'
 import styles from './filters-modal.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
+import { useSheetLayout } from '@/components/om/sheet'
 import { MSG } from '@/lib/forms'
 import { Tooltip } from '@/components/om/tooltip'
 
@@ -48,6 +49,9 @@ export function FiltersModal({
   useEscapeLayer(open, panelRef, onClose)
   useDialogFocus(open, panelRef)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
+  /* (REG-353) ≤767 this is the canvas' Filters bottom sheet (1g, 2o): it rises off the bottom edge and the
+     160px category rail lies down as a scrolling tab strip over the options. */
+  const sheet = useSheetLayout()
   const [tab, setTab] = useState<Tab>('sort')
   const [draft, setDraft] = useState<LeadFilters>(value)
   const [q, setQ] = useState('')
@@ -84,8 +88,9 @@ export function FiltersModal({
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
           {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
               controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
-          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Filters"
+          <motion.div ref={panelRef} className={styles.panel} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal aria-label="Filters"
                       tabIndex={-1} style={{ outline: 'none' }}>
+            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.heading}>
               <span className={styles.title}>Filters</span>
               <Tooltip label="Close">

@@ -57,3 +57,9 @@
     margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
   }
 }
+
+/* (REG-353) The same member rows inside the mobile bottom sheet. (user 2026-09-06: "container left and right
+   spacing is 16px for the member list") The gutter is on the ROW, so a row's hover fill still runs the sheet's
+   full width — the pattern the menu sheets use (components/om/sheet.module.css `.menuBody`). */
+.sheetBody { display: flex; flex-direction: column; padding: var(--om-spacing-2) 0; }
+.sheetBody .row { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }

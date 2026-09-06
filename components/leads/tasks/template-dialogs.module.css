@@ -111,3 +111,24 @@
   .close { margin: -10px; }
   .bannerClose { margin: -12px; }
 }
+
+/* (REG-377) Save as Template and Choose Template were centred desktop cards floating mid-screen, and Choose kept
+   a fixed 600px height that left 134px of white between its last row and a wrapped footer. Both are bottom sheets
+   at ≤767 — the same conversion the shared Dialog performs — and Choose gives up its height so the sheet ends
+   under its last template. The ≥1025 400 / 600×600 cards are untouched. */
+@media (max-width: 767px) {
+  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
+  .panel, .panel[data-kind='choose'] {
+    width: 100vw; max-width: 100vw; height: auto;
+    max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  }
+  .panel::before {
+    content: ''; flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full); background: var(--om-color-surface-variant);
+  }
+  .heading, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .heading { padding-top: var(--om-spacing-3); }
+  .radioRow { min-height: 44px; }   /* 24px rows were well under a fingertip */
+}

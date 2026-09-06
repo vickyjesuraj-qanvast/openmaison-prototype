@@ -27,13 +27,31 @@
     padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px));
     padding-left: calc(var(--om-spacing-2) + env(safe-area-inset-left, 0px));
     background: var(--om-color-surface-default);
-    box-shadow: var(--om-elevation-level-5);
+    /* (REG-357, user 2026-09-06) The dock lifts off the page with a soft band ABOVE it. `--om-elevation-level-5`
+       is the effect Figma lists on this row (#00000040, offset 0/25, blur 50, spread -12) but it points DOWN, so
+       against a dock pinned to the bottom edge it drew nothing at all and the page simply ran into the dock's
+       white. The mock's own render is the spec: sampled at x=30 in 1082:23305, the #f2f2f2 canvas darkens from
+       242 to 235 over the 18px above the dock — this shadow reproduces that curve. */
+    box-shadow: 0 -2px 32px rgba(0, 0, 0, 0.06);
   }
+  /* (REG-362, user 2026-09-06: "I don't want the global header in any of pages other than the level 1 page")
+     The lockup and its four marks are the level-1 chrome. A detail screen has its own header — the back arrow,
+     the lead's name and its actions (1186:2453) — and stacking the global bar over it spent 60px of a phone
+     screen on a second title row. The dock goes with it (user, same day: "from level two pages there is no
+     bottom nav, only the level one pages have the bottom nav"): a detail screen is entered from a level-1 list
+     and left through its own back arrow, so it gives both 60 and 70 back to its content. Both appear only where
+     a level-1 `PageHeader` does. */
+  .bar, .dock { display: none; }
+  :global(body:has([data-om-l1-header])) .bar { display: flex; }
+  :global(body:has([data-om-l1-header])) .dock { display: flex; }
 }
 
 .lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
-.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
-.wordmark { height: 14px; display: block; }
+/* (REG-363, user 2026-09-06: "logo looks small, increase a bit without increasing the height of the header
+   container") The mark and the wordmark grow together, keeping their 2:1 ratio; 32 inside the bar's 60 still
+   leaves 14 clear above and below, so the bar's own height and its 12/16 padding are untouched. */
+.logo { width: 32px; height: 32px; display: block; flex-shrink: 0; }
+.wordmark { height: 16px; display: block; }
 
 /* The bar's right group: 24px Light glyphs 16 apart, then the 36px avatar (r8, 1px surface/variant stroke).
    Each glyph keeps its 24 and gets a 44px box through padding paid back as margin (REG-273). */

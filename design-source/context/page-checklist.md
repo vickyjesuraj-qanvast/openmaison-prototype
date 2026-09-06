@@ -103,6 +103,14 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] Touch-growth rules (REG-273) carry `@media (max-width: 767px), (hover: none) and (max-width: 1024px)` so a
       touch tablet gets them too (REG-307); mobile LAYOUT rules stay on the bare 767 query. Bottom-anchored chrome
       reads `--app-mobile-dock-height`, which already includes the safe-area inset (REG-308).
+- [ ] **Every anchored surface is a bottom sheet at ≤767 (REG-353)** — a menu, popover, picker, side panel or
+      form/modal dialog opts in through `components/om/sheet.tsx` (`useSheetLayout` + `Sheet`, or the grabber +
+      `bottomSheet` variant where the surface owns its shell); it comes off the bottom edge over the dock, under
+      the scrim, ≤88dvh, and takes a heading naming what it acts on. Confirmation ALERTS stay centred cards and
+      multi-step wizards stay full screen with their own top bar. Never anchor a new menu to a cell on a phone.
+- [ ] **A section toolbar is ONE row at ≤767 (REG-354)** — the title and the glyphs. The search box folds into a
+      glyph (`components/om/toolbar-search.tsx`) and the labelled primary becomes its icon; anything that cannot
+      fit leaves the row the way the listing's view toggle did (REG-299), never wraps into a third line.
 
 ## Verification
 - [ ] 1440×1024 Playwright pass against the Figma frame; screenshots banked in `design-source/verify/`.

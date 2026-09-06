@@ -22,7 +22,7 @@
   flex: 1;
   display: flex;
   align-items: stretch;
-  min-height: calc(100dvh - 16px - 72px - 44px);
+  min-height: calc(100dvh - 16px - 72px - 48px);
 }
 .centre {
   flex: 1;
@@ -52,7 +52,18 @@
 .anchor { position: relative; display: inline-flex; }
 /* (REG-345) The stage pill and Convert to Project belong to the lead, so ≤767 they stay on Overview and the other
    tabs give the row back to their own content — the header there is the back arrow, the name and the kebab. */
-@media (max-width: 767px) { .leadActionOnly { display: none; } }
+/* (REG-370, user 2026-09-06: "the stage and Convert to Project buttons go away in other tabs under leads detail —
+   why? fix this too") They were hidden on every tab but Overview at ≤767 (REG-345, to buy back a row of chrome),
+   which made the detail header a different shape on nine screens. The mock draws one header (1186:2453 / 1186:2554)
+   and it carries the pair; every tab shows it now. */
+@media (max-width: 767px) {
+  /* (REG-359, mock 1186:2453) The header's action row is ONE line: "Stage: X" hugs its own text and Convert to
+     Project takes everything that is left — the pair used to wrap because both were content-sized and together
+     they needed ~6px more than a 390 screen has. */
+  .stageAction { flex: 0 0 auto; }
+  .convertAction { flex: 1 1 auto; min-width: 0; }
+  .convertAction button { width: 100%; }
+}
 
 /* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
    Tablet and down: the card grid drops to one column. The two stacks keep their DOM order — MY WORK / QUOTES /
@@ -68,13 +79,28 @@
    kept; the row's min-height loses the desktop 72+44 chrome assumption; the sheet runs edge-to-edge. */
 @media (max-width: 767px) {
   .body { border-radius: 0; }
-  .stickyTabs { top: var(--app-mobile-bar-height); }
+  /* (REG-367, user 2026-09-06) Doubled, like the base rule: `.stickyTabs.stickyTabs` above is specificity 0,2,0 and
+     a single class here never beat it, so the strip kept the DESKTOP offset (8 + 72) on a phone. Under the old
+     60px top bar that was a 20px gap nobody caught; with the bar gone (REG-362) the strip stuck 80px down the
+     screen with white above it while the header scrolled away behind. It sticks to the top of the viewport now. */
+  .stickyTabs.stickyTabs { top: var(--app-mobile-bar-height); }
   .row {
     flex-direction: column;
     align-items: stretch;
-    min-height: calc(100dvh - var(--app-mobile-bar-height) - 44px);
+    min-height: calc(100dvh - var(--app-mobile-bar-height) - 48px);
   }
   .centre { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); }
+  /* (REG-377, canvas 2a) The canvas' card order on a phone: LEAD RETURNED, then LEAD STAGES right under the
+     identity block — it was fourth and ~480px further down because the two desktop columns simply stacked. The
+     columns dissolve so every card is a direct child of the grid and takes its own place. */
+  .column { display: contents; }
+  .grid [data-card='lead-returned'] { order: 0; }
+  .grid [data-card='lead-stages'] { order: 1; }
+  .grid [data-card='my-work'] { order: 2; }
+  .grid [data-card='quotes'] { order: 3; }
+  .grid [data-card='questionnaire'] { order: 4; }
+  .grid [data-card='recent-activity'] { order: 5; }
+  .grid [data-card='files'] { order: 6; }
 }
 
 /* Notes (931:44882): the tab is one fixed 844px card that never scrolls under the FAB, so the mock's 24 bottom padding stands (the FAB overlaps the card corner in the mock). */
@@ -82,7 +108,11 @@
 /* (REG-347) …but only where that card really does not scroll. On a phone the tab scrolls and 24px left the
    contact-log editor's Cancel / Save under the fixed dock at maximum scroll. */
 @media (max-width: 767px) {
-  .centre[data-tab='notes'] { --fab-clearance: calc(var(--app-mobile-dock-height) + var(--om-spacing-6)); }
+  /* (REG-375) The clearance was derived from the dock's height, which REG-362 set to 0 on a level-2 page — so
+     the Notes tab kept no room at all and the FAB (48 disc, 16 off the bottom edge) sat ON the contact-log
+     editor's Save button: a tap on its right third opened Maison AI instead of saving the log. The FAB's own
+     box is the measure now, not a token that no longer describes this route. */
+  .centre[data-tab='notes'] { --fab-clearance: calc(48px + var(--om-spacing-4) + var(--om-spacing-6)); }
 }
 /* An empty tab is one card that fills the body, and the mock pads 24 under it, not the FAB's 88 (910:36266 · 931:38634 ·
    931:40340 · 931:46792 all measure 24 + 36 toolbar + 24 gap + 784 card + 24 = the 892 section). The 784 is that rule's

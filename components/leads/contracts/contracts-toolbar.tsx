@@ -1,12 +1,13 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Button, SearchBar } from '@/components/ds'
+import { useState } from 'react'
+import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { useSearchTarget } from '@/components/shell/search-focus'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
+import { useSheetLayout } from '@/components/om/sheet'
 import styles from './contracts-toolbar.module.css'
 
 export type ContractsToolbarProps = {
@@ -30,11 +31,7 @@ export type ContractsToolbarProps = {
  */
 export function ContractsToolbar({ query, onQuery, onNew, onFilter, filterCount, onMenu }: ContractsToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | null>(null)
-  // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar
-  // owns its <input>, so the target is resolved from the wrapper once it mounts.
-  const searchInput = useRef<HTMLInputElement | null>(null)
-  useSearchTarget(searchInput)
-
+  const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
 
   return (
@@ -42,32 +39,32 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, filterCount,
       <h2 className={styles.title}>All Contracts</h2>
       <div className={styles.actions}>
         <span className={styles.menuWrap}>
-          <Button
-            variant="primary" appearance="outlined"
-            iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-            aria-haspopup="menu" aria-expanded={menu === 'new'}
-            onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
-          >
-            New Contract
-          </Button>
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left">
+          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
+              the menu, its title and every action behind it are the same. */}
+          {sheet ? (
+            <Tooltip label="New Contract">
+              <IconButton icon="add" label="New Contract" variant="primary"
+                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
+            </Tooltip>
+          ) : (
+            <Button
+              variant="primary" appearance="outlined"
+              iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
+            >
+              New Contract
+            </Button>
+          )}
+          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New Contract">
             <DropdownItem onSelect={pick(() => onNew('blank'))}>From Blank</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('template'))}>From Template</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('import'))}>Import from File</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('ai'))}>Create with AI</DropdownItem>
           </Dropdown>
         </span>
-        <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} style={{ display: 'inline-flex' }}>
-          {/* (REG-275) The box matches title, status, the signed copy's file name and every date the row prints
-              as it prints it (lib/leads/contract-filters.ts). The placeholder names the three people reach for;
-              the aria-label stays the plain name of the control. */}
-          <SearchBar
-            appearance="outlined" size="md"
-            placeholder="Search title, status, date…" aria-label="Search contracts"
-            value={query} onChange={onQuery}
-            className={styles.search}
-          />
-        </span>
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, status, date…" label="Search contracts" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters">
             <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
@@ -82,7 +79,7 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, filterCount,
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right">
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>

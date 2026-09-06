@@ -102,11 +102,19 @@
      wrapping into a column two characters wide. */
   .rail { width: min(160px, 40%); }
   .rowName, .rowRole { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  /* (REG-353) The mobile canvas' bottom sheet: full width on the bottom edge, rounded on top, as tall as its
+     content up to 88dvh, with the grabber above the heading — not the whole screen. */
+  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
   .panel {
     width: 100vw; max-width: 100vw;
-    height: 100dvh; max-height: 100dvh;
-    border-radius: 0;
+    height: auto; max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  }
+  .grabber {
+    flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full);
+    background: var(--om-color-surface-variant);
   }
   .content { padding: var(--om-spacing-4); }
   .sortRow { width: 100%; }
@@ -123,4 +131,20 @@
   .close { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
   .chip { position: relative; }
   .chip::after { content: ''; position: absolute; inset: -6px; }
+}
+
+/* (REG-353) The sheet starts below the status bar, so the heading gives up the clearance it took as a
+   full-screen surface and the grabber sits in that space. */
+@media (max-width: 767px) {
+  .heading { padding-top: var(--om-spacing-3); }
+}
+
+/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
+   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
+   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
+   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
+   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
+   with each other. Vertical padding is untouched. */
+@media (max-width: 767px) {
+  .heading, .content, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

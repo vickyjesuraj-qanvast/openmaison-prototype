@@ -8,6 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
 import { Tooltip } from '@/components/om/tooltip'
 import { anchoredSurface } from '@/lib/motion'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import type { Member } from '@/lib/db/schema'
 import styles from './assign-popover.module.css'
 
@@ -33,6 +34,7 @@ export function AssignPopover({
 }) {
   const [picked, setPicked] = useState<Set<string>>(new Set(value))
   const [wasOpen, setWasOpen] = useState(open)
+  const sheet = useSheetLayout()
   const ref = useRef<HTMLDivElement>(null)
 
   // React's adjust-state-during-render pattern: re-seed the draft on open.
@@ -41,7 +43,7 @@ export function AssignPopover({
     if (open) setPicked(new Set(value))
   }
   useEffect(() => {
-    if (!open) return
+    if (!open || sheet) return   // ≤767 the Sheet owns Esc and its own scrim press (REG-353)
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
@@ -51,10 +53,40 @@ export function AssignPopover({
     document.addEventListener('keydown', onKey)
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown, true), 0)   // capture: DS (React Aria) buttons stop pointerdown propagation (REG-153)
     return () => { document.removeEventListener('keydown', onKey); clearTimeout(t); document.removeEventListener('pointerdown', onDown, true) }
-  }, [open, onClose, anchor])
+  }, [open, onClose, anchor, sheet])
 
   const toggle = (id: string) =>
     setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
+
+  const rows = team.map((m) => (
+    <button key={m.id} type="button" className={styles.row} onClick={() => toggle(m.id)}>
+      <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
+      <span className={styles.rowText}>
+        <span className={styles.rowName}>{m.name}</span>
+        <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
+      </span>
+      <Checkbox isSelected={picked.has(m.id)} onChange={() => toggle(m.id)} aria-label={`Assign ${m.name}`} />
+    </button>
+  ))
+  const foot = (
+    <>
+      {requireOne && picked.size === 0 ? <span className={styles.footMsg} role="alert">{MSG.assignee}</span> : null}
+      <Button variant="secondary" appearance="outlined" onPress={() => setPicked(new Set())}>
+        Clear All
+      </Button>
+      <Button isDisabled={requireOne && picked.size === 0} onPress={() => onApply(Array.from(picked))}>Assign</Button>
+    </>
+  )
+
+  /* (REG-353) ≤767 the canvas draws every anchored popover as a bottom sheet: the same member rows, the same
+     Clear All / Assign row, off the bottom edge under a scrim instead of floating over the cell it came from. */
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title="Assign Member" footer={foot} bodyClassName={styles.sheetBody}>
+        {rows}
+      </Sheet>
+    )
+  }
 
   return (
     <AnimatePresence>
@@ -77,23 +109,10 @@ export function AssignPopover({
             </Tooltip>
           </div>
           <div className={styles.body}>
-            {team.map((m) => (
-              <button key={m.id} type="button" className={styles.row} onClick={() => toggle(m.id)}>
-                <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
-                <span className={styles.rowText}>
-                  <span className={styles.rowName}>{m.name}</span>
-                  <span className={styles.rowRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
-                </span>
-                <Checkbox isSelected={picked.has(m.id)} onChange={() => toggle(m.id)} aria-label={`Assign ${m.name}`} />
-              </button>
-            ))}
+            {rows}
           </div>
           <div className={styles.foot}>
-            {requireOne && picked.size === 0 ? <span className={styles.footMsg} role="alert">{MSG.assignee}</span> : null}
-            <Button variant="secondary" appearance="outlined" onPress={() => setPicked(new Set())}>
-              Clear All
-            </Button>
-            <Button isDisabled={requireOne && picked.size === 0} onPress={() => onApply(Array.from(picked))}>Assign</Button>
+            {foot}
           </div>
         </motion.div>
       ) : null}

@@ -42,12 +42,14 @@
 
 /* ── Responsive (REG-269) ── the sibling toolbars' own rule: below 768 the row wraps to two lines and the
    search takes the full width, so a 280 box never squeezes the pill off the screen. */
+/* (REG-354) The mobile canvas' toolbar is ONE row — the title and the glyphs (3d). The 280px search box folds
+   into one of those glyphs (components/om/toolbar-search.tsx) and takes the row on its own when it is asked for. */
 @media (max-width: 767px) {
   .bar { height: auto; flex-wrap: wrap; gap: var(--om-spacing-3); }
-  .left { flex: 1 1 auto; }
-  .right { flex: 1 1 100%; }
-  .searchWrap { flex: 1; min-width: 0; }
-  .search { width: 100%; }
+  .left { flex: 1 1 auto; min-width: 0; }
+  .right { flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; }
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .right { flex: 1 1 auto; flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }
 
 /* ── Touch ergonomics (REG-273), carried over with the controls this row took from the list column (REG-293).

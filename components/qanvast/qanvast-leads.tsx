@@ -1,9 +1,9 @@
 'use client'
 
-import { useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
-import { Button, SearchBar } from '@/components/ds'
+import { Button } from '@/components/ds'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { Dropdown } from '@/components/leads/dropdown'
 import menuStyles from '@/components/leads/menus.module.css'
@@ -14,16 +14,17 @@ import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Tabs } from '@/components/om/tabs'
 import { Tooltip } from '@/components/om/tooltip'
+import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { useSearchTarget } from '@/components/shell/search-focus'
 import { QanvastSkeleton } from '@/components/shell/skeleton'
 import { displayDate, money, phoneDisplay } from '@/lib/format'
 import { INACTIVE_STAGES, STAGES } from '@/lib/leads/enums'
 import type { QanvastLeadsData } from '@/lib/leads/qanvast'
 import { RETURN_FILTERS } from '@/lib/leads/return-tags'
 import { filterByQuery } from '@/lib/search'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { QanvastTable } from './qanvast-table'
 import styles from './qanvast-leads.module.css'
 
@@ -52,6 +53,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   const router = useRouter()
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
+  const mobile = useMediaQuery(MOBILE)   // (REG-361) the listing's mobile header set
 
   /* ── status scope: null = All Leads · a stage name · a return label (RETURN_FILTERS) ── */
   const [scope, setScope] = useState<string | null>(null)
@@ -71,9 +73,6 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
      the column does not exist on this table — matching invisible data reads as a bug. */
   const [query, setQuery] = useState('')
   // The rail search tile and the "/" key focus the page's search input (page checklist). The DS SearchBar owns its
-  // <input>, so the target is resolved from the wrapper once it mounts.
-  const searchInput = useRef<HTMLInputElement | null>(null)
-  useSearchTarget(searchInput)
   const visible = useMemo(() => filterByQuery(scoped, query, (r) => ({
     fields: [r.name, String(r.credits), money(r.budgetMinor), r.propertyType, displayDate(r.createdAt), ...r.tags.map((t) => t.label)],
     phones: [r.phone],
@@ -114,23 +113,42 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
         {/* Page Header / Leads 1200×68 (spec 02): "Qanvast Ops" · Insights 110×36 · Add Lead 121×36 · kebab 36 — all coming soon. */}
         <PageHeader
           title="Qanvast Ops"
-          actions={
+          scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-369) */
+          actions={mobile ? (
+            /* (REG-361, user 2026-09-06: "Qanvast Ops should match the leads listing page header") The listing's
+               mobile header (REG-299, 1082:25131): Add Lead as the filled square, Insights and the kebab as
+               outlined squares, all three on the title's row — the same actions, icon-only. */
             <>
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
-                Insights
-              </Button>
+              <Tooltip label="Add Lead">
+                <IconButton icon="add" label="Add Lead" variant="filled" onClick={comingSoon} />
+              </Tooltip>
+              <Tooltip label="Insights">
+                <IconButton icon="bar_chart_4_bars" label="Insights" onClick={comingSoon} />
+              </Tooltip>
+              <Tooltip label="More options">
+                <IconButton icon="more_vert" label="More options" onClick={comingSoon} />
+              </Tooltip>
+            </>
+          ) : (
+            /* (REG-361) Add Lead first, then Insights — the listing's own order (REG-305). */
+            <>
               <Button iconStart={<Icon name="add" size={20} />} onPress={comingSoon}>
                 Add Lead
+              </Button>
+              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
+                Insights
               </Button>
               <Tooltip label="More options">
                 <IconButton icon="more_vert" label="More options" onClick={comingSoon} />
               </Tooltip>
             </>
-          }
+          )}
         />
         {/* Page Tabs: Leads (selected) · Credits · Reviews · Hangouts. */}
-        <div onClickCapture={onTabsClick}>
-          <Tabs items={TAB_ITEMS} activeHref={TABS_HREF} aria-label="Qanvast Ops sections" />
+        {/* (REG-368) `display: contents` — the wrapper only exists to intercept the inert tabs' clicks, and as a real
+            box it was exactly the strip's height, so the sticky strip had nowhere to travel and scrolled away with it. */}
+        <div className={styles.tabsHost} onClickCapture={onTabsClick}>
+          <Tabs items={TAB_ITEMS} activeHref={TABS_HREF} aria-label="Qanvast Ops sections" className={styles.stickyTabs} />
         </div>
 
         <div className={pageStyles.content}>
@@ -145,7 +163,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
                 {scope !== null ? <AppliedDot /> : null}   {/* (REG-295) */}
               </button>
               {/* Dropdown Menu / Leads "Lead Status" 200 wide (931:49435): All Leads · ACTIVE stages · INACTIVE stages · Lead Return states. */}
-              <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={200}>
+              <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={200} sheetTitle="Lead Status">
                 {item('All Leads', null)}
                 <div className={styles.rule} role="separator" />
                 {groupTitle('ACTIVE', 'green')}
@@ -164,14 +182,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
                 The wrapper is a <label> so the 2px band it grows on a touch pointer still focuses the field (REG-273). */}
             <div className={styles.right}>
               <Button variant="secondary" appearance="outlined" onPress={comingSoon}>Request Leads</Button>
-              <label className={styles.searchWrap} ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }}>
-                <SearchBar
-                  appearance="outlined" size="md"
-                  placeholder="Search" aria-label="Search leads"
-                  value={query} onChange={setQuery}
-                  className={styles.search}
-                />
-              </label>
+              <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search" label="Search leads" />
               <Tooltip label="Filters">
                 <IconButton icon="filter_list" label="Filters" onClick={comingSoon} />
               </Tooltip>

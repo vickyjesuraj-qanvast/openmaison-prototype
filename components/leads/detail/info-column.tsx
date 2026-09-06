@@ -1,6 +1,8 @@
 'use client'
 
-import { useId, useSyncExternalStore, type ReactNode } from 'react'
+import { useId, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { Button } from '@/components/ds'
+import { Sheet } from '@/components/om/sheet'
 import { setFlagPref, useFlagPref } from '@/lib/prefs'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import type { Member } from '@/lib/db/schema'
@@ -88,6 +90,7 @@ export function InfoColumn({
 
   /* (REG-304) Whole-column state — see the file comment. */
   const mobile = useMediaQuery(MOBILE)
+  const [infoOpen, setInfoOpen] = useState(false)   // (REG-366) the phone's "View Client Info" sheet
   const state = useSyncExternalStore(subscribe, read, serverSnapshot)
   const animate = useSyncExternalStore(subscribe, () => cached !== null, () => false)
   const expanded = state === 'expanded'
@@ -137,12 +140,16 @@ export function InfoColumn({
                 <Icon name="edit" size={20} weight={300} />
               </button>
             </Tooltip>
-            {/* (REG-304) The column's own toggle beside the pencil: the panel glyph ≥768 (the rail's), the chevron ≤767. */}
-            <Tooltip label={toggleLabel}>
-              <button type="button" className={styles.iconBtn} aria-label={toggleLabel} aria-expanded={expanded} onClick={toggle}>
-                <Icon name={mobile ? (expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down') : 'left_panel_close'} size={20} weight={300} />
-              </button>
-            </Tooltip>
+            {/* (REG-304) The column's own toggle beside the pencil — the panel glyph, ≥768 only. (REG-366) A phone
+                does not fold the sections under this block any more: it opens them in a sheet from a named button
+                under the identity, so the bare chevron whose destination nobody could guess is gone. */}
+            {mobile ? null : (
+              <Tooltip label={toggleLabel}>
+                <button type="button" className={styles.iconBtn} aria-label={toggleLabel} aria-expanded={expanded} onClick={toggle}>
+                  <Icon name="left_panel_close" size={20} weight={300} />
+                </button>
+              </Tooltip>
+            )}
           </span>
         </div>
         <div className={styles.contact}>
@@ -187,7 +194,8 @@ export function InfoColumn({
         </div>
       </div>
 
-      {expanded ? (<>
+      {/* (REG-366) On a phone the sections live in the "View Client Info" sheet below, never inline. */}
+      {expanded && !mobile ? (<>
       <div className={styles.rule} />
 
       <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
@@ -253,6 +261,69 @@ export function InfoColumn({
         </KVList>
       </Section>
       </>) : null}
+
+      {/* (REG-366, user 2026-09-06) The phone's way into the lead's details: a named secondary button under the
+          identity block, opening the SAME sections in a bottom sheet (REG-353). */}
+      {mobile ? (
+        <>
+          <div className={styles.viewInfo}>
+            <Button variant="secondary" appearance="outlined" onPress={() => setInfoOpen(true)}>View Client Info</Button>
+          </div>
+          <Sheet open={infoOpen} onClose={() => setInfoOpen(false)} title="Client Info" bodyClassName={styles.infoSheet}>
+            <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
+              <KVList>
+                <Row k="Owner" text={owner} />
+                <Row k="Members">
+                  {assignees.length ? (
+                    <div className={styles.assignees}>
+                      {assignees.map((m) => (
+                        <div key={m.id} className={styles.assignee}>
+                          <Avatar name={m.name} color={m.color} size={20} tooltip={false} />
+                          <span className={styles.assigneeName}>{m.name}</span>
+                          <Tooltip label="Member actions">
+                            <button type="button" className={styles.iconBtn} aria-label={`Actions for ${m.name}`}
+                                    onClick={(e) => onAssigneeMenu(e.currentTarget, m)}>
+                              <Icon name="more_vert" size={20} weight={300} />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <LinkButton label="Assign Member" onClick={onAssign} />
+                  )}
+                </Row>
+              </KVList>
+            </Section>
+            <div className={styles.rule} />
+            <Section title="Lead info">
+              <KVList>
+                <Row k="Stage" text={lead.stage} />
+                <Row k="Source" text={lead.source} />
+                <Row k="Budget (S$)" text={money(lead.budgetMinor)} />
+                <Row k="Created" text={displayDate(lead.createdAt)} />
+              </KVList>
+            </Section>
+            <div className={styles.rule} />
+            <Section title="Property info">
+              <KVList gap={16}>
+                <Row k="Type" text={lead.propertyType} />
+                <Row k="Condition" text={lead.condition ?? DASH} />
+                <Row k="Style" text={lead.style ?? DASH} />
+                <Row k="Area size (sq ft)" text={lead.areaSqft != null ? groupDigits(String(lead.areaSqft)) : DASH} />
+                <Row k="Key collection" text={lead.keyCollection ?? DASH} />
+                <Row k="Property address" text={lead.propertyAddress ?? DASH} />
+              </KVList>
+            </Section>
+            <div className={styles.rule} />
+            <Section title="Other info">
+              <KVList>
+                <Row k="Remarks" text={lead.notes ?? DASH} />
+              </KVList>
+            </Section>
+          </Sheet>
+        </>
+      ) : null}
     </aside>
   )
 }

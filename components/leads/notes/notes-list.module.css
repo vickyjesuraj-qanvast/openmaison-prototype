@@ -122,3 +122,22 @@
   .kebab { width: 44px; height: 44px; }
   .titleRow { padding-right: 34px; }
 }
+
+/* ── ≤767: the list is cards (REG-354) ────────────────────────────────────────────────────────────────
+   The mobile canvas draws each note and contact log as its own card on the page's ground (3d), not a
+   100px row in a ruled column: white, radius 8, a 1px stroke, 12 apart, height to its own content. The
+   selected item keeps its 4px primary band, now inside the card's rounded left edge. */
+@media (max-width: 767px) {
+  /* No pane beside the column here, so its right rule (the divider between the two halves) has nothing to divide. */
+  .column { box-shadow: none; }
+  /* (REG-377) 16 down the page, 0 across: the tab's own centre already pays the 16 side gutter, so padding it
+     here again put the note cards on 32 — twice what the canvas draws and twice the lead-listing cards beside them. */
+  .items { padding: var(--om-spacing-4) 0; gap: var(--om-spacing-3); background: var(--om-color-surface-bg); }
+  .item {
+    height: auto; min-height: 88px;
+    border: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-radius: var(--om-radius-2);
+    background: var(--om-color-surface-default);
+    overflow: hidden;
+  }
+}

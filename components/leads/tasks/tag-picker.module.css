@@ -97,3 +97,9 @@
   .chip::after { content: ''; position: absolute; inset: -10px -4px; }
   .link { min-height: 44px; padding-block: 12px; margin-block: -12px; }
 }
+
+/* (REG-378) The picker's own body inside the mobile sheet: the anchored card's chrome steps aside — the Sheet
+   draws the surface and pins "Manage Tags" in its footer, so the in-body copy of that row goes. */
+.sheetBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
+.sheetBody .list { max-height: none; }
+.sheetBody .rule, .sheetBody .foot { display: none; }

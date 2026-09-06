@@ -9,7 +9,8 @@ import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
-import { modalPanel, overlayFade } from '@/lib/motion'
+import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
+import { useSheetLayout } from '@/components/om/sheet'
 import { MSG } from '@/lib/forms'
 import { parseInputDate } from '@/lib/format'
 import {
@@ -74,6 +75,8 @@ export function QuotesFiltersModal({
      pane's Custom picker keeps its own Esc — focus moves onto the panel on open, Tab cycles inside it, and focus
      returns to the Filters button on close. */
   const panel = useRef<HTMLDivElement>(null)
+  /* (REG-353) ≤767 this modal is the canvas' bottom sheet: it rises off the bottom edge and wears the grabber. */
+  const sheet = useSheetLayout()
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
@@ -107,8 +110,9 @@ export function QuotesFiltersModal({
           {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
               focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
               surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
+            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.heading}>
               <span className={styles.title}>Filters</span>
               <Tooltip label="Close">

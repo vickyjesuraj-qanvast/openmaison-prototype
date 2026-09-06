@@ -162,7 +162,7 @@ function OptionMenuField({ label, options, display, error, role, icons, isOn, on
       <TextField label={label} mode="trigger" trailingIcon="expand_more" value={display} boxRef={box} open={open} error={error}
                  onOpen={() => { setWidth(box.current?.offsetWidth ?? null); setOpen((o) => !o) }} />
       {/* The menu is as wide as the field (measured on open — the Dropdown takes a number). */}
-      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={width ?? 200}>
+      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={width ?? 200} sheetTitle={label}>
         {options.map((o) => {
           const on = isOn(o)
           return (

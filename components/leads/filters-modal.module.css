@@ -96,12 +96,28 @@
   .panel { max-width: calc(100vw - 48px); }
 }
 @media (max-width: 767px) {
-  .overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  /* (REG-353) The canvas' Filters bottom sheet (1g, 2o): full width on the bottom edge, rounded on top, as tall
+     as it needs up to 88dvh. */
+  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
   .panel {
     width: 100vw; max-width: 100vw;
-    height: 100dvh; max-height: 100dvh;
-    border-radius: 0;
+    height: auto; max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
+  .grabber {
+    flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full);
+    background: var(--om-color-surface-variant);
+  }
+  .heading { padding-top: var(--om-spacing-3); }
+  /* (REG-360, user 2026-09-06: "the filter screen in tasks is the correct one — update all the filters to it")
+     The category rail stays a rail on a phone, exactly as Lead Details' own filter sheets draw it: it gives way
+     to 40% of the screen before its mocked 160, and a long member name truncates rather than wrapping into a
+     column two characters wide. The horizontal tab strip this replaced came from the ideated canvas (1g, 2o);
+     the built Tasks sheet is the reference now, so the four sheets read the same. */
+  .rail { width: min(160px, 40%); }
+  .rowName, .rowRole { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .content { padding: var(--om-spacing-4); }
   .sortRow { width: 100%; }
   .dateRow { flex-direction: column; }
@@ -115,11 +131,6 @@
    44 tall but whose LABEL (the actual control) is one text line. Each gets a 44px box; the chip keeps its
    fill, stroke, radius and type, and the radios keep the DS mark.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
-@media (max-width: 374px) {
-  /* (REG-347) The 160px rail is the mock's, but at the 320 floor it leaves the option column 128px and the member
-     names collapse to a few characters. The rail gives way first. */
-  .rail { width: 120px; }
-}
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .close {
     min-width: 44px; min-height: 44px;
@@ -134,4 +145,14 @@
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
 @media (hover: none) {
   .searchInput { block-size: 100%; }
+}
+
+/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
+   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
+   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
+   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
+   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
+   with each other. Vertical padding is untouched. */
+@media (max-width: 767px) {
+  .heading, .content, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

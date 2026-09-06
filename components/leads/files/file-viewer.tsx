@@ -124,7 +124,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 </button>
               </Tooltip>
               {/* Frame 95 (931:39889): Move · Duplicate · Rename · Delete, 200 wide under the kebab */}
-              <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
+              <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle={file.name}>
                 {/* (REG-269) Mobile only: the header's Download folds in here — `display: contents` ≤767, nothing at all above. */}
                 <span className={styles.mobileItem}>
                   <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem>

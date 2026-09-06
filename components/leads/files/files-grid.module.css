@@ -133,6 +133,14 @@
 /* Mobile (REG-269): tracks bottom out at 160 so two tiles ride a 390 screen. */
 @media (max-width: 767px) {
   .row { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  /* (REG-378, canvas 3f) Folders are two-up stacked cards — a folder icon and its kebab on the first line, the
+     name and its item count beneath — not one full-width row each. The inline checkbox eating the name's width
+     was the reason the row had been forced to a single column; stacking removes it. */
+  .foldersRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .folder { position: relative; height: auto; min-height: 96px; flex-direction: column; align-items: stretch; gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
+  .folderMain { flex-direction: column; align-items: flex-start; height: auto; gap: var(--om-spacing-1); }
+  /* The kebab takes the card's top-right corner so the stack under it is just icon · name · count (canvas 3f). */
+  .folder .kebab { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); margin: 0; }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────
@@ -175,7 +183,15 @@
     background: var(--om-color-surface-default);
     border-radius: var(--om-radius-1);
   }
-  /* With the checkbox in front of it a 160px folder card leaves ~40px for the name, so the folders group
-     goes one card per row (spacing follows the target, not the mock). The tiles keep their 2-up tracks. */
-  .foldersRow { grid-template-columns: 1fr; }
+  /* (REG-378) …and the folders group stays TWO up: the reason it went one per row was the checkbox in front of
+     the name leaving ~40px for it, which the stacked card above removes — the name now has the card's full
+     width on its own line. The canvas draws two (3f). */
+}
+
+/* (REG-377) A tile's comment chip is absolutely placed at the tile's bottom-right (line ~100); app/globals.css
+   resets `position` on bare buttons at 0,1,1, which beat that 0,1,0 rule on a touch pointer and let the chip fall
+   into the tile's flow — a full-tile-wide pill starting 24px OFF the left edge of the screen. 0,2,0 wins it back,
+   and `(hover: none)` never matches a mouse, so the desktop tile is untouched. */
+@media (hover: none) {
+  .tile .chip { position: absolute; right: 44px; bottom: var(--om-spacing-4); }
 }

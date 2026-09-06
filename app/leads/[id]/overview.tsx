@@ -209,8 +209,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     <PageReveal skeleton={<DetailSkeleton wide={wide} />}>
       <div className={styles.body}>
         <PageHeaderL2
-          scrollShadow={false}   /* the sticky tab strip below carries the level-1 (REG-331) */
-          compact={tab !== ''}   /* (REG-345) ≤767 only Overview carries the chips and the stage / Convert pair */
+          scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
         backHref={origin === 'qanvast' ? '/qanvast-ops' : '/leads'}
           crumb={origin === 'qanvast' ? 'Qanvast Ops / Leads' : 'Leads'}
           title={lead.name}
@@ -233,7 +232,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           }
           actions={
             <>
-              <span className={tab === '' ? styles.anchor : `${styles.anchor} ${styles.leadActionOnly}`} ref={stagePillRef}>
+              <span className={`${styles.anchor} ${styles.stageAction}`} ref={stagePillRef}>
                 <Button variant="secondary" appearance="outlined" iconEnd={<Icon name="keyboard_arrow_down" size={20} />} aria-haspopup="menu" aria-expanded={!!stageMenu}
                         onPress={() => { const el = stagePillRef.current; if (!el) return; setStageMenu((s) => (s ? null : { el, ...stagePos(el) })) }}>
                   Stage: {lead.stage}
@@ -241,31 +240,33 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
               </span>
               {/* The lock glyph is the locked-until-Won cue (REG-168); a Won lead's button is actionable and drops it (REG-204). */}
               <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : 'Available once the lead is Won'}>
-                <span className={tab === '' ? styles.anchor : `${styles.anchor} ${styles.leadActionOnly}`}>
+                <span className={`${styles.anchor} ${styles.convertAction}`}>
                   <Button variant="primary" iconStart={lead.stage === 'Won' ? undefined : <Icon name="lock" size={20} />} onPress={() => (lead.stage === 'Won' ? comingSoon() : snackbar({ message: 'Win the lead first — Won creates the project' }))}>
                     Convert to Project
                   </Button>
                 </span>
               </Tooltip>
-              <span className={styles.anchor}>
-                <Tooltip label="More options" disabled={kebabOpen}>
-                  <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
-                </Tooltip>
-                {/* Kebab menu per 931:49039 (Qanvast: Invite to Portal · Return Lead · Copy Link · Delete) / 931:49047 (others, no Return Lead).
-                    The mock menus carry no Edit; the built overview keeps it first (its only editor entry besides the info column). */}
-                <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right">
-                  <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }}>Edit</DropdownItem>
-                  <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Invite to Portal</DropdownItem>
-                  {canReturn ? (
-                    <DropdownItem onSelect={() => { setKebabOpen(false); setReturnOpen(true) }}>Return Lead</DropdownItem>
-                  ) : null}
-                  <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy Link</DropdownItem>
-                  <DropdownItem onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setDeleting(true) }}>
-                    <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
-                  </DropdownItem>
-                </Dropdown>
-              </span>
             </>
+          }
+          titleActions={
+            <span className={styles.anchor}>
+              <Tooltip label="More options" disabled={kebabOpen}>
+                <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
+              </Tooltip>
+              {/* Kebab menu per 931:49039 (Qanvast: Invite to Portal · Return Lead · Copy Link · Delete) / 931:49047 (others, no Return Lead).
+                  The mock menus carry no Edit; the built overview keeps it first (its only editor entry besides the info column). */}
+              <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle={lead.name}>
+                <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }}>Edit</DropdownItem>
+                <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Invite to Portal</DropdownItem>
+                {canReturn ? (
+                  <DropdownItem onSelect={() => { setKebabOpen(false); setReturnOpen(true) }}>Return Lead</DropdownItem>
+                ) : null}
+                <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy Link</DropdownItem>
+                <DropdownItem onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setDeleting(true) }}>
+                  <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
+                </DropdownItem>
+              </Dropdown>
+            </span>
           }
         />
         <Tabs items={tabItems} activeHref={href(tab)} aria-label="Lead sections" className={styles.stickyTabs} />
@@ -297,7 +298,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                 <div className={styles.grid}>
                   {/* Right column first: the two stacks were swapped as-is (user 2026-08-31). */}
                   <div className={styles.column}>
-                    <div ref={myWorkRef}>
+                    <div ref={myWorkRef} data-card="my-work">
                       <MyWorkCard
                         tasks={lead.tasks} now={now}
                         onCreate={(anchor) => openTasks(anchor)}
@@ -306,13 +307,16 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         onOpenTab={() => goTab('tasks')}
                       />
                     </div>
-                    <QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} />
-                    <QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} />
+                    <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} /></div>
+                    <div data-card="questionnaire"><QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} /></div>
                   </div>
                   <div className={styles.column}>
                     {ret ? (
-                      <LeadReturnedCard ret={ret} returnedBy={returnedBy} onView={() => setReturnDetailsOpen(true)} onAppeal={comingSoon} onOpenTab={() => goTab('activity')} />
+                      <div data-card="lead-returned">
+                        <LeadReturnedCard ret={ret} returnedBy={returnedBy} onView={() => setReturnDetailsOpen(true)} onAppeal={comingSoon} onOpenTab={() => goTab('activity')} />
+                      </div>
                     ) : null}
+                    <div data-card="lead-stages">
                     <LeadStagesCard
                       timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
                       blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement)}
@@ -321,14 +325,17 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                          (user 2026-09-01, REG-259). */
                       onOpen={() => openStageStep(lead.stage)}
                     />
+                    </div>
                     {/* A tile opens the record it draws — folder in the Files tab, file in its viewer (REG-181), the routes the card's own arrow and "+n" already use. */}
+                    <div data-card="files">
                     <FilesCard
                       files={files}
                       onOpenTab={() => goTab('files')}
                       onOpenFile={(file) => router.push(file.kind === 'folder' ? href('files', `folder=${file.id}`) : `/leads/${lead.id}/files/${file.id}`)}
                       onCreateFolder={comingSoon} onUpload={comingSoon}
                     />
-                    <ActivityCard items={activity} now={now} onOpenTab={() => goTab('activity')} />
+                    </div>
+                    <div data-card="recent-activity"><ActivityCard items={activity} now={now} onOpenTab={() => goTab('activity')} /></div>
                   </div>
                 </div>
               </>
@@ -360,6 +367,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onClose={() => setStageMenu(null)}
         blocked={(stage) => blockedReason(lead, stage, stageMovement)}
         current={lead.stage as Stage}
+        subject={`${lead.name} · ${lead.phone}`}
         doneThrough={journeyIdx(lead)}
         onSelect={(stage) => { setStageMenu(null); requestStageChange(stage) }}
       />

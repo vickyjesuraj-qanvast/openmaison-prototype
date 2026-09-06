@@ -57,20 +57,21 @@
   .actions { flex-wrap: wrap; max-width: 100%; row-gap: var(--om-spacing-3); }
   .search { width: auto; flex: 1 1 200px; min-width: 160px; }
 }
-/* Mobile (REG-269): the title / breadcrumb takes its own line; the actions run full-width, wrapping. */
+/* (REG-354) The mobile canvas' toolbar is ONE row — "All Files" and the glyphs (3f). The 280px search box folds
+   into one of those glyphs (components/om/toolbar-search.tsx) and takes the row on its own when it is asked for. */
 @media (max-width: 767px) {
-  .title, .crumbRow { flex-basis: 100%; }
-  .actions { width: 100%; }
-  .search { flex: 1 1 140px; min-width: 120px; }
+  .bar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .crumbRow { flex-basis: 100%; }
+  /* (REG-377) The glyph cluster is content-sized: `flex: 1 1 auto` let it claim half the row and ellipsised the
+     section title ("All Cont…" at 390, "All …" at 320) even though the row had space for both. */
+  .actions { flex: 0 0 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
+  /* (REG-354, following REG-299) One view on a phone — the canvas' 3f is the grid, folders two-up over the file
+     rows — so the segmented toggle leaves the row and gives its width back to the title. */
+  .viewToggle { display: none; }
 }
 
-/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
-   is clipped (the audit measured the row ~85px wider than a 390 screen). */
-@media (max-width: 767px) {
-  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
-  .search, .searchWrap { width: 100%; flex-basis: 100%; }
-  .right, .actions { flex-wrap: wrap; }
-}
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    ≤767 every icon-only control in this row becomes a 44px target. The bare glyphs (breadcrumb back 24,

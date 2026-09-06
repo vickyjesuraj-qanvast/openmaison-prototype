@@ -298,21 +298,15 @@ button.doneFilled[data-variant='primary']:hover {
   .rowEdit::after, .rowKebab::after { content: ''; position: absolute; inset: -4px; }
 }
 
-/* The add row's ✕ / ✓ are om icon buttons at 24: components/om/icon-button.module.css already grows those to
-   a 44 box on a touch pointer and paints the mocked 24 box with ::before. Two of them 4 apart would overlap
-   by 16, so the row gives them room (the 20 gap leaves the two 44 boxes exactly touching) — the drawn buttons keep their 24 footprints, only the space grows.
-   The filled ✓ also has to hand its fill to that pseudo-element, or the purple square grows with the target
-   (its selector is specific enough to beat the shared rule, which is why it must opt in explicitly). REG-273. */
+/* (REG-375) The add row's ✕ / ✓ are om icon buttons at 24, and two 44px targets 4 apart would overlap by 16 —
+   the row gives them 20 so the targets exactly touch while the drawn buttons keep their 24 footprints.
+   What used to sit here as well was a hand-off of the ✓'s fill to a `::before`, written when REG-273 grew the
+   button itself. REG-344 rebuilt the touch target as a TRANSPARENT centred `::after` and removed that
+   `::before` entirely — so the hand-off painted the fill onto a pseudo-element that no longer exists and left
+   a white tick on a transparent square: invisible on the white card, on every phone AND every touch tablet
+   (`hover: none` carries no width bound). The button simply keeps its own fill now. */
 @media (hover: none) {
   .editActions { gap: var(--om-spacing-5); }
-  button.doneFilled[data-variant='primary'],
-  button.doneFilled[data-variant='primary']:hover { background: transparent; border-color: transparent; }
-  button.doneFilled[data-variant='primary']::before {
-    background: var(--om-color-primary-default);
-    border-color: var(--om-color-primary-default);
-  }
-  /* the ✓ glyph paints above the pseudo-element that now carries the fill */
-  button.doneFilled[data-variant='primary'] > * { position: relative; z-index: 1; }
 }
 
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The title button hugs its text (23px tall) inside a 48px row; on touch it takes the row's height so
@@ -345,13 +339,17 @@ button.doneFilled[data-variant='primary']:hover {
   .colCreator, .colStatus, .colTags { display: none; }
   /* (REG-348) The select column stays: hidden, multi-select — and with it the bulk bar's Duplicate, Save as
      Template and Delete — had no entry point on a phone at all. It leads the row as a 44px target. */
-  .cell.colSel { position: absolute; left: var(--om-spacing-2); top: var(--om-spacing-2); padding: 0; border-right: 0; }
+  /* (REG-356, user 2026-09-06) Both marks sit on the ROW's centre line, not at the top of it: the row is two lines
+     (title, then the due date) and the canvas centres the ring against the pair (2b). The ring leaves the title's
+     flow to do it — its Tooltip wrapper is `display: contents`, so nothing is left behind in the line. */
+  .cell.colSel { position: absolute; left: var(--om-spacing-2); top: 50%; transform: translateY(-50%); padding: 0; border-right: 0; }
+  .colTitle .glyph { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); margin: 0; }
   /* Line 1: the ring, the title and whoever it is assigned to. Line 2: the due date, indented past the ring.
      The kebab is pinned right and the row reserves its width, so nothing runs under it. */
   .row { padding-right: 44px; }
   /* The checkbox is pinned left and the title clears it, so a long title can never push it onto its own line. */
-  .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 44px; }
-  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 84px; }   /* under the title, past the checkbox and the ring */
+  .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 80px; }   /* clears the pinned checkbox (8) and ring (44 + 24 + 12) */
+  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 80px; }   /* under the title, on its left edge */
   .cell.colMember { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
   .actions { opacity: 1; pointer-events: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
   .actions > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */

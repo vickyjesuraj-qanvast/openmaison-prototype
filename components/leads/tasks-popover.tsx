@@ -9,6 +9,7 @@ import { TextField } from '@/components/om/text-field'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
 import { displayDate, isDueToday, isOverdue } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { LeadTask } from '@/lib/db/schema'
 import styles from './tasks-popover.module.css'
@@ -116,6 +117,7 @@ export function TasksPopover({
   onOpenTask: (task: LeadTask) => void
 }) {
   const open = lead !== null && pos !== null
+  const sheet = useSheetLayout()
   const ref = useRef<HTMLDivElement>(null)
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState('')
@@ -136,7 +138,7 @@ export function TasksPopover({
   }, [open])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || sheet) return   // ≤767 the Sheet owns Esc and its own scrim press (REG-353)
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return
       e.preventDefault()
@@ -157,7 +159,7 @@ export function TasksPopover({
       clearTimeout(t)
       document.removeEventListener('pointerdown', onDown, true)
     }
-  }, [open, adding, onClose, anchor])
+  }, [open, adding, onClose, anchor, sheet])
 
   const save = async () => {
     if (!lead || !draft.trim() || savingRef.current) return
@@ -179,6 +181,46 @@ export function TasksPopover({
 
   const openCount = lead ? lead.tasks.filter((t) => !completing.has(t.id)).length : 0
 
+  const inner = lead ? (
+    <div className={styles.body}>
+      <span className={styles.sectionLabel}>Open Tasks <span data-dot>·</span> <span>{openCount}</span></span>
+      <div className={styles.list}>
+        <AnimatePresence initial={false}>
+          {lead.tasks.map((t) => (
+            <TaskRow key={t.id} task={t} now={now} completing={completing.has(t.id)}
+                     onComplete={(task) => { void complete(task) }}
+                     onOpen={onOpenTask}
+                     onSetDue={(task, d) => onSetDue(lead, task, d)} />
+          ))}
+        </AnimatePresence>
+        {lead.tasks.length === 0 ? (
+          <span className={styles.empty}>No open tasks yet.</span>
+        ) : null}
+      </div>
+    </div>
+  ) : null
+
+  /* (REG-353) ≤767 this is the canvas' "Open tasks" bottom sheet (1i): the lead names the heading, the rows and the
+     composer are unchanged, and Add Task is the sheet's pinned action row. */
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title={lead?.name} subtitle={lead ? `${lead.phone} · Current stage: ${lead.stage}` : undefined}
+             footer={adding ? null : <Button onPress={() => setAdding(true)}>Add Task</Button>}>
+        {inner}
+        {adding ? (
+          <div className={styles.addArea}
+               onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
+            <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
+            <div className={styles.addBtns}>
+              <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
+              <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>
+            </div>
+          </div>
+        ) : null}
+      </Sheet>
+    )
+  }
+
   return (
     <AnimatePresence>
       {open && lead && pos ? (
@@ -198,22 +240,7 @@ export function TasksPopover({
               </button>
             </Tooltip>
           </div>
-          <div className={styles.body}>
-            <span className={styles.sectionLabel}>Open Tasks <span data-dot>·</span> <span>{openCount}</span></span>
-            <div className={styles.list}>
-              <AnimatePresence initial={false}>
-                {lead.tasks.map((t) => (
-                  <TaskRow key={t.id} task={t} now={now} completing={completing.has(t.id)}
-                           onComplete={(task) => { void complete(task) }}
-                           onOpen={onOpenTask}
-                           onSetDue={(task, d) => onSetDue(lead, task, d)} />
-                ))}
-              </AnimatePresence>
-              {lead.tasks.length === 0 ? (
-                <span className={styles.empty}>No open tasks yet.</span>
-              ) : null}
-            </div>
-          </div>
+          {inner}
           {adding ? (
             <div className={styles.addArea}
                  onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>

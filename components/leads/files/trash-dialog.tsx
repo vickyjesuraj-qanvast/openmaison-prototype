@@ -14,7 +14,7 @@ import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 export function TrashDialog({ open, names, onNo, onYes }: { open: boolean; names: string[]; onNo: () => void; onYes: () => void }) {
   const subject = names.length === 1 ? `"${names[0]}"` : `these ${names.length} items`
   return (
-    <Dialog open={open} onClose={onNo} title="Move to Trash Folder?" width={400} size="form"
+    <Dialog open={open} onClose={onNo} title="Move to Trash Folder?" width={400} size="form" alert
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onNo}>No</Button>
               <DangerButton onClick={onYes}>Yes</DangerButton>

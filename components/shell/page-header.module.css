@@ -37,8 +37,11 @@
 /* Responsive (REG-269): ≤767 the header wraps — title row, then actions — instead of clipping actions. */
 @media (max-width: 767px) {
   .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
-  /* (REG-298, 1082:23387) The mobile header block — top bar + this — lifts on level-1 instead of the hairline. */
-  .header::after { border-radius: 0; box-shadow: var(--om-elevation-level-1); }
+  /* (REG-298, 1082:23387) The mobile header block — top bar + this — lifts on level-1 instead of the hairline.
+     (REG-369) …unless a sticky tab strip follows it (Qanvast Ops), in which case the strip is the block's bottom
+     edge and owns the shadow; this header keeps the 1px stroke its plate already draws. */
+  .header::after { border-radius: 0; }
+  .header[data-owns-shadow]::after { box-shadow: var(--om-elevation-level-1); }
   .header { top: var(--app-mobile-bar-height); }
   .header::before { top: 0; }
   .actions { flex-wrap: wrap; }
