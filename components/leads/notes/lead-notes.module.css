@@ -71,6 +71,10 @@
 }
 @media (min-width: 768px) and (max-width: 1024px) {
   .list { flex: 0 0 280px; width: 280px; }
+  /* (REG-388) …and the attachments column stops sharing the pane's width with the editor: beside the 280 list,
+     the 182 column and the card's own chrome, the writing surface was ~110px wide at 768. It goes under the
+     editor here exactly as it does on a phone. */
+  .body { flex-direction: column; }
 }
 @media (max-width: 767px) {
   .card { min-height: calc(100dvh - var(--app-mobile-bar-height) - 120px); border-radius: 0; box-shadow: none; }
@@ -93,4 +97,43 @@
 .lockHint {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap;
+}
+
+/* (REG-380) The contact log inside the phone's bottom sheet: the editor stacks with its attachments in the
+   sheet body, which already owns the 16px gutters — so the editor only has to stop being a filling grid. */
+.sheetEditor { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-4); }
+
+/* (REG-381, canvas 3d) The phone's docked note composer: it sits under the list inside the card, so the notes
+   stay visible while one is written. Title + body scroll in a capped box (the canvas draws ~2 lines before the
+   tools), then the tool bar — the two list commands and attach — with Save on the right. Off at ≥768. */
+.composer { display: none; }
+@media (max-width: 767px) {
+  .card { flex-direction: column; }
+  .card[data-composer] .composer {
+    display: flex; flex-direction: column; flex-shrink: 0;
+    border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+    background: var(--om-color-surface-default);
+    /* Docked to the screen's foot, above the dock — the canvas draws it over the list, not after it. */
+    position: sticky; bottom: var(--app-mobile-dock-height); z-index: 2;
+  }
+  /* The card clips at rest (its inset stroke); the sticky composer needs the PAGE as its scrollport. */
+  .card[data-composer] { overflow: visible; }
+  /* The canvas draws the title over one body line before the tools; the box scrolls past that. */
+  .composerFields { max-height: 30dvh; overflow-y: auto; }
+  .composerFields > * { height: auto; }
+  /* The editor's 24px column padding becomes the composer's 16px gutter, its 24px gap the canvas' 8. */
+  .composerFields :global([data-testid='note-editor']) > * { padding: var(--om-spacing-4); gap: var(--om-spacing-2); }
+  .composerBar {
+    display: flex; align-items: center; gap: var(--om-spacing-4);
+    padding: var(--om-spacing-3) var(--om-spacing-4);
+    border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  }
+  /* Save is pushed to the far right; the three tools keep the canvas' left cluster. */
+  .composerBar > *:last-child { margin-left: auto; }
+  .composerTool {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; margin: -10px 0;
+    border: 0; background: none; padding: 0; cursor: pointer;
+    color: var(--om-color-on-surface-default);
+  }
 }

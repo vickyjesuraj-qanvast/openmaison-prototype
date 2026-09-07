@@ -7,7 +7,10 @@
 .wrap { display: inline-flex; }
 .field { width: 280px; }
 
-@media (max-width: 767px) {
+/* (REG-384) …and through the TABLET band too: at 768–1024 the centre is ~540 wide beside the rail and the info
+   column, so the 280px box pushed each toolbar onto three rows (the Files bar measured 136 tall at 768) and
+   ellipsised the section title to "All …". Folded, every one of them is the canvas' single row again. */
+@media (max-width: 1024px) {
   .btn { display: inline-flex; }
   .wrap { display: none; }
   /* (REG-375) The open box SHARES the toolbar's one row — it used to claim a full-width line of its own, which

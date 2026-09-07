@@ -80,7 +80,9 @@
 /* Mobile: the brief is clamped to the mock's two lines because the mock's box is 844 wide — the same sentence
    needs four at 318. It stays CLAMPED (the card is a brief, not the record) and stays on its 40px floor, but at
    a width where two lines is half a sentence, four is the honest equivalent of what desktop shows. */
-@media (max-width: 767px) {
+/* (REG-395) …and the TABLET card is narrower still (~232 beside the info column), where two lines ended the
+   brief mid-clause — "HDB 4-Room, S$70.5K budget,…". Same rule, same reason. */
+@media (max-width: 1024px) {
   .text { -webkit-line-clamp: 4; }
 }
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */

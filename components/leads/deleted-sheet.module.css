@@ -157,6 +157,13 @@
   /* (REG-308) No footer here: the scroll end and the floating bar's band clear the home indicator (viewport-fit=cover); env() is 0 elsewhere. */
   .body { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
   .body[data-bulk] { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  /* (REG-379) "Restore" could not be reached at 390. The sheet holds the 8-column desktop table (1316px) in a
+     356px window and freezes the Lead Name column at `left: 40px`; at maximum horizontal scroll the frozen column
+     still covered the row's actions, so there was no offset at which Restore was on screen. Unfreezing it lets the
+     row be panned until the actions clear the left edge — the sheet is untouched at ≥768, where the frozen column
+     has room to do its job. */
+  .pin { position: static; box-shadow: none; }
+  .tableWrap[data-scrolled] .pin { box-shadow: none; }
 }
 
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */

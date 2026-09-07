@@ -139,8 +139,13 @@
   .foldersRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .folder { position: relative; height: auto; min-height: 96px; flex-direction: column; align-items: stretch; gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
   .folderMain { flex-direction: column; align-items: flex-start; height: auto; gap: var(--om-spacing-1); }
-  /* The kebab takes the card's top-right corner so the stack under it is just icon · name · count (canvas 3f). */
-  .folder .kebab { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); margin: 0; }
+  /* (REG-398) The kebab takes the card's top-right corner so the stack under it is just icon · name · count
+     (canvas 3f). It is the WRAPPER that moves, not the button: the button sits inside `.menuWrap`, which is
+     `position: relative` and so was its containing block — the absolute kebab positioned inside a zero-height
+     wrapper at the END of the card's column and painted BELOW the card, outside its fill, with the menu
+     anchored there too. */
+  .folder .menuWrap { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); }
+  .folder .kebab { margin: 0; }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────
@@ -170,9 +175,10 @@
   .folderMain::after { content: ''; position: absolute; inset: -12px 0; }
 }
 
-/* ≤767 only (not REG-307): these three pair with files-grid.tsx, whose `useMediaQuery(MOBILE)` is what makes the
-   tap open — the checkbox is only wanted where the tap does, and a stylesheet cannot follow that hook. */
-@media (max-width: 767px) {
+/* (REG-385) These pair with files-grid.tsx, whose `useMediaQuery(TOUCH_TABLET)` is what makes the tap open — the
+   checkbox is only wanted where the tap does, and a stylesheet cannot follow that hook. Its query is this one:
+   a touch pointer at tablet width or below. A mouse never matches it, at any width. */
+@media (hover: none) and (max-width: 1024px) {
   /* Selection affordance (the tap now opens — see files-grid.tsx). The folder card carries it inline,
      ahead of the icon; the tile floats it over the image's top-left on a white plate so it reads on any
      photo. Both are the DS Checkbox, drawn at its mocked 24 with a 44px touch box on a touch pointer. */

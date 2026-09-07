@@ -208,6 +208,9 @@ export function ReviewSheet({
                           <div className={`${styles.th} ${styles.cCol}`}>New · {selected.data['Lead Source'] || 'Import'} · {relativeTime(selected.receivedAt, new Date(now))}</div>
                           <div className={`${styles.th} ${styles.cMerged}`}>Merged result</div>
                         </div>
+                        {/* (REG-397) The stacked table at ≤767 hides the head row, so each value cell repeats its
+                            own heading — the twin table's `.stackLabel` move. Without them the merge read as two
+                            unlabelled copies of the same name with a third below: nothing said which was which. */}
                         {FIELDS.map((f) => {
                           const ex = existingValue(selected, f)
                           const nw = newValue(selected, f)
@@ -224,6 +227,7 @@ export function ReviewSheet({
                                 {f.label}{matched ? <span data-warn><Icon name="warning" size={16} /></span> : null}
                               </div>
                               <div className={`${styles.td} ${styles.cCol}`}>
+                                <span className={styles.stackLabel}>Existing{selected.existing ? ` · ${displayDate(selected.existing.createdAt)}` : ''}</span>
                                 {f.radio ? (
                                   <Tooltip label={`Keep existing ${f.label}`}>
                                     <button type="button" className={styles.radioBtn} data-on={pick === 'existing' || undefined} aria-label={`Keep existing ${f.label}`} onClick={() => setPick(f.label, 'existing')}>
@@ -234,6 +238,7 @@ export function ReviewSheet({
                                 <span className={styles.cValue}>{ex || '—'}</span>
                               </div>
                               <div className={`${styles.td} ${styles.cCol}`}>
+                                <span className={styles.stackLabel}>New · {selected.data['Lead Source'] || 'Import'} · {relativeTime(selected.receivedAt, new Date(now))}</span>
                                 {matched ? (
                                   <span className={`${styles.cValue} ${styles.matchedNote}`}>identical - matched on this</span>
                                 ) : (
@@ -250,6 +255,7 @@ export function ReviewSheet({
                                 )}
                               </div>
                               <div className={`${styles.td} ${styles.cMerged}`}>
+                                <span className={styles.stackLabel}>Merged result</span>
                                 <span>{merged || '—'}{showAlt ? <span className={styles.altNote}> ({pick === 'new' ? ex : nw} kept as alt)</span> : null}</span>
                               </div>
                             </div>

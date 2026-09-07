@@ -75,7 +75,8 @@
 /* (REG-377) Stacked under the editor the column kept its desktop 182px and its left rule, so attachments ran down
    a narrow strip with ~176px of empty screen beside them. It takes the width it now has, and the rule that used to
    separate two side-by-side columns becomes the one that separates two stacked blocks. */
-@media (max-width: 767px) {
+/* (REG-388) The same at 768–1024, where lead-notes.module.css now stacks the pane for the same reason. */
+@media (max-width: 1024px) {
   .column { width: 100%; border-left: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); overflow-y: visible; }
   .column { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-content: start; gap: var(--om-spacing-2); }
   .title { grid-column: 1 / -1; }

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Link } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
 import { LinkButton } from '@/components/leads/move-stage/fields'
@@ -89,6 +91,10 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   /* Mobile master-detail push (REG-269): ≤767 the list is the screen; selecting shows the pane full-width with
      a back affordance. Back never clears selectedId — the CSS just swaps which half shows; inert ≥768. */
   const [mobilePane, setMobilePane] = useState(false)
+  /* (REG-380, canvas 3e) ≤767 a CONTACT LOG opens as a bottom sheet, not the master-detail push: the pane put its
+     Cancel / Save far below the fold. Notes keep the push (they autosave and have no footer). False at ≥768 by
+     construction — the primitive's own query is (max-width: 767px) — so the desktop pane is untouched. */
+  const sheetLayout = useSheetLayout()
   /* (REG-294, user 2026-09-02: "when i start typing within search bar ... it moves to note editor automatically")
      Whether the editor about to mount may take the caret. The editor is keyed on the item, so a new selection
      REMOUNTS it and its first field's autoFocus fires. That is right when the user chose the item (clicked a row,
@@ -354,6 +360,27 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   /* The selected item's id when it is a contact log — the pane header's actions all act on that one id
      (and it narrows `selectedId` for them, which `selected.kind` alone cannot). */
   const contactId = selectedId && selected?.kind === 'contact' ? selectedId : null
+  /* The contact log lives in the sheet only on a phone; everywhere else it stays in the pane. */
+  const logInSheet = sheetLayout && contactId !== null
+  /* (REG-381, canvas 3d) …and a NOTE becomes a composer docked under the list, which stays on screen. */
+  const noteId = selectedId && selected?.kind === 'note' ? selectedId : null
+  /* Only once the user opened or started one: the tab still LANDS on the list, with the first note merely
+     highlighted, exactly as it does at every other width. */
+  const noteDocked = sheetLayout && noteId !== null && mobilePane
+
+  /* (REG-381) The docked composer shares the phone's bottom-right corner with the Maison AI FAB, so it
+     publishes its presence and measured height the way the bulk bar does (REG-358) and the FAB steps over it. */
+  const composerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = composerRef.current
+    if (!noteDocked || !el) return
+    document.documentElement.style.setProperty('--app-note-composer-height', `${Math.round(el.getBoundingClientRect().height)}px`)
+    document.body.setAttribute('data-om-note-composer', '')
+    return () => {
+      document.body.removeAttribute('data-om-note-composer')
+      document.documentElement.style.removeProperty('--app-note-composer-height')
+    }
+  }, [noteDocked, selectedId])
 
   return (
     /* data-pane drives the ≤767 master-detail push (REG-269): the list is the screen until an item is
@@ -367,7 +394,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
         onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
       />
-      <div className={styles.card} data-pane={mobilePane || undefined}>
+      <div className={styles.card} data-pane={(mobilePane && !logInSheet && !noteDocked) || undefined} data-composer={noteDocked || undefined}>
       <div className={styles.list}>
         <NotesList
           items={items}
@@ -393,7 +420,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         {/* (REG-291, user 2026-09-02) Not for a contact log: it is all fields, so there is no rich text to
             format and nothing for Maison AI to refine — the bar and its rule would only be dead weight above
             a form. Notes keep it, and so does an empty pane (nothing selected), where it shows disabled. */}
-        {contactId ? (
+        {logInSheet ? null : contactId ? (
           /* (REG-292) The contact log's own header: the kind on the left, the actions that used to sit inline
              with the block title (REG-256 Edit · Auto Fill · the REG-268 lock hint) on the right. It has to be
              a child of the pane, not of the editor, so the rule spans the pane and the fields scroll under it. */
@@ -421,7 +448,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           <div className={styles.editor}>
             {selectedId && selected ? (
               selected.kind === 'contact' ? (
-                <ContactEditor
+                logInSheet ? null : <ContactEditor
                   key={editorKey}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
@@ -431,7 +458,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
                   autoFocus={mayFocusEditor}
                   today={new Date(now)}
                 />
-              ) : (
+              ) : noteDocked ? null : (
                 <NoteEditor
                   key={editorKey}
                   draft={selected}
@@ -453,14 +480,96 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         {/* Cancel · Save return to a footer at the pane's foot (REG-277) — the frame-80 row the editors carried
             before REG-254 moved them into the bar. Still the CONTACT LOG's commit point alone: notes autosave
             (REG-263), so a selected note shows no footer at all. */}
-        {selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) ? (
+        {selectedId && selected && selected.kind === 'contact' && isEditing(selectedId) && !logInSheet ? (
           <div className={styles.footer}>
             <Button variant="secondary" appearance="outlined" onPress={() => cancel(selectedId)} isDisabled={savingId === selectedId}>Cancel</Button>
             <Button onPress={() => { void save(selectedId) }} isDisabled={savingId === selectedId}>Save</Button>
           </div>
         ) : null}
       </div>
+
+      {/* (REG-381, canvas 3d "Lead details - notes") The phone writes a note in a composer docked under the
+          list — title, body, then a bar of the two list tools + attach with Save on the right — instead of
+          pushing a whole pane over the notes it is being written beside. Notes still autosave (REG-263):
+          Save is the canvas' way out of the composer, not a second commit path. Mounted only while
+          `sheetLayout`, so ≥768 keeps the pane exactly as it was. */}
+      {noteDocked && noteId && selected ? (
+        <div className={styles.composer} ref={composerRef}>
+          <div className={styles.composerFields}>
+            <NoteEditor
+              key={editorKey}
+              draft={selected}
+              onChange={(patch) => change(noteId, patch)}
+              autoFocus={mayFocusEditor}
+            />
+          </div>
+          <div className={styles.composerBar}>
+            <Tooltip label="Bulleted list">
+              <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertUnorderedList')} aria-label="Bulleted list">
+                <Icon name="format_list_bulleted" size={24} weight={300} />
+              </button>
+            </Tooltip>
+            <Tooltip label="Numbered list">
+              <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertOrderedList')} aria-label="Numbered list">
+                <Icon name="format_list_numbered" size={24} weight={300} />
+              </button>
+            </Tooltip>
+            <Tooltip label="Attach file">
+              <button type="button" className={styles.composerTool} onClick={() => setAttachFor(noteId)} aria-label="Attach file">
+                <Icon name="attach_file_add" size={24} weight={300} />
+              </button>
+            </Tooltip>
+            <Button onPress={() => { void save(noteId); setSelectedId(null); setMobilePane(false) }} isDisabled={savingId === noteId}>Save</Button>
+          </div>
+        </div>
+      ) : null}
       </div>
+
+      {/* (REG-380, canvas 3e) The phone's contact log: the same editor, in a bottom sheet whose head carries Auto
+          Fill / Edit / the stage-lock hint and whose footer pins Cancel · Save — where the pane left them ~278px
+          below the fold. Rendered ONLY when `sheetLayout` is true, so ≥768 never mounts it. */}
+      {logInSheet && contactId && selected ? (
+        <Sheet
+          open={mobilePane}
+          onClose={() => { cancel(contactId); setMobilePane(false) }}
+          title="Contact log"
+          headActions={isEditing(contactId)
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
+            : isStage(contactId) ? (
+              <span className={styles.lockHint}>
+                <Icon name="lock" size={14} />
+                View only
+              </span>
+            ) : <Link variant="primary" onPress={() => edit(contactId)}>Edit</Link>}
+          footer={isEditing(contactId) ? (
+            <>
+              <Button variant="secondary" appearance="outlined" onPress={() => cancel(contactId)} isDisabled={savingId === contactId}>Cancel</Button>
+              <Button onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save</Button>
+            </>
+          ) : undefined}
+        >
+          <div className={styles.sheetEditor}>
+            <ContactEditor
+              key={editorKey}
+              draft={selected}
+              onChange={(patch) => change(contactId, patch)}
+              onAttach={() => setAttachFor(contactId)}
+              errors={errorsFor(contactId, selected)}
+              editing={isEditing(contactId)}
+              autoFocus={mayFocusEditor}
+              today={new Date(now)}
+            />
+            {attachments.length > 0 ? (
+              <AttachmentsColumn
+                files={attachments}
+                onRemove={(fileId: string) => setAttached(contactId, attachedIds(contactId).filter((id) => id !== fileId), 'remove the file')}
+                onOpen={(file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)}
+              />
+            ) : null}
+          </div>
+        </Sheet>
+      ) : null}
 
       <AttachFilesModal
         open={!!attachFor}

@@ -111,6 +111,16 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] **A section toolbar is ONE row at ≤767 (REG-354)** — the title and the glyphs. The search box folds into a
       glyph (`components/om/toolbar-search.tsx`) and the labelled primary becomes its icon; anything that cannot
       fit leaves the row the way the listing's view toggle did (REG-299), never wraps into a third line.
+- [ ] **…and ONE row through the tablet band too (REG-384)** — beside the rail and the info column the centre is
+      ~540px at 768, so the search folds there as well and the section title keeps its width.
+- [ ] **A hover-revealed control is permanent on a touch pointer (REG-310/391)** — row actions, a copy glyph, a
+      grid's tap convention: anything gated on `:hover` needs a `(hover: none)` arm, or it does not exist on a
+      phone OR a tablet. Check the tablet arm too: `(hover: none) and (max-width: 1024px)` (REG-307).
+- [ ] **A table that becomes a list drops its frozen-column treatment (REG-390)** — the sticky offset, the inner
+      border and the scrolled shadow are for a table that scrolls sideways; left standing they draw a rule
+      through the middle of a stacked row.
+- [ ] **A stacked comparison table repeats its column headings in each cell (REG-397)** — the head row is hidden,
+      so without them two records read as unlabelled copies of each other.
 
 ## Verification
 - [ ] 1440×1024 Playwright pass against the Figma frame; screenshots banked in `design-source/verify/`.

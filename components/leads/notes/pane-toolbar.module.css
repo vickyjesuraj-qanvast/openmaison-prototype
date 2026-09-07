@@ -62,6 +62,16 @@
    Six bare 24px icon buttons, three 1px rules and the 28px AI chip in one 68px bar: at 390 every one of them
    is under half a fingertip, and the bar's mocked 24px side padding left it 12px wider than the card anyway.
    The marks keep their sizes and their 16px rhythm; only the boxes around them grow. Desktop is untouched. */
+/* (REG-379) The tool row's natural width is 338 and never shrinks (every child is `flex-shrink: 0`), while the
+   tablet pane is the card minus the 280px list — 292 at 768. The row was painted up to 118px past a card that is
+   `overflow: hidden`, so "Attach files" and the Maison AI chip were unreachable by any route: 768-819 for both,
+   768-885 for the chip. The same wrap the phone already gets, carried to the band that needs it more. From ~938
+   the row is back on one line; at 1024 the header is 1px taller. */
+@media (max-width: 1024px) {
+  .header { height: auto; min-height: 68px; flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .tools { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+}
+
 @media (max-width: 767px) {
   /* (REG-347) These rules named `.toolbar`, which the markup stopped using when the pane header was introduced
      (REG-292) — so they never applied and the Maison AI chip overflowed the card and was clipped. */

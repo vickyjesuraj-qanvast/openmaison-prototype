@@ -61,6 +61,12 @@
 @media (max-width: 1024px) {
   .dialog { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
   .body { overflow-y: auto; }
+  /* (REG-387) A scrolling body clips at its padding box, and a TextField's notched label sits ~7px ABOVE the
+     field's own top edge — so the base body (`padding-top: 0`) sliced the first label in half: "Reason" in Move
+     stage › On Hold / Lost came out with its top cut off at 390. Eight pixels of head-room restore it. Only the
+     base size is touched: the standard / form / modal bodies carry their own padding at 0,2,0 and keep it, and
+     the desktop body never scrolls, so it never clipped. */
+  .body { padding-top: var(--om-spacing-2); }
 }
 @media (max-width: 767px) {
   .dialog { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }

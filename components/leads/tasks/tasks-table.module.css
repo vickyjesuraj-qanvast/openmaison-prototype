@@ -343,13 +343,16 @@ button.doneFilled[data-variant='primary']:hover {
      (title, then the due date) and the canvas centres the ring against the pair (2b). The ring leaves the title's
      flow to do it — its Tooltip wrapper is `display: contents`, so nothing is left behind in the line. */
   .cell.colSel { position: absolute; left: var(--om-spacing-2); top: 50%; transform: translateY(-50%); padding: 0; border-right: 0; }
-  .colTitle .glyph { position: absolute; left: 34px; top: 50%; transform: translateY(-50%); margin: 0; }
+  /* (REG-382) 42 (= 58 from the row's edge), not 34: the checkbox's 44px target runs 14→58 and the ring's runs
+     from its own left edge, so at 34 the ring stole the checkbox's last 8px — elementFromPoint answered "ring"
+     across x=50…58. At 42 the two targets touch exactly and the drawn ring moves 8 right, clear of the box. */
+  .colTitle .glyph { position: absolute; left: 42px; top: 50%; transform: translateY(-50%); margin: 0; }
   /* Line 1: the ring, the title and whoever it is assigned to. Line 2: the due date, indented past the ring.
      The kebab is pinned right and the row reserves its width, so nothing runs under it. */
   .row { padding-right: 44px; }
   /* The checkbox is pinned left and the title clears it, so a long title can never push it onto its own line. */
-  .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 80px; }   /* clears the pinned checkbox (8) and ring (44 + 24 + 12) */
-  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 80px; }   /* under the title, on its left edge */
+  .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 88px; }   /* clears the pinned checkbox and the ring (58 + 24 + 6) */
+  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
   .cell.colMember { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
   .actions { opacity: 1; pointer-events: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
   .actions > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */

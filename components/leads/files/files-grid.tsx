@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import type { FileRow } from '@/lib/leads/file-model'
 import styles from './files-grid.module.css'
 
@@ -52,7 +52,10 @@ const kindIcon = (f: FileRow) => (f.kind === 'pdf' || f.mime === 'application/pd
  */
 export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu }: FilesGridProps) {
   const [menu, setMenu] = useState<string | null>(null)
-  const touch = useMediaQuery(MOBILE)
+  /* (REG-385) The tap-opens convention belongs to the POINTER, not the width: a touch tablet at 768–1024 had the
+     desktop's "one tap selects, double-tap opens" — a gesture no touch platform teaches — with no checkbox to
+     select with either. TOUCH_TABLET is the same hook REG-307/310 use for every other hover-only affordance. */
+  const touch = useMediaQuery(TOUCH_TABLET)
 
   const toggle = (id: string) => {
     const next = new Set(selected)

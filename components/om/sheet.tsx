@@ -39,7 +39,7 @@ export function useSheetLayout(): boolean {
  * in on open and returns to the opener on close (components/om/surface.ts) — the same contract as Dialog.
  */
 export function Sheet({
-  open, onClose, title, subtitle, children, footer, role = 'dialog', label, bodyClassName,
+  open, onClose, title, subtitle, children, footer, headActions, role = 'dialog', label, bodyClassName,
 }: {
   open: boolean
   onClose: () => void
@@ -50,6 +50,8 @@ export function Sheet({
   children: ReactNode
   /** Pinned under the scrolling body, above the home indicator — the sheet's own action row (canvas 1i "Add Task"). */
   footer?: ReactNode
+  /** (REG-380) Controls that belong beside the title, before the close — the canvas' Auto Fill / Edit on 3e. */
+  headActions?: ReactNode
   /** 'menu' when the sheet hosts menu items, so the rows keep their menu semantics. */
   role?: string
   /** Accessible name when there is no visible title. */
@@ -75,6 +77,7 @@ export function Sheet({
                   <span className={styles.title}>{title}</span>
                   {subtitle ? <span className={styles.sub}>{subtitle}</span> : null}
                 </div>
+                {headActions ? <span className={styles.headActions}>{headActions}</span> : null}
                 <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" className={styles.close} onClick={onClose} />
               </div>
             ) : null}

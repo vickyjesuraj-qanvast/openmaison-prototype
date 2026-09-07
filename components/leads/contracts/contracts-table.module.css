@@ -202,4 +202,15 @@
   /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a
      `.menuWrap` and is the first `.float` of THAT, so a descendant selector hides both (the REG-346 lesson). */
   .actions > .float:first-child { display: none; }
+  /* (REG-389, canvas 2n / 3i) The card's kebab is a BARE glyph, as it is on the tasks list: the hover pill's
+     white fill, its shadow and the outlined button's border all belong to a row that reveals its actions on
+     hover, and a card that always shows them reads as a boxed button floating over the title. */
+  .float { box-shadow: none; background: transparent; }
+  .actions button[class*='icon-button'] { border-color: transparent; }
+  /* …and the status is the canvas' bordered pill, not a bare label with a chevron. */
+  .statusBtn {
+    border: var(--om-border-1) solid var(--om-color-surface-variant);
+    border-radius: var(--om-radius-1);
+    padding-inline: var(--om-spacing-3);
+  }
 }

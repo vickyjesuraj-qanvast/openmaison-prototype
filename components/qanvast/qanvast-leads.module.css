@@ -207,6 +207,9 @@
   /* A finger has no hover, so the row's actions become permanent — and they join the stack rather than floating
      over it, which is what absolute positioning did once the cells stopped sitting in columns. */
   .actions { position: static; opacity: 1; pointer-events: auto; flex-wrap: wrap; gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); }
+  /* (REG-391) …and so does the phone's copy button, for the same reason: it is revealed by `.row:hover`, which a
+     finger never fires, so copying a Qanvast lead's number was impossible on a phone or a tablet. */
+  .copyBtn { opacity: 1; }
 }
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
@@ -284,4 +287,16 @@
 .stickyTabs.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 68px); z-index: 19; }
 @media (max-width: 767px) {
   .stickyTabs.stickyTabs { top: calc(var(--app-mobile-bar-height) + 60px); }
+}
+
+/* (REG-379) The `(hover: none)` block above makes the row's actions permanent and puts them in the stack — which is
+   right at ≤767, where the row IS a stack, but between 768 and 1024 the row is still the desktop grid inside its
+   sideways scroller, so "Lead Return Updates" fell out of its own 64px row and landed on the NEXT lead's name.
+   The tablet keeps the desktop placement and gains only the permanent visibility a finger needs. */
+@media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
+  .actions {
+    position: absolute; right: var(--om-spacing-6); top: 14px;
+    flex-wrap: nowrap; gap: var(--om-spacing-3); padding-top: 0;
+    opacity: 1; pointer-events: auto;
+  }
 }

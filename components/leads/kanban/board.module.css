@@ -213,3 +213,13 @@
   .assignLink { min-height: 44px; }
   .clearLink { min-height: 44px; }
 }
+
+/* (REG-379) `.card { touch-action: none }` is the base rule that lets a pointer drag a lead between columns; the
+   ≤767 block already hands the gesture back to the browser. Between 768 and 1024 it did not, so on a touch tablet
+   every card swallowed the pan and the board could not be scrolled by finger at all. Same declaration, on the
+   bounded touch query. The consequence is the one ≤767 already accepted (REG-269): drag-to-stage gives way to the
+   native gesture there, and a lead moves stage from the table's stage cell or its detail pill instead. A mouse
+   never matches `hover: none`, and the width bound keeps a touch-screen desktop out. */
+@media (hover: none) and (max-width: 1024px) {
+  .card { touch-action: auto; }
+}

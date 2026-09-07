@@ -38,6 +38,8 @@
 .title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .close { flex-shrink: 0; margin-top: 2px; }
+/* (REG-380) The head's own controls, between the title and the close (canvas 3e: Auto Fill · ✕). */
+.headActions { display: inline-flex; align-items: center; gap: var(--om-spacing-4); flex-shrink: 0; margin-top: 2px; }
 .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 /* Action row pinned under the body, on the modal footer's own 16/24 (canvas 1i "Add Task", 3e "Save"). Right-aligned,
    as every other footer in the app is — Dialog, the Move stage window, the filter modals (user 2026-09-06: "right

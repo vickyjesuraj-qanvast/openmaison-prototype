@@ -63,6 +63,13 @@
   .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
 }
+/* (REG-383) 768–1024 the chips go the way they go on a phone (REG-359): the stage pill and Convert to Project
+   are fixed-width, so on a tablet the chips ate the title's line and left "Oliv…" — a four-character name plus an
+   ellipsis, the very thing REG-359 answered at ≤767. Dropping them here (they are in the info column all the same)
+   is the one-row fix; the header keeps its 72px, which the tab strip's sticky offset is built on. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .chips { display: none; }
+}
 @media (max-width: 767px) {
   /* (REG-301, bug) `relative`, not `static`: the two absolutely positioned plates below belong to this header. A
      static header is not their containing block, so they positioned against the page-reveal container and painted

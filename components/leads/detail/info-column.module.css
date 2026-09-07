@@ -207,8 +207,12 @@
      pencil has nothing beside it, so it keeps the full 44. */
   .identity .iconBtn { width: 20px; height: 20px; margin: 0; }
   .identity .iconBtn[data-size='16'] { width: 16px; height: 16px; }
-  .identity .iconBtn::after { inset: -4px; }
-  .nameRow .iconBtn::after { inset: -12px; }
+  /* (REG-379) `inset` alone must define these boxes. The shared touch rule (REG-344) gives every `.iconBtn::after`
+     a centred 44x44 with a translate, and `inset` on top of an explicit width/height/transform left the copy
+     glyph's target laid out 26px up-and-left of the mark it belongs to — so a tap on Copy phone number landed in
+     WhatsApp's box instead. Neutralised, the two meet at 108/109 and never overlap (REG-365's own wording). */
+  .identity .iconBtn::after { inset: -4px; width: auto; height: auto; transform: none; }
+  .nameRow .iconBtn::after { inset: -12px; width: auto; height: auto; transform: none; }
 
   .sectionHead { height: auto; min-height: 44px; gap: var(--om-spacing-4); }
   .headLink { position: relative; }

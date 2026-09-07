@@ -118,7 +118,11 @@
    under its last template. The ≥1025 400 / 600×600 cards are untouched. */
 @media (max-width: 767px) {
   .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
-  .panel, .panel[data-kind='choose'] {
+  /* (REG-392) `[data-kind='save']` has to be named too: its own `width: min(400px, 100vw - 32px)` above is
+     specificity 0,2,0 and beat the bare `.panel` here, so Save as Template opened as a 358px card inside an
+     overlay that had already switched to `justify-content: stretch` — a sheet-height panel flush to the left
+     edge with 32px of scrim beside it. */
+  .panel, .panel[data-kind='choose'], .panel[data-kind='save'] {
     width: 100vw; max-width: 100vw; height: auto;
     max-height: min(88dvh, calc(100dvh - 56px));
     border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;

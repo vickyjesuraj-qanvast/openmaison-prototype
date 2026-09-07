@@ -44,5 +44,10 @@
    the current one stays in its primary colour — no abbreviating, no hiding steps. */
 @media (max-width: 1024px) {
   .labels { gap: var(--om-spacing-1); }
-  .stepLabel { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+  /* (REG-394) `break-word`, not `anywhere`: `anywhere` also drops each label's min-content contribution to one
+     character, so the flex row happily sized "Draft" at 24px and the card read "Dra / ft" · "Appro / ved" at 768.
+     `break-word` breaks a word only when the slot is genuinely narrower than the word, so five names break at
+     their spaces ("Sent for / Approval") and single words stay whole — with the same left edges, which is what
+     quote-card.tsx measures for the marks. */
+  .stepLabel { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: break-word; }
 }

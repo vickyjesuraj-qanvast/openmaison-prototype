@@ -190,15 +190,23 @@
 }
 
 @media (max-width: 767px) {
-  /* 1) Full-screen sheet — the overlay drops its 48px band, the panel fills the viewport, radius 0. */
-  .overlay { padding: 0; align-items: stretch; justify-content: stretch; overflow: hidden; }
+  /* 1) (REG-396, canvas 3l) The BOTTOM SHEET every other form modal became under REG-353: full width on the
+     bottom edge, rounded on top, a grabber above the heading, as tall as its content up to 88dvh — the lead
+     stays visible above it. It used to take the whole screen, which the canvas does not draw and which left a
+     column of white under the last field on step 2. */
+  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; overflow: hidden; }
   .panel {
     width: 100vw; max-width: 100vw;
-    height: 100dvh; max-height: 100dvh;
-    border-radius: 0;
+    height: auto; max-height: min(88dvh, calc(100dvh - 56px));
+    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
+  }
+  .panel::before {
+    content: ''; flex-shrink: 0; align-self: center;
+    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
+    border-radius: var(--om-radius-full); background: var(--om-color-surface-variant);
   }
   /* 2) Content padding 24 → 16 (responsive.md ground rule); the column's own 36 rhythm is unchanged. */
-  .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .head { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-4); }
   .footer { padding: var(--om-spacing-4); }
   .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */

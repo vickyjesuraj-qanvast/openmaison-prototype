@@ -167,8 +167,11 @@
    Eight desktop columns inside a phone sheet put TITLE and OWNER on screen and left Restore / Delete Forever
    reachable only by panning sideways inside a sheet that also scrolls. Each row becomes a block: the checkbox
    and the file's icon lead, the name and its owner stack beside them, and the two row actions take their own
-   line. Declared after the ≤1024 block, so the tablet keeps its scroller and ≥1025 is untouched. */
-@media (max-width: 767px) {
+   line. Declared after the ≤1024 block, so ≥1025 is untouched.
+   (REG-386) …and on a TOUCH tablet too: a 1152px table inside a 720px sheet clipped FILE SIZE / FILE LOCATION /
+   the row actions behind an overlay scrollbar nobody can see on an iPad, inside a panel that already scrolls
+   vertically. A mouse at 768–1024 keeps the sideways scroller, which a trackpad can actually drive. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .head { display: none; }
   .card { grid-template-columns: 1fr; overflow-x: visible; }
   .row {

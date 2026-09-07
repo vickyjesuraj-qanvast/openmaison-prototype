@@ -212,6 +212,23 @@
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); height: auto; }
   .search { width: 100%; flex-basis: 100%; flex-shrink: 1; }
   .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
+
+  /* (REG-393, canvas 2j) "Your files" is a LIST on a phone, not the desktop's 276×262 tiles: a 262px-tall photo
+     per file filled the sheet with two files and pushed Attach off the fold, and the 276px width is a desktop
+     track that cannot shrink. Each file becomes the canvas' row — checkbox, a 48px thumbnail, the name, its
+     kind — by dissolving the caption into the tile and ordering the four pieces. Folders match. */
+  .row { flex-direction: column; gap: 0; }
+  .folder { width: 100%; }
+  .tile {
+    width: 100%; height: auto;
+    flex-direction: row; align-items: center; gap: var(--om-spacing-3);
+    padding: var(--om-spacing-2);
+  }
+  .caption { display: contents; }
+  .caption > *:first-child { order: 1; }
+  .tileImg, .tileBox { order: 2; flex: 0 0 48px; width: 48px; height: 48px; min-height: 0; }
+  .tileName { order: 3; }
+  .kind { order: 4; }
 }
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────

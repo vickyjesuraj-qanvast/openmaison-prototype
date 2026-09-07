@@ -88,3 +88,9 @@
   /* The crumb row's own line grows with the back button so the title never rides on top of it. */
   .crumbRow { min-height: 44px; }
 }
+
+/* (REG-384) The folded search shares the row at 768–1024 exactly as it does at ≤767 (om/toolbar-search.module.css). */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
+}

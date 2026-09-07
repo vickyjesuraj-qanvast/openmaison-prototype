@@ -32,4 +32,9 @@
   :global(body[data-om-bulk-bar]) .wrap {
     bottom: calc(var(--app-mobile-dock-height) + var(--om-spacing-4) + var(--app-bulk-bar-height, 52px) + var(--om-spacing-3));
   }
+  /* (REG-381) The same step-over for the Notes tab's docked composer (canvas 3d), which fills that corner with
+     its Save button. `components/leads/notes/lead-notes.tsx` publishes the flag and the measured height. */
+  :global(body[data-om-note-composer]) .wrap {
+    bottom: calc(var(--app-mobile-dock-height) + var(--app-note-composer-height, 156px) + var(--om-spacing-4));
+  }
 }

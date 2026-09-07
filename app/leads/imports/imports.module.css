@@ -120,7 +120,11 @@
   .toolRight > :not(label) { flex-shrink: 0; }
 
   .empty { padding: var(--om-spacing-6) var(--om-spacing-4); }
-  .emptyBtns { flex-wrap: wrap; justify-content: center; }
+  /* (REG-390, canvas 3c) The two calls to action stack full width, Upload on top — side by side they were two
+     half-width buttons whose labels ("Download Template") wrapped inside them. */
+  .emptyBtns { flex-direction: column; align-items: stretch; width: 100%; }
+  .emptyBtns > :first-child { order: 2; }
+  .emptyBtns > * > button, .emptyBtns button { width: 100%; }
 }
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
@@ -166,13 +170,24 @@
   .table { min-width: 0; }
   .headRow { display: none; }
   .row { height: auto; flex-wrap: wrap; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); }
-  .cell { flex: 0 0 auto; padding: 0; }
+  /* (REG-390) The cell's own 4px gap sat between the pseudo separators and the value ("13 of  14"). */
+  .cell { flex: 0 0 auto; padding: 0; gap: 0; }
   .cell:nth-child(2) { flex: 1 1 100%; font: var(--om-type-subheading-m); order: 1; }   /* file name leads */
+  /* (REG-390) The frozen first column is a ≤1024 treatment for a table that scrolls sideways. Here there is no
+     sideways scroll and no columns — and it left a 1px rule standing in the middle of the date line. */
+  .row > .cell:first-child, .headRow > .hCell:first-child {
+    position: static; border-right: 0; box-shadow: none; clip-path: none; background: none;
+  }
   .cell:nth-child(1) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 2; }
-  .cell:nth-child(3), .cell:nth-child(4) { color: var(--om-color-on-surface-secondary); order: 3; }
-  .cell:nth-child(3)::before { content: 'of '; }
-  .cell:nth-child(4)::before { content: ' — '; white-space: pre; }
-  .cell:nth-child(4)::after { content: ' imported'; }
+  /* (REG-390) "27 Aug '26 · 13 of 14 imported" — the counts read in that order, with the separators the row's
+     own columns used to provide. They used to come out as "27 Aug '26of 14 —  13 imported": the total was
+     placed before the imported count and the date ran straight into it. */
+  .cell:nth-child(3), .cell:nth-child(4) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); }
+  .cell:nth-child(4) { order: 3; }
+  .cell:nth-child(4)::before { content: ' · '; white-space: pre; }
+  .cell:nth-child(3) { order: 4; }
+  .cell:nth-child(3)::before { content: ' of '; white-space: pre; }
+  .cell:nth-child(3)::after { content: ' imported'; }
   .cell:nth-child(5) { flex: 1 1 100%; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 4; }
   .cell:nth-child(6) { flex: 1 1 100%; order: 5; }
 }

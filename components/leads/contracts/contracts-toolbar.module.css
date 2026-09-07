@@ -61,3 +61,9 @@
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }
+
+/* (REG-384) The folded search shares the row at 768–1024 exactly as it does at ≤767 (om/toolbar-search.module.css). */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
+}
