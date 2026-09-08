@@ -11,26 +11,29 @@ Not a mockup: real database, real server actions, real state.
 ## Setup
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open http://localhost:3000. That is the whole thing — no second repo, no build step, no database to
-create, no `.env` to fill in.
+That is the whole thing. Open http://localhost:3000.
 
-`npm run dev` runs `scripts/ensure-db.ts` first, which (only when they are missing) writes `.env.local`
-from `.env.example` with a generated `AUTH_SECRET`, creates `local.db` by running the Drizzle migrations,
-and restores the curated demo data from `fixtures/baseline.json`. An existing `local.db` is never touched,
-so it will not overwrite the state you are demoing from.
+No `npm install` first, no second repo, no build step, no database to create, no `.env` to fill in. `npm run dev`
+runs `scripts/preflight.mjs` before Next starts, which does whatever has not been done yet:
 
 | | |
 | --- | --- |
-| Node | >= 20.9 — `.nvmrc` pins 24; `nvm use` if you juggle versions |
-| Package manager | npm (`package-lock.json` is the lockfile) |
-| Database | SQLite via libSQL, at `local.db`, gitignored and created on first run |
+| Checks Node | needs >= 20.9; says what to install if yours is older, instead of failing later inside Next |
+| Installs dependencies | when `node_modules` is missing, incomplete, or older than `package-lock.json` — so a fresh clone **and** a clone that has just pulled new dependencies both just work |
+| Writes `.env.local` | from `.env.example`, with a generated `AUTH_SECRET` |
+| Applies migrations | every run, so a `git pull` that adds one needs nothing from you |
+| Restores the demo data | from `fixtures/baseline.json` — **only** when there was no database, so it never overwrites the state you are demoing from |
+
+Each step is a no-op once done, so the hundredth `npm run dev` costs nothing.
 
 **Reset the demo data** at any time — Maison AI (the ✦ button, bottom right) › "Reset prototype to base",
 or `npm run db:reset` from the terminal.
+
+**If something does go wrong**, `rm -rf node_modules package-lock.json && npm install` and then `npm run dev`
+puts everything back; nothing in your working tree is at risk.
 
 ---
 

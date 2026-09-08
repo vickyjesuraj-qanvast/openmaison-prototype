@@ -4,18 +4,19 @@ import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
 /**
- * First-run setup, folded into `npm run dev` (and `npm run build`) as a `pre` script — so a fresh clone is
- * `npm install && npm run dev` and nothing else. Three steps, each of which does nothing when it has already
- * been done:
+ * The data half of first-run setup, called by scripts/preflight.mjs (the `predev` / `prebuild` hook) once
+ * dependencies exist. Three steps, each of which does nothing when it has already been done:
  *
  *   1. `.env.local` — copied from `.env.example`, with a real AUTH_SECRET generated.
- *   2. `local.db`   — created by running the Drizzle migrations (the file is gitignored: a SQLite binary in git
- *                     collects everyone's demo clicking and cannot be merged).
- *   3. the demo data — restored from `fixtures/baseline.json`, the same curated state Maison AI ›
- *                     "Reset prototype to base" writes.
+ *   2. migrations   — run EVERY time, not just on a fresh database. They are idempotent, and running them
+ *                     unconditionally is what stops "it broke after I pulled" for anyone who does not know
+ *                     that `db:migrate` exists. `local.db` itself stays gitignored: a SQLite binary in git
+ *                     collects everyone's demo clicking and cannot be merged.
+ *   3. the demo data — restored from `fixtures/baseline.json` (the curated state Maison AI › "Reset prototype
+ *                     to base" writes) ONLY when the database did not exist a moment ago.
  *
- * IDEMPOTENT AND NON-DESTRUCTIVE: an existing local.db is left exactly as it is. This runs before every `dev`,
- * so it must never overwrite the database someone is demoing from. Use `npm run db:reset` to start over.
+ * Step 3's condition is the load-bearing one: an existing local.db is never rewritten, so this cannot clear
+ * the state someone is demoing from. `npm run db:reset` is the deliberate way to start over.
  */
 
 const QUIET = process.argv.includes('--quiet')
@@ -32,21 +33,24 @@ if (/^AUTH_SECRET=""\s*$/m.test(env)) {
   log('· generated AUTH_SECRET')
 }
 
-/* 2 + 3. The database, only when there is none. */
+/* 2 + 3. The database. */
 const { DATABASE_URL } = await import('./env')
 const file = DATABASE_URL.startsWith('file:') ? DATABASE_URL.slice('file:'.length) : null
 
 if (!file) {
   log(`· DATABASE_URL points at ${DATABASE_URL} — leaving it to the server`)
-} else if (existsSync(file)) {
-  log(`· ${file} is already here — untouched`)
 } else {
-  log(`· no ${file} yet — creating it`)
+  const fresh = !existsSync(file)
   /* The local tsx, not `npx tsx`: npx on a machine that has never seen the package goes to the network,
      and this has to work on a fresh clone behind whatever proxy someone is sitting behind. */
   const tsx = path.join('node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx')
   const run = (script: string) => execFileSync(tsx, [script], { stdio: QUIET ? 'ignore' : 'inherit' })
+
+  if (fresh) log(`· no ${file} yet — creating it`)
   run('scripts/migrate.ts')
-  run('scripts/restore-baseline.ts')
-  log('· demo data restored from fixtures/baseline.json')
+
+  if (fresh) {
+    run('scripts/restore-baseline.ts')
+    log('· demo data restored from fixtures/baseline.json')
+  }
 }
