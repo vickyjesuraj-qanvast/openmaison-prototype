@@ -4,49 +4,33 @@ Hi-fi, working prototype of the **OpenMaison 2.0** experience — a multi-tenant
 interior design studios. Built to be demoed on desktop, tablet and mobile, and wired
 directly to the [OpenMaison Design System](https://github.com/vickyjesuraj-qanvast/openmaison-design-system).
 
-Not a mockup: real auth, real database, real server actions.
-
----
-
-## Prerequisites
-
-|               |                                               |
-| ------------- | --------------------------------------------- |
-| Node          | >= 20.9 (developed on 24)                     |
-| pnpm          | via `corepack enable` — pinned to 11.15.1     |
-| Design system | cloned as a **sibling directory** (see below) |
-
-The design system is consumed from disk, not from npm (it is private and unpublished).
-The two repos must sit side by side:
-
-```
-GitHub/
-├── openmaison-design-system/   <- private DS repo
-└── openmaison-prototype/       <- this repo
-```
+Not a mockup: real database, real server actions, real state.
 
 ---
 
 ## Setup
 
 ```bash
-corepack enable
-
-# 1. Build the design system (its dist/ is gitignored, so a fresh clone has none)
-pnpm ds:build
-
-# 2. Install, create .env.local, generate AUTH_SECRET, migrate + seed
-pnpm install
-pnpm setup
-
-# 3. Run
-pnpm dev
+npm install
+npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. That is the whole thing — no second repo, no build step, no database to
+create, no `.env` to fill in.
 
-**Demo login:** `aditi@raointeriors.com` / `openmaison2026`
-(Seeded studio "Rao Interiors" — 2 members, 5 projects, 12 rooms.)
+`npm run dev` runs `scripts/ensure-db.ts` first, which (only when they are missing) writes `.env.local`
+from `.env.example` with a generated `AUTH_SECRET`, creates `local.db` by running the Drizzle migrations,
+and restores the curated demo data from `fixtures/baseline.json`. An existing `local.db` is never touched,
+so it will not overwrite the state you are demoing from.
+
+| | |
+| --- | --- |
+| Node | >= 20.9 — `.nvmrc` pins 24; `nvm use` if you juggle versions |
+| Package manager | npm (`package-lock.json` is the lockfile) |
+| Database | SQLite via libSQL, at `local.db`, gitignored and created on first run |
+
+**Reset the demo data** at any time — Maison AI (the ✦ button, bottom right) › "Reset prototype to base",
+or `npm run db:reset` from the terminal.
 
 ---
 
@@ -76,8 +60,11 @@ Other responsive details worth knowing:
 
 ## Design system integration
 
-Components come from `@openmaison/react`, tokens from `@openmaison/tokens`, icons from
-`@openmaison/icons`, all linked from the sibling checkout via pnpm `link:`.
+Components come from `@openmaison/react`, tokens from `@openmaison/tokens`, and the handful of icons the
+DS itself uses from `@openmaison/icons` — all three **vendored into `vendor/`** and wired up as `file:`
+dependencies. They are build output, committed on purpose: the design system is private and unpublished,
+and linking it from a sibling checkout meant every reviewer needed a second clone, access to that repo,
+and a DS build before this app would install.
 
 ### Rules
 
@@ -95,6 +82,8 @@ Components come from `@openmaison/react`, tokens from `@openmaison/tokens`, icon
 3. **Borders are inset `box-shadow`, not `border`** — Figma strokes are inside, and
    this is the convention the DS itself follows.
 
+4. **Never hand-edit `vendor/`.** It is regenerated wholesale; see below.
+
 ### Things the DS does not provide yet
 
 The prototype fills these gaps locally; replace them when the DS ships the real thing:
@@ -107,25 +96,25 @@ The prototype fills these gaps locally; replace them when the DS ships the real 
 
 ### After changing the design system
 
-`dist/` is gitignored in the DS repo, so rebuild and reinstall:
+Only maintainers need this, and only they need the DS checked out beside this repo:
 
 ```bash
-pnpm ds:build
+npm run ds:vendor -- --build   # build ../openmaison-design-system, then re-copy into vendor/
+npm install                    # re-link the file: deps
+git add vendor && git commit -m "vendor: refresh the design system"
 ```
 
-Turbopack usually picks the change up; restart `pnpm dev` if it does not.
+`npm run ds:vendor` without `--build` re-copies whatever is already built. The icon subset is read out of
+the built bundle, so a DS change that reaches for a new icon is picked up automatically.
 
 ### Known integration gotchas
 
-- **`next.config.ts` widens `turbopack.root` to the parent directory** so Turbopack
-  will resolve modules whose real path is outside this repo. Without it every
-  `@openmaison/*` import fails to resolve.
-- **`react` is aliased to this app's copy.** The linked DS has its own `react` in
-  `node_modules`; without the alias React Aria gets a second React instance and every
-  hook throws. Do not remove those aliases.
 - **TypeScript is pinned to the 6.x line** — `typescript-eslint` does not support
   TS 7 yet. **ESLint is pinned to 9.x** — `eslint-plugin-react` (via
   `eslint-config-next`) is not ESLint 10 compatible yet.
+- **`npm install` prints `install-scripts` warnings** for esbuild and unrs-resolver. They are safe to
+  ignore: both ship prebuilt platform binaries, and `tsx` / `drizzle-kit` / `next build` all work without
+  the skipped postinstalls.
 
 ---
 
@@ -181,26 +170,27 @@ Stored in minor units (paise) as integers — never floats. Formatted with
 
 | Script                             | What it does                                             |
 | ---------------------------------- | -------------------------------------------------------- |
-| `pnpm dev`                         | Dev server                                               |
-| `pnpm build` / `pnpm start`        | Production build / serve                                 |
-| `pnpm lint` / `pnpm typecheck`     | ESLint / `tsc --noEmit`                                  |
-| `pnpm format`                      | Prettier                                                 |
-| `pnpm ds:build`                    | Rebuild the sibling design system (icons, tokens, react) |
-| `pnpm db:generate`                 | Generate SQL migrations from the Drizzle schema          |
-| `pnpm db:migrate` / `pnpm db:seed` | Apply migrations / load demo data                        |
-| `pnpm db:repair`                   | Make the demo data consistent (run after any seeding)    |
-| `pnpm db:baseline`                 | Snapshot the curated state to `fixtures/baseline.json`   |
-| `pnpm db:reset`                    | Drop the local DB and rebuild it from scratch            |
-| `pnpm setup`                       | `.env.local` + `AUTH_SECRET` + migrate + seed            |
+| `npm run dev`                              | Dev server (creates `.env.local` + `local.db` on first run) |
+| `npm run build` / `npm start`              | Production build / serve                                 |
+| `npm run lint` / `npm run typecheck`       | ESLint / `tsc --noEmit`                                  |
+| `npm run format`                           | Prettier                                                 |
+| `npm run ds:vendor`                        | Re-copy the built design system into `vendor/` (maintainers) |
+| `npm run db:generate`                      | Generate SQL migrations from the Drizzle schema          |
+| `npm run db:migrate` / `npm run db:seed`   | Apply migrations / load demo data                        |
+| `npm run db:restore`                       | Put `local.db` back to `fixtures/baseline.json`          |
+| `npm run db:repair`                        | Make the demo data consistent (run after any seeding)    |
+| `npm run db:baseline`                      | Snapshot the curated state to `fixtures/baseline.json`   |
+| `npm run db:reset`                         | Drop the local DB and rebuild it from the baseline       |
+| `npm run setup`                            | The first-run steps on their own, without starting dev   |
 
 ## Database
 
-**After every `git pull`, run `pnpm db:migrate`.** `local.db` is yours and is not in
+**After every `git pull`, run `npm run db:migrate`.** `local.db` is yours and is not in
 git, so a schema change that arrives with new code has to be applied to your own file.
 Skipping it shows up as a runtime error naming a column the query wants and your
 database does not have. The command is safe to run any time and does nothing when
 there is nothing to apply. To take the freshly curated demo data as well, migrate
-first, then use Maison AI › **Reset prototype to base** (or `pnpm db:repair` to bring
+first, then use Maison AI › **Reset prototype to base** (or `npm run db:repair` to bring
 your own rows in line without discarding them).
 
 libSQL — a local `local.db` file by default, zero setup. Point `DATABASE_URL` at a

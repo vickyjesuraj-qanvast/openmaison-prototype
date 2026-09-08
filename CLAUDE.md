@@ -2,7 +2,7 @@
 
 Hi-fi, pixel-faithful Next.js prototype of OpenMaison's **Leads** module (interior-design studios in Singapore), pitched to clients in live demos. Owner: Vicky (product designer). Phase 1 = lead listing + imports + stage movement (done, polished). Phase 2 = Lead Details: **Overview built** (`/leads/[id]`, REG-165…169, specs in `design-source/context/lead-overview/`); **Tasks tab built** (`/leads/[id]/tasks`, REG-170…173, specs in `design-source/context/lead-tasks/`); **Quotes tab built** (`/leads/[id]/quotes`, REG-174…176, specs in `design-source/context/lead-quotes/`); **Contracts tab built** (`/leads/[id]/contracts`, REG-177…179, spec in `design-source/context/lead-contracts/`); **Files tab built** (`/leads/[id]/files` + viewer `/leads/[id]/files/[fileId]`, REG-181…183, specs in `design-source/context/lead-files/`); **Notes tab built** (`/leads/[id]/notes`, REG-184…186, specs in `design-source/context/lead-notes/`); **Questionnaire tab built** (`/leads/[id]/questionnaire`, REG-187…189, specs in `design-source/context/lead-questionnaire/`); **Activity tab built** (`/leads/[id]/activity`, REG-190…191, derived feed, spec in `design-source/context/lead-activity/`); **Qanvast lead return + Invite to Portal + Qanvast Ops › Leads built** (REG-192…193, specs in `design-source/context/lead-return/`); Meetings waits for mocks. **Mobile mocks started 2026-09-02** (Lead Listing 1082:23305 → shell + cards, More sheet 1082:24995; REG-298…300); **the owner's Claude Design mobile canvas (39 screens, 1a…3l) is the source for every other surface at ≤767** (REG-353…355: menus / popovers / panels / form modals are bottom sheets, tab toolbars are one row, the lead's name owns its line) — `design-source/context/responsive.md` (REG-269) still governs what the canvas does not draw.
 
-Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/react` (tokens as `--om-*` CSS variables) — sibling repo.
+Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/react` (tokens as `--om-*` CSS variables) — **vendored** into `vendor/`, committed, refreshed with `npm run ds:vendor` from the sibling checkout (maintainers only). The repo is npm + `package-lock.json`; a clone is `npm install && npm run dev` and `predev` creates `.env.local` + `local.db` from `fixtures/baseline.json` when they are missing.
 
 ## How we work (non-negotiable)
 
@@ -16,7 +16,7 @@ Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/re
 ## Stack & conventions
 
 - Next 16 App Router (Turbopack), React 19, TS strict + `noUncheckedIndexedAccess`, ESLint react-hooks strict (no `Date.now()`/refs read in render; no setState in effect bodies; use the render-phase adjust pattern or lazy `useState` initialisers), `motion` with `lib/motion` tokens, CSS modules on `--om-*` tokens.
-- Data: Drizzle + libSQL `local.db`. Schema `lib/db/schema.ts`; migrations `pnpm db:generate` → `pnpm db:migrate` (additive only). Server actions in `app/leads/actions.ts` (+ `app/settings/actions.ts`) with `revalidatePath`.
+- Data: Drizzle + libSQL `local.db`. Schema `lib/db/schema.ts`; migrations `npm run db:generate` → `npm run db:migrate` (additive only). Server actions in `app/leads/actions.ts` (+ `app/settings/actions.ts`) with `revalidatePath`.
 - Radii: 4 fields/buttons · 8 cards · 12 modals. Elevation `--om-elevation-level-1…5`. Type tokens `--om-type-*`.
 - Modal scale: **s 400 · m 600 · l 800 · xl 1200** (`--om-modal-*`), height to content (viewport-capped); **xxl = fluid, 48px margin on every side**. Modal header standard (779-26016): 64px, 20/24 padding, 20px bold title, bare 24px close icon, 1px divider. No full-page overlays.
 - Snackbar: 344×48, radius 4; action = DS text button in `#CCB2FF`; every inert affordance answers "Coming soon in OpenMaison 2.0".
@@ -33,9 +33,9 @@ Figma: `JCGkMBFLjeOyXYiEkOxFMO` (OpenMaison 2.0). Design system: `@openmaison/re
 
 **Review imported leads**: xxl modal; source chips count what the toggle shows; queue duplicates show the row they collided with (same file or an earlier import) side by side; merge table = single-line rows, label column frozen left, Merged result frozen right, equal data columns, 12px caption headers.
 
-**Demo data must be internally consistent (REG-343)**: every state a screen shows must be backed by the records that produce it — a lead in Contacted needs its New→Contacted stage log with a contact-log payload, members need `assigned_at`, a Quote Sent lead needs its approved quote. Never seed a state "as is from the mock" without its trail. `pnpm db:repair` (`scripts/repair-demo-data.ts`) writes those records idempotently and ends with 14 verification queries; run it after ANY seeding, then `pnpm db:baseline`. When a new record type appears, add its Activity branch (`lib/leads/activity.ts`) and its repair rule together.
+**Demo data must be internally consistent (REG-343)**: every state a screen shows must be backed by the records that produce it — a lead in Contacted needs its New→Contacted stage log with a contact-log payload, members need `assigned_at`, a Quote Sent lead needs its approved quote. Never seed a state "as is from the mock" without its trail. `npm run db:repair` (`scripts/repair-demo-data.ts`) writes those records idempotently and ends with 14 verification queries; run it after ANY seeding, then `npm run db:baseline`. When a new record type appears, add its Activity branch (`lib/leads/activity.ts`) and its repair rule together.
 
-**Base state**: `fixtures/baseline.json` is the curated demo state; Maison AI › "Reset prototype to base" restores it (clears `om.*` localStorage, reloads). After curating data, run `pnpm db:baseline` — never edit the JSON by hand.
+**Base state**: `fixtures/baseline.json` is the curated demo state; Maison AI › "Reset prototype to base" restores it (clears `om.*` localStorage, reloads). After curating data, run `npm run db:baseline` — never edit the JSON by hand.
 
 ## Map
 

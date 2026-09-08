@@ -1,0 +1,30 @@
+{
+  "name": "@openmaison/react",
+  "version": "0.1.0",
+  "description": "OpenMaison React component library — React 19 + React Aria + CSS Modules on OpenMaison tokens.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vickyjesuraj-livspace/openmaison-design-system.git",
+    "directory": "packages/react"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

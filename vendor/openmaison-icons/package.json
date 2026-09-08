@@ -1,0 +1,18 @@
+{
+  "name": "@openmaison/icons",
+  "version": "0.1.0",
+  "description": "OpenMaison icon set — typed React components generated 1:1 from Google Material Symbols (Rounded, weight 400), the icon font used in the Figma files. — vendored subset: only the icons the DS components import.",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "createIcon.js",
+    "createIcon.d.ts",
+    "icons"
+  ],
+  "exports": {
+    "./icons/*": "./icons/*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

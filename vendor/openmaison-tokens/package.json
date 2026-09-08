@@ -1,0 +1,22 @@
+{
+  "name": "@openmaison/tokens",
+  "version": "0.1.0",
+  "description": "OpenMaison design tokens — synced 1:1 from Figma Variables, compiled by Style Dictionary to CSS, TypeScript, Compose, and SwiftUI outputs.",
+  "type": "module",
+  "main": "dist/ts/tokens.light.js",
+  "types": "dist/ts/tokens.light.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vickyjesuraj-livspace/openmaison-design-system.git",
+    "directory": "packages/tokens"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/ts/tokens.light.js",
+    "./dark": "./dist/ts/tokens.dark.js",
+    "./css/*": "./dist/css/*",
+    "./json/*": "./dist/json/*"
+  }
+}
