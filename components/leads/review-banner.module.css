@@ -61,6 +61,11 @@
   /* (REG-298) The banner and its skirt rest above the bottom dock, the same 16 the FAB keeps. */
   .banner { bottom: calc(var(--app-mobile-dock-height) + var(--om-spacing-4)); }
   .strip { left: 0; right: 0; bottom: var(--app-mobile-dock-height); }
+  /* (REG-401) Both follow the dock off the bottom edge — the banner is the listing's own, and it is the one
+     thing that would otherwise sit in the band the dock just vacated. */
+  .banner, .strip { transition: bottom var(--motion-toggle); }
+  :global(body[data-om-chrome-hidden]) .banner { bottom: var(--om-spacing-4); }
+  :global(body[data-om-chrome-hidden]) .strip { bottom: 0; }
   /* (REG-303, user 2026-09-02) One line at mobile: the duplicates tag goes (the count stays in the button's
      accessible name) and the title keeps to its line — the banner is the desktop's 50 again. */
   .lead { flex-wrap: nowrap; min-width: 0; }

@@ -118,21 +118,29 @@
   }
   /* The card clips at rest (its inset stroke); the sticky composer needs the PAGE as its scrollport. */
   .card[data-composer] { overflow: visible; }
-  /* The canvas draws the title over one body line before the tools; the box scrolls past that. */
+  /* (REG-402, mock 995:23383) The block is 156 tall: a title line, a body line, then the 45px tool row. The
+     fields box takes what is left of that and scrolls past it, so a long note grows a scroller instead of the
+     composer eating the list. */
   .composerFields { max-height: 30dvh; overflow-y: auto; }
   .composerFields > * { height: auto; }
-  /* The editor's 24px column padding becomes the composer's 16px gutter, its 24px gap the canvas' 8. */
+  /* The editor's 24px column padding becomes the mock's 16px gutter and its 24px gap the mock's 8. */
   .composerFields :global([data-testid='note-editor']) > * { padding: var(--om-spacing-4); gap: var(--om-spacing-2); }
+  /* …and the title drops from the pane's 20/Bold to the mock's 14/Semi Bold: at 20 it filled a third of a
+     156px block on its own, and this is a composer, not the note's own screen. */
+  .composerFields :global(input) { font: var(--om-type-subheading-m); min-height: 0; }
+  .composerFields :global([role='textbox']) { font: var(--om-type-body-m); min-height: 0; }
   .composerBar {
     display: flex; align-items: center; gap: var(--om-spacing-4);
     padding: var(--om-spacing-3) var(--om-spacing-4);
     border-top: var(--om-border-1) solid var(--om-color-surface-variant);
   }
   /* Save is pushed to the far right; the three tools keep the canvas' left cluster. */
-  .composerBar > *:last-child { margin-left: auto; }
+  /* The mock's hairline between the tools and Save (995:23429): it fills whatever gap is left, so Save stays
+     hard right at any width without a magic margin. */
+  .composerRule { flex: 1; height: var(--om-border-1); background: var(--om-color-surface-variant); }
   .composerTool {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; margin: -10px 0;
+    width: 44px; height: 44px; margin: -12px 0;
     border: 0; background: none; padding: 0; cursor: pointer;
     color: var(--om-color-on-surface-default);
   }

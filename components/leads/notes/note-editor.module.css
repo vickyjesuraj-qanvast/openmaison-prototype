@@ -49,3 +49,12 @@
   .title { min-height: 44px; }
   .rich[data-placeholder] { min-height: 44px; }
 }
+
+/* (REG-402) On a phone this editor lives in a bottom sheet or in the docked composer, and both own their own
+   gutters and do their own scrolling. Filling the height there left a note's two lines followed by 200px of
+   white before its attachments. It sizes to its content instead; the desktop pane, which needs the fill to keep
+   its footer at the foot, is untouched. */
+@media (max-width: 767px) {
+  .editor { height: auto; }
+  .fields { padding: 0; overflow: visible; }
+}

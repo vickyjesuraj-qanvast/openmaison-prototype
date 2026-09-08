@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { AutoHideChrome } from '@/components/shell/auto-hide-chrome'
 import { rememberView, useStoredView, type ListingView } from '@/lib/leads/view-pref'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
@@ -310,6 +311,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   return (
     <PageReveal skeleton={view === 'kanban' && !mobile ? <KanbanSkeleton /> : <LeadsSkeleton />}>
+        {/* (REG-401) The listing is the one surface that asked for it: ≤767 the chrome slides away as the list
+            scrolls down and comes back on the way up. Renders nothing; inert at every wider width. */}
+        <AutoHideChrome />
         <div className={styles.body} style={{ position: 'relative' }} data-view={mobile ? 'cards' : view}>
           <PageHeader
             title="Leads"

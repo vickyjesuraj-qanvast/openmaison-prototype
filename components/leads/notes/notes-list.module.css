@@ -141,3 +141,11 @@
     overflow: hidden;
   }
 }
+
+/* (REG-402) ≤767 a row does not "stay selected": tapping one opens it in a sheet and the list is what you come
+   back to. The desktop's fill and its 4px band are master-detail furniture — on a phone they left a row lit up
+   with nothing beside it, which read as a stuck state. */
+@media (max-width: 767px) {
+  .item[data-selected] { background: var(--om-color-surface-default); }
+  .item[data-selected]::before { display: none; }
+}

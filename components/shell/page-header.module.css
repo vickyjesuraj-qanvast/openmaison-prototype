@@ -45,4 +45,9 @@
   .header { top: var(--app-mobile-bar-height); }
   .header::before { top: 0; }
   .actions { flex-wrap: wrap; }
+
+  /* (REG-401) …and it leaves with the top bar: its own height plus the bar's puts it fully off the screen,
+     so the two read as one block sliding away rather than a header stranded at the top edge. */
+  .header { transition: transform var(--motion-toggle); }
+  :global(body[data-om-chrome-hidden]) .header { transform: translateY(calc(-100% - var(--app-mobile-bar-height))); }
 }

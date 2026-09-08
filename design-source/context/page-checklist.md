@@ -119,6 +119,8 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] **A table that becomes a list drops its frozen-column treatment (REG-390)** — the sticky offset, the inner
       border and the scrolled shadow are for a table that scrolls sideways; left standing they draw a rule
       through the middle of a stacked row.
+- [ ] **Chrome that auto-hides is opt-in per surface (REG-401)** — mount `AutoHideChrome` from the page that
+      wants it, never from the shell, and let anything anchored to the dock (the FAB, a banner) travel with it.
 - [ ] **A stacked comparison table repeats its column headings in each cell (REG-397)** — the head row is hidden,
       so without them two records read as unlabelled copies of each other.
 

@@ -148,7 +148,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     setShowErrors((s) => without(s, retired))
   }
   // 3. Nothing left at all → the blank note draft again (frame 79).
-  if (!draft && notes.length === 0 && !savedDraftId) setDraft(freshDraft('note', now))
+  if (!draft && !savedDraftId && (notes.length === 0 || sheetLayout)) setDraft(freshDraft('note', now))
 
   /* Search (REG-275, lib/search.ts): a row matches what it SHOWS — its title, its secondary line and the date the
      list prints (`displayDateTimeDot`, the list's own formatter, never the raw timestamp) — plus the note's BODY as
@@ -162,7 +162,10 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all, and it is
   // never filtered out (no chip and no query hides the thing you are typing) — then the matched notes (created desc).
   const items = [
-    ...(draft ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
+    /* (REG-402) …except on a phone, where a NOTE draft is the docked composer at the foot of the screen (995:23383)
+       and not a row: an untitled row above the notes you already have is noise, and the thing being typed is
+       already on screen. A contact-log draft still takes a row — it opens as a sheet, not in the composer. */
+    ...(draft && !(sheetLayout && draft.kind === 'note') ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
     ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: note.createdAt, locked: note.origin === 'stage' })),
   ]
   // 4. Selection follows the visible list: default = the draft, else the top item — the newest.
@@ -198,8 +201,10 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     setSelectedId(id)
     setMayFocusEditor(true)   // the user picked this item — the caret belongs in it (REG-294)
     setMobilePane(true)   // ≤767 the pane takes the screen (REG-269); inert at every wider width
-    // Leaving a pristine draft drops it (nothing typed, nothing lost); a dirty draft keeps its row (plan › Rules).
-    if (id !== DRAFT_ID && notes.length) setDraft((prev) => (prev && !draftDirty(prev) ? null : prev))
+    /* Leaving a pristine draft drops it (nothing typed, nothing lost); a dirty draft keeps its row (plan › Rules).
+       (REG-402) Not on a phone: there the pristine draft is the empty composer, which stays where it is drawn —
+       dropping it would only make the render-phase adjust above mint another one on the very next render. */
+    if (id !== DRAFT_ID && notes.length && !sheetLayout) setDraft((prev) => (prev && !draftDirty(prev) ? null : prev))
   }
   const change = (id: string, patch: Partial<NoteDraft>) => {
     if (id === DRAFT_ID) { setDraft((prev) => (prev ? { ...prev, ...patch } : prev)); return }
@@ -362,25 +367,29 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const contactId = selectedId && selected?.kind === 'contact' ? selectedId : null
   /* The contact log lives in the sheet only on a phone; everywhere else it stays in the pane. */
   const logInSheet = sheetLayout && contactId !== null
-  /* (REG-381, canvas 3d) …and a NOTE becomes a composer docked under the list, which stays on screen. */
-  const noteId = selectedId && selected?.kind === 'note' ? selectedId : null
-  /* Only once the user opened or started one: the tab still LANDS on the list, with the first note merely
-     highlighted, exactly as it does at every other width. */
-  const noteDocked = sheetLayout && noteId !== null && mobilePane
+  /* (REG-381 → REG-402, mock 995:23383) The phone's composer writes a NEW note and nothing else: it is bound to
+     the draft, it is always there at the foot of the list, and it never loads a saved note. Tapping a note that
+     already exists opens it in a sheet instead (below) — the composer used to take it, which put the note's text
+     in a 190px strip while the row it came from sat above it, unchanged. That is the "opens the details in a
+     weird way" the owner hit (2026-09-08). */
+  const composerDraft = sheetLayout && draft?.kind === 'note' ? draft : null
+  /* An EXISTING note, opened as a sheet — the contact log's treatment (REG-380), for the same reason. */
+  const noteInSheet = sheetLayout && selectedId !== null && selectedId !== DRAFT_ID && selected?.kind === 'note' && mobilePane
+  const noteSheetId = noteInSheet ? selectedId : null
 
   /* (REG-381) The docked composer shares the phone's bottom-right corner with the Maison AI FAB, so it
      publishes its presence and measured height the way the bulk bar does (REG-358) and the FAB steps over it. */
   const composerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = composerRef.current
-    if (!noteDocked || !el) return
+    if (composerDraft === null || !el) return
     document.documentElement.style.setProperty('--app-note-composer-height', `${Math.round(el.getBoundingClientRect().height)}px`)
     document.body.setAttribute('data-om-note-composer', '')
     return () => {
       document.body.removeAttribute('data-om-note-composer')
       document.documentElement.style.removeProperty('--app-note-composer-height')
     }
-  }, [noteDocked, selectedId])
+  }, [composerDraft, selectedId])
 
   return (
     /* data-pane drives the ≤767 master-detail push (REG-269): the list is the screen until an item is
@@ -394,7 +403,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         /* (REG-286) New ▾ leaves the current item without going through `select` — flush what it owes first. */
         onNew={(kind) => { flushLeft(DRAFT_ID); startDraft(kind) }}
       />
-      <div className={styles.card} data-pane={(mobilePane && !logInSheet && !noteDocked) || undefined} data-composer={noteDocked || undefined}>
+      <div className={styles.card} data-pane={(mobilePane && !logInSheet && !noteInSheet) || undefined} data-composer={(composerDraft !== null) || undefined}>
       <div className={styles.list}>
         <NotesList
           items={items}
@@ -458,7 +467,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
                   autoFocus={mayFocusEditor}
                   today={new Date(now)}
                 />
-              ) : noteDocked ? null : (
+              ) : sheetLayout ? null : (
                 <NoteEditor
                   key={editorKey}
                   draft={selected}
@@ -493,37 +502,82 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           pushing a whole pane over the notes it is being written beside. Notes still autosave (REG-263):
           Save is the canvas' way out of the composer, not a second commit path. Mounted only while
           `sheetLayout`, so ≥768 keeps the pane exactly as it was. */}
-      {noteDocked && noteId && selected ? (
+      {composerDraft ? (
         <div className={styles.composer} ref={composerRef}>
           <div className={styles.composerFields}>
             <NoteEditor
-              key={editorKey}
-              draft={selected}
-              onChange={(patch) => change(noteId, patch)}
-              autoFocus={mayFocusEditor}
+              key={draftKey}
+              draft={composerDraft}
+              onChange={(patch) => change(DRAFT_ID, patch)}
+              /* The composer is always on screen; it must not grab the caret on arrival, only when tapped
+                 (REG-294's rule, and the reason New ▾ still focuses it — `startDraft` sets the intent). */
+              autoFocus={mayFocusEditor && selectedId === DRAFT_ID}
             />
           </div>
           <div className={styles.composerBar}>
             <Tooltip label="Bulleted list">
               <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertUnorderedList')} aria-label="Bulleted list">
-                <Icon name="format_list_bulleted" size={24} weight={300} />
+                <Icon name="format_list_bulleted" size={20} weight={300} />
               </button>
             </Tooltip>
             <Tooltip label="Numbered list">
               <button type="button" className={styles.composerTool} onClick={() => document.execCommand('insertOrderedList')} aria-label="Numbered list">
-                <Icon name="format_list_numbered" size={24} weight={300} />
+                <Icon name="format_list_numbered" size={20} weight={300} />
               </button>
             </Tooltip>
             <Tooltip label="Attach file">
-              <button type="button" className={styles.composerTool} onClick={() => setAttachFor(noteId)} aria-label="Attach file">
-                <Icon name="attach_file_add" size={24} weight={300} />
+              <button type="button" className={styles.composerTool} onClick={() => setAttachFor(DRAFT_ID)} aria-label="Attach file">
+                <Icon name="attach_file_add" size={20} weight={300} />
               </button>
             </Tooltip>
-            <Button onPress={() => { void save(noteId); setSelectedId(null); setMobilePane(false) }} isDisabled={savingId === noteId}>Save</Button>
+            {/* The mock's hairline between the tools and Save (995:23429), drawn by the gap itself. */}
+            <span className={styles.composerRule} aria-hidden />
+            <Button onPress={() => { void save(DRAFT_ID) }} isDisabled={savingId === DRAFT_ID || !draftDirty(composerDraft)}>Save</Button>
           </div>
         </div>
       ) : null}
       </div>
+
+      {/* (REG-402) An EXISTING note, opened from the list: a sheet, like the contact log next to it. It carries the
+          note's own title, its body, whatever is attached, and Cancel · Save — instead of loading itself into the
+          composer, which duplicated the row it came from and had no way out but Save. */}
+      {noteInSheet && noteSheetId && selected ? (
+        <Sheet
+          open={mobilePane}
+          onClose={() => { flushLeft(noteSheetId); setMobilePane(false) }}
+          /* The KIND, as the contact log's sheet is titled: the note's own title is the first field inside and
+             printing it twice, 40px apart, read as a bug. */
+          title="Note"
+          headActions={isStage(noteSheetId) ? (
+            <span className={styles.lockHint}>
+              <Icon name="lock" size={14} />
+              View only
+            </span>
+          ) : undefined}
+          footer={
+            <>
+              <Button variant="secondary" appearance="outlined" onPress={() => { clearEdit(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Cancel</Button>
+              <Button onPress={() => { void save(noteSheetId); setMobilePane(false) }} isDisabled={savingId === noteSheetId}>Save</Button>
+            </>
+          }
+        >
+          <div className={styles.sheetEditor}>
+            <NoteEditor
+              key={editorKey}
+              draft={selected}
+              onChange={(patch) => change(noteSheetId, patch)}
+              autoFocus={false}
+            />
+            {attachments.length > 0 ? (
+              <AttachmentsColumn
+                files={attachments}
+                onRemove={(fileId: string) => setAttached(noteSheetId, attachedIds(noteSheetId).filter((id) => id !== fileId), 'remove the file')}
+                onOpen={(file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)}
+              />
+            ) : null}
+          </div>
+        </Sheet>
+      ) : null}
 
       {/* (REG-380, canvas 3e) The phone's contact log: the same editor, in a bottom sheet whose head carries Auto
           Fill / Edit / the stage-lock hint and whose footer pins Cancel · Save — where the pane left them ~278px
@@ -544,7 +598,13 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
             ) : <Link variant="primary" onPress={() => edit(contactId)}>Edit</Link>}
           footer={isEditing(contactId) ? (
             <>
-              <Button variant="secondary" appearance="outlined" onPress={() => cancel(contactId)} isDisabled={savingId === contactId}>Cancel</Button>
+              {/* (REG-402) Cancelling a NEW log closes the sheet: dropping the draft hands the selection to the
+                  first row in the list, and with the sheet still open that was the existing log appearing in
+                  place of the one just abandoned. Cancelling an EDIT of a saved log keeps the sheet, in view
+                  mode, which is where cancelling an edit should leave you. */}
+              <Button variant="secondary" appearance="outlined"
+                      onPress={() => { cancel(contactId); if (contactId === DRAFT_ID) setMobilePane(false) }}
+                      isDisabled={savingId === contactId}>Cancel</Button>
               <Button onPress={() => { void save(contactId) }} isDisabled={savingId === contactId}>Save</Button>
             </>
           ) : undefined}

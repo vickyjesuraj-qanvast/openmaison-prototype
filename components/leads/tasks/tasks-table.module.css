@@ -359,4 +359,16 @@ button.doneFilled[data-variant='primary']:hover {
   .float { box-shadow: none; background: transparent; }
   /* A list row's kebab is a bare glyph, not an outlined button. */
   .actions button[class*='icon-button'] { border-color: transparent; }
+
+  /* (REG-403, owner 2026-09-08: "look at this broken UI") The inline ADD row, on a phone. The card layout pins the
+     select checkbox to the row's vertical centre and indents the title cell 88px to clear it and the status ring —
+     both of which are wrong for a row that has neither: the 2px editing ring is drawn on the CELL, so it wrapped a
+     full-width empty box with the ✕ / ✓ marooned at its right and the disabled checkbox crossing its lower-left
+     corner. Here the field IS the row: no checkbox (it cannot be ticked before the task exists), no indent, and no
+     inert Assign / due-date placeholders underneath — a disabled control under an empty field reads as broken, and
+     both are set from the task's own panel the moment it is saved. A RENAME keeps all of it: that row is real. */
+  .row[data-add] .colSel { display: none; }
+  .row[data-add] { padding-right: 0; }
+  .row[data-add] .colTitle { padding: var(--om-spacing-2) var(--om-spacing-3); }
+  .row[data-add] .colMember, .row[data-add] .colDue { display: none; }
 }

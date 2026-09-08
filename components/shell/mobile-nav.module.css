@@ -44,6 +44,14 @@
   .bar, .dock { display: none; }
   :global(body:has([data-om-l1-header])) .bar { display: flex; }
   :global(body:has([data-om-l1-header])) .dock { display: flex; }
+
+  /* (REG-401) Auto-hide, where a surface asks for it (components/shell/auto-hide-chrome.tsx): scrolling down a
+     long list translates the bar off the top edge and the dock off the bottom, giving their 130px to the rows;
+     scrolling back up returns them. Transform only — the sticky bar keeps its place in the layout, so nothing
+     reflows and the list does not jump under the finger. */
+  .bar, .dock { transition: transform var(--motion-toggle); will-change: transform; }
+  :global(body[data-om-chrome-hidden]) .bar { transform: translateY(-100%); }
+  :global(body[data-om-chrome-hidden]) .dock { transform: translateY(100%); }
 }
 
 .lockup { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }

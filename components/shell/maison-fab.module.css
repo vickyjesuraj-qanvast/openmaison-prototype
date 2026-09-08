@@ -37,4 +37,10 @@
   :global(body[data-om-note-composer]) .wrap {
     bottom: calc(var(--app-mobile-dock-height) + var(--app-note-composer-height, 156px) + var(--om-spacing-4));
   }
+
+  /* (REG-401) When the dock slides away the FAB takes its space rather than hovering over the gap it left:
+     the same two rules as above with the dock's height dropped. The raised variant has to be repeated, or the
+     FAB lands ON the review banner, which travels to the bottom edge at the same moment. */
+  :global(body[data-om-chrome-hidden]) .wrap { bottom: var(--om-spacing-4); }
+  :global(body[data-om-chrome-hidden]) .wrap[data-raised] { bottom: calc(var(--bottom-dock, 56px) + 26px); }
 }

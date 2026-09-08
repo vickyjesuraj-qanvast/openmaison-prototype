@@ -223,7 +223,9 @@ function AddTagsLink({ inert = false }: { inert?: boolean }) {
 /** Inline add row (frame 194 "Type=RW-New, State=Input"): band, disabled checkbox, the field, inert placeholders. */
 function AddRow({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onCancel: () => void }) {
   return (
-    <div className={styles.row} role="row" data-unseen="">
+    /* `data-add` marks the row a task is being CREATED in — a rename puts the same field on a real row, whose
+       cells hold real values. The phone's stylesheet needs to tell the two apart (REG-403). */
+    <div className={styles.row} role="row" data-unseen="" data-add="">
       <div className={`${styles.cell} ${styles.colSel}`} role="cell">
         <Checkbox isSelected={false} isDisabled aria-label="Select new task" />
       </div>
