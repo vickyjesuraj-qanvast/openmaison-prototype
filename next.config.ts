@@ -5,11 +5,13 @@ const nextConfig: NextConfig = {
 
   /**
    * A tunnelled dev server (ngrok, for showing the prototype to someone off this machine) reaches Next under a
-   * host it does not recognise, and Next refuses cross-origin dev requests — the page loads but its assets and
-   * HMR fail. Naming the tunnel's hosts lets `next dev` serve them. Dev only: `next build` / `next start` ignore
-   * this entirely, so a production demo is unaffected.
+   * host it does not recognise, and Next refuses cross-origin dev requests. The page itself still renders, but
+   * the HMR websocket's upgrade is rejected and the dev client retries it forever — which reads as a page that
+   * never finishes loading. Free ngrok domains are `*.ngrok-free.dev` today (they used to be `.ngrok-free.app`,
+   * which is why that one alone was not enough); the paid and legacy hosts are here too. Dev only: `next build`
+   * / `next start` ignore this entirely, so a production demo is unaffected.
    */
-  allowedDevOrigins: ['*.ngrok-free.app', '*.ngrok.app', '*.ngrok.io'],
+  allowedDevOrigins: ['*.ngrok-free.dev', '*.ngrok-free.app', '*.ngrok.dev', '*.ngrok.app', '*.ngrok.io'],
 
   /**
    * Every lead route is `force-dynamic`, and the client router treats dynamic entries as stale the moment they land —

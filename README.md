@@ -121,6 +121,10 @@ the built bundle, so a DS change that reaches for a new icon is picked up automa
 - **`.npmrc` sets `engine-strict=true`** so an old Node stops at install with the version range, rather than
   failing later inside Next with something unreadable. No dependency caps the Node version, so this can only
   fire on a Node older than 20.9.
+- **Sharing a dev server through a tunnel** (ngrok and friends): the host has to be in `allowedDevOrigins`
+  in `next.config.ts`, or Next rejects the HMR websocket's upgrade and its dev client retries forever —
+  which looks exactly like a page that never finishes loading. Free ngrok domains are `*.ngrok-free.dev`
+  now, not `*.ngrok-free.app`; both are listed, along with the paid hosts.
 - **`npm audit` reports a moderate advisory** for an old `esbuild` nested under `drizzle-kit`. It is the
   migration CLI's dev-server advisory, not shipped or served by this app, and `--force` would downgrade
   drizzle-kit. Nothing to do.
