@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import path from 'node:path'
 
 /**
  * First-run setup, folded into `npm run dev` (and `npm run build`) as a `pre` script — so a fresh clone is
@@ -41,7 +42,10 @@ if (!file) {
   log(`· ${file} is already here — untouched`)
 } else {
   log(`· no ${file} yet — creating it`)
-  const run = (script: string) => execFileSync('npx', ['tsx', script], { stdio: QUIET ? 'ignore' : 'inherit' })
+  /* The local tsx, not `npx tsx`: npx on a machine that has never seen the package goes to the network,
+     and this has to work on a fresh clone behind whatever proxy someone is sitting behind. */
+  const tsx = path.join('node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx')
+  const run = (script: string) => execFileSync(tsx, [script], { stdio: QUIET ? 'ignore' : 'inherit' })
   run('scripts/migrate.ts')
   run('scripts/restore-baseline.ts')
   log('· demo data restored from fixtures/baseline.json')

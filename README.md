@@ -112,9 +112,15 @@ the built bundle, so a DS change that reaches for a new icon is picked up automa
 - **TypeScript is pinned to the 6.x line** — `typescript-eslint` does not support
   TS 7 yet. **ESLint is pinned to 9.x** — `eslint-plugin-react` (via
   `eslint-config-next`) is not ESLint 10 compatible yet.
-- **`npm install` prints `install-scripts` warnings** for esbuild and unrs-resolver. They are safe to
-  ignore: both ship prebuilt platform binaries, and `tsx` / `drizzle-kit` / `next build` all work without
-  the skipped postinstalls.
+- **Install-script approvals live in `package.json`** (`allowScripts`: esbuild, fsevents, unrs-resolver).
+  npm 11 asks before running a dependency's install scripts; recording the answer in the repo means a clone
+  installs silently instead of printing warnings and asking each person to approve them.
+- **`.npmrc` sets `engine-strict=true`** so an old Node stops at install with the version range, rather than
+  failing later inside Next with something unreadable. No dependency caps the Node version, so this can only
+  fire on a Node older than 20.9.
+- **`npm audit` reports a moderate advisory** for an old `esbuild` nested under `drizzle-kit`. It is the
+  migration CLI's dev-server advisory, not shipped or served by this app, and `--force` would downgrade
+  drizzle-kit. Nothing to do.
 
 ---
 
