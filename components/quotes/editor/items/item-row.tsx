@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type DragEvent } from 'react'
+import { useRef, useState, type DragEvent, type FocusEvent } from 'react'
 import { Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -65,6 +65,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
 }) {
   const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'thumb' | 'vis' | 'row' | null>(null)
   const [descOpen, setDescOpen] = useState(false)
+  /* The row is ACTIVE while an editable control holds the focus — a cell input, a select, the description — or one of its
+     select menus is open; never because a button in it (the group's fold, the checkbox, the chip, the kebab) was pressed
+     (owner 2026-09-15: "when i expand the description is getting active which shouldn't"). `data-edit` marks the controls. */
+  const [editing, setEditing] = useState(false)
+  const isEdit = (t: EventTarget | null) => t instanceof Element && t.hasAttribute('data-edit')
+  const onFocusCapture = (e: FocusEvent<HTMLDivElement>) => { if (isEdit(e.target)) setEditing(true) }
+  const onBlurCapture = (e: FocusEvent<HTMLDivElement>) => { const next = e.relatedTarget; if (!(next instanceof Element && e.currentTarget.contains(next) && isEdit(next))) setEditing(false) }
   const unitRef = useRef<HTMLButtonElement>(null)
   const roomRef = useRef<HTMLButtonElement>(null)
   const catRef = useRef<HTMLButtonElement>(null)
@@ -103,7 +110,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           <div key={key} role="cell" className={cls} style={st}>
             {isGroup ? null : (
               <>
-                <button ref={unitRef} type="button" className={styles.pick} data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')}>
+                <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')}>
                   <span>{item.unit ?? 'Add Unit Type'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
                 </button>
                 <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
@@ -139,7 +146,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         const title = key === 'room' ? 'Room' : key === 'category' ? 'Category' : 'Section'
         return (
           <div key={key} role="cell" className={cls} style={st}>
-            <button ref={ref} type="button" className={styles.pick} data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)}>
+            <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)}>
               <span>{value ?? empty}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
             </button>
             <LabelMenu open={menu === key} anchor={ref} options={options} value={value} onClose={() => setMenu(null)} title={title}
@@ -162,8 +169,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const total = isGroup ? sums!.totalMinor : lineTotalMinor(item)
   return (
     <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-child={child || undefined} data-selected={selected || undefined}
-         data-active={menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || undefined}
+         data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || undefined}
          data-dragover={dragOver ?? undefined} data-dragging={dragging || undefined} data-full={showFull || undefined}
+         onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
          onDragOver={onRowDragOver} onDrop={(e) => { e.preventDefault(); h.onDrop() }}>
       <div role="cell" className={`${styles.cell} ${styles.colSel}`}>
         <Tooltip label="Drag to reorder">
@@ -222,7 +230,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             ) : null}
           </div>
           {!details.description ? null : descOpen ? (
-            <textarea className={styles.descArea} defaultValue={item.description ?? ''} autoFocus aria-label="Description" rows={3}
+            <textarea className={styles.descArea} data-edit="" defaultValue={item.description ?? ''} autoFocus aria-label="Description" rows={3}
                       onBlur={(e) => { const v = e.target.value; setDescOpen(false); if (v !== (item.description ?? '')) patch({ description: v }) }} />
           ) : showFull ? (
             <span className={styles.desc} onClick={() => setDescOpen(true)}>{item.description || 'Add a description'}</span>
@@ -230,8 +238,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             <>
               {/* At rest the description is text clamped to the density's lines (1260:31372: the base state is two); while the
                   row is active it is the 24px field (1271:40867) — the stylesheet swaps the two on :focus-within. */}
+              {/* A press on the text opens its field: the row goes active first (the field is hidden at rest), then takes the caret. */}
               <span className={styles.descText} data-placeholder={item.description ? undefined : ''} aria-hidden
-                    onMouseDown={(e) => { e.preventDefault(); descRef.current?.focus() }}>
+                    onMouseDown={(e) => { e.preventDefault(); setEditing(true); requestAnimationFrame(() => descRef.current?.focus()) }}>
                 {item.description || 'Add a description'}
               </span>
               <TextCell value={item.description ?? ''} kind="desc" inputRef={descRef} placeholder="Add a description" onCommit={(v) => patch({ description: v })} ariaLabel="Description" />

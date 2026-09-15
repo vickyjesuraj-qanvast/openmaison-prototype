@@ -45,7 +45,7 @@ export function DeletedFilesSheet({
   onEmptyTrash: () => void | Promise<unknown>
 }) {
   const deletedWidths = useColumnWidths('deleted-files')
-  const deletedTracks = gridTracks([{ key: 'sel', track: '40px' }, { key: 'title', track: '210px' }, { key: 'owner', track: '152px' }, { key: 'updated', track: '116px' }, { key: 'type', track: '119px' }, { key: 'size', track: '114px' }, { key: 'location', track: '149px' }, { key: 'actions', track: '252px' }], deletedWidths)   // REG-427
+  const deletedTracks = gridTracks([{ key: 'sel', track: '40px' }, { key: 'title', track: 'minmax(208px, 1fr)' }, { key: 'owner', track: '152px' }, { key: 'updated', track: '116px' }, { key: 'type', track: '119px' }, { key: 'size', track: '114px' }, { key: 'location', track: '149px' }, { key: 'actions', track: '252px' }], deletedWidths)   // REG-427
   useScrollLock(open)   // the page never scrolls behind this surface
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<{ kind: 'forever'; ids: string[] } | { kind: 'empty' } | null>(null)
@@ -124,7 +124,8 @@ export function DeletedFilesSheet({
               </div>
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
-                <div className={styles.card} role="table" aria-label="Deleted files" data-cols="deleted-files" style={deletedTracks ? ({ '--tracks': deletedTracks } as React.CSSProperties) : undefined}>
+                <div className={styles.card} role="table" aria-label="Deleted files" data-cols="deleted-files" style={deletedTracks ? ({ '--tracks': deletedTracks } as React.CSSProperties) : undefined}
+                     onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
                   <div className={styles.head} role="row">
                     <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
                       <Checkbox

@@ -174,7 +174,7 @@
 
 /* Row hover actions — Edit + kebab pinned to the visible right edge (779:24696). */
 .rowActions {
-  position: sticky; right: 16px;
+  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
   width: 0; overflow: visible;
   align-self: center;
   z-index: 4;
@@ -184,7 +184,7 @@
 }
 .row:hover .rowActions, .rowActions[data-open], .rowActions:focus-within { opacity: 1; pointer-events: auto; }
 .rowActionsInner {
-  position: absolute; right: 0; top: 50%;
+  position: absolute; right: 16px; top: 50%;   /* 606:75167: 16 in from the visible edge */
   transform: translateY(-50%);
   display: flex; gap: var(--om-spacing-3); align-items: center;   /* 606:75167: 12px between the hover buttons */
 }

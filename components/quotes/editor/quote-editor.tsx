@@ -14,6 +14,7 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import { setQuoteStatus } from '@/app/leads/quotes-actions'
 import { saveQuoteGeneral, saveQuoteSections, sendQuote, type GeneralPatch } from '@/app/quotes/actions'
 import { displayDate, inputDate, parseInputDate } from '@/lib/format'
+import { duration } from '@/lib/motion'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteEditorData } from '@/lib/quotes/editor'
 import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
@@ -182,12 +183,17 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
   const selectTab = (key: string) => {
     const k = key as SectionKey
     // A collapsed section opens when its tab is chosen — there is nothing to scroll to otherwise.
-    if (sections.find((s) => s.key === k)?.collapsed) { const next = sections.map((s) => (s.key === k ? { ...s, collapsed: false } : s)); setSections(next); persistSections(next) }
+    const wasCollapsed = !!sections.find((s) => s.key === k)?.collapsed
+    if (wasCollapsed) { const next = sections.map((s) => (s.key === k ? { ...s, collapsed: false } : s)); setSections(next); persistSections(next) }
     const el = document.getElementById(`section-${k}`)
     if (!el) return
-    const top = el.getBoundingClientRect().top + window.scrollY - STICKY - 24
+    const scroll = () => { const top = el.getBoundingClientRect().top + window.scrollY - STICKY - 24; window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }) }
     pinned.current = { key: k, until: performance.now() + 1500 }
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    scroll()
+    /* A section near the page's end opens as a height animation (section-card.tsx): its target sits past the page's scrollable
+       height until it has grown, and a smooth scroll asked for a place the page cannot reach yet goes nowhere. Ask again once
+       the body has settled (REG-429). */
+    if (wasCollapsed) setTimeout(scroll, duration.step * 1000 + 40)
     setActive(k)
   }
 

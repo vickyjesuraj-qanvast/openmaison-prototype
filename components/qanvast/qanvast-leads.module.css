@@ -65,15 +65,15 @@
      px; narrower, each holds its px floor and the card scrolls sideways (the listing's rule, components/leads/table.module.css
      .scroller) rather than pushing the row's "View Lead" out of reach. */
   grid-template-columns: var(--tracks,
-    minmax(240px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
-    minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* --tracks: the user's dragged widths (REG-427) */
+    minmax(238px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
+    minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* Name's floor less the card's 2px of border (REG-430); --tracks: the user's dragged widths (REG-427) */
   width: 100%;
   /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
      sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
      vertically (the row actions sit inside their row; the customise popover is position: fixed). */
   overflow-x: auto; overflow-y: hidden;
   background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay full width */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
   border-radius: var(--om-radius-2);
 }
 
@@ -118,6 +118,7 @@
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
   font: var(--om-type-body-m);
@@ -152,13 +153,20 @@
    Updates" before it, 12 apart (two 36 outlined buttons, #ccc stroke / ink text at the Figma render) — quotes-table.module.css
    .actions/.float, right 24, top (64 − 36) / 2 = 14. ---- */
 .actions {
-  position: absolute; right: var(--om-spacing-6); top: 14px;
-  display: flex; align-items: center; gap: var(--om-spacing-3);
+  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
+  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
+  width: 0; height: 0; overflow: visible;
   z-index: 4;
   opacity: 0; pointer-events: none;
   transition: opacity var(--motion-hover);
 }
+.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
 .row:hover .actions, .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* Name frozen on the left at every width (REG-430; ≤1024 since REG-269): opaque, the hover fill survives, the shadow only while scrolled. */
+.colName { position: sticky; left: 0; z-index: 2; background: var(--om-color-surface-default); clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
+.head .colName { z-index: 3; }
+.row:hover .colName { background: var(--om-color-surface-bg); }
+.card[data-scrolled] .colName { box-shadow: var(--om-shadow-frozen-column); }
 /* White fill + level-1 shadow live on a wrapper so the DS button keeps its own hover state. */
 .float {
   display: inline-flex;
@@ -175,15 +183,6 @@
    from the card's own scroll handler (qanvast-table.tsx). Row height, tracks and paddings are unchanged. */
 @media (max-width: 1024px) {
   .card { -webkit-overflow-scrolling: touch; }
-  .colName {
-    position: sticky; left: 0; z-index: 2;
-    background: var(--om-color-surface-default);   /* opaque: the scrolled columns pass underneath it */
-    clip-path: inset(0 -6px 0 0);                  /* the shadow falls only to the right (the listing's rule) */
-    transition: box-shadow var(--motion-toggle);
-  }
-  .head .colName { z-index: 3; }                                       /* the head cell rides above the row cells */
-  .row:hover .colName { background: var(--om-color-surface-bg); }      /* the hover fill survives the opaque cell */
-  .card[data-scrolled] .colName { box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06); }
 }
 
 /* Responsive (REG-269): ≤767 the toolbar wraps — the scope pill takes the first row and Request Leads ·
@@ -207,7 +206,8 @@
 @media (hover: none) {
   /* A finger has no hover, so the row's actions become permanent — and they join the stack rather than floating
      over it, which is what absolute positioning did once the cells stopped sitting in columns. */
-  .actions { position: static; opacity: 1; pointer-events: auto; flex-wrap: wrap; gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); }
+  .actions { position: static; opacity: 1; pointer-events: auto; grid-area: auto; width: auto; height: auto; padding-top: var(--om-spacing-2); }
+  .actionsInner { position: static; transform: none; flex-wrap: wrap; gap: var(--om-spacing-2); }
   /* (REG-391) …and so does the phone's copy button, for the same reason: it is revealed by `.row:hover`, which a
      finger never fires, so copying a Qanvast lead's number was impossible on a phone or a tablet. */
   .copyBtn { opacity: 1; }
@@ -256,7 +256,10 @@
   .head { display: none; }
   /* The rows are subgrid children, so collapsing the row alone changed nothing — the card's own six tracks won.
      Both collapse together, and the card stops scrolling sideways. */
-  .card { grid-template-columns: 1fr; overflow-x: visible; }   /* the card stops scrolling sideways */
+  .card { grid-template-columns: 1fr; overflow-x: visible; border: 0; }   /* the card stops scrolling sideways */
+  .colName { position: static; clip-path: none; box-shadow: none; }
+  .actions { position: static; grid-area: auto; grid-column: 1; justify-self: stretch; width: auto; height: auto; }   /* joins the stack as its last line, from the card's left edge like every other line (a floating box drew over the budget line) */
+  .actionsInner { position: static; transform: none; flex-wrap: wrap; gap: var(--om-spacing-2); }
   /* The desktop row is a fixed 64px; stacked, its cells need whatever they need, or each row draws over the next. */
   /* (REG-354) The canvas draws each lead as a card, not a row in a rule-separated list (3j): the card holds the
      name, the phone and the status tags, 12 apart on the page's own ground. The desktop row is a fixed 64px;
@@ -267,7 +270,7 @@
   .card { background: none; border: 0; box-shadow: none; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
   /* Each cell is pinned to its own desktop track (.colCredits → column 2 and so on); with one track those pins
      put the cell outside the card. Released here, every cell simply stacks. */
-  .cell, .colName, .colCredits, .colBudget, .colType, .colCreated, .colStatus { grid-column: 1; }
+  .cell, .colName, .colCredits, .colBudget, .colType, .colCreated, .colStatus { grid-column: 1; grid-row: auto; }   /* stacked: the desktop's row-1 pin goes too */
   .cell { padding: 0; border: 0; min-width: 0; }
   .cell:empty { display: none; }
   /* Stacked, "200" and "185,000" carry no column head to explain them, so the two numeric cells name themselves. */
@@ -296,8 +299,8 @@
    The tablet keeps the desktop placement and gains only the permanent visibility a finger needs. */
 @media (hover: none) and (min-width: 768px) and (max-width: 1024px) {
   .actions {
-    position: absolute; right: var(--om-spacing-6); top: 14px;
-    flex-wrap: nowrap; gap: var(--om-spacing-3); padding-top: 0;
+    position: absolute; right: 0; top: 50%; width: 0; height: 0; padding-top: 0;   /* the inner box hangs 24 in from the row's end, centred on it */
     opacity: 1; pointer-events: auto;
   }
+  .actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); flex-wrap: nowrap; gap: var(--om-spacing-3); }
 }

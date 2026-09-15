@@ -15,12 +15,19 @@
      Floors + mocked maxima, not frozen px (the quotes twin): free space fills every track to its mocked width before the
      fluid Title takes the rest, so the mock's 1244 card still resolves to 557 · 128 · 120 · 142 · 140 · 157 — and a
      narrower frame (rail pinned + quick links expanded) squeezes the row instead of overflowing the body's `overflow: clip`. */
-  grid-template-columns: var(--tracks, minmax(120px, 1fr) minmax(128px, max-content) minmax(96px, 120px) minmax(112px, 142px) minmax(112px, 140px) minmax(112px, 157px));   /* --tracks: the user's dragged widths (REG-427) */
+  grid-template-columns: var(--tracks, minmax(555px, 1fr) minmax(128px, max-content) 120px 142px 140px 157px);   /* the mock's px are floors (REG-430), Title's 557 less the card's 2px of border; --tracks: the user's dragged widths (REG-427) */
   width: 100%;
   background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke #e5e5e5: rows stay 1244 wide (931:38690) */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
   border-radius: var(--om-radius-2);
 }
+/* The card scrolls sideways only once its tracks run past it (REG-430, use-overflow-x.ts) — while the rows fit it does not
+   clip, so a short table's row menu can hang below it. Title freezes on the left and the actions park at the visible edge. */
+.card[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
+.head .colTitle, .row .colTitle { position: sticky; left: 0; z-index: 2; background: var(--om-color-surface-default); clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
+.head .colTitle { z-index: 3; }
+.row:hover .colTitle { background: var(--om-color-surface-bg); }
+.card[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }   /* the edge shows only while scrolled — the mock draws none at rest */
 
 /* ---- Head row 1244×48 (931:38691) ---- */
 .head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 48px; }   /* shares the card's tracks */
@@ -62,6 +69,7 @@
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
   font: var(--om-type-body-m);
@@ -94,12 +102,14 @@
 /* ---- Row hover actions (Quotes "Hover button" 910:36644 / 910:36709 copied): View + kebab, H g12, level-1 shadow, right 24. ----
    Only `top` changes from the quotes twin: (68 − 36) / 2 = 16. */
 .actions {
-  position: absolute; right: var(--om-spacing-6); top: 16px;
-  display: flex; align-items: center; gap: var(--om-spacing-3);
+  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
+  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
+  width: 0; height: 0; overflow: visible;
   z-index: 4;
   opacity: 0; pointer-events: none;
   transition: opacity var(--motion-hover);
 }
+.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
 .row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
 /* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
 .float {
@@ -115,16 +125,13 @@
    ≤1024 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
    `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
 @media (max-width: 1024px) {
-  /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
-     past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
-     card itself, so the sheet clipped it exactly as before. */
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
-   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+   Where the pointer cannot hover, they are simply always visible — at the row's END over the 150px band (REG-310). */
 @media (hover: none) {
-  .actions { opacity: 1; pointer-events: auto; }
+  .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }   /* the inner box carries the 24 inset */
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
@@ -157,7 +164,7 @@
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
-  .card { grid-template-columns: minmax(120px, 1fr) minmax(128px, max-content) minmax(96px, 120px) minmax(112px, 142px) minmax(112px, 140px) minmax(112px, 157px) 150px; }
+  .card { grid-template-columns: minmax(555px, 1fr) minmax(128px, max-content) 120px 142px 140px 157px 150px; }
 }
 
 /* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
@@ -188,6 +195,9 @@
   }
   .row:hover { background: var(--om-color-surface-default); }   /* a finger has no hover; the fill only muddied the card */
   .cell { padding: 0; border-top: 0; border-right: 0; min-width: 0; }
+  .head .colTitle, .row .colTitle { position: static; clip-path: none; box-shadow: none; background: none; }
+  .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; }   /* grid-area auto: released from the title line's area, the card's own box contains it */
+  .actionsInner { position: static; transform: none; }
   /* (REG-348's lesson) The select column stays — hidden, multi-select and the bulk bar's actions have no entry
      point at all on a phone. It leads the card and spans the two text lines. */
   .cell.colSel { grid-column: 1; grid-row: 1 / span 2; align-items: flex-start; padding: 0; }
@@ -202,7 +212,7 @@
   .actions { opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
   /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a
      `.menuWrap` and is the first `.float` of THAT, so a descendant selector hides both (the REG-346 lesson). */
-  .actions > .float:first-child { display: none; }
+  .actionsInner > .float:first-child { display: none; }
   /* (REG-389, canvas 2n / 3i) The card's kebab is a BARE glyph, as it is on the tasks list: the hover pill's
      white fill, its shadow and the outlined button's border all belong to a row that reveals its actions on
      hover, and a card that always shows them reads as a boxed button floating over the title. */

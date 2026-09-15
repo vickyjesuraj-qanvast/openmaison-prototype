@@ -6,6 +6,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
+import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -28,7 +29,7 @@ export type ContractsTableProps = {
 
 /* Column order + head copy — exactly as the mock types it (931:38691, spec 01-listing-empty.txt). Every head carries unfold_more 16. */
 /** The card's mocked tracks by head key (contracts-table.module.css) — the user's dragged widths replace them (REG-427). */
-const TRACKS = [{ key: 'title', track: 'minmax(120px, 1fr)' }, { key: 'status', track: 'minmax(128px, max-content)' }, { key: 'created', track: 'minmax(96px, 120px)' }, { key: 'signedCopy', track: 'minmax(112px, 142px)' }, { key: 'sent', track: 'minmax(112px, 140px)' }, { key: 'updated', track: 'minmax(112px, 157px)' }]
+const TRACKS = [{ key: 'title', track: 'minmax(555px, 1fr)' }, { key: 'status', track: 'minmax(128px, max-content)' }, { key: 'created', track: '120px' }, { key: 'signedCopy', track: '142px' }, { key: 'sent', track: '140px' }, { key: 'updated', track: '157px' }]
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle },
   { key: 'status', label: 'Status', col: styles.colStatus },
@@ -57,9 +58,12 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu }: Contr
   const [statusRow, setStatusRow] = useState<string | null>(null)
   const colWidths = useColumnWidths('lead-contracts')
   const tracks = gridTracks(TRACKS, colWidths)
+  const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   return (
-    <div className={styles.card} role="table" aria-label="Contracts" data-cols="lead-contracts" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}>
+    <div ref={frame} className={styles.card} role="table" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined}
+         style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}
+         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 48 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
       <div className={styles.head} role="row">
         {HEADS.map((h) => (
@@ -171,6 +175,7 @@ function ContractRowView({
       {/* Row hover actions — not mocked for Contracts; the Quotes "Hover button" (910:36644 / 910:36709) copied:
           View + kebab, level-1 shadow, right 24, vertically centred in the 68 row. */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
+        <span className={styles.actionsInner}>
         <span className={styles.float}>
           <Button variant="primary" appearance="outlined" onPress={() => onView(contract)}>View</Button>
         </span>
@@ -190,6 +195,7 @@ function ContractRowView({
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
             <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
           </Dropdown>
+        </span>
         </span>
       </span>
     </div>

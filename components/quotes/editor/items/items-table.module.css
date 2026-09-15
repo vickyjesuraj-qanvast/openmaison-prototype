@@ -87,13 +87,13 @@
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
   font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; cursor: text;
 }
-.row:is(:focus-within, [data-active]) .expand { display: inline-flex; }
+.row[data-active] .expand { display: inline-flex; }
 .row[data-density='single'] .descText { -webkit-line-clamp: 1; }
 .row[data-density='triple'] .descText { -webkit-line-clamp: 3; }
 .descText[data-placeholder] { color: var(--om-color-on-surface-secondary); }
 /* While the row is active the clamp keeps its lines but goes invisible and the 24px field sits over its first line — so a
    two-line row stays 80 and nothing jumps (owner 2026-09-15: "while editing … there is some UI jerk"). */
-.row:is(:focus-within, [data-active]) .descText { visibility: hidden; }
+.row[data-active] .descText { visibility: hidden; }
 /* A group row: cards glyph after the name, the fold chevron at the cell's right, a 4px tertiary-blue bar down the cell's left edge (1260:31364). */
 .groupBar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--om-color-tertiary-blue-default); }
 .groupGlyph { color: var(--om-color-on-surface-disabled); display: inline-flex; }
@@ -104,8 +104,8 @@
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
 
-/* Inputs: plain text at rest; while the row is active — focus inside it, or one of its selects open (`data-active`: the menu
-   takes the focus, and the select must keep its box while it is being used — owner 2026-09-15) — the number cells take the
+/* Inputs: plain text at rest; while the row is active (`data-active`, item-row.tsx: an editable control — input, select, the
+   description — holds the focus, or one of its select menus is open; a button in the row never activates it) the number cells take the
    DS 36px box and the description its 24px field; the name stays text (1271:40867 "Active Cells" draws no box on it; a 36px
    box grew the row by 12 on every press). */
 .input {
@@ -119,19 +119,19 @@
 /* (REG-417) A money box that shares its cell (the markup's "(x%)") is as wide as its figure — `field-sizing` where the browser
    has it, the `size` attribute the cell sets elsewhere — so the amount is never squeezed into "S$60…". */
 .input[data-fit] { width: auto; max-width: 100%; flex: 0 1 auto; field-sizing: content; }
-.row:is(:focus-within, [data-active]) .cell .input:not([data-name]):not([data-desc]), .input:not([data-name]):not([data-desc]):focus {
+.row[data-active] .cell .input:not([data-name]):not([data-desc]), .input:not([data-name]):not([data-desc]):focus {
   height: 36px; padding: 0 var(--om-spacing-2);
   border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default);
 }
-.row:is(:focus-within, [data-active]) .cell .input:not([data-name]):not([data-desc]):focus, .input:not([data-name]):not([data-desc]):focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.row[data-active] .cell .input:not([data-name]):not([data-desc]):focus, .input:not([data-name]):not([data-desc]):focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
 /* (REG-417) The active row's boxes need the cell's room: QTY (65) keeps 49 for its 36px input (spec 03 "QTY input 36 (p8)"),
    the UNIT / ROOM selects and the COST / MARKUP / UNIT PRICE boxes take their cells at p8 (1271:40867: 99 / 134 / 109) — the
    columns themselves stay put, so every row keeps its alignment (the mock's active row widens UNIT to 183 and ROOM to 159 as
    a frame of its own; a table cannot grow one row's cells). */
-.row:is(:focus-within, [data-active]) .colQty, .row:is(:focus-within, [data-active]) .colUnit, .row:is(:focus-within, [data-active]) .colRoom, .row:is(:focus-within, [data-active]) .colCategory, .row:is(:focus-within, [data-active]) .colDiscount, .row:is(:focus-within, [data-active]) .colGst,
-.row:is(:focus-within, [data-active]) .colCost, .row:is(:focus-within, [data-active]) .colMarkup, .row:is(:focus-within, [data-active]) .colUnitPrice { padding-left: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
-.row:is(:focus-within, [data-active]) { z-index: 4; }
-.row:is(:focus-within, [data-active]) .colItem { overflow: visible; }   /* the floating Expand hangs past the row's edge (1271:40867) */
+.row[data-active] .colQty, .row[data-active] .colUnit, .row[data-active] .colRoom, .row[data-active] .colCategory, .row[data-active] .colDiscount, .row[data-active] .colGst,
+.row[data-active] .colCost, .row[data-active] .colMarkup, .row[data-active] .colUnitPrice { padding-left: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
+.row[data-active] { z-index: 4; }
+.row[data-active] .colItem { overflow: visible; }   /* the floating Expand hangs past the row's edge (1271:40867) */
 /* The name: 14/600, as wide as its text so the cards glyph / eye follow it (1260:31357 · 31395); text while any OTHER cell is
    active (1271:40867); while its own caret is in it, the DS box at the description's 24 (owner 2026-09-15: "our input style
    instead a primary line") — drawn around the text with negative margins so the row keeps its 72 and nothing shifts. */
@@ -139,7 +139,7 @@
 .input[data-name]:focus { height: 24px; margin: -2px calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2); border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); background: var(--om-color-surface-default); }
 /* The description field: hidden at rest (the clamp above shows), the 24px box over the clamp's first line while the row is active. */
 .input[data-desc] { display: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); height: 24px; padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
-.row:is(:focus-within, [data-active]) .input[data-desc] { display: block; position: absolute; left: 0; right: 0; top: 24px; width: 100%; z-index: 1; }
+.row[data-active] .input[data-desc] { display: block; position: absolute; left: 0; right: 0; top: 24px; width: 100%; z-index: 1; }
 .input[data-desc]:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
 .descArea { width: 100%; min-height: 48px; resize: vertical; border: var(--om-border-1) solid var(--om-color-primary-default); border-radius: var(--om-radius-1); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); outline: none; }
 /* "Expand" (1271:40880): a floating 24px white button hanging 12 under the row — only while the row is active. */
@@ -157,11 +157,11 @@
 .pick > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The chevron: drawn while the select is empty ("Add Unit Type ⌄"), open, or its row is active (1271:40867 draws it on "sqft"). */
 .pickChev { display: none; align-items: center; flex-shrink: 0; }
-.pick[data-empty] .pickChev, .pick[aria-expanded='true'] .pickChev, .row:is(:focus-within, [data-active]) .pick .pickChev { display: inline-flex; }
-.row:is(:focus-within, [data-active]) .cell .pick { height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); width: 100%; justify-content: space-between; }
+.pick[data-empty] .pickChev, .pick[aria-expanded='true'] .pickChev, .row[data-active] .pick .pickChev { display: inline-flex; }
+.row[data-active] .cell .pick { height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); width: 100%; justify-content: space-between; }
 .muted { color: var(--om-color-on-surface-secondary); }
 .sub { font: var(--om-type-body-m); }   /* "(x%)" is one run with the amount, 14/400 ink (1260:31253); the cell's own 4px gap separates them */
-.row:is(:focus-within, [data-active]) .sub { display: none; }   /* the markup box stands alone while the row is active (1271:40867) */
+.row[data-active] .sub { display: none; }   /* the markup box stands alone while the row is active (1271:40867) */
 
 /* Status chip (1260:31267 / 31303 / 31337): p8 r4, [glyph 16 + label 14/400, g4] + keyboard_arrow_down 20, g8. */
 .chip { display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); border: 0; cursor: pointer; font: var(--om-type-body-m); white-space: nowrap; }
@@ -210,7 +210,13 @@
 .row[data-child] .colItem { background: var(--om-color-tertiary-blue-variant2); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
 .scroller[data-scrolled] .colItem { box-shadow: 6px 0 8px -4px rgba(0, 0, 0, .16); }
-.row:is(:focus-within, [data-active]) .colItem { overflow: visible; }
+.row[data-active] .colItem { overflow: visible; }
+/* Row hover (owner 2026-09-15: "item table hover state is missing"): the 4 % wash every table's row takes (tasks / quotes
+   rows fill #f2f2f2) — painted as an overlay on each cell, so the frozen cells' own fills, a child's tint and a selection all
+   keep their colour under it; a finger has no hover. */
+@media (hover: hover) {
+  .row:hover .cell { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+}
 @media (max-width: 1024px) {
   .colItem { width: 240px; }
 }
@@ -229,9 +235,9 @@
   .kebab button::after, .expand::after { content: ''; position: absolute; inset: -10px; }
   .link::after { content: ''; position: absolute; inset: -12px 0; }
   .chip { min-height: 44px; }
-  .row .cell .input:not([data-desc]):not([data-name]), .row:is(:focus-within, [data-active]) .cell .input:not([data-desc]):not([data-name]) { height: 44px; }
+  .row .cell .input:not([data-desc]):not([data-name]), .row[data-active] .cell .input:not([data-desc]):not([data-name]) { height: 44px; }
   .input[data-name] { height: 44px; margin: -12px 0; }   /* the name keeps its 20 line in the layout but takes a 44 box under a finger */
-  .row .cell .pick, .row:is(:focus-within, [data-active]) .cell .pick { height: 44px; }
+  .row .cell .pick, .row[data-active] .cell .pick { height: 44px; }
 }
 @media (max-width: 767px) {
   .addInner { gap: var(--om-spacing-3); }

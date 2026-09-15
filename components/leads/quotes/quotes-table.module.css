@@ -2,29 +2,32 @@
  * Lead Details › Quotes table (910:36322) — specs design-source/context/lead-quotes/01-listing-table.txt /
  * 02-rows-menus.txt. Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. No bottom bar.
  * Columns 40 · 319 · 128 · 120 · 120 · 120 · 120 · 120 · 157 (= 1244): Title fills, the others are fixed.
- * The card deliberately does NOT clip (no overflow hidden): the row kebab menu (200×226) and the status menu
- * (200×190) must be able to hang below a short table — copied from tasks-table.module.css.
+ * The frame deliberately does NOT clip while the rows fit (REG-430): the row kebab menu (200×226) and the status menu
+ * (200×190) must be able to hang below a short table; once the tracks run past the frame — a narrower page, or a column the
+ * user widened — it becomes the sideways scroller the leads listing is (components/leads/table.module.css .scroller), with
+ * Selection + Title frozen on the left and the row's actions parked at the visible right edge. Columns never squeeze
+ * below the mock: the tracks are the mock's own px, Title fluid from its 319.
  */
-.card {
-  display: grid;
-  /* One shared track for head + rows (REG-180): Selection 40 · Title fluid (absorbs what Status needs) · Status 128 at rest,
-     grows to its widest content ("Sent for Approval") for every row at once · Total 120 · Due 120 · Created 120 · Sent 120 ·
-     Updated 120 · Approval Date 157 (spec 01). Those are floors + mocked maxima, not frozen px: free space fills every track
-     to its mocked width before the fluid Title takes the rest, so the mock's 1244 card still resolves to
-     40 · 319 · 128 · 120 ×5 · 157 — while a narrower frame (rail pinned + quick links expanded = 1012) squeezes the whole
-     row together instead of paying it all out of Title and overflowing the lead body's `overflow: clip`. */
-  grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px));   /* --tracks: the user's dragged widths (REG-427) */
+.frame {
   width: 100%;
   background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (910:36322).
-     These three lived only on [data-no-approval] below, so a studio WITH the approval step lost the card's
-     surface entirely — no outer stroke, no radius (REG-244; user 2026-09-01) */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border (the listing's card): outside the scrollport, so the frozen cells never cover it (REG-430).
+     Surface, stroke and radius lived only on [data-no-approval] once, so a studio WITH the approval step lost them (REG-244; user 2026-09-01) */
   border-radius: var(--om-radius-2);
+}
+.frame[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
+.card {
+  display: grid;
+  /* One shared track for head + rows (REG-180): Selection 40 · Title fluid from 319 · Status 128 at rest, grows to its widest
+     content ("Sent for Approval") for every row at once · Total 120 · Due 120 · Created 120 · Sent 120 · Updated 120 ·
+     Approval Date 157 (spec 01) — the mock's 1244 card. A narrower frame scrolls (REG-430) instead of squeezing the columns. */
+  grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px) 157px);   /* Title's floor is 319 less the card's 2px of border, so the mock's 1244 card fits without a scroller; --tracks: the user's dragged widths (REG-427) */
+  width: 100%;
 }
 /* A studio with no approval step has no Approval Date to show (Settings › Leads › Quote approval, REG-214), so the
    table drops that column — and its track with it, or the 112–157px would sit at the right edge as dead space. */
 .card[data-no-approval] {
-  grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)));
+  grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px));
 }
 
 /* ---- Head row 1244×56 (910:36323) ---- */
@@ -60,8 +63,18 @@
 .colUpdated { grid-column: 8; }
 .colApproval { grid-column: 9; }
 /* (REG-422) Tools › Quotes adds a Client track after Title; every later column moves one track along. */
-.card[data-client] { grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px)); }
-.card[data-client][data-no-approval] { grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px))); }
+.card[data-client] { grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 157px); }
+.card[data-client][data-no-approval] { grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px)); }
+/* Frozen first block (REG-430, the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the
+   scrolled columns pass underneath, and Title — the last frozen cell — draws the 1px edge at rest (REG-144) and the group's
+   rightward shadow only while the frame is scrolled. */
+.head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
+.colSel { left: 0; }
+.colTitle { left: 40px; clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
+.head .colSel, .head .colTitle { z-index: 3; }
+.row:hover .colSel, .row:hover .colTitle { background: var(--om-color-surface-bg); }
+.row[data-selected] .colSel, .row[data-selected] .colTitle { background: var(--om-color-primary-variant); }
+.frame[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
 .colClient { grid-column: 3; }
 .card[data-client] .colStatus { grid-column: 4; }
 .card[data-client] .colTotal { grid-column: 5; }
@@ -82,6 +95,7 @@
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
   font: var(--om-type-body-m);
@@ -126,14 +140,17 @@
 .dueBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* ---- Row hover actions (910:36644 / 910:36709 "Hover button" @1106,14): View + kebab, H g12, level-1 shadow, right 24. ----
-   Copied from tasks-table.module.css .actions/.float/.menuWrap; only `top` changes: 64 − 36 = 28 → 14 (the mock's y). */
+   Parked at the VISIBLE right edge the way the listing parks Edit + kebab (table.module.css .rowActions, REG-430): a zero-width
+   sticky item laid over the row's tracks, its content hanging to the left of it — so a scrolled row still shows them. */
 .actions {
-  position: absolute; right: var(--om-spacing-6); top: 14px;
-  display: flex; align-items: center; gap: var(--om-spacing-3);
+  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
+  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
+  width: 0; height: 0; overflow: visible;
   z-index: 4;
   opacity: 0; pointer-events: none;
   transition: opacity var(--motion-hover);
 }
+.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }
 .row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
 /* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
 .float {
@@ -149,16 +166,15 @@
    ≤1024 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
    `width: max-content` lets the tracks resolve to their floors; `min-width: 100%` keeps a wide card full. */
 @media (max-width: 1024px) {
-  /* The card stays the container's width and SCROLLS; the grid's own minmax() floors (which already sum
-     past a phone) push the tracks out into that scroll. `width: max-content` was wrong here — it grew the
-     card itself, so the sheet clipped it exactly as before. */
-  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* The frame stays the container's width and SCROLLS; the grid's own floors push the tracks out into that scroll. */
+  .frame { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
-   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise) — and they
+   sit at the row's END over the 150px band (REG-310), not parked over whatever column is under the visible edge. */
 @media (hover: none) {
-  .actions { opacity: 1; pointer-events: auto; }
+  .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }   /* the inner box carries the 24 inset */
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
@@ -193,10 +209,11 @@
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
-  .card { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
-  .card[data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
-  .card[data-client] { grid-template-columns: 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
-  .card[data-client][data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
+  /* The mock's own tracks (REG-430: nothing squeezes — the frame scrolls) plus the band. */
+  .card { grid-template-columns: 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px) 157px 150px; }
+  .card[data-no-approval] { grid-template-columns: 40px minmax(317px, 1fr) minmax(128px, max-content) repeat(5, 120px) 150px; }
+  .card[data-client] { grid-template-columns: 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 157px 150px; }
+  .card[data-client][data-no-approval] { grid-template-columns: 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 150px; }
 }
 
 /* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
@@ -209,11 +226,16 @@
    Declared after the ≤1024 blocks above, so the tablet scroller and ≥1025 are untouched. */
 @media (max-width: 767px) {
   .head { display: none; }
+  .frame { background: none; border: 0; border-radius: 0; overflow: visible; }
   .card, .card[data-no-approval] {
     display: flex; flex-direction: column; gap: var(--om-spacing-3);
     grid-template-columns: 1fr; overflow-x: visible;
     background: none; border: 0; box-shadow: none; border-radius: 0;
   }
+  /* The card layout places every cell itself: the frozen block and the parked actions give way. */
+  .head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: static; clip-path: none; box-shadow: none; background: none; }
+  .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; }   /* grid-area auto: an absolute child placed in a grid area is contained by that area (the title line); released, the card's own box contains it */
+  .actionsInner { position: static; transform: none; }
   .row {
     display: grid; grid-column: 1 / -1; height: auto;
     grid-template-columns: auto 1fr auto;
@@ -243,9 +265,10 @@
   .card[data-client] .colTotal { grid-column: 3; }
   /* A finger cannot hover, so the row's controls are always up, pinned to the card's top-right corner. */
   .actions { opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
+  .actions { position: absolute; }
   /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a
      `.menuWrap` and is the first `.float` of THAT, so a descendant selector hides both (the REG-346 lesson). */
-  .actions > .float:first-child { display: none; }
+  .actionsInner > .float:first-child { display: none; }
   /* (REG-389, canvas 2n / 3i) The card's kebab is a BARE glyph, as it is on the tasks list: the hover pill's
      white fill, its shadow and the outlined button's border all belong to a row that reveals its actions on
      hover, and a card that always shows them reads as a boxed button floating over the title. */

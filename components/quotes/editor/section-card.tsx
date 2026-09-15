@@ -1,6 +1,8 @@
 'use client'
 
-import type { PointerEvent, ReactNode } from 'react'
+import { useState, type PointerEvent, type ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { duration, ease } from '@/lib/motion'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import styles from './section-card.module.css'
@@ -10,6 +12,9 @@ import styles from './section-card.module.css'
  * (keyboard_arrow_up open, keyboard_arrow_down collapsed), the movable sections carry the drag handle the mock draws
  * before the title (drag_indicator 24 Light, on-surface-disabled), and each section's own controls sit in `actions`.
  * `onHandlePointerDown` starts the reorder drag (motion's drag controls, quote-editor.tsx) — absent, no handle is drawn.
+ * The body opens and closes as a 200 ms height animation (owner 2026-09-15: the sections' interaction "is not smooth … lot of
+ * UI jerks"): it is clipped only while it moves, so a table's floating Expand, the row kebabs and the frozen Total's shadow
+ * are free once it has settled; `prefers-reduced-motion` collapses the animation to a cut.
  */
 export function SectionCard({ id, title, open, onToggle, actions, onHandlePointerDown, children }: {
   id: string
@@ -21,6 +26,8 @@ export function SectionCard({ id, title, open, onToggle, actions, onHandlePointe
   children?: ReactNode
 }) {
   const bodyId = `${id}-body`
+  const reduced = useReducedMotion()
+  const [moving, setMoving] = useState(false)
   return (
     <section id={id} className={styles.card} data-open={open || undefined} aria-labelledby={`${id}-title`}>
       <div className={styles.top}>
@@ -39,7 +46,16 @@ export function SectionCard({ id, title, open, onToggle, actions, onHandlePointe
         </div>
         {actions ? <div className={styles.actions}>{actions}</div> : null}
       </div>
-      {open ? <div id={bodyId} className={styles.body}>{children}</div> : null}
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div key="body" id={bodyId} className={styles.body} style={{ overflow: moving ? 'hidden' : 'visible' }}
+                      initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                      transition={reduced ? { duration: 0 } : { height: { duration: duration.step, ease: ease.standard }, opacity: { duration: duration.toggle } }}
+                      onAnimationStart={() => setMoving(true)} onAnimationComplete={() => setMoving(false)}>
+            {children}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   )
 }

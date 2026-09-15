@@ -3,7 +3,16 @@
    1px rule inside (p12/16 + 20 + the rule), no column rules; Total row 44 on surface-bg. Columns: selection 40 · name 319 ·
    description flex · % 140 · amount 140 · due 140 (pr24). 48 + 4 × 48 + 44 = 284 (1271:37370). */
 .body { display: flex; flex-direction: column; gap: 20px; padding: var(--om-spacing-6); }
-.table { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: clip; }
+.table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: clip; }   /* a real border, outside the scrollport (REG-430) */
+/* Past its floor (REG-430 — a column the user widened) the table scrolls sideways; the handle + name freeze on the left and carry the row's fill. */
+.table[data-overflow] { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
+.head, .row, .totalRow { min-width: var(--pay-min, 0); }
+.cell.cSel, .cell.cName { position: sticky; z-index: 2; background: inherit; }   /* doubled class: `.cell { position: relative }` below is later in the cascade and, at one class, turned the sticky pair relative — `left: 40px` then shoved the name over the description (caught by the payments suite, REG-430) */
+.cell.cSel { left: 0; }
+.cell.cName { left: 40px; clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
+.head .cSel, .head .cName { z-index: 3; }
+.cell.cName[data-editing] { clip-path: none; }   /* the ✕ / ✓ box hangs below the cell (.confirm): the shadow's clip would cut it off and its clicks fell to the next row (REG-430) */
+.table[data-scrolled] .cName { box-shadow: var(--om-shadow-frozen-column); }
 .head, .row, .totalRow { display: grid; grid-template-columns: var(--pay-tracks, 40px 319px minmax(120px, 1fr) 140px 140px 140px); align-items: center; }   /* --pay-tracks: the user's dragged widths (REG-427) */
 .head { height: 48px; }
 .head .cell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
@@ -82,7 +91,7 @@
 
 /* ── Tablet (768–1024): the six columns tighten so the table fits the ~624px centre without scrolling sideways. */
 @media (max-width: 1024px) {
-  .head, .row, .totalRow { grid-template-columns: 36px 150px minmax(80px, 1fr) 90px 120px 120px; }
+  .head, .row, .totalRow { grid-template-columns: 36px 150px minmax(80px, 1fr) 90px 120px 120px; min-width: 0; }   /* the desktop floor (--pay-min, the mock's tracks) is released with the tracks themselves (REG-430) */
   .cell { padding: var(--om-spacing-3) var(--om-spacing-2); }
   .cSel { padding-left: var(--om-spacing-2); }
   .cDue { padding-right: var(--om-spacing-6); }
@@ -94,6 +103,8 @@
 @media (max-width: 767px) {
   .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .head { display: none; }
+  .head, .row, .totalRow { min-width: 0; }
+  .cell.cSel, .cell.cName { position: static; clip-path: none; box-shadow: none; }   /* the doubled class above needs the same weight to be released */
   .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel desc amount' 'sel desc due'; align-items: start; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) 40px var(--om-spacing-3) 0; }
   .row .cell { padding: 0; }
   .cSel { grid-area: sel; padding-left: var(--om-spacing-2); align-self: center; }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, typ
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
+import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -77,6 +78,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const phone = useMediaQuery(MOBILE)
   const colWidths = useColumnWidths(PAY_TABLE)
   const tracks = gridTracks(PAY_TRACKS, colWidths)
+  // The rows' floor (REG-430): the mock's 40 + 319 + 120 + 140 × 3, each column at its dragged width instead — the table scrolls sideways past it.
+  const payFloor = 40 + (colWidths.name ?? 319) + (colWidths.desc ?? 120) + (colWidths.pct ?? 140) + (colWidths.amount ?? 140) + (colWidths.due ?? 140)
+  const [payFrame, payOverflowing] = useOverflowX()
 
   const [rows, setRows] = useState<QuotePayment[]>(seed.rows)
   const rowsRef = useRef(rows); useEffect(() => { rowsRef.current = rows })
@@ -269,7 +273,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
             ))}
           </div>
         ) : (
-          <div className={styles.table} role="table" aria-label="Payment schedule" data-cols={PAY_TABLE} style={tracks ? ({ '--pay-tracks': tracks } as React.CSSProperties) : undefined}>
+          <div ref={payFrame} className={styles.table} role="table" aria-label="Payment schedule" data-cols={PAY_TABLE} data-overflow={payOverflowing || undefined}
+               style={{ ...(tracks ? { '--pay-tracks': tracks } : {}), '--pay-min': `${payFloor}px` } as React.CSSProperties}
+               onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
             <div className={styles.head} role="row">
               <div role="columnheader" className={`${styles.cell} ${styles.cSel}`} />
               {PAY_HEADS.map((h) => (

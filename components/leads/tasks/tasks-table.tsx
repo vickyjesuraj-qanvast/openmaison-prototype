@@ -6,6 +6,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
+import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -113,8 +114,15 @@ export function TasksTable({
 
   const colWidths = useColumnWidths('lead-tasks')
   const colVars = flexVars(colWidths)   // REG-427: `--cw-<key>` per dragged column, read by tasks-table.module.css
+  /* The rows' floor (REG-430, the listing's inline min-width): the mock's 1244 = 56 + Title 422 + 160 + 160 + 137 + 118 + 191,
+     each column at its dragged width instead where the user changed it — the card scrolls sideways past that, never squeezes. */
+  const floor = 56 + (colWidths.title ?? 420) + (colWidths.assignees ?? 160) + (colWidths.creator ?? 160) + (colWidths.due ?? 137) + (colWidths.status ?? 118) + (colWidths.tags ?? 191)
+  const [frame, overflowing] = useOverflowX()
   return (
-    <div className={styles.card} role="table" aria-label="Tasks" data-cols="lead-tasks" style={colVars as React.CSSProperties | undefined}>
+    <div className={styles.card} role="table" aria-label="Tasks" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
+    <div ref={frame} className={styles.scroller} data-overflow={overflowing || undefined}
+         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
+    <div className={styles.table}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
@@ -167,6 +175,8 @@ export function TasksTable({
           onRowMenu={onRowMenu} onEdit={onEdit}
         />
       ))}
+    </div>
+    </div>
 
       {/* Bottom bar 902:26450 — Link text Primary leading icon add "Add Task". Sticks to the viewport bottom while
           the card runs past it; `data-floating` adds the lift only while it is actually docked. */}
@@ -444,6 +454,7 @@ function TaskRowView({
       {/* Row hover actions (frame 195 / 606:75167, REG-163): Edit + kebab, level-1 shadow, right 24. */}
       {renaming ? null : (
         <span className={styles.actions} data-open={menuOpen || undefined}>
+          <span className={styles.actionsInner}>
           <span className={styles.float}>
             {/* rowEdit / rowKebab: the 36px controls take a ≥40 touch target below 768 (REG-273) — a transparent
                 overlay, so the mock's pill is drawn exactly as it is on desktop. */}
@@ -464,6 +475,7 @@ function TaskRowView({
               <DropdownItem onSelect={pick('duplicate')}>Duplicate</DropdownItem>
               <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
             </Dropdown>
+          </span>
           </span>
         </span>
       )}

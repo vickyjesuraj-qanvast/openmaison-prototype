@@ -26,7 +26,7 @@ const COLS = [
   { key: 'total', label: 'Total Rows', width: 118 },
   { key: 'imported', label: 'Rows Imported', width: 142 },
   { key: 'errors', label: 'Error count', width: 396 },
-  { key: 'log', label: 'Error Log', width: 234 },
+  { key: 'log', label: 'Error Log', width: 232 },   // the mock's 234 less the card's 2px of border (REG-430)
 ] as const
 
 function TemplateButton() {
@@ -147,7 +147,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                   freezes — data-scrolled turns its shadow on only while the box is scrolled sideways. */}
               <div className={styles.tableWrap}
                    onScroll={(e) => { e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0) }}>
-                <div className={styles.table} role="table" aria-label="Import history">
+                <div className={styles.table} role="table" aria-label="Import history" style={{ '--imports-min': `${COLS.reduce((w, c) => w + (importWidths[c.key] ?? c.width), 0)}px` } as CSSProperties}>
                   <div className={styles.headRow} role="row">
                     {COLS.map((c) => (
                       <div key={c.key} className={styles.hCell} style={colStyle(c.key, c.width)} role="columnheader">
@@ -173,7 +173,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                       <div className={styles.cell} style={colStyle('total', 118)} role="cell"><span>{b.totalRows}</span></div>
                       <div className={styles.cell} style={colStyle('imported', 142)} role="cell"><span>{b.importedRows}</span></div>
                       <div className={styles.cell} style={colStyle('errors', 396)} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
-                      <div className={styles.cell} style={colStyle('log', 234)} role="cell">
+                      <div className={styles.cell} style={colStyle('log', 232)} role="cell">
                         {b.skippedRows > 0 ? (
                           <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download Skipped Records</a>
                         ) : <span style={{ color: 'var(--om-color-on-surface-secondary)' }}>—</span>}

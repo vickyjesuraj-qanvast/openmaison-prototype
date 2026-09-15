@@ -2,16 +2,31 @@
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt / 02-rows-menus-bulk.txt.
  * Container: fill #fff, 1px surface-variant, r8, hugs rows. Head 56 · rows 48 · bottom bar 53.
  * Columns 56 · 582 · 160 · 137 · 118 · 191 (= 1244): Title fills, the others are fixed.
- * The card deliberately does NOT clip (no overflow hidden): the row kebab menu (200×190) must be able to
- * hang below a short table. Row fills only touch the middle rows, so the rounded corners stay clean.
+ * The card deliberately does NOT clip while its rows fit (REG-430): the row kebab menu (200×190) must be able to hang below a
+ * short table; once the columns run past it — a narrower page, or a column the user widened — the rows scroll sideways inside
+ * the card the way the leads listing does, Selection + Title frozen on the left and the row's actions parked at the visible
+ * right edge. Columns never squeeze below the mock. Row fills only touch the middle rows, so the rounded corners stay clean.
  */
 .card {
   display: flex; flex-direction: column;
   width: 100%;
   background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (902:26387) */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border (the listing's card): outside the scroller, so the frozen cells never cover it (REG-430) */
   border-radius: var(--om-radius-2);
 }
+.scroller { width: 100%; }
+.scroller[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
+.table { display: flex; flex-direction: column; width: 100%; min-width: var(--table-min, 1242px); }   /* --table-min: the columns' floor (tasks-table.tsx) */
+/* Frozen first block (the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the scrolled
+   columns pass underneath, and Title — the last frozen cell, which already draws its 1px edge (REG-144) — casts the group's
+   rightward shadow only while the card is scrolled. */
+.head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
+.head .colSel, .head .colTitle { z-index: 3; }
+.colSel { left: 0; }
+.colTitle { left: 56px; clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
+.row:hover .colSel, .row:hover .colTitle { background: var(--om-color-surface-bg); }
+.row[data-selected] .colSel, .row[data-selected] .colTitle { background: var(--om-color-primary-variant); }
+.scroller[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }
 
 /* ---- Head row 1244×56 ---- */
 .head { display: flex; height: 56px; }
@@ -35,7 +50,7 @@
 /* ---- Columns (flex basis = mock width) ---- */
 .colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
 .head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
-.colTitle { flex: var(--cw-title, 1 1 582px); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.colTitle { flex: var(--cw-title, 1 0 420px); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* Title fills from its 422 floor (1244 − the 822 of fixed columns), never shrinks (REG-430); REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
 .colMember { flex: var(--cw-assignees, 0 0 160px); }
 .colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
 .colDue { flex: var(--cw-due, 0 0 137px); }
@@ -46,8 +61,9 @@
 .row { display: flex; height: 48px; position: relative; transition: background-color var(--motion-hover); }
 .row:hover { background: var(--om-color-surface-bg); }                    /* frame 195: hover fill #f2f2f2 */
 .row[data-selected] { background: var(--om-color-primary-variant); }     /* frame 192: selected fill #eee5ff */
-/* Unseen task (Type=RW-New): 4px primary band at the row's left edge — the listing's unseen band (REG-131 applied to tasks). */
-.row[data-unseen]::before {
+/* Unseen task (Type=RW-New): 4px primary band at the row's left edge — the listing's unseen band (REG-131 applied to tasks);
+   drawn inside the frozen Selection cell so it rides with it (REG-430). */
+.row[data-unseen] .colSel::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--om-color-primary-default); z-index: 1;
 }
@@ -199,12 +215,13 @@ button.doneFilled[data-variant='primary']:hover {
 
 /* ---- Row hover actions (frame 195 → 606:75167, REG-163): Edit + kebab at 1113,6 → right 24, top 6; H g12; level-1 shadow. ---- */
 .actions {
-  position: absolute; right: var(--om-spacing-6); top: 6px;
-  display: flex; align-items: center; gap: var(--om-spacing-3);
+  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
+  width: 0; overflow: visible; align-self: center; flex-shrink: 0;
   z-index: 4;
   opacity: 0; pointer-events: none;
   transition: opacity var(--motion-hover);
 }
+.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
 .row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
 /* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
 .float {
@@ -239,18 +256,14 @@ button.doneFilled[data-variant='primary']:hover {
    overflow-x visible, so columns were unreachable). Rows size to their content and still fill a wide
    card, so desktop ≥1025 is untouched. */
 @media (max-width: 1024px) {
-  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  /* (REG-311) One width for every row: the mock's 1244 card, so the columns sit exactly where the desktop puts them
-     (title 422 beside the 822 of fixed columns). `width: max-content` (REG-269) let each row take its own content
-     width — long titles made their rows wider than their neighbours and the columns drifted apart at the end of
-     the sideways scroll. */
-  .head, .row { min-width: 1244px; }
+  .scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
-   Where the pointer cannot hover, they are simply always visible (the row keeps its resting look otherwise). */
+   Where the pointer cannot hover, they are simply always visible — at the row's END over the 150px band (REG-310). */
 @media (hover: none) {
-  .actions { opacity: 1; pointer-events: auto; }
+  .actions { opacity: 1; pointer-events: auto; position: absolute; right: var(--om-spacing-6); top: 6px; width: auto; align-self: auto; }
+  .actionsInner { position: static; transform: none; }
 }
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
@@ -320,7 +333,7 @@ button.doneFilled[data-variant='primary']:hover {
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
   .head::after, .row::after { content: ''; flex: 0 0 150px; }
-  .head, .row { min-width: calc(1244px + 150px); }   /* the band is part of the floor, so the title never absorbs it */
+  .table { min-width: calc(var(--table-min, 1242px) + 150px); }   /* the band is part of the floor, so the title never absorbs it */
 }
 
 /* ── ≤767: the table is a list (REG-346) ──────────────────────────────────────────────────────────────
@@ -331,10 +344,13 @@ button.doneFilled[data-variant='primary']:hover {
    actions become permanent, because a finger has no hover and could never raise them. */
 @media (max-width: 767px) {
   .head { display: none; }
+  .card { border: 0; border-radius: 0; background: none; }
   /* The separator belongs to the row now: on the desktop table every cell draws it, which turned each wrapped
      row into two ruled bands. */
   /* The list wraps to the screen, so the desktop column floor that made the card scroll sideways is dropped. */
-  .head, .row { min-width: 0; }
+  .table { min-width: 0; }
+  .scroller, .scroller[data-overflow] { overflow: visible; }
+  .colTitle, .head .colTitle, .row .colTitle { position: static; clip-path: none; box-shadow: none; background: none; }
   .row { height: auto; min-height: 64px; flex-wrap: wrap; align-items: center; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .cell { padding: 0; border-top: 0; }
   .colCreator, .colStatus, .colTags { display: none; }
@@ -355,8 +371,9 @@ button.doneFilled[data-variant='primary']:hover {
   .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 88px; }   /* clears the pinned checkbox and the ring (58 + 24 + 6) */
   .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
   .cell.colMember { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
-  .actions { opacity: 1; pointer-events: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
-  .actions > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */
+  .actions { opacity: 1; pointer-events: auto; position: absolute; width: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
+  .actionsInner { position: static; transform: none; }
+  .actionsInner > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */
   .float { box-shadow: none; background: transparent; }
   /* A list row's kebab is a bare glyph, not an outlined button. */
   .actions button[class*='icon-button'] { border-color: transparent; }

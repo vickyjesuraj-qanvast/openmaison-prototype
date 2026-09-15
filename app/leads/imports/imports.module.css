@@ -41,14 +41,22 @@
 .toolRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
 .tableWrap {
-  /* The mock's rule is an inside stroke: the columns sum to the wrapper's full 1316 at 1440. As a border it took 2px
-     off the content box and the table scrolled sideways by exactly that (REG-323) — an inset outline draws the same
-     line without taking width. */
-  outline: var(--om-border-1) solid var(--om-color-surface-variant); outline-offset: calc(-1 * var(--om-border-1));
+  /* The mock's rule is an inside stroke. It was an inset outline for a while (REG-323: a border took 2px off the content box
+     and the 1316 columns scrolled by exactly that), but the frozen Date column paints over an outline; a real border sits
+     outside the scrollport, and the last column gives up the border's 2px instead (REG-430, the listing's card). */
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);
   overflow-x: auto;
 }
-.table { display: flex; flex-direction: column; width: 100%; min-width: 1316px; }   /* 141+285+118+142+396+234 (779:20147); columns grow pro rata beyond that */
+.table { display: flex; flex-direction: column; width: 100%; min-width: var(--imports-min, 1314px); }   /* 141+285+118+142+396+232 (779:20147 less the border); columns grow pro rata beyond that; a dragged column raises the floor (REG-430) */
+/* Date frozen at every width (REG-430; ≤1024 since REG-269): the frozen cell paints the body's white behind itself. */
+.headRow > .hCell:first-child, .row > .cell:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--om-color-surface-default);
+  clip-path: inset(0 -6px 0 0);
+  transition: box-shadow var(--motion-toggle);
+}
+.tableWrap[data-scrolled] .headRow > .hCell:first-child, .tableWrap[data-scrolled] .row > .cell:first-child { box-shadow: var(--om-shadow-frozen-column); }
 .headRow, .row { display: flex; align-items: stretch; }
 .headRow { height: 56px; }
 .row { height: 44px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
@@ -81,20 +89,8 @@
    content padding comes down 24 → 16. */
 @media (max-width: 1024px) {
   .tableWrap { -webkit-overflow-scrolling: touch; }
-  /* Date freezes so a row stays identifiable while the other five columns scroll past it. The rows have no
-     background of their own, so the frozen cell paints the body's white behind itself. */
-  .headRow > .hCell:first-child,
-  .row > .cell:first-child {
-    position: sticky; left: 0; z-index: 2;
-    background: var(--om-color-surface-default);
-    border-right: var(--om-border-1) solid var(--om-color-surface-variant);
-    clip-path: inset(0 -6px 0 0);   /* the shadow only falls to the right */
-    transition: box-shadow var(--motion-toggle);
-  }
-  .tableWrap[data-scrolled] .headRow > .hCell:first-child,
-  .tableWrap[data-scrolled] .row > .cell:first-child {
-    box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.1), 1px 0 2px 0 rgba(0, 0, 0, 0.06);
-  }
+  /* The frozen Date cell draws its 1px edge at rest on a tablet, where the table always scrolls. */
+  .headRow > .hCell:first-child, .row > .cell:first-child { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
   /* the empty-search line starts at the box's left edge instead of the centre of the 1316px track */
   .noMatch { text-align: left; }
 }

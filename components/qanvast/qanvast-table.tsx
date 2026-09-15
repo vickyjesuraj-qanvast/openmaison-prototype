@@ -12,7 +12,7 @@ import styles from './qanvast-leads.module.css'
 
 /* Column order + head copy (931:49232, spec 02) — the head style uppercases them, as the Leads listing head. Every head carries unfold_more 16 (inert). */
 /** The card's mocked tracks (qanvast-leads.module.css) — the user's dragged widths replace them (REG-427). */
-const TRACKS = [{ key: 'name', track: 'minmax(240px, 240fr)' }, { key: 'credits', track: 'minmax(132px, 132fr)' }, { key: 'budget', track: 'minmax(138px, 138fr)' }, { key: 'type', track: 'minmax(158px, 158fr)' }, { key: 'created', track: 'minmax(115px, 115fr)' }, { key: 'status', track: '369px' }]
+const TRACKS = [{ key: 'name', track: 'minmax(238px, 240fr)' }, { key: 'credits', track: 'minmax(132px, 132fr)' }, { key: 'budget', track: 'minmax(138px, 138fr)' }, { key: 'type', track: 'minmax(158px, 158fr)' }, { key: 'created', track: 'minmax(115px, 115fr)' }, { key: 'status', track: '369px' }]
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'name', label: 'Name', col: styles.colName },
   { key: 'credits', label: 'Credits', col: styles.colCredits },
@@ -99,8 +99,10 @@ export function QanvastTable({ rows, onView, onCopyPhone }: { rows: QanvastLeadR
               reachable with a mouse (user 2026-09-05). A row with no return raises no hover bar at all now. */}
           {row.ret ? (
             <span className={styles.actions}>
+              <span className={styles.actionsInner}>
               <span className={styles.float}>
                 <Button appearance="outlined" onPress={comingSoon} aria-label={`Lead return updates for ${row.name}`}>Lead Return Updates</Button>
+              </span>
               </span>
             </span>
           ) : null}

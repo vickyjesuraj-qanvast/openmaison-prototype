@@ -7,6 +7,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
+import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -39,7 +40,7 @@ export type QuotesTableProps = {
 /* Column order + head copy — exactly as the mock types it (910:36323, spec 01). Every head carries unfold_more 16.
    Approval Date is part of the approval lifecycle, so it is dropped with it (see `showApproval` below). */
 /** The card's mocked tracks by head key (quotes-table.module.css) — the user's dragged widths replace them (REG-427). */
-const TRACK: Record<string, string> = { sel: '40px', title: 'minmax(120px, 1fr)', client: 'minmax(140px, 180px)', status: 'minmax(128px, max-content)', total: 'minmax(96px, 120px)', due: 'minmax(96px, 120px)', created: 'minmax(96px, 120px)', sent: 'minmax(96px, 120px)', updated: 'minmax(96px, 120px)', approval: 'minmax(112px, 157px)' }
+const TRACK: Record<string, string> = { sel: '40px', title: 'minmax(317px, 1fr)', client: '180px', status: 'minmax(128px, max-content)', total: '120px', due: '120px', created: '120px', sent: '120px', updated: '120px', approval: '157px' }
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle },
   { key: 'status', label: 'Status', col: styles.colStatus },
@@ -77,7 +78,8 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   const withClient = clientOf ? [HEADS[0]!, { key: 'client', label: 'Client', col: styles.colClient }, ...HEADS.slice(1)] : HEADS
   const heads = showApproval ? withClient : withClient.filter((h) => h.key !== 'approval')
   const colWidths = useColumnWidths('lead-quotes')
-  const tracks = gridTracks([{ key: 'sel', track: TRACK.sel! }, ...heads.map((h) => ({ key: h.key, track: TRACK[h.key] ?? 'minmax(96px, 120px)' }))], colWidths)
+  const tracks = gridTracks([{ key: 'sel', track: TRACK.sel! }, ...heads.map((h) => ({ key: h.key, track: TRACK[h.key] ?? '120px' }))], colWidths)
+  const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   const allSelected = quotes.length > 0 && quotes.every((q) => selected.has(q.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(quotes.map((q) => q.id)))
@@ -88,6 +90,8 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   }
 
   return (
+    <div ref={frame} className={styles.frame} data-overflow={overflowing || undefined}
+         onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
     <div className={styles.card} role="table" aria-label="Quotes" data-no-approval={showApproval ? undefined : ''} data-client={clientOf ? '' : undefined}
          data-cols="lead-quotes" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
@@ -131,6 +135,7 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
           client={clientOf ? clientOf(quote) : null}
         />
       ))}
+    </div>
     </div>
   )
 }
@@ -254,6 +259,7 @@ function QuoteRowView({
 
       {/* Row hover actions (910:36644 / 910:36709 "Hover button"): View + kebab, level-1 shadow, right 24 — tasks pattern with "View". */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
+        <span className={styles.actionsInner}>
         <span className={styles.float}>
           <Button variant="primary" appearance="outlined" onPress={() => onView(quote)}>View</Button>
         </span>
@@ -273,6 +279,7 @@ function QuoteRowView({
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
             <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
           </Dropdown>
+        </span>
         </span>
       </span>
     </div>

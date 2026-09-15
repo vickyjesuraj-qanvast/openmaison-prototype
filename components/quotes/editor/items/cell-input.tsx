@@ -38,7 +38,7 @@ export function TextCell({ value, placeholder, onCommit, kind = 'text', ariaLabe
   return (
     /* A name is as wide as its text so the group's cards glyph / a child's eye follow it (1260:31357 · 31395): `field-sizing:
        content` where the browser has it, the `size` attribute as the fallback (the placeholder's length when empty). */
-    <input ref={inputRef} className={styles.input} data-name={kind === 'name' || undefined} data-desc={kind === 'desc' || undefined}
+    <input ref={inputRef} className={styles.input} data-edit="" data-name={kind === 'name' || undefined} data-desc={kind === 'desc' || undefined}
            size={kind === 'name' ? Math.max(1, (shown || placeholder || '').length) : undefined}
            value={shown} placeholder={placeholder} aria-label={ariaLabel} autoFocus={autoFocus}
            onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={onKey} />
@@ -62,7 +62,7 @@ export function MoneyCell({ minor, onCommit, ariaLabel, fit }: { minor: number; 
   }
   const shown = draft ?? money2(minor)
   return (
-    <input className={styles.input} data-money data-fit={fit || undefined} size={fit ? shown.length + 2 : undefined} inputMode="decimal" aria-label={ariaLabel}
+    <input className={styles.input} data-edit="" data-money data-fit={fit || undefined} size={fit ? shown.length + 2 : undefined} inputMode="decimal" aria-label={ariaLabel}
            value={shown}
            onFocus={() => setDraft((minor / 100).toFixed(2))}
            onChange={(e) => setDraft(e.target.value.replace(/[^0-9.,]/g, ''))}
@@ -86,7 +86,7 @@ export function NumberCell({ value, onCommit, ariaLabel, suffix = '', max = 1_00
     if (e.key === 'Escape') cancel(e)
   }
   return (
-    <input className={styles.input} data-money inputMode="decimal" aria-label={ariaLabel}
+    <input className={styles.input} data-edit="" data-money inputMode="decimal" aria-label={ariaLabel}
            value={draft ?? `${shown}${suffix}`}
            onFocus={() => setDraft(shown)}
            onChange={(e) => setDraft(e.target.value.replace(/[^0-9.]/g, ''))}
