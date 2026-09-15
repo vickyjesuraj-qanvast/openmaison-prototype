@@ -2,7 +2,7 @@ import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: 
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { settings } from '@/lib/db/schema'
-import { DEFAULT_QUOTE_APPROVAL, DEFAULT_STAGE_MOVEMENT, parseQuoteApproval, parseStageMovement, type QuoteApproval, type StageMovement } from './types'
+import { DEFAULT_QUOTE_APPROVAL, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, parseQuoteApproval, parseStageMovement, parseStudio, type QuoteApproval, type StageMovement, type Studio } from './types'
 
 export const STAGE_MOVEMENT_KEY = 'stage_movement'
 
@@ -20,4 +20,13 @@ export async function fetchQuoteApproval(): Promise<QuoteApproval> {
   const [row] = await db.select().from(settings).where(eq(settings.key, QUOTE_APPROVAL_KEY)).limit(1)
   if (!row) return DEFAULT_QUOTE_APPROVAL
   try { return parseQuoteApproval(JSON.parse(row.value)) } catch { return DEFAULT_QUOTE_APPROVAL }
+}
+
+export const STUDIO_KEY = 'studio'
+
+/** The studio record (REG-415): name + GST registration; the row is seeded by scripts/repair-demo-data.ts R23. */
+export async function fetchStudio(): Promise<Studio> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, STUDIO_KEY)).limit(1)
+  if (!row) return DEFAULT_STUDIO
+  try { return parseStudio(JSON.parse(row.value)) } catch { return DEFAULT_STUDIO }
 }

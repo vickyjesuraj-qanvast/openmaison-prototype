@@ -1,6 +1,6 @@
 'use client'
 
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Icon } from './icon'
 import styles from './icon-button.module.css'
 
@@ -13,6 +13,7 @@ export function IconButton({
   iconSize,
   iconWeight,
   iconFamily,
+  glyph,
   className,
   type = 'button',
   ...rest
@@ -28,6 +29,8 @@ export function IconButton({
   iconSize?: number
   iconWeight?: 300 | 400
   iconFamily?: 'rounded' | 'outlined'
+  /** Drawn in place of the Material glyph — the Maison AI mark on the folded Items toolbar (REG-417); `icon` still names it. */
+  glyph?: ReactNode
 }) {
   return (
     <button
@@ -39,7 +42,7 @@ export function IconButton({
       data-selected={selected || undefined}
       className={className ? `${styles.btn} ${className}` : styles.btn}
     >
-      <Icon name={icon} size={iconSize ?? 20} weight={iconWeight} family={iconFamily} />
+      {glyph ?? <Icon name={icon} size={iconSize ?? 20} weight={iconWeight} family={iconFamily} />}
     </button>
   )
 }

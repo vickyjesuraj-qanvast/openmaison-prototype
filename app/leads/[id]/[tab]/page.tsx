@@ -65,7 +65,7 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
   if (tab === 'quotes') {
     // Quotes (910-36240): the same wide frame; the tab owns its table, menus, filters and dialogs.
     const { detail, data } = await loadFrame(id, fetchLeadQuotes)
-    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuotes leadId={id} data={data} approval={detail.quoteApproval} />} />
+    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuotes leadId={id} leadName={detail.lead.name} data={data} approval={detail.quoteApproval} />} />
   }
   if (tab === 'contracts') {
     // Contracts (931-38609): the same wide frame; the tab owns its table, menus, filters and dialogs.

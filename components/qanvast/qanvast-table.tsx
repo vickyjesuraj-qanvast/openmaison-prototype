@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ds'
+import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -10,6 +11,8 @@ import type { QanvastLeadRow } from '@/lib/leads/qanvast'
 import styles from './qanvast-leads.module.css'
 
 /* Column order + head copy (931:49232, spec 02) — the head style uppercases them, as the Leads listing head. Every head carries unfold_more 16 (inert). */
+/** The card's mocked tracks (qanvast-leads.module.css) — the user's dragged widths replace them (REG-427). */
+const TRACKS = [{ key: 'name', track: 'minmax(240px, 240fr)' }, { key: 'credits', track: 'minmax(132px, 132fr)' }, { key: 'budget', track: 'minmax(138px, 138fr)' }, { key: 'type', track: 'minmax(158px, 158fr)' }, { key: 'created', track: 'minmax(115px, 115fr)' }, { key: 'status', track: '369px' }]
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'name', label: 'Name', col: styles.colName },
   { key: 'credits', label: 'Credits', col: styles.colCredits },
@@ -28,10 +31,12 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
  */
 export function QanvastTable({ rows, onView, onCopyPhone }: { rows: QanvastLeadRow[]; onView: (id: string) => void; onCopyPhone: (row: QanvastLeadRow) => void }) {
   const comingSoon = useComingSoon()
+  const colWidths = useColumnWidths('qanvast-leads')
+  const tracks = gridTracks(TRACKS, colWidths)
   return (
     /* data-scrolled drives the frozen Name column's shadow ≤1024 (REG-269) — the listing's own handler
        (components/leads/table.tsx .scroller); inert at desktop, where the card never scrolls. */
-    <div className={styles.card} role="table" aria-label="Qanvast leads" data-testid="qanvast-leads"
+    <div className={styles.card} role="table" aria-label="Qanvast leads" data-testid="qanvast-leads" data-cols="qanvast-leads" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div className={styles.head} role="row">
         {HEADS.map((h, i) => (
@@ -40,6 +45,7 @@ export function QanvastTable({ rows, onView, onCopyPhone }: { rows: QanvastLeadR
               <span className={styles.hLabel}>{h.label}</span>
               <Icon name="unfold_more" size={16} />
             </button>
+            <ColumnResizer table="qanvast-leads" column={h.key} label={h.label} min={h.key === 'name' ? 160 : 72} />
             {i === 0 ? (
               /* Name head: tune 16 = Customise view (the listing's components/leads/table.tsx head control) — coming soon here. */
               <span className={styles.hTools}>

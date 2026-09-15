@@ -10,8 +10,6 @@
 /* Menu anchors (New Quote button · header kebab) — the Dropdown positions itself against these. */
 .menuWrap { position: relative; display: inline-flex; }
 /* Chevron points up while the menu is open — every menu trigger does this (listing toolbar rule, user 2026-08-28). */
-.chev { display: inline-flex; transition: transform var(--motion-toggle); }
-.chev[data-open] { transform: rotate(180deg); }
 
 /* Search Bar 36 Outlined (910:36319) — 280 wide in the mock; the DS component is fluid so the width is set here. */
 .search { width: 280px; }

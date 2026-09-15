@@ -4,7 +4,8 @@
  * listing bar's (bottom 32 + the review-banner dock) — the specs only say "floating bottom-centre".
  */
 .bar {
-  position: fixed; left: 50%; bottom: calc(32px + var(--bottom-dock, 0px)); z-index: 80; transition: bottom var(--motion-toggle);
+  position: fixed; left: calc(50% + var(--bulk-bar-shift, 0px)); bottom: calc(32px + var(--bottom-dock, 0px)); z-index: 80; transition: bottom var(--motion-toggle);
+  /* --bulk-bar-shift: a host whose content column is not the viewport's centre (the quote editor beside its Create strip) sets it. */
   display: flex; align-items: center; gap: var(--om-spacing-6);
   height: 50px;
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-3);

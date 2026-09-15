@@ -21,9 +21,11 @@ export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
  */
 export function Dialog({
   open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
+  eyebrow, leading, headRule = true, height,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
-  width?: number; children: ReactNode; footer: ReactNode
+  /** A footer is optional: a modal drawn without one (the templates library, 1238:33258) ends on its body. */
+  width?: number; children: ReactNode; footer?: ReactNode
   /** compact = delete-alert shell (779:24663); standard = 56px heading with divider, h3 title, 24px body (821:23969);
    *  form = one-field dialog (784:113420): 72px heading (24 padding, no divider), 12/24 body, 84px footer;
    *  modal = the modal header standard (779:26016 — Notes' Auto Fill 931:45344 / Add tasks 931:45360): 64px heading
@@ -34,6 +36,14 @@ export function Dialog({
   /** (REG-376) A confirmation, not a form. It borrows the `form` / `modal` chrome for its 72/84 shell but stays a
    *  CENTRED CARD at ≤767 — the canvas draws every alert that way (2e Delete Task) and REG-353 says so. */
   alert?: boolean
+  /** A 12/400 line ABOVE the title (the New Template head's "Terms and Conditions Templates /" crumb, 1238:33173). */
+  eyebrow?: ReactNode
+  /** A control before the title block (the New Template head's arrow_back). */
+  leading?: ReactNode
+  /** `modal` heads draw the standard's bottom rule; the templates modals (1238:33084 · 33173) draw none. */
+  headRule?: boolean
+  /** A fixed panel height (the templates modal's 600); the body scrolls inside it. Viewport-capped like every dialog. */
+  height?: number
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
@@ -49,13 +59,15 @@ export function Dialog({
       {open ? (
         <motion.div className={styles.overlay} data-nested={nested || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div ref={panel} className={styles.dialog} style={{ width }} variants={asSheet ? bottomSheet : modalPanel} data-size={size}
+          <motion.div ref={panel} className={styles.dialog} style={{ width, height }} variants={asSheet ? bottomSheet : modalPanel} data-size={size}
                       initial="initial" animate="animate" exit="exit"
-                      data-alert={alert || undefined}
+                      data-alert={alert || undefined} data-norule={headRule ? undefined : ''}
                       role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
             {asSheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.head}>
+              {leading}
               <div className={styles.headText}>
+                {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
                 <span className={styles.title}>{title}</span>
                 {subtitle}
               </div>
@@ -64,7 +76,7 @@ export function Dialog({
               </Tooltip>
             </div>
             <div ref={scrollRef} className={styles.body}>{children}</div>
-            <div className={styles.foot} data-shadow={bodyScrolls || undefined}>{footer}</div>
+            {footer !== undefined ? <div className={styles.foot} data-shadow={bodyScrolls || undefined}>{footer}</div> : null}
           </motion.div>
         </motion.div>
       ) : null}

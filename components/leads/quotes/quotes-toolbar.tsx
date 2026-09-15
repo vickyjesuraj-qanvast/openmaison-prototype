@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
@@ -13,8 +12,10 @@ import styles from './quotes-toolbar.module.css'
 export type QuotesToolbarProps = {
   query: string
   onQuery: (q: string) => void
-  /** New Quote menu (910:36664): From Blank · From Template · Import from File · Create with AI. */
-  onNew: (kind: 'blank' | 'template' | 'import' | 'ai') => void
+  /** The tab's box reads "Search" (910:36319); the studio list names what it matches (REG-422). */
+  searchPlaceholder?: string
+  /** Create Quote (owner 2026-09-11, REG-405): one button, no menu — it opens the Create Quote modal, then the editor. */
+  onCreate: () => void
   onFilter: () => void
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
@@ -24,12 +25,13 @@ export type QuotesToolbarProps = {
 
 /**
  * Lead Details › Quotes — toolbar row (910:36314 "Section items", spec design-source/context/lead-quotes/01-listing-table.txt):
- * "All Quotes" · New Quote (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
+ * "All Quotes" · Create Quote (primary outlined; was "New Quote ▾" with a four-item menu — the quote editor's Create
+ * Quote modal now holds those ways to start, owner 2026-09-11, REG-405) · Search 280 · Filters · kebab.
  * Copied from components/leads/tasks/tasks-toolbar.tsx — same geometry, the quotes' copy and menus.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function QuotesToolbar({ query, onQuery, onNew, onFilter, filterCount, onMenu }: QuotesToolbarProps) {
-  const [menu, setMenu] = useState<'new' | 'more' | null>(null)
+export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, filterCount, onMenu }: QuotesToolbarProps) {
+  const [menu, setMenu] = useState<'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
 
@@ -37,33 +39,15 @@ export function QuotesToolbar({ query, onQuery, onNew, onFilter, filterCount, on
     <div className={styles.bar}>
       <h2 className={styles.title}>All Quotes</h2>
       <div className={styles.actions}>
-        <span className={styles.menuWrap}>
-          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
-              the menu, its title and every action behind it are the same. */}
-          {sheet ? (
-            <Tooltip label="New Quote">
-              <IconButton icon="add" label="New Quote" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'}
-                          onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
-            </Tooltip>
-          ) : (
-            <Button
-              variant="primary" appearance="outlined"
-              iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'}
-              onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
-            >
-              New Quote
-            </Button>
-          )}
-          <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New Quote">
-            <DropdownItem onSelect={pick(() => onNew('blank'))}>From Blank</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('template'))}>From Template</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('import'))}>Import from File</DropdownItem>
-            <DropdownItem onSelect={pick(() => onNew('ai'))}>Create with AI</DropdownItem>
-          </Dropdown>
-        </span>
-        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, number, status…" label="Search quotes" />
+        {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon. */}
+        {sheet ? (
+          <Tooltip label="Create Quote">
+            <IconButton icon="add" label="Create Quote" variant="primary" onClick={onCreate} />
+          </Tooltip>
+        ) : (
+          <Button variant="primary" appearance="outlined" onPress={onCreate}>Create Quote</Button>
+        )}
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder} label="Search quotes" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters">
             <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />

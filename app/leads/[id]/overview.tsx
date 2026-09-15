@@ -307,7 +307,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         onOpenTab={() => goTab('tasks')}
                       />
                     </div>
-                    <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={comingSoon} /></div>
+                    <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={onNewQuote} />   {/* both land in the Create Quote modal (REG-412) */}</div>
                     <div data-card="questionnaire"><QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} /></div>
                   </div>
                   <div className={styles.column}>

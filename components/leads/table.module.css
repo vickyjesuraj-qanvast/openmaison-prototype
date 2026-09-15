@@ -15,6 +15,7 @@
 
 .headRow { display: flex; height: 56px; align-items: center; position: sticky; top: 0; z-index: 3; background: var(--om-color-surface-default); }
 .hCell {
+  position: relative;   /* the column-resize handle on the head's right edge (REG-427); .pin's sticky (below) still wins for pinned heads */
   display: flex; align-items: center; gap: var(--om-spacing-1);
   height: 100%;
   padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);

@@ -1,0 +1,13 @@
+<svg width="23" height="23" viewBox="0 0 22.6274 22.6274" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Rectangle 26 (the 16px four-point star) turned 135°, as every mock instance draws it (1260:31162 / 1262:35630 / 1271:37381): the box is the turned star's own bounds (16·√2), so a host sizes the mark by that box. -->
+<g transform="rotate(135 11.3137 11.3137) translate(3.3137 3.3137)">
+<path id="Rectangle 26" d="M0.168867 2.1908C-0.487759 0.893961 0.893958 -0.487761 2.19079 0.168865L7.32036 2.76611C7.74763 2.98245 8.25237 2.98245 8.67964 2.76611L13.8092 0.168867C15.106 -0.487759 16.4878 0.893958 15.8311 2.19079L13.2339 7.32036C13.0175 7.74763 13.0175 8.25237 13.2339 8.67964L15.8311 13.8092C16.4878 15.106 15.106 16.4878 13.8092 15.8311L8.67964 13.2339C8.25237 13.0175 7.74763 13.0175 7.32036 13.2339L2.1908 15.8311C0.893961 16.4878 -0.487761 15.106 0.168865 13.8092L2.76611 8.67964C2.98245 8.25237 2.98245 7.74763 2.76611 7.32036L0.168867 2.1908Z" fill="url(#paint0_linear_0_25)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_25" x1="14.9229" y1="14.7665" x2="0.15416" y2="-0.00221593" gradientUnits="userSpaceOnUse">
+<stop stop-color="#AB2576"/>
+<stop offset="0.447178" stop-color="#DF4D2A"/>
+<stop offset="1" stop-color="#EE8E2B"/>
+</linearGradient>
+</defs>
+</svg>

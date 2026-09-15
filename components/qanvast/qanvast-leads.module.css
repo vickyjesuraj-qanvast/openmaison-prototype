@@ -64,9 +64,9 @@
      QanvastSkeleton), so the columns don't jump at the PageReveal hand-off. At 1152 every track resolves to its exact mocked
      px; narrower, each holds its px floor and the card scrolls sideways (the listing's rule, components/leads/table.module.css
      .scroller) rather than pushing the row's "View Lead" out of reach. */
-  grid-template-columns:
+  grid-template-columns: var(--tracks,
     minmax(240px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
-    minmax(158px, 158fr) minmax(115px, 115fr) 369px;
+    minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* --tracks: the user's dragged widths (REG-427) */
   width: 100%;
   /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
      sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
@@ -79,6 +79,7 @@
 
 /* ---- Head row ×56 ---- */
 .head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
+.hCell { position: relative; }   /* the column-resize handle (REG-427) */
 .hCell {
   display: flex; align-items: center; gap: var(--om-spacing-1);
   min-width: 0;

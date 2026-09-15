@@ -17,7 +17,8 @@ export function NameDialog({
   open, title, initial, onSave, onClose,
 }: {
   open: boolean
-  title: 'Create Folder' | 'Rename Folder' | 'Rename File'
+  /** Create Folder · Rename Folder · Rename File — and the quote editor's Add Category / Add Section / Rename Group (REG-415). */
+  title: string
   initial: string
   onSave: (name: string) => void
   onClose: () => void

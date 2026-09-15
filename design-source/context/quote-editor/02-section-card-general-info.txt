@@ -1,0 +1,20 @@
+SECTION CARD (every section: General 1271:39680, Items 1260:31209, …) 1320 wide
+  white, border 1px surface-variant, r8. 
+  section-top 69 tall (border-bottom 1px inside), padding 16 24, gap 12:
+    label group flex 1 gap 8: drag_indicator 24 Light on-surface-disabled #999 (absent on General Info and Activity)
+      + [title 16/700 on-surface-default + keyboard_arrow_up 20 Regular secondary, gap 4]  (arrow_down when collapsed)
+    actions group gap 12 (per section).
+  Collapsed = section-top only. Sections 24 apart.
+
+GENERAL INFO (1273:29296, the page's live frame, 311 tall — 1271:39680 was an older 383 frame; corrected 2026-09-15, REG-423) — no actions:
+  the "Draft ▾" pill lives in the page header (1271:41470).
+  Body = two 659 columns each padded 24 (fields 611, 48 between them), THREE rows 24 apart, fields 48 tall:
+    row 1: Quote Title ‖ Client · Property Type (293.5 each, 24 apart)
+    row 2: Project Ref # ‖ Site Address
+    row 3: Prepared by · Quote Valid Until ‖ NRIC · Customer ID
+  (the older reading below is kept for the field list; the row order above is the one built)
+  (DS TextField, floating label 12/400 secondary on white, value 14/400, border 1px #ccc r4):
+    left:  Quote Title (text) · Prepared by (select, expand_more 16) · Quote Valid Until (DateField, calendar_month 16) · Project Ref # (text)
+    right: Client (read-only, trailing open_in_new 16 → the lead) · Property Type (select) · Site Address (text) · [NRIC · Customer ID] pair gap 24
+  Values come from the lead (client, site address, property type) and the studio (prepared by = current member) — REG-403.
+  Empty fields show the label inside (NRIC, Customer ID).

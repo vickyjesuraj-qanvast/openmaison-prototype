@@ -5,6 +5,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import { Button, Checkbox, Tag } from '@/components/ds'
+import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -44,8 +45,9 @@ const SORTABLE: Record<ColumnKey, boolean> = {
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null
 const EMPTY_SELECTION = new Set<string>()
 
-/** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata. */
-const colStyle = (key: ColumnKey) => ({ flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
+/** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata — unless the
+    user dragged the column (REG-427), which fixes it at that width. */
+const colStyle = (key: ColumnKey, dragged: number | undefined) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
 
 function sortValue(row: LeadRow, key: ColumnKey): string | number {
   switch (key) {
@@ -125,7 +127,9 @@ export function LeadsTable({
   }
 
   const visible = columns.filter((c) => c.visible)
-  const minWidth = visible.reduce((w, c) => w + WIDTHS[c.key], 0)
+  const dragged = useColumnWidths('leads')   // REG-427
+  const widthOf = (key: ColumnKey) => dragged[key] ?? WIDTHS[key]
+  const minWidth = visible.reduce((w, c) => w + widthOf(c.key), 0)
   /* (REG-310) On a touch tablet the hover actions are an in-flow last cell (table.module.css, `hover: none`), 134 wide:
      the table's floor grows by that band so every row — and the head's spacer — has room for it, and the column scale
      below is still measured off the columns alone. Server snapshot = no band, as the mock. */
@@ -133,7 +137,7 @@ export function LeadsTable({
   // Pinned columns stack from the left; only the LAST one carries the 2px divider + shadow (user rule 2026-08-27).
   const pinOffset: Partial<Record<ColumnKey, number>> = {}
   let pinAcc = 0
-  for (const c of visible) if (c.pinned) { pinOffset[c.key] = pinAcc; pinAcc += WIDTHS[c.key] }
+  for (const c of visible) if (c.pinned) { pinOffset[c.key] = pinAcc; pinAcc += widthOf(c.key) }
   const pinEdge = [...visible].reverse().find((c) => c.pinned)?.key
   /* (REG-286) ARIA grid roles: the data cells carried no role at all, so a screen reader saw a role="table" whose
      rows held generic children and dropped out of table mode entirely — no column announcements, no cell
@@ -142,7 +146,7 @@ export function LeadsTable({
   const cellProps = (col: ColumnConfig, base: string | undefined) => ({
     role: 'cell',
     className: col.pinned ? `${base} ${styles.pin}` : base,
-    style: col.pinned ? { ...colStyle(col.key), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key),
+    style: col.pinned ? { ...colStyle(col.key, dragged[col.key]), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key, dragged[col.key]),
     'data-pin-edge': col.pinned && col.key === pinEdge ? true : undefined,
   })
   /* Fluid columns grow pro rata, so sticky offsets scale by (rendered width ÷ floor). DOM write only.
@@ -344,6 +348,7 @@ export function LeadsTable({
                 ) : (
                   <span className={styles.hLabel}>{col.label}</span>
                 )}
+                <ColumnResizer table="leads" column={col.key} label={col.label} min={col.key === 'name' ? 160 : 72} />
                 {i === 0 ? (
                   <span className={styles.hTools}>
                     <Tooltip label="Customise your view">

@@ -15,6 +15,7 @@
 
 /* ---- Head row 1244×56 ---- */
 .head { display: flex; height: 56px; }
+.hCell { position: relative; }   /* the column-resize handle (REG-427) */
 .hCell {
   display: flex; align-items: center; gap: var(--om-spacing-1);
   min-width: 0;
@@ -34,12 +35,12 @@
 /* ---- Columns (flex basis = mock width) ---- */
 .colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
 .head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
-.colTitle { flex: 1 1 582px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
-.colMember { flex: 0 0 160px; }
-.colCreator { flex: 0 0 160px; }   /* REG-239, not in the mock: Avatar 24 + name */
-.colDue { flex: 0 0 137px; }
-.colStatus { flex: 0 0 118px; }
-.colTags { flex: 0 0 191px; }
+.colTitle { flex: var(--cw-title, 1 1 582px); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.colMember { flex: var(--cw-assignees, 0 0 160px); }
+.colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
+.colDue { flex: var(--cw-due, 0 0 137px); }
+.colStatus { flex: var(--cw-status, 0 0 118px); }
+.colTags { flex: var(--cw-tags, 0 0 191px); }   /* --cw-*: the user's dragged widths (REG-427) */
 
 /* ---- Rows 1244×48 ---- */
 .row { display: flex; height: 48px; position: relative; transition: background-color var(--motion-hover); }

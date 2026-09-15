@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from './surface'
+import { Sheet, sheetMenuBody, useSheetLayout } from './sheet'
 import menuStyles from '@/components/leads/menus.module.css'
 
 /** Anchored menu rendered through a body portal so scroll containers (modal
@@ -15,9 +16,13 @@ import menuStyles from '@/components/leads/menus.module.css'
  *  Keyboard (REG-286): focus moves onto the current row on open, arrows / Home / End walk the rows, Tab and Esc
  *  hand focus back to the trigger — the portal renders after the whole page, so without this an open menu could
  *  only be reached by tabbing through everything behind it (components/om/surface.ts). A menu opened from a text
- *  box (the Assign member search) keeps focus in the field, so typing still filters. */
+ *  box (the Assign member search) keeps focus in the field, so typing still filters.
+ *
+ *  Phone (REG-353): a caller that names a `sheetTitle` gets the mobile canvas' bottom sheet at ≤767 instead of a card
+ *  anchored to a cell that can sit anywhere — the same branch Dropdown has. Callers that pass none (a select's own
+ *  option list, a combobox's results under its field) keep the anchored surface. */
 export function PortalMenu({
-  open, anchor, onClose, align = 'left', width, children, role = 'listbox',
+  open, anchor, onClose, align = 'left', width, children, role = 'listbox', sheetTitle, id, className,
 }: {
   open: boolean
   anchor: RefObject<HTMLElement | null>
@@ -26,9 +31,16 @@ export function PortalMenu({
   width?: number
   children: ReactNode
   role?: string
+  /** ≤767 the menu becomes a bottom sheet with this heading (REG-353). Omit to stay anchored on the phone. */
+  sheetTitle?: string
+  /** The surface's element id — a combobox names it through aria-controls. */
+  id?: string
+  /** Extra class on the surface (a popover that rounds to r8, 1271:40932). */
+  className?: string
 }) {
   const menuRef = useRef<HTMLDivElement | null>(null)
-  useMenuKeyboard(open, menuRef, onClose)   // (REG-286) keyboard reach — see the note above
+  const sheet = useSheetLayout() && sheetTitle !== undefined
+  useMenuKeyboard(open && !sheet, menuRef, onClose)   // (REG-286) keyboard reach — see the note above
 
   // Position via callback ref (runs before paint) — measured-DOM styling
   // without a state round-trip.
@@ -46,19 +58,24 @@ export function PortalMenu({
     const spaceBelow = window.innerHeight - r.bottom
     el.style.left = `${left}px`
     el.style.width = `${w}px`
+    /* The menu is as tall as its rows up to the room the viewport leaves on the side it opens (audit 2026-09-15): a fixed
+       320 cap clipped the row menu's ninth row ("Remove") and the Add Item list's third match behind an inner scroll with
+       no cue. Below when it fits (or there is more room below than above), else above. */
     if (spaceBelow < 340 && r.top > spaceBelow) {
       el.style.bottom = `${window.innerHeight - r.top + 4}px`
       el.style.top = 'auto'
+      el.style.maxHeight = `${Math.max(120, r.top - 4 - EDGE)}px`
       el.style.transformOrigin = 'bottom left'
     } else {
       el.style.top = `${r.bottom + 4}px`
       el.style.bottom = 'auto'
+      el.style.maxHeight = `${Math.max(120, spaceBelow - 4 - EDGE)}px`
       el.style.transformOrigin = 'top left'
     }
   }, [anchor, align, width])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || sheet) return   // the sheet owns Esc and its own scrim press (components/om/sheet.tsx)
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       if (anchor.current?.contains(t) || menuRef.current?.contains(t)) return
@@ -67,8 +84,13 @@ export function PortalMenu({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
     }
+    /* (REG-416) A menu that opens off a control the browser is still scrolling into view — Tab onto a select below the
+       fold, a pointer press that nudges the page — saw that very scroll and closed itself at once. Scrolls in the first
+       250 ms after opening are the opener's, not the user's; after that any scroll closes the menu as before. */
+    const openedAt = performance.now()
     const onScroll = (e: Event) => {
       if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return
+      if (performance.now() - openedAt < 250) return
       onClose()
     }
     const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
@@ -86,19 +108,27 @@ export function PortalMenu({
       document.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onResize)
     }
-  }, [open, onClose, anchor])
+  }, [open, onClose, anchor, sheet])
 
   if (typeof document === 'undefined') return null
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title={sheetTitle} label={sheetTitle} role={role} bodyClassName={sheetMenuBody}>
+        {children}
+      </Sheet>
+    )
+  }
   return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
           ref={place}
-          className={menuStyles.menu}
+          className={className ? `${menuStyles.menu} ${className}` : menuStyles.menu}
           role={role}
+          id={id}
           data-om-menu
           variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
-          style={{ position: 'fixed', zIndex: 130, maxHeight: 320, overflowY: 'auto' }}
+          style={{ position: 'fixed', zIndex: 130, overflowY: 'auto' }}
         >
           {children}
         </motion.div>

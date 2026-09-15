@@ -41,7 +41,7 @@ type Toast = { name: string; pdf: boolean; state: 'uploading' | 'done' | 'failed
  * The toast's "Failed" + refresh row exists behind data-state="failed" for completeness; nothing in the demo triggers it.
  */
 export function AttachFilesModal({
-  open, files, attached, onClose, onAttach, onUploadPicked,
+  open, files, attached, onClose, onAttach, onUploadPicked, mode = 'files', chrome = 'tasks',
 }: {
   open: boolean
   files: LeadFile[]
@@ -49,7 +49,15 @@ export function AttachFilesModal({
   onClose: () => void
   onAttach: (fileIds: string[]) => void
   onUploadPicked: (file?: File) => void
+  /** image = the quote editor's "Add Image" (1271:41016): images only, one pick, "Add" (REG-415). */
+  mode?: 'files' | 'image'
+  /** quote = the quote editor's frames (Attach files 1238:30353 · Add Image 1271:41016): no checkboxes — a picked tile is
+   *  tinted — the caption is kind glyph · name · kebab, folder cards count their items, "Search files", no dropzone helper,
+   *  the `sort` glyph and a list-then-grid toggle. tasks = the Tasks tab's own mock (902:28220), unchanged. */
+  chrome?: 'tasks' | 'quote'
 }) {
+  const imageMode = mode === 'image'
+  const quoteChrome = chrome === 'quote'
   useScrollLock(open)
   const comingSoon = useComingSoon()
   const [selected, setSelected] = useState<Set<string>>(() => new Set(attached))
@@ -78,7 +86,7 @@ export function AttachFilesModal({
   }
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
-  const all = [...uploaded, ...files]
+  const all = [...uploaded, ...(imageMode ? files.filter((f) => f.kind !== 'pdf') : files)]
   /* Search matches everything a tile shows (REG-274): the file name, the kind caption under it ("pdf" / "image"),
      and the day heading the tile sits under, formatted by this modal's own `dayLabel` ("Friday, 17 Jul ’26") so a
      search for a day keeps that whole group. Folders carry neither a kind caption nor a day heading — they render
@@ -100,7 +108,7 @@ export function AttachFilesModal({
 
   const attachedSet = new Set(attached)
   const picks = [...selected].filter((id) => !attachedSet.has(id))
-  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const toggle = (id: string) => setSelected((s) => { if (imageMode) return new Set(s.has(id) ? [] : [id]); const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleGroup = (ids: string[], on: boolean) => setSelected((s) => { const n = new Set(s); ids.forEach((id) => (on ? n.add(id) : n.delete(id))); return n })
 
   const pick = (file?: File) => {
@@ -122,7 +130,7 @@ export function AttachFilesModal({
   }
 
   const count = picks.length
-  const attachLabel = count === 0 ? 'Attach Files' : count === 1 ? 'Attach 1 File' : `Attach ${count} Files`
+  const attachLabel = imageMode ? 'Add' : count === 0 ? 'Attach Files' : count === 1 ? 'Attach 1 File' : `Attach ${count} Files`
   // The head counts the toast's rows, not the in-flight flag: the toast stays up after the row's green check (only ✕
   // removes it), and a count keyed off 'uploading' turned that frame into "Uploading 0 files". One row per toast —
   // the Dropzone takes one file — so this reads "Uploading 1 file" throughout, as 902:28261 and the sibling toasts do.
@@ -137,11 +145,11 @@ export function AttachFilesModal({
               focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
               surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
           <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
-                      role="dialog" aria-modal aria-label="Attach files" tabIndex={-1}>
+                      role="dialog" aria-modal aria-label={imageMode ? 'Add Image' : 'Attach files'} tabIndex={-1}>
             {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             {/* Heading 64 (p20/24): title 20/Bold · bare 24px close · 1px rule — the modal header standard (779:26016). */}
             <div className={styles.heading}>
-              <span className={styles.title}>Attach files</span>
+              <span className={styles.title}>{imageMode ? 'Add Image' : 'Attach files'}</span>
               <Tooltip label="Close">
                 <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
                   <Icon name="close" size={24} family="outlined" />
@@ -156,8 +164,8 @@ export function AttachFilesModal({
                 <div className={styles.dropWrap}>
                   <Dropzone
                     title={<>Drop your file or <b>browse</b></>}
-                    helper="Supports: JPEG, PNG, PDF"
-                    accept="image/*,.pdf"
+                    helper={quoteChrome ? undefined : imageMode ? 'Supports: JPEG or PNG' : 'Supports: JPEG, PNG, PDF'}
+                    accept={imageMode ? 'image/*' : 'image/*,.pdf'}
                     onPick={pick}
                   />
                 </div>
@@ -172,23 +180,25 @@ export function AttachFilesModal({
                   <SearchBar
                     className={styles.search}
                     appearance="outlined"
-                    placeholder="Search"
+                    placeholder={quoteChrome ? 'Search files' : 'Search'}
                     aria-label="Search files"
                     value={query}
                     onChange={setQuery}
                   />
-                  {/* File Type filter chip 93×36 — the listing toolbar's chip (components/leads/toolbar.module.css); inert. */}
-                  <button type="button" className={styles.chip} onClick={comingSoon}>
+                  {/* File Type filter chip — the listing toolbar's chip (components/leads/toolbar.module.css); the quote's frame draws it 93 wide (12/600, expand_more 16); inert. */}
+                  <button type="button" className={styles.chip} data-chrome={chrome} onClick={comingSoon}>
                     <span>File Type</span>
-                    <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
+                    <span className={styles.chipChevron}><Icon name={quoteChrome ? 'expand_more' : 'keyboard_arrow_down'} size={quoteChrome ? 16 : 20} /></span>
                   </button>
                   <Tooltip label="Sort">
-                    <IconButton icon="swap_vert" label="Sort" onClick={comingSoon} />
+                    <IconButton icon={quoteChrome ? 'sort' : 'swap_vert'} label="Sort" onClick={comingSoon} />
                   </Tooltip>
                   <SegmentedIconToggle
                     label="View"
                     value="grid"
-                    options={[{ value: 'grid', icon: 'grid_view', label: 'Grid view' }, { value: 'list', icon: 'view_list', label: 'List view' }]}
+                    options={quoteChrome
+                      ? [{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'grid_view', label: 'Grid view' }]
+                      : [{ value: 'grid', icon: 'grid_view', label: 'Grid view' }, { value: 'list', icon: 'view_list', label: 'List view' }]}
                     onChange={(v) => { if (v !== 'grid') comingSoon() }}
                   />
                 </div>
@@ -211,14 +221,20 @@ export function AttachFilesModal({
                       /* Folders (frames 56/58): header row + 276-wide folder cards; folders are inert in this flow. */
                       <div className={styles.group}>
                         <div className={styles.groupHead}>
-                          <Checkbox isSelected={false} onChange={comingSoon} aria-label="Select all folders" />
+                          {quoteChrome ? null : <Checkbox isSelected={false} onChange={comingSoon} aria-label="Select all folders" />}
                           <span className={styles.groupTitle}>Folders</span>
                         </div>
                         <div className={styles.row}>
                           {folders.map((f) => (
-                            <div key={f.id} className={styles.folder}>
+                            <div key={f.id} className={styles.folder} data-chrome={chrome}>
                               <Icon name="folder" size={24} className={styles.folderIcon} />
-                              <span className={styles.folderName}>{f.name}</span>
+                              {quoteChrome ? (
+                                /* The quote's folder card (1238:30353): name 14/600 over "n items" 10/400 — the folder's own count. */
+                                <span className={styles.folderText}>
+                                  <span className={styles.folderName}>{f.name}</span>
+                                  <span className={styles.folderCount}>{(() => { const n = files.filter((x) => x.parentId === f.id && x.kind !== 'folder').length; return `${n} ${n === 1 ? 'item' : 'items'}` })()}</span>
+                                </span>
+                              ) : <span className={styles.folderName}>{f.name}</span>}
                               <Tooltip label="Folder actions">
                                 <button type="button" className={styles.folderKebab} aria-label={`${f.name} actions`} onClick={comingSoon}>
                                   <Icon name="more_vert" size={24} weight={300} />
@@ -236,19 +252,23 @@ export function AttachFilesModal({
                       return (
                         <div key={g.day} className={styles.group}>
                           <div className={styles.groupHead}>
-                            <Checkbox
-                              isSelected={on === ids.length}
-                              isIndeterminate={on > 0 && on < ids.length}
-                              onChange={(next) => toggleGroup(ids, next)}
-                              aria-label={`Select all files from ${g.label}`}
-                            />
+                            {quoteChrome ? null : (
+                              <Checkbox
+                                isSelected={on === ids.length}
+                                isIndeterminate={on > 0 && on < ids.length}
+                                onChange={(next) => toggleGroup(ids, next)}
+                                aria-label={`Select all files from ${g.label}`}
+                              />
+                            )}
                             <span className={styles.groupTitle}>{g.label}</span>
                           </div>
                           <div className={styles.row}>
                             {g.files.map((f) => {
                               const isOn = selected.has(f.id)
                               return (
-                                <div key={f.id} className={styles.tile} data-selected={isOn || undefined} onClick={() => toggle(f.id)}>
+                                <div key={f.id} className={styles.tile} data-selected={isOn || undefined} data-chrome={chrome} role={quoteChrome ? 'button' : undefined} tabIndex={quoteChrome ? 0 : undefined}
+                                     aria-pressed={quoteChrome ? isOn : undefined} aria-label={quoteChrome ? `${isOn ? 'Deselect' : 'Select'} ${f.name}` : undefined}
+                                     onClick={() => toggle(f.id)} onKeyDown={quoteChrome ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(f.id) } } : undefined}>
                                   {f.thumb ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={f.thumb} alt="" className={styles.tileImg} />
@@ -256,14 +276,27 @@ export function AttachFilesModal({
                                     /* No thumbnail (a PDF): the overview file tile's surface-variant box with the kind's glyph. */
                                     <span className={styles.tileBox}><Icon name={f.kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={24} className={styles.tileBoxIcon} /></span>
                                   )}
-                                  <div className={styles.caption} onClick={(e) => e.stopPropagation()}>
-                                    <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
-                                    <span className={styles.tileName} onClick={() => toggle(f.id)}>{f.name}</span>
-                                    <span className={styles.kind}>
-                                      <Icon name={f.kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={12} className={styles.kindIcon} />
-                                      {f.kind}
-                                    </span>
-                                  </div>
+                                  {quoteChrome ? (
+                                    /* The quote's caption (1238:30353): kind glyph 20 red · name 14/600 · kebab Light — the tile itself is the pick. */
+                                    <div className={styles.caption}>
+                                      <Icon name={f.kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={20} className={styles.kindIcon} />
+                                      <span className={styles.tileName}>{f.name}</span>
+                                      <Tooltip label="File actions">
+                                        <button type="button" className={styles.folderKebab} aria-label={`${f.name} actions`} onClick={(e) => { e.stopPropagation(); comingSoon() }}>
+                                          <Icon name="more_vert" size={24} weight={300} />
+                                        </button>
+                                      </Tooltip>
+                                    </div>
+                                  ) : (
+                                    <div className={styles.caption} onClick={(e) => e.stopPropagation()}>
+                                      <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
+                                      <span className={styles.tileName} onClick={() => toggle(f.id)}>{f.name}</span>
+                                      <span className={styles.kind}>
+                                        <Icon name={f.kind === 'pdf' ? 'picture_as_pdf' : 'image'} size={12} className={styles.kindIcon} />
+                                        {f.kind}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )
                             })}

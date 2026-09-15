@@ -1,0 +1,4 @@
+/* Anchor tabs for the editor (Page Tabs 1261:35438): the om Tabs geometry (components/om/tabs.module.css) on BUTTONS —
+   the strip scrolls the page to a section instead of routing, so the items are not links. The button keeps the Tab Item's
+   own 14/600 (`font: inherit` used to override it with the page's 14/400 — audit 2026-09-15). */
+.btn { border: 0; background: none; cursor: pointer; }

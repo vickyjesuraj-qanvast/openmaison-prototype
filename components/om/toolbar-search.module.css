@@ -3,7 +3,10 @@
    cannot live in that row, so ≤767 it folds into a glyph and comes back as its own full-width row when asked
    — the same move the listing toolbar already makes (REG-298, canvas 1h). ≥768 the box is always in the row
    and the glyph does not exist. */
-.btn { display: none; }
+/* Doubled class (REG-422): IconButton's own `.btn { display: inline-flex }` has the same specificity, and which rule wins then
+   depends on the order the CSS chunks land in — on the studio-wide Quotes page (app/quotes) the glyph came back beside the
+   open box at 1440. The doubled selector settles it. */
+.btn.btn { display: none; }
 .wrap { display: inline-flex; }
 .field { width: 280px; }
 
@@ -11,7 +14,7 @@
    column, so the 280px box pushed each toolbar onto three rows (the Files bar measured 136 tall at 768) and
    ellipsised the section title to "All …". Folded, every one of them is the canvas' single row again. */
 @media (max-width: 1024px) {
-  .btn { display: inline-flex; }
+  .btn.btn { display: inline-flex; }
   .wrap { display: none; }
   /* (REG-375) The open box SHARES the toolbar's one row — it used to claim a full-width line of its own, which
      with the glyphs either side of it turned REG-354's single row into three (~130px of chrome, two of the rows

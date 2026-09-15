@@ -3,8 +3,11 @@
 import { randomUUID } from 'node:crypto'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leads, quotes } from '@/lib/db/schema'
-import { revalidateLead } from '@/lib/leads/queries'
+import { leads, members, quoteTemplates, quotes, quotePayments } from '@/lib/db/schema'
+import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
+import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
+import { projectRef, validUntil } from '@/lib/quotes/refs'
+import { DEFAULT_DENSITY } from '@/lib/quotes/items-model'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
 import { fetchLeadContracts } from '@/lib/leads/contracts'
@@ -21,15 +24,45 @@ async function nextNumber(): Promise<string> {
 }
 
 /**
- * New Quote › From Blank / empty state › From Scratch (REG: invented behaviour — the quote editor has no mock):
- * a Private Draft titled after the lead (910:36324 shows the lead's name as the row title), total S$0.
+ * Create Quote modal › a template tile or Blank Quote (REG-405 / REG-412): a Private Draft titled after the lead
+ * (910:36324 shows the lead's name as the row title), total S$0, remembering the design template it started from —
+ * and stamping that template's "used n ago". A template id that is not the studio's is refused.
  */
-export async function createQuote(leadId: string): Promise<string> {
-  const [lead] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId))
+export async function createQuote(leadId: string, templateId: string | null = null): Promise<string> {
+  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, leadId))
   if (!lead) throw new Error('lead not found')
+  if (templateId) {
+    const [t] = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
+    if (!t) throw new Error('template not found')
+  }
+  // (REG-403) The editor's General Info opens filled from the records that exist: the lead's property type and address,
+  // and the signed-in member as "Prepared by". The section order / state stays null = the default (lib/quotes/sections.ts).
+  const [me] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true))
   const id = randomUUID(); const now = new Date()
-  await db.insert(quotes).values({ id, leadId, number: await nextNumber(), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now })
+  // Project Ref # and Quote Valid Until are records from the start (REG-403 / lib/quotes/refs.ts): the property's family, the
+  // day and its sequence; 30 days of validity. The description clamps to two lines by default (1260:31372).
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
+  await db.insert(quotes).values({
+    id, leadId, number: await nextNumber(), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
+    preparedBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId,
+    validUntil: validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
+  })
+  if (templateId) await db.update(quoteTemplates).set({ lastUsedAt: now }).where(eq(quoteTemplates.id, templateId))
+  // (REG-418) Every quote starts on the studio's default split — the toolbar reads "Default: 10/30/30/30" from the first
+  // open — with the deposit on approval and the rest estimated from the lead's start date and the property's renovation length.
+  const rows = presetRows('default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: now, propertyType: lead.propertyType }))
+  await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId: id, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
   touch(leadId); return id
+}
+
+/** Template tile kebab › Set as default (REG-412): one default at a time, studio-wide. */
+export async function setDefaultTemplate(templateId: string): Promise<void> {
+  const [t] = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
+  if (!t) throw new Error('template not found')
+  await db.update(quoteTemplates).set({ isDefault: false })
+  await db.update(quoteTemplates).set({ isDefault: true }).where(eq(quoteTemplates.id, templateId))
+  revalidateEveryLead()
 }
 
 async function leadOf(quoteId: string): Promise<string | null> {

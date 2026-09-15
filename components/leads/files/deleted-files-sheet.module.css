@@ -51,7 +51,7 @@
    Selection 40 · Title 210 · Owner 152 · Updated 116 · File type 119 · File size 114 · File Location 149 · Actions 252 */
 .card {
   display: grid;
-  grid-template-columns: 40px 210px 152px 116px 119px 114px 149px 252px;
+  grid-template-columns: var(--tracks, 40px 210px 152px 116px 119px 114px 149px 252px);   /* --tracks: the user's dragged widths (REG-427) */
   align-content: start;
   width: 100%; flex-shrink: 0;
   background: var(--om-color-surface-default);
@@ -61,6 +61,7 @@
 }
 /* Head 56 — labels 12/Medium #666666 (the Files list head, 931:40167) */
 .head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+.hCell { position: relative; }   /* the column-resize handle (REG-427) */
 .hCell {
   display: flex; align-items: center; gap: var(--om-spacing-1);
   min-width: 0;

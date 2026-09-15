@@ -102,7 +102,7 @@ export function Dropdown({
   )
 }
 
-export function DropdownItem({ children, onSelect, tone, disabled, title }: {
+export function DropdownItem({ children, onSelect, tone, disabled, title, role = 'menuitem', checked, submenu }: {
   children: ReactNode
   onSelect: () => void
   /** Destructive item (Delete) — red text, as om/menu's `tone`. */
@@ -110,9 +110,16 @@ export function DropdownItem({ children, onSelect, tone, disabled, title }: {
   /** Shown but inert (REG-265: a stage-logged record's Edit / Delete) — `title` says why on hover. */
   disabled?: boolean
   title?: string
+  /** A radio / checkbox row (View by, density, a status) says which value is current through `checked` (aria-checked);
+   *  the keyboard then opens the menu on that row (components/om/surface.ts). Plain rows stay `menuitem`. */
+  role?: 'menuitem' | 'menuitemradio' | 'menuitemcheckbox'
+  checked?: boolean
+  /** The row opens a further level in place (aria-haspopup="menu"). */
+  submenu?: boolean
 }) {
   return (
-    <button type="button" role="menuitem" className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
+    <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
+            aria-checked={role === 'menuitem' ? undefined : !!checked} aria-haspopup={submenu ? 'menu' : undefined}
             onClick={disabled ? undefined : onSelect}>
       {children}
     </button>

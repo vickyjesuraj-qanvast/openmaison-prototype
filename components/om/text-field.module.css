@@ -69,6 +69,18 @@
 .support { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-on-surface-secondary); display: flex; align-items: center; gap: 4px; }
 .field[data-error] .support { color: var(--om-color-tertiary-red-default); }
 
+/* Dense field (REG-417): the 36px box the quote editor's table draws — spec 03 "TextField 36 'Add Item'", "Issuing Entity
+   select 36". Same label behaviour, same strokes; only the height changes. */
+.field[data-size='s'] .box { height: 36px; }
+.field[data-size='s'][data-below] .box { height: auto; min-height: 36px; }
+/* Touch (REG-312): the dense box stands 44 under a finger, and its select control — a button the audits measure — carries
+   the same invisible overlay the other 36px controls do, so the whole 44 answers a tap. Nothing drawn changes on the desktop. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .field[data-size='s'] .box { height: 44px; }
+  .field[data-size='s'] button.control { position: relative; }
+  .field[data-size='s'] button.control::after { content: ''; position: absolute; inset: -1px; }
+}
+
 /* `below` — content inside the box, on its own row under the control (picked chips). The box stops being a fixed
    48px row and becomes a column that grows downwards; the label floats by definition, since a box holding content is
    never empty. Everything here is scoped to [data-below], so no other field is touched. */

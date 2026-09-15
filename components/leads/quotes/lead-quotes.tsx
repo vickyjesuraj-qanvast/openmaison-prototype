@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DatePicker } from '@/components/om/date-picker'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
@@ -11,7 +12,8 @@ import type { Quote } from '@/lib/db/schema'
 import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
 import type { LeadQuotesData } from '@/lib/leads/quotes'
-import { archiveQuote, createQuote, deleteQuotes, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { archiveQuote, createQuote, deleteQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
 import { QuotesToolbar } from './quotes-toolbar'
 import { QuotesTable, type QuoteRowAction } from './quotes-table'
 import { QuotesEmpty } from './quotes-empty'
@@ -21,13 +23,16 @@ import styles from './lead-quotes.module.css'
 
 /**
  * Lead Details › Quotes (910-36240): the tab's state — toolbar, table or empty state, selection + bulk bar, status
- * changes, due dates, the row / header menus, filters and delete. No panels: the quote editor has no mock ("View",
- * Preview and Share, PDF, Print, templates and settings answer coming soon). Actions run through the tabs' shared
- * `useRun`; the `?new=1` landing and the `om:quotes:new` event through `useCreateIntent`.
+ * changes, due dates, the row / header menus, filters and delete. Every new-quote path (Create Quote, the empty state,
+ * the Overview card, the Quote quick link, the Won wizard — the last three land here with `?new=1` or the
+ * `om:quotes:new` event) opens the Create Quote modal (REG-405 / REG-412); a tile creates the Draft and opens the quote
+ * editor (`/quotes/<id>`, Figma 1271:40301), as does the row's View. Preview and Share, PDF, Print, templates and
+ * settings still answer coming soon. Actions run through the tabs' shared `useRun`.
  * Specs: design-source/context/lead-quotes/.
  */
-export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: LeadQuotesData; approval: QuoteApproval }) {
-  const { quotes, now } = data
+export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: string; leadName: string; data: LeadQuotesData; approval: QuoteApproval }) {
+  const { quotes, templates, priceBookCount, now } = data
+  const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
   const { run, fail } = useRun()
@@ -51,12 +56,16 @@ export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: L
   const [deleting, setDeleting] = useState<string[] | null>(null)
   const dueQuote = dueFor ? quotes.find((q) => q.id === dueFor.quoteId) : null
 
-  // One draft per press: a double click / a double event cannot create two (RACE-05).
-  const newQuote = () => run('create the quote', () => createQuote(leadId), 'Quote created', { guard: 'create' })
+  /* The Create Quote modal (REG-412). A tile creates ONE Draft per press — a double click cannot create two (RACE-05) —
+     from the chosen template (null = Blank Quote) and opens it in the editor. */
+  const [createOpen, setCreateOpen] = useState(false)
+  const openCreate = () => setCreateOpen(true)
+  const startQuote = (templateId: string | null) => run('create the quote', async () => { const id = await createQuote(leadId, templateId); setCreateOpen(false); router.push(`/quotes/${id}`) }, undefined, { guard: 'create' })
+  const openQuote = (quote: Quote) => router.push(`/quotes/${quote.id}`)
 
-  // Overview › QUOTES card "From Scratch" lands here with ?new=1 (one draft, then the param is dropped);
-  // Create quick links › Quote on this tab raises `om:quotes:new`.
-  useCreateIntent({ event: CREATE_EVENTS.quotes, landing: { href: `/leads/${leadId}/quotes` }, onIntent: () => { void newQuote() } })
+  // Overview › QUOTES card, the Quote quick link and the Won wizard land here with ?new=1 (consumed once, then the
+  // param is dropped); Create quick links › Quote on this tab raises `om:quotes:new`. Both open the modal.
+  useCreateIntent({ event: CREATE_EVENTS.quotes, landing: { href: `/leads/${leadId}/quotes` }, onIntent: openCreate })
 
   const onStatus = (quote: Quote, status: QuoteStatus) => {
     if (status === quote.status) return
@@ -82,12 +91,12 @@ export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: L
     <div className={styles.tab}>
       <QuotesToolbar
         query={query} onQuery={setQuery}
-        onNew={(kind) => (kind === 'blank' ? void newQuote() : comingSoon())}
+        onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
         onMenu={comingSoon}
       />
       {quotes.length === 0 ? (
-        <QuotesEmpty onFromScratch={() => { void newQuote() }} onFromTemplate={comingSoon} />
+        <QuotesEmpty onFromScratch={openCreate} onFromTemplate={openCreate} />
       ) : nothingMatches ? (
         <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
       ) : (
@@ -96,7 +105,7 @@ export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: L
           selected={selected} onSelect={setSelected}
           onStatus={onStatus}
           onDue={openDue}
-          onView={comingSoon}
+          onView={openQuote}
           onRowMenu={rowMenu}
         />
       )}
@@ -119,6 +128,12 @@ export function LeadQuotes({ leadId, data, approval }: { leadId: string; data: L
         open={filtersOpen} value={filters} now={now} approval={approval}
         onApply={(v) => { setFilters(v); setFiltersOpen(false) }}
         onClose={() => setFiltersOpen(false)}
+      />
+      <CreateQuoteModal
+        open={createOpen} leadName={leadName} templates={templates} priceBookCount={priceBookCount} now={now}
+        onClose={() => setCreateOpen(false)}
+        onStart={(templateId) => { void startQuote(templateId) }}
+        onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
       />
       <DeleteQuotesDialog
         open={!!deleting} count={deleting?.length ?? 1}

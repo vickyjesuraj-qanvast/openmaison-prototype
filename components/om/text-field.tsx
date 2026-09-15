@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useId, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { Icon } from './icon'
 import { PortalMenu } from './portal-menu'
 import { useReadOnly } from './read-only'
@@ -56,6 +56,10 @@ export type TextFieldProps = {
   inputRef?: RefObject<HTMLInputElement | null>
   autoFocus?: boolean
   className?: string
+  /** m = the DS 48px field (default) · s = the 36px field the quote editor's table draws (spec 03: "TextField 36 'Add Item'", "Issuing Entity select 36"). */
+  size?: 'm' | 's'
+  /** Extra attributes for the text input — a combobox's role / aria-* (REG-417). Explicit props win over these. */
+  inputProps?: InputHTMLAttributes<HTMLInputElement>
 }
 
 /**
@@ -66,7 +70,7 @@ export type TextFieldProps = {
 export function TextField({
   label, value, onChange, mode = 'text', options, placeholder, trailingIcon, trailing, leading, below, helper, error,
   disabled: disabledProp = false, required = false, open: openProp, onOpen, onFocus, onBlur, onKeyDown,
-  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className,
+  type = 'text', inputMode, numeric, maxLength, autoComplete, name, boxRef, inputRef, autoFocus, className, size = 'm', inputProps,
 }: TextFieldProps) {
   const id = useId()
   const readOnlyScope = useReadOnly()
@@ -124,7 +128,7 @@ export function TextField({
 
   return (
     <div className={className ? `${styles.field} ${className}` : styles.field}
-         data-kind={mode} data-floated={floated || undefined} data-active={(focused || open) || undefined}
+         data-kind={mode} data-size={size === 's' ? 's' : undefined} data-floated={floated || undefined} data-active={(focused || open) || undefined}
          data-error={hasError || undefined} data-disabled={disabled || undefined} data-open={open || undefined}
          data-trail={(icon || trailing) ? '' : undefined} data-below={below ? '' : undefined}>
       <div ref={setBox} className={styles.box}
@@ -134,13 +138,14 @@ export function TextField({
         {leading ? <span className={styles.leading}>{leading}</span> : null}
         {mode === 'text' ? (
           <input
+            {...inputProps}
             id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
             value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
             disabled={disabled} required={required}
             aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
             onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
-            onFocus={() => { setFocused(true); onFocus?.() }}
-            onBlur={() => { setFocused(false); onBlur?.() }}
+            onFocus={(e) => { setFocused(true); onFocus?.(); inputProps?.onFocus?.(e) }}
+            onBlur={(e) => { setFocused(false); onBlur?.(); inputProps?.onBlur?.(e) }}
             onKeyDown={onKeyDown}
           />
         ) : (
@@ -168,13 +173,14 @@ export function TextField({
         {leading ? <span className={styles.leading}>{leading}</span> : null}
         {mode === 'text' ? (
           <input
+            {...inputProps}
             id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
             value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
             disabled={disabled} required={required}
             aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
             onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
-            onFocus={() => { setFocused(true); onFocus?.() }}
-            onBlur={() => { setFocused(false); onBlur?.() }}
+            onFocus={(e) => { setFocused(true); onFocus?.(); inputProps?.onFocus?.(e) }}
+            onBlur={(e) => { setFocused(false); onBlur?.(); inputProps?.onBlur?.(e) }}
             onKeyDown={onKeyDown}
           />
         ) : (
@@ -199,7 +205,8 @@ export function TextField({
         {trailing ? <span className={styles.trailSlot}>{trailing}</span> : null}
         {icon ? <span className={styles.trail} aria-hidden><Icon name={icon} size={16} /></span> : null}
         </>)}
-        <label id={`${id}-label`} htmlFor={mode === 'text' ? id : undefined} className={styles.label}>{label}</label>
+        {/* A required field's label carries the mock's asterisk ("Designer Name*", 1239:31250; "Title*", 1238:33173) — one convention for every form. */}
+        <label id={`${id}-label`} htmlFor={mode === 'text' ? id : undefined} className={styles.label}>{required ? `${label}*` : label}</label>
         {below ? <div className={styles.below}>{below}</div> : null}
       </div>
       {message ? <span id={supportId} className={styles.support} role={hasError ? 'alert' : undefined}>{message}</span> : null}

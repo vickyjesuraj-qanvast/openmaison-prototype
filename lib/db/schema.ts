@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
 /**
  * ⚠ PROVISIONAL — identity/tenancy plumbing only.
@@ -92,6 +92,11 @@ export const members = sqliteTable('members', {
   role: text('role').notNull(),              // Owner | Designer
   color: text('color').notNull(),            // avatar tint hex, or 'photo'
   isYou: integer('is_you', { mode: 'boolean' }).notNull().default(false),
+  // Quote editor › Signature (1240:34176, REG-421; owner 2026-09-11: "signature saved per member"): how the member signs —
+  // `draw` keeps an SVG path in `signatureData` (viewBox 752×140), `type` prints `signatureName` in the signature face.
+  signatureKind: text('signature_kind'),     // draw | type | null = not set up
+  signatureName: text('signature_name'),
+  signatureData: text('signature_data'),
 })
 
 export const leads = sqliteTable(
@@ -235,9 +240,168 @@ export const quotes = sqliteTable(
     approvedAt: integer('approved_at', { mode: 'timestamp' }),
     archivedAt: integer('archived_at', { mode: 'timestamp' }),   // row kebab › Archive (910:36723)
     deletedAt: integer('deleted_at', { mode: 'timestamp' }),     // row kebab › Delete — soft, surfaces under "Deleted Quotes"
+    // Quote editor › General Info (1271:39680, REG-403): what the studio types on the quote itself. `preparedBy` is a
+    // members.id; property type and site address are COPIED from the lead when the quote is created and editable here.
+    preparedBy: text('prepared_by'),
+    validUntil: integer('valid_until', { mode: 'timestamp' }),
+    projectRef: text('project_ref'),
+    nric: text('nric'),
+    customerId: text('customer_id'),
+    propertyType: text('property_type'),
+    siteAddress: text('site_address'),
+    version: integer('version').notNull().default(1),   // header chip "VERSION 1" (1201:33807); bumps are deferred (build plan)
+    // The studio's section order + collapsed state for THIS quote (owner 2026-09-11: "reorder should remain as is per quote
+    // and the new quote is set to default"); JSON of lib/quotes/sections.ts `QuoteSectionState[]`, null = the default.
+    sections: text('sections'),
+    templateId: text('template_id'),   // the design template the quote started from (Create Quote modal); null = blank
+    // Items section (1260:31209, REG-415): quote-level pricing controls and the studio's table preferences for this quote.
+    additionalDiscountMode: text('additional_discount_mode').notNull().default('pct'),   // pct | amount (the % ▾ select, 1271:36776)
+    additionalDiscountValue: real('additional_discount_value').notNull().default(0),     // percent, or S$ when mode = amount
+    gstEnabled: integer('gst_enabled', { mode: 'boolean' }).notNull().default(true),     // the "GST 9%" switch (1271:36779)
+    issuingEntity: text('issuing_entity'),                                               // "Issuing Entity" (1271:36854); null = the studio
+    itemsView: text('items_view').notNull().default('none'),                             // View by: none | category | room | section
+    itemsDensity: text('items_density').notNull().default('single'),                     // Single | Double | Triple (description lines)
+    itemsColumns: text('items_columns'),                                                 // JSON column settings (1271:41169); null = default
+    itemsLabels: text('items_labels'),                                                   // JSON { categories, rooms, sections } the studio added
+    // Files section (1238:32938, REG-419): the section-top eye — whether the attached files show in the client's view.
+    filesVisible: integer('files_visible', { mode: 'boolean' }).notNull().default(true),
+    // Terms and Conditions · Additional Notes (1238:33502 · 1238:33503, REG-420): the in-house editor's HTML and each section's "Show in client view".
+    termsHtml: text('terms_html'),
+    notesHtml: text('notes_html'),
+    termsVisible: integer('terms_visible', { mode: 'boolean' }).notNull().default(true),
+    notesVisible: integer('notes_visible', { mode: 'boolean' }).notNull().default(true),
+    // Signature (1240:34176, REG-421): the section-top "Client Signature Required" switch — off keeps the client block (owner: "default: don't hide").
+    clientSignatureRequired: integer('client_signature_required', { mode: 'boolean' }).notNull().default(true),
   },
   (t) => [index('quotes_lead_idx').on(t.leadId)],
 )
+
+/**
+ * Files section (1238:32938, REG-419): the lead's files a quote carries. The quote never owns a file — every attachment is
+ * one of the lead's `lead_files` (an upload from the section lands in the lead's Files tab as well, owner 2026-09-11) —
+ * so "Delete" on a tile only removes the link.
+ */
+export const quoteFiles = sqliteTable(
+  'quote_files',
+  {
+    quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+    fileId: text('file_id').notNull().references(() => leadFiles.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [index('quote_files_quote_idx').on(t.quoteId)],
+)
+
+/**
+ * Terms and Conditions · Additional Notes templates (1238:33084 · 1238:33173, REG-420): the studio's library behind "My Templates",
+ * one list per section (`kind`). Bodies are the editor's HTML and may carry tokens ("[Client Full Name]") that resolve when added.
+ */
+export const quoteTextTemplates = sqliteTable('quote_text_templates', {
+  id: text('id').primaryKey(),
+  kind: text('kind').notNull(),   // terms | notes
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+})
+export type QuoteTextTemplate = typeof quoteTextTemplates.$inferSelect
+
+/**
+ * Payment Schedule (1238:29290, REG-418): the milestones a quote is paid in. `pct` is the row's share of the quote's total
+ * (amounts are DERIVED — total × pct — never stored, REG-403); `position` orders the rows. A row's due is one of three
+ * kinds: `approval` (the deposit's "On Approval"), `estimate` (a date derived from the lead's start date and the property's
+ * renovation length, printed "~ 21 Oct ’26") or `fixed` (a date the studio picked in the date picker).
+ */
+export const quotePayments = sqliteTable(
+  'quote_payments',
+  {
+    id: text('id').primaryKey(),
+    quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull().default(0),
+    name: text('name').notNull(),
+    description: text('description'),
+    pct: real('pct').notNull().default(0),
+    dueKind: text('due_kind').notNull().default('estimate'),   // approval | estimate | fixed
+    dueAt: integer('due_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('quote_payments_quote_idx').on(t.quoteId)],
+)
+export type QuotePayment = typeof quotePayments.$inferSelect
+
+/**
+ * The studio's price book — "My Items" (Add item popover 1271:40932; Company › My Items later). Every line a quote can pick.
+ * `kind` is the item's nature and the glyph it wears when it has no photo (Use Icon 1271:41123: design_services · attach_money ·
+ * handyman · local_shipping · shopping_cart = design · fee · labour · delivery · purchase, owner 2026-09-11). Money in cents.
+ */
+export const priceBookItems = sqliteTable('price_book_items', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  kind: text('kind').notNull().default('purchase'),
+  unit: text('unit').notNull().default('Pieces'),
+  costMinor: integer('cost_minor').notNull().default(0),
+  markupMinor: integer('markup_minor').notNull().default(0),
+  category: text('category'),
+  thumb: text('thumb'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+})
+export type PriceBookItem = typeof priceBookItems.$inferSelect
+
+/**
+ * A quote's line items (Items table 1260:31225): items and groups, groups holding items through `parentId`, siblings ordered by
+ * `position`. Unit price = cost + markup; a line's total = qty × unit price × (1 − discount%) before GST (lib/quotes/math.ts).
+ * A group sums its children (owner 2026-09-11). `status` is the client's answer (Pending · Approved · Declined); a Declined line
+ * stays listed but leaves the totals (REG-415). `visibility` is what the client view shows for the line (menu 1271:40931).
+ */
+export const quoteItems = sqliteTable(
+  'quote_items',
+  {
+    id: text('id').primaryKey(),
+    quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+    parentId: text('parent_id'),
+    kind: text('kind').notNull().default('item'),          // item | group
+    position: integer('position').notNull().default(0),
+    name: text('name').notNull(),
+    description: text('description'),
+    thumb: text('thumb'),                                    // photo path; null → the icon placeholder
+    thumbCount: integer('thumb_count').notNull().default(0), // "1/2" badge when more than one photo
+    icon: text('icon'),                                      // price-book kind glyph when there is no photo (design | fee | labour | delivery | purchase)
+    status: text('status').notNull().default('Pending'),    // Pending | Approved | Declined
+    qty: real('qty').notNull().default(1),
+    unit: text('unit'),                                      // Pieces | Lot | sqft | ft run | point | hour | set; null → "Add Unit Type"
+    costMinor: integer('cost_minor').notNull().default(0),
+    markupMinor: integer('markup_minor').notNull().default(0),
+    discountPct: real('discount_pct').notNull().default(0),
+    gstPct: real('gst_pct').notNull().default(9),
+    room: text('room'),
+    category: text('category'),
+    section: text('section'),
+    visibility: text('visibility').notNull().default('visible'),   // visible | hidden | no-price
+    collapsed: integer('collapsed', { mode: 'boolean' }).notNull().default(false),   // a group's children folded (1260:31467)
+    priceBookItemId: text('price_book_item_id'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('quote_items_quote_idx').on(t.quoteId)],
+)
+export type QuoteItem = typeof quoteItems.$inferSelect
+
+/**
+ * Quote design templates — what the Create Quote modal lists under "FROM A DESIGN TEMPLATE" (1.0 screen + Figma
+ * 1209:27023, REG-412). A design template carries the quote's look (Company › Templates, later); `lastUsedAt` prints
+ * "used 2w ago" and `isDefault` the DEFAULT tag. Seeded by scripts/repair-demo-data.ts R22.
+ */
+export const quoteTemplates = sqliteTable('quote_templates', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  kind: text('kind').notNull().default('design'),   // design (look only) — content templates come with Company › Templates
+  isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+export type QuoteTemplate = typeof quoteTemplates.$inferSelect
 
 /** A contract raised for the lead (Contracts tab 931:38609). Status: Draft | Sent to Client | Signed (invented — the mock shows Draft only). */
 export const contracts = sqliteTable(

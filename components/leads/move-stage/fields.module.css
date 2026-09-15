@@ -97,6 +97,8 @@
 .dropHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* Notes › Auto Fill (931:45344, spec 02): dropzone 552×168, the helper 12/Regular #666666 in a 237-wide centred column. */
 .dropzone[data-variant='notes'] { min-height: 168px; }
+/* Quote editor › Files (1267:36650, REG-419): the 68px strip — the same box, p24 / 0 around its one line. */
+.dropzone[data-variant='compact'] { box-sizing: border-box; min-height: 68px; padding: 22px 0; }   /* 2 + 22 + 20 + 22 + 2 = the mock's 68 */
 .dropzone[data-variant='notes'] .dropHelper { max-width: 237px; }
 
 

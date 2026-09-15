@@ -1,0 +1,14 @@
+/* General Info (1273:29296): two 659 columns each padded 24 — fields 611 wide, 48 between them — three rows 24 apart, fields 48;
+   card 69 + 24 + 48·3 + 24·2 + 24 = 311. */
+.grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: calc(var(--om-spacing-6) * 2); row-gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+}
+/* A pair shares one cell (Client · Property Type, Prepared by · Quote Valid Until, NRIC · Customer ID), 24 apart. */
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-6); }
+/* Two-column field rows go single column ≤767 (responsive.md). */
+@media (max-width: 767px) {
+  .grid { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
+  .pair { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); }
+}

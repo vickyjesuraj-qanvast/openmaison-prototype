@@ -1,0 +1,131 @@
+/* Payment Schedule (1238:29290 · 1271:37370, spec design-source/context/quote-editor/06-payment-schedule.txt): body p24 g20;
+   the table 1px surface-variant r8 clipped (the stroke inside) — head 48 (p16, 12/500 uppercase secondary), rows 48 with their
+   1px rule inside (p12/16 + 20 + the rule), no column rules; Total row 44 on surface-bg. Columns: selection 40 · name 319 ·
+   description flex · % 140 · amount 140 · due 140 (pr24). 48 + 4 × 48 + 44 = 284 (1271:37370). */
+.body { display: flex; flex-direction: column; gap: 20px; padding: var(--om-spacing-6); }
+.table { box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: clip; }
+.head, .row, .totalRow { display: grid; grid-template-columns: var(--pay-tracks, 40px 319px minmax(120px, 1fr) 140px 140px 140px); align-items: center; }   /* --pay-tracks: the user's dragged widths (REG-427) */
+.head { height: 48px; }
+.head .cell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.rows { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.row { min-height: 48px; box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); background: var(--om-color-surface-default); position: relative; }
+.row[data-dragging] { z-index: 5; box-shadow: var(--om-elevation-level-2); }
+/* Row hover (1271:38624): the primary-variant wash and the red delete at the row's right — a row being edited stays white (1271:37609). */
+.row:hover { background: var(--om-color-primary-variant); }
+.totalRow { min-height: 44px; box-shadow: inset 0 var(--om-border-1) 0 var(--om-color-surface-variant); background: var(--om-color-surface-bg); font-weight: 700; }
+.totalRow[data-error] .cPct, .totalRow[data-error] .cAmount { color: var(--om-color-tertiary-red-default); }
+.cell { padding: var(--om-spacing-3) var(--om-spacing-4); min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); position: relative; white-space: nowrap; }
+.cSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); display: flex; align-items: center; }
+.cName { font-weight: 700; }
+.cDesc { overflow: hidden; text-overflow: ellipsis; }
+.cPct, .cAmount, .cDue { text-align: right; }
+.cAmount { font-weight: 600; }
+.cDue { padding-right: var(--om-spacing-6); }
+.totalRow .cName, .totalRow .cPct, .totalRow .cAmount { font-weight: 700; }
+/* Every value is its own control: click to edit in place (the cell's text at rest, nothing drawn). */
+.cellBtn { display: block; width: 100%; border: 0; background: none; padding: 0; margin: 0; font: inherit; font-weight: inherit; color: inherit; text-align: inherit; cursor: text; border-radius: var(--om-radius-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cDue .cellBtn { cursor: pointer; }
+.cellBtn[data-empty] { color: var(--om-color-on-surface-secondary); font-weight: 400; }
+.cellBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.handle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border-radius: var(--om-radius-1); }
+.handle:active { cursor: grabbing; }
+.handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* The row's delete (1271:38624): a 36 Icon Button — white, 1px tertiary-red, r4, delete 20 red — 24 from the row's right edge,
+   centred, shown on hover (the keyboard reaches it through its own focus). */
+.del.del { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; border-color: var(--om-color-tertiary-red-default); background: var(--om-color-surface-default); color: var(--om-color-tertiary-red-default); transition: opacity var(--motion-hover); }
+.del.del:hover { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-tertiary-red-default); }
+.row:hover .del, .del:focus-visible { opacity: 1; pointer-events: auto; }
+
+/* Inline edit (1271:37609 / 37797): the cell becomes the 2px primary box filling the row's 48, square, 14/400 whatever the
+   cell's weight, with ✕ / ✓ hanging 2 under the row's bottom edge at its right. */
+.cell[data-editing] { z-index: 4; align-self: stretch; display: flex; align-items: center; }
+.editGhost { visibility: hidden; }   /* keeps the cell its width while the box floats over it */
+.editInput {
+  position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;
+  border: var(--om-border-2) solid var(--om-color-primary-default); border-radius: 0;
+  background: var(--om-color-surface-default); padding: 0 14px; margin: 0;
+  font: inherit; font-weight: 400; color: var(--om-color-on-surface-default); text-align: inherit; outline: none;
+}
+.editInput[data-error] { border-color: var(--om-color-tertiary-red-default); }
+.confirm { position: absolute; right: 0; top: calc(100% + 2px); display: inline-flex; gap: var(--om-spacing-1); z-index: 5; }
+.cancelBtn, .okBtn { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-2); cursor: pointer; }
+.cancelBtn { border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); }
+.okBtn { border: 0; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
+.cancelBtn:focus-visible, .okBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* The over-balance error (1271:38240): 14/500 tertiary-red under the table, 20 above "Add a Payment" (the body's gap). */
+.error { margin: 0; font: var(--om-type-body-m); font-weight: 500; color: var(--om-color-tertiary-red-default); }
+.foot { display: flex; }
+
+/* Maison AI banner (1271:39197): 60 tall, the rail's Upgrade tint, r8, p12/16, g12; mark 16.6 · text 14/500 · Undo · a bare
+   close 20 in ink flush at the padding. */
+.banner { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); min-height: 60px; border-radius: var(--om-radius-2); background: linear-gradient(90deg, rgba(214, 97, 66, .1), rgba(189, 58, 95, .1)); }
+.bannerText { flex: 1; min-width: 0; font: var(--om-type-body-m); font-weight: 500; color: var(--om-color-on-surface-default); }
+.bannerClose { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
+.bannerClose:hover { background: var(--om-color-hover-08p); }
+.bannerClose:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* Loading cards (1238:29277 / 29281 / 29285): 400×178 each, white r8, no stroke, the mark 24.5 over a 14/700 label — three at once. */
+.loading { display: grid; grid-template-columns: repeat(3, minmax(0, 400px)); gap: var(--om-spacing-6); }
+.card { height: 178px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: var(--om-radius-2); background: var(--om-color-surface-default); font: var(--om-type-body-m); font-weight: 700; color: var(--om-color-on-surface-default); }
+.aiMark { display: inline-flex; align-items: center; justify-content: center; }
+.aiMark img { display: block; }
+
+/* Toolbar (1271:37377): the preset select (secondary outlined) and "Add Payments with AI" (primary outlined, the mark in the glyph slot), g12. */
+.tools { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: nowrap; }
+.anchor { position: relative; display: inline-flex; }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+.menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.menuText { flex: 1; min-width: 0; }
+.menuCurrent { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* the preset the rows are (the tab's status menu meta) */
+
+/* ── Tablet (768–1024): the six columns tighten so the table fits the ~624px centre without scrolling sideways. */
+@media (max-width: 1024px) {
+  .head, .row, .totalRow { grid-template-columns: 36px 150px minmax(80px, 1fr) 90px 120px 120px; }
+  .cell { padding: var(--om-spacing-3) var(--om-spacing-2); }
+  .cSel { padding-left: var(--om-spacing-2); }
+  .cDue { padding-right: var(--om-spacing-6); }
+  .loading { grid-template-columns: 1fr; }
+  .card { height: 120px; }
+}
+/* ── Phone (≤767, REG-346 / REG-377 pattern): each milestone is a card — name and description on the left, share, amount and
+   due stacked on the right, the handle down the left edge, the delete pinned top-right; the head goes, the Total row is one line. */
+@media (max-width: 767px) {
+  .body { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  .head { display: none; }
+  .row { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'sel name pct' 'sel desc amount' 'sel desc due'; align-items: start; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) 40px var(--om-spacing-3) 0; }
+  .row .cell { padding: 0; }
+  .cSel { grid-area: sel; padding-left: var(--om-spacing-2); align-self: center; }
+  .cName { grid-area: name; white-space: normal; }
+  .cDesc { grid-area: desc; white-space: normal; color: var(--om-color-on-surface-secondary); }
+  .cDesc .cellBtn { white-space: normal; }
+  .cPct { grid-area: pct; }
+  .cAmount { grid-area: amount; }
+  .cDue { grid-area: due; padding-right: 0; }
+  .cPct, .cAmount, .cDue { padding-left: var(--om-spacing-3); }
+  .del.del { opacity: 1; pointer-events: auto; right: 8px; top: 8px; transform: none; }
+  .totalRow { grid-template-columns: 36px 1fr auto; grid-template-areas: 'sel name pct' 'sel name amount'; padding: var(--om-spacing-3) 40px var(--om-spacing-3) 0; row-gap: var(--om-spacing-1); }
+  .totalRow .cell { padding: 0; }
+  .totalRow .cSel { grid-area: sel; }
+  .totalRow .cName { grid-area: name; align-self: center; }
+  .totalRow .cDesc, .totalRow .cDue { display: none; }
+  .totalRow .cPct { grid-area: pct; } .totalRow .cAmount { grid-area: amount; }
+  .banner { flex-wrap: wrap; }
+  .bannerText { flex-basis: 100%; }
+  .editInput { position: relative; height: 44px; }
+  .editGhost { display: none; }
+  .foot > * { width: 100%; }
+}
+/* ── Touch (REG-273 / REG-312): the 24 handle, delete and confirm pair take 44 boxes; every value control stands 44 tall. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .handle, .cancelBtn, .okBtn, .bannerClose { position: relative; }
+  .bannerClose::after { content: ''; position: absolute; inset: -12px; }
+  .handle::after, .cancelBtn::after, .okBtn::after { content: ''; position: absolute; inset: -10px; }
+  .del.del { opacity: 1; pointer-events: auto; }
+  .del::after { content: ''; position: absolute; inset: -4px; }
+  .cellBtn { min-height: 44px; display: flex; align-items: center; margin: -12px 0; }
+  .cPct .cellBtn, .cAmount .cellBtn, .cDue .cellBtn { justify-content: flex-end; }
+  .tools button { position: relative; }
+  .tools button::after { content: ''; position: absolute; inset: -4px; }
+}

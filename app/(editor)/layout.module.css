@@ -1,0 +1,4 @@
+/* The quote editor's frame: a full-page surface with no rail (owner 2026-09-11: "a full page on top of the previous
+   page … a full page modal window"), so this route group renders without AppShell — only the snackbar host and the
+   surface-bg canvas the section cards sit on (page 1260:31139). */
+.surface { min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }

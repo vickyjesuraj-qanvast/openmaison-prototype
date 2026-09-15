@@ -13,7 +13,7 @@
      to its mocked width before the fluid Title takes the rest, so the mock's 1244 card still resolves to
      40 · 319 · 128 · 120 ×5 · 157 — while a narrower frame (rail pinned + quick links expanded = 1012) squeezes the whole
      row together instead of paying it all out of Title and overflowing the lead body's `overflow: clip`. */
-  grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px);
+  grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px));   /* --tracks: the user's dragged widths (REG-427) */
   width: 100%;
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);   /* Figma's inside stroke: rows stay 1244 wide (910:36322).
@@ -24,11 +24,12 @@
 /* A studio with no approval step has no Approval Date to show (Settings › Leads › Quote approval, REG-214), so the
    table drops that column — and its track with it, or the 112–157px would sit at the right edge as dead space. */
 .card[data-no-approval] {
-  grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px));
+  grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)));
 }
 
 /* ---- Head row 1244×56 (910:36323) ---- */
 .head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
+.hCell { position: relative; }   /* the column-resize handle on the head's right edge (REG-427) */
 .hCell {
   display: flex; align-items: center; gap: var(--om-spacing-1);
   min-width: 0;
@@ -58,6 +59,21 @@
 .colSent { grid-column: 7; }
 .colUpdated { grid-column: 8; }
 .colApproval { grid-column: 9; }
+/* (REG-422) Tools › Quotes adds a Client track after Title; every later column moves one track along. */
+.card[data-client] { grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px)); }
+.card[data-client][data-no-approval] { grid-template-columns: var(--tracks, 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px))); }
+.colClient { grid-column: 3; }
+.card[data-client] .colStatus { grid-column: 4; }
+.card[data-client] .colTotal { grid-column: 5; }
+.card[data-client] .colDue { grid-column: 6; }
+.card[data-client] .colCreated { grid-column: 7; }
+.card[data-client] .colSent { grid-column: 8; }
+.card[data-client] .colUpdated { grid-column: 9; }
+.card[data-client] .colApproval { grid-column: 10; }
+.clientLink { font: var(--om-type-body-m); color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }   /* primary at rest: it is a link (REG-422) */
+.clientLink:hover { color: var(--om-color-on-primary-variant); text-decoration: underline; }
+.clientLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.subClient { display: none; }   /* the phone card prints the client on the title's second line instead of a column */
 
 /* ---- Rows 1244×64 (910:36324) ---- */
 .row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }   /* same tracks as the head — no per-row drift (REG-180) */
@@ -179,6 +195,8 @@
 @media (hover: none) and (max-width: 1024px) {
   .card { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
   .card[data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
+  .card[data-client] { grid-template-columns: 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) minmax(112px, 157px) 150px; }
+  .card[data-client][data-no-approval] { grid-template-columns: 40px minmax(120px, 1fr) minmax(140px, 180px) minmax(128px, max-content) repeat(5, minmax(96px, 120px)) 150px; }
 }
 
 /* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
@@ -218,7 +236,11 @@
   .cell.colTitle { grid-column: 2 / -1; grid-row: 1; padding: 0 40px 0 0; }
   .cell.colStatus { grid-column: 2; grid-row: 2; }
   .cell.colTotal { grid-column: 3; grid-row: 2; justify-content: flex-end; font: var(--om-type-heading-h5); }
-  .colDue, .colCreated, .colSent, .colUpdated, .colApproval { display: none; }
+  .colDue, .colCreated, .colSent, .colUpdated, .colApproval, .colClient { display: none; }
+  .subClient { display: inline; }
+  /* (REG-422) The Client column's desktop pins (one track along) must not reach the card: status and total keep the card's own lines. */
+  .card[data-client] .colStatus { grid-column: 2; }
+  .card[data-client] .colTotal { grid-column: 3; }
   /* A finger cannot hover, so the row's controls are always up, pinned to the card's top-right corner. */
   .actions { opacity: 1; pointer-events: auto; top: var(--om-spacing-3); right: var(--om-spacing-3); }
   /* View is in the kebab's own menu; the card shows one control. DIRECT child only — the kebab sits in a

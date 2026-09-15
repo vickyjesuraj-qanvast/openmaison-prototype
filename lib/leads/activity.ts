@@ -1,7 +1,8 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteFiles, quoteItems, quotePayments, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
 import { parseInputDateTime } from '@/lib/format'
@@ -46,10 +47,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(leadReturns).where(eq(leadReturns.leadId, leadId)),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, leadId)),
   ])
-  const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id)
-  const [tComments, fComments] = await Promise.all([
+  const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id), quoteIds = qs.map((x) => x.id)
+  const [tComments, fComments, qLines, qPays, qFiles] = await Promise.all([
     taskIds.length ? db.select().from(taskComments).where(inArray(taskComments.taskId, taskIds)) : Promise.resolve([]),
     fileIds.length ? db.select().from(fileComments).where(inArray(fileComments.fileId, fileIds)) : Promise.resolve([]),
+    quoteIds.length ? db.select().from(quoteItems).where(inArray(quoteItems.quoteId, quoteIds)) : Promise.resolve([]),
+    quoteIds.length ? db.select().from(quotePayments).where(inArray(quotePayments.quoteId, quoteIds)).orderBy(asc(quotePayments.position)) : Promise.resolve([]),
+    quoteIds.length ? db.select().from(quoteFiles).where(inArray(quoteFiles.quoteId, quoteIds)) : Promise.resolve([]),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const who = (id: string | null | undefined): string => (!id ? 'System' : id === ME ? 'You' : byMember.get(id)?.name ?? 'System')
@@ -109,6 +113,15 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     if (x.sentAt) push({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
     if (x.approvedAt) push({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `You approved the quote ${q(x.number)}.`, link, actor: 'You' })   // fixed copy: the status can move on after the stamp
     if (x.deletedAt) push({ id: `quote-d-${x.id}`, at: x.deletedAt, icon: 'docs', text: `You deleted the quote ${q(x.number)}.`, link, actor: 'You' })
+    // The editor's own records (REG-343: a new record type gets its Activity branch): the lines written (REG-415) and the
+    // payment schedule set (REG-418) — dated by the records themselves, linked to the editor.
+    const editor = { label: 'Open Quote', href: `/quotes/${x.id}` }
+    const lines = qLines.filter((i) => i.quoteId === x.id && i.kind === 'item')
+    if (lines.length) push({ id: `quote-i-${x.id}`, at: new Date(Math.min(...lines.map((l) => l.createdAt.getTime()))), icon: 'docs', text: `You added ${lines.length} ${lines.length === 1 ? 'item' : 'items'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
+    const pays = qPays.filter((p) => p.quoteId === x.id)
+    if (pays.length) push({ id: `quote-p-${x.id}`, at: new Date(Math.max(...pays.map((p) => (p.updatedAt ?? p.createdAt).getTime()))), icon: 'docs', text: `You set the payment schedule of the quote ${q(x.number)} to ${presetLabel(presetOf(pays)).replace('Default: ', '')}.`, link: editor, actor: 'You' })
+    const attached = qFiles.filter((f) => f.quoteId === x.id)
+    if (attached.length) push({ id: `quote-f-${x.id}`, at: new Date(Math.max(...attached.map((f) => f.createdAt.getTime()))), icon: 'docs', text: `You attached ${attached.length} ${attached.length === 1 ? 'file' : 'files'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
   }
   for (const x of cs) {
     const link = { label: 'See Contract', href: `${base}/contracts` }

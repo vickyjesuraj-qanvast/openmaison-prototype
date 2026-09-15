@@ -111,9 +111,12 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
  * `variant="notes"` = Notes › Auto Fill (931:45344, spec 02): 552×168, the helper 237 wide and centred.
  * Keyboard: the box is a real tab stop; Enter / Space open the file picker (audit 2026-08-30).
  */
-export function Dropzone({ title, helper, onPick, uploading, accept, variant }: {
-  title: ReactNode; helper: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
-  variant?: 'notes'
+export function Dropzone({ title, helper, onPick, uploading, accept, variant, onBrowse }: {
+  title: ReactNode; helper?: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
+  /** notes = the Auto Fill box (168 tall) · compact = the quote editor's 68px strip (1267:36650, REG-419). */
+  variant?: 'notes' | 'compact'
+  /** A click / Enter opens THIS (the quote editor's Attach files modal) instead of the native picker; a drop still uploads. */
+  onBrowse?: () => void
 }) {
   const [over, setOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -132,8 +135,8 @@ export function Dropzone({ title, helper, onPick, uploading, accept, variant }: 
       className={styles.dropzone}
       data-variant={variant}
       data-over={over || undefined}
-      onClick={() => inputRef.current?.click()}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() } }}
+      onClick={() => (onBrowse ? onBrowse() : inputRef.current?.click())}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onBrowse) onBrowse(); else inputRef.current?.click() } }}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); onPick(e.dataTransfer.files[0]) }}
@@ -142,7 +145,7 @@ export function Dropzone({ title, helper, onPick, uploading, accept, variant }: 
       aria-label="Upload file"
     >
       <span className={styles.dropTitle}>{title}</span>
-      <span className={styles.dropHelper}>{helper}</span>
+      {helper ? <span className={styles.dropHelper}>{helper}</span> : null}
       <input ref={inputRef} type="file" accept={accept} className={styles.fileInput} tabIndex={-1} aria-hidden
              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; onPick(f) }} />
     </div>

@@ -1,0 +1,78 @@
+/* Create strip — the quote editor's shortcut column (collapsed 1260:31160 72 wide · expanded 1271:40377 140 wide).
+   Copied from components/leads/detail/quick-links.module.css; only the sticky offsets differ: this page has no 8px
+   canvas gutter, its header is 76 and the tab strip 48 (REG-364). */
+.aside {
+  box-sizing: border-box;
+  width: 72px; flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: calc(76px + 48px);
+  height: calc(100dvh - 76px - 48px);
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--om-spacing-6);
+  padding: var(--om-spacing-6);
+  border-left: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);   /* the strip is white in both states (1260:31160 sits on the white page frame) */
+  overflow: hidden;
+}
+.aside[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
+.aside[data-state='expanded'] { width: 140px; gap: var(--om-spacing-3); }
+
+.toggle {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-secondary);
+  transition: background-color var(--motion-hover);
+}
+.toggle:hover { background: var(--om-color-hover-08p); }
+.divider { width: 24px; height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }
+
+.glyphs, .tiles { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 2px; margin: -2px; }
+.glyphs > *, .tiles > * { flex-shrink: 0; }
+.glyphs { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.glyph {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.glyph:hover { background: var(--om-color-hover-08p); }
+
+.head { width: 92px; height: 20px; display: flex; align-items: center; }
+.title { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+.tiles { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.tile {
+  box-sizing: border-box;
+  width: 92px; min-height: 80px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--om-spacing-2);
+  padding: var(--om-spacing-4) var(--om-spacing-2);
+  border: 0; cursor: pointer;
+  border-radius: var(--om-radius-2);
+  background-color: var(--om-color-surface-bg);
+  color: var(--om-color-on-surface-default);
+  transition: background-image var(--motion-hover);
+}
+.tile:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+/* The expanded tile's label is body-s (12/400) in this strip (1271:40354 "Menu text"), not the Overview strip's caption-s. */
+.label { width: 100%; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); text-align: center; overflow-wrap: anywhere; }
+/* The Maison AI mark: a 16px four-point star turned 135° in a 24px box (Rectangle 26, 1260:31162 / 1271:40353). */
+.mark { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+.mark img { width: 22px; height: 22px; display: block; }
+
+.toggle:focus-visible, .glyph:focus-visible, .tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+
+/* ≤1024 collapsed-only, as the Overview strip (responsive.md); ≤767 no strip — every create lives in its section. */
+@media (max-width: 1024px) {
+  .aside, .aside[data-state='expanded'] { width: 72px; gap: var(--om-spacing-6); }
+  .aside { overflow: hidden auto; }
+  .toggle, .divider { display: none; }
+  .glyph { position: relative; }
+  .glyph::after { content: ''; position: absolute; inset: -10px; }
+}
+@media (max-width: 767px) { .aside { display: none; } }

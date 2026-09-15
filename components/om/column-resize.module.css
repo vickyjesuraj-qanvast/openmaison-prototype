@@ -1,0 +1,16 @@
+/* The column-resize handle (REG-427): an 8px strip on the head cell's right edge, `col-resize`; a 2px primary guide on
+   hover / focus / drag (the sheet's rule between heads). Inside the cell so an `overflow: hidden` head never clips it. */
+.handle {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 8px; z-index: 3;
+  cursor: col-resize; touch-action: none; user-select: none; outline: none;
+}
+.handle::before {
+  content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 2px;
+  background: var(--om-color-primary-default); opacity: 0; transition: opacity var(--motion-hover);
+}
+.handle:hover::before, .handle:focus-visible::before, .handle[data-dragging]::before { opacity: 1; }
+/* Touch (REG-273): the strip takes a 24-wide box through an invisible overlay that grows INTO the cell (past its edge it
+   would add scrollable overflow to a grid that must fit its card, e.g. the payment table at 768); the guide stays 2. */
+@media (hover: none) {
+  .handle::after { content: ''; position: absolute; top: 0; bottom: 0; left: -16px; right: 0; }
+}

@@ -1,0 +1,30 @@
+PAYMENT SCHEDULE (section 1238:29290; base state 1271:37370 1320×459; page instance 1260:31998)
+
+SECTION-TOP actions (1271:37377, g12): "Default: 10/30/30/30 ▾" outlined 36 (pl16 pr12, 14/600 secondary, keyboard_arrow_down 20) ·
+  "Add Payments with AI" primary outlined 36 (pl12 pr16; the add glyph is replaced by the Maison AI mark 1271:37381).
+BODY (1271:37382): p24, column gap 20: the table, then "Add a Payment" primary outlined 36 (p8/16).
+TABLE (1271:37383) 1270 wide, white, 1px surface-variant, r8, overflow clip.
+  Head (48 = p16 + 16): selection 40 (empty, pl16) · PAYMENT NAME 319 · DESCRIPTION / TRIGGER (flex 1) · PERCENTAGE (%) 140 right ·
+    AMOUNT (S$) 140 right · DUE 140 right (pl16 pr24). Head cells p16, 12/500 uppercase secondary. No right rules between columns.
+  Rows (44 = p12 + 20; border-top 1px): drag_indicator 24 Light #999 (pl16 pr0) · name 14/700 (heading-h5) · description 14/400 ·
+    percentage 14/400 right ("10%") · amount 14/600 right ("S$10,000.00") · due 14/400 right ("On Approval" for the first, "~ 21 Oct ‘26").
+  Total row: bg surface-bg; "Total" 14/700 · (empty) · "100%" 14/700 right · "S$100,000.00" 14/700 right · (empty).
+  Mock rows: Deposit · Upon signing · 10% · On Approval / Commencement · Works commence · 30% · ~ date / Mid-Project · 50% completion · 30% /
+    Completion · Handover · 30%. Amounts DERIVE from the quote total × % (REG-403); the mock's S$10,000 rows are placeholders.
+STATES (1238:29290 sub-frames; ids re-read 2026-09-15 — REG-423): inline edit of % / amount with ✓ / ✕ (1271:37609 · 1271:37797) — the box
+  fills the 48 row, square, 14/400, the amount as "S$10,000.00"; the over-balance error "Your upcoming scheduled payments are S$10,000
+  above the proposal’s balance of S$100,000" 14/500 in whole dollars with the % cell and Total in red (1271:38240); row hover (1271:38624)
+  with the primary-variant wash and the red delete — a 36 Icon Button, white, 1px tertiary-red — 24 from the row's right (a row being
+  edited stays white with no delete); rows 48 with their rule inside (table 284); the Maison AI banner "Here's an Maison AI generated
+  payment schedule · Undo · ✕" (1271:39003 right; copy → "Here's a Maison AI …", owner 2026-09-11); the three 400×178 loading cards
+  "Gathering information" · "Making some AI magic" · "Adding final touches" (1238:29277 / 29281 / 29285).
+
+MEASURED STATES
+  AI banner (1271:39197) 1270×60: gradient rgba(214,97,66,.1) → rgba(189,58,95,.1) (the rail's Upgrade tint), r8, p12/16, g12:
+    Maison AI mark 16.6 · text 14/500 on-surface-default "Here's a Maison AI generated payment schedule" (flex 1) · "Undo" primary outlined 36 (p8/16) · close 20 Regular on-surface-default.
+    Sits above the table (table moves down 80: y 104 vs 24).
+  Loading cards (1238:29277 / 29281 / 29285) 400×178 each, white r8, content centred (column, g10): the Maison AI mark 24.5 · label 14/700
+    "Gathering information" · "Making some AI magic" · "Adding final touches".
+  Inline edit confirm pair (1271:37797) 52×24, g4: ✕ = 24 icon button, white, 1px #ccc, r4, close 20 secondary, level-2 shadow ·
+    ✓ = 24 icon button, primary fill, done 20 on-primary, level-2 shadow. Drawn at the edited cell's right edge, just under the row.
+  The over-balance error (1271:38240) 14/500 in tertiary-red under the table, 20 above "Add a Payment"; the Total row's % and amount turn red.

@@ -40,3 +40,11 @@ export const QUOTE_APPROVAL_OPTIONS: { key: QuoteApproval; title: string; help: 
 export function parseQuoteApproval(v: unknown): QuoteApproval {
   return v === 'not-required' ? 'not-required' : 'required'
 }
+
+/** The studio itself (settings key `studio`, seeded by repair R23): what the quote's Issuing Entity and GST line read. */
+export type Studio = { name: string; gstRegistered: boolean; /** The studio's line, as the quote's "[Studio Phone Number]" token prints it (REG-420); '' until set. */ phone: string }
+export const DEFAULT_STUDIO: Studio = { name: 'Demo Studio Pte Ltd', gstRegistered: true, phone: '' }
+export function parseStudio(v: unknown): Studio {
+  const r = (v ?? {}) as Partial<Record<keyof Studio, unknown>>
+  return { name: typeof r.name === 'string' && r.name.trim() ? r.name : DEFAULT_STUDIO.name, gstRegistered: r.gstRegistered !== false, phone: typeof r.phone === 'string' ? r.phone.trim() : '' }
+}

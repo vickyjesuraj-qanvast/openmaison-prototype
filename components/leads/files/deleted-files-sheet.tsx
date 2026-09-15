@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
+import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
 import { Tooltip } from '@/components/om/tooltip'
@@ -43,6 +44,8 @@ export function DeletedFilesSheet({
   onDeleteForever: (ids: string[]) => void | Promise<unknown>
   onEmptyTrash: () => void | Promise<unknown>
 }) {
+  const deletedWidths = useColumnWidths('deleted-files')
+  const deletedTracks = gridTracks([{ key: 'sel', track: '40px' }, { key: 'title', track: '210px' }, { key: 'owner', track: '152px' }, { key: 'updated', track: '116px' }, { key: 'type', track: '119px' }, { key: 'size', track: '114px' }, { key: 'location', track: '149px' }, { key: 'actions', track: '252px' }], deletedWidths)   // REG-427
   useScrollLock(open)   // the page never scrolls behind this surface
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<{ kind: 'forever'; ids: string[] } | { kind: 'empty' } | null>(null)
@@ -121,7 +124,7 @@ export function DeletedFilesSheet({
               </div>
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
-                <div className={styles.card} role="table" aria-label="Deleted files">
+                <div className={styles.card} role="table" aria-label="Deleted files" data-cols="deleted-files" style={deletedTracks ? ({ '--tracks': deletedTracks } as React.CSSProperties) : undefined}>
                   <div className={styles.head} role="row">
                     <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
                       <Checkbox
@@ -131,12 +134,12 @@ export function DeletedFilesSheet({
                         aria-label="Select all deleted files"
                       />
                     </div>
-                    <div className={`${styles.hCell} ${styles.colTitle}`} role="columnheader"><span className={styles.hLabel}>Title</span></div>
-                    <div className={`${styles.hCell} ${styles.colOwner}`} role="columnheader"><span className={styles.hLabel}>Owner</span></div>
-                    <div className={`${styles.hCell} ${styles.colUpdated}`} role="columnheader"><span className={styles.hLabel}>Updated</span></div>
-                    <div className={`${styles.hCell} ${styles.colType}`} role="columnheader"><span className={styles.hLabel}>File type</span></div>
-                    <div className={`${styles.hCell} ${styles.colSize}`} role="columnheader"><span className={styles.hLabel}>File size</span></div>
-                    <div className={`${styles.hCell} ${styles.colLocation}`} role="columnheader"><span className={styles.hLabel}>File Location</span></div>
+                    <div className={`${styles.hCell} ${styles.colTitle}`} role="columnheader"><span className={styles.hLabel}>Title</span><ColumnResizer table="deleted-files" column="title" label="Title" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colOwner}`} role="columnheader"><span className={styles.hLabel}>Owner</span><ColumnResizer table="deleted-files" column="owner" label="Owner" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colUpdated}`} role="columnheader"><span className={styles.hLabel}>Updated</span><ColumnResizer table="deleted-files" column="updated" label="Updated" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colType}`} role="columnheader"><span className={styles.hLabel}>File type</span><ColumnResizer table="deleted-files" column="type" label="File type" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colSize}`} role="columnheader"><span className={styles.hLabel}>File size</span><ColumnResizer table="deleted-files" column="size" label="File size" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colLocation}`} role="columnheader"><span className={styles.hLabel}>File Location</span><ColumnResizer table="deleted-files" column="location" label="File Location" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colActions}`} role="columnheader"><span className={styles.hLabel}>Actions</span></div>
                   </div>
 

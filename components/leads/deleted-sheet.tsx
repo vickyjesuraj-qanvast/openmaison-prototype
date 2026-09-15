@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
+import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
@@ -50,6 +51,8 @@ export function DeletedLeadsSheet({
   onEmptyTrash: () => void | Promise<void>
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
+  const deletedWidths = useColumnWidths('deleted-leads')   // REG-427
+  const cw = (key: string, mock: number) => deletedWidths[key] ?? mock
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<Sort>(null)
   const [bannerOpen, setBannerOpen] = useState(true)
@@ -172,11 +175,12 @@ export function DeletedLeadsSheet({
                         />
                       </span>
                       {COLS.map((c, i) => (
-                        <div key={c.key} className={`${styles.hCell}${i === 0 ? ` ${styles.pin}` : ''}`} style={{ width: c.width }} role="columnheader">
+                        <div key={c.key} className={`${styles.hCell}${i === 0 ? ` ${styles.pin}` : ''}`} style={{ width: cw(c.key, c.width) }} role="columnheader">
                           <button type="button" className={styles.hSort} data-sorted={sort?.key === c.key || undefined} onClick={() => cycle(c.key)}>
                             <span className={styles.hLabel}>{c.label}</span>
                             <Icon name={sortIcon(c.key)} size={16} />
                           </button>
+                          <ColumnResizer table="deleted-leads" column={c.key} label={c.label} min={i === 0 ? 140 : 72} />
                         </div>
                       ))}
                       <div className={styles.hCell} style={{ width: ACTIONS_W }} role="columnheader">
@@ -191,18 +195,18 @@ export function DeletedLeadsSheet({
                         <span className={styles.selCell} role="cell">
                           <Checkbox isSelected={liveSelected.has(l.id)} onChange={() => toggle(l.id)} aria-label={`Select ${titleCaseName(l.name)}`} />
                         </span>
-                        <div className={`${styles.cell} ${styles.pin}`} style={{ width: 176 }} role="cell">
+                        <div className={`${styles.cell} ${styles.pin}`} style={{ width: cw('name', 176) }} role="cell">
                           <span className={styles.twoLine}>
                             <span className={styles.name}>{titleCaseName(l.name)}</span>
                             <span className={styles.phone}>{l.phone}</span>
                           </span>
                         </div>
-                        <div className={styles.cell} style={{ width: 146 }} role="cell"><span className={styles.plain}>{l.stage}</span></div>
-                        <div className={styles.cell} style={{ width: 132 }} role="cell"><span className={styles.plain}>{l.source}</span></div>
-                        <div className={styles.cell} style={{ width: 138 }} role="cell"><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
-                        <div className={styles.cell} style={{ width: 158 }} role="cell"><span className={styles.plain}>{l.propertyType}</span></div>
-                        <div className={styles.cell} style={{ width: 137 }} role="cell"><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
-                        <div className={styles.cell} style={{ width: 137 }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
+                        <div className={styles.cell} style={{ width: cw('stage', 146) }} role="cell"><span className={styles.plain}>{l.stage}</span></div>
+                        <div className={styles.cell} style={{ width: cw('source', 132) }} role="cell"><span className={styles.plain}>{l.source}</span></div>
+                        <div className={styles.cell} style={{ width: cw('budget', 138) }} role="cell"><span className={styles.plain}>{money(l.budgetMinor)}</span></div>
+                        <div className={styles.cell} style={{ width: cw('propertyType', 158) }} role="cell"><span className={styles.plain}>{l.propertyType}</span></div>
+                        <div className={styles.cell} style={{ width: cw('created', 137) }} role="cell"><span className={styles.plain}>{displayDate(l.createdAt)}</span></div>
+                        <div className={styles.cell} style={{ width: cw('archived', 137) }} role="cell"><span className={styles.plain}>{l.deletedAt ? displayDate(l.deletedAt) : '—'}</span></div>
                         <div className={`${styles.cell} ${styles.actions}`} style={{ width: ACTIONS_W }} role="cell">
                           <button type="button" className={styles.link} disabled={pending.has(l.id)}
                                   onClick={() => { prune([l.id]); void run([l.id], () => onRestore([l.id])) }}>Restore</button>

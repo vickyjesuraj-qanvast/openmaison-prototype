@@ -1,0 +1,113 @@
+'use client'
+
+import { useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { PageReveal } from '@/components/shell/page-reveal'
+import { PageHeader } from '@/components/shell/page-header'
+import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { MaisonFab } from '@/components/shell/maison-fab'
+import { DatePicker } from '@/components/om/date-picker'
+import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
+import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import { useRun } from '@/components/leads/tasks/use-run'
+import { QuotesToolbar } from '@/components/leads/quotes/quotes-toolbar'
+import { QuotesTable, type QuoteRowAction } from '@/components/leads/quotes/quotes-table'
+import { QuotesEmpty } from '@/components/leads/quotes/quotes-empty'
+import { QuotesFiltersModal } from '@/components/leads/quotes/quotes-filters-modal'
+import { DeleteQuotesDialog } from '@/components/leads/quotes/delete-dialog'
+import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
+import { archiveQuote, createQuote, deleteQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import type { Quote } from '@/lib/db/schema'
+import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
+import type { StudioQuotesData } from '@/lib/quotes/list'
+import pageStyles from '@/app/leads/leads.module.css'
+import styles from './quotes-workspace.module.css'
+
+/**
+ * Tools › Quotes (REG-422; owner 2026-09-11: the Quotes tile "lands on a studio-wide list … with Create Quote + Client
+ * field"): every quote in the studio — the Quotes tab's toolbar, table, filters, bulk bar and dialogs (components/leads/
+ * quotes/*), with a Client column that links to the lead's Quotes tab, a search that also matches the client's name, and
+ * Create Quote opening the modal with a Client field on top. Actions run through the tabs' shared `useRun`.
+ */
+export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
+  const { quotes, leads, templates, priceBookCount, approval, now } = data
+  const router = useRouter()
+  const snackbar = useSnackbar()
+  const comingSoon = useComingSoon()
+  const { run, fail } = useRun()
+  const nameOf = useMemo(() => new Map(quotes.map((q) => [q.id, q.leadName])), [quotes])
+
+  const [query, setQuery] = useState('')
+  const [filters, setFilters] = useState<QuoteFilters>(EMPTY_QUOTE_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const filterCount = activeQuoteFilterCount(filters)
+  const visible = useMemo(() => {
+    const base = applyQuoteFilters(quotes, filters, now)
+    const q = query.trim().toLowerCase()
+    return q ? base.filter((x) => searchQuotes([x], query).length > 0 || (nameOf.get(x.id) ?? '').toLowerCase().includes(q)) : base
+  }, [quotes, filters, query, now, nameOf])
+  const nothingMatches = quotes.length > 0 && visible.length === 0 && (query.trim() !== '' || filterCount > 0)
+  const visibleIds = useMemo(() => new Set(visible.map((q) => q.id)), [visible])
+  if ([...selected].some((id) => !visibleIds.has(id))) setSelected(new Set([...selected].filter((id) => visibleIds.has(id))))
+
+  const [dueFor, setDueFor] = useState<{ quoteId: string; el: HTMLElement } | null>(null)
+  const dueAnchor = useRef<HTMLElement | null>(null)
+  const [deleting, setDeleting] = useState<string[] | null>(null)
+  const dueQuote = dueFor ? quotes.find((q) => q.id === dueFor.quoteId) : null
+  const [createOpen, setCreateOpen] = useState(false)
+  const startQuote = (templateId: string | null, clientId: string | null) => {
+    if (!clientId) return
+    return run('create the quote', async () => { const id = await createQuote(clientId, templateId); setCreateOpen(false); router.push(`/quotes/${id}`) }, undefined, { guard: 'create' })
+  }
+  const openQuote = (quote: Quote) => router.push(`/quotes/${quote.id}`)
+  const onStatus = (quote: Quote, status: QuoteStatus) => {
+    if (status === quote.status) return
+    void run('change the status', () => setQuoteStatus(quote.id, status), `Quote marked ${status}`)
+  }
+  const openDue = (quote: Quote, anchor: HTMLElement) => { dueAnchor.current = anchor; setDueFor((d) => (d?.el === anchor ? null : { quoteId: quote.id, el: anchor })) }
+  const rowMenu = (quote: Quote, action: QuoteRowAction) => {
+    if (action === 'copy') {
+      const url = `${window.location.origin}/quotes/${quote.id}`
+      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Link copied' }), () => fail('copy the link'))
+    } else if (action === 'archive') {
+      void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })
+    } else if (action === 'delete') {
+      setDeleting([quote.id])
+    } else {
+      comingSoon()
+    }
+  }
+  const selectedIds = [...selected]
+
+  return (
+    <PageReveal skeleton={<LeadsSkeleton />}>
+      <div className={pageStyles.body} style={{ position: 'relative' }}>
+        <PageHeader title="Quotes" />
+        <div className={styles.frame}>
+          <QuotesToolbar query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={comingSoon} />
+          {quotes.length === 0 ? (
+            <QuotesEmpty onFromScratch={() => setCreateOpen(true)} onFromTemplate={() => setCreateOpen(true)} />
+          ) : nothingMatches ? (
+            <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
+          ) : (
+            <QuotesTable quotes={visible} now={now} approval={approval} selected={selected} onSelect={setSelected}
+                         onStatus={onStatus} onDue={openDue} onView={openQuote} onRowMenu={rowMenu}
+                         clientOf={(q) => ({ name: nameOf.get(q.id) ?? '', href: `/leads/${q.leadId}/quotes` })} />
+          )}
+        </div>
+        <DetailBulkBar count={selected.size} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting(selectedIds) }]} onClear={() => setSelected(new Set())} />
+        <DatePicker open={!!dueFor} anchorRef={dueAnchor} anchorKey={dueFor?.quoteId ?? ''} value={dueQuote?.dueAt ?? null} today={new Date(now)} label="Due date"
+                    onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }} onClose={() => setDueFor(null)} />
+        <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={(v) => { setFilters(v); setFiltersOpen(false) }} onClose={() => setFiltersOpen(false)} />
+        <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => setCreateOpen(false)}
+                          onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
+                          onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }} />
+        <DeleteQuotesDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}
+                            onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); void run('delete', () => deleteQuotes(ids), ids.length === 1 ? 'Quote deleted' : `${ids.length} quotes deleted`, { refresh: true }) }} />
+        <MaisonFab onPress={comingSoon} />
+      </div>
+    </PageReveal>
+  )
+}

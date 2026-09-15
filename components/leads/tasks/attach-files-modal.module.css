@@ -69,6 +69,8 @@
 }
 .chip:hover { background: var(--om-color-hover-04p); }
 .chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; }
+/* The quote's chip (1238:30353): 12/600, pl12 pr8, expand_more 16 — 93 wide. */
+.chip[data-chrome='quote'] { font: var(--om-type-caption-s); font-weight: 600; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); }
 
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-10); }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
@@ -88,6 +90,11 @@
 }
 .folderIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .folderName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The quote's folder card (1238:30353): p12 g8, 56 tall — folder 24 · name 14/600 over "n items" 10/400 · kebab. */
+.folder[data-chrome='quote'] { padding: var(--om-spacing-3); gap: var(--om-spacing-2); min-height: 56px; }
+.folderText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.folder[data-chrome='quote'] .folderName { font: var(--om-type-subheading-m); }
+.folderCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
 /* Kebab: bare more_vert 24/Light secondary — the Files grid's folder card (files-grid.module.css .kebab, lead-files/02 line 12);
    the attach-files spec is silent on it, so the measured sibling wins (audit 2026-08-30, UI-25). */
 .folderKebab {
@@ -109,6 +116,14 @@
   transition: background-color var(--motion-hover);
 }
 .tile:hover { background: var(--om-color-hover-04p); }   /* hover copied from the overview file tile (files-card.module.css) */
+/* The quote's tile (1238:30353 · 1271:41016): the pick is the tile itself — selected = primary-variant fill inside a 1px primary
+   stroke; no checkbox. Its caption pt16 pb12 (g8 p8) leaves the image 200 tall. */
+.tile[data-chrome='quote'] { box-shadow: inset 0 0 0 var(--om-border-1) transparent; }
+.tile[data-chrome='quote'][data-selected] { background: var(--om-color-primary-variant); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); }
+.tile[data-chrome='quote']:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tile[data-chrome='quote'] .caption { padding: var(--om-spacing-4) var(--om-spacing-2) var(--om-spacing-3); cursor: pointer; }
+.tile[data-chrome='quote'] .tileName { font: var(--om-type-subheading-m); }
+.tile[data-chrome='quote'] .kindIcon { flex-shrink: 0; }
 .tileImg { display: block; width: 100%; flex: 1; min-height: 0; object-fit: cover; border-radius: var(--om-radius-0-5); }
 .tileBox {
   flex: 1; min-height: 0; width: 100%;

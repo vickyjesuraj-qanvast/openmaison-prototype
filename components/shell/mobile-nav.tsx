@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
+import { ToolsPopover } from './tools-popover'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -47,6 +48,7 @@ export function MobileChrome() {
   const layer = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
   const comingSoon = useComingSoon()
+  const [toolsOpen, setToolsOpen] = useState(false)   // (REG-422) Tools › the tile sheet
   const pathname = usePathname()
   /* (REG-287) The sheet only exists ≤767 — leaving mobile closes it (render-phase adjust on the house hook). */
   const mobile = useMediaQuery(MOBILE)
@@ -113,10 +115,14 @@ export function MobileChrome() {
                   aria-current={on ? 'page' : undefined}>
               {inner}
             </Link>
+          ) : it.label === 'Tools' ? (
+            /* (REG-422) Tools opens its sheet (tools-popover.tsx) — the rail item's phone form. */
+            <button key={it.label} type="button" className={styles.dockItem} data-active={toolsOpen || undefined} aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen(true)}>{inner}</button>
           ) : (
             <button key={it.label} type="button" className={styles.dockItem} onClick={comingSoon}>{inner}</button>
           )
         })}
+        <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
         <button type="button" className={styles.dockItem} data-active={open || undefined}
                 aria-label="More" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} /></span>

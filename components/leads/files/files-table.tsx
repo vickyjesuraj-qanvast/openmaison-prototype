@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
+import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -27,6 +28,8 @@ export type FilesTableProps = {
 }
 
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
+/** The card's mocked tracks (files-table.module.css) — the user's dragged widths replace them (REG-427). */
+const TRACKS = [{ key: 'sel', track: '40px' }, { key: 'title', track: 'minmax(0, 1fr)' }, { key: 'owner', track: '240px' }, { key: 'updated', track: '116px' }, { key: 'type', track: '119px' }, { key: 'size', track: '114px' }, { key: 'attached', track: '195px' }]
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle },
   { key: 'owner', label: 'Owner', col: styles.colOwner },
@@ -71,8 +74,10 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
   /* ≤1024 the card is the table's own horizontal scroller (REG-269) and `data-scrolled` lifts the frozen
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
+  const colWidths = useColumnWidths('lead-files')
+  const tracks = gridTracks(TRACKS, colWidths)
   return (
-    <div className={styles.card} role="table" aria-label="Files"
+    <div className={styles.card} role="table" aria-label="Files" data-cols="lead-files" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
       <div className={styles.head} role="row">
@@ -86,6 +91,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
               <span className={styles.hLabel}>{h.label}</span>
               <Icon name="unfold_more" size={16} />
             </button>
+            <ColumnResizer table="lead-files" column={h.key} label={h.label} min={h.key === 'title' ? 160 : 72} />
           </div>
         ))}
       </div>

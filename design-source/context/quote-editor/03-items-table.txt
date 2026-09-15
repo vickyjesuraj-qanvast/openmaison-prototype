@@ -1,0 +1,56 @@
+ITEMS SECTION (1260:31209 1320×1027; toolbar 1260:31210 — NO drag handle (owner 2026-09-11, re-read from Figma); table 1260:31225 1510 wide inside 1318 → horizontal scroll)
+
+TOOLBAR (section-top actions, gap 12, all 36 tall, border 1px #ccc r4, 14/600 secondary, glyphs 20 Regular)
+  Create Group (create_new_folder + label, pl12 pr16) · segmented undo | redo (36 each, share a border; 40% opacity when nothing to undo)
+  · expand_content · tune (→ column settings panel 1271:41169) · format_line_spacing (→ density Single / Double / Triple)
+  · "View by: None ▾" (pl16 pr12; menu: None · Category · Room · Section — radio rows)
+  · Maison AI (primary outlined, add 20 + label, the sparkle mark overlaid) · "Create ▾" (primary outlined, pl16 pr12)
+  Reference (View by ≠ None): "Add Category" / "Add Section" text buttons appear before Create Group, and "Collapse All" before View by.
+
+TABLE — header row 52, rows 72 with the 1px rule INSIDE (p12 around the 48 thumb) growing to 80 / 96 as the description's clamp needs
+  a second / third line — the base state (1260:31372) clamps to TWO, Double is the default (REG-423); cells border-right 1px
+  (2026-09-15, 1260:31209 updated — REG-426: the STATUS column is no longer in the default set; it stays in Column settings, 160 wide when on.)
+  (2026-09-15, REG-427: every column but ITEM is CONTENT-FIT — the widths below are the SSR / first-paint fallback — and resizable by its
+   head's right edge; selection · # · ITEM are frozen left at every width.)
+  Column widths (x → w):  selection 100 · # 76 · ITEM 360 (border-right 4px) · [STATUS 160 when on] · QTY 65 · UNIT 127 · COST 115 ·
+  MARKUP 150 · UNIT PRICE 125 · DISCOUNT 101 · GST (%) 79 · add-column 52 (add_box 20 primary in the head) · TOTAL 140 (frozen right,
+  border-left 4px, pl16 pr24, right-aligned).  Head cells p16, 12/500 uppercase secondary; body cells p16, 14/400 on-surface-default;
+  placeholders ("Add Unit Type", "Add Room") 14/400 secondary.
+  Selection cell: p16, gap 4, glyphs 20 Light secondary: drag_indicator · add (insert below) · checkbox 20. Head = select-all checkbox, right-aligned.
+  # cell: 12/500 uppercase ("1", "4.1"). Reference numbering: groups 1..n, children 1.1, 1.2; View by adds a level (2.2.1).
+  ITEM cell: px16 py12, gap 12: thumb 48 (bg #f2f2f2, border 1px surface-variant, r2, image cover; "1/2" badge = more images;
+    placeholder = 2px dashed #ccc + add_photo_alternate 20 Light secondary) + text col gap 4: name 14/600 + description 12/400 secondary
+    (h32 = 2-line clamp; "Add a description" placeholder).
+  GROUP row: name 14/600 + cards 20 FILL #999 right after the text (gap 4) + keyboard_arrow_up/down 20 at the cell's right, flush with the
+  text column (16 from the cell edge — "20" was a mis-measure, corrected 2026-09-15); sums 14/400 with the markup's "(x%)"; 4px tertiary-blue #4e58b4 bar
+    on the cell's left edge (full row height). Group cells show the SUM of children (owner: groups sum children).
+  CHILD row: ITEM cell bg tertiary-blue-variant2 #edeef7, pl32; name + visibility / visibility_off 20 FILL secondary (client visibility, menu 1271:40931);
+    STATUS cell empty; the 4px blue bar continues.
+  STATUS chip (p8 r4, gap 8: [icon 16 + label 14/400, gap 4] + keyboard_arrow_down 20):
+    Pending  = bg tertiary-yellow-variant2 #fef5ea, text on-tertiary-yellow-variant #c17e22, hourglass_top
+    Approved = green tint (tertiary-green-variant2 #edf5ee / on-tertiary-green-variant #387e47), check_circle
+    Declined = red tint (tertiary-red variant2 / on-tertiary-red variant), warning
+  ACTIVE CELLS row (1271:40867): description becomes a 24px input (12/400, p4 8) with a floating "Expand" button below-left
+    (white, border 1px #ccc, level-2 shadow, expand_content 20 + 14/600, 24 tall, pl8 pr12); QTY input 36 (p8); UNIT select 36 (pl8 pr12, cell grows to 183);
+    COST / MARKUP / UNIT PRICE inputs 36 (p8); ROOM select 36 (cell 159); GST plain.
+  ADD ITEM row (56): "#n" · TextField 36 "Add Item" (327 wide) · links 14/600 primary "View Price Book" · "Export As" (gap 24).
+    Typing opens the Add item popover (1271:40932) anchored under the field.
+  Density (reference): Single = 1-line description (72) · Double = 2 lines (80, DEFAULT) · Triple = 3 lines (96) — the row follows its content.
+  Active row (1271:40867): the NAME stays 14/600 text (no box); the description is the 24px field; the number cells the 36px box;
+  COST / MARKUP / UNIT PRICE cells drop to p8 (boxes 99 / 134 / 109); the UNIT select shows its chevron; "(x%)" hides; Expand hangs 12 below.
+  Reference extra columns (column settings): SKU · Status · Type · Category · Qty · Unit · Cost · MSRP · Markup · Margin · Unit Price ·
+    Room · Color · Dimensions · Materials · Shipping · Shipping Markup · Taxable · Vendor/Sub · Website Link; item details toggles
+    Show item description · Show images · Show autonumber; footer Add New Column · Save. Drag to reorder columns.
+
+BELOW THE TABLE (1260:31541 1318×292): border-top 1px, padding 22 24, gap 24, items start:
+  left flex 1: Issuing Entity select 36 (label "Issuing Entity", value = the studio, expand_more) + helper "GST-Registered" 12/400 secondary.
+  right: TOTALS card 434 wide — border 1px surface-variant, r8, p16, column gap 12; every row = 200 label + 200 value (right, 14/600):
+    "Subtotal · n items" (dot secondary) | S$23,000.00
+    "Discount" | S$0.00                            (Σ line discounts)
+    "Additional Discount" | [ "%" select 24 tall (pl8 pr4, 12/400, expand_more 16) · input 24 (p4 8, 12/400 right, "0.00") ]
+    "GST 9%" + Switch 40×20 (gap 8) | S$2,070.00
+    1px divider
+    "Total" 20/600 + "Round Prices" link 14/600 primary (gap 8) | S$25,070.00 20/600
+    margin strip: bg tertiary-green-variant2 #edf5ee, r4, p8, gap 16: visibility_off 16 + "Margin · owners only" 12/400 secondary |
+      "31.4% · S$7,220" 12/500 on-tertiary-green-variant #387e47
+  Money: "S$" + money() with two decimals everywhere in the editor ("S$1,000.00").

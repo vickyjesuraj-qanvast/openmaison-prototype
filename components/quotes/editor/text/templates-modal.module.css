@@ -1,0 +1,33 @@
+/* Templates (1238:33084 empty · 1238:33258 list · 1238:33173 new): the L 800 modal, 600 tall — a 96px rule-less heading (title row +
+   the search / Create New row), the p24 body of 752×88 cards (stroke inside), the empty state a bordered box filling the body;
+   the New Template form: Title* (36) over the framed editor, footer Save · Save and Add. */
+.headRow { display: flex; align-items: center; gap: var(--om-spacing-3); margin-bottom: -8px; }   /* 20 + 24 + 4 + 36 + 12 = 96 */
+.search { width: 240px; flex-shrink: 0; }
+.spacer { flex: 1; }
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.card { display: flex; align-items: center; gap: var(--om-spacing-2); padding: 19px var(--om-spacing-5); min-height: 88px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.cardText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.cardTitle { font: var(--om-type-heading-h5); text-transform: uppercase; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardActions { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; position: relative; }
+/* Empty (1238:33084): a 1px surface-variant r8 box filling the body's 456; "No templates yet" 20/600 over the 14/400 line, both ink. */
+.empty { flex: 1; min-height: 456px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-3); text-align: center; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.emptyTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }
+.emptyLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+/* "Insert Token ▾" (1238:33173): a 36px trigger — 1px #ccc r4, "Insert Token" 14/400 ink, expand_more 20 ink — whose 200 menu right-aligns to it. */
+.tokenAnchor { position: relative; display: inline-flex; }
+.tokenBtn { height: 36px; display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
+.tokenBtn:hover { background: var(--om-color-hover-04p); }
+.tokenBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tokenChev { display: inline-flex; transition: transform var(--motion-toggle); }
+.tokenChev[data-open] { transform: rotate(180deg); }
+.menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .headRow { flex-wrap: wrap; }
+  .search { width: 100%; flex-basis: 100%; }
+  .card { flex-wrap: wrap; }
+  .cardText { flex-basis: 100%; }
+  .cardActions { margin-left: auto; }
+  .tokenAnchor { width: 100%; }
+}

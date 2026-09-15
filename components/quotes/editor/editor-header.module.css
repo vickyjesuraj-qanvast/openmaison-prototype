@@ -1,0 +1,85 @@
+/* Page Header / Quotes (1201:33834, instance 1260:31143 / 1273:29264): 76 tall, p16/24, white, 1px surface-variant INSIDE bottom
+   stroke; row gap 12: arrow_back 24 · title block (crumb 12/400 over [the quote's title 20/700 + chevron 20] · chips g8 · saved) ·
+   [status ▾] · Send · actions g12.
+   Spec: design-source/context/quote-editor/01-header-tabs-strip.txt. Sticky at the top of the page (no canvas gutter here). */
+.header {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  height: 76px;
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  background: var(--om-color-surface-default);
+  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+}
+.back {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex-shrink: 0;
+  color: var(--om-color-on-surface-default);
+  text-decoration: none; border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+}
+.back:hover { background: var(--om-color-hover-08p); }
+.titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+/* [title + keyboard_arrow_down] is one button: the lead's other quotes open under it (owner 2026-09-11); the title is the quote's. */
+.switch {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  border: 0; background: none; padding: 0; cursor: pointer; min-width: 0; max-width: 100%;
+  border-radius: var(--om-radius-1);
+  color: var(--om-color-on-surface-default);
+}
+.switch:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.title { margin: 0; min-width: 0; font: var(--om-type-heading-h3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chev { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+/* check_circle 20 tertiary-green + "Saved 2 mins ago" 12/400 secondary, g4 (1201:33809). */
+.saved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.savedIcon { display: inline-flex; color: var(--om-color-tertiary-green-default); }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
+.anchor { position: relative; display: inline-flex; min-width: 0; }
+.send { display: inline-flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
+.sendBtn { display: inline-flex; }
+.rule { width: 1px; height: 36px; background: var(--om-color-surface-variant); flex-shrink: 0; }
+/* The quote-switch rows: title (ellipsis) · number, "current" at the right (the tab's status menu meta, quotes-table.module.css). */
+.menuTitle { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menuSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.menuCurrent { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+
+/* ── Responsive (responsive.md, REG-269): ≤1024 the chips scroll before anything clips; ≤767 the header leaves the
+   sticky stack, wraps (back · title · kebab · close, then the chips line, then Send full width) and the secondary
+   actions fold into the kebab (editor-header.tsx adds them there). */
+@media (max-width: 1024px) {
+  .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  /* Preview and Comments fold into the kebab from the tablet down (both answer coming soon), which gives the lead's
+     name its line back — at 768 the full cluster cut it to "Olivia…"; the name keeps its width and the chips scroll. */
+  .foldable { display: none; }
+  .titleRow > .anchor { flex-shrink: 0; max-width: 45%; }
+}
+@media (max-width: 767px) {
+  /* Two rows: back · title (chips + saved wrap under it) · kebab + close, then Send across the full width. */
+  .header {
+    position: relative; top: auto; z-index: auto; height: auto;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+    column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-3);
+    padding: var(--om-spacing-4); padding-top: calc(var(--om-spacing-4) + env(safe-area-inset-top, 0px));
+  }
+  /* The arrow and the kebab / close sit on the TITLE's line (the L2 header's phone rule), not the block's centre. */
+  .back { grid-row: 1; grid-column: 1; align-self: start; }
+  .titleBlock { grid-row: 1; grid-column: 2; min-width: 0; }
+  .actions { grid-row: 1; grid-column: 3; align-self: start; margin-top: -6px; }
+  .send { grid-row: 2; grid-column: 1 / -1; display: flex; }
+  .sendBtn { flex: 1; }
+  .sendBtn > *, .sendBtn button { width: 100%; }
+  .crumb { display: none; }
+  .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .chips { flex: 1 1 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .foldable { display: none; }
+}
+@media (hover: none) {
+  .back { width: 44px; height: 44px; margin: -10px; }
+}
+@media (hover: none) and (max-width: 767px) {
+  .back { margin: -10px; }   /* the 44 box stays centred on the 24 title line */
+}

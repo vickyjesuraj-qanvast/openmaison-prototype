@@ -5,6 +5,7 @@ import { Button, Checkbox, Link, Tag } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
+import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -110,8 +111,10 @@ export function TasksTable({
     onSelect(next)
   }
 
+  const colWidths = useColumnWidths('lead-tasks')
+  const colVars = flexVars(colWidths)   // REG-427: `--cw-<key>` per dragged column, read by tasks-table.module.css
   return (
-    <div className={styles.card} role="table" aria-label="Tasks">
+    <div className={styles.card} role="table" aria-label="Tasks" data-cols="lead-tasks" style={colVars as React.CSSProperties | undefined}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
@@ -128,6 +131,7 @@ export function TasksTable({
             ) : (
               <span className={styles.hLabel}>{h.label}</span>
             )}
+            <ColumnResizer table="lead-tasks" column={h.key} label={h.label} min={h.key === 'title' ? 200 : 72} />
           </div>
         ))}
       </div>

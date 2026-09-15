@@ -1,0 +1,51 @@
+/* Signature (1263:35910 …, REG-421): two 659 panes (p20/36) — the 587×140 signature box, then name · Edit · studio 12 below. */
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 14/400 ink + the 20px switch (1263:35917) */
+.panes { display: grid; grid-template-columns: 1fr 1fr; }
+.pane { padding: 20px 36px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.box { height: 140px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--om-color-on-surface-default); }
+.box[data-kind='type'], .box[data-kind='draw'] { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+.choose { display: inline-flex; gap: var(--om-spacing-3); }
+/* The signature face (1263:36013 "Menu text" 32 tall): the name at 24/700. */
+.typed { font-size: 24px; line-height: 32px; font-weight: 700; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 var(--om-spacing-4); }
+.drawing { width: 100%; height: 100%; display: block; }
+.who { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the rule 12 above the name (1263:35910) */
+.whoRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.name { flex: 1; min-width: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 16/600 */
+.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); border-radius: var(--om-radius-1); }
+.link:hover { color: var(--om-color-on-primary-variant); }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.metaLabel { font-weight: 400; }   /* "NRIC:" regular (1263:35952) */
+.pending { font-style: italic; }
+/* The client's block (1263:35933): dashed 1px on-surface-border r8, 140 tall. */
+.clientBox { height: 140px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-1); text-align: center; padding: 0 var(--om-spacing-6); }
+.clientTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); }   /* "Client signs online" #666 (1263:35933) */
+.clientMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Signature Settings (1239:31250): blocks 20 apart — "Show signature as" 14/700 + Draw / Type radio rows 36 (Outlined glyphs); the
+   752×140 preview (1px #ccc r4) with Clear at its top-right; the name in the section's own 24/32 face. */
+.settings { display: flex; flex-direction: column; gap: 20px; }
+.modeRow { display: flex; align-items: center; gap: var(--om-spacing-5); }
+.modeLabel { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.radio { display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
+.radio:hover { background: var(--om-color-hover-04p); }
+.radio:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.radioIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.radioIcon[data-on] { color: var(--om-color-primary-default); }
+.preview { position: relative; height: 140px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--om-color-on-surface-default); }
+.canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.clear { position: absolute; top: 20px; right: 20px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }
+.clear:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }
+
+/* ── Tablet / phone: the panes stack; the panes' 36 gutter becomes 24 / 16. */
+@media (max-width: 1024px) { .pane { padding: 20px 24px; } }
+@media (max-width: 767px) {
+  .panes { grid-template-columns: 1fr; }
+  .pane { padding: 16px; }
+  .switchRow { font: var(--om-type-body-s); }
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .link, .clear { position: relative; }
+  .link::after, .clear::after { content: ''; position: absolute; inset: -12px; }
+  .radio { min-height: 44px; }
+}

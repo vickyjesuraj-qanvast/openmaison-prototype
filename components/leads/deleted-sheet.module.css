@@ -93,6 +93,7 @@
 }
 .tableWrap[data-scrolled] .pin { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
 .hCell { color: var(--om-color-on-surface-secondary); }
+.hCell:not(.pin) { position: relative; }   /* the column-resize handle (REG-427); the pinned head is already positioned (sticky) */
 .hSort {
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   border: 0; background: none; padding: 0; cursor: pointer;

@@ -8,6 +8,7 @@ import { ImportsSkeleton } from '@/components/shell/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
 import { MaisonFab } from '@/components/shell/maison-fab'
+import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -40,6 +41,8 @@ function TemplateButton() {
 }
 
 function View({ imports }: { imports: ImportBatch[] }) {
+  const importWidths = useColumnWidths('imports')   // REG-427: a dragged column is fixed at that width, the others keep their pro-rata growth
+  const colStyle = (key: string, mock: number): CSSProperties => (importWidths[key] ? { flex: `0 0 ${importWidths[key]}px` } : ({ '--col': mock } as CSSProperties))
   const searchRef = useRef<HTMLInputElement>(null)
   useSearchTarget(searchRef)
   const router = useRouter()
@@ -147,13 +150,14 @@ function View({ imports }: { imports: ImportBatch[] }) {
                 <div className={styles.table} role="table" aria-label="Import history">
                   <div className={styles.headRow} role="row">
                     {COLS.map((c) => (
-                      <div key={c.key} className={styles.hCell} style={{ '--col': c.width } as CSSProperties} role="columnheader">
+                      <div key={c.key} className={styles.hCell} style={colStyle(c.key, c.width)} role="columnheader">
                         {'sortable' in c && c.sortable ? (
                           <button type="button" className={styles.hSort} data-sorted={dateDir !== 'none' || undefined}
                                   onClick={() => setDateDir((d) => (d === 'none' ? 'desc' : d === 'desc' ? 'asc' : 'none'))}>
                             {c.label}<Icon name={dateDir === 'none' ? 'unfold_more' : dateDir === 'desc' ? 'arrow_downward' : 'arrow_upward'} size={16} />
                           </button>
                         ) : c.label}
+                        <ColumnResizer table="imports" column={c.key} label={c.label} min={72} />
                       </div>
                     ))}
                   </div>
@@ -164,12 +168,12 @@ function View({ imports }: { imports: ImportBatch[] }) {
                        so a screen reader saw rows of generic children and dropped out of table mode — no column
                        announcements, no cell navigation. Additive only; nothing here is styled by role. */
                     <div key={b.id} className={styles.row} role="row">
-                      <div className={styles.cell} style={{ '--col': 141 } as CSSProperties} role="cell"><span>{displayDate(b.createdAt)}</span></div>
-                      <div className={`${styles.cell} ${styles.fileName}`} style={{ '--col': 285 } as CSSProperties} role="cell"><span>{b.fileName}</span></div>
-                      <div className={styles.cell} style={{ '--col': 118 } as CSSProperties} role="cell"><span>{b.totalRows}</span></div>
-                      <div className={styles.cell} style={{ '--col': 142 } as CSSProperties} role="cell"><span>{b.importedRows}</span></div>
-                      <div className={styles.cell} style={{ '--col': 396 } as CSSProperties} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
-                      <div className={styles.cell} style={{ '--col': 234 } as CSSProperties} role="cell">
+                      <div className={styles.cell} style={colStyle('date', 141)} role="cell"><span>{displayDate(b.createdAt)}</span></div>
+                      <div className={`${styles.cell} ${styles.fileName}`} style={colStyle('file', 285)} role="cell"><span>{b.fileName}</span></div>
+                      <div className={styles.cell} style={colStyle('total', 118)} role="cell"><span>{b.totalRows}</span></div>
+                      <div className={styles.cell} style={colStyle('imported', 142)} role="cell"><span>{b.importedRows}</span></div>
+                      <div className={styles.cell} style={colStyle('errors', 396)} role="cell"><span>{b.errorNote ?? 'No errors'}</span></div>
+                      <div className={styles.cell} style={colStyle('log', 234)} role="cell">
                         {b.skippedRows > 0 ? (
                           <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download Skipped Records</a>
                         ) : <span style={{ color: 'var(--om-color-on-surface-secondary)' }}>—</span>}

@@ -58,7 +58,7 @@
   padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4);
   overflow: hidden; white-space: nowrap;
 }
-.hCell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.hCell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); position: relative; }   /* relative: the column-resize handle (REG-427); the frozen Date head's sticky rule below still wins */
 .hSort { display: inline-flex; align-items: center; gap: var(--om-spacing-1); border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; text-transform: inherit; }
 .hSort[data-sorted] { color: var(--om-color-primary-default); }
 .cell { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }

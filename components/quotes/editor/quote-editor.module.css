@@ -1,0 +1,47 @@
+/* Quote editor page (frame 208, 1260:31139): 1440 wide with NO rail — a full-page surface over the page the user came
+   from (owner 2026-09-11). Header 76 + tab strip 48 (REG-364) stick at the top; the body is the section column
+   (p24, cards 24 apart = 1320 wide at 1440) beside the 72 / 140 Create strip. Page canvas = surface-bg. */
+.page { flex: 1; min-width: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); --bulk-bar-shift: -36px; }
+/* The floating bulk bar (detail-bulk-bar.module.css) centres on the section column: half the Create strip's width to the left
+   (72 collapsed · 140 expanded; ≤1024 collapsed-only; ≤767 no strip). */
+.page[data-strip='expanded'] { --bulk-bar-shift: -70px; }
+/* ^ min-width 0: PageReveal's .reveal is a ROW flex container, so without it the page's automatic minimum followed the
+   tab strip's unbroken width (926 at 768) and the whole surface scrolled sideways on a tablet and a phone. */
+/* Doubled class (specificity 0,2,0, the Lead Details rule): om/tabs' own `.tabs { position: relative }` must never win. */
+.stickyTabs.stickyTabs { position: sticky; top: 76px; z-index: 19; }
+.body { flex: 1; display: flex; align-items: stretch; min-height: 0; }
+.main {
+  flex: 1; min-width: 0;
+  padding: var(--om-spacing-6);
+  padding-bottom: var(--fab-clearance, 96px);
+  display: flex; flex-direction: column; gap: var(--om-spacing-6);
+}
+/* The five movable sections (motion Reorder.Group) keep the column's rhythm. */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-6); list-style: none; margin: 0; padding: 0; }
+.item { position: relative; }
+.item[data-dragging] { z-index: 2; }
+/* Sections whose bodies arrive in a later phase show the Lead Details' coming-soon body (app/leads/[id]/overview.module.css .soon). */
+.soon {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-3);
+  text-align: center; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m);
+  padding: var(--om-spacing-8);
+}
+.soonTitle { font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); }
+.anchor { position: relative; display: inline-flex; }
+.menuText { flex: 1; min-width: 0; }
+.menuCurrent { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* the tab's status menu meta (910:36673) */
+/* Touch (REG-273 / REG-312): the status pill is a 36px DS Button; the invisible ::after grows its box to 44 without moving the mark. */
+@media (hover: none) and (max-width: 1024px), (max-width: 767px) {
+  .anchor > button { position: relative; }
+  .anchor > button::after { content: ''; position: absolute; inset: -4px; }
+}
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+
+@media (max-width: 1024px) { .page[data-strip] { --bulk-bar-shift: -36px; } }
+@media (max-width: 767px) {
+  .page[data-strip] { --bulk-bar-shift: 0px; }
+  .stickyTabs.stickyTabs { top: 0; }   /* the header leaves the sticky stack ≤767 (editor-header.module.css) */
+  .main { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); gap: var(--om-spacing-4); }
+  .group { gap: var(--om-spacing-4); }
+}

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Button, Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
+import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -30,10 +32,14 @@ export type QuotesTableProps = {
   onDue: (quote: Quote, anchor: HTMLElement) => void
   onView: (quote: Quote) => void
   onRowMenu: (quote: Quote, action: QuoteRowAction) => void
+  /** Tools › Quotes (REG-422): the studio-wide list adds a Client column after Title — the lead the quote belongs to, linked. */
+  clientOf?: (quote: Quote) => { name: string; href: string } | null
 }
 
 /* Column order + head copy — exactly as the mock types it (910:36323, spec 01). Every head carries unfold_more 16.
    Approval Date is part of the approval lifecycle, so it is dropped with it (see `showApproval` below). */
+/** The card's mocked tracks by head key (quotes-table.module.css) — the user's dragged widths replace them (REG-427). */
+const TRACK: Record<string, string> = { sel: '40px', title: 'minmax(120px, 1fr)', client: 'minmax(140px, 180px)', status: 'minmax(128px, max-content)', total: 'minmax(96px, 120px)', due: 'minmax(96px, 120px)', created: 'minmax(96px, 120px)', sent: 'minmax(96px, 120px)', updated: 'minmax(96px, 120px)', approval: 'minmax(112px, 157px)' }
 const HEADS: { key: string; label: string; col: string | undefined }[] = [
   { key: 'title', label: 'Title', col: styles.colTitle },
   { key: 'status', label: 'Status', col: styles.colStatus },
@@ -58,7 +64,7 @@ const MENU_ITEMS = 6
  * Structure copied from components/leads/tasks/tasks-table.tsx: every icon-only control carries a Tooltip (REG-75);
  * sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu }: QuotesTableProps) {
+export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf }: QuotesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
@@ -68,7 +74,10 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
      quotes internally has no approval date to show, and the column headed one for every row. A quote approved before
      the setting was switched off keeps its date visible — the same courtesy the row menu pays a retired status. */
   const showApproval = statuses.includes('Approved') || quotes.some((q) => q.approvedAt)
-  const heads = showApproval ? HEADS : HEADS.filter((h) => h.key !== 'approval')
+  const withClient = clientOf ? [HEADS[0]!, { key: 'client', label: 'Client', col: styles.colClient }, ...HEADS.slice(1)] : HEADS
+  const heads = showApproval ? withClient : withClient.filter((h) => h.key !== 'approval')
+  const colWidths = useColumnWidths('lead-quotes')
+  const tracks = gridTracks([{ key: 'sel', track: TRACK.sel! }, ...heads.map((h) => ({ key: h.key, track: TRACK[h.key] ?? 'minmax(96px, 120px)' }))], colWidths)
 
   const allSelected = quotes.length > 0 && quotes.every((q) => selected.has(q.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(quotes.map((q) => q.id)))
@@ -79,7 +88,8 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   }
 
   return (
-    <div className={styles.card} role="table" aria-label="Quotes" data-no-approval={showApproval ? undefined : ''}>
+    <div className={styles.card} role="table" aria-label="Quotes" data-no-approval={showApproval ? undefined : ''} data-client={clientOf ? '' : undefined}
+         data-cols="lead-quotes" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
@@ -92,6 +102,7 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
               <span className={styles.hLabel}>{h.label}</span>
               <Icon name="unfold_more" size={16} />
             </button>
+            <ColumnResizer table="lead-quotes" column={h.key} label={h.label} min={h.key === 'title' ? 120 : 72} />
           </div>
         ))}
       </div>
@@ -117,6 +128,7 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
           /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
           menuSide={menuSide}
           onStatus={onStatus} onDue={onDue} onView={onView} onRowMenu={onRowMenu}
+          client={clientOf ? clientOf(quote) : null}
         />
       ))}
     </div>
@@ -129,10 +141,11 @@ function QuoteRowView({
   quote, now, selected, onToggleSelect, statuses, showApproval,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onStatus, onDue, onView, onRowMenu,
+  onStatus, onDue, onView, onRowMenu, client,
 }: {
   quote: Quote
   now: number
+  client: { name: string; href: string } | null
   selected: boolean
   onToggleSelect: () => void
   statuses: readonly QuoteStatus[]
@@ -168,9 +181,16 @@ function QuoteRowView({
             <span>{quote.number}</span>
             <span>·</span>
             <span>{quote.visibility}</span>
+            {client ? <><span className={styles.subClient}>·</span><span className={styles.subClient}>{client.name}</span></> : null}
           </span>
         </div>
       </div>
+      {client ? (
+        /* (REG-422) Client: the lead's name, a link to its Quotes tab. */
+        <div className={`${styles.cell} ${styles.colClient}`} role="cell">
+          <Link href={client.href} className={styles.clientLink}>{client.name}</Link>
+        </div>
+      ) : null}
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu 910:36673 (all five, current marked). */}
       <div className={`${styles.cell} ${styles.colStatus}`} role="cell">

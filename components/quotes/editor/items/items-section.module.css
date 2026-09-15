@@ -1,0 +1,100 @@
+/* Items section chrome around the table (1260:31209): the body holds the table; below it the Issuing Entity + totals block
+   (1260:31541: border-top 1px, p22/24, g24) — spec 03-items-table.txt "BELOW THE TABLE". */
+.body { display: flex; flex-direction: column; min-width: 0; }
+.below { display: flex; align-items: flex-start; gap: var(--om-spacing-6); padding: 22px var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.entity { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.entityHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* Totals card 434: 1px surface-variant, r8, p16, rows 12 apart = 200 label + 200 value. */
+.totals { width: 434px; flex-shrink: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.trow { display: flex; align-items: center; }
+.tlabel { flex: 1 1 200px; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.tlabel .dot, .tlabel .count { color: var(--om-color-on-surface-secondary); }
+.tvalue { flex: 1 1 200px; text-align: right; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
+.tcontrols { flex: 1 1 200px; display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-1); }
+/* The mini fields (1271:36776 / 36777): 24 tall, 12/400, r4, 1px #ccc — the unit select 50 (g8) and the amount taking the rest, 4 apart. */
+.mini { height: 24px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); background: var(--om-color-surface-default); }
+.miniSelect { padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); display: inline-flex; align-items: center; gap: var(--om-spacing-2); cursor: pointer; color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.miniInput { flex: 1; min-width: 0; padding: 0 var(--om-spacing-2); text-align: right; outline: none; }
+.tlabelTight { gap: var(--om-spacing-1); }   /* "Subtotal · n items": the dot 4 from its neighbours (1271:36761) */
+.miniInput:focus { border-color: var(--om-color-primary-default); }
+.rule { height: 1px; background: var(--om-color-surface-variant); }
+.total { font: var(--om-type-subheading-xl); }
+.totalLabel { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.roundLink { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
+.roundLink:hover { color: var(--om-color-on-primary-variant); }
+/* Margin strip (owners only): tertiary-green-variant2, r4, p8, g16. */
+.margin { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-green-variant2); font: var(--om-type-body-s); }
+.marginLabel { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
+.marginValue { color: var(--om-color-on-tertiary-green-variant); font: var(--om-type-subtitle-s); white-space: nowrap; }
+.marginValue .dot { font-weight: 400; margin: 0 var(--om-spacing-1); }
+
+/* Toolbar (section-top actions, 1260:31216): every control 36; the segmented undo/redo shares one border — a disabled half
+   dims its GLYPH only (the #ccc border stays, 1260:31216). */
+.tools { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; justify-content: flex-end; }
+.seg { display: inline-flex; }
+.seg > * + * { margin-left: -1px; }
+.seg button:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.seg button:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.seg button[disabled] { cursor: default; }
+.seg button[disabled] > * { opacity: .4; }
+.anchor { position: relative; display: inline-flex; }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+/* The Maison AI button (1262:35629): primary outlined with the brand mark in place of its glyph. */
+.aiMark { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+.aiMark img { width: 17px; height: 17px; display: block; }
+
+/* Add item popover (1271:40932): 360, white, r8, level-3, py8; rows p12/16 — Create New Item 20 from the top. */
+.popoverMenu.popoverMenu { padding: 0; border-radius: var(--om-radius-2); }
+.popover { display: flex; flex-direction: column; padding: var(--om-spacing-2) 0; }
+.popRow { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.popRow:hover, .popRow[data-active] { background: var(--om-color-hover-04p); }   /* the keyboard's active option (aria-activedescendant) */
+.popRow + .popRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.popHead { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.popCreate { padding: var(--om-spacing-3) var(--om-spacing-4); }
+.popCreate > * { width: 100%; }
+.popThumb { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); overflow: hidden; }
+.popThumb img { width: 100%; height: 100%; object-fit: cover; }
+.popText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.popName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.popMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.popEmpty { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Menu rows with a leading glyph (visibility 1271:40931, the icon picker 1271:41123, submenu chevrons). */
+.menuHead { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.menuIcon[data-on] { color: var(--om-color-primary-default); }
+.menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.iconGrid { display: grid; grid-template-columns: repeat(3, 52px); gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
+.iconTile { width: 52px; height: 52px; border: 0; border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-on-surface-default); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.iconTile:hover { background-image: linear-gradient(var(--om-color-hover-08p), var(--om-color-hover-08p)); }
+.iconTile[data-on] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+
+/* Column settings (1271:41169): helper 14/400, 16 to the eyebrow (12/500 uppercase secondary), rows 56 (p16 around the 24
+   switch) = handle 24 · label 14/600 · Switch; the lists 12 either side of a 1px rule. */
+.settings { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.settingsHelp { margin: 0 0 var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.setGroup { display: flex; flex-direction: column; gap: 0; }
+.setRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 56px; }
+.setLabel { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.setHandle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border: 0; background: none; padding: 0; }
+.setList { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.setDivider { height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }   /* flex-shrink 0: a 1px flex child of a scrolling body collapsed to nothing */
+
+/* ≤1024 the toolbar is folded (items-section.tsx `compact`): three 36px controls that always fit on the title row (REG-354 / REG-384). */
+.tools[data-compact] { flex-wrap: nowrap; }
+@media (max-width: 767px) {
+  .below { flex-direction: column; padding: var(--om-spacing-4); }
+  .totals { width: 100%; }
+  .tlabel, .tvalue, .tcontrols { flex-basis: 50%; }
+}
+/* Touch (REG-273 / REG-312): every 36px control in the toolbar, the 24px row kebab and unit / label picks, the 20px links and
+   the 24px mini select take a 44px box through an invisible overlay; nothing drawn changes. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .tools button, .anchor > button, .roundLink { position: relative; }
+  .tools button::after, .anchor > button::after { content: ''; position: absolute; inset: -4px; }
+  .roundLink::after { content: ''; position: absolute; inset: -12px; }
+  .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
+  .setRow { min-height: 44px; }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFlagPref } from '@/lib/prefs'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import Link from 'next/link'
@@ -9,6 +9,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { requestSearchFocus } from './search-focus'
+import { ToolsPopover } from './tools-popover'
 import styles from './app-rail.module.css'
 
 /**
@@ -43,6 +44,8 @@ export function AppRail() {
   const tabletDown = useMediaQuery(TABLET_DOWN)
   const expanded = pinned && !tabletDown
   const [railHover, setRailHover] = useState(false)     // logo tile → expand icon (795:22541)
+  const [toolsOpen, setToolsOpen] = useState(false)     // Tools › the tile grid beside the rail (REG-422)
+  const toolsRef = useRef<HTMLButtonElement>(null)
   const [scrolled, setScrolled] = useState(false)   // (REG-329) the rail body has scrolled under the logo → the head takes a shadow
 
   const onEnter = () => setRailHover(true)
@@ -72,6 +75,16 @@ export function AppRail() {
         <span className={styles.label}>{it.label}</span>
       </>
     )
+    if (it.label === 'Tools') {
+      return (
+        <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || toolsOpen}>
+          <button ref={toolsRef} type="button" className={className} aria-label={it.label} data-active={toolsOpen ? 'true' : undefined}
+                  aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen((o) => !o)}>
+            {inner}
+          </button>
+        </Tooltip>
+      )
+    }
     return (
       <Tooltip key={it.label} label={it.label} side="right" disabled={expanded}>
         {it.href ? (
@@ -154,6 +167,7 @@ export function AppRail() {
         </div>
         </div>
       </nav>
+      <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
     </div>
   )
 }

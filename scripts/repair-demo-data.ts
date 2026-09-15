@@ -4,7 +4,11 @@ import { createClient, type InStatement } from '@libsql/client'
 import { createHash } from 'node:crypto'
 import { DATABASE_AUTH_TOKEN, DATABASE_URL } from './env'
 import { emptyWizardData, SYSTEM_CONTRACT, SYSTEM_QUOTE, type WizardData } from '../lib/leads/stage-data'
-import { formatInputDateTime } from '../lib/format'
+import { displayDate, formatInputDateTime } from '../lib/format'
+import { quoteTotals } from '../lib/quotes/math'
+import { presetRows, scheduleAnchors } from '../lib/quotes/payments'
+import { resolveTokens, TEMPLATE_SEED } from '../lib/quotes/text'
+import { projectRef, VALIDITY_DAYS } from '../lib/quotes/refs'
 import { STAGES } from '../lib/leads/enums'
 
 /**
@@ -440,6 +444,235 @@ async function main() {
   await client.execute(`UPDATE leads SET updated_at = max(updated_at, (SELECT max(created_at) FROM stage_logs s WHERE s.lead_id = leads.id))
                         WHERE EXISTS (SELECT 1 FROM stage_logs s WHERE s.lead_id = leads.id)`)
 
+  /* ── R21 · the quote editor's General Info reads records (REG-403) ─────────────────────────────
+     Prepared by = the lead's first assigned member (the Owner when nobody is assigned); the property type and the site
+     address are the lead's own. Quotes created in the app carry these from the start (createQuote). */
+  console.log('\nR21 quote editor fields')
+  await client.execute(`UPDATE quotes SET prepared_by = COALESCE(prepared_by,
+      (SELECT a.member_id FROM lead_assignees a WHERE a.lead_id = quotes.lead_id ORDER BY COALESCE(a.assigned_at, 0), a.member_id LIMIT 1),
+      (SELECT m.id FROM members m WHERE m.role = 'Owner' LIMIT 1))`)
+  await client.execute(`UPDATE quotes SET property_type = COALESCE(property_type, (SELECT l.property_type FROM leads l WHERE l.id = quotes.lead_id))`)
+  await client.execute(`UPDATE quotes SET site_address = COALESCE(site_address, (SELECT l.property_address FROM leads l WHERE l.id = quotes.lead_id))`)
+  note('quotes carry prepared_by / property_type / site_address from their lead and members')
+
+  /* ── R22 · the studio's quote design templates (Create Quote modal, REG-412 / REG-414) ───────────
+     Three design templates read as the studio's own: the default PDF look and the two BTO layouts the mocks name
+     (1209:27023). Ids are deterministic; `last_used_at` is re-stamped RELATIVE to the run ("used 5d ago" reads 5d on
+     any day, REG-412) unless the demo used the template since — a newer stamp is kept. */
+  console.log('\nR22 quote design templates')
+  const templates: [string, number][] = [['Default Quote PDF', 14 * D], ['4-Room BTO', 5 * D], ['5-Room BTO', 21 * D]]
+  for (const [name, ago] of templates) {
+    const id = sid(name, 'quote_template')
+    await client.execute({ sql: `INSERT OR IGNORE INTO quote_templates (id, name, kind, is_default, last_used_at, created_at) VALUES (?, ?, 'design', ?, ?, ?)`,
+      args: [id, name, name === 'Default Quote PDF' ? 1 : 0, NOW - ago, NOW - 60 * D] })
+    await client.execute({ sql: `UPDATE quote_templates SET last_used_at = ? WHERE id = ? AND (last_used_at IS NULL OR last_used_at <= ?)`, args: [NOW - ago, id, NOW - ago] })
+  }
+  await client.execute(`UPDATE quote_templates SET is_default = 1 WHERE id = ? AND NOT EXISTS (SELECT 1 FROM quote_templates WHERE is_default = 1)`.replace('?', `'${sid('Default Quote PDF', 'quote_template')}'`))
+  note(`${templates.length} design templates present, one default`)
+
+  /* ── R23 · the studio, its price book and every quote's lines (Items section, REG-415 / REG-403) ─────
+     A quote's amount is DERIVED from its lines, so every seeded quote gets the lines a Singapore studio would have
+     written for that unit — the studio's eight price-book items plus the ad-hoc lines a whole-home job needs — scaled
+     to the size of the property, grouped by room, with the client's answers matching the quote's status. Blank drafts
+     the app created stay blank (amount 0 = no lines). Ids are deterministic; a quote that already has lines is left alone. */
+  console.log('\nR23 studio, price book, quote lines')
+  await client.execute({ sql: `INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('studio', ?, ?)`, args: [JSON.stringify({ name: 'Demo Studio Pte Ltd', gstRegistered: true }), NOW] })
+  type PB = { name: string; description: string; kind: string; unit: string; cost: number; markup: number; category: string }
+  const PRICE_BOOK: PB[] = [
+    { name: 'Hacking of existing floor and wall tiles', description: 'Removal of existing tiles and screed, debris disposal included', kind: 'labour', unit: 'sqft', cost: 3.2, markup: 0.8, category: 'Hacking' },
+    { name: 'Cement screeding and waterproofing', description: 'Levelling screed with waterproofing membrane for wet areas', kind: 'labour', unit: 'sqft', cost: 2.8, markup: 0.7, category: 'Masonry' },
+    { name: 'Vinyl flooring, supply and install', description: '5 mm SPC vinyl planks with underlay, laid over screed', kind: 'purchase', unit: 'sqft', cost: 5.5, markup: 1.5, category: 'Flooring' },
+    { name: 'Kitchen carpentry, top and bottom cabinets', description: 'Laminated plywood carcass with soft-close hinges, per foot run', kind: 'purchase', unit: 'ft run', cost: 190, markup: 60, category: 'Carpentry' },
+    { name: 'Electrical point, new', description: 'Concealed wiring for a new lighting, power or data point', kind: 'labour', unit: 'point', cost: 55, markup: 15, category: 'Electrical' },
+    { name: 'Plumbing works, kitchen and bathrooms', description: 'Relocation of water points and drainage, sanitary ware installation', kind: 'labour', unit: 'Lot', cost: 1400, markup: 400, category: 'Plumbing' },
+    { name: 'Painting, whole unit', description: 'Two coats of emulsion on walls and ceilings, sealer included', kind: 'labour', unit: 'Lot', cost: 1500, markup: 450, category: 'Painting' },
+    { name: 'Design consultation and 3D drawings', description: 'Space planning, material selection and 3D visuals for the whole unit', kind: 'design', unit: 'Lot', cost: 1800, markup: 1200, category: 'Design' },
+  ]
+  const pbId = (name: string) => sid(name, 'price_book_item')
+  for (const p of PRICE_BOOK) {
+    await client.execute({ sql: `INSERT OR IGNORE INTO price_book_items (id, name, description, kind, unit, cost_minor, markup_minor, category, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [pbId(p.name), p.name, p.description, p.kind, p.unit, Math.round(p.cost * 100), Math.round(p.markup * 100), p.category, NOW - 90 * D, NOW - 30 * D] })
+  }
+  note(`${PRICE_BOOK.length} price-book items present`)
+
+  type LineT = { name: string; description: string; kind: string; unit: string; cost: number; markup: number; qty: number; group?: string; room: string; category: string; section: string; pb?: string; scale?: boolean }
+  const AREA: Record<string, number> = { 'HDB 3-Room': 700, 'HDB 4-Room': 970, 'HDB 5-Room': 1180, 'BTO 4-Room': 970, 'BTO 5-Room': 1180, 'Executive Condo': 1100, 'Condo 2-bedder': 800, 'Condo 3-bedder': 1100, 'Landed': 2400 }
+  /** The lines of a whole-home renovation for `sqft` of floor area (quantities the trade would take off a floor plan). */
+  const recipe = (sqft: number): LineT[] => {
+    const wet = Math.round(sqft * 0.32)      // kitchen + bathrooms + service yard
+    const dry = sqft - wet
+    const ft = (n: number) => Math.round(n)
+    const pb = (name: string, qty: number, extra: Partial<LineT>): LineT => { const p = PRICE_BOOK.find((x) => x.name === name)!; return { name: p.name, description: p.description, kind: p.kind, unit: p.unit, cost: p.cost, markup: p.markup, qty, category: p.category, room: 'Whole unit', section: 'Wet works', pb: p.name, ...extra } }
+    return [
+      pb('Hacking of existing floor and wall tiles', wet + Math.round(dry * 0.3), { room: 'Whole unit', section: 'Wet works', scale: true }),
+      pb('Cement screeding and waterproofing', wet, { room: 'Whole unit', section: 'Wet works', scale: true }),
+      { name: 'Bathroom tiles, supply and install', description: 'Homogeneous 600 × 300 tiles for floor and walls of both bathrooms', kind: 'purchase', unit: 'sqft', cost: 9, markup: 3, qty: Math.round(wet * 0.9), group: 'Bathrooms', room: 'Common Bathroom', category: 'Masonry', section: 'Wet works', scale: true },
+      pb('Plumbing works, kitchen and bathrooms', 1, { group: 'Bathrooms', room: 'Common Bathroom', section: 'Wet works' }),
+      { name: 'Glass shower screen', description: 'Frameless 10 mm tempered glass panel with towel bar', kind: 'purchase', unit: 'Pieces', cost: 650, markup: 180, qty: 2, group: 'Bathrooms', room: 'Master Bathroom', category: 'Fittings', section: 'Wet works' },
+      { name: 'Bathroom vanity with basin', description: 'Wall-hung vanity, solid surface top and undermount basin', kind: 'purchase', unit: 'Pieces', cost: 1100, markup: 350, qty: 2, group: 'Bathrooms', room: 'Master Bathroom', category: 'Carpentry', section: 'Carpentry' },
+      pb('Vinyl flooring, supply and install', dry, { room: 'Living Room', section: 'Finishing', category: 'Flooring', scale: true }),
+      pb('Kitchen carpentry, top and bottom cabinets', ft(sqft * 0.024), { group: 'Kitchen', room: 'Kitchen', section: 'Carpentry', scale: true }),
+      { name: 'Kitchen countertop, quartz', description: '20 mm engineered quartz top with cut-outs for hob and sink', kind: 'purchase', unit: 'ft run', cost: 150, markup: 50, qty: ft(sqft * 0.014), group: 'Kitchen', room: 'Kitchen', category: 'Carpentry', section: 'Carpentry', scale: true },
+      { name: 'Kitchen backsplash, glass', description: 'Back-painted tempered glass panel, cut for outlets', kind: 'purchase', unit: 'ft run', cost: 75, markup: 25, qty: ft(sqft * 0.011), group: 'Kitchen', room: 'Kitchen', category: 'Fittings', section: 'Finishing', scale: true },
+      { name: 'Wardrobe, master bedroom', description: 'Full-height laminated wardrobe with sliding doors and internal drawers', kind: 'purchase', unit: 'ft run', cost: 260, markup: 80, qty: ft(sqft * 0.012), group: 'Bedrooms', room: 'Master Bedroom', category: 'Carpentry', section: 'Carpentry', scale: true },
+      { name: 'Study desk and shelving', description: 'Built-in desk with overhead open shelving, laminate finish', kind: 'purchase', unit: 'ft run', cost: 210, markup: 70, qty: ft(sqft * 0.006), group: 'Bedrooms', room: 'Bedroom 2', category: 'Carpentry', section: 'Carpentry', scale: true },
+      { name: 'Bedroom doors, laminate', description: 'Solid-core laminate door with frame, hinges and lever handle', kind: 'purchase', unit: 'Pieces', cost: 480, markup: 140, qty: sqft > 1000 ? 4 : 3, group: 'Bedrooms', room: 'Bedroom 2', category: 'Fittings', section: 'Finishing' },
+      { name: 'TV console and feature wall', description: 'Suspended TV console with fluted feature wall panelling', kind: 'purchase', unit: 'Lot', cost: 2800, markup: 900, qty: 1, room: 'Living Room', category: 'Carpentry', section: 'Carpentry' },
+      { name: 'False ceiling with cove lighting', description: 'Plaster board L-box with LED strip, living and dining', kind: 'labour', unit: 'ft run', cost: 22, markup: 8, qty: ft(sqft * 0.06), room: 'Living Room', category: 'Ceiling', section: 'Finishing', scale: true },
+      pb('Electrical point, new', Math.round(sqft * 0.035), { room: 'Whole unit', section: 'Finishing', scale: true }),
+      pb('Painting, whole unit', 1, { room: 'Whole unit', section: 'Finishing' }),
+      { name: 'Haulage and debris disposal', description: 'Lorry haulage of debris and materials, including disposal fees', kind: 'delivery', unit: 'Lot', cost: 600, markup: 150, qty: 1, room: 'Whole unit', category: 'Logistics', section: 'Wet works' },
+      pb('Design consultation and 3D drawings', 1, { room: 'Whole unit', section: 'Design', category: 'Design' }),
+    ]
+  }
+  const liveQuotes = rows<{ id: string; lead_id: string; number: string; status: string; amount_minor: number; created_at: number; property_type: string | null; lead_property_type: string; area_sqft: number | null }>(await client.execute(
+    `SELECT q.id, q.lead_id, q.number, q.status, q.amount_minor, q.created_at, q.property_type, l.property_type AS lead_property_type, l.area_sqft
+     FROM quotes q JOIN leads l ON l.id = q.lead_id WHERE q.deleted_at IS NULL AND q.amount_minor > 0 ORDER BY q.number`))
+  let seeded = 0
+  for (const q of liveQuotes) {
+    const has = rows<{ n: number }>(await client.execute({ sql: 'SELECT count(*) AS n FROM quote_items WHERE quote_id = ?', args: [q.id] }))[0]?.n ?? 0
+    if (has > 0) continue
+    const sqft = q.area_sqft ?? AREA[q.property_type ?? q.lead_property_type] ?? 970
+    const lines = recipe(sqft)
+    // scale the take-off quantities so the pre-GST subtotal lands near the amount the quote already carried
+    const target = q.amount_minor / 100 / 1.09
+    const base = lines.reduce((s, l) => s + l.qty * (l.cost + l.markup), 0)
+    const f = target / base
+    for (const l of lines) if (l.scale) l.qty = Math.max(1, Math.round(l.qty * f))
+    const status = q.status === 'Draft' ? 'Pending' : 'Approved'
+    const created = q.created_at + 2 * H
+    const groups = ['Kitchen', 'Bathrooms', 'Bedrooms']
+    const groupIds: Record<string, string> = {}
+    let pos = 0
+    const orderTop: string[] = []
+    for (const g of groups) {
+      const gid = sid(`${q.id}:${g}`, 'quote_group'); groupIds[g] = gid
+      await client.execute({ sql: `INSERT OR IGNORE INTO quote_items (id, quote_id, parent_id, kind, position, name, description, status, qty, unit, cost_minor, markup_minor, discount_pct, gst_pct, room, category, section, visibility, collapsed, created_at, updated_at)
+        VALUES (?, ?, NULL, 'group', ?, ?, ?, ?, 1, NULL, 0, 0, 0, 9, ?, NULL, NULL, 'visible', 0, ?, ?)`,
+        args: [gid, q.id, pos++, g, g === 'Kitchen' ? 'Kitchen carpentry, worktop and finishes' : g === 'Bathrooms' ? 'Wet works and fittings for both bathrooms' : 'Bedroom carpentry and doors', status, g === 'Kitchen' ? 'Kitchen' : g === 'Bathrooms' ? 'Common Bathroom' : 'Master Bedroom', created, created] })
+      orderTop.push(gid)
+    }
+    const childPos: Record<string, number> = { Kitchen: 0, Bathrooms: 0, Bedrooms: 0 }
+    lines.forEach((l, idx) => {
+      const id = sid(`${q.id}:${idx}:${l.name}`, 'quote_item')
+      const parent = l.group ? groupIds[l.group]! : null
+      const position = parent ? (childPos[l.group!] = (childPos[l.group!] ?? 0) + 1) - 1 : pos++
+      const declined = q.number === 'OM-10008' && l.name === 'False ceiling with cove lighting'   // the client passed on the cove lighting (one Declined line in the demo; a top-level line — a child carries its group's answer, REG-417)
+      push(`INSERT OR IGNORE INTO quote_items (id, quote_id, parent_id, kind, position, name, description, icon, status, qty, unit, cost_minor, markup_minor, discount_pct, gst_pct, room, category, section, visibility, collapsed, price_book_item_id, created_at, updated_at)
+            VALUES (?, ?, ?, 'item', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 9, ?, ?, ?, 'visible', 0, ?, ?, ?)`,
+        [id, q.id, parent, position, l.name, l.description, l.kind, declined ? 'Declined' : status, l.qty, l.unit, Math.round(l.cost * 100), Math.round(l.markup * 100), l.room, l.category, l.section, l.pb ? pbId(l.pb) : null, created + idx * 60, created + idx * 60])
+    })
+    seeded++
+  }
+  await client.batch(stmts, 'write'); stmts.length = 0
+  // (REG-417) The status chip sits on the group row and a child's STATUS cell is empty (spec 03), so a child carries its
+  // group's answer — a Declined child under an open group was a state the table could not show. Every child follows its
+  // group, and the demo's one Declined line is a top-level item on OM-10008 (the client passed on the cove lighting).
+  const followed = await client.execute(`UPDATE quote_items SET status = (SELECT p.status FROM quote_items p WHERE p.id = quote_items.parent_id)
+    WHERE parent_id IS NOT NULL AND status <> (SELECT p.status FROM quote_items p WHERE p.id = quote_items.parent_id)`)
+  const passed = await client.execute(`UPDATE quote_items SET status = 'Declined' WHERE parent_id IS NULL AND kind = 'item' AND name = 'False ceiling with cove lighting' AND status <> 'Declined'
+    AND quote_id = (SELECT id FROM quotes WHERE number = 'OM-10008' AND deleted_at IS NULL)`)
+  note(`${followed.rowsAffected} child lines follow their group's answer · ${passed.rowsAffected} line(s) marked Declined on OM-10008`)
+  // the amount is what the lines add up to — for every live quote, lines or none
+  const allQuotes = rows<{ id: string; additional_discount_mode: string; additional_discount_value: number; gst_enabled: number }>(await client.execute(`SELECT id, additional_discount_mode, additional_discount_value, gst_enabled FROM quotes WHERE deleted_at IS NULL`))
+  for (const q of allQuotes) {
+    const items = rows<{ id: string; parent_id: string | null; kind: string; status: string; qty: number; cost_minor: number; markup_minor: number; discount_pct: number; gst_pct: number }>(await client.execute({ sql: 'SELECT id, parent_id, kind, status, qty, cost_minor, markup_minor, discount_pct, gst_pct FROM quote_items WHERE quote_id = ?', args: [q.id] }))
+    if (items.length === 0) continue
+    const t = quoteTotals(items.map((i) => ({ id: i.id, parentId: i.parent_id, kind: i.kind, status: i.status, qty: i.qty, costMinor: i.cost_minor, markupMinor: i.markup_minor, discountPct: i.discount_pct, gstPct: i.gst_pct })),
+      { additionalDiscountMode: q.additional_discount_mode, additionalDiscountValue: q.additional_discount_value, gstEnabled: q.gst_enabled === 1 })
+    await client.execute({ sql: 'UPDATE quotes SET amount_minor = ? WHERE id = ? AND amount_minor <> ?', args: [t.totalMinor, q.id, t.totalMinor] })
+  }
+  note(`${seeded} quotes received their lines; every amount equals its lines`)
+
+  /* ── R24 · every quote's payment schedule (Payment Schedule section, REG-418 / REG-403) ─────────
+     A quote carries the studio's default split from the day it is written (createQuote seeds it): the deposit on approval,
+     the other milestones estimated from the lead's start date and the property's renovation length. Quotes that predate
+     the section get the same rows, dated from their own created_at; a quote that already has rows is left alone. */
+  console.log('\nR24 payment schedules')
+  const unscheduled = rows<{ id: string; created_at: number; property_type: string | null; lead_property_type: string; estimated_start_date: number | null }>(await client.execute(
+    `SELECT q.id, q.created_at, q.property_type, l.property_type AS lead_property_type, l.estimated_start_date
+     FROM quotes q JOIN leads l ON l.id = q.lead_id WHERE q.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM quote_payments p WHERE p.quote_id = q.id) ORDER BY q.number`))
+  for (const q of unscheduled) {
+    const anchors = scheduleAnchors({ estimatedStart: q.estimated_start_date ? new Date(q.estimated_start_date * 1000) : null, quoteCreated: new Date(q.created_at * 1000), propertyType: q.property_type ?? q.lead_property_type })
+    const created = q.created_at + 2 * H + 5 * 60   // written right after the lines (R23: created + 2h)
+    presetRows('default', anchors).forEach((r, position) => {
+      push(`INSERT OR IGNORE INTO quote_payments (id, quote_id, position, name, description, pct, due_kind, due_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+        [sid(`${q.id}:${position}:${r.name}`, 'quote_payment'), q.id, position, r.name, r.description, r.pct, r.dueKind, r.dueAt ? Math.floor(r.dueAt.getTime() / 1000) : null, created])
+    })
+  }
+  await client.batch(stmts, 'write'); stmts.length = 0
+  note(`${unscheduled.length} quotes received the default schedule`)
+
+  /* ── R25 · every priced quote carries the lead's latest file (Files section, REG-419) ────────────
+     The Files section shows the lead's files a quote points at (never a copy). A priced quote that carries none gets the
+     lead's most recent file — the reference the studio quoted from — linked right after the schedule was set. */
+  console.log('\nR25 quote files')
+  const unfiled = rows<{ id: string; file_id: string | null; created_at: number }>(await client.execute(
+    `SELECT q.id, q.created_at, (SELECT f.id FROM lead_files f WHERE f.lead_id = q.lead_id AND f.deleted_at IS NULL AND f.kind <> 'folder' ORDER BY f.created_at DESC, f.id LIMIT 1) AS file_id
+     FROM quotes q WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND NOT EXISTS (SELECT 1 FROM quote_files x WHERE x.quote_id = q.id) ORDER BY q.number`))
+  let filed = 0
+  for (const q of unfiled) {
+    if (!q.file_id) continue
+    push(`INSERT OR IGNORE INTO quote_files (quote_id, file_id, created_at) VALUES (?, ?, ?)`, [q.id, q.file_id, q.created_at + 2 * H + 10 * 60])
+    filed++
+  }
+  await client.batch(stmts, 'write'); stmts.length = 0
+  note(`${filed} quotes received the lead's latest file`)
+
+  /* ── R26 · the studio's phone, the text template library and every priced quote's terms / notes (REG-420) ──
+     The studio record carries the line its "[Studio Phone Number]" token prints; the library holds the seeded templates
+     (lib/quotes/text.ts TEMPLATE_SEED — real Singapore renovation terms); a priced quote with no terms gets the general
+     terms with its tokens resolved, and a quote with no notes a note derived from its own schedule. */
+  console.log('\nR26 studio phone, text templates, quote terms and notes')
+  await client.execute(`UPDATE settings SET value = json_set(value, '$.phone', '6222 0188') WHERE key = 'studio' AND json_extract(value, '$.phone') IS NULL`)
+  for (const t of TEMPLATE_SEED) {
+    push(`INSERT OR IGNORE INTO quote_text_templates (id, kind, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NULL)`, [sid(`${t.kind}:${t.title}`, 'quote_text_template'), t.kind, t.title, t.body, NOW - 60 * D])
+  }
+  await client.batch(stmts, 'write'); stmts.length = 0
+  const studioRow = rows<{ value: string }>(await client.execute(`SELECT value FROM settings WHERE key = 'studio'`))[0]
+  const studio = studioRow ? (JSON.parse(studioRow.value) as { name: string; phone?: string }) : { name: 'Demo Studio Pte Ltd', phone: '6222 0188' }
+  const untexted = rows<{ id: string; terms_html: string | null; notes_html: string | null; client: string; member: string | null; created_at: number; property_type: string | null; lead_property_type: string; estimated_start_date: number | null }>(await client.execute(
+    `SELECT q.id, q.terms_html, q.notes_html, l.name AS client, m.name AS member, q.created_at, q.property_type, l.property_type AS lead_property_type, l.estimated_start_date
+     FROM quotes q JOIN leads l ON l.id = q.lead_id LEFT JOIN members m ON m.id = q.prepared_by
+     WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND (q.terms_html IS NULL OR q.notes_html IS NULL) ORDER BY q.number`))
+  const general = TEMPLATE_SEED.find((t) => t.kind === 'terms')!
+  let texted = 0
+  for (const q of untexted) {
+    const a = scheduleAnchors({ estimatedStart: q.estimated_start_date ? new Date(q.estimated_start_date * 1000) : null, quoteCreated: new Date(q.created_at * 1000), propertyType: q.property_type ?? q.lead_property_type })
+    const terms = q.terms_html ?? resolveTokens(general.body, { client: q.client, studio: studio.name, studioPhone: studio.phone ?? '', member: q.member ?? '' })
+    const notes = q.notes_html ?? `<p>Prices are inclusive of GST at 9%. Works are scheduled to start on about ${displayDate(a.start)} and run for about ${a.weeks} weeks; the dates move with material lead times and the confirmation of selections.</p>`
+    await client.execute({ sql: `UPDATE quotes SET terms_html = ?, notes_html = ? WHERE id = ?`, args: [terms, notes, q.id] })
+    texted++
+  }
+  note(`${TEMPLATE_SEED.length} templates present · ${texted} quotes received their terms and notes`)
+
+  /* ── R27 · the signed-in member's signature (Signature section, REG-421) ────────────────────────
+     A signature is saved per member (owner 2026-09-11). The demo's signed-in member has set theirs up as their typed name,
+     so every quote they prepare shows a signature; the other members have not — the section offers Draw / Type to them. */
+  console.log('\nR27 member signature')
+  const signed = await client.execute(`UPDATE members SET signature_kind = 'type', signature_name = name, signature_data = NULL WHERE is_you = 1 AND signature_kind IS NULL`)
+  note(`${signed.rowsAffected} member signature(s) set up`)
+
+  /* ── R28 · Project Ref #, Quote Valid Until and the description clamp (General Info 1273:29296, REG-403) ──────
+     Every live quote carries the reference and validity its records give it (lib/quotes/refs.ts: the property's family / the
+     day it was written / its sequence that day; 30 days) — createQuote writes them from the start — and the Items table's
+     two-line default (1260:31372; the column's stored 'single' predates the choice). Values already set are left alone. */
+  console.log('\nR28 project refs, validity, density')
+  const unref = rows<{ id: string; created_at: number; property_type: string | null; project_ref: string | null; valid_until: number | null }>(await client.execute(
+    `SELECT id, created_at, property_type, project_ref, valid_until FROM quotes WHERE deleted_at IS NULL ORDER BY created_at, number`))
+  const perDay = new Map<string, number>()
+  let refs = 0
+  for (const q of unref) {
+    const at = new Date(q.created_at * 1000)
+    const day = `${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`
+    const seq = (perDay.get(day) ?? 0) + 1; perDay.set(day, seq)
+    if (!q.project_ref) { push(`UPDATE quotes SET project_ref = ? WHERE id = ?`, [projectRef(q.property_type, at, seq), q.id]); refs++ }
+    if (!q.valid_until) push(`UPDATE quotes SET valid_until = ? WHERE id = ?`, [q.created_at + VALIDITY_DAYS * D, q.id])
+  }
+  push(`UPDATE quotes SET items_density = 'double' WHERE items_density = 'single'`)
+  await client.batch(stmts, 'write'); stmts.length = 0
+  note(`${refs} quotes received a project ref; validity filled where empty; density double`)
+
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')
   const checks: [string, string][] = [
@@ -460,6 +693,19 @@ async function main() {
     ['completed task with no completion stamp', `SELECT l.name FROM lead_tasks t JOIN leads l ON l.id = t.lead_id WHERE t.done = 1 AND t.updated_at - t.created_at < 60`],
     ['return with no Lost move or no task', `SELECT l.name FROM lead_returns r JOIN leads l ON l.id = r.lead_id WHERE r.task_id IS NULL OR NOT EXISTS (SELECT 1 FROM stage_logs s WHERE s.lead_id = r.lead_id AND s.to_stage = 'Lost')`],
     ['import reporting skipped rows it does not have', `SELECT i.file_name FROM imports i WHERE i.skipped_rows > 0 AND (SELECT count(*) FROM import_rows r WHERE r.import_id = i.id) = 0`],
+    ['quote with no prepared-by member or property type (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.prepared_by IS NULL OR q.property_type IS NULL)`],
+    ['no default quote design template', `SELECT 'quote_templates' WHERE NOT EXISTS (SELECT 1 FROM quote_templates WHERE is_default = 1)`],
+    ['quote with no project ref or validity (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.project_ref IS NULL OR q.valid_until IS NULL)`],
+    ['priced quote with no lines (Items section)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND NOT EXISTS (SELECT 1 FROM quote_items i WHERE i.quote_id = q.id)`],
+    ['no studio record', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'studio')`],
+    ['line whose answer differs from its group (no chip to show it)', `SELECT q.number || ' · ' || c.name FROM quote_items c JOIN quote_items p ON p.id = c.parent_id JOIN quotes q ON q.id = c.quote_id WHERE c.status <> p.status`],
+    ['live quote with no payment schedule (Payment Schedule section)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM quote_payments p WHERE p.quote_id = q.id)`],
+    ['payment row with a date on an approval milestone, or none on a dated one', `SELECT q.number || ' · ' || p.name FROM quote_payments p JOIN quotes q ON q.id = p.quote_id WHERE (p.due_kind = 'approval' AND p.due_at IS NOT NULL) OR (p.due_kind <> 'approval' AND p.due_at IS NULL)`],
+    ['quote file that is a folder or trashed', `SELECT q.number || ' · ' || f.name FROM quote_files x JOIN lead_files f ON f.id = x.file_id JOIN quotes q ON q.id = x.quote_id WHERE f.kind = 'folder' OR f.deleted_at IS NOT NULL OR f.lead_id <> q.lead_id`],
+    ['priced quote with no terms or notes (Terms / Notes sections)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND (q.terms_html IS NULL OR q.notes_html IS NULL)`],
+    ['text template library missing a kind', `SELECT k FROM (SELECT 'terms' AS k UNION SELECT 'notes') WHERE NOT EXISTS (SELECT 1 FROM quote_text_templates t WHERE t.kind = k)`],
+    ['signed-in member with no signature (Signature section)', `SELECT name FROM members WHERE is_you = 1 AND signature_kind IS NULL`],
+    ['demo quote with no Declined line to show the status', `SELECT 'OM-10008' WHERE NOT EXISTS (SELECT 1 FROM quote_items i JOIN quotes q ON q.id = i.quote_id WHERE q.number = 'OM-10008' AND i.status = 'Declined' AND i.parent_id IS NULL)`],
     ['keyboard-mash task left behind', `SELECT title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"') OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`],
   ]
   let failed = 0

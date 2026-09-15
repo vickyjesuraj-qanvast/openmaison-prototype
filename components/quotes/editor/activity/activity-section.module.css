@@ -1,0 +1,19 @@
+/* Activity (1254:3769): p24; rows 44 = [rail 11 · when] in a 200 group, then 16 to the text (216 from the dot's left edge); the
+   rail's 1px rule links the dots. */
+.list { list-style: none; margin: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 11px 181px minmax(0, 1fr); column-gap: 12px; align-items: center; min-height: 44px; }
+.rail { position: relative; width: 11px; height: 44px; display: flex; align-items: center; justify-content: center; }
+.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--om-color-surface-variant); }
+.row[data-first] .dot { background: var(--om-color-primary-default); }
+.row:not(:last-child) .rail::after { content: ''; position: absolute; left: 5px; top: 27.5px; height: 33px; width: 1px; background: var(--om-color-surface-variant); }
+.when { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.text { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; }
+.empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .list { padding: var(--om-spacing-4); }
+  .row { grid-template-columns: 11px minmax(0, 1fr); grid-template-areas: 'rail when' 'rail text'; row-gap: 2px; padding: var(--om-spacing-2) 0; }
+  .rail { grid-area: rail; align-self: stretch; height: auto; align-items: flex-start; padding-top: 6px; }
+  .row:not(:last-child) .rail::after { top: 17px; height: calc(100% - 6px); }
+  .when { grid-area: when; font: var(--om-type-body-s); }
+  .text { grid-area: text; }
+}

@@ -1,0 +1,48 @@
+QUOTE EDITOR — HEADER · TABS · SIDE STRIP (page 1260:31139, header 1261:35488)
+
+PAGE
+  1440 wide, no rail. Header block 120 = Page Header / Quotes 76 + Page Tabs 44. Body "Container" from y=120:
+  "Section container" 1368 wide (x 0..1368) holding the section cards at x=24, 1320 wide, first at y=24, 24 apart;
+  the side strip 72 wide sits at x=1368..1440 for the full height (collapsed) / 140 wide expanded (1271:40377).
+
+PAGE HEADER / QUOTES (component 1201:33834, instance 1260:31143) 1440×76
+  white, border-bottom 1px surface-variant, padding 16 24. Row gap 12, items centred:
+  - arrow_back 24 Light on-surface-default (→ origin)
+  - title block flex 1, column gap 4:
+      crumb 12/400 secondary: "Leads / {lead name} / Quotes"
+      title row gap 12:
+        [title 20/700 on-surface-default + keyboard_arrow_down 20 Regular secondary, gap 4]  ← switch quote menu
+        chip group gap 8: Tag = bg surface-bg #f2f2f2, border 1px on-surface-border #ccc, r4, p4 8, 10/500 uppercase secondary lh12
+          "OM-10001" · "VERSION 1" · "{status}"
+        saved state gap 4: check_circle 20 Regular tertiary-green #469e59 + "Saved 2 mins ago" 12/400 secondary
+      (1273:29264, the page's instance: the title IS the quote's title, e.g. "88 Merlion Street"; the lead's name lives in the crumb.
+       Built so since 2026-09-15 — REG-423. The "{status} ▾" outlined pill (91×36, 1271:41470) sits first in the action row, before Send.)
+  - actions gap 12, right: 
+      Send   = primary filled 36 (p8 16, 14/600 on-primary)
+      Preview = outlined 36 (border 1px #ccc, p8 16, 14/600 secondary)
+      comment  icon button 36 (border 1px #ccc r4, glyph 20 Regular secondary)
+      more_vert icon button 36  → menu 1271:41512
+      vertical rule 1×36 surface-variant
+      close icon button 36 → origin
+    (the component's default slot also carries an outlined "Draft ▾" 36 — pl16 pr12 — NOT shown on the page instance: REG-404)
+
+PAGE TABS (1261:35438) 1440×44
+  white, padding 0 24, items gap 24, each min-width 48, 14/600, py 12.
+  Active: primary #50f + 4px indicator (radius 2 2 0 0) — pt12 · gap 8 · 4 = 44. Inactive: on-surface-secondary.
+  Labels (anchor tabs → scroll to the section): General Info · Items (n) · Payment Schedule · Files ·
+  Terms and Conditions · Additional Notes · Signature · Activity.
+  The header + tabs block is sticky (the Lead Details pattern: one level-1 shadow carried by the tab strip, REG-331/369).
+
+SIDE STRIP — "shortcut-expanded" (collapsed 1260:31160 72×full · expanded 1271:40377 140×908)
+  Collapsed: border-left 1px surface-variant, padding 24, column gap 24, items centred:
+    left_panel_close 20 Light secondary · 1px divider (24 wide) · glyph column gap 24:
+    Maison AI mark (16 svg rotated 135°) · list_alt · description · history_2 · menu_book — 24 Light on-surface-default
+  Expanded: padding 24, column gap 12: head row 92 wide = "Create" 14/600 + left_panel_open 20 Light secondary;
+    tiles 92 wide, bg surface-bg #f2f2f2, r8, padding 16 8, column gap 8: icon 24 Light + label 12/400 centred
+    (wraps: "Recent Quotes", "Brand Catalog"); tiles 12 apart.
+    Tiles: Maison AI · My Items · Templates · Recent Quotes · Brand Catalog.
+  Build: the quick-links strip (components/leads/detail/quick-links.tsx) with these tiles; state remembered per browser.
+
+HEADER KEBAB MENU (Dropdown Menu / Leads 1271:41512) 200 wide, r4, border 1px surface-variant, level-3 shadow, py 4
+  rows 36, px 12, 14/400: Rename Quote · Duplicate and Edit · Save as Template · ─ · Download as PDF · Export · Print ·
+  Version History · ─ · Delete (tertiary-red #db382a)
