@@ -3,6 +3,9 @@
    Framed = the template modal's editor box (1263:36344: 1px #ccc r8). */
 .editor { display: flex; flex-direction: column; }
 .editor[data-framed] { border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); }
+/* fill (REG-437): inside a fixed-height form the body takes what is left and scrolls — a long template no longer grows the modal past the screen. */
+.editor[data-fill] { flex: 1; min-height: 0; }
+.editor[data-fill] .body { flex: 1; min-height: 0; overflow-y: auto; }
 .toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); min-height: 68px; padding: var(--om-spacing-4) var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .tools { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-4); overflow-x: auto; scrollbar-width: none; }
 .group { display: inline-flex; align-items: center; gap: var(--om-spacing-4); flex-shrink: 0; }
@@ -27,7 +30,8 @@
 /* ── Phone: the tools scroll under a finger and the right slot takes its own line; touch boxes at 44 (REG-312). */
 @media (max-width: 767px) {
   .toolbar { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); }
-  .tools { flex-basis: 100%; }
+  .tools { flex-basis: 100%; flex-wrap: wrap; gap: var(--om-spacing-2); overflow: visible; }   /* the tools wrap at 8 apart (a 324 line holds nine; the link follows on the next) instead of scrolling off the edge (REG-437) */
+  .group { gap: var(--om-spacing-2); }
   .right { flex-basis: 100%; }
   .right > * { flex: 1; }
   .body { padding: var(--om-spacing-4); }

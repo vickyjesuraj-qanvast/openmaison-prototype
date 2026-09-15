@@ -89,7 +89,6 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
   const [itemCount, setItemCount] = useState(items.filter((i) => i.kind === 'item').length)
   // The quote's live total and lines (the Items section reports them): the Payment Schedule's amounts and its AI schedule follow.
   const [amountMinor, setAmountMinor] = useState(quote.amountMinor)
-  const linesRef = useRef<QuoteItem[]>(items)
   const [fileCount, setFileCount] = useState(quoteFiles.length)
   const [lines, setLines] = useState<QuoteItem[]>(items)
   const [scheduleRows, setScheduleRows] = useState<QuotePayment[]>(payments)
@@ -304,14 +303,14 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
             </SectionCard>
             <ItemsCard seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
-                       onTotal={setAmountMinor} onLines={(l) => { linesRef.current = l; setLines(l) }} />
+                       onTotal={setAmountMinor} onLines={setLines} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
                                 onDrop={() => persistSections(sectionsRef.current)}
                                 render={s.key === 'payment' ? (onHandle) => (
                                   <PaymentsCard seed={paymentsSeed} open={!s.collapsed} onToggle={() => toggle('payment')} onHandlePointerDown={onHandle}
-                                                totalMinor={amountMinor} linesRef={linesRef} today={new Date(now)} onSaved={stamp} onRows={setScheduleRows} />
+                                                totalMinor={amountMinor} today={new Date(now)} onSaved={stamp} onRows={setScheduleRows} />
                                 ) : s.key === 'files' ? (onHandle) => (
                                   <FilesCard seed={filesSeed} open={!s.collapsed} onToggle={() => toggle('files')} onHandlePointerDown={onHandle} onSaved={stamp} onCount={setFileCount} />
                                 ) : s.key === 'terms' || s.key === 'notes' ? (onHandle) => (

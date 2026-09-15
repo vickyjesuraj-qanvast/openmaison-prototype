@@ -31,10 +31,16 @@
 /* Toolbar (section-top actions, 1260:31216): every control 36; the segmented undo/redo shares one border — a disabled half
    dims its GLYPH only (the #ccc border stays, 1260:31216). */
 .tools { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; justify-content: flex-end; }
+/* Expand (REG-434, owner 2026-09-15): the whole Items card laid over the editor, edge to edge like the editor over its origin page,
+   on the canvas' ground with the section's 24 all round; the card fills the height and its body scrolls. The toolbar's Expand
+   becomes Collapse. Under the menus (60), the bulk bar (80), the drawer (100) and dialogs (110). */
+.fullPage { position: fixed; inset: 0; z-index: 40; background: var(--om-color-surface-bg); padding: var(--om-spacing-6); display: flex; flex-direction: column; }
+.fullPage > * { flex: 1; min-height: 0; }
+@media (max-width: 767px) { .fullPage { padding: var(--om-spacing-4); } }
 .seg { display: inline-flex; }
 .seg > * + * { margin-left: -1px; }
-.seg button:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.seg button:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.seg > :first-child button { border-top-right-radius: 0; border-bottom-right-radius: 0; }   /* each button sits in its Tooltip's span, so `button:first-child` matched both and squared every corner (REG-432) */
+.seg > :last-child button { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .seg button[disabled] { cursor: default; }
 .seg button[disabled] > * { opacity: .4; }
 .anchor { position: relative; display: inline-flex; }

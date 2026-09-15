@@ -110,7 +110,7 @@
 
 /* ---- Rows ×64 ---- */
 .row {
-  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180) */
+  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180); auto-rows 100%: cells fit the 64 (REG-431) */
   height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
   transition: background-color var(--motion-hover);
 }
@@ -118,6 +118,7 @@
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
   grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
@@ -264,7 +265,7 @@
   /* (REG-354) The canvas draws each lead as a card, not a row in a rule-separated list (3j): the card holds the
      name, the phone and the status tags, 12 apart on the page's own ground. The desktop row is a fixed 64px;
      stacked, its cells need whatever they need, or each row draws over the next. */
-  .row { grid-template-columns: 1fr; grid-column: 1 / -1; height: auto; padding: var(--om-spacing-4); row-gap: var(--om-spacing-1);
+  .row { grid-template-columns: 1fr; grid-auto-rows: auto; grid-column: 1 / -1; height: auto; padding: var(--om-spacing-4); row-gap: var(--om-spacing-1);   /* auto-rows: the desktop's 100% would make every stacked line a whole card tall (REG-431) */
          border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
          background: var(--om-color-surface-default); }
   .card { background: none; border: 0; box-shadow: none; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }

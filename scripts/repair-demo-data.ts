@@ -482,11 +482,11 @@ async function main() {
     { name: 'Hacking of existing floor and wall tiles', description: 'Removal of existing tiles and screed, debris disposal included', kind: 'labour', unit: 'sqft', cost: 3.2, markup: 0.8, category: 'Hacking' },
     { name: 'Cement screeding and waterproofing', description: 'Levelling screed with waterproofing membrane for wet areas', kind: 'labour', unit: 'sqft', cost: 2.8, markup: 0.7, category: 'Masonry' },
     { name: 'Vinyl flooring, supply and install', description: '5 mm SPC vinyl planks with underlay, laid over screed', kind: 'purchase', unit: 'sqft', cost: 5.5, markup: 1.5, category: 'Flooring' },
-    { name: 'Kitchen carpentry, top and bottom cabinets', description: 'Laminated plywood carcass with soft-close hinges, per foot run', kind: 'purchase', unit: 'ft run', cost: 190, markup: 60, category: 'Carpentry' },
+    { name: 'Kitchen carpentry, top and bottom cabinets', description: 'Laminated plywood carcass with soft-close hinges and internal drawers, top cabinets taken to the ceiling, per foot run', kind: 'purchase', unit: 'ft run', cost: 190, markup: 60, category: 'Carpentry' },
     { name: 'Electrical point, new', description: 'Concealed wiring for a new lighting, power or data point', kind: 'labour', unit: 'point', cost: 55, markup: 15, category: 'Electrical' },
-    { name: 'Plumbing works, kitchen and bathrooms', description: 'Relocation of water points and drainage, sanitary ware installation', kind: 'labour', unit: 'Lot', cost: 1400, markup: 400, category: 'Plumbing' },
-    { name: 'Painting, whole unit', description: 'Two coats of emulsion on walls and ceilings, sealer included', kind: 'labour', unit: 'Lot', cost: 1500, markup: 450, category: 'Painting' },
-    { name: 'Design consultation and 3D drawings', description: 'Space planning, material selection and 3D visuals for the whole unit', kind: 'design', unit: 'Lot', cost: 1800, markup: 1200, category: 'Design' },
+    { name: 'Plumbing works, kitchen and bathrooms', description: 'Relocation of water points and drainage in the kitchen and both bathrooms, sanitary ware and mixers installed', kind: 'labour', unit: 'Lot', cost: 1400, markup: 400, category: 'Plumbing' },
+    { name: 'Painting, whole unit', description: 'Two coats of washable emulsion on every wall and ceiling over sealer, doors and frames finished in enamel', kind: 'labour', unit: 'Lot', cost: 1500, markup: 450, category: 'Painting' },
+    { name: 'Design consultation and 3D drawings', description: 'Space planning, material selection and 3D visuals for the whole unit, with two rounds of revisions before the final set', kind: 'design', unit: 'Lot', cost: 1800, markup: 1200, category: 'Design' },
   ]
   const pbId = (name: string) => sid(name, 'price_book_item')
   for (const p of PRICE_BOOK) {
@@ -514,7 +514,7 @@ async function main() {
       pb('Kitchen carpentry, top and bottom cabinets', ft(sqft * 0.024), { group: 'Kitchen', room: 'Kitchen', section: 'Carpentry', scale: true }),
       { name: 'Kitchen countertop, quartz', description: '20 mm engineered quartz top with cut-outs for hob and sink', kind: 'purchase', unit: 'ft run', cost: 150, markup: 50, qty: ft(sqft * 0.014), group: 'Kitchen', room: 'Kitchen', category: 'Carpentry', section: 'Carpentry', scale: true },
       { name: 'Kitchen backsplash, glass', description: 'Back-painted tempered glass panel, cut for outlets', kind: 'purchase', unit: 'ft run', cost: 75, markup: 25, qty: ft(sqft * 0.011), group: 'Kitchen', room: 'Kitchen', category: 'Fittings', section: 'Finishing', scale: true },
-      { name: 'Wardrobe, master bedroom', description: 'Full-height laminated wardrobe with sliding doors and internal drawers', kind: 'purchase', unit: 'ft run', cost: 260, markup: 80, qty: ft(sqft * 0.012), group: 'Bedrooms', room: 'Master Bedroom', category: 'Carpentry', section: 'Carpentry', scale: true },
+      { name: 'Wardrobe, master bedroom', description: 'Full-height laminated wardrobe with sliding doors, internal drawers, hanging rails and a mirror panel on one door', kind: 'purchase', unit: 'ft run', cost: 260, markup: 80, qty: ft(sqft * 0.012), group: 'Bedrooms', room: 'Master Bedroom', category: 'Carpentry', section: 'Carpentry', scale: true },
       { name: 'Study desk and shelving', description: 'Built-in desk with overhead open shelving, laminate finish', kind: 'purchase', unit: 'ft run', cost: 210, markup: 70, qty: ft(sqft * 0.006), group: 'Bedrooms', room: 'Bedroom 2', category: 'Carpentry', section: 'Carpentry', scale: true },
       { name: 'Bedroom doors, laminate', description: 'Solid-core laminate door with frame, hinges and lever handle', kind: 'purchase', unit: 'Pieces', cost: 480, markup: 140, qty: sqft > 1000 ? 4 : 3, group: 'Bedrooms', room: 'Bedroom 2', category: 'Fittings', section: 'Finishing' },
       { name: 'TV console and feature wall', description: 'Suspended TV console with fluted feature wall panelling', kind: 'purchase', unit: 'Lot', cost: 2800, markup: 900, qty: 1, room: 'Living Room', category: 'Carpentry', section: 'Carpentry' },
@@ -672,6 +672,26 @@ async function main() {
   push(`UPDATE quotes SET items_density = 'double' WHERE items_density = 'single'`)
   await client.batch(stmts, 'write'); stmts.length = 0
   note(`${refs} quotes received a project ref; validity filled where empty; density double`)
+
+  /* ── R29 · descriptions long enough for the Items table's Triple density to show three lines (owner 2026-09-15, REG-433) ──
+     The seeded scope lines all fit two lines of the 268px description block, so Double and Triple looked the same. Five of
+     them read as a trade would write them — the same text R23 seeds now; existing rows are lengthened in place. */
+  console.log('\nR29 three-line descriptions')
+  const LONGER: [name: string, was: string, now: string][] = [
+    ['Kitchen carpentry, top and bottom cabinets', 'Laminated plywood carcass with soft-close hinges, per foot run', 'Laminated plywood carcass with soft-close hinges and internal drawers, top cabinets taken to the ceiling, per foot run'],
+    ['Plumbing works, kitchen and bathrooms', 'Relocation of water points and drainage, sanitary ware installation', 'Relocation of water points and drainage in the kitchen and both bathrooms, sanitary ware and mixers installed'],
+    ['Painting, whole unit', 'Two coats of emulsion on walls and ceilings, sealer included', 'Two coats of washable emulsion on every wall and ceiling over sealer, doors and frames finished in enamel'],
+    ['Design consultation and 3D drawings', 'Space planning, material selection and 3D visuals for the whole unit', 'Space planning, material selection and 3D visuals for the whole unit, with two rounds of revisions before the final set'],
+    ['Wardrobe, master bedroom', 'Full-height laminated wardrobe with sliding doors and internal drawers', 'Full-height laminated wardrobe with sliding doors, internal drawers, hanging rails and a mirror panel on one door'],
+  ]
+  let lengthened = 0
+  for (const [name, was, now] of LONGER) {
+    for (const table of ['price_book_items', 'quote_items']) {
+      const r = await client.execute({ sql: `UPDATE ${table} SET description = ? WHERE name = ? AND description = ?`, args: [now, name, was] })
+      lengthened += r.rowsAffected
+    }
+  }
+  console.log(`  ${lengthened} description(s) lengthened`)
 
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')

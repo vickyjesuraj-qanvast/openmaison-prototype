@@ -16,20 +16,22 @@ import styles from './section-card.module.css'
  * UI jerks"): it is clipped only while it moves, so a table's floating Expand, the row kebabs and the frozen Total's shadow
  * are free once it has settled; `prefers-reduced-motion` collapses the animation to a cut.
  */
-export function SectionCard({ id, title, open, onToggle, actions, onHandlePointerDown, children }: {
+export function SectionCard({ id, title, open, onToggle, actions, onHandlePointerDown, fill, children }: {
   id: string
   title: string
   open: boolean
   onToggle: () => void
   actions?: ReactNode
   onHandlePointerDown?: (e: PointerEvent<HTMLButtonElement>) => void
+  /** The card fills its container and its body scrolls (the Items section's full-page Expand, REG-434). */
+  fill?: boolean
   children?: ReactNode
 }) {
   const bodyId = `${id}-body`
   const reduced = useReducedMotion()
   const [moving, setMoving] = useState(false)
   return (
-    <section id={id} className={styles.card} data-open={open || undefined} aria-labelledby={`${id}-title`}>
+    <section id={id} className={styles.card} data-open={open || undefined} data-fill={fill || undefined} aria-labelledby={`${id}-title`}>
       <div className={styles.top}>
         <div className={styles.label}>
           {onHandlePointerDown ? (
@@ -46,6 +48,9 @@ export function SectionCard({ id, title, open, onToggle, actions, onHandlePointe
         </div>
         {actions ? <div className={styles.actions}>{actions}</div> : null}
       </div>
+      {fill ? (
+        <div id={bodyId} className={`${styles.body} ${styles.fill}`}>{children}</div>
+      ) : (
       <AnimatePresence initial={false}>
         {open ? (
           <motion.div key="body" id={bodyId} className={styles.body} style={{ overflow: moving ? 'hidden' : 'visible' }}
@@ -56,6 +61,7 @@ export function SectionCard({ id, title, open, onToggle, actions, onHandlePointe
           </motion.div>
         ) : null}
       </AnimatePresence>
+      )}
     </section>
   )
 }

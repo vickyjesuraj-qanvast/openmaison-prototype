@@ -41,6 +41,7 @@ chevron_right
 circle
 close
 collapse_all
+collapse_content
 comment
 content_copy
 contract

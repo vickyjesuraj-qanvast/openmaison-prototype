@@ -74,15 +74,16 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
 
   if (editing) {
     /* New / Edit Template (1238:33173): arrow_back · the "{Section} Templates /" crumb over the title, no rule; Title* resting in
-       its box (no autofocus); the framed editor 359 tall whose toolbar ends in the "Insert Token ▾" trigger (200 menu). */
+       its box (no autofocus); the framed editor whose toolbar ends in the "Insert Token ▾" trigger (200 menu). The panel is the
+       mock's 663 and the editor's body scrolls inside it (REG-437: an edited template's long body grew the modal past the screen). */
     return (
-      <Dialog open={open} onClose={close} title={editing.id ? 'Edit Template' : 'New Template'} size="modal" width={800} headRule={false}
+      <Dialog open={open} onClose={close} title={editing.id ? 'Edit Template' : 'New Template'} size="modal" width={800} height={663} headRule={false}
               eyebrow={`${label} Templates /`}
               leading={<Tooltip label="Back"><IconButton icon="arrow_back" label="Back to templates" size={24} variant="bare" iconSize={24} onClick={() => setEditing(null)} /></Tooltip>}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => save(false)} isDisabled={!editing.title.trim()}>Save</Button><Button onPress={() => save(true)} isDisabled={!editing.title.trim()}>Save and Add</Button></>}>
         <div className={styles.form}>
           <TextField label="Title" required size="s" value={editing.title} onChange={(v) => setEditing((e) => (e ? { ...e, title: v } : e))} />
-          <RichEditor ref={editor} framed value={editing.body} onChange={(html) => setEditing((e) => (e ? { ...e, body: html } : e))} placeholder={`Add your ${label}.`} label={`${label} template`} minHeight={359}
+          <RichEditor ref={editor} framed fill value={editing.body} onChange={(html) => setEditing((e) => (e ? { ...e, body: html } : e))} placeholder={`Add your ${label}.`} label={`${label} template`} minHeight={359}
                       right={
                         <span className={styles.tokenAnchor}>
                           <button ref={tokenRef} type="button" className={styles.tokenBtn} aria-haspopup="menu" aria-expanded={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)}>

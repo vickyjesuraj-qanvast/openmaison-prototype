@@ -41,6 +41,7 @@
 .dialog[data-size='modal'][data-norule] .head:has(.eyebrow) .headText { gap: 0; }
 /* A fixed-height panel (the templates modal's 600, 1238:33258): the body takes the room and scrolls. */
 .dialog[data-size='modal'] .body { flex: 1; min-height: 0; overflow-y: auto; }
+.dialog[data-size='modal'] { max-height: calc(100dvh - 48px); }   /* the desktop caps a modal too (REG-437): a 663 form on a short window scrolls its body instead of running off the screen */
 
 .message { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 

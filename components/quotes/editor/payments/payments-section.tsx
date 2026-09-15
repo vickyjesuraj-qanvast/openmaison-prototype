@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
@@ -14,9 +14,9 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
-import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
+import type { QuotePayment } from '@/lib/db/schema'
 import { money2 } from '@/lib/quotes/math'
-import { aiSchedule, blankRow, dueLabel, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, toRows, PRESETS, type PaymentRow, type ScheduleAnchors } from '@/lib/quotes/payments'
+import { blankRow, dueLabel, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, toRows, PRESETS, type PaymentRow, type ScheduleAnchors } from '@/lib/quotes/payments'
 import { createQuotePayment, deleteQuotePayment, reorderQuotePayments, replaceQuotePayments, updateQuotePayment, type PaymentPatch } from '@/app/quotes/payments-actions'
 import { SectionCard } from '../section-card'
 import { useLevelFocus } from '../items/table-menus'
@@ -32,7 +32,6 @@ export type PaymentsSeed = {
 type Field = 'name' | 'description' | 'pct' | 'amount'
 type Edit = { id: string; field: Field; draft: string }
 
-const LOADING = ['Gathering information', 'Making some AI magic', 'Adding final touches']
 /** The table's key in the user's stored column widths (REG-427) and its mocked tracks (payments-section.module.css). */
 const PAY_TABLE = 'quote-payments'
 const PAY_TRACKS = [{ key: 'sel', track: '40px' }, { key: 'name', track: '319px' }, { key: 'desc', track: 'minmax(120px, 1fr)' }, { key: 'pct', track: '140px' }, { key: 'amount', track: '140px' }, { key: 'due', track: '140px' }]
@@ -41,31 +40,19 @@ const fmtPct = (p: number) => `${Number.isInteger(p) ? p : Number(p.toFixed(2))}
 /** Whole dollars ("S$10,000") — the over-balance message's figures (1271:38240). */
 const money0 = (minor: number) => money2(Math.round(minor / 100) * 100).replace(/\.00$/, '')
 
-/** The Maison AI mark (1271:37381 / 1271:39197). */
-function AiMark({ size = 17 }: { size?: number }) {
-  return (
-    <span className={styles.aiMark} style={{ width: size + 3, height: size + 3 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/figma-assets/maison-ai-mark.svg" alt="" style={{ width: size, height: size }} />
-    </span>
-  )
-}
-
 /**
  * Payment Schedule (1238:29290 · base 1271:37370 · edit 1271:37609 · over-balance 1271:38240 · hover 1271:38624 · banner
- * 1271:39003 / 39197 · loading 1238:29277…; spec 06, REG-418). The section's own card: the preset select and "Add Payments with AI" in the section-top, the table (handle ·
+ * 1271:39003 / 39197; spec 06, REG-418 — "Add Payments with AI" and its schedule left on the owner's word, REG-436). The section's own card: the preset select in the section-top, the table (handle ·
  * name · description / trigger · % · amount · due), the over-balance error, "Add a Payment". Amounts are the quote's live
- * total × each row's share (REG-403); every edit writes at once and stamps the quote's "Saved …". Presets, the AI schedule
- * and a removed row can be undone.
+ * total × each row's share (REG-403); every edit writes at once and stamps the quote's "Saved …". Presets and a removed row
+ * can be undone.
  */
-export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalMinor, linesRef, today, onSaved, onRows }: {
+export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalMinor, today, onSaved, onRows }: {
   seed: PaymentsSeed
   open: boolean
   onToggle: () => void
   onHandlePointerDown: (e: PointerEvent<HTMLButtonElement>) => void
   totalMinor: number
-  /** The Items section's current lines — what "Add Payments with AI" derives the schedule from. */
-  linesRef: RefObject<QuoteItem[]>
   today: Date
   onSaved: (updatedAt: number) => void
   /** The schedule as shown — Write with AI (REG-420) reads it. */
@@ -94,8 +81,6 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const moreLevel = useLevelFocus(moreSub)
   const presetRef = useRef<HTMLSpanElement>(null)
   const moreRef = useRef<HTMLSpanElement>(null)
-  const [generating, setGenerating] = useState(false)
-  const [banner, setBanner] = useState(false)
   const previous = useRef<PaymentRow[] | null>(null)
 
   /* ── the schedule as the table shows it: a % / amount being typed previews at once (the Total row and the error follow) ── */
@@ -144,19 +129,6 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   }
   const reorder = (ids: string[]) => setRows((rs) => ids.map((id) => rs.find((r) => r.id === id)!).filter(Boolean))
   const persistOrder = () => { void run('reorder the payments', async () => { const r = await reorderQuotePayments(quoteId, rowsRef.current.map((x) => x.id)); onSaved(r.updatedAt) }) }
-
-  /* ── Add Payments with AI: the three loading cards, then the schedule derived from the quote's lines, with Undo ── */
-  const generate = () => {
-    if (generating) return
-    previous.current = toRows(rowsRef.current)
-    setGenerating(true); setBanner(false)
-    const schedule = aiSchedule(linesRef.current ?? [], anchors)
-    void run('generate the schedule', async () => {
-      await new Promise((res) => setTimeout(res, 2100))   // the three cards (1238:29277 / 29281 / 29285), 700 ms each — invented pacing
-      await replace(schedule)
-      setBanner(true)
-    }).finally(() => setGenerating(false))
-  }
 
   /* ── inline edit (1271:37609): the cell becomes the 2px primary box with ✕ / ✓ under it; Enter and ✓ commit, Esc and ✕ discard ── */
   const startEdit = (row: QuotePayment, field: Field, i: number) => {
@@ -207,10 +179,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       <span className={styles.menuText}>{p.label}</span>{p.key === preset ? <span className={styles.menuCurrent}>current</span> : null}
     </DropdownItem>
   ))
-  const aiDisabled = generating || banner
   const toolbar = phone ? (
     <div className={styles.tools}>
-      <Tooltip label="Add Payments with AI" disabled={aiDisabled}><IconButton icon="auto_awesome" glyph={<AiMark />} label="Add Payments with AI" variant="primary" disabled={aiDisabled} onClick={generate} /></Tooltip>
       <span ref={moreRef} className={styles.anchor}>
         <Tooltip label="More options" disabled={menu === 'more'}>
           <IconButton icon="more_vert" label="More options for Payment Schedule" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} />
@@ -245,7 +215,6 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
           {presetRowsUi}
         </PortalMenu>
       </span>
-      <Button variant="primary" appearance="outlined" iconStart={<AiMark />} isDisabled={aiDisabled} onPress={generate}>Add Payments with AI</Button>
     </div>
   )
 
@@ -253,26 +222,6 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   return (
     <SectionCard id="section-payment" title="Payment Schedule" open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
       <div className={styles.body}>
-        {banner ? (
-          <div className={styles.banner} role="status">
-            <AiMark size={17} />
-            <span className={styles.bannerText}>Here’s a Maison AI generated payment schedule</span>
-            <Button variant="primary" appearance="outlined" onPress={() => { setBanner(false); restore('undo the schedule') }}>Undo</Button>
-            <Tooltip label="Dismiss">
-              <button type="button" className={styles.bannerClose} aria-label="Dismiss" onClick={() => setBanner(false)}><Icon name="close" size={20} /></button>
-            </Tooltip>
-          </div>
-        ) : null}
-        {generating ? (
-          <div className={styles.loading} role="status" aria-label="Generating the payment schedule">
-            {LOADING.map((label) => (
-              <div key={label} className={styles.card}>
-                <AiMark size={24} />
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
           <div ref={payFrame} className={styles.table} role="table" aria-label="Payment schedule" data-cols={PAY_TABLE} data-overflow={payOverflowing || undefined}
                style={{ ...(tracks ? { '--pay-tracks': tracks } : {}), '--pay-min': `${payFloor}px` } as React.CSSProperties}
                onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
@@ -320,12 +269,11 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
               <div role="cell" className={`${styles.cell} ${styles.cDue}`} />
             </div>
           </div>
-        )}
-        {balance.over && !generating ? (
+        {balance.over ? (
           <p className={styles.error} role="alert">Your upcoming scheduled payments are {money0(balance.overMinor)} above the proposal’s balance of {money0(totalMinor)}</p>
         ) : null}
         <div className={styles.foot}>
-          <Button variant="primary" appearance="outlined" onPress={addRow} isDisabled={generating}>Add a Payment</Button>
+          <Button variant="primary" appearance="outlined" onPress={addRow}>Add a Payment</Button>
         </div>
       </div>
       <DatePicker open={!!dueRow} anchorRef={dueAnchor} anchorKey={dueFor ?? ''} value={dueRow?.dueAt ?? null} today={today} label="Due date"

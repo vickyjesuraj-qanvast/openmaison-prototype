@@ -66,17 +66,6 @@
 .error { margin: 0; font: var(--om-type-body-m); font-weight: 500; color: var(--om-color-tertiary-red-default); }
 .foot { display: flex; }
 
-/* Maison AI banner (1271:39197): 60 tall, the rail's Upgrade tint, r8, p12/16, g12; mark 16.6 · text 14/500 · Undo · a bare
-   close 20 in ink flush at the padding. */
-.banner { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); min-height: 60px; border-radius: var(--om-radius-2); background: linear-gradient(90deg, rgba(214, 97, 66, .1), rgba(189, 58, 95, .1)); }
-.bannerText { flex: 1; min-width: 0; font: var(--om-type-body-m); font-weight: 500; color: var(--om-color-on-surface-default); }
-.bannerClose { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
-.bannerClose:hover { background: var(--om-color-hover-08p); }
-.bannerClose:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-/* Loading cards (1238:29277 / 29281 / 29285): 400×178 each, white r8, no stroke, the mark 24.5 over a 14/700 label — three at once. */
-.loading { display: grid; grid-template-columns: repeat(3, minmax(0, 400px)); gap: var(--om-spacing-6); }
-.card { height: 178px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: var(--om-radius-2); background: var(--om-color-surface-default); font: var(--om-type-body-m); font-weight: 700; color: var(--om-color-on-surface-default); }
-.aiMark { display: inline-flex; align-items: center; justify-content: center; }
 .aiMark img { display: block; }
 
 /* Toolbar (1271:37377): the preset select (secondary outlined) and "Add Payments with AI" (primary outlined, the mark in the glyph slot), g12. */

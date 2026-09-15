@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -95,6 +96,22 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [showFull, setShowFull] = useState<Set<string>>(() => new Set())
   const [history, setHistory] = useState<{ past: QuoteItem[][]; future: QuoteItem[][] }>({ past: [], future: [] })
   const [menu, setMenu] = useState<'view' | 'density' | 'create' | 'more' | null>(null)
+  /* Expand (REG-434): the whole card as a full-page layer over the editor; Escape (with no menu or dialog up) and the toolbar's
+     Collapse bring it back. The page keeps a collapsed stand-in in the section's slot so nothing below it moves. */
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    if (!expanded) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(() => (document.querySelector('[data-items-expanded] [aria-label="Collapse"]') as HTMLElement | null)?.focus())
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      if (document.querySelector('[role="menu"], [role="listbox"]') || document.querySelectorAll('[role="dialog"]').length > 1) return
+      setExpanded(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey) }
+  }, [expanded])
   const [moreSub, setMoreSub] = useState<'view' | 'density' | null>(null)
   const moreLevel = useLevelFocus(moreSub)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -315,7 +332,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                 <DropdownItem disabled={history.past.length === 0} onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
                 <DropdownItem disabled={history.future.length === 0} onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
                 <DropdownDivider />
-                <DropdownItem onSelect={() => { closeMenus(); comingSoon() }}><span className={styles.menuIcon}><Icon name="expand_content" size={20} /></span>Expand</DropdownItem>
+                <DropdownItem onSelect={() => { closeMenus(); setExpanded((x) => !x) }}><span className={styles.menuIcon}><Icon name={expanded ? 'collapse_content' : 'expand_content'} size={20} /></span>{expanded ? 'Collapse' : 'Expand'}</DropdownItem>
                 <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem>
                 <DropdownItem submenu onSelect={() => setMoreSub('density')}><span className={styles.menuIcon}><Icon name="format_line_spacing" size={20} /></span>Row density: {DENSITY_LABEL[density]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
                 <DropdownItem submenu onSelect={() => setMoreSub('view')}>View by: {ITEM_VIEW_LABEL[view]}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
@@ -335,7 +352,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <Tooltip label="Undo"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
         <Tooltip label="Redo"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
       </span>
-      <Tooltip label="Expand"><IconButton icon="expand_content" label="Expand" onClick={comingSoon} /></Tooltip>
+      <Tooltip label={expanded ? 'Collapse' : 'Expand'}><IconButton icon={expanded ? 'collapse_content' : 'expand_content'} label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpanded((x) => !x)} /></Tooltip>
       <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setSettingsOpen(true)} /></Tooltip>
       <span ref={densityRef} className={styles.anchor}>
         <Tooltip label="Row density" disabled={menu === 'density'}>
@@ -368,9 +385,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     </div>
   )
 
-  return (
-    <>
-      <SectionCard id="section-items" title={`Items (${lineCount})`} open={open} onToggle={onToggle} actions={toolbar}>
+  const title = `Items (${lineCount})`
+  const body = (
         <div className={styles.body}>
           <ItemsTable
             items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels}
@@ -401,7 +417,22 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           />
           <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} onPricing={changePricing} onRound={round} />
         </div>
-      </SectionCard>
+  )
+  return (
+    <>
+      {expanded ? (
+        <>
+          <SectionCard id="section-items" title={title} open={false} onToggle={() => setExpanded(false)} />
+          {createPortal(
+            <div className={styles.fullPage} role="dialog" aria-modal="true" aria-label={title} data-items-expanded="">
+              <SectionCard id="section-items-expanded" title={title} open onToggle={() => setExpanded(false)} actions={toolbar} fill>{body}</SectionCard>
+            </div>,
+            document.body,
+          )}
+        </>
+      ) : (
+        <SectionCard id="section-items" title={title} open={open} onToggle={onToggle} actions={toolbar}>{body}</SectionCard>
+      )}
       <DetailBulkBar
         count={selected.size}
         actions={[

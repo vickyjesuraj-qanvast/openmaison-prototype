@@ -15,6 +15,15 @@
   border-radius: var(--om-radius-2);
 }
 .scroller { width: 100%; }
+/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
+   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
+   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
+.card { position: relative; }
+.card::after {
+  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+}
+
 .scroller[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
 .table { display: flex; flex-direction: column; width: 100%; min-width: var(--table-min, 1242px); }   /* --table-min: the columns' floor (tasks-table.tsx) */
 /* Frozen first block (the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the scrolled
@@ -345,6 +354,7 @@ button.doneFilled[data-variant='primary']:hover {
 @media (max-width: 767px) {
   .head { display: none; }
   .card { border: 0; border-radius: 0; background: none; }
+  .card::after { content: none; }
   /* The separator belongs to the row now: on the desktop table every cell draws it, which turned each wrapped
      row into two ruled bands. */
   /* The list wraps to the screen, so the desktop column floor that made the card scroll sideways is dropped. */

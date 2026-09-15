@@ -6,16 +6,15 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import type { QuoteItem } from '@/lib/db/schema'
-import { ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, isItemStatus, isVisibility, type ColumnKey, type ColumnSettings, type ItemKind, type ItemsDensity, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
+import { ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, isVisibility, type ColumnKey, type ColumnSettings, type ItemKind, type ItemsDensity, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
 import { groupTotals, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import type { ItemPatch } from '@/app/quotes/items-actions'
 import { MoneyCell, NumberCell, TextCell } from './cell-input'
-import { StatusChip } from './status-chip'
 import { LabelMenu, RowMenu, ThumbMenu, UnitMenu, VisibilityMenu } from './table-menus'
 import styles from './items-table.module.css'
 
 export const COL_CLASS: Record<ColumnKey, string | undefined> = {
-  status: styles.colStatus, qty: styles.colQty, unit: styles.colUnit, cost: styles.colCost, markup: styles.colMarkup, unitPrice: styles.colUnitPrice,
+  qty: styles.colQty, unit: styles.colUnit, cost: styles.colCost, markup: styles.colMarkup, unitPrice: styles.colUnitPrice,
   discount: styles.colDiscount, gst: styles.colGst, room: styles.colRoom, category: styles.colCategory, section: styles.colCategory, type: styles.colType, margin: styles.colMargin,
   sku: styles.colType, msrp: styles.colCost, color: styles.colRoom, dimensions: styles.colRoom, materials: styles.colRoom, shipping: styles.colCost, shippingMarkup: styles.colMarkup, taxable: styles.colGst, vendor: styles.colRoom, website: styles.colRoom,
 }
@@ -84,7 +83,6 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const isGroup = item.kind === 'group'
   const child = !!item.parentId
   const sums = isGroup ? groupTotals(all, item.id) : null
-  const status = isItemStatus(item.status) ? item.status : 'Pending'
   const vis: Visibility = isVisibility(item.visibility) ? item.visibility : 'visible'
   const kind: ItemKind | null = isItemKind(item.icon) ? item.icon : null
   const patch = (p: ItemPatch) => h.onPatch(item.id, p)
@@ -100,9 +98,6 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
     const cls = `${styles.cell} ${COL_CLASS[key]}`
     const st = colW[key] ? { width: colW[key] } : undefined
     switch (key) {
-      case 'status':
-        // The chip sits on top-level rows; a child's cell is empty and the line carries its group's answer (spec 03, REG-417).
-        return <div key={key} role="cell" className={cls} style={st}>{child ? null : <StatusChip status={status} label={item.name} onChange={(s) => patch({ status: s })} />}</div>
       case 'qty':
         return <div key={key} role="cell" className={cls} style={st}>{isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />}</div>
       case 'unit':

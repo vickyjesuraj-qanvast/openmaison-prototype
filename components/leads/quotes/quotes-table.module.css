@@ -15,6 +15,15 @@
      Surface, stroke and radius lived only on [data-no-approval] once, so a studio WITH the approval step lost them (REG-244; user 2026-09-01) */
   border-radius: var(--om-radius-2);
 }
+/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
+   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
+   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
+.frame { position: relative; }
+.frame:not([data-overflow])::after {
+  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+}
+
 .frame[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
 .card {
   display: grid;
@@ -89,12 +98,15 @@
 .subClient { display: none; }   /* the phone card prints the client on the title's second line instead of a column */
 
 /* ---- Rows 1244×64 (910:36324) ---- */
-.row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }   /* same tracks as the head — no per-row drift (REG-180) */
+.row { display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }   /* grid-auto-rows 100%: the cells fit the 64, never 65 (REG-431) */
+.card > .row:last-child, .card > .row:last-child .colSel { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* the fill's corners follow the card's (REG-431) */
+.card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* same tracks as the head — no per-row drift (REG-180) */
 .row:hover { background: var(--om-color-surface-bg); }                    /* frame 200 hover row: fill #f2f2f2 */
 .row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff — tasks frame 192 (build plan) */
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
   grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
@@ -227,6 +239,7 @@
 @media (max-width: 767px) {
   .head { display: none; }
   .frame { background: none; border: 0; border-radius: 0; overflow: visible; }
+  .frame::after { content: none; }
   .card, .card[data-no-approval] {
     display: flex; flex-direction: column; gap: var(--om-spacing-3);
     grid-template-columns: 1fr; overflow-x: visible;
@@ -237,7 +250,7 @@
   .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; }   /* grid-area auto: an absolute child placed in a grid area is contained by that area (the title line); released, the card's own box contains it */
   .actionsInner { position: static; transform: none; }
   .row {
-    display: grid; grid-column: 1 / -1; height: auto;
+    display: grid; grid-column: 1 / -1; height: auto; grid-auto-rows: auto;   /* the desktop's 100% is of a fixed row; against this auto-height card it made every stacked line a whole card tall (REG-431) */
     grid-template-columns: auto 1fr auto;
     padding: var(--om-spacing-4);
     row-gap: var(--om-spacing-2); column-gap: var(--om-spacing-3);

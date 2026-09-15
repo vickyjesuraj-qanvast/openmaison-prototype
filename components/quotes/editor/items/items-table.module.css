@@ -32,7 +32,6 @@
 .head .colSel { justify-content: flex-end; }
 .colNum { width: var(--num-w); font: var(--om-type-caption-s); text-transform: uppercase; }
 .colItem { width: 360px; padding: 11px var(--om-spacing-4) var(--om-spacing-3); gap: var(--om-spacing-3); border-right-width: 4px; align-items: center; position: relative; white-space: normal; }   /* 11 above: the row's 1px rule is inside its 72 (thumb 48 + 12 + 11 + the rule) */
-.colStatus { width: 160px; padding: var(--om-spacing-3) var(--om-spacing-4); gap: var(--om-spacing-3); overflow: visible; }
 .colQty { width: 65px; }
 .colUnit { width: 127px; }
 .colCost { width: 115px; }

@@ -47,8 +47,10 @@ export const RichEditor = forwardRef<RichEditorHandle, {
   right?: ReactNode
   /** The toolbar row sits inside its own box (the template modal's editor, 1263:36344) — no change to the tools. */
   framed?: boolean
+  /** The body takes the editor's remaining height and scrolls inside it (the template form's fixed 663, REG-437). */
+  fill?: boolean
   minHeight?: number
-}>(function RichEditor({ value, onChange, placeholder, label, right, framed, minHeight = 361 }, ref) {
+}>(function RichEditor({ value, onChange, placeholder, label, right, framed, fill, minHeight = 361 }, ref) {
   const body = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState<Partial<Record<Cmd, boolean>>>({})
   const [linkOpen, setLinkOpen] = useState(false)
@@ -119,7 +121,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
   }), [emit])
 
   return (
-    <div className={styles.editor} data-framed={framed || undefined}>
+    <div className={styles.editor} data-framed={framed || undefined} data-fill={fill || undefined}>
       <div className={styles.toolbar} role="toolbar" aria-label={`${label} formatting`}>
         <div className={styles.tools}>
           {GROUPS.map((g, gi) => (
@@ -144,7 +146,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
         </div>
         {right ? <div className={styles.right}>{right}</div> : null}
       </div>
-      <div ref={body} className={styles.body} style={{ minHeight }} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
+      <div ref={body} className={styles.body} style={{ minHeight: fill ? 0 : minHeight }} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
            data-placeholder={placeholder}
            onInput={emit} onBlur={readActive}
            onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />

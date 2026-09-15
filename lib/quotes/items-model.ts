@@ -43,18 +43,18 @@ export const DENSITY_LABEL: Record<ItemsDensity, string> = { single: 'Single', d
 export const isDensity = (s: string): s is ItemsDensity => (DENSITIES as readonly string[]).includes(s)
 
 /** Column settings (1271:41169): the mocked catalogue in its order — plus Section, which the Section view needs (REG-415) — the mocked ON set is the table's default. */
-export const COLUMN_KEYS = ['sku', 'status', 'type', 'category', 'section', 'qty', 'unit', 'cost', 'msrp', 'markup', 'margin', 'unitPrice', 'discount', 'gst', 'room', 'color', 'dimensions', 'materials', 'shipping', 'shippingMarkup', 'taxable', 'vendor', 'website'] as const
+export const COLUMN_KEYS = ['sku', 'type', 'category', 'section', 'qty', 'unit', 'cost', 'msrp', 'markup', 'margin', 'unitPrice', 'discount', 'gst', 'room', 'color', 'dimensions', 'materials', 'shipping', 'shippingMarkup', 'taxable', 'vendor', 'website'] as const
 export type ColumnKey = (typeof COLUMN_KEYS)[number]
 export const COLUMN_LABEL: Record<ColumnKey, string> = {
-  sku: 'SKU', status: 'Status', type: 'Type', category: 'Category', section: 'Section', qty: 'Qty', unit: 'Unit', cost: 'Cost', msrp: 'MSRP', markup: 'Markup', margin: 'Margin',
+  sku: 'SKU', type: 'Type', category: 'Category', section: 'Section', qty: 'Qty', unit: 'Unit', cost: 'Cost', msrp: 'MSRP', markup: 'Markup', margin: 'Margin',
   unitPrice: 'Unit Price', discount: 'Discount', gst: 'GST (%)', room: 'Room', color: 'Color', dimensions: 'Dimensions', materials: 'Materials',
   shipping: 'Shipping', shippingMarkup: 'Shipping Markup', taxable: 'Taxable', vendor: 'Vendor/Sub', website: 'Website Link',
 }
 /** Columns the table can actually render today (the rest are in the catalogue, off, and answer coming soon when switched on). */
-export const RENDERABLE_COLUMNS: readonly ColumnKey[] = ['status', 'qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'type', 'margin']
+export const RENDERABLE_COLUMNS: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'type', 'margin']
 export type ColumnSettings = { details: { description: boolean; images: boolean; autonumber: boolean }; columns: { key: ColumnKey; on: boolean }[] }
-/** The table as mocked (1260:31209, updated 2026-09-15 — the STATUS column left the default set, REG-426): Qty · Unit · Cost ·
-    Markup · Unit Price · Discount · GST (%). Status stays in the catalogue (1271:41169 lists it) and turns on in Column settings. */
+/** The table as mocked (1260:31209, updated 2026-09-15 — the STATUS column left the default set, REG-426, then the catalogue
+    too, REG-435): Qty · Unit · Cost · Markup · Unit Price · Discount · GST (%). A stored 'status' entry is dropped on read. */
 export const DEFAULT_COLUMNS: ColumnSettings = {
   details: { description: true, images: true, autonumber: true },
   columns: COLUMN_KEYS.map((key) => ({ key, on: ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst'].includes(key) })),

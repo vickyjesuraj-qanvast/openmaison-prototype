@@ -9,7 +9,7 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
-import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, isItemStatus, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
+import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
 import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
 
@@ -46,7 +46,6 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
     const isGroup = i.kind === 'group'
     const sums = isGroup ? groupTotals(items, i.id) : null
     switch (key) {
-      case 'status': if (!i.parentId) out.push([isItemStatus(i.status) ? i.status : 'Pending', 64]); break   // chip: glyph 16 + 4 · label · 8 + chevron 20, p8 ×2
       case 'qty': if (!isGroup) out.push([fmtNum(i.qty), 0]); break
       case 'unit': if (!isGroup) out.push([i.unit ?? 'Add Unit Type', 24]); break   // + the select's chevron 16 and gap
       case 'cost': out.push([money2(isGroup ? sums!.costMinor : i.costMinor), 0]); break

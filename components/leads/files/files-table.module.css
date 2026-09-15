@@ -14,6 +14,15 @@
   border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
   border-radius: var(--om-radius-2);
 }
+/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
+   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
+   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
+.card { position: relative; }
+.card:not([data-overflow])::after {
+  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+}
+
 /* The card scrolls sideways only once its tracks run past it (REG-430, use-overflow-x.ts) — while the rows fit it does not
    clip, so a short table's row menu can hang below it. Selection + Title freeze on the left (the listing's .pin): they carry
    the row's own fill so the scrolled columns pass underneath, and Title — the last frozen cell — draws the group's rightward
@@ -59,15 +68,18 @@
 
 /* ---- Rows 1244×60 (931:40181 / 931:40194) ---- */
 .row {
-  display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift */
+  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift; auto-rows 100%: cells fit the 60 (REG-431) */
   height: 60px; position: relative;                                      /* relative: the absolute .actions hang off the row */
   transition: background-color var(--motion-hover);
 }
 .row:hover { background: var(--om-color-surface-bg); }                    /* hover not mocked — the Quotes / Tasks hover row #f2f2f2 */
+.card > .row:last-child, .card > .row:last-child .colSel { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* the fill's corners follow the card's (REG-431) */
+.card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
 .row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff (frames 96/97, frame 104 rows) */
 .cell {
   display: flex; align-items: center;
   min-width: 0;
+  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
   grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
   padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
