@@ -1,5 +1,7 @@
 'use client'
 
+import { createPortal } from 'react-dom'
+
 import { useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -21,7 +23,7 @@ export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
  */
 export function Dialog({
   open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
-  eyebrow, leading, headRule = true, height,
+  eyebrow, leading, headRule = true, height, portal = false,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
   /** A footer is optional: a modal drawn without one (the templates library, 1238:33258) ends on its body. */
@@ -44,6 +46,9 @@ export function Dialog({
   headRule?: boolean
   /** A fixed panel height (the templates modal's 600); the body scrolls inside it. Viewport-capped like every dialog. */
   height?: number
+  /** Render through a portal on <body> (REG-444): a dialog opened from inside a sideways scroller with sticky cells is otherwise
+   *  composited under the cells that follow it — the Items table's frozen block showed through the scrim. */
+  portal?: boolean
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
@@ -54,7 +59,7 @@ export function Dialog({
      2i…2m, 3e, 3g): they rise off the bottom edge instead of scaling in the middle, and wear the grabber.
      The compact / standard alerts stay centred cards there (canvas 2e Delete Task). */
   const asSheet = useSheetLayout() && !alert && (size === 'form' || size === 'modal')
-  return (
+  const node = (
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} data-nested={nested || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
@@ -82,6 +87,8 @@ export function Dialog({
       ) : null}
     </AnimatePresence>
   )
+  if (portal) { if (typeof document === 'undefined') return null; return createPortal(node, document.body) }
+  return node
 }
 
 /** Body copy for one-line confirmations (helper style: 12/16 secondary). */

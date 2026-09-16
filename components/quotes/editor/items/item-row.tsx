@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type DragEvent, type FocusEvent } from 'react'
-import { Checkbox } from '@/components/ds'
+import { Checkbox, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -10,6 +10,7 @@ import { ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, isVisibility, type ColumnK
 import { groupTotals, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import type { ItemPatch } from '@/app/quotes/items-actions'
 import { MoneyCell, NumberCell, TextCell } from './cell-input'
+import { DescriptionDialog } from './description-dialog'
 import { LabelMenu, RowMenu, ThumbMenu, UnitMenu, VisibilityMenu } from './table-menus'
 import styles from './items-table.module.css'
 
@@ -163,7 +164,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
 
   const total = isGroup ? sums!.totalMinor : lineTotalMinor(item)
   return (
-    <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-child={child || undefined} data-selected={selected || undefined}
+    <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-group={item.kind === 'group' || undefined} data-child={child || undefined} data-selected={selected || undefined}
          data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || undefined}
          data-dragover={dragOver ?? undefined} data-dragging={dragging || undefined} data-full={showFull || undefined}
          onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
@@ -205,7 +206,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           {/* The name is text-wide; a press on the row's remaining width still lands the caret in it. */}
           <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) nameRef.current?.focus() }}>
             <TextCell value={item.name} kind="name" inputRef={nameRef} placeholder={isGroup ? 'New Group' : 'Type item name'} onCommit={(v) => patch({ name: v })} ariaLabel={isGroup ? 'Group name' : 'Item name'} />
-            {isGroup ? <span className={styles.groupGlyph} aria-hidden><Icon name="cards" size={20} weight={300} fill /></span> : null}
+            {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">Group</Tag></span> : null}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
             {child ? (
               <>
                 <Tooltip label="Client visibility" disabled={menu === 'vis'}>
@@ -224,10 +225,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
               </Tooltip>
             ) : null}
           </div>
-          {!details.description ? null : descOpen ? (
-            <textarea className={styles.descArea} data-edit="" defaultValue={item.description ?? ''} autoFocus aria-label="Description" rows={3}
-                      onBlur={(e) => { const v = e.target.value; setDescOpen(false); if (v !== (item.description ?? '')) patch({ description: v }) }} />
-          ) : showFull ? (
+          {!details.description ? null : showFull ? (
             <span className={styles.desc} onClick={() => setDescOpen(true)}>{item.description || 'Add a description'}</span>
           ) : (
             <>
@@ -242,11 +240,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             </>
           )}
         </div>
-        {!isGroup && !descOpen && details.description ? (
-          <button type="button" className={styles.expand} data-expand onClick={() => setDescOpen(true)}>
+        {!isGroup && details.description ? (
+          <button type="button" className={styles.expand} data-expand onMouseDown={(e) => e.preventDefault()} onClick={() => setDescOpen(true)}>   {/* keeps the box's focus, so the row stays active through the press (the chip only shows on an active row) */}
             <Icon name="expand_content" size={20} />Expand
           </button>
         ) : null}
+        {/* Expand = the S 400 modal with a bigger box (REG-444); Save writes through the row's patch, so it autosaves and undoes like a cell. */}
+        <DescriptionDialog open={descOpen} name={item.name} value={item.description ?? ''} onClose={() => setDescOpen(false)}
+                           onSave={(v) => { if (v !== (item.description ?? '')) patch({ description: v }) }} />
       </div>
       {columns.map(cell)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
@@ -254,7 +255,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         <span className={styles.total}>{money2(total)}</span>
         <span ref={kebabRef} className={styles.kebab} data-open={menu === 'row' || undefined}>
           <Tooltip label="More options" disabled={menu === 'row'}>
-            <IconButton icon="more_vert" label={`More options for ${item.name}`} size={24} variant="bare" iconSize={24} aria-haspopup="menu" aria-expanded={menu === 'row'} onClick={() => toggle('row')} />
+            <span className={styles.float}>
+              <IconButton icon="more_vert" label={`More options for ${item.name}`} variant="primary" aria-haspopup="menu" aria-expanded={menu === 'row'} onClick={() => toggle('row')} />
+            </span>
           </Tooltip>
         </span>
         <RowMenu open={menu === 'row'} anchor={kebabRef} item={item} groups={groups} selectedCount={selected ? selectedCount : 1}

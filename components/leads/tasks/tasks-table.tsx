@@ -126,7 +126,7 @@ export function TasksTable({
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
-          <Checkbox isSelected={allSelected} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
+          <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && tasks.some((t) => selected.has(t.id))} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
         </div>
         {HEADS.map((h) => (
           <div key={h.key} className={`${styles.hCell} ${h.col ?? ""}`} role="columnheader">

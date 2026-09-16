@@ -337,7 +337,7 @@ export function LeadsTable({
               >
                 {i === 0 && selectable ? (
                   <span className={styles.headSelBox}>
-                    <Checkbox isSelected={allSelected} onChange={onToggleSelectAll} aria-label="Select all leads" />
+                    <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && rows.some((r) => selected.has(r.id))} onChange={onToggleSelectAll} aria-label="Select all leads" />
                   </span>
                 ) : null}
                 {SORTABLE[col.key] ? (

@@ -104,3 +104,8 @@
   .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
   .setRow { min-height: 44px; }
 }
+
+/* Expand's description modal (REG-444): the line's name under the title, the DS TextArea eight lines tall. */
+.descDialogName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.descDialogArea { width: 100%; }
+.descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */

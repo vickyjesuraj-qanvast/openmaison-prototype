@@ -13,6 +13,10 @@
 .head, .row, .bucket, .addRow { display: flex; align-items: stretch; }
 .head { height: 52px; }
 .row { min-height: 72px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); position: relative; }
+/* A group row is a BAND (owner 2026-09-16, REG-440: "item and group looks confusing without a color difference for the row"): every cell
+   from the checkbox to TOTAL wears the bar's own blue family, its sums bold, so the block reads as a tinted header over plain,
+   indented lines. Selection still wins (the rules below); the hover wash is an overlay, so it works on the band too. */
+.row[data-group] { background: var(--om-color-tertiary-blue-variant2); }
 .row[data-selected] { background: var(--om-color-primary-variant); }
 .row[data-dragover='before'] { box-shadow: inset 0 2px 0 var(--om-color-primary-default); }
 .row[data-dragover='after'] { box-shadow: inset 0 -2px 0 var(--om-color-primary-default); }
@@ -31,7 +35,7 @@
 .colSel { width: var(--sel-w); gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); overflow: visible; }
 .head .colSel { justify-content: flex-end; }
 .colNum { width: var(--num-w); font: var(--om-type-caption-s); text-transform: uppercase; }
-.colItem { width: 360px; padding: 11px var(--om-spacing-4) var(--om-spacing-3); gap: var(--om-spacing-3); border-right-width: 4px; align-items: center; position: relative; white-space: normal; }   /* 11 above: the row's 1px rule is inside its 72 (thumb 48 + 12 + 11 + the rule) */
+.colItem { flex: 1 0 auto; width: 360px; padding: 11px var(--om-spacing-4) var(--om-spacing-3); gap: var(--om-spacing-3); border-right-width: 4px; align-items: center; position: relative; white-space: normal; }   /* 11 above: the row's 1px rule is inside its 72 (thumb 48 + 12 + 11 + the rule) */
 .colQty { width: 65px; }
 .colUnit { width: 127px; }
 .colCost { width: 115px; }
@@ -43,16 +47,20 @@
 .colType { width: 100px; }
 .colMargin { width: 90px; }
 .colAdd { width: 52px; border-right: 0; justify-content: center; color: var(--om-color-primary-default); }
+/* ITEM is the fluid column (owner 2026-09-16: "Total column should be always on the right … check if any columns can fill to fit
+   the table"): its 360 (or the dragged width) is a floor and it takes whatever a wide card leaves over, so the row always
+   reaches the card's edge and TOTAL — content-width, frozen right — sits flush against it. A narrower card scrolls as before. */
 /* TOTAL: frozen right, 4px left rule, pl16 pr24, right-aligned; the sideways shadow shows while columns are still hidden under it. */
 .colTotal {
-  width: 140px; position: sticky; right: 0; z-index: 2;
+  width: 188px; position: sticky; right: 0; z-index: 2;   /* the mock's 140 + the room the hover kebab needs (REG-446, owner 2026-09-16: "the total amount is hidden behind the contextual menu"): the amount ends 72 in — 24 inset + the 36 button + 12 — so the pill never covers it and nothing moves on hover */
   background: inherit; border-right: 0;
   border-left: 4px solid var(--om-color-surface-variant);
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);
+  padding: var(--om-spacing-4) 72px var(--om-spacing-4) var(--om-spacing-4);
   justify-content: flex-end; text-align: right;
   transition: box-shadow var(--motion-toggle);
 }
 .row .colTotal { background: var(--om-color-surface-default); }
+.row[data-group] .colTotal { background: var(--om-color-tertiary-blue-variant2); }
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
@@ -89,17 +97,20 @@
 .row[data-active] .expand { display: inline-flex; }
 .row[data-density='single'] .descText { -webkit-line-clamp: 1; }
 .row[data-density='triple'] .descText { -webkit-line-clamp: 3; }
+/* Triple is also a taller row (owner 2026-09-16: "triple is not working" on a quote whose lines have short descriptions — three
+   lines never existed, so nothing changed): every row is at least the three-line row's 96, its content centred (REG-433). */
+.row[data-density='triple'] { min-height: 96px; }
 .descText[data-placeholder] { color: var(--om-color-on-surface-secondary); }
 /* While the row is active the clamp keeps its lines but goes invisible and the 24px field sits over its first line — so a
    two-line row stays 80 and nothing jumps (owner 2026-09-15: "while editing … there is some UI jerk"). */
 .row[data-active] .descText { visibility: hidden; }
 /* A group row: cards glyph after the name, the fold chevron at the cell's right, a 4px tertiary-blue bar down the cell's left edge (1260:31364). */
 .groupBar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--om-color-tertiary-blue-default); }
-.groupGlyph { color: var(--om-color-on-surface-disabled); display: inline-flex; }
+.groupTag { display: inline-flex; flex-shrink: 0; }   /* the DS Tag "Group" after the name (REG-445) */
 .fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); margin-left: auto; }   /* flush with the text column, 16 from the cell edge (1260:31357) */
 .fold:hover { background: var(--om-color-hover-08p); }
 /* A child row (1260:31402): tinted cell, 32 inset, the eye that opens the visibility menu. */
-.row[data-child] .colItem { background: var(--om-color-tertiary-blue-variant2); padding-left: var(--om-spacing-8); }
+.row[data-child] .colItem { padding-left: var(--om-spacing-8); }   /* a child keeps only its indent and the bar: the group's band carries the colour (REG-440) */
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
 
@@ -119,16 +130,18 @@
    has it, the `size` attribute the cell sets elsewhere — so the amount is never squeezed into "S$60…". */
 .input[data-fit] { width: auto; max-width: 100%; flex: 0 1 auto; field-sizing: content; }
 .row[data-active] .cell .input:not([data-name]):not([data-desc]), .input:not([data-name]):not([data-desc]):focus {
-  height: 36px; padding: 0 var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-2); margin: 0 calc(-1 * var(--om-spacing-2)); width: calc(100% + 2 * var(--om-spacing-2));   /* 8 + 1 + 8 = the resting 16 + 1: the text does not move */
   border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default);
 }
+.row[data-active] .cell .input[data-fit]:not([data-name]):not([data-desc]), .input[data-fit]:not([data-name]):not([data-desc]):focus { width: auto; }
 .row[data-active] .cell .input:not([data-name]):not([data-desc]):focus, .input:not([data-name]):not([data-desc]):focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
 /* (REG-417) The active row's boxes need the cell's room: QTY (65) keeps 49 for its 36px input (spec 03 "QTY input 36 (p8)"),
    the UNIT / ROOM selects and the COST / MARKUP / UNIT PRICE boxes take their cells at p8 (1271:40867: 99 / 134 / 109) — the
    columns themselves stay put, so every row keeps its alignment (the mock's active row widens UNIT to 183 and ROOM to 159 as
    a frame of its own; a table cannot grow one row's cells). */
-.row[data-active] .colQty, .row[data-active] .colUnit, .row[data-active] .colRoom, .row[data-active] .colCategory, .row[data-active] .colDiscount, .row[data-active] .colGst,
-.row[data-active] .colCost, .row[data-active] .colMarkup, .row[data-active] .colUnitPrice { padding-left: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
+/* (REG-442, owner 2026-09-16: "when i click the drop down there is a jerk … the texts move") The cells keep their 16 while the
+   row is active; the 36px boxes bleed 8 into that padding instead (negative margins below), so a figure, a select's label and a
+   group's sums stay exactly where they were at rest. */
 .row[data-active] { z-index: 4; }
 .row[data-active] .colItem { overflow: visible; }   /* the floating Expand hangs past the row's edge (1271:40867) */
 /* The name: 14/600, as wide as its text so the cards glyph / eye follow it (1260:31357 · 31395); text while any OTHER cell is
@@ -140,7 +153,6 @@
 .input[data-desc] { display: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); height: 24px; padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
 .row[data-active] .input[data-desc] { display: block; position: absolute; left: 0; right: 0; top: 24px; width: 100%; z-index: 1; }
 .input[data-desc]:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
-.descArea { width: 100%; min-height: 48px; resize: vertical; border: var(--om-border-1) solid var(--om-color-primary-default); border-radius: var(--om-radius-1); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); outline: none; }
 /* "Expand" (1271:40880): a floating 24px white button hanging 12 under the row — only while the row is active. */
 .expand {
   position: absolute; left: 76px; bottom: -12px; z-index: 3;
@@ -157,7 +169,7 @@
 /* The chevron: drawn while the select is empty ("Add Unit Type ⌄"), open, or its row is active (1271:40867 draws it on "sqft"). */
 .pickChev { display: none; align-items: center; flex-shrink: 0; }
 .pick[data-empty] .pickChev, .pick[aria-expanded='true'] .pickChev, .row[data-active] .pick .pickChev { display: inline-flex; }
-.row[data-active] .cell .pick { height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); width: 100%; justify-content: space-between; }
+.row[data-active] .cell .pick { height: 36px; padding: 0 var(--om-spacing-3) 0 calc(var(--om-spacing-2) - var(--om-border-1)); margin: 0 calc(-1 * var(--om-spacing-2)); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); width: calc(100% + 2 * var(--om-spacing-2)); max-width: none; justify-content: space-between; }   /* 8 + 1 + 7 = the resting 16 (REG-442) */
 .muted { color: var(--om-color-on-surface-secondary); }
 .sub { font: var(--om-type-body-m); }   /* "(x%)" is one run with the amount, 14/400 ink (1260:31253); the cell's own 4px gap separates them */
 .row[data-active] .sub { display: none; }   /* the markup box stands alone while the row is active (1271:40867) */
@@ -170,7 +182,11 @@
 .chip[data-tone='red'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
 
 /* Row kebab: a bare 24 in the frozen TOTAL cell, shown on hover / focus / while its menu is open (tasks-table .actions). */
-.kebab { position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
+/* The hovered row's kebab is the listing's hover control (606:75167 / REG-163, owner 2026-09-16: "contextual menu when hovered is not
+   correct as per our DS … like the leads listing"): the om primary IconButton on a white level-1 pill, 24 in from the visible
+   edge on the row's centre line — it floats over the TOTAL cell as the listing's Edit + kebab float over whatever sits under the edge. */
+.kebab { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
+.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
 .row:hover .kebab, .kebab[data-open], .kebab:focus-within { opacity: 1; pointer-events: auto; }
 .colTotal .total { padding-right: 0; }
 
@@ -179,7 +195,8 @@
 .bucket .cell { background: var(--om-color-surface-bg); }
 .bucketName { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bucket .colItem { padding: var(--om-spacing-4); align-items: center; }
-.sum { font: var(--om-type-body-m); }   /* a group's sums are 14/400 like every figure (1260:31357) */
+.sum { font: var(--om-type-body-m); font-weight: 700; }   /* a group's sums read as a subtotal line on the band (REG-440; 1260:31357 drew them 400) */
+.row[data-group] .total { font-weight: 700; }
 
 /* Add Item row (1262:35728): 56 tall; "#n" (secondary) in the # column, the 36px field at the ITEM column's padding edge (16 in),
    the two links 16 and 20 apart. */
@@ -205,8 +222,8 @@
 .colNum { left: var(--sel-w); }
 .colItem { left: calc(var(--sel-w) + var(--num-w)); }
 .head .colSel, .head .colNum, .head .colItem, .row .colSel, .row .colNum, .row .colItem { background: var(--om-color-surface-default); }
+.row[data-group] .colSel, .row[data-group] .colNum, .row[data-group] .colItem { background: var(--om-color-tertiary-blue-variant2); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
-.row[data-child] .colItem { background: var(--om-color-tertiary-blue-variant2); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
 .scroller[data-scrolled] .colItem { box-shadow: 6px 0 8px -4px rgba(0, 0, 0, .16); }
 .row[data-active] .colItem { overflow: visible; }

@@ -97,7 +97,7 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
-          <Checkbox isSelected={allSelected} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
+          <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && quotes.some((q) => selected.has(q.id))} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
         </div>
         {heads.map((h) => (
           <div key={h.key} className={`${styles.hCell} ${h.col ?? ''}`} role="columnheader">

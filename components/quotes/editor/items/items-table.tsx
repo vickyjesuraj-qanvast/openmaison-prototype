@@ -174,10 +174,11 @@ export function ItemsTable({
     return () => { el.removeEventListener('scroll', update); ro.disconnect() }
   }, [items.length, columns.length])
 
-  const display = useMemo(() => {
-    const viewLabels = view === 'room' ? labels.rooms : view === 'category' ? labels.categories : view === 'section' ? labels.sections : []
-    return buildDisplay(items, view, viewLabels, collapsedBuckets)
-  }, [items, view, labels, collapsedBuckets])
+  const viewLabels = useMemo(() => (view === 'room' ? labels.rooms : view === 'category' ? labels.categories : view === 'section' ? labels.sections : []), [view, labels])
+  const display = useMemo(() => buildDisplay(items, view, viewLabels, collapsedBuckets), [items, view, viewLabels, collapsedBuckets])
+  /* The fit is measured over EVERY line — groups unfolded, no bucket collapsed — so folding anything never changes a column's
+     width (owner 2026-09-16: "expanded and collapsed width looks different because of this there is jerk", REG-447). */
+  const fullDisplay = useMemo(() => buildDisplay(items.map((i) => (i.kind === 'group' && i.collapsed ? { ...i, collapsed: false } : i)), view, viewLabels, new Set()), [items, view, viewLabels])
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
@@ -189,11 +190,11 @@ export function ItemsTable({
     const next: Partial<Record<ColumnKey, number>> = {}
     for (const c of columns) {
       let w = measure(COLUMN_LABEL[c].toUpperCase(), headFont)
-      for (const [text, extra] of columnTexts(c, display, items)) w = Math.max(w, measure(text, bodyFont) + extra)
+      for (const [text, extra] of columnTexts(c, fullDisplay, items)) w = Math.max(w, measure(text, bodyFont) + extra)
       next[c] = Math.max(MIN_COL, Math.ceil(w) + 36)   // the cell's 32 of padding + the input's 2 of border + 2 of slack (the box rounds up past the canvas measure)
     }
     setFit((cur) => (columns.every((c) => cur[c] === next[c]) && Object.keys(cur).length === columns.length ? cur : next))
-  }, [columns, display, items, fontsReady])
+  }, [columns, fullDisplay, items, fontsReady])
   // What every row lays its cells to: the user's width, else the fit, else the stylesheet's mocked width (item-row.tsx COL_CLASS).
   const colW: ColWidths = useMemo(() => {
     const w: ColWidths = {}
@@ -228,7 +229,7 @@ export function ItemsTable({
                   </button>
                 </Tooltip>
               ) : null}
-              <span className={styles.check}><Checkbox isSelected={allOn} isDisabled={allIds.length === 0} onChange={(on: boolean) => onSelectAll(on)} aria-label="Select all items" /></span>
+              <span className={styles.check}><Checkbox isSelected={allOn} isIndeterminate={!allOn && allIds.some((id) => selected.has(id))} isDisabled={allIds.length === 0} onChange={(on: boolean) => onSelectAll(on)} aria-label="Select all items" /></span>
             </div>
             {details.autonumber ? <div role="columnheader" className={`${styles.cell} ${styles.colNum}`}>#</div> : null}
             <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item<ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} /></div>

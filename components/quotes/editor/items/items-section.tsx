@@ -192,6 +192,15 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   }
 
   /* ── row menu ── */
+  /* "+" on a group row (owner 2026-09-16, REG-441): the new line goes INTO the group, directly under its row — first among its
+     children — and a folded group opens so the line is seen; on any other row it stays a sibling right below. */
+  const insertBelow = (item: QuoteItem) => {
+    if (item.kind === 'group') {
+      const first = itemsRef.current.filter((i) => i.parentId === item.id).sort((a, b) => a.position - b.position)[0]
+      if (item.collapsed) patchItem(item.id, { collapsed: false })
+      void create(first ? { parentId: item.id, beforeId: first.id } : { parentId: item.id }, true)
+    } else void create({ parentId: item.parentId ?? null, afterId: item.id }, true)
+  }
   const onMenu = (item: QuoteItem, action: RowMenuAction) => {
     switch (action) {
       case 'library': void run('save to My Items', async () => { const p = await saveItemToPriceBook(item.id); setPriceBook((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Saved to My Items'); break
@@ -200,7 +209,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('group the items', () => groupQuoteItems(quoteId, list), 'Group created'); setSelected(new Set()); break }
       case 'showFull': setShowFull((s) => { const n = new Set(s); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n }); break
       case 'addAbove': void create({ parentId: item.parentId ?? null, beforeId: item.id }, true); break
-      case 'addBelow': void create({ parentId: item.parentId ?? null, afterId: item.id }, true); break
+      case 'addBelow': insertBelow(item); break
       case 'moveUp': void structural('move the item', () => moveQuoteItem(item.id, 'up')); break
       case 'moveDown': void structural('move the item', () => moveQuoteItem(item.id, 'down')); break
       case 'remove': setRemoving([item.id]); break
@@ -394,7 +403,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             h={{
               onPatch: patchItem,
               onSelect: (id, on) => setSelected((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n }),
-              onInsertBelow: (item) => { void create({ parentId: item.parentId ?? null, afterId: item.id }, true) },
+              onInsertBelow: insertBelow,
               onMenu,
               onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the group' : 'Moved out of the group') },
               onUploadImage: (item) => setImageFor(item),
