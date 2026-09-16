@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { readFrom } from '@/lib/nav'
 import { notFound } from 'next/navigation'
 import { fetchLeadDetail } from '@/lib/leads/detail'
 import { DETAIL_TABS, type DetailTabSlug } from '@/lib/leads/stage-policy'
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function LeadTabPage({ params, searchParams }: { params: Promise<{ id: string; tab: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ id, tab }, sp] = await Promise.all([params, searchParams])
   if (!isTab(tab)) notFound()
-  const origin = sp.from === 'qanvast' ? ('qanvast' as const) : undefined
+  const origin = readFrom(sp.from)   // (REG-465) where the lead was opened from, kept across the tabs
   if (tab === 'tasks') {
     // Tasks (902-36216): the lead frame without the info column; the tab owns its table, panels and dialogs.
     const { detail, data } = await loadFrame(id, fetchLeadTasks)

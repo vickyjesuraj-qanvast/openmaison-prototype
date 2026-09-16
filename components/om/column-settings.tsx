@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useLiveApply } from './use-live-apply'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button, Switch } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
@@ -13,7 +14,7 @@ import styles from './column-settings.module.css'
  * … do it as we did in the items list"). Opens from the toolbar's `tune` icon; the Items drawer's shape everywhere:
  * the helper line, a table's own switches first when it has them (`extras`), then — where a table pins — the Pinned group
  * (up to `pinning.max`, the identity column locked first, REG-84 / REG-103, one divider under it, REG-147), then Manage
- * columns: drag (or arrow keys on the handle) to reorder, a switch to show. Footer: Reset to default · Save. A fixed right
+ * columns: drag (or arrow keys on the handle) to reorder, a switch to show. Footer: Reset to default · Done (changes apply live, REG-464). A fixed right
  * anchor (Items' Total) is not a row — `anchorNote` says so in one line.
  */
 export type ColumnItem = { key: string; label: string; visible: boolean; pinned: boolean; locked?: boolean }
@@ -48,6 +49,8 @@ export function ColumnSettingsDrawer({ open, onClose, columns, onSave, onReset, 
   const [draft, setDraft] = useState<ColumnItem[]>(() => normalise(columns, pins))
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setDraft(normalise(columns, pins)) }   // every opening starts from what the table shows
+  /* (REG-464) Every change reaches the table as it happens — a column hides, pins, moves while the drawer is open; Done only closes. */
+  useLiveApply(open, draft, columns, true, onSave, (a, b) => a.length === b.length && a.every((c, i) => c.key === b[i]?.key && c.visible === b[i]?.visible && c.pinned === b[i]?.pinned))
   const max = pinning?.max ?? 0
   const pinnedRows = pins ? draft.filter((c) => c.pinned) : []
   const rest = pins ? draft.filter((c) => !c.pinned) : draft
@@ -74,7 +77,7 @@ export function ColumnSettingsDrawer({ open, onClose, columns, onSave, onReset, 
   )
   return (
     <Drawer open={open} title="Column settings" onClose={onClose} label="Column settings"
-            footer={<><Button variant="secondary" appearance="outlined" onPress={() => setDraft(normalise(onReset(), pins))}>Reset to default</Button><Button onPress={() => { onSave(draft); onClose() }}>Save</Button></>}>
+            footer={<><Button variant="secondary" appearance="outlined" onPress={() => setDraft(normalise(onReset(), pins))}>Reset to default</Button><Button onPress={onClose}>Done</Button></>}>
       <div className={styles.settings}>
         <p className={styles.help}>Toggle columns you want to see. Drag columns up or down to reorder them.</p>
         {extras}

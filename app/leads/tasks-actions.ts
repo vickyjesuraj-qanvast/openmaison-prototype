@@ -1,6 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { revalidatePath } from 'next/cache'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadTasks, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
@@ -11,14 +12,15 @@ import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 /* Lead Details › Tasks (902-36216). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity. */
-const touch = (leadId: string) => revalidateLead(leadId)
+/* (REG-466) A studio task has no lead; either way the rail's Tasks page and its badge are refreshed. */
+const touch = (leadId: string | null) => { if (leadId) revalidateLead(leadId); revalidatePath('/tasks'); revalidatePath('/', 'layout') }
 const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
 
 /** (REG-286) `kind` lands in a column the table, the drawer and the filters all read back — the guard REG-285 put on updateTask. */
 const kindOf = (kind: string | undefined): string =>
   typeof kind === 'string' && (TASK_KINDS as readonly string[]).includes(kind) ? kind : 'General'
 
-export async function createTask(leadId: string, title: string, opts?: { description?: string | null; kind?: string; dueAt?: Date | null; assignees?: string[]; tagIds?: string[] }): Promise<string> {
+export async function createTask(leadId: string | null, title: string, opts?: { description?: string | null; kind?: string; dueAt?: Date | null; assignees?: string[]; tagIds?: string[] }): Promise<string> {
   const id = randomUUID(); const now = new Date()
   // A task lands UNSEEN (seenAt null): that is what makes it the first row whatever the sort, and what draws the
   // mock's RW-New treatment on it — the primary band + bold title of 902:26362 frame 191. It stops being new the
@@ -98,14 +100,14 @@ export async function duplicateTasks(taskIds: string[]): Promise<void> {
       const g = tagLinks.filter((l) => l.taskId === r.id); if (g.length) await tx.insert(taskTags).values(g.map((l) => ({ taskId: id, tagId: l.tagId })))
     }
   })
-  const leadId = rows[0]?.leadId; if (leadId) touch(leadId)
+  touch(rows[0]?.leadId ?? null)   /* (REG-466) a studio task has no lead — the rail page still refreshes */
 }
 
 export async function deleteTasks(taskIds: string[]): Promise<void> {
   if (!taskIds.length) return
   const rows = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(inArray(leadTasks.id, taskIds))
   await db.delete(leadTasks).where(inArray(leadTasks.id, taskIds))
-  const leadId = rows[0]?.leadId; if (leadId) touch(leadId)
+  touch(rows[0]?.leadId ?? null)   /* (REG-466) a studio task has no lead — the rail page still refreshes */
 }
 
 /* ── tags (Manage Tags 902:27709) — studio-level, so no single lead to name ── */
@@ -133,13 +135,13 @@ export async function editComment(commentId: string, body: string): Promise<void
   const [c] = await db.select().from(taskComments).where(eq(taskComments.id, commentId))
   if (!c || !body.trim()) return
   await db.update(taskComments).set({ body: body.trim(), updatedAt: new Date() }).where(eq(taskComments.id, commentId))
-  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, c.taskId)); if (t) touch(t.leadId)
+  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, c.taskId)); if (t) touch(t.leadId ?? null)
 }
 export async function deleteComment(commentId: string): Promise<void> {
   const [c] = await db.select().from(taskComments).where(eq(taskComments.id, commentId))
   if (!c) return
   await db.delete(taskComments).where(eq(taskComments.id, commentId))
-  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, c.taskId)); if (t) touch(t.leadId)
+  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, c.taskId)); if (t) touch(t.leadId ?? null)
 }
 
 /* ── attachments (Attach files 902:28220) — files come from the lead's library (`lead_files`) ── */
@@ -176,7 +178,7 @@ export async function saveTemplate(input: { taskIds: string[]; name?: string; te
   revalidateEveryLead(); return id
 }
 /** "Use Template": the template's tasks land on the lead as new open tasks (assignees only when the template kept them — the demo keeps none). */
-export async function applyTemplate(leadId: string, templateId: string): Promise<number> {
+export async function applyTemplate(leadId: string | null, templateId: string): Promise<number> {
   const rows = await db.select().from(templateTasks).where(eq(templateTasks.templateId, templateId)).orderBy(templateTasks.sortOrder)
   const now = new Date()
   // (REG-286) All the template's tasks or none: a half-applied template is a checklist with steps missing, and the

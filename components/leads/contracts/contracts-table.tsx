@@ -44,6 +44,8 @@ export const CONTRACT_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'sent', label: 'Sent', track: '140px' },
   { key: 'updated', label: 'Updated', track: '157px' },
 ]
+/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
+const SORTABLE: Record<string, boolean> = { title: false, signedCopy: false }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, status: styles.colStatus, created: styles.colCreated, signedCopy: styles.colSignedCopy, sent: styles.colSent, updated: styles.colUpdated }
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
@@ -78,11 +80,15 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, columns
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
-            {/* Sort is inert in this prototype — the head answers coming soon. */}
-            <button type="button" className={styles.hSort} onClick={comingSoon}>
+            {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
-              <Icon name="unfold_more" size={16} />
-            </button>
+            ) : (
+              /* Sort is inert in this prototype — the head answers coming soon. */
+              <button type="button" className={styles.hSort} onClick={comingSoon}>
+                <span className={styles.hLabel}>{c.label}</span>
+                <Icon name="unfold_more" size={16} />
+              </button>
+            )}
             <ColumnResizer table="lead-contracts" column={c.key} label={c.label} min={c.key === 'title' ? 120 : 72} />
           </div>
         ))}

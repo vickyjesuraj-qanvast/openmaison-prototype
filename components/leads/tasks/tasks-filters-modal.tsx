@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -16,11 +17,13 @@ import { MSG } from '@/lib/forms'
 import { parseInputDate } from '@/lib/format'
 import { EMPTY_TASK_FILTERS, activeTaskGroups, type TaskFilters, type TaskSort, type TaskStatus } from '@/lib/leads/task-filters'
 import type { Member, Tag } from '@/lib/db/schema'
+import type { TaskLead } from '@/lib/leads/tasks'
+import { STAGES } from '@/lib/leads/enums'
 import styles from './tasks-filters-modal.module.css'
 
 /* Lead Details › Tasks › Filters (902:28963, panes 184–189) — the listing FiltersModal shell with the tasks' six groups. */
 
-type Group = 'sort' | 'assignees' | 'creators' | 'status' | 'tags' | 'date'
+type Group = 'sort' | 'assignees' | 'creators' | 'status' | 'tags' | 'date' | 'leads' | 'stages'
 const TABS: { key: Group; label: string }[] = [
   { key: 'sort', label: 'Sort' },
   { key: 'assignees', label: 'Members' },   /* REG-290 */
@@ -40,8 +43,10 @@ const STATUSES: { key: TaskStatus; label: string }[] = [
 ]
 
 export function TasksFiltersModal({
-  open, team, tags, value, onApply, onClose, now,
+  open, team, tags, value, onApply, onClose, now, leads,
 }: {
+  /** The rail's Tasks page (REG-466) hands the live leads: two more panes, Lead and Stage. */
+  leads?: TaskLead[]
   open: boolean
   team: Member[]
   tags: Tag[]
@@ -53,6 +58,7 @@ export function TasksFiltersModal({
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const [tab, setTab] = useState<Group>('sort')
+  const tabs = leads ? [...TABS, { key: 'leads' as Group, label: 'Lead' }, { key: 'stages' as Group, label: 'Stage' }] : TABS
   const [draft, setDraft] = useState<TaskFilters>(value)
   const [wasOpen, setWasOpen] = useState(false)
   const [mountedAt] = useState(() => Date.now())
@@ -75,7 +81,7 @@ export function TasksFiltersModal({
   }
 
   const dots = activeTaskGroups(draft)
-  const toggle = (key: 'assignees' | 'creators' | 'tags', v: string) =>
+  const toggle = (key: 'assignees' | 'creators' | 'tags' | 'leads' | 'stages', v: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
   const toggleStatus = (s: TaskStatus) =>
     setDraft((d) => ({ ...d, status: d.status.includes(s) ? d.status.filter((x) => x !== s) : [...d.status, s] }))
@@ -83,6 +89,8 @@ export function TasksFiltersModal({
   // DateField only ever holds a picker-chosen date, so the only rule left is the range order.
   const fromD = parseInputDate(draft.from), toD = parseInputDate(draft.to)
   const rangeBad = !!fromD && !!toD && fromD.getTime() > toD.getTime()
+  /* (REG-464) Every change filters the list behind the modal as it happens; an inverted date range waits until it is fixed. */
+  useLiveApply(open, draft, value, !rangeBad, onApply)
 
   const memberRows = (key: 'assignees' | 'creators') => (
     <div className={styles.list}>
@@ -123,7 +131,7 @@ export function TasksFiltersModal({
             </div>
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
-                {TABS.map((t) => (
+                {tabs.map((t) => (
                   <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={styles.tab}
                           data-active={tab === t.key || undefined} onClick={() => setTab(t.key)}>
                     <span>{t.label}</span>
@@ -150,6 +158,34 @@ export function TasksFiltersModal({
                   <>
                     <span className={styles.sectionTitle}>Creators</span>
                     {memberRows('creators')}
+                  </>
+                ) : tab === 'leads' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Lead</span>
+                    <div className={styles.list}>
+                      {[{ id: 'studio', name: 'Studio', stage: 'No lead' }, ...(leads ?? [])].map((l) => (
+                        <div key={l.id} className={styles.rowTwo} role="button" tabIndex={0} onClick={() => toggle('leads', l.id)}
+                             onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('leads', l.id) } }}>
+                          <span className={styles.rowText}>
+                            <span className={styles.rowName}>{l.name}</span>
+                            <span className={styles.rowRole}>{l.stage}</span>
+                          </span>
+                          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                            <Checkbox isSelected={draft.leads.includes(l.id)} onChange={() => toggle('leads', l.id)} aria-label={l.name} />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : tab === 'stages' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Stage</span>
+                    <div className={styles.chips} role="group" aria-label="Stage">
+                      {STAGES.map((st) => (
+                        <button key={st} type="button" className={styles.chip} aria-pressed={draft.stages.includes(st)}
+                                data-selected={draft.stages.includes(st) || undefined} onClick={() => toggle('stages', st)}>{st}</button>
+                      ))}
+                    </div>
                   </>
                 ) : tab === 'status' ? (
                   <>
@@ -193,7 +229,8 @@ export function TasksFiltersModal({
             </div>
             <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_TASK_FILTERS)}>Clear All</Button>
-              <Button onPress={() => { if (rangeBad) return; onApply(draft); onClose() }} isDisabled={rangeBad}>Apply</Button>
+              {/* (REG-464) The draft is already applied — Done only closes. */}
+              <Button onPress={onClose}>Done</Button>
             </div>
           </motion.div>
         </motion.div>

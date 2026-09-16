@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -62,7 +63,7 @@ function savedLabel(updatedAt: number, now: number): string {
  * Every section is live: Items (REG-415), the Payment Schedule (REG-418), Files (REG-419), Terms and Conditions / Additional
  * Notes (REG-420), Signature and Activity (REG-421).
  */
-export function QuoteEditor({ data }: { data: QuoteEditorData }) {
+export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: string }) {
   const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, activity, now } = data
   const router = useRouter()
   const comingSoon = useComingSoon()
@@ -209,7 +210,8 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
     void run('change the status', async () => { await setQuoteStatus(quote.id, s); setStatus(s); setUpdatedAt(Date.now()); setClock(Date.now()) }, `Quote marked ${s}`)
   }
   const onMenu = (_action: HeaderMenuAction) => { comingSoon() }   // every kebab item, Preview and Comments: coming soon (owner 2026-09-11)
-  const backHref = `/leads/${lead.id}/quotes`
+  /* (REG-465) Close returns where the editor was opened from — the Quotes tab, Tools › Quotes, a Qanvast-origin tab — the lead's tab when nothing says. */
+  const backHref = from ?? `/leads/${lead.id}/quotes`
   const close = () => router.push(backHref)
 
   const tabs = sections.map((s) => ({ key: s.key, label: s.key === 'items' ? `Items (${itemCount})` : s.key === 'files' ? `Files (${fileCount})` : SECTION_LABELS[s.key] }))
@@ -291,7 +293,7 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
           lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={quote.version} status={status} siblings={siblings}
           savedLabel={savedLabel(updatedAt, clock)}
           canSend={!!nextStep} sendHint={`Quote is ${status}`} statusSlot={statusPill}
-          onSwitch={(id) => router.push(`/quotes/${id}`)}
+          onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
           onSend={send} onMenu={onMenu} onClose={close}
         />
         <EditorTabs items={tabs} active={active} onSelect={selectTab} className={styles.stickyTabs} />

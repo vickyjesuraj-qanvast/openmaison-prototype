@@ -116,3 +116,5 @@
   .touchTarget { position: relative; }
   .touchTarget::after { content: ''; position: absolute; inset: -4px; }
 }
+.leadLink { color: var(--om-color-primary-default); font-weight: 600; text-decoration: none; }
+.leadLink:hover { text-decoration: underline; text-underline-offset: 2px; }

@@ -7,9 +7,13 @@ import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
 import { useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { useMediaQuery } from '@/lib/breakpoint'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
+import NextLink from 'next/link'
+import { withFrom } from '@/lib/nav'
+import type { TaskLead } from '@/lib/leads/tasks'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
@@ -17,11 +21,14 @@ import { displayDate, isOverdue } from '@/lib/format'
 import type { TaskRow } from '@/lib/leads/tasks'
 import styles from './tasks-table.module.css'
 
+const NO_HOVER = '(hover: none)'
 export type TaskRowAction = 'complete' | 'rename' | 'template' | 'duplicate' | 'delete'
 
 export type TasksTableProps = {
   /** The visible columns in the user's order (useTableColumns, REG-454). */
   columns: readonly TableColumn[]
+  /** The rail's Tasks page (REG-466): the add row's Lead cell is a picker — Studio (no lead) or one of the live leads. */
+  leadPicker?: LeadPicker
   /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
   onReorder: (keys: string[]) => void
   tasks: TaskRow[]
@@ -44,6 +51,8 @@ export type TasksTableProps = {
   onAddCancel: () => void
   /** Row being renamed — the same field treatment on that row, pre-filled with the title. */
   renaming: string | null
+  /** (REG-472) A click on the title text — the row starts editing in place. */
+  onRenameStart: (task: TaskRow) => void
   onRenameSubmit: (id: string, title: string) => void
   onRenameCancel: () => void
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
@@ -70,8 +79,11 @@ export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'status', label: 'Status', track: '118' },
   { key: 'tags', label: 'Tags', track: '191' },
 ]
-const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
-const SORTABLE: Record<string, boolean> = { title: true, assignees: true, creator: true, due: true, status: true, tags: false }
+/** The rail's Tasks page (REG-466): the same columns with the task's Lead after Title — free, not pinned (owner's call). */
+export const STUDIO_TASK_COLUMN_DEFS: readonly TableColumnDef[] = [TASK_COLUMN_DEFS[0]!, { key: 'lead', label: 'Lead', track: '200' }, ...TASK_COLUMN_DEFS.slice(1)]
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
+/* (REG-468) Only Due date and Status order a task list; Title, Lead, Members and Creator lost their glyph. */
+const SORTABLE: Record<string, boolean> = { title: false, lead: false, assignees: false, creator: false, due: true, status: true, tags: false }
 
 /**
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt + 02-rows-menus-bulk.txt.
@@ -83,8 +95,8 @@ const SORTABLE: Record<string, boolean> = { title: true, assignees: true, creato
 export function TasksTable({
   tasks, now, selected, onSelect, unseen, descriptionMatches,
   adding, onAddSubmit, addKey, onAddCancel,
-  renaming, onRenameSubmit, onRenameCancel,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder,
+  renaming, onRenameStart, onRenameSubmit, onRenameCancel,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
@@ -158,11 +170,12 @@ export function TasksTable({
       </div>
 
       {adding ? (
-        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} />
+        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} />
       ) : null}
 
       {tasks.map((task, idx) => (
         <TaskRowView L={L}
+          onRenameStart={onRenameStart}
           key={task.id}
           task={task}
           now={now}
@@ -226,12 +239,15 @@ function TitleField({ initial, onSubmit, onCancel }: { initial: string; onSubmit
         autoFocus
         aria-label="Task title"
       />
-      <span className={styles.editActions}>
+      {/* (REG-472) The pair floats just under the box's right end, outside it, as the Payment Schedule cell draws it (owner 2026-09-16:
+          "the cross and save small buttons we moved outside … is the correct behavior, update this across"). mousedown is
+          swallowed so the field keeps focus until the click lands. */}
+      <span className={styles.confirm}>
         <Tooltip label="Cancel">
-          <IconButton icon="close" label="Cancel" size={24} onClick={onCancel} />
+          <button type="button" className={styles.cancelBtn} aria-label="Cancel" onMouseDown={(e) => e.preventDefault()} onClick={onCancel}><Icon name="close" size={20} /></button>
         </Tooltip>
         <Tooltip label="Save">
-          <IconButton icon="done" label="Save" size={24} variant="primary" className={styles.doneFilled} onClick={submit} />
+          <button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={submit}><Icon name="done" size={20} /></button>
         </Tooltip>
       </span>
     </>
@@ -248,7 +264,29 @@ function AddTagsLink({ inert = false }: { inert?: boolean }) {
 }
 
 /** Inline add row (frame 194 "Type=RW-New, State=Input"): band, disabled checkbox, the field, inert placeholders. */
-function AddRow({ onSubmit, onCancel, L }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout> }) {
+export type LeadPicker = { leads: TaskLead[]; value: string | null; onChange: (id: string | null) => void }
+
+/** The add row's Lead cell on the rail's Tasks page (REG-466): "Studio" until a lead is picked; the menu lists the live leads. */
+function LeadPickerCell({ picker }: { picker: LeadPicker }) {
+  const [open, setOpen] = useState(false)
+  const current = picker.value ? picker.leads.find((l) => l.id === picker.value) : null
+  return (
+    <span className={styles.menuWrap}>
+      <button type="button" className={styles.leadPick} aria-haspopup="menu" aria-expanded={open} aria-label={`Lead for the new task: ${current?.name ?? 'Studio'}`} onClick={() => setOpen((o) => !o)}>
+        <span className={styles.leadPickName}>{current?.name ?? 'Studio'}</span>
+        <Icon name="keyboard_arrow_down" size={20} />
+      </button>
+      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={280} sheetTitle="Lead">
+        <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>Studio (no lead)</DropdownItem>
+        {picker.leads.map((l) => (
+          <DropdownItem key={l.id} role="menuitemradio" checked={picker.value === l.id} onSelect={() => { setOpen(false); picker.onChange(l.id) }}>{l.name}</DropdownItem>
+        ))}
+      </Dropdown>
+    </span>
+  )
+}
+
+function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout>; leadPicker?: LeadPicker }) {
   return (
     /* `data-add` marks the row a task is being CREATED in — a rename puts the same field on a real row, whose
        cells hold real values. The phone's stylesheet needs to tell the two apart (REG-403). */
@@ -259,6 +297,11 @@ function AddRow({ onSubmit, onCancel, L }: { onSubmit: (title: string) => void; 
       <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')} data-editing="">
         <TitleField initial="" onSubmit={onSubmit} onCancel={onCancel} />
       </div>
+      {leadPicker ? (
+        <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
+          <LeadPickerCell picker={leadPicker} />
+        </div>
+      ) : null}
       <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')}>
         <span className={`${styles.assignLink} ${styles.inert}`}>
           <Icon name="person_add" size={20} />
@@ -284,11 +327,12 @@ function AddRow({ onSubmit, onCancel, L }: { onSubmit: (title: string) => void; 
 
 function TaskRowView({
   task, now, unseen, descriptionMatch, selected, onToggleSelect,
-  renaming, onRenameSubmit, onRenameCancel,
+  renaming, onRenameStart, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
 }: {
   task: TaskRow
+  onRenameStart: (task: TaskRow) => void
   L: ReturnType<typeof useColumnLayout>
   now: number
   unseen: boolean
@@ -315,6 +359,7 @@ function TaskRowView({
 }) {
   const overdue = !task.done && isOverdue(task.dueAt, now)
   const shiftHeld = useRef(false)
+  const touch = useMediaQuery(NO_HOVER)   /* (REG-472) which of the two the title cell does */
   const inert = renaming ? '' : undefined
   const pick = (action: TaskRowAction) => () => { onMenuClose(); onRowMenu(task, action) }
 
@@ -348,7 +393,9 @@ function TaskRowView({
             </button>
           </Tooltip>
           {/* Nested buttons aren't allowed, so the glyph sits beside this button; the anchor handed up is the cell itself. */}
-          <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}>
+          {/* (REG-472, owner 2026-09-16) The title itself edits in place, as a cell of the quote editor does; the rest of the
+              cell, the Edit pill and the comment chip still open the panel. */}
+          <button type="button" className={styles.titleBtn} onClick={(e) => (touch ? onOpen(task, e.currentTarget.parentElement as HTMLElement) : onRenameStart(task))} aria-label={touch ? `Open ${task.title}` : `Rename ${task.title}`}>
             <span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span>
           </button>
           {/* The chips sit BESIDE the title button, not inside it: the comment chip is a control of its own now
@@ -384,14 +431,26 @@ function TaskRowView({
               ) : null}
             </span>
           ) : null}
-          {/* The rest of the cell still opens the task, as it did while the title button filled the row. */}
+          {/* (REG-472) The whole cell edits on a pointer that hovers; on touch the tap opens the panel (the mobile canvas, REG-354). */}
           <button type="button" className={styles.titleRest} tabIndex={-1} aria-hidden
-                  onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)} />
+                  onClick={(e) => (touch ? onOpen(task, e.currentTarget.parentElement as HTMLElement) : onRenameStart(task))} />
         </div>
       )}
 
       {/* Member cell: up to two Avatars 24 + person_add 24 primary outlined; unassigned = the leads listing's
           "Assign" link, no placeholder avatar (REG-240 — one vocabulary for "nobody yet" everywhere). */}
+      {L.hidden('lead') ? null : (
+      <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
+        {/* (REG-466) The rail's Tasks page: the lead as the listing names it — bold, primary on hover, no stage (owner 2026-09-16) — opening its Tasks tab and coming back here. */}
+        {task.lead ? (
+          <NextLink href={withFrom(`/leads/${task.lead.id}/tasks`, '/tasks')} className={styles.leadLink}>
+            <span className={styles.leadName}>{task.lead.name}</span>
+          </NextLink>
+        ) : (
+          <span className={styles.leadStudio}><Icon name="domain" size={16} weight={300} />Studio</span>
+        )}
+      </div>
+      )}
       <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-inert={inert}>
         {task.assignees.length === 0 ? (
           <button type="button" className={styles.assignLink} onClick={(e) => onAssign(task, e.currentTarget)}>

@@ -8,20 +8,82 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
+import { TASK_SCOPE_LABEL, type TaskScope } from '@/lib/leads/task-filters'
 import styles from './tasks-toolbar.module.css'
 
+export type TasksMenuAction = 'saveAll' | 'manage' | 'export' | 'deleteAll'
 export type TasksToolbarProps = {
   query: string
   onQuery: (q: string) => void
   /** Add Task menu (902:26678): Create New Task · Use Template. */
   onAdd: (kind: 'new' | 'template') => void
   onFilter: () => void
+  /** The rail's Tasks page (REG-466): the scope chip in place of the "All Tasks" title, and a search placeholder that names the lead. */
+  scope?: { value: TaskScope; onChange: (s: TaskScope) => void; count: number }
+  searchPlaceholder?: string
   /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
   onColumns?: () => void
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
   /** Header kebab (902:27154): Save all as Template · Manage Templates · Export all as... · Delete all. */
-  onMenu: (action: 'saveAll' | 'manage' | 'export' | 'deleteAll') => void
+  onMenu: (action: TasksMenuAction) => void
+  /** (REG-466) On the rail's Tasks page Add Task and the kebab sit in the page header, as the Leads header carries Add Lead and its kebab. */
+  inHeader?: boolean
+}
+
+/**
+ * Add Task ▾ (902:26678): Create New Task · Use Template. On the tab the primary outlined button with a trailing chevron; in the
+ * rail page's header the Leads header's filled primary with the plus. ≤767 (REG-354) the glyph alone — the menu, its title and
+ * every action behind it are the same.
+ */
+export function AddTaskButton({ onAdd, header = false }: { onAdd: (kind: 'new' | 'template') => void; header?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const sheet = useSheetLayout()
+  const pick = (fn: () => void) => () => { setOpen(false); fn() }
+  return (
+    <span className={styles.menuWrap}>
+      {sheet ? (
+        <Tooltip label="Add Task" disabled={open}>
+          <IconButton icon="add" label="Add Task" variant={header ? 'filled' : 'primary'} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
+        </Tooltip>
+      ) : header ? (
+        <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={open} onPress={() => setOpen((o) => !o)}>Add Task</Button>
+      ) : (
+        /* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */
+        <Button
+          variant="primary" appearance="outlined" className={styles.touchTarget}
+          iconEnd={<span className={styles.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+          aria-haspopup="menu" aria-expanded={open}
+          onPress={() => setOpen((o) => !o)}
+        >
+          Add Task
+        </Button>
+      )}
+      <Dropdown open={open} onClose={() => setOpen(false)} align={header ? 'right' : 'left'} sheetTitle="Add Task">
+        <DropdownItem onSelect={pick(() => onAdd('new'))}>Create New Task</DropdownItem>
+        <DropdownItem onSelect={pick(() => onAdd('template'))}>Use Template</DropdownItem>
+      </Dropdown>
+    </span>
+  )
+}
+
+/** The kebab (902:27154): Save all as Template · Manage Templates · Export all as... · Delete all. */
+export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) => void }) {
+  const [open, setOpen] = useState(false)
+  const pick = (fn: () => void) => () => { setOpen(false); fn() }
+  return (
+    <span className={styles.menuWrap}>
+      <Tooltip label="More options" disabled={open}>
+        <IconButton icon="more_vert" label="More options" className={styles.touchTarget} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
+      </Tooltip>
+      <Dropdown open={open} onClose={() => setOpen(false)} align="right" sheetTitle="All Tasks">
+        <DropdownItem onSelect={pick(() => onMenu('saveAll'))}>Save all as Template</DropdownItem>
+        <DropdownItem onSelect={pick(() => onMenu('manage'))}>Manage Templates</DropdownItem>
+        <DropdownItem onSelect={pick(() => onMenu('export'))}>Export all as...</DropdownItem>
+        <DropdownItem onSelect={pick(() => onMenu('deleteAll'))}><span className={styles.danger}>Delete all</span></DropdownItem>
+      </Dropdown>
+    </span>
+  )
 }
 
 /**
@@ -29,41 +91,32 @@ export type TasksToolbarProps = {
  * "All Tasks" · Add Task (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu }: TasksToolbarProps) {
-  const [menu, setMenu] = useState<'add' | 'more' | null>(null)
-  const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
-  const pick = (fn: () => void) => () => { setMenu(null); fn() }
+export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, searchPlaceholder, inHeader = false }: TasksToolbarProps) {
+  const [scopeOpen, setScopeOpen] = useState(false)
+  const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
 
   return (
     <div className={styles.bar}>
-      <h2 className={styles.title}>All Tasks</h2>
-      <div className={styles.actions}>
-        <span className={styles.menuWrap}>
-          {/* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */}
-          {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
-              the menu, its title and every action behind it are the same. */}
-          {sheet ? (
-            <Tooltip label="Add Task">
-              <IconButton icon="add" label="Add Task" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'add'}
-                          onClick={() => setMenu((m) => (m === 'add' ? null : 'add'))} />
-            </Tooltip>
-          ) : (
-            <Button
-              variant="primary" appearance="outlined" className={styles.touchTarget}
-              iconEnd={<span className={styles.chev} data-open={menu === 'add' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'add'}
-              onPress={() => setMenu((m) => (m === 'add' ? null : 'add'))}
-            >
-              Add Task
-            </Button>
-          )}
-          <Dropdown open={menu === 'add'} onClose={() => setMenu(null)} align="left" sheetTitle="Add Task">
-            <DropdownItem onSelect={pick(() => onAdd('new'))}>Create New Task</DropdownItem>
-            <DropdownItem onSelect={pick(() => onAdd('template'))}>Use Template</DropdownItem>
+      {scope ? (
+        /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count. */
+        <span className={styles.scopeWrap}>
+          <button type="button" className={styles.scopeChip} aria-haspopup="menu" aria-expanded={scopeOpen} data-open={scopeOpen || undefined}
+                  onClick={() => setScopeOpen((o) => !o)}>
+            {TASK_SCOPE_LABEL[scope.value]} <span className={styles.scopeCount}>({scope.count})</span>
+            <span className={styles.chev} data-open={scopeOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
+          </button>
+          <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" sheetTitle="Show">
+            {(Object.keys(TASK_SCOPE_LABEL) as TaskScope[]).map((k) => (
+              <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>
+            ))}
           </Dropdown>
         </span>
-        <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, member, tag…" label="Search tasks" />
+      ) : (
+        <h2 className={styles.title}>All Tasks</h2>
+      )}
+      <div className={styles.actions}>
+        {inHeader ? null : <AddTaskButton onAdd={onAdd} />}
+        <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />
         <span className={styles.filterWrap}>
           <Tooltip label="Filters">
             <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
@@ -77,21 +130,7 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
             <IconButton icon="tune" label="Column settings" onClick={onColumns} className={styles.touchTarget} />
           </Tooltip>
         ) : null}
-        <span className={styles.menuWrap}>
-          <Tooltip label="More options" disabled={menu === 'more'}>
-            <IconButton
-              icon="more_vert" label="More options" className={styles.touchTarget}
-              aria-haspopup="menu" aria-expanded={menu === 'more'}
-              onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
-            />
-          </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Tasks">
-            <DropdownItem onSelect={pick(() => onMenu('saveAll'))}>Save all as Template</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('manage'))}>Manage Templates</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('export'))}>Export all as...</DropdownItem>
-            <DropdownItem onSelect={pick(() => onMenu('deleteAll'))}><span className={styles.danger}>Delete all</span></DropdownItem>
-          </Dropdown>
-        </span>
+        {inHeader ? null : <TasksMoreButton onMenu={onMenu} />}
       </div>
     </div>
   )

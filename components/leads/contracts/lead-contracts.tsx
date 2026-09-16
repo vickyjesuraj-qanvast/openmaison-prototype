@@ -99,7 +99,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <ContractsFiltersModal
         open={filtersOpen} value={filters} now={now}
-        onApply={(v) => { setFilters(v); setFiltersOpen(false) }}
+        onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
         onClose={() => setFiltersOpen(false)}
       />
       <DeleteContractsDialog

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { readFrom, withFrom } from '@/lib/nav'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
@@ -68,12 +69,17 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const folder = useMemo(() => (folderId ? files.find((f) => f.id === folderId && isFolder(f)) ?? null : null), [files, folderId])
   const currentId = folder?.id ?? null
   const rootHref = `/leads/${leadId}/files`
-  const openFolder = (f: FileRow) => { setQuery(''); router.push(`${rootHref}?folder=${f.id}`) }
-  const back = () => { setQuery(''); router.push(rootHref) }
-  const openFile = (f: FileRow) => router.push(`${rootHref}/${f.id}`)
+  /* (REG-465) The tab's own origin (`?from=`, a Qanvast-opened lead) rides on every hop inside it, and a file opens with this
+     very URL as its `from`, so the viewer's Back lands in the same folder with the same crumb. */
+  const from = readFrom(params.get('from'))
+  const pathname = usePathname(); const search = params.toString()
+  const here = search ? `${pathname}?${search}` : pathname
+  const openFolder = (f: FileRow) => { setQuery(''); router.push(withFrom(`${rootHref}?folder=${f.id}`, from)) }
+  const back = () => { setQuery(''); router.push(withFrom(rootHref, from)) }
+  const openFile = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}`, here))
   /* The comment chip (grid tile + list row) opens the viewer with its comments panel already open —
      the Tasks title-cell chip's interaction (REG-253, user 2026-09-01). */
-  const openComments = (f: FileRow) => router.push(`${rootHref}/${f.id}?panel=comments`)
+  const openComments = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}?panel=comments`, here))
 
   /* ── list state ── */
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -155,7 +161,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
     clearSelection()
     // The Undo snackbar rides with the success (RACE-03): a failed trash shows only "Couldn’t move to the Trash Folder".
     void run('move to the Trash Folder', () => trashFiles(ids), { message: 'Moved to Trash Folder', actionLabel: 'Undo', onAction: () => { void run('restore', () => restoreFiles(ids), 'Restored') } })
-      .then((ok) => { if (ok && leaving) router.push(rootHref) })
+      .then((ok) => { if (ok && leaving) router.push(withFrom(rootHref, from)) })
   }
   // One handler behind every kebab: the folder card / breadcrumb menu (931:40130: Open · Move · Rename · Delete), the file
   // tile menu (931:40131: + Duplicate · Download) and the list row's kebab (same items as the tile / card — logged).

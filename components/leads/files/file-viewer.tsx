@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { readFrom, withFrom } from '@/lib/nav'
 import { Icon } from '@/components/om/icon'
 import { useEscapeLayer } from '@/components/om/surface'
 import { Tooltip } from '@/components/om/tooltip'
@@ -67,7 +68,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
 
   const zoom = ZOOM_STEPS[zoomIdx] ?? 1
   /* Back to the Files tab — inside the open folder when the file sits in one (the tab reads `?folder=`). */
-  const backHref = folder ? `/leads/${lead.id}/files?folder=${folder.id}` : `/leads/${lead.id}/files`
+  const from = readFrom(useSearchParams().get('from'))   // (REG-465) the tab URL the file was opened from, folder and origin included
+  const backHref = from ?? (folder ? `/leads/${lead.id}/files?folder=${folder.id}` : `/leads/${lead.id}/files`)
   const idx = siblings.findIndex((s) => s.id === file.id)
   const prev = idx > 0 ? siblings[idx - 1] : undefined
   const next = idx >= 0 ? siblings[idx + 1] : undefined
@@ -151,14 +153,14 @@ export function FileViewer({ data }: { data: FileViewData }) {
             {/* prev / next (931:39859): 48px white buttons at the edges (inset 16), vertically centred; hidden when there is no neighbour */}
             {prev ? (
               <Tooltip label="Previous file" side="right">
-                <button type="button" className={styles.nav} data-side="prev" aria-label="Previous file" onClick={() => router.push(`/leads/${lead.id}/files/${prev.id}`)}>
+                <button type="button" className={styles.nav} data-side="prev" aria-label="Previous file" onClick={() => router.push(withFrom(`/leads/${lead.id}/files/${prev.id}`, from))}>
                   <Icon name="keyboard_arrow_left" size={24} />
                 </button>
               </Tooltip>
             ) : null}
             {next ? (
               <Tooltip label="Next file" side="left">
-                <button type="button" className={styles.nav} data-side="next" aria-label="Next file" onClick={() => router.push(`/leads/${lead.id}/files/${next.id}`)}>
+                <button type="button" className={styles.nav} data-side="next" aria-label="Next file" onClick={() => router.push(withFrom(`/leads/${lead.id}/files/${next.id}`, from))}>
                   <Icon name="keyboard_arrow_right" size={24} />
                 </button>
               </Tooltip>

@@ -17,7 +17,7 @@ import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction, DEFAULT_COLUMNS } from '@/lib/quotes/items-model'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
 import { quoteTotals, type QuoteTotals } from '@/lib/quotes/math'
 import { createQuoteItem, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, setQuoteItemParent, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
 import { SectionCard } from '../section-card'
@@ -272,7 +272,14 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const closeMenus = () => { setMenu(null); setMoreSub(null) }
   const chooseView = (v: ItemsView) => { closeMenus(); setView(v); setCollapsedBuckets(new Set()); savePrefs({ itemsView: v }) }
   const chooseDensity = (d: ItemsDensity) => { closeMenus(); setDensity(d); savePrefs({ itemsDensity: d }) }
-  const saveColumns = (c: ColumnSettings) => { setColumns(c); savePrefs({ itemsColumns: c }) }
+  /* (REG-464) The drawer applies live — a drag inside it streams reorders — so the table follows at once and the quote is written
+     once the stream settles. */
+  const persistColumns = useRef<number | null>(null)
+  const saveColumns = (c: ColumnSettings) => {
+    setColumns(c)
+    if (persistColumns.current) window.clearTimeout(persistColumns.current)
+    persistColumns.current = window.setTimeout(() => { persistColumns.current = null; savePrefs({ itemsColumns: c }) }, 400)
+  }
   const addLabel = (kind: 'room' | 'category' | 'section', name: string) => {
     const key = kind === 'room' ? 'rooms' : kind === 'category' ? 'categories' : 'sections'
     const next = { ...labels, [key]: labels[key].includes(name) ? labels[key] : [...labels[key], name] }
@@ -401,7 +408,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <div className={styles.body}>
           <ItemsTable
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
-            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={DEFAULT_COLUMNS.details} /* (REG-459) description · images · autonumber always on — the frozen Item block is not configurable */ labels={usedLabels}
+            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
             h={{
               onPatch: patchItem,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { fromLabel } from '@/lib/nav'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -70,9 +71,9 @@ const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); r
 /**
  * `body` renders a tab's own content inside the lead frame (Tasks tab); `wide` drops the info column (the Tasks mock 902-26362
  * has none). Without either, the frame shows the coming-soon body for tabs that have no mocks yet.
- * `origin="qanvast"` (931:49680, `?from=qanvast`): the L2 crumb reads "Qanvast Ops / Leads" and back goes to /qanvast-ops.
+ * `origin` (931:49680's `?from=qanvast`, any in-app path since REG-465): the L2 crumb reads "{section} / Leads" and Back goes there.
  */
-export function LeadOverview({ detail, tab, body, wide = false, origin }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: 'qanvast' }) {
+export function LeadOverview({ detail, tab, body, wide = false, origin }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: string }) {
   const { lead, team, now, stageMovement, quoteApproval, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret } = detail
   const router = useRouter()
   const snackbar = useSnackbar()
@@ -121,6 +122,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   }
   /** A LEAD STAGES row, and the card's head arrow at the lead's current position (REG-259): the Move stage
       window for a reached stage, the resume flow for a parked lead, the guarded request for a future one. */
+  /** (REG-469) Why this lead cannot reach Won right now — null when Convert to Project may open the Won step. */
+  const wonBlock = lead.stage === 'Won' ? null : blockedReason(lead, 'Won', stageMovement)
   const openStageStep = (stage: string) => {
     if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
     const step = timeline.find((s) => s.stage === stage)
@@ -173,9 +176,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     return () => { document.removeEventListener('scroll', follow, true); window.removeEventListener('resize', follow) }
   }, [anyAnchored])
 
-  /** Tab / quick-link hrefs keep the Qanvast origin (931:49680): `?from=qanvast` rides along so the crumb and Back stay "Qanvast Ops / Leads". */
+  /** Tab / quick-link hrefs keep the origin (931:49680, REG-465): `?from=` rides along so the crumb and Back hold across the tabs. */
   const href = (slug: DetailTabSlug, query?: string) => {
-    const parts = [query, origin === 'qanvast' ? 'from=qanvast' : undefined].filter(Boolean)
+    const parts = [query, origin ? `from=${encodeURIComponent(origin)}` : undefined].filter(Boolean)
     return parts.length ? `${detailHref(lead.id, slug)}?${parts.join('&')}` : detailHref(lead.id, slug)
   }
   const goTab = (slug: DetailTabSlug) => router.push(href(slug))
@@ -205,8 +208,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       <div className={styles.body}>
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
-        backHref={origin === 'qanvast' ? '/qanvast-ops' : '/leads'}
-          crumb={origin === 'qanvast' ? 'Qanvast Ops / Leads' : 'Leads'}
+        backHref={origin ?? '/leads'}
+          crumb={fromLabel(origin) ? `${fromLabel(origin)} / Leads` : 'Leads'}
           title={lead.name}
           chips={
             <>
@@ -233,10 +236,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                   Stage: {lead.stage}
                 </Button>
               </span>
-              {/* The lock glyph is the locked-until-Won cue (REG-168); a Won lead's button is actionable and drops it (REG-204). */}
-              <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : 'Available once the lead is Won'}>
+              {/* (REG-469, user feedback 2026-09-16: "shouldn't we allow someone to do that and automatically change the stage to Won?")
+                  Convert to Project IS winning the lead: where the policy lets this lead reach Won, the button opens the Move stage
+                  window at the Won step (the same path as picking Won on the pill); where it does not, the lock stays and the press
+                  says why (blockedReason — "Complete Quote Sent first", "Assign a member first"). A Won lead's button converts (REG-204). */}
+              <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : wonBlock ?? 'Opens the Won step — it creates the project'}>
                 <span className={`${styles.anchor} ${styles.convertAction}`}>
-                  <Button variant="primary" iconStart={lead.stage === 'Won' ? undefined : <Icon name="lock" size={20} />} onPress={() => (lead.stage === 'Won' ? comingSoon() : snackbar({ message: 'Win the lead first — Won creates the project' }))}>
+                  <Button variant="primary" iconStart={lead.stage === 'Won' || !wonBlock ? undefined : <Icon name="lock" size={20} />}
+                          onPress={() => (lead.stage === 'Won' ? comingSoon() : wonBlock ? snackbar({ message: wonBlock }) : requestStageChange('Won'))}>
                     Convert to Project
                   </Button>
                 </span>

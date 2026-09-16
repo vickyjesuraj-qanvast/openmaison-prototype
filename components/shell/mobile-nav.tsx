@@ -24,6 +24,7 @@ const DOCK = [
 ] as const
 /** The More sheet's rows (1082:24995): the rail's remaining destinations, in the mock's order and groups. */
 const MORE_TOP = [
+  { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the dock keeps the mock's five; Tasks leads the sheet */
   { icon: 'storefront', label: 'Marketplace' },
   { icon: 'domain', label: 'Company' },
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },

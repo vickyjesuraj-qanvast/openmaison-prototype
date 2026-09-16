@@ -71,7 +71,8 @@ export function useColumnLayout(columns: readonly TableColumn[], headRef: RefObj
     if (key === 'sel') return { left: 0 }
     const i = index.get(key)
     if (i === undefined) return { display: 'none' }
-    const pos = flex ? { order: i + 1 } : { gridColumn: i + 1 + (leading ? 1 : 0), gridRow: 1 }
+    /* A flex table reads the order from a variable (`.cell { order: var(--col-order) }`), so a phone stylesheet can place the cells its own way. */
+    const pos: CSSProperties = flex ? ({ '--col-order': i + 1 } as CSSProperties) : { gridColumn: i + 1 + (leading ? 1 : 0), gridRow: 1 }
     return pinnedKeys.includes(key) ? { ...pos, left: offsets[key] ?? (leading || 0) } : pos
   }
   return { style, pinned: (key: string) => key === 'sel' ? leading > 0 : pinnedKeys.includes(key), edge: (key: string) => key === edgeKey, hidden: (key: string) => !index.has(key) }

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { DatePicker } from '@/components/om/date-picker'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { ExportDialog } from '@/components/leads/export-dialog'
-import { TasksTable } from './tasks-table'
-import { TasksToolbar } from './tasks-toolbar'
+import { STUDIO_TASK_COLUMN_DEFS, TasksTable } from './tasks-table'
+import { AddTaskButton, TasksMoreButton, TasksToolbar, type TasksMenuAction } from './tasks-toolbar'
 import { TasksEmpty } from './tasks-empty'
 import { TabSearchEmpty } from './tab-search-empty'
 import { DetailBulkBar } from './detail-bulk-bar'
@@ -22,10 +22,10 @@ import { ChooseTemplateDialog, SaveTemplateDialog } from './template-dialogs'
 import { DeleteTasksDialog } from './delete-dialog'
 import { useRun } from './use-run'
 import { CREATE_EVENTS, useCreateIntent } from './use-create-intent'
-import { EMPTY_TASK_FILTERS, activeTaskFilterCount, applyTaskFilters, type TaskFilters } from '@/lib/leads/task-filters'
+import { EMPTY_TASK_FILTERS, activeTaskFilterCount, applyTaskFilters, type TaskFilters, type TaskScope } from '@/lib/leads/task-filters'
 import { filterByQuery, matchesQuery } from '@/lib/search'
 import { displayDate } from '@/lib/format'
-import type { LeadTasksData, TaskRow } from '@/lib/leads/tasks'
+import type { LeadTasksData, TaskRow, TaskLead } from '@/lib/leads/tasks'
 import {
   addComment, applyTemplate, attachFiles, createTag, createTask, deleteComment, deleteTag, deleteTasks, detachFile, duplicateTasks,
   editComment, markTaskSeen, renameTag, saveTemplate, setTaskAssignees, setTaskTags, updateTask,
@@ -58,6 +58,7 @@ const REFRESH = { refresh: true } as const
  */
 const rowText = (t: TaskRow): (string | null | undefined)[] => [
   t.title,
+  t.lead?.name,
   ...t.assignees.map((m) => m.name),
   t.creator?.name,
   t.dueAt ? displayDate(t.dueAt) : null,
@@ -70,7 +71,9 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
  * panels, tags, attachments, filters, templates, export and delete. Every rule the listing settled applies (menus toggle,
  * tooltips, coming-soon on inert affordances, picker-only dates, unseen band). Specs: design-source/context/lead-tasks/.
  */
-export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksData }) {
+/** `leadId` null = the rail's Tasks page (REG-466): every lead's tasks and the studio's own, with a Lead column, a scope chip and Lead / Stage filters. */
+export function LeadTasks({ leadId, data, header }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode }) {
+  const studio = leadId === null
   const { tasks, tags, files, templates, team, now } = data
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -79,12 +82,14 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
 
   /* ── list state ── */
   const [query, setQuery] = useState('')
+  const [scope, setScope] = useState<TaskScope>('all')   // (REG-466) the rail page's chip; 'all' on a lead's tab
+  const [addLead, setAddLead] = useState<string | null>(null)   // (REG-466) the add row's lead on the rail page — null = Studio
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_TASK_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
   const [columnsOpen, setColumnsOpen] = useState(false)
   const phone = useMediaQuery(MOBILE)
-  const columnPrefs = useTableColumns('lead-tasks', TASK_COLUMN_DEFS, phone)
+  const columnPrefs = useTableColumns(studio ? 'studio-tasks' : 'lead-tasks', studio ? STUDIO_TASK_COLUMN_DEFS : TASK_COLUMN_DEFS, phone)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [adding, setAdding] = useState(false)
   /** Bumped per inline save: remounts the add row empty and focused, so tasks chain without re-opening (REG-257). */
@@ -93,14 +98,19 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const [seenLocally, setSeenLocally] = useState<Set<string>>(() => new Set())
   const unseen = useMemo(() => new Set(tasks.filter((t) => t.seenAt === null && !seenLocally.has(t.id)).map((t) => t.id)), [tasks, seenLocally])
   const filterCount = activeTaskFilterCount(filters)
+  /* (REG-466) The rail page's scope comes before the filters: mine = assigned to me, unassigned = nobody's, studio = no lead. */
+  const inScope = useMemo(() => scope === 'all' ? tasks : tasks.filter((t) => scope === 'mine' ? t.assignees.some((m) => m.id === me.id) : scope === 'unassigned' ? t.assignees.length === 0 : t.leadId === null), [tasks, scope, me.id])
+  const openCount = useMemo(() => inScope.filter((t) => !t.done).length, [inScope])
   const visible = useMemo(() => {
-    const base = applyTaskFilters(tasks, filters, now)
+    const sorted = applyTaskFilters(inScope, filters, now)
+    /* (REG-466) On the studio page the due-date sort keeps the open tasks ahead of the completed ones — a morning list, not an archive. */
+    const base = studio && filters.sort === 'due' ? [...sorted.filter((t) => !t.done), ...sorted.filter((t) => t.done)] : sorted
     /* Search is the last step, after the filters, and matches every piece of text the ROW shows (REG-274, one rule
        for every list) — `rowText` above — plus the DESCRIPTION (REG-275, user: "fix all of them"). The description
        lives in the task panel, not the row, so a hit on it alone used to read as a bug; the row now says why it is
        there (the "In description" chip beside the title), which is what unlocked matching it. */
     return filterByQuery(base, query, (t) => ({ fields: [...rowText(t), t.description] }))
-  }, [tasks, filters, query, now])
+  }, [inScope, filters, query, now, studio])
   /* (REG-275) The tasks whose ONLY hit is the description — the chip's trigger. Quiet by construction: empty while
      the box is empty, and empty for a task the reader can already see the query in. */
   const descriptionOnly = useMemo(() => {
@@ -136,7 +146,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const startAdd = () => { setRenaming(null); setAdding(true) }
   // Create quick links › Task (858:26317) starts the inline add row: in place on this tab, or on landing from
   // another tab with `?new=1` (the landing the Quotes / Notes / Questionnaire tabs already accept).
-  useCreateIntent({ event: CREATE_EVENTS.tasks, landing: { href: `/leads/${leadId}/tasks` }, onIntent: startAdd })
+  useCreateIntent({ event: CREATE_EVENTS.tasks, landing: { href: studio ? '/tasks' : `/leads/${leadId}/tasks` }, onIntent: startAdd })
   // Anchored popovers follow their trigger while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(assign || tagsFor)
   useEffect(() => {
@@ -187,18 +197,23 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         { label: 'Delete', tone: 'danger' as const, onClick: () => setDeleting({ ids: selectedIds, all: false }) },
       ]
 
+  const menuAction = (action: TasksMenuAction) => {
+    if (action === 'saveAll') setSaveTemplateFor(tasks.map((t) => t.id))
+    if (action === 'manage') comingSoon()
+    if (action === 'export') setExportOpen(true)
+    if (action === 'deleteAll') setDeleting({ ids: tasks.map((t) => t.id), all: true })
+  }
   return (
-    <div className={styles.tab} data-open={openId ? '' : undefined}>
+    <>
+    {header ? header({ add: <AddTaskButton header onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))} />, more: <TasksMoreButton onMenu={menuAction} /> }) : null}
+    <div className={styles.tab} data-open={openId ? '' : undefined} data-studio={studio || undefined}>
       <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
+        scope={studio ? { value: scope, onChange: setScope, count: openCount } : undefined}
+        searchPlaceholder={studio ? 'Search title, lead, member, tag…' : undefined}
         query={query} onQuery={setQuery}
         onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={(action) => {
-          if (action === 'saveAll') setSaveTemplateFor(tasks.map((t) => t.id))
-          if (action === 'manage') comingSoon()
-          if (action === 'export') setExportOpen(true)
-          if (action === 'deleteAll') setDeleting({ ids: tasks.map((t) => t.id), all: true })
-        }}
+        onMenu={menuAction} inHeader={!!header}
       />
       {tasks.length === 0 && !adding ? (
         /* No tasks yet → the sibling tabs' empty card (T9); the inline add row takes over as soon as one starts. */
@@ -207,6 +222,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         <TabSearchEmpty noun="tasks" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_TASK_FILTERS) }} />
       ) : (
         <TasksTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
+          leadPicker={studio ? { leads: data.leads ?? [], value: addLead, onChange: setAddLead } : undefined}
           tasks={visible} now={now}
           selected={selected} onSelect={setSelected}
           unseen={unseen}
@@ -214,11 +230,12 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
           adding={adding}
           /* Saving keeps the row open, empty and focused for the next task — entry chains until Esc / Cancel
              (user 2026-09-01, REG-257: "user can just keep adding tasks one after the other"). */
-          onAddSubmit={(title) => { if (title.trim()) { void run('add the task', () => createTask(leadId, title.trim()), 'Task added'); setAddRun((n) => n + 1) } else setAdding(false) }}
+          onAddSubmit={(title) => { if (title.trim()) { void run('add the task', () => createTask(studio ? addLead : leadId, title.trim()), 'Task added'); setAddRun((n) => n + 1) } else setAdding(false) }}
           addKey={addRun}
           onAddCancel={() => setAdding(false)}
           onAddClick={startAdd}
           renaming={renaming}
+          onRenameStart={(task) => { setAdding(false); setRenaming(task.id) }}   /* (REG-472) the title edits in place */
           onRenameSubmit={(id, title) => { setRenaming(null); if (title.trim()) void run('rename the task', () => updateTask(id, { title: title.trim() }), 'Task updated') }}   /* (REG-329) the inline rename confirms as the panel does (REG-326) */
           onRenameCancel={() => setRenaming(null)}
           onOpen={(task) => open(task)}
@@ -236,6 +253,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
 
       {openTask && panelView === 'task' ? (
         <TaskPanel
+          lead={studio ? (openTask?.lead ?? null) : undefined}
           task={openTask} team={team} tags={tags} now={now}
           onClose={() => setOpenId(null)}
           onComments={() => setPanelView('comments')}
@@ -316,7 +334,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
       />
       <AttachFilesModal
         open={!!attachTask}
-        files={files}
+        files={studio ? files.filter((f) => !!attachTask?.leadId && f.leadId === attachTask.leadId) : files}   /* (REG-466) on the rail page, the task's own lead's library; a studio task has none */
         attached={attachTask?.attachments.map((f) => f.id) ?? []}
         onClose={() => setAttachFor(null)}
         onAttach={(fileIds) => { const t = attachTask; setAttachFor(null); if (t) void run('attach the files', () => attachFiles(t.id, fileIds), `${fileIds.length === 1 ? '1 file' : `${fileIds.length} files`} attached`) }}
@@ -324,13 +342,14 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
       />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <TasksFiltersModal
+        leads={studio ? data.leads : undefined}
         open={filtersOpen} team={team} tags={tags} value={filters} now={now}
-        onApply={(v) => { setFilters(v); setFiltersOpen(false) }}
+        onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
         onClose={() => setFiltersOpen(false)}
       />
       <ChooseTemplateDialog
         open={chooseTemplate} templates={templates}
-        onSelect={(id) => { setChooseTemplate(false); void run('apply the template', async () => { const n = await applyTemplate(leadId, id); snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added from the template` }) }) }}
+        onSelect={(id) => { setChooseTemplate(false); void run('apply the template', async () => { const n = await applyTemplate(studio ? null : leadId, id); snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added from the template` }) }) }}
         onManage={comingSoon}
         onClose={() => setChooseTemplate(false)}
       />
@@ -351,5 +370,6 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         onDone={(name, format) => snackbar({ message: `Exported ${tasks.length} tasks as ${format} · ${name}` })}
       />
     </div>
+    </>
   )
 }

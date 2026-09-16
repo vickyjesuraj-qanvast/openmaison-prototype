@@ -7,3 +7,6 @@
    paint over the panel instead of under it — page-checklist z-scale: a popover raised from a surface sits above it (T1). */
 .popovers { position: absolute; top: 0; left: 0; width: 0; height: 0; }
 .popovers[data-raised] { z-index: 110; }
+
+/* (REG-466) On the rail's Tasks page the tab's block is the page body under the L1 header — Tools › Quotes' frame: 24 all round, flex 1. */
+.tab[data-studio] { flex: 1; min-width: 0; padding: var(--om-spacing-6); }

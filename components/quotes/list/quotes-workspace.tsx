@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
 import { LeadsSkeleton } from '@/components/shell/skeleton'
@@ -69,9 +70,10 @@ export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
   const [createOpen, setCreateOpen] = useState(false)
   const startQuote = (templateId: string | null, clientId: string | null) => {
     if (!clientId) return
-    return run('create the quote', async () => { const id = await createQuote(clientId, templateId); setCreateOpen(false); router.push(`/quotes/${id}`) }, undefined, { guard: 'create' })
+    return run('create the quote', async () => { const id = await createQuote(clientId, templateId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, undefined, { guard: 'create' })
   }
-  const openQuote = (quote: Quote) => router.push(`/quotes/${quote.id}`)
+  /* (REG-465) Opened from Tools › Quotes, the editor's close — and a client's lead — come back to /quotes. */
+  const openQuote = (quote: Quote) => router.push(withFrom(`/quotes/${quote.id}`, '/quotes'))
   const onStatus = (quote: Quote, status: QuoteStatus) => {
     if (status === quote.status) return
     void run('change the status', () => setQuoteStatus(quote.id, status), `Quote marked ${status}`)
@@ -104,14 +106,14 @@ export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
           ) : (
             <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} quotes={visible} now={now} approval={approval} selected={selected} onSelect={setSelected}
                          onStatus={onStatus} onDue={openDue} onView={openQuote} onRowMenu={rowMenu}
-                         clientOf={(q) => ({ name: nameOf.get(q.id) ?? '', href: `/leads/${q.leadId}/quotes` })} />
+                         clientOf={(q) => ({ name: nameOf.get(q.id) ?? '', href: withFrom(`/leads/${q.leadId}/quotes`, '/quotes') })} />
           )}
         </div>
         <DetailBulkBar count={selected.size} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting(selectedIds) }]} onClear={() => setSelected(new Set())} />
         <DatePicker open={!!dueFor} anchorRef={dueAnchor} anchorKey={dueFor?.quoteId ?? ''} value={dueQuote?.dueAt ?? null} today={new Date(now)} label="Due date"
-                    onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }} onClose={() => setDueFor(null)} />
+                    onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), date ? { message: 'Due date set — follow-up task added', actionLabel: 'View', onAction: () => router.push(withFrom(`/leads/${q.leadId}/tasks`, '/quotes')) } : 'Due date cleared') }} onClose={() => setDueFor(null)} />
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
-        <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={(v) => { setFilters(v); setFiltersOpen(false) }} onClose={() => setFiltersOpen(false)} />
+        <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={setFilters}   /* (REG-464) live — the modal closes on Done */ onClose={() => setFiltersOpen(false)} />
         <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => setCreateOpen(false)}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }} />

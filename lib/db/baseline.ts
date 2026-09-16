@@ -12,7 +12,9 @@ import { client } from '@/lib/db'
  * so "Due today", "Upcoming" and the deliberately overdue examples keep their meaning however long after
  * the snapshot the reset runs. Done tasks and every other stamp stay absolute.
  */
-export const BASELINE_TABLES = ['users', 'organizations', 'memberships', 'members', 'leads', 'lead_assignees', 'lead_tasks', 'stage_logs', 'imports', 'import_rows', 'settings', 'quotes', 'quote_templates', 'quote_text_templates', 'price_book_items', 'quote_items', 'quote_payments', 'contracts', 'lead_files', 'quote_files', 'lead_questionnaires', 'lead_returns', 'tags', 'task_tags', 'task_assignees', 'task_comments', 'task_attachments', 'task_templates', 'template_tasks', 'file_comments', 'lead_notes', 'note_attachments', 'questions', 'return_attachments'] as const
+/* Parents before children — the restore inserts in this order and deletes in reverse. `lead_tasks` sits after quotes, files and
+   tags, right before its own link tables: a task can point at the quote whose due date raised it (REG-470). */
+export const BASELINE_TABLES = ['users', 'organizations', 'memberships', 'members', 'leads', 'lead_assignees', 'stage_logs', 'imports', 'import_rows', 'settings', 'quotes', 'quote_templates', 'quote_text_templates', 'price_book_items', 'quote_items', 'quote_payments', 'contracts', 'lead_files', 'quote_files', 'lead_questionnaires', 'lead_returns', 'tags', 'lead_tasks', 'task_tags', 'task_assignees', 'task_comments', 'task_attachments', 'task_templates', 'template_tasks', 'file_comments', 'lead_notes', 'note_attachments', 'questions', 'return_attachments'] as const
 export const BASELINE_FILE = path.join(process.cwd(), 'fixtures', 'baseline.json')
 
 /** The fixture: one row list per table, with `takenAt` (an ISO instant) and `demoDay` (YYYY-MM-DD) beside them. */

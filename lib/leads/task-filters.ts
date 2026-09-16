@@ -4,6 +4,9 @@ import { parseInputDate } from '@/lib/format'
 /** Lead Details › Tasks filters modal model (902:28963) — Sort · Assignees · Creators · Status · Tags · Date. */
 export type TaskSort = 'due' | 'newest' | 'oldest'
 export type TaskStatus = 'open' | 'completed'
+/** The rail's Tasks page scope chip (REG-466): every task · the signed-in member's · nobody's · the studio's own (no lead). */
+export type TaskScope = 'all' | 'mine' | 'unassigned' | 'studio'
+export const TASK_SCOPE_LABEL: Record<TaskScope, string> = { all: 'All Tasks', mine: 'My Tasks', unassigned: 'Unassigned', studio: 'Studio Tasks' }
 export type TaskFilters = {
   sort: TaskSort
   assignees: string[]      // member ids
@@ -12,14 +15,16 @@ export type TaskFilters = {
   tags: string[]           // tag ids
   from: string             // d/m/yyyy (DateField value — never typed, REG-119)
   to: string               // d/m/yyyy
+  leads: string[]          // lead ids, 'studio' for the tasks with no lead (the rail's Tasks page, REG-466)
+  stages: string[]         // the lead's stage (REG-466)
 }
 
 export const EMPTY_TASK_FILTERS: TaskFilters = {
-  sort: 'due', assignees: [], creators: [], status: [], tags: [], from: '', to: '',
+  sort: 'due', assignees: [], creators: [], status: [], tags: [], from: '', to: '', leads: [], stages: [],
 }
 
 /** Which groups carry a selection — drives the rail dots and the toolbar badge (mirrors lib/leads/filters activeGroups). */
-export function activeTaskGroups(f: TaskFilters): { sort: boolean; assignees: boolean; creators: boolean; status: boolean; tags: boolean; date: boolean } {
+export function activeTaskGroups(f: TaskFilters): { sort: boolean; assignees: boolean; creators: boolean; status: boolean; tags: boolean; date: boolean; leads: boolean; stages: boolean } {
   return {
     sort: f.sort !== 'due',
     assignees: f.assignees.length > 0,
@@ -27,6 +32,8 @@ export function activeTaskGroups(f: TaskFilters): { sort: boolean; assignees: bo
     status: f.status.length > 0,
     tags: f.tags.length > 0,
     date: !!(parseInputDate(f.from) || parseInputDate(f.to)),
+    leads: f.leads.length > 0,
+    stages: f.stages.length > 0,
   }
 }
 export const activeTaskFilterCount = (f: TaskFilters) => Object.values(activeTaskGroups(f)).filter(Boolean).length
@@ -45,6 +52,8 @@ export function applyTaskFilters(tasks: TaskRow[], f: TaskFilters, _now: number)
     out = out.filter((t) => t.done === wantDone)
   }
   if (f.tags.length) out = out.filter((t) => t.tags.some((g) => f.tags.includes(g.id)))
+  if (f.leads.length) out = out.filter((t) => f.leads.includes(t.lead?.id ?? 'studio'))
+  if (f.stages.length) out = out.filter((t) => !!t.lead && f.stages.includes(t.lead.stage))
   const a = parseInputDate(f.from), b = parseInputDate(f.to)
   if (a || b) {
     const day = 86_400_000

@@ -45,6 +45,8 @@ export const FILE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'size', label: 'File size', track: '114px' },
   { key: 'attached', label: 'Attached to', track: '195px' },
 ]
+/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
+const SORTABLE: Record<string, boolean> = { owner: false, type: false, attached: false }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, owner: styles.colOwner, updated: styles.colUpdated, type: styles.colType, size: styles.colSize, attached: styles.colAttached }
 
 /**
@@ -99,11 +101,15 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
         </div>
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
-            {/* Sort is inert in this prototype — the head answers coming soon. */}
-            <button type="button" className={styles.hSort} onClick={comingSoon}>
+            {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
-              <Icon name="unfold_more" size={16} />
-            </button>
+            ) : (
+              /* Sort is inert in this prototype — the head answers coming soon. */
+              <button type="button" className={styles.hSort} onClick={comingSoon}>
+                <span className={styles.hLabel}>{c.label}</span>
+                <Icon name="unfold_more" size={16} />
+              </button>
+            )}
             <ColumnResizer table="lead-files" column={c.key} label={c.label} min={c.key === 'title' ? 160 : 72} />
           </div>
         ))}

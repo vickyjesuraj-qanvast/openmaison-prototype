@@ -10,7 +10,7 @@ import styles from './app-shell.module.css'
  * ghost is on screen. Each route group's layout renders this once.
  * ≤767 (REG-298, mock 1082:23305) the rail hides and MobileChrome's top bar, bottom dock and More drawer take over.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, railBadges }: { children: ReactNode; railBadges?: Record<string, number> }) {
   return (
     <SnackbarProvider>
       <div className={styles.page}>
@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <a className={styles.skip} href="#om-main">Skip to content</a>
         <MobileChrome />
         <div className={styles.main}>
-          <AppRail />
+          <AppRail badges={railBadges} />
           {/* (REG-286) The `main` landmark every route's content lives in — and the skip link's target, hence
               tabIndex -1 (Safari will not move focus to a plain fragment target). A transparent flex
               pass-through: it takes exactly the box the route's own root already had as a child of .main

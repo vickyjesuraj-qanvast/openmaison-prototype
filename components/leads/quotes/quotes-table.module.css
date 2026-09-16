@@ -63,6 +63,8 @@
 .colSel { grid-column: 1; padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
 .head .colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }
 .colTitle { grid-column: 2; }
+.colCreator { gap: var(--om-spacing-2); }   /* (REG-471) Avatar 24 + name */
+.creatorName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
 /* 128 at rest (mock); "Sent for Approval" (never shown in a mock cell) needs ~138, so the TRACK grows to its content and the fluid Title absorbs it (REG-176, head + rows together REG-180). */
 .colStatus { grid-column: 3; }
 .colTotal { grid-column: 4; }
@@ -246,6 +248,7 @@
    pin is released and re-placed onto those three lines, and the columns the canvas does not draw step out.
    Declared after the ≤1024 blocks above, so the tablet scroller and ≥1025 are untouched. */
 @media (max-width: 767px) {
+  .colCreator { display: none; }   /* (REG-471) the phone card keeps the mock's lines */
   .head { display: none; }
   .frame { background: none; border: 0; border-radius: 0; overflow: visible; }
   .frame::after { content: none; }

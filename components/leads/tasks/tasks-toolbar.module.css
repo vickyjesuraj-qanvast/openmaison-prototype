@@ -65,3 +65,16 @@
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
+
+/* (REG-466) The rail's Tasks page scope chip — the listing's "All Leads (99)" chip: h36, border ccc, r4, pl-16 pr-12, gap-8. */
+.scopeWrap { flex: 1; min-width: 0; display: flex; align-items: center; position: relative; }
+.scopeChip {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer;
+  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover);
+}
+.scopeChip:hover, .scopeChip[data-open] { background: var(--om-color-hover-08p); }
+.scopeCount { font-weight: 400; color: var(--om-color-on-surface-secondary); }

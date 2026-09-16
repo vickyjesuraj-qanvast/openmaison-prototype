@@ -147,7 +147,10 @@ export const leadTasks = sqliteTable(
   'lead_tasks',
   {
     id: text('id').primaryKey(),
-    leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
+    // (REG-466) Null = a STUDIO task, one that belongs to no lead — the rail's Tasks page lists them beside every lead's.
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
+    // (REG-470) The quote whose due date raised this task — one open follow-up per quote, kept in step with the date.
+    quoteId: text('quote_id').references(() => quotes.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     kind: text('kind').notNull().default('General'),  // General | Call (mock vocab)
     dueAt: integer('due_at', { mode: 'timestamp' }),
@@ -228,6 +231,7 @@ export const quotes = sqliteTable(
     id: text('id').primaryKey(),
     leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
     number: text('number').notNull(),            // "OM-10001"
+    createdBy: text('created_by'),               // (REG-471) the member who created the quote — the Quotes tables' Creator column
     title: text('title').notNull(),              // "Whole-home renovation"
     amountMinor: integer('amount_minor').notNull(),
     visibility: text('visibility').notNull().default('Private'),   // Private | Shared

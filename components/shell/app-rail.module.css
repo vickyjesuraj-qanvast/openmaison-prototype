@@ -198,3 +198,16 @@
   .wrap .panel .searchTile,
   .wrap .panel .logoTile { width: 44px; margin-inline: -4px; }
 }
+
+/* (REG-466) The overdue count on the Tasks glyph: the toolbar's filter badge (16px pill), top-right of the 24px icon, in both rail states. */
+.item { position: relative; }
+.badge {
+  /* Inside the item's box (it clips overflow for the label crossfade): anchored to the right edge while the rail is collapsed,
+     to the glyph's corner once it is wide (owner 2026-09-16: "number 5 container looks chopped"). */
+  position: absolute; top: 2px; right: 2px; box-sizing: border-box;
+  min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px;
+  background: var(--om-color-tertiary-red-default); color: #fff;
+  font: 600 10px/16px var(--om-font-family, Inter, system-ui, sans-serif); text-align: center; letter-spacing: 0;
+  pointer-events: none;
+}
+.panel[data-expanded] .badge { right: auto; left: 22px; }

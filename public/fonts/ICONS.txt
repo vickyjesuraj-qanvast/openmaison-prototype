@@ -31,6 +31,7 @@ call
 call_log
 cancel
 cards
+category
 chat
 check
 check_box
@@ -40,6 +41,7 @@ chevron_left
 chevron_right
 circle
 close
+code
 collapse_all
 collapse_content
 comment
@@ -171,6 +173,7 @@ strikethrough_s
 style
 swap_horiz
 swap_vert
+switch
 tab
 table
 task

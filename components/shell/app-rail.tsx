@@ -20,6 +20,7 @@ import styles from './app-rail.module.css'
  */
 const TOP_ITEMS = [
   { icon: 'dashboard', label: 'Dashboard' },
+  { icon: 'task_alt', label: 'Tasks', href: '/tasks' },   /* (REG-466) the studio's tasks, second after Dashboard as 1.0 had it; task_alt has no filled state in Material Symbols — the owner chose to leave it */
   { icon: 'business_center', label: 'Projects' },
   { icon: 'people_alt', label: 'Leads', href: '/leads' },
   { icon: 'storefront', label: 'Marketplace' },
@@ -32,7 +33,8 @@ const BOTTOM_ITEMS = [
   { icon: 'notifications', label: 'Notifications' },
   { icon: 'settings', label: 'Settings', href: '/settings' },
 ]
-export function AppRail() {
+/** `badges`: a count drawn on an item's glyph — today the Tasks item's overdue tasks (REG-466), keyed by href. */
+export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
@@ -72,6 +74,7 @@ export function AppRail() {
              carry `fill: true` outright, so it read as selected from the Qanvast Ops and Settings pages too. */
           <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
+        {it.href && badges?.[it.href] ? <span className={styles.badge} aria-hidden>{badges[it.href]}</span> : null}
         <span className={styles.label}>{it.label}</span>
       </>
     )
@@ -88,7 +91,7 @@ export function AppRail() {
     return (
       <Tooltip key={it.label} label={it.label} side="right" disabled={expanded}>
         {it.href ? (
-          <Link href={it.href} className={className} data-active={active || undefined} aria-label={it.label}
+          <Link href={it.href} className={className} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
                 aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>

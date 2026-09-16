@@ -15,7 +15,8 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
-import type { Quote } from '@/lib/db/schema'
+import type { Member, Quote } from '@/lib/db/schema'
+import { Avatar } from '@/components/om/avatar'
 import { displayDate, money } from '@/lib/format'
 import { isQuoteOverdue, quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
@@ -25,7 +26,7 @@ import styles from './quotes-table.module.css'
 export type QuoteRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'archive' | 'delete'
 
 export type QuotesTableProps = {
-  quotes: Quote[]
+  quotes: (Quote & { creator?: Member | null })[]
   /** Clock captured by the caller (purity rule) — overdue = not Signed + due before today. */
   now: number
   /** Settings › Leads › Quote approval — decides which statuses the row menu can offer. */
@@ -53,6 +54,7 @@ export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: 'minmax(317px, 1fr)', locked: true },
   { key: 'client', label: 'Client', track: '180px' },
   { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
+  { key: 'creator', label: 'Creator', track: '160px' },   /* (REG-471) who created the quote — avatar + name, as the Tasks table's Creator */
   { key: 'total', label: 'Total', track: '120px' },
   { key: 'due', label: 'Due', track: '120px' },
   { key: 'created', label: 'Created', track: '120px' },
@@ -63,7 +65,9 @@ export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
 /** Whether the Approval Date column exists at all — the lifecycle has it, or a quote was approved before the setting was switched off. */
 export const quoteShowApproval = (quotes: readonly Pick<Quote, 'approvedAt'>[], approval: QuoteApproval) => quoteStatuses(approval).includes('Approved') || quotes.some((q) => q.approvedAt)
 export const quoteColumnDefs = (withClient: boolean, withApproval: boolean) => QUOTE_COLUMN_DEFS.filter((d) => (d.key !== 'client' || withClient) && (d.key !== 'approval' || withApproval))
-const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, updated: styles.colUpdated, approval: styles.colApproval }
+/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
+const SORTABLE: Record<string, boolean> = { title: false, creator: false }
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, creator: styles.colCreator, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, updated: styles.colUpdated, approval: styles.colApproval }
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
    ~560px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
@@ -114,11 +118,15 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
         </div>
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
-            {/* Sort is inert in this prototype — the head answers coming soon. */}
-            <button type="button" className={styles.hSort} onClick={comingSoon}>
+            {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
-              <Icon name="unfold_more" size={16} />
-            </button>
+            ) : (
+              /* Sort is inert in this prototype — the head answers coming soon. */
+              <button type="button" className={styles.hSort} onClick={comingSoon}>
+                <span className={styles.hLabel}>{c.label}</span>
+                <Icon name="unfold_more" size={16} />
+              </button>
+            )}
             <ColumnResizer table="lead-quotes" column={c.key} label={c.label} min={c.key === 'title' ? 120 : 72} />
           </div>
         ))}
@@ -161,7 +169,7 @@ function QuoteRowView({
   menuOpen, onMenuToggle, onMenuClose, menuSide,
   onStatus, onDue, onView, onRowMenu, client, L,
 }: {
-  quote: Quote
+  quote: Quote & { creator?: Member | null }
   now: number
   client: { name: string; href: string } | null
   selected: boolean
@@ -247,6 +255,14 @@ function QuoteRowView({
       </div>
 
       {/* Total: "S$70,000" — no space after S$ (910:36324). */}
+      <div className={`${styles.cell} ${styles.colCreator} ${L.pinned('creator') ? styles.pin : ''}`} role="cell" data-col="creator" data-pin-edge={L.edge('creator') || undefined} style={L.style('creator')}>
+        {quote.creator ? (
+          <>
+            <Avatar name={quote.creator.name} color={quote.creator.color} size={24} tooltip={false} />
+            <span className={styles.creatorName}>{quote.creator.name}</span>
+          </>
+        ) : <span className={styles.creatorName}>—</span>}
+      </div>
       <div className={`${styles.cell} ${styles.colTotal} ${L.pinned('total') ? styles.pin : ''}`} role="cell" data-col="total" data-pin-edge={L.edge('total') || undefined} style={L.style('total')}>{`S$${money(quote.amountMinor)}`}</div>
 
       {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}

@@ -6,6 +6,9 @@ import { Avatar } from '@/components/om/avatar'
 import { DateField } from '@/components/om/date-field'
 import { Drawer, DrawerAction, DrawerRule } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
+import NextLink from 'next/link'
+import { withFrom } from '@/lib/nav'
+import type { TaskLead } from '@/lib/leads/tasks'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
@@ -51,13 +54,15 @@ function AreaField({
  */
 export function TaskPanel({
   task, tags, onClose, onComments, onAttach, onMenu, onChange, onAssign, onTags, onManageTags, onToggleDone, onDetach,
-  open = true, now, onCreateTag,
+  open = true, now, onCreateTag, lead,
 }: {
   task: TaskRow
   /** The studio's members (the assign popover is the host's; the panel shows task.assignees). */
   team: Member[]
   tags: Tag[]
   onClose: () => void
+  /** The rail's Tasks page (REG-466): the task's lead as the first row — a link to its Tasks tab, or "Studio"; omitted on a lead's own tab. */
+  lead?: TaskLead | null
   onComments: () => void
   onAttach: () => void
   onMenu: (action: TaskPanelMenuAction) => void
@@ -129,6 +134,12 @@ export function TaskPanel({
     <Drawer open={open} title="Task" actions={actions} footer={footer} onClose={onClose}>
       {/* KV block: Creator · Created on */}
       <dl className={styles.kv}>
+        {lead !== undefined ? (
+          <>
+            <dt className={styles.key}>Lead</dt>
+            <dd className={styles.value}>{lead ? <NextLink href={withFrom(`/leads/${lead.id}/tasks`, '/tasks')} className={styles.leadLink}>{lead.name}</NextLink> : 'Studio'}</dd>
+          </>
+        ) : null}
         <dt className={styles.key}>Creator</dt>
         <dd className={styles.value}>
           {task.creator ? (

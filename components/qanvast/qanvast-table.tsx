@@ -24,6 +24,8 @@ export const QANVAST_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'created', label: 'Created', track: 'minmax(115px, 115fr)' },
   { key: 'status', label: 'Status', track: '369px' },
 ]
+/* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
+const SORTABLE: Record<string, boolean> = { type: false, status: false }
 const COL_CLASS: Record<string, string | undefined> = { name: styles.colName, credits: styles.colCredits, budget: styles.colBudget, type: styles.colType, created: styles.colCreated, status: styles.colStatus }
 
 /**
@@ -48,10 +50,15 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
-            <button type="button" className={styles.hSort} onClick={comingSoon}>
+            {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
-              <Icon name="unfold_more" size={16} />
-            </button>
+            ) : (
+              /* Sort is inert in this prototype — the head answers coming soon. */
+              <button type="button" className={styles.hSort} onClick={comingSoon}>
+                <span className={styles.hLabel}>{c.label}</span>
+                <Icon name="unfold_more" size={16} />
+              </button>
+            )}
             <ColumnResizer table="qanvast-leads" column={c.key} label={c.label} min={c.key === 'name' ? 160 : 72} />
           </div>
         ))}

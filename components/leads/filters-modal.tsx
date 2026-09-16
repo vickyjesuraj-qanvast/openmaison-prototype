@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -72,6 +73,8 @@ export function FiltersModal({
   const fromD = parseDMY(draft.from), toD = parseDMY(draft.to)
   const rangeBad = custom && !!fromD && !!toD && fromD.getTime() > toD.getTime()
   const dateInvalid = rangeBad
+  /* (REG-464) Every change filters the list behind the modal as it happens; an inverted date range waits until it is fixed. */
+  useLiveApply(open, draft, value, !dateInvalid, onApply)
   const rangeError = rangeBad ? MSG.dateRange : undefined
 
   const searchBox = (
@@ -206,7 +209,8 @@ export function FiltersModal({
             </div>
             <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
-              <Button onPress={() => { if (dateInvalid) return; onApply(draft); onClose() }} isDisabled={dateInvalid}>Apply</Button>
+              {/* (REG-464) The draft is already applied — Done only closes. */}
+              <Button onPress={onClose}>Done</Button>
             </div>
           </motion.div>
         </motion.div>

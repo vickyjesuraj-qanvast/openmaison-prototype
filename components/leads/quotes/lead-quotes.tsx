@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { DatePicker } from '@/components/om/date-picker'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
@@ -70,8 +71,11 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
      from the chosen template (null = Blank Quote) and opens it in the editor. */
   const [createOpen, setCreateOpen] = useState(false)
   const openCreate = () => setCreateOpen(true)
-  const startQuote = (templateId: string | null) => run('create the quote', async () => { const id = await createQuote(leadId, templateId); setCreateOpen(false); router.push(`/quotes/${id}`) }, undefined, { guard: 'create' })
-  const openQuote = (quote: Quote) => router.push(`/quotes/${quote.id}`)
+  const startQuote = (templateId: string | null) => run('create the quote', async () => { const id = await createQuote(leadId, templateId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, undefined, { guard: 'create' })
+  /* (REG-465) The editor carries this tab's own URL (folder-free, origin and all) so its close comes straight back here. */
+  const pathname = usePathname(); const search = useSearchParams().toString()
+  const here = search ? `${pathname}?${search}` : pathname
+  const openQuote = (quote: Quote) => router.push(withFrom(`/quotes/${quote.id}`, here))
 
   // Overview › QUOTES card, the Quote quick link and the Won wizard land here with ?new=1 (consumed once, then the
   // param is dropped); Create quick links › Quote on this tab raises `om:quotes:new`. Both open the modal.
@@ -131,13 +135,13 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         value={dueQuote?.dueAt ?? null}
         today={new Date(now)}
         label="Due date"
-        onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }}   /* (REG-329) as the Tasks due picker */
+        onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), date ? { message: 'Due date set — follow-up task added', actionLabel: 'View', onAction: () => router.push(withFrom(`/leads/${leadId}/tasks`, here)) } : 'Due date cleared') }}   /* (REG-329) as the Tasks due picker */
         onClose={() => setDueFor(null)}
       />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <QuotesFiltersModal
         open={filtersOpen} value={filters} now={now} approval={approval}
-        onApply={(v) => { setFilters(v); setFiltersOpen(false) }}
+        onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
         onClose={() => setFiltersOpen(false)}
       />
       <CreateQuoteModal

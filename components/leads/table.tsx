@@ -38,9 +38,11 @@ const WIDTHS: Record<ColumnKey, number> = {
   name: 240, stage: 146, tasks: 321, assignees: 160,
   source: 132, budget: 138, propertyType: 158, created: 115, address: 240,
 }
+/* (REG-468, sort audit 2026-09-16: "Remove the 17") A glyph only where ordering answers a question: names, stage, budget, dates.
+   Members (several per cell), Source and Property Type (categories the filter serves) lost theirs. */
 const SORTABLE: Record<ColumnKey, boolean> = {
-  name: true, stage: true, tasks: false, assignees: true,
-  source: true, budget: true, propertyType: true, created: true, address: false,
+  name: true, stage: true, tasks: false, assignees: false,
+  source: false, budget: true, propertyType: false, created: true, address: false,
 }
 
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null

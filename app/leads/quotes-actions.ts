@@ -1,9 +1,12 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leads, members, quoteTemplates, quotes, quotePayments } from '@/lib/db/schema'
+import { leadTasks, leads, members, quoteTemplates, quotes, quotePayments, taskAssignees } from '@/lib/db/schema'
+import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { displayDate } from '@/lib/format'
+import { revalidatePath } from 'next/cache'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
 import { projectRef, validUntil } from '@/lib/quotes/refs'
@@ -16,6 +19,7 @@ import { fetchLeadContracts } from '@/lib/leads/contracts'
 
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every quote milestone. */
 const touch = (leadId: string) => revalidateLead(leadId)
+const ME = SESSION_MEMBER_ID
 
 /** Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). */
 async function nextNumber(): Promise<string> {
@@ -45,7 +49,7 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
   await db.insert(quotes).values({
     id, leadId, number: await nextNumber(), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
-    preparedBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId,
+    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId,
     validUntil: validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
   })
   if (templateId) await db.update(quoteTemplates).set({ lastUsedAt: now }).where(eq(quoteTemplates.id, templateId))
@@ -90,10 +94,35 @@ export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Prom
 }
 
 /** Due cell (calendar_add_on 24 → the Material picker, REG-119). */
+/**
+ * (REG-470, user feedback 2026-09-16: "If I add a due date to a quote, shouldn't that create a task for me automatically?")
+ * The due date IS a follow-up: setting it raises one open task on the lead — "Follow up on quote OM-10001", due that day,
+ * assigned to whoever prepared the quote — moving it keeps the task's date in step, and clearing it removes the task while it
+ * is still open (a completed one stays as history). The task remembers its quote (`quote_id`), so there is never a second.
+ */
 export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<void> {
-  const leadId = await leadOf(quoteId); if (!leadId) return
+  const [q] = await db.select({ leadId: quotes.leadId, number: quotes.number, title: quotes.title, preparedBy: quotes.preparedBy }).from(quotes).where(eq(quotes.id, quoteId))
+  if (!q) return
   await db.update(quotes).set({ dueAt, updatedAt: new Date() }).where(eq(quotes.id, quoteId))
-  touch(leadId)
+  const [task] = await db.select({ id: leadTasks.id }).from(leadTasks).where(and(eq(leadTasks.quoteId, quoteId), eq(leadTasks.done, false)))
+  if (dueAt) {
+    if (task) {
+      await db.update(leadTasks).set({ dueAt, updatedAt: new Date() }).where(eq(leadTasks.id, task.id))
+    } else {
+      const id = randomUUID(); const now = new Date()
+      await db.transaction(async (tx) => {
+        await tx.insert(leadTasks).values({
+          id, leadId: q.leadId, quoteId, title: `Follow up on quote ${q.number}`, kind: 'General',
+          description: `${q.title} is due on ${displayDate(dueAt)} — chase the client for a decision before then.`,
+          dueAt, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: null,
+        })
+        await tx.insert(taskAssignees).values({ taskId: id, memberId: q.preparedBy ?? ME })
+      })
+    }
+  } else if (task) {
+    await db.delete(leadTasks).where(eq(leadTasks.id, task.id))
+  }
+  touch(q.leadId); revalidatePath('/tasks'); revalidatePath('/', 'layout')
 }
 
 /** Row kebab › Archive (910:36723) — soft; `restore` is the snackbar's Undo. */

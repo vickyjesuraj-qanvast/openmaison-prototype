@@ -176,10 +176,15 @@ export function DeletedLeadsSheet({
                       </span>
                       {COLS.map((c, i) => (
                         <div key={c.key} className={`${styles.hCell}${i === 0 ? ` ${styles.pin}` : ''}`} style={{ width: cw(c.key, c.width) }} role="columnheader">
+                          {c.key === 'source' || c.key === 'propertyType' ? (
+                            /* (REG-468) categories the filter serves — no sort glyph */
+                            <span className={styles.hLabel}>{c.label}</span>
+                          ) : (
                           <button type="button" className={styles.hSort} data-sorted={sort?.key === c.key || undefined} onClick={() => cycle(c.key)}>
                             <span className={styles.hLabel}>{c.label}</span>
                             <Icon name={sortIcon(c.key)} size={16} />
                           </button>
+                          )}
                           <ColumnResizer table="deleted-leads" column={c.key} label={c.label} min={i === 0 ? 140 : 72} />
                         </div>
                       ))}

@@ -25,7 +25,11 @@
 }
 
 .scroller[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
-.table { display: flex; flex-direction: column; width: 100%; min-width: var(--table-min, 1242px); }   /* --table-min: the columns' floor (tasks-table.tsx) */
+/* --table-min: the columns' floor (tasks-table.tsx) + the parked actions' band (Edit 58 · gap 12 · kebab 36 · inset 24 = 130): with the
+   mock's 1242 filling a 1440 screen exactly, the hover pills sat over the last column's "Add Tags" (REG-467, the REG-446 rule —
+   a hover control never covers a value the row exists to show). The band is part of the floor, as the touch layout and the
+   listing already have it, so at the row's end the pills park over empty room. */
+.table { display: flex; flex-direction: column; width: 100%; min-width: calc(var(--table-min, 1242px) + 130px); }
 /* Frozen first block (the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the scrolled
    columns pass underneath, and Title — the last frozen cell, which already draws its 1px edge (REG-144) — casts the group's
    rightward shadow only while the card is scrolled. */
@@ -63,7 +67,16 @@
 .colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
 .head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
 .colTitle { flex: var(--cw-title, 1 0 420px); }   /* Title fills from its 422 floor (1244 − the 822 of fixed columns), never shrinks (REG-430); REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.hCell, .cell { order: var(--col-order, 0); }   /* the column order from Column settings / a dragged head (REG-454 / 462); the ≤767 block places the cells itself */
 .colMember { flex: var(--cw-assignees, 0 0 160px); }
+.colLead { flex: var(--cw-lead, 0 0 200px); min-width: 0; }   /* the rail's Tasks page only (REG-466); hidden by the layout on a lead's tab */
+.leadLink { display: flex; min-width: 0; text-decoration: none; color: inherit; }
+.leadName { font: var(--om-type-body-m); font-weight: 600; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.row:hover .leadName, .leadLink:focus-visible .leadName { color: var(--om-color-primary-default); text-decoration: underline; }   /* the listing's name on hover (REG-450) */
+.leadStudio { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.leadPick { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; max-width: 100%; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.leadPick:hover { background: var(--om-color-hover-08p); }
+.leadPickName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
 .colDue { flex: var(--cw-due, 0 0 137px); }
 .colStatus { flex: var(--cw-status, 0 0 118px); }
@@ -124,7 +137,9 @@
 }
 .titleBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; border-radius: var(--om-radius-1); }
 .title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover); }
-.row:hover .title, .titleBtn:hover .title { color: var(--om-color-primary-default); text-decoration: underline; }   /* the listing's name affordance on row hover (REG-450); the weight stays the mock's — bold marks an unseen task */
+/* (REG-472) The title is an editable cell, as the quote editor's — no link colour or underline on hover (REG-450 is for titles that open a record); the text cursor says what a click does. */
+.titleBtn, .titleRest { cursor: text; }
+@media (hover: none) { .titleBtn, .titleRest { cursor: pointer; } }   /* a tap opens the panel, as the mobile canvas draws (REG-354) */
 .title[data-unseen] { font: var(--om-type-heading-h5); }   /* RW-New: name 14/Bold */
 .chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; margin-left: var(--om-spacing-3); }   /* H g8, 12 from the title (the gap .titleBtn used to hold) */
 /* Filler: the cell's remaining width, still opening the task. Not a tab stop — the title button already is one. */
@@ -203,26 +218,25 @@
 
 /* ---- Inline add / rename (frame 194 "Type=RW-New, State=Input") ---- */
 /* The whole Title cell is the active field: 2px primary ring inside the cell, no status glyph. */
-.cell[data-editing] { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); }
+.cell[data-editing] { box-shadow: inset 0 0 0 var(--om-border-2) var(--om-color-primary-default); overflow: visible; }   /* the pinned title stays sticky — `relative` here turned its sticky `left` into a 56px shift (REG-472) */
+.cell[data-editing]:not(.pin) { position: relative; }   /* an unpinned title still anchors its ✕ / ✓ pair */
 .editInput {
   flex: 1; min-width: 0;
   border: 0; outline: 0; background: none; padding: 0; margin: 0;
   font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
   caret-color: var(--om-color-on-surface-default);
 }
-.editActions { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }   /* H g4 */
+/* (REG-472) The ✕ / ✓ pair under the box's right end, outside it — payments-section.module.css's `.confirm`, the same 24px
+   boxes on the level-2 lift, so the field keeps its full width and the pair reads as a control of the edit, not a cell value. */
+.confirm { position: absolute; right: 0; top: calc(100% + 2px); display: inline-flex; gap: var(--om-spacing-1); z-index: 5; }
+.cancelBtn, .okBtn { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-2); cursor: pointer; }
+.cancelBtn { border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); }
+.okBtn { border: 0; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
+.cancelBtn:hover { background: var(--om-color-hover-08p); }
+.okBtn:hover { background: var(--om-color-primary-hover, var(--om-color-primary-default)); }
+.cancelBtn:focus-visible, .okBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 /* Icon Buttons Primary/24/Filled (done): fill #5500ff, icon #fff — om/icon-button has no filled variant, so it is
    restyled here (element + attribute beats the primitive's .btn[data-variant] rule). */
-button.doneFilled[data-variant='primary'] {
-  background: var(--om-color-primary-default);
-  border-color: var(--om-color-primary-default);
-  color: var(--om-color-on-primary-default);
-}
-button.doneFilled[data-variant='primary']:hover {
-  background: var(--om-color-primary-hover);
-  border-color: var(--om-color-primary-hover);
-  color: var(--om-color-on-primary-default);
-}
 /* Inert affordances of the add row (member · due · tags) — drawn as in the mock, not pressable while adding. */
 .inert { pointer-events: none; }
 
@@ -256,7 +270,7 @@ button.doneFilled[data-variant='primary']:hover {
   display: flex; align-items: center;
   padding: var(--om-spacing-4) var(--om-spacing-6);
   border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  position: sticky; bottom: 0; z-index: 1;
+  position: sticky; bottom: 0; z-index: 4;   /* above the frozen cells (2) and the head's (3): docked over a long list, the rows painted over it (owner 2026-09-16, REG-466) */
   background: var(--om-color-surface-default);
   border-radius: 0 0 var(--om-radius-2) var(--om-radius-2);
 }
@@ -334,7 +348,7 @@ button.doneFilled[data-variant='primary']:hover {
    a white tick on a transparent square: invisible on the white card, on every phone AND every touch tablet
    (`hover: none` carries no width bound). The button simply keeps its own fill now. */
 @media (hover: none) {
-  .editActions { gap: var(--om-spacing-5); }
+  .confirm { gap: var(--om-spacing-3); }
 }
 
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The title button hugs its text (23px tall) inside a 48px row; on touch it takes the row's height so
@@ -384,8 +398,12 @@ button.doneFilled[data-variant='primary']:hover {
   .row { padding-right: 44px; }
   /* The checkbox is pinned left and the title clears it, so a long title can never push it onto its own line. */
   .colTitle { flex: 1 1 100%; min-width: 0; order: 1; border-right: 0; padding: var(--om-spacing-3) 0 var(--om-spacing-1) 88px; }   /* clears the pinned checkbox and the ring (58 + 24 + 6) */
-  .cell.colDue { flex: 0 0 auto; order: 2; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
-  .cell.colMember { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
+  /* (REG-466) The rail page's card is three lines — title · lead · due date and members — and its ring and checkbox sit on
+     the TITLE line rather than the card's centre (REG-356's pair rule is for the tab's two-line card). */
+  .cell.colLead { flex: 1 1 100%; order: 2; min-width: 0; padding: 0 44px var(--om-spacing-1) 88px; }
+  .row:has(.colLead) .cell.colSel, .row:has(.colLead) .colTitle .glyph { top: 22px; }
+  .cell.colDue { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
+  .cell.colMember { flex: 0 0 auto; order: 4; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
   .actions { opacity: 1; pointer-events: auto; position: absolute; width: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
   .actionsInner { position: static; transform: none; }
   .actionsInner > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */

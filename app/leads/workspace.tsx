@@ -597,7 +597,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           try { await setTaskDue(task.id, due); return true }
           catch { snackbar({ message: 'Couldn’t set the due date — please try again' }); return false }
         }}
-        onOpenTask={(task) => router.push(`${detailHref(task.leadId, 'tasks')}?open=${task.id}`)}   // the task panel on Lead Details › Tasks, as the Overview's popover (REG-173)
+        onOpenTask={(task) => { if (task.leadId) router.push(`${detailHref(task.leadId, 'tasks')}?open=${task.id}`) }}   // the task panel on Lead Details › Tasks, as the Overview's popover (REG-173)
       />
       <LeadFormModal
         team={team}

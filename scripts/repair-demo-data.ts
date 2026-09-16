@@ -120,7 +120,7 @@ async function main() {
   note(`${junkLeads.length} junk trashed leads removed`)
 
   const mash = rows<{ id: string; title: string }>(await client.execute(
-    `SELECT id, title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"') OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`))
+    `SELECT id, title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"','tse6y\\') OR title LIKE 'tse6y%' OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`))
   for (const t of mash) {
     for (const tbl of ['task_tags', 'task_assignees', 'task_comments', 'task_attachments']) push(`DELETE FROM ${tbl} WHERE task_id = ?`, [t.id])
     push('DELETE FROM lead_tasks WHERE id = ?', [t.id])
@@ -693,9 +693,17 @@ async function main() {
   }
   console.log(`  ${lengthened} description(s) lengthened`)
 
+  /* ── R30 · every quote names its creator (Creator column, REG-471) ──────────────────────────────
+     Quotes made before the column existed take the member who prepared them, else the signed-in member. */
+  console.log('\nR30 quote creators')
+  const stamped = await client.execute(`UPDATE quotes SET created_by = coalesce(prepared_by, (SELECT id FROM members WHERE is_you = 1 LIMIT 1)) WHERE created_by IS NULL`)
+  console.log(`  ${stamped.rowsAffected} quote(s) given a creator`)
+
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')
   const checks: [string, string][] = [
+    ['quote with no creator', `SELECT number FROM quotes WHERE created_by IS NULL`],
+    ['quote follow-up task out of step with its due date', `SELECT q.number FROM lead_tasks t JOIN quotes q ON q.id = t.quote_id WHERE t.done = 0 AND (q.due_at IS NULL OR q.due_at <> t.due_at)`],
     ['live lead past New with no stage trail', `SELECT l.name FROM leads l WHERE l.deleted_at IS NULL AND l.stage <> 'New' AND NOT EXISTS (SELECT 1 FROM stage_logs s WHERE s.lead_id = l.id)`],
     ['lead whose last move does not match its stage', `SELECT l.name FROM leads l JOIN stage_logs s ON s.lead_id = l.id WHERE l.deleted_at IS NULL AND s.created_at = (SELECT max(created_at) FROM stage_logs x WHERE x.lead_id = l.id) AND s.to_stage <> l.stage`],
     ['stage log before its lead existed', `SELECT l.name FROM stage_logs s JOIN leads l ON l.id = s.lead_id WHERE s.created_at <= l.created_at`],
