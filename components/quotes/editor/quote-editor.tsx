@@ -291,7 +291,6 @@ export function QuoteEditor({ data }: { data: QuoteEditorData }) {
           lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={quote.version} status={status} siblings={siblings}
           savedLabel={savedLabel(updatedAt, clock)}
           canSend={!!nextStep} sendHint={`Quote is ${status}`} statusSlot={statusPill}
-          backHref={backHref}
           onSwitch={(id) => router.push(`/quotes/${id}`)}
           onSend={send} onMenu={onMenu} onClose={close}
         />

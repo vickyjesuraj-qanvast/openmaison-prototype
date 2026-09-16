@@ -29,13 +29,16 @@
 /* Frozen first block (the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the scrolled
    columns pass underneath, and Title — the last frozen cell, which already draws its 1px edge (REG-144) — casts the group's
    rightward shadow only while the card is scrolled. */
-.head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
-.head .colSel, .head .colTitle { z-index: 3; }
-.colSel { left: 0; }
-.colTitle { left: 56px; clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
-.row:hover .colSel, .row:hover .colTitle { background: var(--om-color-surface-bg); }
-.row[data-selected] .colSel, .row[data-selected] .colTitle { background: var(--om-color-primary-variant); }
-.scroller[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }
+
+/* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
+   `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle); }   /* 0,2,0 — outranks the head cell's own `position: relative` */
+.head .pin { z-index: 3; }
+.row:hover .pin { background: var(--om-color-primary-variant); }
+.row[data-selected] .pin { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
 
 /* ---- Head row 1244×56 ---- */
 .head { display: flex; height: 56px; }
@@ -59,7 +62,7 @@
 /* ---- Columns (flex basis = mock width) ---- */
 .colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
 .head .colSel { padding: var(--om-spacing-4); }                                                                                                        /* head p16 */
-.colTitle { flex: var(--cw-title, 1 0 420px); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* Title fills from its 422 floor (1244 − the 822 of fixed columns), never shrinks (REG-430); REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.colTitle { flex: var(--cw-title, 1 0 420px); }   /* Title fills from its 422 floor (1244 − the 822 of fixed columns), never shrinks (REG-430); REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
 .colMember { flex: var(--cw-assignees, 0 0 160px); }
 .colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
 .colDue { flex: var(--cw-due, 0 0 137px); }
@@ -68,7 +71,7 @@
 
 /* ---- Rows 1244×48 ---- */
 .row { display: flex; height: 48px; position: relative; transition: background-color var(--motion-hover); }
-.row:hover { background: var(--om-color-surface-bg); }                    /* frame 195: hover fill #f2f2f2 */
+.row:hover { background: var(--om-color-primary-variant); }                    /* frame 195: hover fill #f2f2f2 */
 .row[data-selected] { background: var(--om-color-primary-variant); }     /* frame 192: selected fill #eee5ff */
 /* Unseen task (Type=RW-New): 4px primary band at the row's left edge — the listing's unseen band (REG-131 applied to tasks);
    drawn inside the frozen Selection cell so it rides with it (REG-430). */
@@ -120,7 +123,8 @@
   color: inherit; font: inherit;
 }
 .titleBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; border-radius: var(--om-radius-1); }
-.title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); }
+.title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-m); text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover); }
+.row:hover .title, .titleBtn:hover .title { color: var(--om-color-primary-default); text-decoration: underline; }   /* the listing's name affordance on row hover (REG-450); the weight stays the mock's — bold marks an unseen task */
 .title[data-unseen] { font: var(--om-type-heading-h5); }   /* RW-New: name 14/Bold */
 .chips { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; margin-left: var(--om-spacing-3); }   /* H g8, 12 from the title (the gap .titleBtn used to hold) */
 /* Filler: the cell's remaining width, still opening the task. Not a tab stop — the title button already is one. */
@@ -224,6 +228,7 @@ button.doneFilled[data-variant='primary']:hover {
 
 /* ---- Row hover actions (frame 195 → 606:75167, REG-163): Edit + kebab at 1113,6 → right 24, top 6; H g12; level-1 shadow. ---- */
 .actions {
+  order: 100;   /* the cells carry a flex `order` from Column settings (REG-454); the parked actions stay last whatever the user does */
   position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
   width: 0; overflow: visible; align-self: center; flex-shrink: 0;
   z-index: 4;
@@ -360,7 +365,7 @@ button.doneFilled[data-variant='primary']:hover {
   /* The list wraps to the screen, so the desktop column floor that made the card scroll sideways is dropped. */
   .table { min-width: 0; }
   .scroller, .scroller[data-overflow] { overflow: visible; }
-  .colTitle, .head .colTitle, .row .colTitle { position: static; clip-path: none; box-shadow: none; background: none; }
+  .colTitle, .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
   .row { height: auto; min-height: 64px; flex-wrap: wrap; align-items: center; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   .cell { padding: 0; border-top: 0; }
   .colCreator, .colStatus, .colTags { display: none; }
@@ -400,3 +405,6 @@ button.doneFilled[data-variant='primary']:hover {
   .row[data-add] .colTitle { padding: var(--om-spacing-2) var(--om-spacing-3); }
   .row[data-add] .colMember, .row[data-add] .colDue { display: none; }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }

@@ -152,7 +152,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
            onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />
       <Dialog open={linkOpen} onClose={() => setLinkOpen(false)} title="Add link" size="form" width={400}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setLinkOpen(false)}>Cancel</Button><Button onPress={addLink} isDisabled={!url.trim()}>Add</Button></>}>
-        <TextField label="Link URL" value={url} onChange={setUrl} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && url.trim()) { e.preventDefault(); addLink() } }} />
+        <TextField label="Link URL" required value={url} onChange={setUrl} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && url.trim()) { e.preventDefault(); addLink() } }} />
       </Dialog>
     </div>
   )

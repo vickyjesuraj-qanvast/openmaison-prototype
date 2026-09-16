@@ -46,7 +46,8 @@ export type RowHandlers = {
  * inset and the client-visibility eye. Every cell edits in place and the row autosaves (items-section.tsx).
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
-export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragOver, dragging, showFull, h }: {
+export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragOver, dragging, showFull, h,
+}: {
   item: QuoteItem
   all: QuoteItem[]
   number: string
@@ -84,6 +85,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const isGroup = item.kind === 'group'
   const child = !!item.parentId
   const sums = isGroup ? groupTotals(all, item.id) : null
+  const childCount = isGroup ? all.filter((c) => c.parentId === item.id).length : 0
   const vis: Visibility = isVisibility(item.visibility) ? item.visibility : 'visible'
   const kind: ItemKind | null = isItemKind(item.icon) ? item.icon : null
   const patch = (p: ItemPatch) => h.onPatch(item.id, p)
@@ -206,7 +208,8 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           {/* The name is text-wide; a press on the row's remaining width still lands the caret in it. */}
           <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) nameRef.current?.focus() }}>
             <TextCell value={item.name} kind="name" inputRef={nameRef} placeholder={isGroup ? 'New Group' : 'Type item name'} onCommit={(v) => patch({ name: v })} ariaLabel={isGroup ? 'Group name' : 'Item name'} />
-            {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">Group</Tag></span> : null}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
+            {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">Group</Tag></span> : null}
+            {isGroup && childCount > 0 ? <span className={styles.groupCount}>{childCount} {childCount === 1 ? 'item' : 'items'}</span> : null}   {/* (REG-463) only once the group holds something */}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
             {child ? (
               <>
                 <Tooltip label="Client visibility" disabled={menu === 'vis'}>

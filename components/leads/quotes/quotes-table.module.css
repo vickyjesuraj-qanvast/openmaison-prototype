@@ -62,7 +62,7 @@
 /* Selection 40: p12/0/12/16 (head p16/0/16/16) — 16 + the 24 checkbox = 40; the spec lists no right rule on it. */
 .colSel { grid-column: 1; padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
 .head .colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }
-.colTitle { grid-column: 2; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* REG-144: 1px at rest — the mock's 2px frozen-column divider is overridden */
+.colTitle { grid-column: 2; }
 /* 128 at rest (mock); "Sent for Approval" (never shown in a mock cell) needs ~138, so the TRACK grows to its content and the fluid Title absorbs it (REG-176, head + rows together REG-180). */
 .colStatus { grid-column: 3; }
 .colTotal { grid-column: 4; }
@@ -77,13 +77,16 @@
 /* Frozen first block (REG-430, the listing's .pin): Selection + Title stick to the left edge, carry the row's own fill so the
    scrolled columns pass underneath, and Title — the last frozen cell — draws the 1px edge at rest (REG-144) and the group's
    rightward shadow only while the frame is scrolled. */
-.head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: sticky; z-index: 2; background: var(--om-color-surface-default); }
-.colSel { left: 0; }
-.colTitle { left: 40px; clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
-.head .colSel, .head .colTitle { z-index: 3; }
-.row:hover .colSel, .row:hover .colTitle { background: var(--om-color-surface-bg); }
-.row[data-selected] .colSel, .row[data-selected] .colTitle { background: var(--om-color-primary-variant); }
-.frame[data-scrolled] .colTitle { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
+
+/* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
+   `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle); }   /* 0,2,0 — outranks the head cell's own `position: relative` */
+.head .pin { z-index: 3; }
+.row:hover .pin { background: var(--om-color-primary-variant); }
+.row[data-selected] .pin { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.frame[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
 .colClient { grid-column: 3; }
 .card[data-client] .colStatus { grid-column: 4; }
 .card[data-client] .colTotal { grid-column: 5; }
@@ -101,7 +104,7 @@
 .row { display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }   /* grid-auto-rows 100%: the cells fit the 64, never 65 (REG-431) */
 .card > .row:last-child, .card > .row:last-child .colSel { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* the fill's corners follow the card's (REG-431) */
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* same tracks as the head — no per-row drift (REG-180) */
-.row:hover { background: var(--om-color-surface-bg); }                    /* frame 200 hover row: fill #f2f2f2 */
+.row:hover { background: var(--om-color-primary-variant); }                    /* frame 200 hover row: fill #f2f2f2 */
 .row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff — tasks frame 192 (build plan) */
 .cell {
   display: flex; align-items: center;
@@ -118,7 +121,13 @@
 
 /* Title cell "Cell / Two line": Cell Data V g4 — Name 14/Bold + "OM-10001 · Private" 12/Regular secondary (H g8). */
 .titleData { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; flex: 1; }
-.title { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The title is the row's open affordance, as the listing's lead name (table.module.css .name, REG-349 / REG-450, owner 2026-09-16:
+   "hover state is inconsistent compared to lead listing where there is underline and highlight on the names and font emphasis"):
+   14 bold at rest, primary + underline on row hover, a button that opens the record. */
+.title { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; border: 0; background: none; padding: 0; cursor: pointer; text-align: left; border-radius: var(--om-radius-1); text-decoration: none; text-underline-offset: 2px; text-decoration-thickness: 1px; transition: color var(--motion-hover); }
+.row:hover .title, .title:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.title:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 /* Contained like its .title sibling: a Title track under ~153px used to let this nowrap line paint across the column
    rule onto Status. It clips (no ellipsis — text-overflow does not reach a flex container's items); at the mocked
    319 track the full "OM-10001 · Private" still fits with room to spare. */
@@ -246,7 +255,7 @@
     background: none; border: 0; box-shadow: none; border-radius: 0;
   }
   /* The card layout places every cell itself: the frozen block and the parked actions give way. */
-  .head .colSel, .head .colTitle, .row .colSel, .row .colTitle { position: static; clip-path: none; box-shadow: none; background: none; }
+  .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
   .actions { position: absolute; grid-area: auto; width: auto; height: auto; transform: none; }   /* grid-area auto: an absolute child placed in a grid area is contained by that area (the title line); released, the card's own box contains it */
   .actionsInner { position: static; transform: none; }
   .row {
@@ -294,3 +303,6 @@
     padding-inline: var(--om-spacing-3);
   }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }

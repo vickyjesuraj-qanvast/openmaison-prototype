@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox } from '@/components/ds'
+import { useColumnDrag } from '@/components/om/column-drag'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -126,7 +127,7 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 }
 
 export function ItemsTable({
-  items, priceBook, view, density, columns, details, labels, selected, collapsedBuckets, showFull, nextNumber, h,
+  items, priceBook, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onViewPriceBook, onExport, addInputRef, addOpenTick,
 }: {
   items: QuoteItem[]
@@ -134,6 +135,8 @@ export function ItemsTable({
   view: ItemsView
   density: ItemsDensity
   columns: ColumnKey[]
+  /** A head dragged to a new place (REG-462): the visible keys in their new order. */
+  onReorder: (keys: ColumnKey[]) => void
   details: ColumnSettings['details']
   labels: { rooms: string[]; categories: string[]; sections: string[] }
   selected: Set<string>
@@ -204,6 +207,7 @@ export function ItemsTable({
   }, [columns, stored, fit])
   const itemStyle: CSSProperties | undefined = colW.item ? { width: colW.item } : undefined
   const groups = items.filter((i) => i.kind === 'group')
+  const D = useColumnDrag(columns.map((key) => ({ key })), (keys) => onReorder(keys as ColumnKey[]))   /* drag a head to reorder (REG-462); the frozen blocks and Total are not in the list */
   const allIds = items.map((i) => i.id)
   const allOn = allIds.length > 0 && allIds.every((id) => selected.has(id))
   const [drag, setDrag] = useState<{ id: string; over: string | null; where: 'before' | 'after' | null } | null>(null)
@@ -234,7 +238,7 @@ export function ItemsTable({
             {details.autonumber ? <div role="columnheader" className={`${styles.cell} ${styles.colNum}`}>#</div> : null}
             <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item<ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} /></div>
             {columns.map((c) => (
-              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} style={colW[c] ? { width: colW[c] } : undefined}>
+              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} data-col={c} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...D.style(c) }} {...D.head(c)}>
                 {COLUMN_LABEL[c]}<ColumnResizer table={ITEMS_TABLE} column={c} label={COLUMN_LABEL[c]} min={MIN_COL} />
               </div>
             ))}

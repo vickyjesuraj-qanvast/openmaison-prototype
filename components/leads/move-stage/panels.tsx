@@ -116,12 +116,12 @@ function LogCard({
         <Icon name="info" size={16} weight={300} />
         <span>This log is saved under Lead Details › Notes › Contact Log.</span>
       </p>
-      <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={log.channel}
+      <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={log.channel}
                    onChange={(v) => onChange({ channel: v })} error={err('channel')} />
       <div className={styles.fieldPair}>
-        <DateTimeField label="Date & Time" value={log.when} today={today}
+        <DateTimeField label="Date & Time" value={log.when} required today={today}
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
-        <TextField label="Outcome" value={log.outcome} mode="select" options={OUTCOMES}
+        <TextField label="Outcome" required value={log.outcome} mode="select" options={OUTCOMES}
                    onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
       </div>
       {/* (REG-319 / REG-324, mock 781:58313) The optional schedule block — heading + helper (V g4), then the pair — appears
@@ -207,9 +207,9 @@ function MeetingCard({
     <LogShell index={index} collapsed={!!log.collapsed} onToggle={() => onChange({ collapsed: !log.collapsed })}
               readOnly={readOnly} onAutoFill={onAutoFill} onEdit={onEdit} onDelete={onDelete}>
       <div className={styles.fieldPair}>
-        <TextField label="Where" value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
+        <TextField label="Where" required value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
                    onChange={(v) => onChange({ where: v })} error={err('where')} />
-        <DateTimeField label="Date & Time" value={log.when} today={today}
+        <DateTimeField label="Date & Time" value={log.when} required today={today}
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
       </div>
       {/* (REG-325, 780:90234 updated) Remarks before the rule; the Attach row is the log's last section, its link "Attach". */}

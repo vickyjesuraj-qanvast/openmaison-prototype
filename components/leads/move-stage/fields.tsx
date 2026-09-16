@@ -12,12 +12,12 @@ export { TextField } from '@/components/om/text-field'
 export { DateField, DateTimeField } from '@/components/om/date-field'
 
 export function ChoiceChips({
-  options, value, onChange, label, error,
-}: { options: readonly string[]; value: string | null; onChange: (v: string) => void; label: string; error?: string }) {
+  options, value, onChange, label, error, required = false,
+}: { options: readonly string[]; value: string | null; onChange: (v: string) => void; label: string; error?: string; required?: boolean }) {
   const ro = useReadOnly()
   return (
     <div className={styles.chipGroup} data-error={error || undefined}>
-      <span className={styles.mutedLabel} data-error={error || undefined}>{label}</span>
+      <span className={styles.mutedLabel} data-error={error || undefined}>{required ? `${label}*` : label}</span>
       <div className={styles.chips} role="radiogroup" aria-label={label} aria-invalid={!!error || undefined} aria-disabled={ro || undefined}>
         {options.map((o) => (
           <button key={o} type="button" role="radio" aria-checked={o === value}

@@ -101,7 +101,7 @@
 .hTune:hover { color: var(--om-color-on-surface-default); }
 
 /* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
-.colName { grid-column: 1; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the mock's full-height rule after Name (x 494) — the frozen-column edge (REG-144, quotes-table.module.css .colTitle) */
+.colName { grid-column: 1; }   /* the mock's full-height rule after Name (x 494) — the frozen-column edge (REG-144, quotes-table.module.css .colTitle) */
 .colCredits { grid-column: 2; }
 .colBudget { grid-column: 3; }
 .colType { grid-column: 4; }
@@ -114,7 +114,7 @@
   height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
   transition: background-color var(--motion-hover);
 }
-.row:hover { background: var(--om-color-surface-bg); }   /* hover row fill #f2f2f2 — the quotes / contracts hover row (209 shows the hover button only) */
+.row:hover { background: var(--om-color-primary-variant); }   /* hover row fill #f2f2f2 — the quotes / contracts hover row (209 shows the hover button only) */
 .cell {
   display: flex; align-items: center;
   min-width: 0;
@@ -164,10 +164,16 @@
 .actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
 .row:hover .actions, .actions:focus-within { opacity: 1; pointer-events: auto; }
 /* Name frozen on the left at every width (REG-430; ≤1024 since REG-269): opaque, the hover fill survives, the shadow only while scrolled. */
-.colName { position: sticky; left: 0; z-index: 2; background: var(--om-color-surface-default); clip-path: inset(0 -6px 0 0); transition: box-shadow var(--motion-toggle); }
-.head .colName { z-index: 3; }
-.row:hover .colName { background: var(--om-color-surface-bg); }
-.card[data-scrolled] .colName { box-shadow: var(--om-shadow-frozen-column); }
+
+/* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
+   `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle); }   /* 0,2,0 — outranks the head cell's own `position: relative` */
+.head .pin { z-index: 3; }
+.row:hover .pin { background: var(--om-color-primary-variant); }
+.row[data-selected] .pin { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
 /* White fill + level-1 shadow live on a wrapper so the DS button keeps its own hover state. */
 .float {
   display: inline-flex;
@@ -258,7 +264,7 @@
   /* The rows are subgrid children, so collapsing the row alone changed nothing — the card's own six tracks won.
      Both collapse together, and the card stops scrolling sideways. */
   .card { grid-template-columns: 1fr; overflow-x: visible; border: 0; }   /* the card stops scrolling sideways */
-  .colName { position: static; clip-path: none; box-shadow: none; }
+  .colName, .pin { position: static; clip-path: none; box-shadow: none; border-right: 0; }
   .actions { position: static; grid-area: auto; grid-column: 1; justify-self: stretch; width: auto; height: auto; }   /* joins the stack as its last line, from the card's left edge like every other line (a floating box drew over the budget line) */
   .actionsInner { position: static; transform: none; flex-wrap: wrap; gap: var(--om-spacing-2); }
   /* The desktop row is a fixed 64px; stacked, its cells need whatever they need, or each row draws over the next. */
@@ -305,3 +311,5 @@
   }
   .actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); flex-wrap: nowrap; gap: var(--om-spacing-3); }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */

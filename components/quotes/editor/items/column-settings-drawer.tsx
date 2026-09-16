@@ -1,81 +1,37 @@
 'use client'
 
-import { useState, type KeyboardEvent } from 'react'
-import { Reorder, useDragControls } from 'motion/react'
-import { Button, Switch } from '@/components/ds'
-import { Drawer } from '@/components/om/drawer'
-import { Icon } from '@/components/om/icon'
-import { Tooltip } from '@/components/om/tooltip'
+import { ColumnSettingsDrawer as SharedDrawer, type ColumnItem } from '@/components/om/column-settings'
 import { useComingSoon } from '@/components/om/snackbar'
-import { COLUMN_LABEL, RENDERABLE_COLUMNS, type ColumnKey, type ColumnSettings } from '@/lib/quotes/items-model'
-import styles from './items-section.module.css'
+import styles from '@/components/om/column-settings.module.css'
+import { COLUMN_LABEL, DEFAULT_COLUMNS, RENDERABLE_COLUMNS, type ColumnKey, type ColumnSettings } from '@/lib/quotes/items-model'
 
 /**
- * Column settings (1271:41169): "Toggle columns you want to see. Drag columns up or down to reorder them." — ITEM DETAILS
- * (description · images · autonumber) then MANAGE COLUMNS, each row a handle, the label and a Switch; footer Add New Column
- * (coming soon) · Save. Columns the table cannot draw yet stay in the list and answer coming soon when switched on.
+ * The Items table's Column settings (1271:41169; REG-454): the shared drawer, no Pinned group — selection · # · Item and Total
+ * are the table's fixed frozen blocks (owner 2026-09-16: "keep its fixed selection") — "Add New Column" (coming soon) and
+ * Reset to default, which also forgets dragged widths (the caller's `onReset`). Columns the table cannot draw yet stay listed
+ * and answer coming soon. The mock's "Item details" rows (description · images · autonumber) stay as information but carry no
+ * switch (REG-459, owner 2026-09-16: they belong to the frozen Item block, which always shows all three — "remove only the
+ * switch and retain the info"); the stored `details` ride along untouched.
  */
-export function ColumnSettingsDrawer({ open, value, onClose, onSave }: { open: boolean; value: ColumnSettings; onClose: () => void; onSave: (v: ColumnSettings) => void }) {
+export function ColumnSettingsDrawer({ open, value, onClose, onSave, onReset }: { open: boolean; value: ColumnSettings; onClose: () => void; onSave: (v: ColumnSettings) => void; onReset: () => void }) {
   const comingSoon = useComingSoon()
-  const [draft, setDraft] = useState<ColumnSettings>(value)
-  const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) setDraft(value) }   // every opening starts from what the table shows
-  const setDetail = (k: keyof ColumnSettings['details'], on: boolean) => setDraft((d) => ({ ...d, details: { ...d.details, [k]: on } }))
-  const setCol = (key: ColumnKey, on: boolean) => {
-    if (on && !RENDERABLE_COLUMNS.includes(key)) { comingSoon(); return }
-    setDraft((d) => ({ ...d, columns: d.columns.map((c) => (c.key === key ? { ...c, on } : c)) }))
-  }
-  /* Keyboard reorder (REG-417): ArrowUp / ArrowDown on a row's handle swaps it with its neighbour — the pointer drag's second channel. */
-  const move = (key: ColumnKey, dir: -1 | 1) => setDraft((d) => {
-    const i = d.columns.findIndex((c) => c.key === key); const j = i + dir
-    if (i < 0 || j < 0 || j >= d.columns.length) return d
-    const columns = [...d.columns]; const [row] = columns.splice(i, 1); columns.splice(j, 0, row!)
-    return { ...d, columns }
-  })
-  return (
-    <Drawer open={open} title="Settings" onClose={onClose} label="Column settings"
-            footer={<><Button variant="secondary" appearance="outlined" onPress={comingSoon}>Add New Column</Button><Button onPress={() => { onSave(draft); onClose() }}>Save</Button></>}>
-      <div className={styles.settings}>
-        <p className={styles.settingsHelp}>Toggle columns you want to see. Drag columns up or down to reorder them.</p>
-        <div className={styles.setGroup}>
-          <div className={styles.eyebrow}>Item details</div>
-          <div className={styles.setList}>
-            {([['description', 'Show item description'], ['images', 'Show images'], ['autonumber', 'Show autonumber']] as const).map(([k, label]) => (
-              <div key={k} className={styles.setRow}>
-                <span className={styles.setLabel}>{label}</span>
-                <Switch isSelected={draft.details[k]} onChange={(v: boolean) => setDetail(k, v)} aria-label={label} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className={styles.setDivider} />
-        <div className={styles.setGroup}>
-          <div className={styles.eyebrow}>Manage columns</div>
-          <Reorder.Group as="ul" axis="y" values={draft.columns.map((c) => c.key)} className={styles.setList}
-                         onReorder={(keys: ColumnKey[]) => setDraft((d) => ({ ...d, columns: keys.map((k) => d.columns.find((c) => c.key === k)!) }))}>
-            {draft.columns.map((c) => <ColumnRow key={c.key} col={c} onToggle={(on) => setCol(c.key, on)} onMove={(dir) => move(c.key, dir)} />)}
-          </Reorder.Group>
-        </div>
-      </div>
-    </Drawer>
+  const toItems = (cols: ColumnSettings['columns']): ColumnItem[] => cols.map((c) => ({ key: c.key, label: COLUMN_LABEL[c.key], visible: c.on, pinned: false }))
+  const extras = (
+    <div className={styles.group}>
+      <div className={styles.eyebrow}>Item details</div>
+      <ul className={styles.list} aria-label="Item details, always shown">
+        {/* (owner 2026-09-16) The frozen block's two columns, named as the table heads them: "# Autonumber" · "Item". */}
+        {['# Autonumber', 'Item'].map((label) => (
+          <li key={label} className={styles.row}><span className={styles.label}>{label}</span></li>
+        ))}
+      </ul>
+      <div className={styles.divider} />
+    </div>
   )
-}
-
-function ColumnRow({ col, onToggle, onMove }: { col: { key: ColumnKey; on: boolean }; onToggle: (on: boolean) => void; onMove: (dir: -1 | 1) => void }) {
-  const controls = useDragControls()
-  const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); onMove(-1) }
-    if (e.key === 'ArrowDown') { e.preventDefault(); onMove(1) }
-  }
   return (
-    <Reorder.Item as="li" value={col.key} dragListener={false} dragControls={controls} className={styles.setRow}>
-      <Tooltip label="Drag to reorder">
-        <button type="button" className={styles.setHandle} aria-label={`Drag to reorder ${COLUMN_LABEL[col.key]} (arrow keys move it)`} onPointerDown={(e) => controls.start(e)} onKeyDown={onKey}>
-          <Icon name="drag_indicator" size={20} weight={300} />
-        </button>
-      </Tooltip>
-      <span className={styles.setLabel}>{COLUMN_LABEL[col.key]}</span>
-      <Switch isSelected={col.on} onChange={onToggle} aria-label={COLUMN_LABEL[col.key]} />
-    </Reorder.Item>
+    <SharedDrawer open={open} onClose={onClose} columns={toItems(value.columns)} extras={extras} anchorNote="Total stays at the right." addColumn={comingSoon}
+                  guardToggle={(key, on) => { if (on && !RENDERABLE_COLUMNS.includes(key as ColumnKey)) { comingSoon(); return false } return true }}
+                  onSave={(next) => onSave({ details: value.details, columns: next.map((c) => ({ key: c.key as ColumnKey, on: c.visible })) })}
+                  onReset={() => { onReset(); return toItems(DEFAULT_COLUMNS.columns) }} />
   )
 }

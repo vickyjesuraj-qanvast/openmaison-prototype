@@ -26,6 +26,8 @@ export type FilesToolbarProps = {
   onNew: (kind: 'local' | 'company' | 'drive') => void
   /** filter_list (931:40164) — no Files filter is mocked; the caller answers coming soon. */
   onFilter: () => void
+  /** Column settings (REG-454) — only in the list view, and never on a phone. */
+  onColumns?: () => void
   view: FilesView
   onView: (view: FilesView) => void
   /** Header kebab (931:40139, 200×46): Deleted Files. */
@@ -42,7 +44,7 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onNew, onFilter, view, onView, onMenu }: FilesToolbarProps) {
+export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -119,6 +121,12 @@ export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onN
         <Tooltip label="Filters">
           <IconButton icon="filter_list" label="Filters" className={styles.touchBtn} onClick={onFilter} />
         </Tooltip>
+        {onColumns ? (
+          /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
+          <Tooltip label="Column settings">
+            <IconButton icon="tune" label="Column settings" onClick={onColumns} className={styles.touchBtn} />
+          </Tooltip>
+        ) : null}
         {/* Segmented Icon Button 931:40165: Start = view_list (frames 87/90 selected), End = view_kanban (frame 85 selected → grid). */}
         <span className={styles.viewToggle}>
           <SegmentedIconToggle

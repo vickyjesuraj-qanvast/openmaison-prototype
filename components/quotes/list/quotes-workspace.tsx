@@ -22,6 +22,10 @@ import type { Quote } from '@/lib/db/schema'
 import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { StudioQuotesData } from '@/lib/quotes/list'
 import pageStyles from '@/app/leads/leads.module.css'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { quoteColumnDefs, quoteShowApproval } from '@/components/leads/quotes/quotes-table'
 import styles from './quotes-workspace.module.css'
 
 /**
@@ -41,6 +45,12 @@ export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<QuoteFilters>(EMPTY_QUOTE_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const phone = useMediaQuery(MOBILE)
+  const showApproval = quoteShowApproval(data.quotes, approval)
+  const quoteDefs = useMemo(() => quoteColumnDefs(true, showApproval), [showApproval])
+  const columnPrefs = useTableColumns('studio-quotes', quoteDefs, phone)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const filterCount = activeQuoteFilterCount(filters)
   const visible = useMemo(() => {
@@ -86,13 +96,13 @@ export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title="Quotes" />
         <div className={styles.frame}>
-          <QuotesToolbar query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={comingSoon} />
+          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={comingSoon} />
           {quotes.length === 0 ? (
             <QuotesEmpty onFromScratch={() => setCreateOpen(true)} onFromTemplate={() => setCreateOpen(true)} />
           ) : nothingMatches ? (
             <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
           ) : (
-            <QuotesTable quotes={visible} now={now} approval={approval} selected={selected} onSelect={setSelected}
+            <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} quotes={visible} now={now} approval={approval} selected={selected} onSelect={setSelected}
                          onStatus={onStatus} onDue={openDue} onView={openQuote} onRowMenu={rowMenu}
                          clientOf={(q) => ({ name: nameOf.get(q.id) ?? '', href: `/leads/${q.leadId}/quotes` })} />
           )}
@@ -100,6 +110,7 @@ export function QuotesWorkspace({ data }: { data: StudioQuotesData }) {
         <DetailBulkBar count={selected.size} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting(selectedIds) }]} onClear={() => setSelected(new Set())} />
         <DatePicker open={!!dueFor} anchorRef={dueAnchor} anchorKey={dueFor?.quoteId ?? ''} value={dueQuote?.dueAt ?? null} today={new Date(now)} label="Due date"
                     onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }} onClose={() => setDueFor(null)} />
+        <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={(v) => { setFilters(v); setFiltersOpen(false) }} onClose={() => setFiltersOpen(false)} />
         <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => setCreateOpen(false)}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}

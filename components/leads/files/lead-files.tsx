@@ -21,6 +21,10 @@ import { TrashDialog } from './trash-dialog'
 import { MoveDialog } from './move-dialog'
 import { DeletedFilesSheet } from './deleted-files-sheet'
 import { UploadToast } from './upload-toast'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { FILE_COLUMN_DEFS } from './files-table'
 import styles from './lead-files.module.css'
 
 /** Folder card kebab (931:40130): Open · Move · Rename · Delete. */
@@ -87,6 +91,10 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
 
   /* ── overlays ── */
   const [nameDialog, setNameDialog] = useState<Shown<NameDialogState> | null>(null)
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const phone = useMediaQuery(MOBILE)
+  const columnPrefs = useTableColumns('lead-files', FILE_COLUMN_DEFS, phone)
   const [trash, setTrash] = useState<Shown<string[]> | null>(null)
   const [move, setMove] = useState<Shown<string[]> | null>(null)
   const [deletedOpen, setDeletedOpen] = useState(false)
@@ -169,7 +177,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
 
   return (
     <div className={styles.tab}>
-      <FilesToolbar
+      <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)}
         folder={folder} onBack={back}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
         query={query} onQuery={setQuery}
@@ -189,7 +197,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
           onFolderMenu={itemMenu} onFileMenu={itemMenu}
         />
       ) : (
-        <FilesTable
+        <FilesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           rows={visible}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
@@ -210,6 +218,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         ]}
         onClear={clearSelection}
       />
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <NameDialog
         open={!!nameDialog?.open}
         title={nameDialog?.payload.mode === 'rename' ? (isFolder(nameDialog.payload.target) ? 'Rename Folder' : 'Rename File') : 'Create Folder'}

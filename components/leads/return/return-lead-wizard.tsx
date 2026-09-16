@@ -200,15 +200,15 @@ export function ReturnLeadWizard({
                   <div className={styles.columns}>
                     <div className={styles.form}>
                       {/* Text Field 48 select "Select a reason" (expand_more) */}
-                      <TextField label="Select a reason" mode="select" options={REASONS} value={reason} onChange={setReason} error={shown.reason} />
+                      <TextField label="Select a reason" required mode="select" options={REASONS} value={reason} onChange={setReason} error={shown.reason} />
                       {reason ? (
                         <>
                           {/* Text Field 48 "Date and time of first outreach" (trailing event → date-time picker) */}
-                          <DateTimeField label="Date and time of first outreach" value={outreach} today={today} onChange={setOutreach} error={shown.outreach} />
+                          <DateTimeField label="Date and time of first outreach" required value={outreach} today={today} onChange={setOutreach} error={shown.outreach} />
 
                           {/* [V g10] "Number of attempts made" · row H g10 of five Buttons 86×48 */}
                           <div className={styles.group} role="group" aria-label="Number of attempts made">
-                            <span className={styles.groupLabel}>Number of attempts made</span>
+                            <span className={styles.groupLabel}>Number of attempts made*</span>
                             <div className={styles.attemptsWrap}>
                               <div className={styles.attempts}>
                                 {ATTEMPTS.map((a) => (

@@ -45,7 +45,7 @@ import type { LeadDetail } from '@/lib/leads/detail'
 import { returnTags } from '@/lib/leads/return-tags'
 import { type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
-import { displayDate, moneyCompact, phoneDigits, phoneDisplay } from '@/lib/format'
+import { moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
 import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import styles from './overview.module.css'
 
@@ -89,12 +89,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const [confirmMove, setConfirmMove] = useState<Stage | null>(null)
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('Property delay')
-  const [holdDuration, setHoldDuration] = useState('3 months')
   const [lostReason, setLostReason] = useState('Property too far')
-  const holdFollowUp = useMemo(() => {
-    const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
-    return displayDate(new Date((holdOpenedAt || 0) + days * 86400000))
-  }, [holdDuration, holdOpenedAt])
 
   /* A flexible-mode quick move used to be awaited RAW here: `void quickMove(stage)` with nothing around it, so a
      server action that threw became an unhandled rejection — no snackbar, no change, nothing on screen. The listing's
@@ -116,7 +111,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     const intent = stageIntent(lead, stage, stageMovement)
     switch (intent.kind) {
       case 'none': return
-      case 'hold': setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(true); return
+      case 'hold': setHoldReason('Property delay'); setHoldOpenedAt(Date.now()); setOnHold(true); return
       case 'lost': setLostReason('Property too far'); setLost(true); return
       case 'blocked': snackbar({ message: intent.message }); return
       case 'confirm-resume': setConfirmMove(intent.stage); return
@@ -215,7 +210,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           title={lead.name}
           chips={
             <>
-              <MetaChip icon="call">{lead.phone}</MetaChip>
+              <MetaChip icon="call">{phoneLocal(lead.phone)}</MetaChip>
               <MetaChip icon="money_bag">{moneyCompact(lead.budgetMinor)}</MetaChip>
               <MetaChip icon="home">{lead.propertyType}</MetaChip>
               {/* Green marks a Qanvast lead — the source that behaves differently (Return Lead, Qanvast Ops).
@@ -367,7 +362,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onClose={() => setStageMenu(null)}
         blocked={(stage) => blockedReason(lead, stage, stageMovement)}
         current={lead.stage as Stage}
-        subject={`${lead.name} · ${lead.phone}`}
+        subject={`${lead.name} · ${phoneLocal(lead.phone)}`}
         doneThrough={journeyIdx(lead)}
         onSelect={(stage) => { setStageMenu(null); requestStageChange(stage) }}
       />
@@ -419,15 +414,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         open={onHold}
         onClose={() => setOnHold(false)}
         reason={holdReason} setReason={setHoldReason}
-        duration={holdDuration} setDuration={setHoldDuration}
-        followUp={holdFollowUp}
-        onSave={(otherReason) => {
+        openedAt={holdOpenedAt}
+        onSave={(otherReason, followUpAt, duration) => {
           setOnHold(false)
-          const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
           void run(async () => {
             await moveStage({
               leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
-              payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
+              payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration, followUpAt },
               tasks: [],
             })
             snackbar({ message: 'Moved to On Hold' })

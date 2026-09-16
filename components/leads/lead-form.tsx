@@ -14,7 +14,7 @@ import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
 import { bottomSheet, modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { useSheetLayout } from '@/components/om/sheet'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
-import { parseInputDate, groupDigits, inputDate, phoneDigits } from '@/lib/format'
+import { parseInputDate, groupDigits, inputDate, phoneDigits, phoneTyped } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
@@ -109,13 +109,14 @@ export function validateLeadForm(data: LeadFormData, requireAssignee = false): L
    app's one phone rule: `digitsOnly(v).slice(0, 8)` turned a pasted "+65 9123 4567" into "65912345" — the country
    code ate the number. `maxLength` is gone with it: the browser truncated a paste to 8 raw characters ("+65 9123")
    before `phoneDigits` could ever see the country code. Typing is still capped at 8 by the slice below, so the
-   value the field can hold is unchanged. */
+   value the field can hold is unchanged. The box SHOWS the digits grouped as they are typed — "9123 4", "9123 4567"
+   (REG-456, user feedback 2026-09-16) — while `value` stays the bare digits the rule above produces. */
 function PhoneField({ value, onChange, error, inputRef }: {
   value: string; onChange: (v: string) => void; error?: string; inputRef?: RefObject<HTMLInputElement | null>
 }) {
   return (
     <TextField
-      label="Lead phone number*" value={value} error={error} inputRef={inputRef}
+      label="Lead phone number" required value={phoneTyped(value)} error={error} inputRef={inputRef}   /* (REG-456) shown "9123 4567", stored "91234567" */
       type="tel" inputMode="tel" numeric="digits" trailingIcon={null}
       leading={<span className={styles.prefix}>+65<span className={styles.divider} /></span>}
       onChange={(v) => onChange(phoneDigits(v).slice(0, 8))}
@@ -290,7 +291,7 @@ export function LeadFormModal({
             <div ref={scrollRef} className={styles.body}>
               <div className={styles.section}>
                 <div className={styles.fieldWrap} data-field="name">
-                  <TextField label="Lead name*" value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef} />
+                  <TextField label="Lead name" required value={data.name} onChange={set('name')} trailingIcon={null} error={errors.name} inputRef={nameRef} />
                 </div>
                 <div className={styles.fieldWrap} data-field="phone">
                   <PhoneField value={data.phone} onChange={set('phone')} error={errors.phone} inputRef={phoneRef} />

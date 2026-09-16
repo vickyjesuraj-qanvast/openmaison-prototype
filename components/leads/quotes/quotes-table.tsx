@@ -6,8 +6,11 @@ import { Button, Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import menuStyles from '@/components/leads/menus.module.css'
-import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
+import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
+import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
+import { useRef } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -35,22 +38,32 @@ export type QuotesTableProps = {
   onRowMenu: (quote: Quote, action: QuoteRowAction) => void
   /** Tools › Quotes (REG-422): the studio-wide list adds a Client column after Title — the lead the quote belongs to, linked. */
   clientOf?: (quote: Quote) => { name: string; href: string } | null
+  /** The visible columns in the user's order (useTableColumns, REG-454). */
+  columns: readonly TableColumn[]
+  /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
+  onReorder: (keys: string[]) => void
 }
 
 /* Column order + head copy — exactly as the mock types it (910:36323, spec 01). Every head carries unfold_more 16.
    Approval Date is part of the approval lifecycle, so it is dropped with it (see `showApproval` below). */
 /** The card's mocked tracks by head key (quotes-table.module.css) — the user's dragged widths replace them (REG-427). */
-const TRACK: Record<string, string> = { sel: '40px', title: 'minmax(317px, 1fr)', client: '180px', status: 'minmax(128px, max-content)', total: '120px', due: '120px', created: '120px', sent: '120px', updated: '120px', approval: '157px' }
-const HEADS: { key: string; label: string; col: string | undefined }[] = [
-  { key: 'title', label: 'Title', col: styles.colTitle },
-  { key: 'status', label: 'Status', col: styles.colStatus },
-  { key: 'total', label: 'Total', col: styles.colTotal },
-  { key: 'due', label: 'Due', col: styles.colDue },
-  { key: 'created', label: 'Created', col: styles.colCreated },
-  { key: 'sent', label: 'Sent', col: styles.colSent },
-  { key: 'updated', label: 'Updated', col: styles.colUpdated },
-  { key: 'approval', label: 'Approval Date', col: styles.colApproval },
+/** The table's columns (910:36323, spec 01): Title locked first; Client only where a caller names one (Tools › Quotes); Approval Date
+    only with the approval lifecycle. The user's order, visibility and pins come from Column settings (REG-454). */
+export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
+  { key: 'title', label: 'Title', track: 'minmax(317px, 1fr)', locked: true },
+  { key: 'client', label: 'Client', track: '180px' },
+  { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
+  { key: 'total', label: 'Total', track: '120px' },
+  { key: 'due', label: 'Due', track: '120px' },
+  { key: 'created', label: 'Created', track: '120px' },
+  { key: 'sent', label: 'Sent', track: '120px' },
+  { key: 'updated', label: 'Updated', track: '120px' },
+  { key: 'approval', label: 'Approval Date', track: '157px' },
 ]
+/** Whether the Approval Date column exists at all — the lifecycle has it, or a quote was approved before the setting was switched off. */
+export const quoteShowApproval = (quotes: readonly Pick<Quote, 'approvedAt'>[], approval: QuoteApproval) => quoteStatuses(approval).includes('Approved') || quotes.some((q) => q.approvedAt)
+export const quoteColumnDefs = (withClient: boolean, withApproval: boolean) => QUOTE_COLUMN_DEFS.filter((d) => (d.key !== 'client' || withClient) && (d.key !== 'approval' || withApproval))
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, updated: styles.colUpdated, approval: styles.colApproval }
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
    ~560px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
@@ -65,7 +78,7 @@ const MENU_ITEMS = 6
  * Structure copied from components/leads/tasks/tasks-table.tsx: every icon-only control carries a Tooltip (REG-75);
  * sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf }: QuotesTableProps) {
+export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf, columns, onReorder }: QuotesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
@@ -74,11 +87,12 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   /* The head list follows the studio's lifecycle like the status menu does (REG-214): a studio that does not review
      quotes internally has no approval date to show, and the column headed one for every row. A quote approved before
      the setting was switched off keeps its date visible — the same courtesy the row menu pays a retired status. */
-  const showApproval = statuses.includes('Approved') || quotes.some((q) => q.approvedAt)
-  const withClient = clientOf ? [HEADS[0]!, { key: 'client', label: 'Client', col: styles.colClient }, ...HEADS.slice(1)] : HEADS
-  const heads = showApproval ? withClient : withClient.filter((h) => h.key !== 'approval')
+  const showApproval = quoteShowApproval(quotes, approval)
   const colWidths = useColumnWidths('lead-quotes')
-  const tracks = gridTracks([{ key: 'sel', track: TRACK.sel! }, ...heads.map((h) => ({ key: h.key, track: TRACK[h.key] ?? '120px' }))], colWidths)
+  const tracks = gridTemplateFor(columns, colWidths, '40px')
+  const headRow = useRef<HTMLDivElement>(null)
+  const L = useColumnLayout(columns, headRow, { leading: 40 })
+  const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   const allSelected = quotes.length > 0 && quotes.every((q) => selected.has(q.id))
@@ -92,27 +106,26 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   return (
     <div ref={frame} className={styles.frame} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-    <div className={styles.card} role="table" aria-label="Quotes" data-no-approval={showApproval ? undefined : ''} data-client={clientOf ? '' : undefined}
-         data-cols="lead-quotes" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}>
+    <div className={styles.card} role="table" aria-label="Quotes" data-cols="lead-quotes" style={{ '--tracks': tracks } as React.CSSProperties}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
-      <div className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
+      <div ref={headRow} className={styles.head} role="row">
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && quotes.some((q) => selected.has(q.id))} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
         </div>
-        {heads.map((h) => (
-          <div key={h.key} className={`${styles.hCell} ${h.col ?? ''}`} role="columnheader">
+        {columns.map((c) => (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
             {/* Sort is inert in this prototype — the head answers coming soon. */}
             <button type="button" className={styles.hSort} onClick={comingSoon}>
-              <span className={styles.hLabel}>{h.label}</span>
+              <span className={styles.hLabel}>{c.label}</span>
               <Icon name="unfold_more" size={16} />
             </button>
-            <ColumnResizer table="lead-quotes" column={h.key} label={h.label} min={h.key === 'title' ? 120 : 72} />
+            <ColumnResizer table="lead-quotes" column={c.key} label={c.label} min={c.key === 'title' ? 120 : 72} />
           </div>
         ))}
       </div>
 
       {quotes.map((quote) => (
-        <QuoteRowView
+        <QuoteRowView L={L}
           key={quote.id}
           quote={quote}
           now={now}
@@ -146,7 +159,7 @@ function QuoteRowView({
   quote, now, selected, onToggleSelect, statuses, showApproval,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onStatus, onDue, onView, onRowMenu, client,
+  onStatus, onDue, onView, onRowMenu, client, L,
 }: {
   quote: Quote
   now: number
@@ -166,6 +179,7 @@ function QuoteRowView({
   onDue: (quote: Quote, anchor: HTMLElement) => void
   onView: (quote: Quote) => void
   onRowMenu: (quote: Quote, action: QuoteRowAction) => void
+  L: ReturnType<typeof useColumnLayout>
 }) {
   const overdue = isQuoteOverdue(quote, now)
   const pick = (action: QuoteRowAction) => () => { onMenuClose(); onRowMenu(quote, action) }
@@ -174,14 +188,14 @@ function QuoteRowView({
   return (
     <div className={styles.row} role="row" data-selected={selected ? '' : undefined}>
       {/* Selection cell 40: checkbox 24/Light secondary → check_box 24 primary when selected. */}
-      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={selected} onChange={onToggleSelect} aria-label={`Select ${quote.title}`} />
       </div>
 
       {/* Title cell "Cell / Two line" (V g4): Name 14/Bold + "OM-10001 · Private" 12/Regular secondary (H g8). */}
-      <div className={`${styles.cell} ${styles.colTitle}`} role="cell">
+      <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
         <div className={styles.titleData}>
-          <span className={styles.title}>{quote.title}</span>
+          <button type="button" className={styles.title} onClick={() => onView(quote)}>{quote.title}</button>
           <span className={styles.sub}>
             <span>{quote.number}</span>
             <span>·</span>
@@ -192,13 +206,13 @@ function QuoteRowView({
       </div>
       {client ? (
         /* (REG-422) Client: the lead's name, a link to its Quotes tab. */
-        <div className={`${styles.cell} ${styles.colClient}`} role="cell">
+        <div className={`${styles.cell} ${styles.colClient} ${L.pinned('client') ? styles.pin : ''}`} role="cell" data-col="client" data-pin-edge={L.edge('client') || undefined} style={L.style('client')}>
           <Link href={client.href} className={styles.clientLink}>{client.name}</Link>
         </div>
       ) : null}
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu 910:36673 (all five, current marked). */}
-      <div className={`${styles.cell} ${styles.colStatus}`} role="cell">
+      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
         <span className={styles.statusWrap}>
           <button
             type="button" className={styles.statusBtn}
@@ -233,10 +247,10 @@ function QuoteRowView({
       </div>
 
       {/* Total: "S$70,000" — no space after S$ (910:36324). */}
-      <div className={`${styles.cell} ${styles.colTotal}`} role="cell">{`S$${money(quote.amountMinor)}`}</div>
+      <div className={`${styles.cell} ${styles.colTotal} ${L.pinned('total') ? styles.pin : ''}`} role="cell" data-col="total" data-pin-edge={L.edge('total') || undefined} style={L.style('total')}>{`S$${money(quote.amountMinor)}`}</div>
 
       {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}
-      <div className={`${styles.cell} ${styles.colDue}`} role="cell">
+      <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')}>
         {quote.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
                   aria-label={`Due ${displayDate(quote.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
@@ -252,10 +266,10 @@ function QuoteRowView({
       </div>
 
       {/* Created · Sent · Updated · Approval Date — "17 Jul ’26" 14/Regular, "-" when empty (910:36324). */}
-      <div className={`${styles.cell} ${styles.colCreated}`} role="cell">{displayDate(quote.createdAt)}</div>
-      <div className={`${styles.cell} ${styles.colSent}`} role="cell">{quote.sentAt ? displayDate(quote.sentAt) : '-'}</div>
-      <div className={`${styles.cell} ${styles.colUpdated}`} role="cell">{displayDate(quote.updatedAt ?? quote.createdAt)}</div>
-      {showApproval ? <div className={`${styles.cell} ${styles.colApproval}`} role="cell">{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div> : null}
+      <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(quote.createdAt)}</div>
+      <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>{quote.sentAt ? displayDate(quote.sentAt) : '-'}</div>
+      <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(quote.updatedAt ?? quote.createdAt)}</div>
+      {showApproval ? <div className={`${styles.cell} ${styles.colApproval} ${L.pinned('approval') ? styles.pin : ''}`} role="cell" data-col="approval" data-pin-edge={L.edge('approval') || undefined} style={L.style('approval')}>{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div> : null}
 
       {/* Row hover actions (910:36644 / 910:36709 "Hover button"): View + kebab, level-1 shadow, right 24 — tasks pattern with "View". */}
       <span className={styles.actions} data-open={menuOpen || undefined}>

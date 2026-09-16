@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
-import { isOverdue, moneySGD, relativeTime } from '@/lib/format'
+import { isOverdue, moneySGD, relativeTime, phoneLocal } from '@/lib/format'
 import styles from './lead-cards.module.css'
 
 export type LeadCardsProps = {
@@ -55,7 +55,7 @@ export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick,
               </span>
             </button>
             <p className={styles.info}>
-              <span>{highlightPhone(row.phone, query)}</span>
+              <span>{highlightPhone(phoneLocal(row.phone), query)}</span>
               <span className={styles.dot} aria-hidden>·</span>
               <span>{moneySGD(row.budgetMinor)}</span>
               <span className={styles.dot} aria-hidden>·</span>

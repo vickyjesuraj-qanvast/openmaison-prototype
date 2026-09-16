@@ -16,6 +16,8 @@ export type TasksToolbarProps = {
   /** Add Task menu (902:26678): Create New Task · Use Template. */
   onAdd: (kind: 'new' | 'template') => void
   onFilter: () => void
+  /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
+  onColumns?: () => void
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
   /** Header kebab (902:27154): Save all as Template · Manage Templates · Export all as... · Delete all. */
@@ -27,7 +29,7 @@ export type TasksToolbarProps = {
  * "All Tasks" · Add Task (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onMenu }: TasksToolbarProps) {
+export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu }: TasksToolbarProps) {
   const [menu, setMenu] = useState<'add' | 'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -69,6 +71,12 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, filterCount, onM
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
+        {onColumns ? (
+          /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
+          <Tooltip label="Column settings">
+            <IconButton icon="tune" label="Column settings" onClick={onColumns} className={styles.touchTarget} />
+          </Tooltip>
+        ) : null}
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton

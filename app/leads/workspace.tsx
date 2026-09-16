@@ -21,7 +21,10 @@ import { LeadCards } from '@/components/leads/lead-cards'
 import { MOBILE, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/leads/dropdown'
 import { AssignPopover } from '@/components/leads/assign-popover'
-import { CustomiseView } from '@/components/leads/customise-view'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { resetColumnPrefs, saveColumnPrefs, useColumnPrefs } from '@/lib/column-prefs'
+import { reorderColumns } from '@/components/om/column-drag'
+import { clearColumnWidths } from '@/lib/table-widths'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { LeadsEmptyState } from '@/components/leads/empty-state'
 import { StageDropdown } from '@/components/leads/stage-dropdown'
@@ -41,7 +44,7 @@ import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
 import { fetchLeadFilesForReturn, returnLead, undoReturn, type ReturnInput } from './return-actions'
-import { displayDate, money, phoneDisplay } from '@/lib/format'
+import { displayDate, money, phoneDisplay, phoneLocal } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 import { type Stage } from '@/lib/leads/enums'
 import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
@@ -70,17 +73,6 @@ const clampPos = (el: HTMLElement, w: number, h: number) => {
 const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 400, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
 const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
-/* Customise your view is the tall surface (752 at the mock's eight columns), so it clamps against its own
-   footprint: anchorRect's 460 is the Assign popover's, and it leaves the Save footer off screen once the
-   viewport drops under ~955px. The budget is the card's own CSS cap — min(756, 100dvh − 32), see
-   customise-view.module.css — so the card rides up only as far as it must and never overhangs the edge.
-   At 1440×1024 nothing clamps: top 203 under the gear, bottom 955, as 780:80275. */
-const CUSTOMISE_MAX = 756, EDGE = 16
-const customisePos = (el: HTMLElement) => {
-  const r = el.getBoundingClientRect()
-  const h = Math.min(CUSTOMISE_MAX, usableViewportHeight() - EDGE * 2)
-  return { el, top: Math.max(EDGE, Math.min(r.bottom + 4, usableViewportHeight() - h - EDGE)), left: clampAxis(r.left, 400, window.innerWidth) }
-}
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > usableViewportHeight() }
 
 function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement }: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
@@ -101,13 +93,13 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
      not in the row there. Server snapshot = desktop, so the markup hydrates as the mock and the width takes over. */
   const mobile = useMediaQuery(MOBILE)
   const setView = (v: ListingView) => { setChosenView(v); rememberView(v) }
-  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
+  const columns = useColumnPrefs<ColumnConfig>('leads', DEFAULT_COLUMNS)   // per user, in the browser (REG-454)
+  const [columnsOpen, setColumnsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
-  const [customise, setCustomise] = useState<{ el: HTMLElement; top: number; left: number } | null>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
   // An optimistic assignee set is released once the refreshed row carries it (render-phase adjust, like pendingDrop below); a failed action drops its entry in applyAssign.
   const settledAssignees = Object.keys(optimisticAssignees).filter((id) => {
@@ -125,7 +117,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [confirmMove, setConfirmMove] = useState<{ leadId: string; stage: Stage } | null>(null)   // linear: moving back needs no details, just a nod
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('Property delay')
-  const [holdDuration, setHoldDuration] = useState('3 months')
   const [lostReason, setLostReason] = useState('Property too far')
   const [deleting, setDeleting] = useState<string[] | null>(null)
   const [deletedOpen, setDeletedOpen] = useState(false)
@@ -174,7 +165,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const intent = stageIntent(lead, stage, stageMovement)
     switch (intent.kind) {
       case 'none': setPendingDrop(null); return
-      case 'hold': setHoldReason('Property delay'); setHoldDuration('3 months'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
+      case 'hold': setHoldReason('Property delay'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
       case 'lost': setLostReason('Property too far'); setLost(lead.id); return
       case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
       case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage }); return
@@ -243,13 +234,12 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     setTasksFor({ id: row.id, seq: t, el: anchor, ...tasksPos(anchor) })
   }
   // Popovers follow their cell while anything scrolls (user 2026-08-29) and close once the anchor leaves the viewport.
-  const anyAnchored = !!(stageMenu || assign || customise || tasksFor)
+  const anyAnchored = !!(stageMenu || assign || tasksFor)
   useEffect(() => {
     if (!anyAnchored) return
     const follow = () => {
       setStageMenu((s) => (s ? (offscreen(s.el) ? null : { ...s, ...stagePos(s.el) }) : s))
       setAssign((s) => (s ? (offscreen(s.el) ? null : { ...s, ...anchorRect(s.el) }) : s))
-      setCustomise((s) => (s ? (offscreen(s.el) ? null : { ...s, ...customisePos(s.el) }) : s))
       setTasksFor((s) => (s ? (offscreen(s.el) ? null : { ...s, ...tasksPos(s.el) }) : s))
     }
     document.addEventListener('scroll', follow, true)
@@ -276,10 +266,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     ? (optimisticAssignees[assign.id] ?? rows.find((r) => r.id === assign.id)?.assignees.map((m) => m.id) ?? [])
     : []
 
-  const holdFollowUp = useMemo(() => {
-    const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
-    return displayDate(new Date((holdOpenedAt || 0) + days * 86400000))
-  }, [holdDuration, holdOpenedAt])
 
   const aiSuggestions = useMemo(() => {
     return [
@@ -373,6 +359,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               query={query}
               onQueryChange={setQuery}
               onFilterClick={() => { setNowTick(Date.now()); setFiltersOpen(true) }}
+              onColumnsClick={mobile ? undefined : () => setColumnsOpen(true)}   /* the phone's cards place every cell themselves (REG-454) */
               filterCount={activeFilterCount(filters)}
               view={view}
               onViewChange={(v) => { setNowTick(Date.now()); setView(v) }}
@@ -423,6 +410,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               <LeadsTable
                 rows={filtered}
                 columns={columns}
+                onReorder={(keys) => saveColumnPrefs('leads', reorderColumns(columns, keys))}
                 unseenIds={unseenIds}
                 onRowSeen={markSeen}
                 onNameClick={(lead) => { markSeen(lead); router.push(`/leads/${lead.id}`) }}
@@ -431,8 +419,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onTaskClick={openTasks}
                 now={nowTick}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
-                onTuneClick={(anchor) => setCustomise((c) => (c ? null : customisePos(anchor)))}   // the gear toggles its popover (REG-153)
-                tuneOpen={!!customise}
                 query={query}
                 filterSort={filters.sort}
                 onEditRow={(row) => setLeadForm({ mode: 'edit', lead: row })}
@@ -469,7 +455,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           return row ? blockedReason(row, stage, stageMovement) : null
         }}
         current={rows.find((r) => r.id === stageMenu?.id)?.stage as Stage | undefined ?? null}
-        subject={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? `${row.name} · ${row.phone}` : undefined })()}
+        subject={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? `${row.name} · ${phoneLocal(row.phone)}` : undefined })()}
         doneThrough={(() => { const row = rows.find((r) => r.id === stageMenu?.id); return row ? journeyIdx(row) : -1 })()}
         onSelect={(stage) => {
           const leadId = stageMenu!.id
@@ -550,17 +536,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         open={!!onHold}
         onClose={() => { setOnHold(null); setPendingDrop(null) }}
         reason={holdReason} setReason={setHoldReason}
-        duration={holdDuration} setDuration={setHoldDuration}
-        followUp={holdFollowUp}
-        onSave={(otherReason) => {
+        openedAt={holdOpenedAt}
+        onSave={(otherReason, followUpAt, duration) => {
           const lead = rows.find((r) => r.id === onHold)
           setOnHold(null)
           if (!lead) { setPendingDrop(null); return }
-          const days = holdDuration.startsWith('1') ? 30 : holdDuration.startsWith('3') ? 90 : 180
           void run('move the lead', async () => {
             await moveStage({
               leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
-              payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration: holdDuration, followUpAt: new Date(Date.now() + days * 86400000).toISOString() },
+              payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration, followUpAt },
               tasks: [],
             })
             snackbar({ message: 'Moved to On Hold' })
@@ -591,14 +575,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
         position={assign}
       />
-      <CustomiseView
-        open={!!customise}
-        columns={columns}
-        onClose={() => setCustomise(null)}
-        onSave={(cols) => { setColumns(cols); setCustomise(null) }}
-        position={customise}
-        anchor={customise?.el}
-      />
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }}
+                            columns={columns.map((c) => ({ ...c, locked: c.key === 'name' }))}
+                            onSave={(next) => saveColumnPrefs('leads', next)}
+                            onReset={() => { clearColumnWidths('leads'); resetColumnPrefs('leads'); return DEFAULT_COLUMNS.map((c) => ({ ...c, locked: c.key === 'name' })) }} />
       <TasksPopover
         lead={effectiveRows.find((r) => r.id === tasksFor?.id) ?? null}
         pos={tasksFor}

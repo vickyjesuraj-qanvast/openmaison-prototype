@@ -6,6 +6,8 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
+import { useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -18,6 +20,10 @@ import styles from './tasks-table.module.css'
 export type TaskRowAction = 'complete' | 'rename' | 'template' | 'duplicate' | 'delete'
 
 export type TasksTableProps = {
+  /** The visible columns in the user's order (useTableColumns, REG-454). */
+  columns: readonly TableColumn[]
+  /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
+  onReorder: (keys: string[]) => void
   tasks: TaskRow[]
   /** Clock captured by the caller (purity rule) — overdue = open + due before today. */
   now: number
@@ -54,14 +60,18 @@ export type TasksTableProps = {
 }
 
 /* Column order + head copy — sentence case, exactly as the mock types it (spec 01). Tags has no sort icon. */
-const HEADS: { key: string; label: string; col: string | undefined; sortable: boolean }[] = [
-  { key: 'title', label: 'Title', col: styles.colTitle, sortable: true },
-  { key: 'assignees', label: 'Members', col: styles.colMember, sortable: true },   /* REG-290 */
-  { key: 'creator', label: 'Creator', col: styles.colCreator, sortable: true },
-  { key: 'due', label: 'Due date', col: styles.colDue, sortable: true },
-  { key: 'status', label: 'Status', col: styles.colStatus, sortable: true },
-  { key: 'tags', label: 'Tags', col: styles.colTags, sortable: false },
+/** The table's columns (902:26387): Title locked first; the user's order, visibility and pins come from Column settings (REG-454).
+    `track` is the mock's px — the floor the rows never squeeze under (REG-430); the flex bases live in the CSS. */
+export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
+  { key: 'title', label: 'Title', track: '420', locked: true },
+  { key: 'assignees', label: 'Members', track: '160' },   /* REG-290 */
+  { key: 'creator', label: 'Creator', track: '160' },
+  { key: 'due', label: 'Due date', track: '137' },
+  { key: 'status', label: 'Status', track: '118' },
+  { key: 'tags', label: 'Tags', track: '191' },
 ]
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, assignees: styles.colMember, creator: styles.colCreator, due: styles.colDue, status: styles.colStatus, tags: styles.colTags }
+const SORTABLE: Record<string, boolean> = { title: true, assignees: true, creator: true, due: true, status: true, tags: false }
 
 /**
  * Lead Details › Tasks table (902:26387) — specs 01-listing-table.txt + 02-rows-menus-bulk.txt.
@@ -74,7 +84,7 @@ export function TasksTable({
   tasks, now, selected, onSelect, unseen, descriptionMatches,
   adding, onAddSubmit, addKey, onAddCancel,
   renaming, onRenameSubmit, onRenameCancel,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
@@ -116,7 +126,10 @@ export function TasksTable({
   const colVars = flexVars(colWidths)   // REG-427: `--cw-<key>` per dragged column, read by tasks-table.module.css
   /* The rows' floor (REG-430, the listing's inline min-width): the mock's 1244 = 56 + Title 422 + 160 + 160 + 137 + 118 + 191,
      each column at its dragged width instead where the user changed it — the card scrolls sideways past that, never squeezes. */
-  const floor = 56 + (colWidths.title ?? 420) + (colWidths.assignees ?? 160) + (colWidths.creator ?? 160) + (colWidths.due ?? 137) + (colWidths.status ?? 118) + (colWidths.tags ?? 191)
+  const floor = 56 + columns.reduce((sum, c) => sum + (colWidths[c.key] ?? Number(c.track)), 0)
+  const headRow = useRef<HTMLDivElement>(null)
+  const L = useColumnLayout(columns, headRow, { leading: 56, flex: true })
+  const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
   const [frame, overflowing] = useOverflowX()
   return (
     <div className={styles.card} role="table" aria-label="Tasks" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
@@ -124,32 +137,32 @@ export function TasksTable({
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
     <div className={styles.table}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
-      <div className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
+      <div ref={headRow} className={styles.head} role="row">
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && tasks.some((t) => selected.has(t.id))} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
         </div>
-        {HEADS.map((h) => (
-          <div key={h.key} className={`${styles.hCell} ${h.col ?? ""}`} role="columnheader">
-            {h.sortable ? (
+        {columns.map((c) => (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+            {SORTABLE[c.key] ? (
               /* Sort is inert in this prototype — the head answers coming soon. */
               <button type="button" className={styles.hSort} onClick={comingSoon}>
-                <span className={styles.hLabel}>{h.label}</span>
+                <span className={styles.hLabel}>{c.label}</span>
                 <Icon name="unfold_more" size={16} />
               </button>
             ) : (
-              <span className={styles.hLabel}>{h.label}</span>
+              <span className={styles.hLabel}>{c.label}</span>
             )}
-            <ColumnResizer table="lead-tasks" column={h.key} label={h.label} min={h.key === 'title' ? 200 : 72} />
+            <ColumnResizer table="lead-tasks" column={c.key} label={c.label} min={c.key === 'title' ? 200 : 72} />
           </div>
         ))}
       </div>
 
       {adding ? (
-        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} />
+        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} />
       ) : null}
 
       {tasks.map((task, idx) => (
-        <TaskRowView
+        <TaskRowView L={L}
           key={task.id}
           task={task}
           now={now}
@@ -235,34 +248,34 @@ function AddTagsLink({ inert = false }: { inert?: boolean }) {
 }
 
 /** Inline add row (frame 194 "Type=RW-New, State=Input"): band, disabled checkbox, the field, inert placeholders. */
-function AddRow({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onCancel: () => void }) {
+function AddRow({ onSubmit, onCancel, L }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout> }) {
   return (
     /* `data-add` marks the row a task is being CREATED in — a rename puts the same field on a real row, whose
        cells hold real values. The phone's stylesheet needs to tell the two apart (REG-403). */
     <div className={styles.row} role="row" data-unseen="" data-add="">
-      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={false} isDisabled aria-label="Select new task" />
       </div>
-      <div className={`${styles.cell} ${styles.colTitle}`} role="cell" data-editing="">
+      <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')} data-editing="">
         <TitleField initial="" onSubmit={onSubmit} onCancel={onCancel} />
       </div>
-      <div className={`${styles.cell} ${styles.colMember}`} role="cell">
+      <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')}>
         <span className={`${styles.assignLink} ${styles.inert}`}>
           <Icon name="person_add" size={20} />
           Assign
         </span>
       </div>
       {/* The creator is stamped on save; until then the cell reads as unset, the panel's own "—". */}
-      <div className={`${styles.cell} ${styles.colCreator}`} role="cell">
+      <div className={`${styles.cell} ${styles.colCreator} ${L.pinned('creator') ? styles.pin : ''}`} role="cell" data-col="creator" data-pin-edge={L.edge('creator') || undefined} style={L.style('creator')}>
         <span className={styles.creatorName}>—</span>
       </div>
-      <div className={`${styles.cell} ${styles.colDue}`} role="cell">
+      <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')}>
         <IconButton icon="calendar_add_on" label="Set due date" size={24} variant="primary" className={styles.inert} tabIndex={-1} aria-disabled />
       </div>
-      <div className={`${styles.cell} ${styles.colStatus}`} role="cell">
+      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
         <Tag appearance="outlined" color="blue">OPEN</Tag>
       </div>
-      <div className={`${styles.cell} ${styles.colTags}`} role="cell">
+      <div className={`${styles.cell} ${styles.colTags} ${L.pinned('tags') ? styles.pin : ''}`} role="cell" data-col="tags" data-pin-edge={L.edge('tags') || undefined} style={L.style('tags')}>
         <AddTagsLink inert />
       </div>
     </div>
@@ -273,9 +286,10 @@ function TaskRowView({
   task, now, unseen, descriptionMatch, selected, onToggleSelect,
   renaming, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit,
+  onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
 }: {
   task: TaskRow
+  L: ReturnType<typeof useColumnLayout>
   now: number
   unseen: boolean
   /** (REG-275) The live search found this row by its description alone — the title cell says so. */
@@ -309,7 +323,7 @@ function TaskRowView({
       {/* Selection cell: checkbox 24/Light secondary → check_box 24 primary when selected.
           The DS Checkbox reports the next checked state, not the event, so Shift is read off the click on its way
           down (capture runs before the input's own change) and handed to the range selector. */}
-      <div className={`${styles.cell} ${styles.colSel}`} role="cell"
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}
            onClickCapture={(e) => { shiftHeld.current = e.shiftKey }}
            onKeyDownCapture={(e) => { shiftHeld.current = e.shiftKey }}>
         <Checkbox isSelected={selected} onChange={() => onToggleSelect(shiftHeld.current)} aria-label={`Select ${task.title}`} />
@@ -317,11 +331,11 @@ function TaskRowView({
 
       {/* Title cell — status glyph · title (bold when unseen) · count chips; the rest of the cell opens the task. */}
       {renaming ? (
-        <div className={`${styles.cell} ${styles.colTitle}`} role="cell" data-editing="">
+        <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')} data-editing="">
           <TitleField initial={task.title} onSubmit={onRenameSubmit} onCancel={onRenameCancel} />
         </div>
       ) : (
-        <div className={`${styles.cell} ${styles.colTitle}`} role="cell">
+        <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
           <Tooltip label={task.done ? 'Reopen' : 'Mark as completed'}>
             <button
               type="button" className={styles.glyph} data-done={task.done || undefined}
@@ -378,7 +392,7 @@ function TaskRowView({
 
       {/* Member cell: up to two Avatars 24 + person_add 24 primary outlined; unassigned = the leads listing's
           "Assign" link, no placeholder avatar (REG-240 — one vocabulary for "nobody yet" everywhere). */}
-      <div className={`${styles.cell} ${styles.colMember}`} role="cell" data-inert={inert}>
+      <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-inert={inert}>
         {task.assignees.length === 0 ? (
           <button type="button" className={styles.assignLink} onClick={(e) => onAssign(task, e.currentTarget)}>
             <Icon name="person_add" size={20} />
@@ -399,7 +413,7 @@ function TaskRowView({
       </div>
 
       {/* Creator cell (REG-239, not in the mock): the panel's Creator row as a column — Avatar 24 + name, — when absent. */}
-      <div className={`${styles.cell} ${styles.colCreator}`} role="cell">
+      <div className={`${styles.cell} ${styles.colCreator} ${L.pinned('creator') ? styles.pin : ''}`} role="cell" data-col="creator" data-pin-edge={L.edge('creator') || undefined} style={L.style('creator')}>
         {task.creator ? (
           <>
             <Avatar name={task.creator.name} color={task.creator.color} size={24} tooltip={false} />
@@ -411,7 +425,7 @@ function TaskRowView({
       </div>
 
       {/* Due cell: calendar_add_on 24 primary outlined when empty; the date (underlined, red when overdue) otherwise. */}
-      <div className={`${styles.cell} ${styles.colDue}`} role="cell" data-inert={inert}>
+      <div className={`${styles.cell} ${styles.colDue} ${L.pinned('due') ? styles.pin : ''}`} role="cell" data-col="due" data-pin-edge={L.edge('due') || undefined} style={L.style('due')} data-inert={inert}>
         {task.dueAt ? (
           <button type="button" className={styles.dueBtn} data-overdue={overdue || undefined}
                   aria-label={`Due ${displayDate(task.dueAt)}${overdue ? ', overdue' : ''} — change due date`}
@@ -427,14 +441,14 @@ function TaskRowView({
       </div>
 
       {/* Status cell: Tag Outlined Blue "OPEN" · Green "COMPLETED". */}
-      <div className={`${styles.cell} ${styles.colStatus}`} role="cell">
+      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
         {task.done
           ? <Tag appearance="outlined" color="green">COMPLETED</Tag>
           : <Tag appearance="outlined" color="blue">OPEN</Tag>}
       </div>
 
       {/* Tags cell: two Tag Outlined Default + "+n", or the "+ Add Tags" link; the whole cell opens the picker. */}
-      <div className={`${styles.cell} ${styles.colTags}`} role="cell" data-inert={inert}>
+      <div className={`${styles.cell} ${styles.colTags} ${L.pinned('tags') ? styles.pin : ''}`} role="cell" data-col="tags" data-pin-edge={L.edge('tags') || undefined} style={L.style('tags')} data-inert={inert}>
         <button type="button" className={styles.tagsBtn} aria-label={`Tags for ${task.title}`}
                 onClick={(e) => onAddTags(task, e.currentTarget)}>
           {task.tags.length === 0 ? (

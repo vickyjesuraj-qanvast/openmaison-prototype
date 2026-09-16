@@ -74,13 +74,21 @@ export const CONTACT_MODES = [...CONTACT_CHANNELS, 'In person'] as const
 export const HOLD_DURATIONS = ['1 month', '3 months', '6 months'] as const
 export type HoldDuration = (typeof HOLD_DURATIONS)[number]
 export const HOLD_DURATION_DAYS: Record<HoldDuration, number> = { '1 month': 30, '3 months': 90, '6 months': 180 }
-/** What the dialog opens on. */
-export const DEFAULT_HOLD_DURATION: HoldDuration = '3 months'
+/** What the dialog's "Follow up on" date opens on (REG-453: one month ahead, the presets a tap away). */
+export const DEFAULT_HOLD_DURATION: HoldDuration = '1 month'
 
 /** Next follow-up = `from` + the duration's days. Text outside the vocabulary falls back to the default duration. */
 export function holdFollowUpAt(duration: string, from: number): Date {
   const days = HOLD_DURATION_DAYS[duration as HoldDuration] ?? HOLD_DURATION_DAYS[DEFAULT_HOLD_DURATION]
   return new Date(from + days * 86_400_000)
+}
+
+/** The preset a follow-up date matches ("3 months"), else "Until 15 Dec ’26" — what the stage log's `duration` records (REG-453). */
+export function holdDurationLabel(followUpAt: Date, from: number): string {
+  const day = (d: Date) => Math.round(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 86_400_000)
+  const days = day(followUpAt) - day(new Date(from))
+  const preset = HOLD_DURATIONS.find((d) => HOLD_DURATION_DAYS[d] === days)
+  return preset ?? `Until ${followUpAt.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: '2-digit' }).replace(/(\d{2})$/, '’$1')}`
 }
 
 /** Only style/condition/key-collection values visible anywhere in the mocks. */

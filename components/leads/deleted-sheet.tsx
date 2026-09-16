@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
 import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 import { modalPanel, overlayFade } from '@/lib/motion'
-import { displayDate, money, titleCaseName } from '@/lib/format'
+import { displayDate, money, titleCaseName, phoneLocal } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
 import styles from './deleted-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -198,7 +198,7 @@ export function DeletedLeadsSheet({
                         <div className={`${styles.cell} ${styles.pin}`} style={{ width: cw('name', 176) }} role="cell">
                           <span className={styles.twoLine}>
                             <span className={styles.name}>{titleCaseName(l.name)}</span>
-                            <span className={styles.phone}>{l.phone}</span>
+                            <span className={styles.phone}>{phoneLocal(l.phone)}</span>
                           </span>
                         </div>
                         <div className={styles.cell} style={{ width: cw('stage', 146) }} role="cell"><span className={styles.plain}>{l.stage}</span></div>

@@ -187,3 +187,6 @@
   .cell:nth-child(5) { flex: 1 1 100%; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 4; }
   .cell:nth-child(6) { flex: 1 1 100%; order: 5; }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+.row:hover, .row:hover > .cell:first-child { background: var(--om-color-primary-variant); }

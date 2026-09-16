@@ -69,7 +69,7 @@
 .headRow { position: sticky; top: 0; z-index: 3; transition: box-shadow var(--motion-toggle); }
 .tableWrap[data-scrolled-y] .headRow { box-shadow: var(--om-elevation-level-1); }
 .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); height: 64px; transition: background-color var(--motion-hover); }
-.row:hover { background: var(--om-color-surface-bg); }   /* row hover as every other table (frame 195), audit 2026-08-30 */
+.row:hover { background: var(--om-color-primary-variant); }   /* row hover as every other table (frame 195), audit 2026-08-30 */
 .row[data-selected] { background: var(--om-color-primary-variant); }
 /* Selection + pinned name column stay fixed while the row h-scrolls. Frozen-column edge rule (REG-144):
    the last frozen column shows a 1px inner edge at rest and its shadow only while scrolled sideways. */
@@ -186,3 +186,6 @@
   .hSort::after { content: ''; position: absolute; inset: -14px -4px; }
   .link::after { content: ''; position: absolute; inset: -12px -8px; }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }

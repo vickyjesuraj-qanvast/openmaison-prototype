@@ -10,7 +10,7 @@ import { useCopy } from '@/components/om/use-copy'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
 import { PORTAL_LINK } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MSG } from '@/lib/forms'
-import { digitsOnly } from '@/lib/format'
+import { digitsOnly, phoneTyped } from '@/lib/format'
 import styles from './invite-portal-modal.module.css'
 
 /**
@@ -64,8 +64,8 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
         <p className={styles.helper}>Invite a homeowner to track their project.</p>
         <TextField label="Homeowner name" value={name} onChange={setName} />
         <TextField
-          label="Phone number" value={phone} onChange={(v) => setPhone(v.slice(0, 8))}
-          type="tel" inputMode="tel" numeric="digits" maxLength={8} trailingIcon={null}
+          label="Phone number" required value={phoneTyped(phone)} onChange={(v) => setPhone(v.slice(0, 8))}   /* (REG-456) shown "9123 4567", held as digits; no maxLength — the space is the 9th character */
+          type="tel" inputMode="tel" numeric="digits" trailingIcon={null}
           error={pressed ? phoneError : undefined}
           helper="WhatsApp opens with a ready-to-send message containing their portal login link."
           leading={

@@ -5,12 +5,13 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import { Button, Checkbox, Tag } from '@/components/ds'
+import { useColumnDrag } from '@/components/om/column-drag'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
-import { displayDate, isOverdue, money } from '@/lib/format'
+import { displayDate, isOverdue, money, phoneLocal } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
@@ -71,13 +72,12 @@ export function LeadsTable({
   selectable = false,
   selected = EMPTY_SELECTION,
   onToggleSelect = () => {},
+  onReorder,
   onToggleSelectAll = () => {},
   onNameClick,
   onStageClick,
   onTaskClick,
   onAssignClick,
-  onTuneClick,
-  tuneOpen = false,
   onEditRow,
   onDeleteRow,
   onReturnRow,
@@ -90,6 +90,8 @@ export function LeadsTable({
   openStageId?: string | null
   rows: LeadRow[]
   columns: ColumnConfig[]
+  /** A head dragged to a new place (REG-462): the visible keys in their new order. */
+  onReorder?: (keys: string[]) => void
   /** Leads nobody has opened or clicked yet — they carry the primary band + bold name (user 2026-08-29). */
   unseenIds?: Set<string>
   onRowSeen?: (row: LeadRow) => void
@@ -102,9 +104,6 @@ export function LeadsTable({
   onStageClick: (row: LeadRow, anchor: HTMLElement) => void
   onTaskClick: (row: LeadRow, anchor: HTMLElement) => void
   onAssignClick: (row: LeadRow, anchor: HTMLElement) => void
-  onTuneClick: (anchor: HTMLElement) => void
-  /** The Customise-your-view popover is open — the gear reports it (aria-expanded) so a second press toggles it closed (REG-153). */
-  tuneOpen?: boolean
   onEditRow: (row: LeadRow) => void
   onDeleteRow: (row: LeadRow) => void
   onReturnRow: (row: LeadRow) => void
@@ -127,6 +126,7 @@ export function LeadsTable({
   }
 
   const visible = columns.filter((c) => c.visible)
+  const D = useColumnDrag(visible.map((c) => ({ key: c.key, pinned: c.pinned, locked: c.key === 'name' })), (keys) => onReorder?.(keys))   /* drag a head to reorder (REG-462) */
   const dragged = useColumnWidths('leads')   // REG-427
   const widthOf = (key: ColumnKey) => dragged[key] ?? WIDTHS[key]
   const minWidth = visible.reduce((w, c) => w + widthOf(c.key), 0)
@@ -225,7 +225,7 @@ export function LeadsTable({
             </span>
             <span className={styles.phoneRow}>
               <span className={styles.phone}>
-                {hitPhone(row.phone)}
+                {hitPhone(phoneLocal(row.phone))}
                 {/* On Hold leads say till when, in the card's dot format (user 2026-08-29) */}
                 {row.stage === 'On Hold' && row.onHoldFollowUp
                   ? <>{' · On hold till: '}{hit(displayDate(new Date(row.onHoldFollowUp)))}</>
@@ -334,6 +334,9 @@ export function LeadsTable({
                 key={col.key}
                 {...cellProps(col, styles.hCell)}
                 role="columnheader"
+                data-col={col.key}
+                {...D.head(col.key)}
+                style={{ ...cellProps(col, styles.hCell).style, ...D.style(col.key) }}
               >
                 {i === 0 && selectable ? (
                   <span className={styles.headSelBox}>
@@ -349,16 +352,6 @@ export function LeadsTable({
                   <span className={styles.hLabel}>{col.label}</span>
                 )}
                 <ColumnResizer table="leads" column={col.key} label={col.label} min={col.key === 'name' ? 160 : 72} />
-                {i === 0 ? (
-                  <span className={styles.hTools}>
-                    <Tooltip label="Customise your view">
-                      <button type="button" className={styles.hTune} aria-label="Customise your view"
-                              aria-haspopup="dialog" aria-expanded={tuneOpen} onClick={(e) => onTuneClick(e.currentTarget)}>
-                        <Icon name="tune" size={16} />
-                      </button>
-                    </Tooltip>
-                  </span>
-                ) : null}
               </div>
             ))}
           </div>

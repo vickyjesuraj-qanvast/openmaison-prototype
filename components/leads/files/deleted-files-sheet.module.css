@@ -197,3 +197,7 @@
   .cell.colActions { grid-column: 1 / -1; grid-row: 3; padding-top: var(--om-spacing-2); }
   .colUpdated, .colType, .colSize, .colLocation { display: none; }
 }
+
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+.row:hover, .row:hover .colSel, .row:hover .colTitle { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant-hover); }

@@ -160,8 +160,8 @@ export function SaveTemplateDialog({
         <Radio value="existing">Existing Template</Radio>
       </RadioGroup>
       {mode === 'new'
-        ? <TextField label="Task template name" value={name} onChange={setName} autoFocus />
-        : <TextField label="Choose template" value={existing} onChange={setExisting} mode="select" options={templates.map((t) => t.name)} />}
+        ? <TextField label="Task template name" required value={name} onChange={setName} autoFocus />
+        : <TextField label="Choose template" required value={existing} onChange={setExisting} mode="select" options={templates.map((t) => t.name)} />}
       {banner ? (
         <div className={styles.banner} role="note">
           <Icon name="info" size={20} />
@@ -178,11 +178,11 @@ export function SaveTemplateDialog({
         <span className={styles.groupTitle}>Task details to keep in this template</span>
         <div className={styles.keepRow}>
           <span className={styles.keepLabel}>Team Members</span>
-          <Switch size="md" isSelected={keepMembers} onChange={setKeepMembers} aria-label="Keep team members" />
+          <Switch size="sm" isSelected={keepMembers} onChange={setKeepMembers} aria-label="Keep team members" />
         </div>
         <div className={styles.keepRow}>
           <span className={styles.keepLabel}>Task Description</span>
-          <Switch size="md" isSelected={keepDescription} onChange={setKeepDescription} aria-label="Keep task description" />
+          <Switch size="sm" isSelected={keepDescription} onChange={setKeepDescription} aria-label="Keep task description" />
         </div>
       </div>
     </TemplateShell>

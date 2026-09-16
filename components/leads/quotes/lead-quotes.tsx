@@ -19,6 +19,10 @@ import { QuotesTable, type QuoteRowAction } from './quotes-table'
 import { QuotesEmpty } from './quotes-empty'
 import { QuotesFiltersModal } from './quotes-filters-modal'
 import { DeleteQuotesDialog } from './delete-dialog'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { quoteColumnDefs, quoteShowApproval } from './quotes-table'
 import styles from './lead-quotes.module.css'
 
 /**
@@ -41,6 +45,12 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<QuoteFilters>(EMPTY_QUOTE_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const phone = useMediaQuery(MOBILE)
+  const showApproval = quoteShowApproval(data.quotes, approval)
+  const quoteDefs = useMemo(() => quoteColumnDefs(false, showApproval), [showApproval])
+  const columnPrefs = useTableColumns('lead-quotes', quoteDefs, phone)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const filterCount = activeQuoteFilterCount(filters)
   const visible = useMemo(() => searchQuotes(applyQuoteFilters(quotes, filters, now), query), [quotes, filters, query, now])
@@ -89,7 +99,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
 
   return (
     <div className={styles.tab}>
-      <QuotesToolbar
+      <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         query={query} onQuery={setQuery}
         onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
@@ -100,7 +110,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
       ) : nothingMatches ? (
         <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
       ) : (
-        <QuotesTable
+        <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           quotes={visible} now={now} approval={approval}
           selected={selected} onSelect={setSelected}
           onStatus={onStatus}
@@ -124,6 +134,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), 'Due date updated') }}   /* (REG-329) as the Tasks due picker */
         onClose={() => setDueFor(null)}
       />
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <QuotesFiltersModal
         open={filtersOpen} value={filters} now={now} approval={approval}
         onApply={(v) => { setFilters(v); setFiltersOpen(false) }}

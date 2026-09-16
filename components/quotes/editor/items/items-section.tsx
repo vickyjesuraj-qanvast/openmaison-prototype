@@ -17,11 +17,12 @@ import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction, DEFAULT_COLUMNS } from '@/lib/quotes/items-model'
 import { quoteTotals, type QuoteTotals } from '@/lib/quotes/math'
 import { createQuoteItem, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, setQuoteItemParent, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
 import { SectionCard } from '../section-card'
-import { ItemsTable } from './items-table'
+import { ItemsTable, ITEMS_TABLE } from './items-table'
+import { clearColumnWidths } from '@/lib/table-widths'
 import { ItemsSummary, maxAdditional, type Pricing } from './items-summary'
 import { ColumnSettingsDrawer } from './column-settings-drawer'
 import { useLevelFocus } from './table-menus'
@@ -361,7 +362,6 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <Tooltip label="Undo"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
         <Tooltip label="Redo"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
       </span>
-      <Tooltip label={expanded ? 'Collapse' : 'Expand'}><IconButton icon={expanded ? 'collapse_content' : 'expand_content'} label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpanded((x) => !x)} /></Tooltip>
       <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setSettingsOpen(true)} /></Tooltip>
       <span ref={densityRef} className={styles.anchor}>
         <Tooltip label="Row density" disabled={menu === 'density'}>
@@ -391,6 +391,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         </Button>
         {createMenu}
       </span>
+      {/* (owner 2026-09-16, REG-458) Expand / Collapse is the row's last control, after Create — the mock (1271:41169) had it among the icon buttons. */}
+      <Tooltip label={expanded ? 'Collapse' : 'Expand'}><IconButton icon={expanded ? 'collapse_content' : 'expand_content'} label={expanded ? 'Collapse' : 'Expand'} onClick={() => setExpanded((x) => !x)} /></Tooltip>
     </div>
   )
 
@@ -398,7 +400,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const body = (
         <div className={styles.body}>
           <ItemsTable
-            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels}
+            onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
+            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={DEFAULT_COLUMNS.details} /* (REG-459) description · images · autonumber always on — the frozen Item block is not configurable */ labels={usedLabels}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
             h={{
               onPatch: patchItem,
@@ -459,7 +462,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <AttachFilesModal open={!!imageFor} mode="image" chrome="quote" files={seed.files} attached={[]} onClose={() => setImageFor(null)}
                         onAttach={(fileIds) => { const f = seed.files.find((x) => x.id === fileIds[0]); if (imageFor && f) patchItem(imageFor.id, { thumb: f.thumb ?? null, thumbCount: f.thumb ? 1 : 0, icon: null }); setImageFor(null) }}
                         onUploadPicked={() => { if (imageFor) patchItem(imageFor.id, { thumb: '/figma-assets/file-thumb-1.png', thumbCount: 1, icon: null }); setImageFor(null) }} />
-      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} />
+      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} />
     </>
   )
 }

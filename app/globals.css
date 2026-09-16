@@ -300,3 +300,8 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
     --app-mobile-dock-height: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* Column drag (REG-462): a draggable head shows the grab hand; the head being dragged rides above its neighbours, lifted by
+   the level-2 shadow, while they slide aside (the transform comes inline from components/om/column-drag.ts). */
+[role="columnheader"][data-draggable] { cursor: grab; user-select: none; }
+[role="columnheader"][data-dragging] { box-shadow: var(--om-elevation-level-2); }

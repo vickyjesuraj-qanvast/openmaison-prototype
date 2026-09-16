@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import Link from 'next/link'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -22,7 +21,7 @@ export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'ex
  * Preview, comment and every kebab item answer coming soon for now (owner 2026-09-11); Send and the quote switch are live.
  */
 export function EditorHeader({
-  lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, backHref, statusSlot,
+  lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,
   onSwitch, onSend, onMenu, onClose,
 }: {
   lead: EditorLead
@@ -37,7 +36,6 @@ export function EditorHeader({
   canSend: boolean
   /** Why Send is inert (tooltip) — the quote is already past the sending steps. */
   sendHint: string
-  backHref: string
   /** The "{status} ▾" pill (1271:41470), first in the action row (REG-404). */
   statusSlot?: ReactNode
   onSwitch: (quoteId: string) => void
@@ -50,11 +48,7 @@ export function EditorHeader({
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
   return (
     <header className={styles.header}>
-      <Tooltip label="Back to Quotes">
-        <Link href={backHref} className={styles.back} aria-label="Back to Quotes">
-          <Icon name="arrow_back" size={24} weight={300} />
-        </Link>
-      </Tooltip>
+      {/* (REG-455, owner 2026-09-16) The mock's arrow_back is gone: the header opens on the crumb, and the close X is the way out. */}
       <div className={styles.titleBlock}>
         <span className={styles.crumb}>Leads / {lead.name} / Quotes</span>
         <div className={styles.titleRow}>

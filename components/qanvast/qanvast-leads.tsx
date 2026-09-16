@@ -25,7 +25,9 @@ import type { QanvastLeadsData } from '@/lib/leads/qanvast'
 import { RETURN_FILTERS } from '@/lib/leads/return-tags'
 import { filterByQuery } from '@/lib/search'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { QanvastTable } from './qanvast-table'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { QANVAST_COLUMN_DEFS, QanvastTable } from './qanvast-table'
 import styles from './qanvast-leads.module.css'
 
 /**
@@ -54,6 +56,9 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const mobile = useMediaQuery(MOBILE)   // (REG-361) the listing's mobile header set
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const columnPrefs = useTableColumns('qanvast-leads', QANVAST_COLUMN_DEFS, mobile)
 
   /* ── status scope: null = All Leads · a stage name · a return label (RETURN_FILTERS) ── */
   const [scope, setScope] = useState<string | null>(null)
@@ -186,13 +191,18 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
               <Tooltip label="Filters">
                 <IconButton icon="filter_list" label="Filters" onClick={comingSoon} />
               </Tooltip>
+              {mobile ? null : (
+                <Tooltip label="Column settings">
+                  <IconButton icon="tune" label="Column settings" onClick={() => setColumnsOpen(true)} />
+                </Tooltip>
+              )}
             </div>
           </div>
 
           {nothingMatches ? (
             <TabSearchEmpty noun="leads" searching={query.trim() !== ''} onClearAll={clearAll} />
           ) : (
-            <QanvastTable rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)}
+            <QanvastTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} rows={visible} onView={(id) => router.push(`/leads/${id}?from=qanvast`)}
                           onCopyPhone={async (row) => {
                             // (REG-351) The listing's own handler: one copy format (phoneDisplay), one confirmation.
                             try { await navigator.clipboard.writeText(phoneDisplay(row.phone)); snackbar({ message: 'Copied to clipboard' }) }
@@ -201,6 +211,8 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
           )}
         </div>
       </div>
+
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
 
       <AiSheet open={aiOpen} suggestions={AI_SUGGESTIONS} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
       <MaisonFab onPress={() => setAiOpen((o) => !o)} />

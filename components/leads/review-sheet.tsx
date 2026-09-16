@@ -6,7 +6,7 @@ import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { overlayFade, modalPanel } from '@/lib/motion'
-import { displayDate, relativeTime } from '@/lib/format'
+import { displayDate, relativeTime, phoneLocal } from '@/lib/format'
 import type { ReviewRow } from '@/lib/leads/queries'
 import styles from './review-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -104,7 +104,7 @@ export function ReviewSheet({
   }
   const newValue = (r: ReviewRow, f: (typeof FIELDS)[number]) => {
     const v = r.data[f.key] ?? ''
-    return f.leadKey === 'budgetMinor' ? fmtBudget(v) : v
+    return f.leadKey === 'budgetMinor' ? fmtBudget(v) : f.leadKey === 'phone' ? phoneLocal(v) : v
   }
   // Frozen-column shadows only while the table is scrolled (user 2026-08-29).
   const markScroll = (e: React.UIEvent<HTMLDivElement>) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)

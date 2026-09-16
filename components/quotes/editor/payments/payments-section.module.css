@@ -13,7 +13,7 @@
 .head .cSel, .head .cName { z-index: 3; }
 .cell.cName[data-editing] { clip-path: none; }   /* the ✕ / ✓ box hangs below the cell (.confirm): the shadow's clip would cut it off and its clicks fell to the next row (REG-430) */
 .table[data-scrolled] .cName { box-shadow: var(--om-shadow-frozen-column); }
-.head, .row, .totalRow { display: grid; grid-template-columns: var(--pay-tracks, 40px 319px minmax(120px, 1fr) 140px 140px 140px); align-items: center; }   /* --pay-tracks: the user's dragged widths (REG-427) */
+.head, .row, .totalRow { display: grid; grid-template-columns: var(--pay-tracks, 40px 319px minmax(120px, 1fr) 140px 140px 188px); align-items: center; }   /* --pay-tracks: the user's dragged widths (REG-427) */
 .head { height: 48px; }
 .head .cell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .rows { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
@@ -29,7 +29,7 @@
 .cDesc { overflow: hidden; text-overflow: ellipsis; }
 .cPct, .cAmount, .cDue { text-align: right; }
 .cAmount { font-weight: 600; }
-.cDue { padding-right: var(--om-spacing-6); }
+.cDue { padding-right: 72px; }   /* the mock's 24 + the hover delete's 36 + 12 (REG-448, owner 2026-09-16): the due date ends beside the button, never under it */
 .totalRow .cName, .totalRow .cPct, .totalRow .cAmount { font-weight: 700; }
 /* Every value is its own control: click to edit in place (the cell's text at rest, nothing drawn). */
 .cellBtn { display: block; width: 100%; border: 0; background: none; padding: 0; margin: 0; font: inherit; font-weight: inherit; color: inherit; text-align: inherit; cursor: text; border-radius: var(--om-radius-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -80,10 +80,11 @@
 
 /* ── Tablet (768–1024): the six columns tighten so the table fits the ~624px centre without scrolling sideways. */
 @media (max-width: 1024px) {
-  .head, .row, .totalRow { grid-template-columns: 36px 150px minmax(80px, 1fr) 90px 120px 120px; min-width: 0; }   /* the desktop floor (--pay-min, the mock's tracks) is released with the tracks themselves (REG-430) */
+  .head, .row, .totalRow { grid-template-columns: 36px 132px minmax(80px, 1fr) 80px 112px 156px; min-width: 0;   /* the tablet's 596 centre: Due 156 = 120 + the delete's room at a 12 inset (REG-448); name, % and amount give the 36 back */ }   /* the desktop floor (--pay-min, the mock's tracks) is released with the tracks themselves (REG-430) */
   .cell { padding: var(--om-spacing-3) var(--om-spacing-2); }
   .cSel { padding-left: var(--om-spacing-2); }
-  .cDue { padding-right: var(--om-spacing-6); }
+  .cDue { padding-right: 60px; }   /* 12 inset + 36 + 12 */
+  .del.del { right: var(--om-spacing-3); }
   .loading { grid-template-columns: 1fr; }
   .card { height: 120px; }
 }

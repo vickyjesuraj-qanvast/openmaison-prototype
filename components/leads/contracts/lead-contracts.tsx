@@ -14,6 +14,10 @@ import { ContractsTable, type ContractRowAction } from './contracts-table'
 import { ContractsEmpty } from './contracts-empty'
 import { ContractsFiltersModal } from './contracts-filters-modal'
 import { DeleteContractsDialog } from './delete-dialog'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { CONTRACT_COLUMN_DEFS } from './contracts-table'
 import styles from './lead-contracts.module.css'
 
 /**
@@ -35,6 +39,10 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<ContractFilters>(EMPTY_CONTRACT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const phone = useMediaQuery(MOBILE)
+  const columnPrefs = useTableColumns('lead-contracts', CONTRACT_COLUMN_DEFS, phone)
   const filterCount = activeContractFilterCount(filters)
   const visible = useMemo(() => searchContracts(applyContractFilters(contracts, filters, now), query), [contracts, filters, query, now])
   // Search / filters that match nothing → the listing's "No results found" card (T6); the bare head never shows.
@@ -70,7 +78,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
 
   return (
     <div className={styles.tab}>
-      <ContractsToolbar
+      <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'blank' ? void newContract() : comingSoon())}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
@@ -81,13 +89,14 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       ) : nothingMatches ? (
         <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
       ) : (
-        <ContractsTable
+        <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           contracts={visible}
           onStatus={onStatus}
           onView={comingSoon}
           onRowMenu={rowMenu}
         />
       )}
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <ContractsFiltersModal
         open={filtersOpen} value={filters} now={now}
         onApply={(v) => { setFilters(v); setFiltersOpen(false) }}

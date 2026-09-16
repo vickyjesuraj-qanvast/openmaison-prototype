@@ -47,13 +47,13 @@ export function ContactEditor({
       <div className={styles.fields}>
         {editing ? (
           <>
-            <ChoiceChips label="Contacted via" options={CONTACT_CHANNELS} value={draft.channel}
+            <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={draft.channel}
                          onChange={(v) => onChange({ channel: v })} error={errors.channel} />
             <div className={styles.fieldPair}>
-              <DateTimeField label="Date & Time" value={draft.when} today={today}
+              <DateTimeField label="Date & Time" value={draft.when} required today={today}
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
               {/* Opens focused on its first field, as the note editor does — when the user came here to enter data (REG-294). */}
-              <TextField label="Outcome" autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
+              <TextField label="Outcome" required autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
                          onChange={(v) => onChange({ outcome: v })} error={errors.outcome} />
             </div>
             {/* (REG-319, mock 781:58313) The optional schedule block, one heading + helper for every outcome — the Move stage window's. */}

@@ -4,8 +4,11 @@ import { useState } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
-import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
+import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
+import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
+import { useRef } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -26,19 +29,23 @@ export type FilesTableProps = {
   onOpenComments: (file: FileRow) => void
   /** A folder row offers the folder items (FolderAction), a file row the file items (FileAction). */
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
+  columns: readonly TableColumn[]
+  /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
+  onReorder: (keys: string[]) => void
 }
 
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
 /** The card's mocked tracks (files-table.module.css) — the user's dragged widths replace them (REG-427). */
-const TRACKS = [{ key: 'sel', track: '40px' }, { key: 'title', track: 'minmax(418px, 1fr)' }, { key: 'owner', track: '240px' }, { key: 'updated', track: '116px' }, { key: 'type', track: '119px' }, { key: 'size', track: '114px' }, { key: 'attached', track: '195px' }]
-const HEADS: { key: string; label: string; col: string | undefined }[] = [
-  { key: 'title', label: 'Title', col: styles.colTitle },
-  { key: 'owner', label: 'Owner', col: styles.colOwner },
-  { key: 'updated', label: 'Updated', col: styles.colUpdated },
-  { key: 'type', label: 'File type', col: styles.colType },
-  { key: 'size', label: 'File size', col: styles.colSize },
-  { key: 'attached', label: 'Attached to', col: styles.colAttached },
+/** The list's columns (931:40168, spec 01): Title locked first; the user's order, visibility and pins come from Column settings (REG-454). */
+export const FILE_COLUMN_DEFS: readonly TableColumnDef[] = [
+  { key: 'title', label: 'Title', track: 'minmax(418px, 1fr)', locked: true },
+  { key: 'owner', label: 'Owner', track: '240px' },
+  { key: 'updated', label: 'Updated', track: '116px' },
+  { key: 'type', label: 'File type', track: '119px' },
+  { key: 'size', label: 'File size', track: '114px' },
+  { key: 'attached', label: 'Attached to', track: '195px' },
 ]
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, owner: styles.colOwner, updated: styles.colUpdated, type: styles.colType, size: styles.colSize, attached: styles.colAttached }
 
 /**
  * Lead Details › Files — list view (frame 90, table 931:40167; spec design-source/context/lead-files/
@@ -49,7 +56,7 @@ const HEADS: { key: string; label: string; col: string | undefined }[] = [
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
  * hover pattern (.actions/.float) with the kebab only (build plan, logged). Sorting is inert (coming soon).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu }: FilesTableProps) {
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
@@ -76,31 +83,34 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
   const colWidths = useColumnWidths('lead-files')
-  const tracks = gridTracks(TRACKS, colWidths)
+  const tracks = gridTemplateFor(columns, colWidths, '40px')
+  const headRow = useRef<HTMLDivElement>(null)
+  const L = useColumnLayout(columns, headRow, { leading: 40 })
+  const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
   return (
     <div ref={frame} className={styles.card} role="table" aria-label="Files" data-cols="lead-files" data-overflow={overflowing || undefined}
-         style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}
+         style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
-      <div className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
+      <div ref={headRow} className={styles.head} role="row">
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={someSelected} isDisabled={rows.length === 0} onChange={toggleAll} aria-label="Select all files" />
         </div>
-        {HEADS.map((h) => (
-          <div key={h.key} className={`${styles.hCell} ${h.col ?? ''}`} role="columnheader">
+        {columns.map((c) => (
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
             {/* Sort is inert in this prototype — the head answers coming soon. */}
             <button type="button" className={styles.hSort} onClick={comingSoon}>
-              <span className={styles.hLabel}>{h.label}</span>
+              <span className={styles.hLabel}>{c.label}</span>
               <Icon name="unfold_more" size={16} />
             </button>
-            <ColumnResizer table="lead-files" column={h.key} label={h.label} min={h.key === 'title' ? 160 : 72} />
+            <ColumnResizer table="lead-files" column={c.key} label={c.label} min={c.key === 'title' ? 160 : 72} />
           </div>
         ))}
       </div>
 
       {rows.map((row) => (
-        <FileRowView
+        <FileRowView L={L}
           key={row.id}
           row={row}
           isSelected={selected.has(row.id)}
@@ -128,7 +138,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpenFolder, onOpenFile, onOpenComments, onRowMenu,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L,
 }: {
   row: FileRow
   isSelected: boolean
@@ -142,6 +152,7 @@ function FileRowView({
   onOpenFile: (file: FileRow) => void
   onOpenComments: (file: FileRow) => void
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
+  L: ReturnType<typeof useColumnLayout>
 }) {
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
@@ -150,13 +161,13 @@ function FileRowView({
   return (
     <div className={styles.row} role="row" data-selected={isSelected || undefined} data-kind={folder ? 'folder' : 'file'}>
       {/* Selection cell 40×60 (931:40181 "Cell / Selection" H g12 p12/0/12/16, top rule). */}
-      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={isSelected} onChange={onToggle} aria-label={`Select ${row.name}`} />
       </div>
 
       {/* Title cell "Cell / Two line" 420×60 H g12 p12/24/12/16: thumb 48×36 (fill #f2f2f2 r2 — image cover, or folder 24
           centred) + name 14/Medium + comment chip 34×24 (only with comments). The name opens the row. */}
-      <div className={`${styles.cell} ${styles.colTitle}`} role="cell">
+      <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
         <span className={styles.thumb} aria-hidden>
           {folder ? (
             <Icon name="folder" size={24} className={styles.thumbIcon} />
@@ -184,7 +195,7 @@ function FileRowView({
 
       {/* Owner "Cell / One line" 240 H g12: Avatar Generic 24 + "James" 14/Regular. No owner → "--" (spec silent; the
           File size column's empty mark reused). */}
-      <div className={`${styles.cell} ${styles.colOwner}`} role="cell">
+      <div className={`${styles.cell} ${styles.colOwner} ${L.pinned('owner') ? styles.pin : ''}`} role="cell" data-col="owner" data-pin-edge={L.edge('owner') || undefined} style={L.style('owner')}>
         {row.owner ? (
           <>
             <Avatar name={row.owner.name} color={row.owner.color} size={24} tooltip={false} />
@@ -194,13 +205,13 @@ function FileRowView({
       </div>
 
       {/* Updated "17 Jul ‘26" · File type "JPEG" / "Folder" · File size "711 KB" / "--" (frame 104 folder row). */}
-      <div className={`${styles.cell} ${styles.colUpdated}`} role="cell">{displayDate(row.updatedAt ?? row.createdAt)}</div>
-      <div className={`${styles.cell} ${styles.colType}`} role="cell">{fileTypeLabel(row)}</div>
-      <div className={`${styles.cell} ${styles.colSize}`} role="cell">{folder ? '--' : fileSize(row.sizeBytes)}</div>
+      <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(row.updatedAt ?? row.createdAt)}</div>
+      <div className={`${styles.cell} ${styles.colType} ${L.pinned('type') ? styles.pin : ''}`} role="cell" data-col="type" data-pin-edge={L.edge('type') || undefined} style={L.style('type')}>{fileTypeLabel(row)}</div>
+      <div className={`${styles.cell} ${styles.colSize} ${L.pinned('size') ? styles.pin : ''}`} role="cell" data-col="size" data-pin-edge={L.edge('size') || undefined} style={L.style('size')}>{folder ? '--' : fileSize(row.sizeBytes)}</div>
 
       {/* Attached to: Tag Outlined Default "Task" (931:40181) or "--" (the mock repeats "Task" as a placeholder; the
           model's attachedTo decides). */}
-      <div className={`${styles.cell} ${styles.colAttached}`} role="cell">
+      <div className={`${styles.cell} ${styles.colAttached} ${L.pinned('attached') ? styles.pin : ''}`} role="cell" data-col="attached" data-pin-edge={L.edge('attached') || undefined} style={L.style('attached')}>
         {row.attachedTo ? <Tag appearance="outlined">{row.attachedTo}</Tag> : '--'}
       </div>
 

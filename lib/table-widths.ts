@@ -54,3 +54,9 @@ export function setColumnWidth(table: string, key: string, px: number | null, _p
   cache.set(table, Object.freeze(next))
   emit(table)
 }
+
+/** Forget every dragged width of one table — Column settings › Reset to default (REG-454). */
+export function clearColumnWidths(table: string) {
+  cache.set(table, EMPTY)
+  emit(table)
+}

@@ -7,7 +7,7 @@ import { setFlagPref, useFlagPref } from '@/lib/prefs'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
-import { displayDate, groupDigits, money } from '@/lib/format'
+import { displayDate, groupDigits, money, phoneLocal } from '@/lib/format'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -155,7 +155,7 @@ export function InfoColumn({
         <div className={styles.contact}>
           <div className={styles.contactRow}>
             {/* eight unbroken digits (REG-162) */}
-            <span className={styles.contactText}>{lead.phone}</span>
+            <span className={styles.contactText}>{phoneLocal(lead.phone)}</span>
             <Tooltip label="Copy phone number">
               <button type="button" className={styles.iconBtn} data-size="16" aria-label="Copy phone number"
                       onClick={() => onCopy('phone', lead.phone)}>

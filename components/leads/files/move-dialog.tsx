@@ -185,7 +185,7 @@ export function MoveDialog({
                 /* 931:39335 (frame 106): "Create Folder" 20/Bold + Text Field 48 "Name" under the list. */
                 <div className={styles.create}>
                   <span className={styles.createTitle}>Create Folder</span>
-                  <TextField label="Name" value={newName} onChange={setNewName} autoFocus
+                  <TextField label="Name" required value={newName} onChange={setNewName} autoFocus
                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void create() } }} />
                 </div>
               ) : null}

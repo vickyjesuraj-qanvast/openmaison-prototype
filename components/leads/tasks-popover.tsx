@@ -7,7 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { anchoredSurface, duration, ease } from '@/lib/motion'
-import { displayDate, isDueToday, isOverdue } from '@/lib/format'
+import { displayDate, isDueToday, isOverdue, phoneLocal } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import type { LeadRow } from '@/lib/leads/queries'
@@ -204,13 +204,13 @@ export function TasksPopover({
      composer are unchanged, and Add Task is the sheet's pinned action row. */
   if (sheet) {
     return (
-      <Sheet open={open} onClose={onClose} title={lead?.name} subtitle={lead ? `${lead.phone} · Current stage: ${lead.stage}` : undefined}
+      <Sheet open={open} onClose={onClose} title={lead?.name} subtitle={lead ? `${phoneLocal(lead.phone)} · Current stage: ${lead.stage}` : undefined}
              footer={adding ? null : <Button onPress={() => setAdding(true)}>Add Task</Button>}>
         {inner}
         {adding ? (
           <div className={styles.addArea}
                onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
-            <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
+            <TextField label="Describe your task" required value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
             <div className={styles.addBtns}>
               <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
               <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>
@@ -245,7 +245,7 @@ export function TasksPopover({
             <div className={styles.addArea}
                  onKeyDown={(e) => { if (e.key === 'Enter' && !saving) { e.preventDefault(); void save() } }}>
               {/* The composer always opens focused — it only exists because the user asked to write something. */}
-              <TextField label="Describe your task" value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
+              <TextField label="Describe your task" required value={draft} onChange={setDraft} trailingIcon={null} autoFocus />
               <div className={styles.addBtns}>
                 <Button variant="secondary" onPress={() => { setAdding(false); setDraft('') }} isDisabled={saving}>Cancel</Button>
                 <Button onPress={() => { void save() }} isDisabled={!draft.trim() || saving}>Save</Button>

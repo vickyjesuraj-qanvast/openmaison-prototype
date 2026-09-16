@@ -1,0 +1,24 @@
+/* Column settings (REG-454): the Items drawer's list — 56px rows of handle · label · (pin) · switch — under a helper line,
+   a Pinned group with its one divider (REG-147) where a table pins, then Manage columns; footer Reset to default · Save. */
+.settings { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.help { margin: 0 0 var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.group { display: flex; flex-direction: column; gap: 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.list { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 56px; }
+.handle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border: 0; background: none; padding: 0; border-radius: var(--om-radius-1); }
+.handle:active { cursor: grabbing; }
+.handle[data-locked] { opacity: .4; cursor: default; }   /* the identity column stays first (REG-84) */
+.handle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.label { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
+.pin[data-pinned] { color: var(--om-color-on-surface-default); }
+.pin:hover { background: var(--om-color-hover-08p); }
+.pin:disabled { color: var(--om-color-on-surface-disabled); cursor: default; background: none; }
+.pin:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.pinSlot { width: 24px; flex-shrink: 0; }
+.divider { height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
+.link { align-self: flex-start; margin-top: var(--om-spacing-2); border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); border-radius: var(--om-radius-1); }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

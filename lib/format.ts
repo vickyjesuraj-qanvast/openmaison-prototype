@@ -120,9 +120,25 @@ export function phoneDigits(raw: string | null | undefined): string {
   return d.length === 10 && d.startsWith('65') ? d.slice(2) : d   // the +65 country code is implied, never stored
 }
 
-/** How a phone is shown, copied and exported: "+65 91234567" — the country code the column leaves implied. */
-export function phoneDisplay(phone: string | null | undefined): string {
+/** A phone AS IT IS TYPED (REG-456, user feedback 2026-09-16): the on-screen grouping applied to whatever is in the box so
+    far — "9123" · "9123 4" · "9123 4567"; a number past eight digits regroups 5 + 5. Display only: the box stores digits. */
+export function phoneTyped(raw: string | null | undefined): string {
+  const d = digitsOnly(raw ?? '')
+  if (d.length <= 4) return d
+  if (d.length <= 8) return `${d.slice(0, 4)} ${d.slice(4)}`
+  return `${d.slice(0, 5)} ${d.slice(5, 10)}`
+}
+/** How a local number reads on screen (REG-452, user feedback 2026-09-16): "9041 4042" — Singapore's 4 + 4; a 10-digit
+    number 5 + 5; anything else as its digits. The space is display only: search, copy-back and storage strip it (phoneDigits). */
+export function phoneLocal(phone: string | null | undefined): string {
   const d = phoneDigits(phone)
+  if (d.length === 8) return `${d.slice(0, 4)} ${d.slice(4)}`
+  if (d.length === 10) return `${d.slice(0, 5)} ${d.slice(5)}`
+  return d
+}
+/** How a phone is copied and exported: "+65 9041 4042" — the country code the column leaves implied, the same spacing as on screen. */
+export function phoneDisplay(phone: string | null | undefined): string {
+  const d = phoneLocal(phone)
   return d ? `+65 ${d}` : ''
 }
 

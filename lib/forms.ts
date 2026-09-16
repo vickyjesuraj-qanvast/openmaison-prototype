@@ -15,6 +15,7 @@ export const MSG = {
   milestones: 'Milestones must add up to 100%',
   assignee: 'Assign at least one member',
   dateRange: 'From date must be on or before To date',
+  future: 'Choose a date after today',   // On Hold › Follow up on (REG-453)
   mapField: 'Select a field or Ignore',   // Import Leads › mapping (REG-317)
 } as const
 

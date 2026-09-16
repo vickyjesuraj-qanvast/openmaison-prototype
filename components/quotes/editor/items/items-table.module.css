@@ -16,7 +16,13 @@
 /* A group row is a BAND (owner 2026-09-16, REG-440: "item and group looks confusing without a color difference for the row"): every cell
    from the checkbox to TOTAL wears the bar's own blue family, its sums bold, so the block reads as a tinted header over plain,
    indented lines. Selection still wins (the rules below); the hover wash is an overlay, so it works on the band too. */
+/* Group colour (owner 2026-09-16, REG-457 as revised the same day): one blue. The group row keeps the DS tertiary-blue band
+   (variant2) and its 4px bar; its CHILDREN sit on a lighter blue — the band tint at half strength over the surface —
+   so a child block reads as the group's and the next group's band stands out (a four-tone rotation was tried first and dropped:
+   "the new colors are not going very well visually"). Selection and hover still win (the rules below / the REG-449 wash). */
+.row { --group-child-tint: color-mix(in srgb, var(--om-color-tertiary-blue-variant2) 50%, var(--om-color-surface-default)); }
 .row[data-group] { background: var(--om-color-tertiary-blue-variant2); }
+.row[data-child] { background: var(--group-child-tint); }
 .row[data-selected] { background: var(--om-color-primary-variant); }
 .row[data-dragover='before'] { box-shadow: inset 0 2px 0 var(--om-color-primary-default); }
 .row[data-dragover='after'] { box-shadow: inset 0 -2px 0 var(--om-color-primary-default); }
@@ -33,7 +39,7 @@
 /* The column-resize handle sits on the head's right edge (REG-427): the head cell is positioned — the frozen heads already are (sticky), the rest go relative. */
 .head .cell:not(.colSel):not(.colNum):not(.colItem):not(.colTotal) { position: relative; }
 .colSel { width: var(--sel-w); gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); overflow: visible; }
-.head .colSel { justify-content: flex-end; }
+.head .colSel { justify-content: flex-end; padding-right: 11px; }   /* the row's checkbox sits after handle · gap · plus · gap = 64 from the cell's edge, 4px into the padding; 11 (the head cell's 1px rule counts) puts the head's box on the same x (owner 2026-09-16, REG-461) */
 .colNum { width: var(--num-w); font: var(--om-type-caption-s); text-transform: uppercase; }
 .colItem { flex: 1 0 auto; width: 360px; padding: 11px var(--om-spacing-4) var(--om-spacing-3); gap: var(--om-spacing-3); border-right-width: 4px; align-items: center; position: relative; white-space: normal; }   /* 11 above: the row's 1px rule is inside its 72 (thumb 48 + 12 + 11 + the rule) */
 .colQty { width: 65px; }
@@ -61,6 +67,7 @@
 }
 .row .colTotal { background: var(--om-color-surface-default); }
 .row[data-group] .colTotal { background: var(--om-color-tertiary-blue-variant2); }
+.row[data-child] .colTotal { background: var(--group-child-tint); }
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
@@ -107,10 +114,11 @@
 /* A group row: cards glyph after the name, the fold chevron at the cell's right, a 4px tertiary-blue bar down the cell's left edge (1260:31364). */
 .groupBar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--om-color-tertiary-blue-default); }
 .groupTag { display: inline-flex; flex-shrink: 0; }   /* the DS Tag "Group" after the name (REG-445) */
+.groupCount { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }   /* "3 items" after the Group tag (REG-463) */
 .fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); margin-left: auto; }   /* flush with the text column, 16 from the cell edge (1260:31357) */
 .fold:hover { background: var(--om-color-hover-08p); }
 /* A child row (1260:31402): tinted cell, 32 inset, the eye that opens the visibility menu. */
-.row[data-child] .colItem { padding-left: var(--om-spacing-8); }   /* a child keeps only its indent and the bar: the group's band carries the colour (REG-440) */
+.row[data-child] .colItem { padding-left: var(--om-spacing-8); }   /* a child keeps its indent, the bar and the lighter blue (REG-440 / REG-457) */
 .eye { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); }
 .eye:hover { background: var(--om-color-hover-08p); }
 
@@ -223,6 +231,7 @@
 .colItem { left: calc(var(--sel-w) + var(--num-w)); }
 .head .colSel, .head .colNum, .head .colItem, .row .colSel, .row .colNum, .row .colItem { background: var(--om-color-surface-default); }
 .row[data-group] .colSel, .row[data-group] .colNum, .row[data-group] .colItem { background: var(--om-color-tertiary-blue-variant2); }
+.row[data-child] .colSel, .row[data-child] .colNum, .row[data-child] .colItem { background: var(--group-child-tint); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
 .scroller[data-scrolled] .colItem { box-shadow: 6px 0 8px -4px rgba(0, 0, 0, .16); }
@@ -231,7 +240,8 @@
    rows fill #f2f2f2) — painted as an overlay on each cell, so the frozen cells' own fills, a child's tint and a selection all
    keep their colour under it; a finger has no hover. */
 @media (hover: hover) {
-  .row:hover .cell { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+  /* The DS primary tint as a wash (REG-449): primary at 10% over white IS primary-variant, and it also reads over a group's band and a selected row. */
+  .row:hover .cell { background-image: linear-gradient(color-mix(in srgb, var(--om-color-primary-default) 10%, transparent), color-mix(in srgb, var(--om-color-primary-default) 10%, transparent)); }
 }
 @media (max-width: 1024px) {
   .colItem { width: 240px; }

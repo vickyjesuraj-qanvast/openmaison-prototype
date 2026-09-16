@@ -5,9 +5,9 @@ import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
-import { displayDate } from '@/lib/format'
-import { HOLD_DURATIONS, holdFollowUpAt } from '@/lib/leads/enums'
-import { Divider, Dropzone, TextField } from './fields'
+import { displayDate, inputDate, parseInputDate, startOfDay } from '@/lib/format'
+import { DEFAULT_HOLD_DURATION, HOLD_DURATIONS, holdDurationLabel, holdFollowUpAt } from '@/lib/leads/enums'
+import { ChoiceChips, DateField, Divider, Dropzone, TextField } from './fields'
 import styles from './wizard.module.css'
 
 // The dialog shell and the destructive button are generic primitives (components/om/dialog); re-exported here so the
@@ -112,59 +112,63 @@ export function SuggestedTasksDialog({
 }
 
 /**
- * Move stage › On Hold. The dialog owns the duration vocabulary AND the follow-up date it promises: both come
- * from `HOLD_DURATIONS` / `holdFollowUpAt` (REG-286, audit finding "the On Hold duration → follow-up-date rule
- * is computed in four places"), measured from `openedAt` — the instant the dialog opened — so the date it
- * saves is the date the reader just agreed to, even if the dialog sat open across midnight.
+ * Move stage › On Hold. The follow-up is a DATE — the 1 / 3 / 6 month presets as chips plus "Custom", which alone reveals
+ * the "Follow up on" date field, pre-filled with the preset that was on (REG-453, user feedback 2026-09-16: "the customer
+ * could have requested a follow up at any point in the future"; the owner: "add custom as the last option and when user
+ * selects the custom then only reveal the date selection input"). The date the helper line promises is the date saved
+ * (REG-286), measured from `openedAt` — the instant the dialog opened.
  */
 export function OnHoldDialog({
-  open, onClose, onSave, reason, setReason, duration, setDuration, openedAt, followUp,
+  open, onClose, onSave, reason, setReason, openedAt,
 }: {
   open: boolean; onClose: () => void
-  /** `followUpAt` is the ISO date this dialog just promised on screen — store THAT, never a recomputed one (REG-286). */
-  onSave: (otherReason: string | undefined, followUpAt: string) => void
+  /** `followUpAt` is the ISO date the dialog shows; `duration` the preset it matches or "Until …" — store both (REG-286 / REG-453). */
+  onSave: (otherReason: string | undefined, followUpAt: string, duration: string) => void
   reason: string; setReason: (v: string) => void
-  duration: string; setDuration: (v: string) => void
-  /** When the dialog was opened (ms). The follow-up date is measured from it. */
-  openedAt?: number
-  /** @deprecated Pass `openedAt` instead and let the dialog derive the line; only read while a caller still computes it. */
-  followUp?: string
+  /** When the dialog was opened (ms). The presets and the pre-fill are measured from it. */
+  openedAt: number
 }) {
-  // "Other reason" lives here — the parent only knows `reason` (see openQuestions in the change report).
+  // "Other reason" and the date live here — the parent only knows `reason`.
   const [other, setOther] = useState('')
+  const [when, setWhen] = useState('')   // d/m/yyyy, the DateField's canonical string
+  const [custom, setCustom] = useState(false)   // the Custom chip: the date field shows only then
   const [showErrors, setShowErrors] = useState(false)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {   // every opening starts on the default preset with nothing carried over from the last lead
+    setWasOpen(open)
+    if (open) { setWhen(inputDate(holdFollowUpAt(DEFAULT_HOLD_DURATION, openedAt))); setCustom(false); setOther(''); setShowErrors(false) }
+  }
+  const today = new Date(openedAt)
+  const picked = parseInputDate(when)
   const errors = {
     reason: !reason ? MSG.required : undefined,
-    duration: !duration ? MSG.required : undefined,
     other: reason === 'Others' && !other.trim() ? MSG.required : undefined,
+    when: !when ? MSG.required : !picked ? MSG.date : startOfDay(picked) <= startOfDay(today) ? MSG.future : undefined,
   }
   const invalid = Object.values(errors).some(Boolean)
-  const reset = () => { setOther(''); setShowErrors(false) }   // the dialog stays mounted between leads — never carry text or errors over
-  const close = () => { reset(); onClose() }
-  // The promised date and the saved one are the same call on the same instant (REG-286).
-  const followUpDate = (from: number) => holdFollowUpAt(duration, from)
-  const followUpLine = openedAt === undefined ? (followUp ?? '') : displayDate(followUpDate(openedAt))
+  const preset = custom ? 'Custom' : (HOLD_DURATIONS.find((d) => inputDate(holdFollowUpAt(d, openedAt)) === when) ?? null)
+  const pick = (d: string) => { if (d === 'Custom') { setCustom(true); return } setCustom(false); setWhen(inputDate(holdFollowUpAt(d, openedAt))) }
+  const close = () => { setOther(''); setShowErrors(false); onClose() }
   const save = () => {
-    if (invalid) { setShowErrors(true); return }
+    if (invalid || !picked) { setShowErrors(true); return }
     const v = reason === 'Others' ? other.trim() : undefined
-    reset()
-    onSave(v, followUpDate(openedAt ?? Date.now()).toISOString())
+    setOther(''); setShowErrors(false)
+    onSave(v, picked.toISOString(), holdDurationLabel(picked, openedAt))
   }
   return (
     <Dialog open={open} onClose={close} title="Move stage" width={400}
             subtitle={<span className={styles.subtitle}>Moving to On Hold</span>}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
                      <Button onPress={save}>Save &amp; Move</Button></>}>
-      <TextField label="Reason" value={reason} onChange={setReason} mode="select"
+      <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
                  options={['Property delay', 'Budget on hold', 'Travelling', 'Others']}
                  error={showErrors ? errors.reason : undefined} />
       {reason === 'Others' ? (
-        <TextField label="Other reason" value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
+        <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
       ) : null}
-      <TextField label="Duration" value={duration} onChange={setDuration} mode="select"
-                 options={HOLD_DURATIONS}
-                 error={showErrors ? errors.duration : undefined} />
-      <span className={styles.helper}>Next follow up date will be {followUpLine}</span>
+      <ChoiceChips label="Duration" required options={[...HOLD_DURATIONS, 'Custom']} value={preset} onChange={pick} />
+      {custom ? <DateField label="Follow up on" required value={when} onChange={setWhen} today={today} error={showErrors ? errors.when : undefined} /> : null}
+      <span className={styles.helper}>Next follow up date will be {picked ? displayDate(picked) : '—'}</span>
     </Dialog>
   )
 }
@@ -190,11 +194,11 @@ export function LostDialog({
             subtitle={<span className={styles.subtitle}>Moving to Lost</span>}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
                      <Button onPress={save}>Save &amp; Move</Button></>}>
-      <TextField label="Reason" value={reason} onChange={setReason} mode="select"
+      <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
                  options={['Property too far', 'Went with another firm', 'Budget mismatch', 'Unresponsive', 'Others']}
                  error={showErrors ? errors.reason : undefined} />
       {reason === 'Others' ? (
-        <TextField label="Other reason" value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
+        <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
       ) : null}
     </Dialog>
   )

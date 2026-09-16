@@ -34,7 +34,7 @@ type Edit = { id: string; field: Field; draft: string }
 
 /** The table's key in the user's stored column widths (REG-427) and its mocked tracks (payments-section.module.css). */
 const PAY_TABLE = 'quote-payments'
-const PAY_TRACKS = [{ key: 'sel', track: '40px' }, { key: 'name', track: '319px' }, { key: 'desc', track: 'minmax(120px, 1fr)' }, { key: 'pct', track: '140px' }, { key: 'amount', track: '140px' }, { key: 'due', track: '140px' }]
+const PAY_TRACKS = [{ key: 'sel', track: '40px' }, { key: 'name', track: '319px' }, { key: 'desc', track: 'minmax(120px, 1fr)' }, { key: 'pct', track: '140px' }, { key: 'amount', track: '140px' }, { key: 'due', track: '188px' }]
 const PAY_HEADS: { key: string; label: string }[] = [{ key: 'name', label: 'Payment name' }, { key: 'desc', label: 'Description / Trigger' }, { key: 'pct', label: 'Percentage (%)' }, { key: 'amount', label: 'Amount (S$)' }, { key: 'due', label: 'Due' }]
 const fmtPct = (p: number) => `${Number.isInteger(p) ? p : Number(p.toFixed(2))}%`
 /** Whole dollars ("S$10,000") — the over-balance message's figures (1271:38240). */
@@ -66,7 +66,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const colWidths = useColumnWidths(PAY_TABLE)
   const tracks = gridTracks(PAY_TRACKS, colWidths)
   // The rows' floor (REG-430): the mock's 40 + 319 + 120 + 140 × 3, each column at its dragged width instead — the table scrolls sideways past it.
-  const payFloor = 40 + (colWidths.name ?? 319) + (colWidths.desc ?? 120) + (colWidths.pct ?? 140) + (colWidths.amount ?? 140) + (colWidths.due ?? 140)
+  const payFloor = 40 + (colWidths.name ?? 319) + (colWidths.desc ?? 120) + (colWidths.pct ?? 140) + (colWidths.amount ?? 140) + (colWidths.due ?? 188)
   const [payFrame, payOverflowing] = useOverflowX()
 
   const [rows, setRows] = useState<QuotePayment[]>(seed.rows)

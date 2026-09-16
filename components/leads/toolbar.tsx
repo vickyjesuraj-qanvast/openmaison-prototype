@@ -21,8 +21,7 @@ export function LeadsToolbar({
   filterCount = 0,
   view,
   onViewChange,
-  chipMenu,
-}: {
+  chipMenu, onColumnsClick}: {
   chipLabel: string
   onChipClick: () => void
   /** The pill's menu is open — chevron points up. */
@@ -32,6 +31,8 @@ export function LeadsToolbar({
   query: string
   onQueryChange: (q: string) => void
   onFilterClick: () => void
+  /** Column settings (REG-454): the one entry point every table shares, after Filters. */
+  onColumnsClick?: () => void
   /** A2: number of active filter groups — badge on the filter button. */
   filterCount?: number
   view: 'table' | 'kanban'
@@ -83,6 +84,12 @@ export function LeadsToolbar({
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
+        {onColumnsClick ? (
+          /* Column settings (REG-454): its own item in the row — inside the filter wrapper it touched Filters (owner 2026-09-16). */
+          <Tooltip label="Column settings">
+            <IconButton icon="tune" label="Column settings" onClick={onColumnsClick} />
+          </Tooltip>
+        ) : null}
         {/* (REG-299) ≤767 there is one view — the mock's cards — so the toggle leaves the row. */}
         <span className={styles.viewWrap}>
           <SegmentedIconToggle

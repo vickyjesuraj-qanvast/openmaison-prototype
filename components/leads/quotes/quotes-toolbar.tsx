@@ -17,6 +17,8 @@ export type QuotesToolbarProps = {
   /** Create Quote (owner 2026-09-11, REG-405): one button, no menu — it opens the Create Quote modal, then the editor. */
   onCreate: () => void
   onFilter: () => void
+  /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
+  onColumns?: () => void
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
   /** Header kebab (910:36729): Manage Templates · Quotes Settings · Deleted Quotes. */
@@ -30,7 +32,7 @@ export type QuotesToolbarProps = {
  * Copied from components/leads/tasks/tasks-toolbar.tsx — same geometry, the quotes' copy and menus.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, filterCount, onMenu }: QuotesToolbarProps) {
+export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu }: QuotesToolbarProps) {
   const [menu, setMenu] = useState<'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -54,6 +56,12 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
+        {onColumns ? (
+          /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
+          <Tooltip label="Column settings">
+            <IconButton icon="tune" label="Column settings" onClick={onColumns} />
+          </Tooltip>
+        ) : null}
         <span className={styles.menuWrap}>
           <Tooltip label="More options" disabled={menu === 'more'}>
             <IconButton

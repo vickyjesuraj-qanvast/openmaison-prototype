@@ -31,6 +31,10 @@ import {
   editComment, markTaskSeen, renameTag, saveTemplate, setTaskAssignees, setTaskTags, updateTask,
 } from '@/app/leads/tasks-actions'
 import { downloadTasks } from '@/lib/leads/export'
+import { ColumnSettingsDrawer } from '@/components/om/column-settings'
+import { useTableColumns } from '@/components/om/table-columns'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { TASK_COLUMN_DEFS } from './tasks-table'
 import styles from './lead-tasks.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
@@ -77,6 +81,10 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_TASK_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
+  const [columnsOpen, setColumnsOpen] = useState(false)
+  const phone = useMediaQuery(MOBILE)
+  const columnPrefs = useTableColumns('lead-tasks', TASK_COLUMN_DEFS, phone)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [adding, setAdding] = useState(false)
   /** Bumped per inline save: remounts the add row empty and focused, so tasks chain without re-opening (REG-257). */
@@ -181,7 +189,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
 
   return (
     <div className={styles.tab} data-open={openId ? '' : undefined}>
-      <TasksToolbar
+      <TasksToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)}
         query={query} onQuery={setQuery}
         onAdd={(kind) => (kind === 'new' ? startAdd() : setChooseTemplate(true))}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
@@ -198,7 +206,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
       ) : nothingMatches && !adding ? (
         <TabSearchEmpty noun="tasks" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_TASK_FILTERS) }} />
       ) : (
-        <TasksTable
+        <TasksTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           tasks={visible} now={now}
           selected={selected} onSelect={setSelected}
           unseen={unseen}
@@ -314,6 +322,7 @@ export function LeadTasks({ leadId, data }: { leadId: string; data: LeadTasksDat
         onAttach={(fileIds) => { const t = attachTask; setAttachFor(null); if (t) void run('attach the files', () => attachFiles(t.id, fileIds), `${fileIds.length === 1 ? '1 file' : `${fileIds.length} files`} attached`) }}
         onUploadPicked={() => { /* REG-149: the picked file becomes the mock's file — the modal shows the upload toast and lists it in "Your files" */ }}
       />
+      <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <TasksFiltersModal
         open={filtersOpen} team={team} tags={tags} value={filters} now={now}
         onApply={(v) => { setFilters(v); setFiltersOpen(false) }}

@@ -39,7 +39,7 @@ export function NameDialog({
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <Button onPress={save} isDisabled={!trimmed}>Save</Button>
             </>}>
-      <TextField label="Name" value={name} onChange={setName} autoFocus
+      <TextField label="Name" required value={name} onChange={setName} autoFocus
                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }} />
     </Dialog>
   )
