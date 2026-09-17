@@ -166,6 +166,25 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   }
   const undo = () => { const prev = history.past.at(-1); if (prev) void restore(prev, true) }
   const redo = () => { const next = history.future[0]; if (next) void restore(next, false) }
+  /* Cmd+Z / Cmd+Shift+Z (Ctrl+Z / Ctrl+Y as well) undo and redo the lines from the page's body or anywhere in this card (REG-475) — but
+     not from a box with typing in it, where the browser's own undo takes the keystrokes back, nor from another dialog or a menu. */
+  const keys = useRef({ undo, redo, live: open || expanded })
+  useEffect(() => { keys.current = { undo, redo, live: open || expanded } })
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const z = e.key === 'z' || e.key === 'Z', y = e.key === 'y' || e.key === 'Y'
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || !(z || y) || !keys.current.live) return
+      const t = e.target instanceof HTMLElement ? e.target : null
+      if (t && t !== document.body && !t.closest('[id^="section-items"], [data-items-expanded]')) return
+      if (t?.closest('[role="dialog"]:not([data-items-expanded]), [role="menu"], [role="listbox"]') || document.querySelector('[role="dialog"]:not([data-items-expanded])')) return
+      if (t?.matches('input, textarea, [contenteditable="true"]') && (!t.hasAttribute('data-edit') || t.hasAttribute('data-dirty'))) return
+      e.preventDefault()
+      if (t?.hasAttribute('data-edit')) t.blur()
+      if (y || e.shiftKey) keys.current.redo(); else keys.current.undo()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   const patchItem = (id: string, patch: ItemPatch, opts: { snapshot?: boolean } = {}) => {
     if (opts.snapshot !== false && !pending.current.size) snapshot()
@@ -413,6 +432,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             h={{
               onPatch: patchItem,
               onSelect: (id, on) => setSelected((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n }),
+              onSelectRun: (ids) => setSelected((s) => new Set([...s, ...ids])),
               onInsertBelow: insertBelow,
               onMenu,
               onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the group' : 'Moved out of the group') },

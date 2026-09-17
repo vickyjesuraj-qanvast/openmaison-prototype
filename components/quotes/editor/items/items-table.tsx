@@ -13,6 +13,7 @@ import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
 import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
+import { atEdge, focusCell, nextAcross, nextDown, type Target } from './grid-keys'
 
 /** The table's key in the user's stored column widths (lib/table-widths.ts). */
 export const ITEMS_TABLE = 'quote-items'
@@ -211,8 +212,17 @@ export function ItemsTable({
   const allIds = items.map((i) => i.id)
   const allOn = allIds.length > 0 && allIds.every((id) => selected.has(id))
   const [drag, setDrag] = useState<{ id: string; over: string | null; where: 'before' | 'after' | null } | null>(null)
+  const lastTouched = useRef<string | null>(null)
   const rowH: RowHandlers = {
     ...h,
+    /* Shift-click selects the run between the last row touched and this one over the rows as shown (a folded group's children
+       are not in it); it only ever adds, so a run across a partly-ticked list fills the gaps (REG-475, the Tasks table's rule). */
+    onSelect: (id, on, range) => {
+      const ids = display.flatMap((d) => (d.kind === 'row' ? [d.item.id] : []))
+      const a = lastTouched.current ? ids.indexOf(lastTouched.current) : -1, b = ids.indexOf(id)
+      if (range && a >= 0 && b >= 0) h.onSelectRun(ids.slice(Math.min(a, b), Math.max(a, b) + 1)); else h.onSelect(id, on)
+      lastTouched.current = id
+    },
     onDragStart: (id) => { setDrag({ id, over: null, where: null }); h.onDragStart(id) },
     onDragOver: (id, where) => { setDrag((d) => (d ? { ...d, over: id, where } : d)); h.onDragOver(id, where) },
     onDrop: () => { setDrag(null); h.onDrop() },
@@ -220,10 +230,28 @@ export function ItemsTable({
   }
   const anyFolded = collapsedBuckets.size > 0
 
+  /* The keyboard grid (REG-475, grid-keys.ts): Tab / Shift+Tab step across the cells, Enter / Shift+Enter and ↑ ↓ walk the column,
+     ← → leave a box from its edge, F2 drops the caret at the end of a selected value; past the last row is the Add Item field.
+     An open select menu keeps its own keys, and so does anything that is not a cell control. */
+  const onGridKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const t = e.target
+    if (!(t instanceof HTMLElement) || !t.hasAttribute('data-edit') || t.getAttribute('aria-expanded') === 'true' || e.metaKey || e.ctrlKey || e.altKey) return
+    const table = e.currentTarget
+    const input = t instanceof HTMLInputElement ? t : null
+    const go = (n: Target) => { if (n === 'add') addInputRef.current?.focus(); else if (n) focusCell(n, scroller.current); else t.blur() }
+    switch (e.key) {
+      case 'Tab': { const n = nextAcross(table, t, e.shiftKey ? -1 : 1); if (!n) return; e.preventDefault(); go(n); return }
+      case 'Enter': e.preventDefault(); go(nextDown(table, t, e.shiftKey ? -1 : 1)); return
+      case 'ArrowDown': case 'ArrowUp': { const n = nextDown(table, t, e.key === 'ArrowDown' ? 1 : -1); if (!n) return; e.preventDefault(); go(n); return }
+      case 'ArrowLeft': case 'ArrowRight': { const dir = e.key === 'ArrowRight' ? 1 : -1; if (input && !atEdge(input, dir)) return; const n = nextAcross(table, t, dir); if (!n) return; e.preventDefault(); go(n); return }
+      case 'F2': if (input) { e.preventDefault(); const L = input.value.length; input.setSelectionRange(L, L) } return
+    }
+  }
+
   return (
     <div className={styles.wrap}>
       <div ref={scroller} className={styles.scroller} data-more={more || undefined} data-scrolled={scrolled || undefined}>
-        <div className={styles.table} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE}>
+        <div className={styles.table} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} onKeyDown={onGridKey}>
           <div ref={headRef} className={styles.head} role="row">
             <div role="columnheader" className={`${styles.cell} ${styles.colSel}`}>
               {view !== 'none' ? (

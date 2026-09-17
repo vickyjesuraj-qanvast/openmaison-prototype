@@ -178,6 +178,7 @@
 .pickChev { display: none; align-items: center; flex-shrink: 0; }
 .pick[data-empty] .pickChev, .pick[aria-expanded='true'] .pickChev, .row[data-active] .pick .pickChev { display: inline-flex; }
 .row[data-active] .cell .pick { height: 36px; padding: 0 var(--om-spacing-3) 0 calc(var(--om-spacing-2) - var(--om-border-1)); margin: 0 calc(-1 * var(--om-spacing-2)); border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); width: calc(100% + 2 * var(--om-spacing-2)); max-width: none; justify-content: space-between; }   /* 8 + 1 + 7 = the resting 16 (REG-442) */
+.pick:focus-visible { outline: none; border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }   /* a select reached by key wears the focused box's ring (REG-475) */
 .muted { color: var(--om-color-on-surface-secondary); }
 .sub { font: var(--om-type-body-m); }   /* "(x%)" is one run with the amount, 14/400 ink (1260:31253); the cell's own 4px gap separates them */
 .row[data-active] .sub { display: none; }   /* the markup box stands alone while the row is active (1271:40867) */

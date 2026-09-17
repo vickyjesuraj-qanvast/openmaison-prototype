@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { menuSideFor } from '@/components/leads/menu-side'
@@ -72,7 +72,7 @@ export type TasksTableProps = {
 /** The table's columns (902:26387): Title locked first; the user's order, visibility and pins come from Column settings (REG-454).
     `track` is the mock's px — the floor the rows never squeeze under (REG-430); the flex bases live in the CSS. */
 export const TASK_COLUMN_DEFS: readonly TableColumnDef[] = [
-  { key: 'title', label: 'Title', track: '420', locked: true },
+  { key: 'title', label: 'Title', track: '320', locked: true },   /* floor 320 (was the mock's 420, owner 2026-09-17: Tags must show below 1440) */
   { key: 'assignees', label: 'Members', track: '160' },   /* REG-290 */
   { key: 'creator', label: 'Creator', track: '160' },
   { key: 'due', label: 'Due date', track: '137' },
@@ -219,15 +219,31 @@ export function TasksTable({
 /* ---------------------------------------------------------------------------------------------- */
 
 /** The title cell as the active field (frame 194): bare input + ✕ (secondary outlined 24) + ✓ (primary filled 24). */
-function TitleField({ initial, onSubmit, onCancel }: { initial: string; onSubmit: (title: string) => void; onCancel: () => void }) {
+function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { initial: string; onSubmit: (title: string) => void; onCancel: () => void; closeOnBlur?: boolean }) {
   const [value, setValue] = useState(initial)
+  /* Settled once — Enter, Escape or a button ends the edit, and the blur the unmount then fires must not act again. */
+  const settled = useRef(false)
   const submit = () => {
+    if (settled.current) return
+    settled.current = true
     const title = value.trim()
     if (!title) onCancel(); else onSubmit(title)   // empty title = cancel
   }
+  const cancel = () => { if (settled.current) return; settled.current = true; onCancel() }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); submit() }
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onCancel() }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel() }
+  }
+  /* (REG-472, owner 2026-09-17: "when I clicked in, I can't click out") A click away ends the edit the way the quote editor's
+     cells do: a changed title is saved, an unchanged or empty one is dropped. The add row also closes, so its remount cannot
+     take the focus back from wherever the click went. The ✕ / ✓ swallow mousedown, so they never blur the field first. */
+  const onBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (settled.current) return
+    /* Focus moving within the same row — the add row's Lead picker, the ✕ / ✓ — is not a click away: the edit stays open. */
+    const row = e.currentTarget.closest('[role="row"]')
+    if (e.relatedTarget instanceof Node && row?.contains(e.relatedTarget)) return
+    const title = value.trim()
+    if (title && title !== initial) { submit(); if (closeOnBlur) onCancel() } else cancel()
   }
   return (
     <>
@@ -236,6 +252,7 @@ function TitleField({ initial, onSubmit, onCancel }: { initial: string; onSubmit
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}
+        onBlur={onBlur}
         autoFocus
         aria-label="Task title"
       />
@@ -244,7 +261,7 @@ function TitleField({ initial, onSubmit, onCancel }: { initial: string; onSubmit
           swallowed so the field keeps focus until the click lands. */}
       <span className={styles.confirm}>
         <Tooltip label="Cancel">
-          <button type="button" className={styles.cancelBtn} aria-label="Cancel" onMouseDown={(e) => e.preventDefault()} onClick={onCancel}><Icon name="close" size={20} /></button>
+          <button type="button" className={styles.cancelBtn} aria-label="Cancel" onMouseDown={(e) => e.preventDefault()} onClick={cancel}><Icon name="close" size={20} /></button>
         </Tooltip>
         <Tooltip label="Save">
           <button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={submit}><Icon name="done" size={20} /></button>
@@ -295,7 +312,7 @@ function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: strin
         <Checkbox isSelected={false} isDisabled aria-label="Select new task" />
       </div>
       <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')} data-editing="">
-        <TitleField initial="" onSubmit={onSubmit} onCancel={onCancel} />
+        <TitleField initial="" onSubmit={onSubmit} onCancel={onCancel} closeOnBlur />
       </div>
       {leadPicker ? (
         <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>

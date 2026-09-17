@@ -38,7 +38,7 @@
 .fullPage > * { flex: 1; min-height: 0; }
 @media (max-width: 767px) { .fullPage { padding: var(--om-spacing-4); } }
 .seg { display: inline-flex; }
-.seg > * + * { margin-left: -1px; }
+.seg > :last-child button { margin-left: -1px; }   /* the two 1px borders share one line — on the BUTTON: the Tooltip wrapper around it has no box, so a margin there did nothing and the divider read as 2px (owner 2026-09-17) */
 .seg > :first-child button { border-top-right-radius: 0; border-bottom-right-radius: 0; }   /* each button sits in its Tooltip's span, so `button:first-child` matched both and squared every corner (REG-432) */
 .seg > :last-child button { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .seg button[disabled] { cursor: default; }

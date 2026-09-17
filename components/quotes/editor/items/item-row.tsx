@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type DragEvent, type FocusEvent } from 'react'
+import { useRef, useState, type DragEvent, type FocusEvent, type KeyboardEvent } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -25,7 +25,9 @@ export type ColWidths = Partial<Record<ColumnKey | 'item', number>>
 
 export type RowHandlers = {
   onPatch: (id: string, patch: ItemPatch) => void
-  onSelect: (id: string, on: boolean) => void
+  /** A checkbox press; `range` (Shift held) selects the run from the last row touched, as the Tasks table does (REG-475). */
+  onSelect: (id: string, on: boolean, range?: boolean) => void
+  onSelectRun: (ids: string[]) => void
   onInsertBelow: (item: QuoteItem) => void
   onMenu: (item: QuoteItem, action: RowMenuAction) => void
   onChooseGroup: (item: QuoteItem, groupId: string | null) => void
@@ -90,6 +92,9 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const kind: ItemKind | null = isItemKind(item.icon) ? item.icon : null
   const patch = (p: ItemPatch) => h.onPatch(item.id, p)
   const toggle = (m: typeof menu) => setMenu((cur) => (cur === m ? null : m))
+  /* Backspace / Delete on a focused select clears it, as a spreadsheet clears the cell (REG-475); the rest of the keys are the grid's. */
+  const clearKey = (has: boolean, clear: () => void) => (e: KeyboardEvent<HTMLButtonElement>) => { if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); if (has) clear() } }
+  const shiftHeld = useRef(false)
 
   const onRowDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -102,13 +107,13 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
     const st = colW[key] ? { width: colW[key] } : undefined
     switch (key) {
       case 'qty':
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />}</div>
       case 'unit':
         return (
-          <div key={key} role="cell" className={cls} style={st}>
+          <div key={key} role="cell" className={cls} style={st} data-col={key}>
             {isGroup ? null : (
               <>
-                <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')}>
+                <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')} onKeyDown={clearKey(!!item.unit, () => patch({ unit: null }))}>
                   <span>{item.unit ?? 'Add Unit Type'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
                 </button>
                 <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
@@ -117,10 +122,10 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           </div>
         )
       case 'cost':
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? <span className={styles.sum}>{money2(sums!.costMinor)}</span> : <MoneyCell minor={item.costMinor} onCommit={(v) => patch({ costMinor: v, markupMinor: Math.max(-v, item.markupMinor) })} ariaLabel={`Cost of ${item.name}`} />}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? <span className={styles.sum}>{money2(sums!.costMinor)}</span> : <MoneyCell minor={item.costMinor} onCommit={(v) => patch({ costMinor: v, markupMinor: Math.max(-v, item.markupMinor) })} ariaLabel={`Cost of ${item.name}`} />}</div>
       case 'markup':
         return (
-          <div key={key} role="cell" className={cls} style={st}>
+          <div key={key} role="cell" className={cls} style={st} data-col={key}>
             {isGroup ? <><span className={styles.sum}>{money2(sums!.markupMinor)}</span><span className={styles.sub}>({pct(Number((sums!.costMinor > 0 ? (sums!.markupMinor / sums!.costMinor) * 100 : 0).toFixed(2)))})</span></> : (
               <>
                 <MoneyCell fit minor={item.markupMinor} onCommit={(v) => patch({ markupMinor: v })} ariaLabel={`Markup of ${item.name}`} />
@@ -131,11 +136,11 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         )
       case 'unitPrice':
         // Unit Price = Cost + Markup; the markup absorbs the change and never takes the price below zero (REG-417).
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? <span className={styles.sum}>{money2(sums!.unitPriceMinor)}</span> : <MoneyCell minor={unitPriceMinor(item)} onCommit={(v) => patch({ markupMinor: Math.max(-item.costMinor, v - item.costMinor) })} ariaLabel={`Unit price of ${item.name}`} />}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? <span className={styles.sum}>{money2(sums!.unitPriceMinor)}</span> : <MoneyCell minor={unitPriceMinor(item)} onCommit={(v) => patch({ markupMinor: Math.max(-item.costMinor, v - item.costMinor) })} ariaLabel={`Unit price of ${item.name}`} />}</div>
       case 'discount':
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? null : <NumberCell value={item.discountPct} suffix="%" max={100} onCommit={(v) => patch({ discountPct: v })} ariaLabel={`Discount of ${item.name}`} />}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.discountPct} suffix="%" max={100} onCommit={(v) => patch({ discountPct: v })} ariaLabel={`Discount of ${item.name}`} />}</div>
       case 'gst':
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? null : <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />}</div>
       case 'room': case 'category': case 'section': {
         const ref = key === 'room' ? roomRef : key === 'category' ? catRef : secRef
         const value = item[key]
@@ -143,8 +148,8 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         const empty = key === 'room' ? 'Add Room' : key === 'category' ? 'Add Category' : 'Add Section'
         const title = key === 'room' ? 'Room' : key === 'category' ? 'Category' : 'Section'
         return (
-          <div key={key} role="cell" className={cls} style={st}>
-            <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)}>
+          <div key={key} role="cell" className={cls} style={st} data-col={key}>
+            <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)} onKeyDown={clearKey(!!value, () => patch({ [key]: null } as ItemPatch))}>
               <span>{value ?? empty}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
             </button>
             <LabelMenu open={menu === key} anchor={ref} options={options} value={value} onClose={() => setMenu(null)} title={title}
@@ -153,14 +158,14 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         )
       }
       case 'type':
-        return <div key={key} role="cell" className={cls} style={st}>{isGroup ? null : <span className={kind ? undefined : styles.muted}>{kind ? ITEM_KIND_LABEL[kind] : '–'}</span>}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <span className={kind ? undefined : styles.muted}>{kind ? ITEM_KIND_LABEL[kind] : '–'}</span>}</div>
       case 'margin': {
         const price = isGroup ? sums!.unitPriceMinor : unitPriceMinor(item)
         const cost = isGroup ? sums!.costMinor : item.costMinor
-        return <div key={key} role="cell" className={cls} style={st}>{price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–'}</div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–'}</div>
       }
       default:
-        return <div key={key} role="cell" className={cls} style={st}><span className={styles.muted}>–</span></div>
+        return <div key={key} role="cell" className={cls} style={st} data-col={key}><span className={styles.muted}>–</span></div>
     }
   }
 
@@ -184,7 +189,10 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             <Icon name="add" size={20} weight={300} />
           </button>
         </Tooltip>
-        <span className={styles.check}><Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on)} aria-label={`Select ${item.name}`} /></span>
+        {/* The DS Checkbox reports the next state, not the event, so Shift is read off the press on its way in (the Tasks table's rule). */}
+        <span className={styles.check} onClickCapture={(e) => { shiftHeld.current = e.shiftKey }} onKeyDownCapture={(e) => { shiftHeld.current = e.shiftKey }}>
+          <Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on, shiftHeld.current)} aria-label={`Select ${item.name}`} />
+        </span>
       </div>
       {details.autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>
