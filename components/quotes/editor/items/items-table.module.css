@@ -325,4 +325,4 @@
   .row:hover .edgeAdd { opacity: 1; pointer-events: auto; }
   .edgeAdd:hover + .edgeLine { opacity: 1; }
 }
-@media (hover: none) { .edgeAdd, .edgeLine { display: none; } }
+@media (hover: none), (max-width: 767px) { .edgeAdd, .edgeLine { display: none; } }   /* no hover, or a phone-width window: the leading + is the way */

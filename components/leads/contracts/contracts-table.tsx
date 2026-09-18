@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
@@ -28,6 +29,8 @@ export type ContractsTableProps = {
   onStatus: (contract: Contract, status: ContractStatus) => void
   onView: (contract: Contract) => void
   onRowMenu: (contract: Contract, action: ContractRowAction) => void
+  /** (REG-534) Tools › Contracts: the lead each row belongs to, as a link to its Contracts tab. */
+  leadOf?: (contract: Contract) => { name: string; href: string } | null
   columns: readonly TableColumn[]
   /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
   onReorder: (keys: string[]) => void
@@ -38,6 +41,7 @@ export type ContractsTableProps = {
 /** The table's columns (931:38691, spec 01): Title locked first; the user's order, visibility and pins come from Column settings (REG-454). */
 export const CONTRACT_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'title', label: 'Title', track: 'minmax(555px, 1fr)', locked: true },
+  { key: 'lead', label: 'Lead', track: '180px' },   /* (REG-534) Tools › Contracts only — the quotes list's Client column */
   { key: 'status', label: 'Status', track: 'minmax(128px, max-content)' },
   { key: 'created', label: 'Created', track: '120px' },
   { key: 'signedCopy', label: 'Signed Copy', track: '142px' },
@@ -45,8 +49,10 @@ export const CONTRACT_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'updated', label: 'Updated', track: '157px' },
 ]
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
-const SORTABLE: Record<string, boolean> = { title: false, signedCopy: false }
-const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, status: styles.colStatus, created: styles.colCreated, signedCopy: styles.colSignedCopy, sent: styles.colSent, updated: styles.colUpdated }
+const SORTABLE: Record<string, boolean> = { title: false, signedCopy: false, lead: false }
+/** The tab's columns (no Lead) or the studio list's (with it) — the quotes table's `quoteColumnDefs` (REG-422). */
+export const contractColumnDefs = (withLead: boolean) => CONTRACT_COLUMN_DEFS.filter((d) => d.key !== 'lead' || withLead)
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, status: styles.colStatus, created: styles.colCreated, signedCopy: styles.colSignedCopy, sent: styles.colSent, updated: styles.colUpdated }
 
 /* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
    ~550px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
@@ -60,7 +66,7 @@ const MENU_ITEMS = 6
  * No selection column, no bottom bar. Structure copied from components/leads/quotes/quotes-table.tsx (the Quotes twin):
  * every icon-only control carries a Tooltip (REG-75); sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function ContractsTable({ contracts, onStatus, onView, onRowMenu, columns, onReorder }: ContractsTableProps) {
+export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder }: ContractsTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
@@ -110,6 +116,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, columns
           /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
           menuSide={menuSide}
           onStatus={onStatus} onView={onView} onRowMenu={onRowMenu}
+          lead={leadOf ? leadOf(contract) : null} showLead={columns.some((c) => c.key === 'lead')}
         />
       ))}
     </div>
@@ -122,9 +129,11 @@ function ContractRowView({
   contract,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onStatus, onView, onRowMenu, L,
+  onStatus, onView, onRowMenu, L, lead, showLead,
 }: {
   contract: Contract
+  lead: { name: string; href: string } | null
+  showLead: boolean
   statusOpen: boolean
   onStatusToggle: () => void
   onStatusClose: () => void
@@ -147,6 +156,13 @@ function ContractRowView({
       <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
         <button type="button" className={styles.title} onClick={() => onView(contract)}>{contract.title}</button>
       </div>
+
+      {/* (REG-534) Tools › Contracts: the lead, a link to its Contracts tab — the quotes list's Client column (REG-422). */}
+      {showLead ? (
+        <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
+          {lead ? <Link href={lead.href} className={styles.leadLink}>{lead.name}</Link> : <span>-</span>}
+        </div>
+      ) : null}
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu over CONTRACT_STATUSES
           (not mocked — the Quotes status menu 910:36673 pattern, current marked; REG-178). */}

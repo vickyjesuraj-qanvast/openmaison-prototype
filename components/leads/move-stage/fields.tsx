@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -150,4 +150,17 @@ export function Dropzone({ title, helper, onPick, uploading, accept, variant, on
              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; onPick(f) }} />
     </div>
   )
+}
+
+/** The simulated upload (REG-149: any picked file → ~1.4 s "Uploading…" → the file row). Shared by the Move stage window and the contract dialogs (REG-534). */
+export function useUploadSim(ms = 1400) {
+  const [uploading, setUploading] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  const start = (onDone: () => void) => {
+    if (timer.current) clearTimeout(timer.current)
+    setUploading(true)
+    timer.current = setTimeout(() => { timer.current = null; setUploading(false); onDone() }, ms)
+  }
+  return { uploading, start }
 }

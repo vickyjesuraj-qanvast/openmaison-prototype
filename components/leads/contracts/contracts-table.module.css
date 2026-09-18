@@ -68,6 +68,7 @@
 .colTitle { grid-column: 1; }
 /* 128 at rest (mock); "Sent to Client" needs more, so the TRACK grows to its content and the fluid Title absorbs it —
    the quotes .colStatus intent (REG-176), applied to head and rows together (REG-180). */
+.colLead { }   /* (REG-534) placed by the layout hook's inline style; the tab never shows it */
 .colStatus { grid-column: 2; }
 .colCreated { grid-column: 3; }
 .colSignedCopy { grid-column: 4; }
@@ -253,3 +254,9 @@
 }
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+
+/* (REG-534) The Lead link (Tools › Contracts) — the quotes list's client link. */
+.leadLink { font: var(--om-type-body-m); color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }
+.leadLink:hover { color: var(--om-color-on-primary-variant); text-decoration: underline; }
+.leadLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .cell.colLead { display: none; } }

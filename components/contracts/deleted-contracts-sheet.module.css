@@ -1,0 +1,20 @@
+/* Deleted Contracts sheet (REG-534): the Deleted sheets' table language — 48 head · 60 rows · the two actions parked right. */
+.head { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-bottom: var(--om-spacing-4); }
+.note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.row { display: grid; grid-template-columns: minmax(240px, 1fr) 140px 140px 280px; align-items: center; min-height: 60px; }
+.table[data-lead] .row { grid-template-columns: minmax(240px, 1fr) 180px 140px 140px 280px; }
+.row[data-head] { min-height: 48px; background: var(--om-color-surface-bg); }
+.row[data-head] .cell { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+@media (hover: hover) { .row:not([data-head]):hover { background: var(--om-color-primary-variant); } }
+.cell { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title { font: var(--om-type-subtitle-m); }
+.title > :first-child { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.actions { justify-content: flex-end; gap: var(--om-spacing-2); }
+.empty { padding: var(--om-spacing-8) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+@media (max-width: 767px) {
+  .row { grid-template-columns: 1fr; row-gap: 0; padding: var(--om-spacing-2) 0; }
+  .row[data-head] { display: none; }
+  .actions { justify-content: flex-start; }
+}

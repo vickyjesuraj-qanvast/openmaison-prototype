@@ -50,6 +50,7 @@ type Link = { icon: string; label: string; kind: 'task' | 'quote' | 'callLog' | 
 const LINKS: Link[] = [
   { icon: 'task_alt', label: 'Task', kind: 'task' },
   { icon: 'docs', label: 'Quote', kind: 'quote' },
+  { icon: 'contract', label: 'Contract', kind: 'other' },   /* (REG-534) a new contract on this lead, straight into the editor */
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
   { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
   { icon: 'event', label: 'Meeting', kind: 'meeting' },

@@ -35,7 +35,7 @@
 .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chev { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
 .card:not([data-open]) .chev { transform: rotate(180deg); }   /* keyboard_arrow_up open · keyboard_arrow_down collapsed */
-.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 1; min-width: 0; }   /* (REG-533) may shrink at ≥1025 so a wrapping toolbar (the Items tools) folds to a second row instead of running past the card — "View by: Category" overflowed at 1025 */
 .body { display: flex; flex-direction: column; min-width: 0; }
 /* fill (REG-434): the card takes its container's height and the body scrolls inside it — no open / close animation. */
 .card[data-fill] { height: 100%; min-height: 0; }

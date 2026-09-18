@@ -16,7 +16,7 @@
 }
 .item {
   display: flex; align-items: center; gap: var(--om-spacing-2);
-  width: 100%; height: 36px;
+  width: 100%; height: auto; min-height: 36px;   /* (REG-531) min, not fixed: a label that wraps grows its row instead of being clipped by the next one */
   padding: var(--om-spacing-2) var(--om-spacing-3);
   border: 0; background: none; cursor: pointer; text-align: left;
   font: var(--om-type-body-m);

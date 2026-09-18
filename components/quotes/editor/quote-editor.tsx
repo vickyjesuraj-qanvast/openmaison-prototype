@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
+import { createContractDoc } from '@/app/contracts/actions'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -248,6 +249,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
+    if (action === 'contract') { void flushRef.current(); void createContractDoc({ leadId: lead.id, fromQuoteId: quote.id }).then((id) => router.push(`/contracts/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}`), () => snackbar({ message: 'Couldn’t create the contract — please try again' })); return }   /* (REG-534) the agreement's Quote chips read this quote */
+    if (action === 'xray') { void flushRef.current(); router.push(`/quote-x-ray?lead=${lead.id}&quote=${quote.id}&from=${encodeURIComponent(`/quotes/${quote.id}`)}`); return }   /* (REG-529) Quote X-Ray on this quote */
     comingSoon()
   }
   const VIEW_WORD: Record<ItemsView, string> = { none: 'your own groups', category: 'Trade', room: 'Room', section: 'Section' }

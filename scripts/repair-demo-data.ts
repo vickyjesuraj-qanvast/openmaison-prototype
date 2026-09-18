@@ -1,6 +1,10 @@
 process.env.TZ = process.env.TZ ?? 'Asia/Kolkata'   // before any Date: every `when` string and every due hour is local (the demo machine runs IST)
 
 import { createClient, type InStatement } from '@libsql/client'
+import { compareQuotes, type YourLine } from '@/lib/xray/compare'
+import { AGREEMENT_TITLE, VARIATION_TITLE, agreementHtml, variationHtml } from '@/lib/contracts/agreement'
+import { readOtherQuote } from '@/lib/xray/reference'
+import { lineTotalMinor } from '@/lib/quotes/math'
 import { createHash } from 'node:crypto'
 import { DATABASE_AUTH_TOKEN, DATABASE_URL } from './env'
 import { emptyWizardData, SYSTEM_CONTRACT, SYSTEM_QUOTE, type WizardData } from '../lib/leads/stage-data'
@@ -746,9 +750,55 @@ async function main() {
     note('Showflat Presentation awaits approval, submitted by Sarah 2h ago')
   }
 
+  /* ── R33 · two Quote X-Ray comparisons (REG-529) ─────────────────────────────────────────────────
+     Recent comparisons and the leads' Activity need real readings: two studio quotes compared with two of the reference
+     quotes through the same engine the page runs — nothing typed in "as the mock shows". */
+  console.log('\nR33 quote comparisons')
+  {
+    const picks: [string, string, string, number][] = [['OM-10008', 'Flo Design Sample Quotation.pdf', 'xray-1', 2], ['OM-10001', 'Cove Interior Quotation.pdf', 'xray-2', 5]]
+    for (const [number, file, seed, daysAgo] of picks) {
+      const q = (await client.execute({ sql: `SELECT id, lead_id, title FROM quotes WHERE number = ? AND deleted_at IS NULL`, args: [number] })).rows[0]
+      if (!q) { note(`${number} not found — no comparison seeded`); continue }
+      const other = readOtherQuote(file)!
+      const items = (await client.execute({ sql: `SELECT i.id, i.name, i.description, i.qty, i.unit, i.cost_minor, i.markup_minor, i.discount_pct, i.optional, i.category, i.room, g.category AS g_category, g.room AS g_room, g.name AS g_name FROM quote_items i LEFT JOIN quote_items g ON g.id = i.parent_id WHERE i.quote_id = ? AND i.kind = 'item' AND i.status <> 'Declined'`, args: [String(q.id)] })).rows
+      const yours: YourLine[] = items.map((i) => ({ id: String(i.id), name: String(i.name), description: (i.description as string | null) ?? null, trade: ((i.category ?? i.g_category ?? i.g_name) as string | null) ?? null, room: ((i.room ?? i.g_room) as string | null) ?? null, qty: Number(i.qty), unit: (i.unit as string | null) ?? null, amountMinor: lineTotalMinor({ qty: Number(i.qty), costMinor: Number(i.cost_minor), markupMinor: Number(i.markup_minor), discountPct: Number(i.discount_pct) }), optional: Number(i.optional) === 1 }))
+      const lead = (await client.execute({ sql: `SELECT name FROM leads WHERE id = ?`, args: [String(q.lead_id)] })).rows[0]
+      const result = compareQuotes(yours, other, { yourLabel: `${number} · ${String(q.title)}`, yourStudio: DEFAULT_BRAND_SETTING.details.name, clientName: lead ? String(lead.name) : null })
+      await client.execute({ sql: `INSERT OR IGNORE INTO quote_comparisons (id, lead_id, quote_id, your_label, other_studio, other_file, result_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'dane', ?)`,
+        args: [sid(seed, 'quote_comparison'), String(q.lead_id), String(q.id), `${number} · ${String(q.title)}`, other.studio, file, JSON.stringify(result), NOW - daysAgo * 86400] })
+      note(`${number} compared with ${other.studio} (${result.compared} items)`)
+    }
+  }
+
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')
+  /* ── R34 · contract documents and the two contract templates (REG-534) ─────────────────────────────
+     Every composed contract carries the starter agreement as its document, the lead's client as recipient, its creation
+     day as the contract date; the library holds "Interior Design Service Agreement" and "Variation Order". */
+  console.log('\nR34 contract documents + templates')
+  {
+    const nowS = Math.floor(Date.now() / 1000)
+    const tpl = [
+      { id: sid('template', 'contract-agreement'), title: AGREEMENT_TITLE, body: agreementHtml(), days: 40 },
+      { id: sid('template', 'contract-variation'), title: VARIATION_TITLE, body: variationHtml(), days: 26 },
+    ]
+    for (const t of tpl) {
+      await client.execute({ sql: `INSERT INTO contract_templates (id, title, body, created_by, created_at, updated_at) VALUES (?, ?, ?, 'dane', ?, ?)
+        ON CONFLICT(id) DO UPDATE SET title = excluded.title, body = CASE WHEN contract_templates.body = '' THEN excluded.body ELSE contract_templates.body END`, args: [t.id, t.title, t.body, nowS - t.days * 86400, nowS - t.days * 86400] })
+    }
+    const bare = rows<{ id: string; lead_id: string; created_at: number; name: string; phone: string }>(await client.execute(
+      `SELECT c.id, c.lead_id, c.created_at, l.name, l.phone FROM contracts c JOIN leads l ON l.id = c.lead_id WHERE c.source = 'composed' AND c.body IS NULL`))
+    for (const c of bare) {
+      await client.execute({ sql: `UPDATE contracts SET body = ?, recipient_name = COALESCE(recipient_name, ?), recipient_phone = COALESCE(recipient_phone, ?), contract_date = COALESCE(contract_date, created_at),
+        template_id = COALESCE(template_id, ?), created_by = COALESCE(created_by, 'dane') WHERE id = ?`, args: [agreementHtml(), c.name, c.phone.replace(/\D/g, '').slice(-8), tpl[0]!.id, c.id] })
+    }
+    await client.execute(`UPDATE contract_templates SET last_used_at = (SELECT max(created_at) FROM contracts c WHERE c.template_id = contract_templates.id) WHERE last_used_at IS NULL`)
+    console.log(`  ${bare.length} contract documents written · ${tpl.length} templates`)
+  }
+
   const checks: [string, string][] = [
+    ['composed contract with no document (REG-534)', `SELECT title FROM contracts WHERE source = 'composed' AND body IS NULL`],
+    ['contract with no recipient (REG-534)', `SELECT title FROM contracts WHERE recipient_name IS NULL OR recipient_phone IS NULL`],
     ['quote with no creator', `SELECT number FROM quotes WHERE created_by IS NULL`],
     ['quote follow-up task out of step with its due date', `SELECT q.number FROM lead_tasks t JOIN quotes q ON q.id = t.quote_id WHERE t.done = 0 AND (q.due_at IS NULL OR q.due_at <> t.due_at)`],
     ['live lead past New with no stage trail', `SELECT l.name FROM leads l WHERE l.deleted_at IS NULL AND l.stage <> 'New' AND NOT EXISTS (SELECT 1 FROM stage_logs s WHERE s.lead_id = l.id)`],
@@ -770,6 +820,7 @@ async function main() {
     ['import reporting skipped rows it does not have', `SELECT i.file_name FROM imports i WHERE i.skipped_rows > 0 AND (SELECT count(*) FROM import_rows r WHERE r.import_id = i.id) = 0`],
     ['quote with no prepared-by member or property type (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.prepared_by IS NULL OR q.property_type IS NULL)`],
     ['no default quote design template', `SELECT 'quote_templates' WHERE NOT EXISTS (SELECT 1 FROM quote_templates WHERE is_default = 1)`],
+    ['quote comparison whose quote is gone', `SELECT c.your_label FROM quote_comparisons c WHERE c.quote_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM quotes q WHERE q.id = c.quote_id AND q.deleted_at IS NULL)`],
     ['quote with no project ref or validity (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.project_ref IS NULL OR q.valid_until IS NULL)`],
     ['priced quote with no lines (Items section)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND NOT EXISTS (SELECT 1 FROM quote_items i WHERE i.quote_id = q.id)`],
     ['no studio record', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'studio')`],

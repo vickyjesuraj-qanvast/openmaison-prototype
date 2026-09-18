@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { Crumbs, type CrumbItem } from '@/components/om/crumbs'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import styles from './page-header-l2.module.css'
@@ -16,6 +17,7 @@ export function PageHeaderL2({
   scrollShadow = true,
   backHref,
   crumb,
+  crumbs,
   title,
   chips,
   actions,
@@ -27,7 +29,9 @@ export function PageHeaderL2({
   scrollShadow?: boolean
   backHref: string
   /** Breadcrumb parent, rendered as "{crumb} / " (mock: "Leads / "). */
-  crumb: string
+  crumb?: string
+  /** (REG-536) The crumb as links — every segment with an href is clickable; `crumb` is the text fallback. */
+  crumbs?: CrumbItem[]
   title: string
   /** `MetaChip`s, 8 apart, centred on the title line. */
   chips?: ReactNode
@@ -37,16 +41,17 @@ export function PageHeaderL2({
   titleActions?: ReactNode
 }) {
   const scrolled = useWindowScrolled()
+  const crumbText = crumb ?? (crumbs ?? []).map((c) => c.label).join(' / ')
   return (
     <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined}
             data-owns-shadow={scrollShadow || undefined}>
-      <Tooltip label={`Back to ${crumb}`}>
-        <Link href={backHref} className={styles.back} aria-label={`Back to ${crumb}`}>
+      <Tooltip label={`Back to ${crumbText}`}>
+        <Link href={backHref} className={styles.back} aria-label={`Back to ${crumbText}`}>
           <Icon name="arrow_back" size={24} weight={300} />
         </Link>
       </Tooltip>
       <div className={styles.titleBlock} data-pinned={titleActions ? '' : undefined}>
-        <span className={styles.crumb}>{crumb} / </span>
+        {crumbs ? <Crumbs items={crumbs} className={styles.crumb} trailingSlash /> : <span className={styles.crumb}>{crumb} / </span>}
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{title}</h1>
           {chips ? <div className={styles.chips}>{chips}</div> : null}

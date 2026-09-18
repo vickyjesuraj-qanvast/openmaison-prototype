@@ -17,8 +17,8 @@ import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
-import { quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
+import { categoryShares, counts, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
@@ -155,6 +155,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* "GST 9%" only while every line carries 9 — the per-line GST column is editable, so a mixed table reads plain "GST". */
   const gstLabel = useMemo(() => { const pcts = [...new Set(items.filter((it) => it.kind === 'item').map((it) => it.gstPct))]; return pcts.length === 1 ? `GST ${pcts[0]}%` : 'GST' }, [items])
   const totals: QuoteTotals = useMemo(() => quoteTotals(items, pricing), [items, pricing])
+  const shares = useMemo(() => categoryShares(items, UNLABELLED.category), [items])   // (REG-532) By category under the table
+  const bodyRef = useRef<HTMLDivElement>(null)
   useEffect(() => { onTotal?.(totals.totalMinor) }, [totals.totalMinor, onTotal])
   useEffect(() => { onPricing?.(pricing) }, [pricing, onPricing])
   useEffect(() => { onLines?.(items) }, [items, onLines])
@@ -440,6 +442,17 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const list = view === 'room' ? usedLabels.rooms : view === 'category' ? usedLabels.categories : usedLabels.sections
     return [...new Set([...list, view === 'category' ? 'Uncategorized' : 'Unassigned'])]
   }, [view, usedLabels])
+  /* (REG-532) A By-category row: View by → Category. The shares count every priced line by its own category, while the view buckets
+     top-level rows (a group stays whole under its own label, else Uncategorized — `buildDisplay`), so a share's bucket can be empty:
+     the picked bucket is opened alone and scrolled to only when it holds priced lines; otherwise the view simply switches, every bucket open. */
+  const pickCategory = (name: string) => {
+    chooseView('category')
+    const tops = items.filter((i) => !i.parentId && (i.category || UNLABELLED.category) === name)
+    const priced = tops.some((t) => (t.kind === 'item' ? counts(t) && lineTotalMinor(t) > 0 : items.some((c) => c.parentId === t.id && counts(c) && lineTotalMinor(c) > 0)))
+    if (!priced) return
+    setCollapsedBuckets(new Set([...usedLabels.categories, UNLABELLED.category].filter((k) => k !== name)))
+    window.setTimeout(() => bodyRef.current?.querySelector(`[data-bucket="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60)
+  }
 
   const visibleColumns = columns.columns.filter((c) => c.on).map((c) => c.key) as ColumnKey[]
   const selectedList = [...selected]
@@ -567,7 +580,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
 
   const title = `Items (${lineCount})`
   const body = (
-        <div className={styles.body}>
+        <div ref={bodyRef} className={styles.body}>
           <ItemsTable
             onAddColumn={() => setSettingsOpen(true)}
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
@@ -600,7 +613,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             addInputRef={addInputRef}
             addOpenTick={addOpenTick + addTick}
           />
-          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} gstLabel={gstLabel} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
+          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
         </div>
   )
   return (

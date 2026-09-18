@@ -23,3 +23,8 @@ Owner brief 2026-09-11 (Vicky). Mocks: Figma section **1271:40301 "Quotes Editor
 
 ## Components (planned)
 `components/quotes/editor/*` — `quote-editor.tsx` (orchestrator: sections order, autosave, header actions), `editor-header.tsx`, `editor-tabs.tsx` (anchor tabs), `create-strip.tsx` (side strip), `section-card.tsx` (drag handle · title · chevron · actions), `general-info.tsx`, `items/*` (table, row, group row, cell editors, toolbar, add-item popover, visibility menu, thumb menu, column settings), `totals.tsx`. Modal: `components/quotes/create-quote-modal.tsx`. Data: `lib/quotes/*` (model, totals maths, activity), actions `app/quotes/actions.ts`, schema additions in `lib/db/schema.ts` (quote_items, quote_sections, price_book_items, quote_payments, quote_text, quote_signatures, quote_files).
+
+
+## By category (REG-532, 2026-09-18)
+
+1.0's "BY CATEGORY" block, placed under Issuing Entity beside the totals card (proposal: `proposals/by-category-placement.png`, accepted). `.below` is a two-column grid (left `minmax(0,1fr)`, right 434); the totals card spans rows 1–2. Data: `categoryShares(items, UNLABELLED.category)` (`lib/quotes/math.ts`) — counted lines only, bucketed as `buildDisplay` buckets View by › Category, sorted by total desc, Uncategorized last, `pct` of the subtotal. UI: `ItemsBreakdown` in `items-summary.tsx`; rows are buttons → `pickCategory` in `items-section.tsx` (View by → Category, every other bucket collapsed, `[data-bucket]` on the bucket row scrolled into view). Two columns via `grid-auto-flow: column` + `--rows`; one column ≤1024; ≤767 after the totals. Probe: `probe-bycat.cjs`.

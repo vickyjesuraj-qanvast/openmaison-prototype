@@ -1,11 +1,11 @@
 /* Items section chrome around the table (1260:31209): the body holds the table; below it the Issuing Entity + totals block
    (1260:31541: border-top 1px, p22/24, g24) — spec 03-items-table.txt "BELOW THE TABLE". */
 .body { display: flex; flex-direction: column; min-width: 0; }
-.below { display: flex; align-items: flex-start; gap: var(--om-spacing-6); padding: 22px var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.entity { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.below { display: grid; grid-template-columns: minmax(0, 1fr) 434px; align-items: start; column-gap: var(--om-spacing-6); row-gap: var(--om-spacing-6); padding: 22px var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (REG-532) a grid: Issuing Entity over By category on the left, the totals card spanning both rows on the right */
+.entity { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .entityHelper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* Totals card 434: 1px surface-variant, r8, p16, rows 12 apart = 200 label + 200 value. */
-.totals { width: 434px; flex-shrink: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.totals { grid-column: 2; grid-row: 1 / 3; width: 434px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .trow { display: flex; align-items: center; }
 .tlabel { flex: 1 1 200px; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
 .tlabel .dot, .tlabel .count { color: var(--om-color-on-surface-secondary); }
@@ -22,6 +22,22 @@
 .totalLabel { display: flex; align-items: center; gap: var(--om-spacing-2); }
 .roundLink { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
 .roundLink:hover { color: var(--om-color-on-primary-variant); }
+/* (REG-532) By category under Issuing Entity: the section's caption eyebrow, then 24px rows in two columns filled down the left first
+   (`--rows` = half the count, set inline) — name (≤150) · 6px primary bar on a surface-variant track · the share (subheading, tabular).
+   A row is a button with the 4% hover tint bleeding 4 into the gutter; "n · no cost" rows read secondary. */
+.bycat { grid-column: 1; grid-row: 2; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.bycatHead { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.bycatMeta { font: var(--om-type-body-s); text-transform: none; letter-spacing: 0; color: var(--om-color-on-surface-secondary); }
+.shares { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 1), 24px); grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: var(--om-spacing-2); }
+.share { display: grid; grid-template-columns: minmax(96px, 150px) minmax(0, 1fr) 72px; align-items: center; gap: var(--om-spacing-3); height: 24px; margin: 0 calc(-1 * var(--om-spacing-1)); padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); transition: background-color var(--motion-hover); }
+@media (hover: hover) { .share:hover { background: var(--om-color-hover-04p); } .share:hover .shareName { color: var(--om-color-primary-default); } }
+.share:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.shareName { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track { display: block; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; }
+.fill { display: block; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); transition: width var(--motion-toggle); }
+.shareVal { text-align: right; font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shareVal[data-none] { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 1024px) { .shares { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); } }   /* one column where the left block is narrow */
 /* Margin strip (owners only): tertiary-green-variant2, r4, p8, g16. */
 .margin { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-green-variant2); font: var(--om-type-body-s); }
 .marginLabel { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
@@ -84,8 +100,9 @@
 /* ≤1024 the toolbar is folded (items-section.tsx `compact`): three 36px controls that always fit on the title row (REG-354 / REG-384). */
 .tools[data-compact] { flex-wrap: nowrap; }
 @media (max-width: 767px) {
-  .below { flex-direction: column; padding: var(--om-spacing-4); }
-  .totals { width: 100%; }
+  .below { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
+  .totals { grid-column: 1; grid-row: 2; width: 100%; }   /* (REG-532) the money first, then By category */
+  .bycat { grid-row: 3; }
   .tlabel, .tvalue, .tcontrols { flex-basis: 50%; }
 }
 /* Touch (REG-273 / REG-312): every 36px control in the toolbar, the 24px row kebab and unit / label picks, the 20px links and
@@ -95,6 +112,8 @@
   .tools button::after, .anchor > button::after { content: ''; position: absolute; inset: -4px; }
   .roundLink::after { content: ''; position: absolute; inset: -12px; }
   .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
+  .share { height: 44px; }   /* (REG-532) a By-category row stands 44 under a finger; the two-column grid is already one column here */
+  .shares { row-gap: 0; }
 }
 
 /* Expand's description modal (REG-444): the line's name under the title, the DS TextArea eight lines tall. */

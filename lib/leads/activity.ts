@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteFiles, quoteItems, quotePayments, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
 import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
@@ -35,7 +35,7 @@ const ME = SESSION_MEMBER_ID
 export async function fetchLeadActivity(leadId: string): Promise<LeadActivityData> {
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId))
   if (!lead) return { events: [], now: Date.now() }
-  const [team, logs, tasks, qs, cs, files, notes, qns, rets, assigned] = await Promise.all([
+  const [team, logs, tasks, qs, cs, files, notes, qns, rets, assigned, cmps] = await Promise.all([
     db.select().from(members),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, leadId)).orderBy(asc(stageLogs.createdAt)),
     db.select().from(leadTasks).where(eq(leadTasks.leadId, leadId)),
@@ -46,6 +46,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(questions).where(eq(questions.leadId, leadId)),
     db.select().from(leadReturns).where(eq(leadReturns.leadId, leadId)),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, leadId)),
+    db.select().from(quoteComparisons).where(eq(quoteComparisons.leadId, leadId)),   // (REG-529) Quote X-Ray
   ])
   const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id), quoteIds = qs.map((x) => x.id)
   const [tComments, fComments, qLines, qPays, qFiles] = await Promise.all([
@@ -91,6 +92,8 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       : []
     entries.forEach((e, i) => push({ id: `stage-${log.id}-log-${i + 1}`, at: parseInputDateTime(e.when) ?? log.createdAt, icon: 'swap_horiz', text: e.text, link: overview, actor: 'You' }))
   }
+  /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
+  for (const c of cmps) push({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: { label: 'See comparison', href: `/quote-x-ray/${c.id}` }, actor: who(c.createdBy) })
   for (const r of rets) push({ id: `ret-${r.id}`, at: r.returnedAt, icon: 'undo', text: `${who(r.returnedById)} returned the lead to Qanvast${r.reason ? ` (${r.reason})` : ''}.`, link: { label: 'See Overview', href: base }, actor: who(r.returnedById) })
 
   // Tasks (the mock's "ballot" rows) — created by whoever the record names, then updated / completed when its dates say so.
@@ -124,10 +127,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     if (attached.length) push({ id: `quote-f-${x.id}`, at: new Date(Math.max(...attached.map((f) => f.createdAt.getTime()))), icon: 'docs', text: `You attached ${attached.length} ${attached.length === 1 ? 'file' : 'files'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
   }
   for (const x of cs) {
-    const link = { label: 'See Contract', href: `${base}/contracts` }
-    push({ id: `contract-${x.id}`, at: x.createdAt, icon: 'description', text: `You created the contract ${q(x.title)}.`, link, actor: 'You' })
-    if (x.sentAt) push({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'description', text: `You sent the contract ${q(x.title)} to the client.`, link, actor: 'You' })
-    if (x.signedAt) push({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'description', text: `You marked the contract ${q(x.title)} as signed.`, link, actor: 'You' })
+    /* (REG-534) The editor's records: an uploaded PDF, the WhatsApp signing link, the client signing online. Rows open the editor. */
+    const link = { label: 'Open Contract', href: `/contracts/${x.id}?from=${encodeURIComponent(`${base}/contracts`)}` }
+    const by = x.createdBy ? who(x.createdBy) : 'You'
+    push({ id: `contract-${x.id}`, at: x.createdAt, icon: 'contract', text: x.source === 'uploaded' ? `${by} uploaded the contract ${q(x.title)}${x.fileName ? ` (${x.fileName})` : ''}.` : `${by} created the contract ${q(x.title)}${x.templateId ? ' from a template' : ''}.`, link, actor: by })
+    if (x.sentAt && !(x.source === 'uploaded' && x.signedAt && x.sentAt.getTime() === x.signedAt.getTime())) push({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'contract', text: `${by} sent the contract ${q(x.title)} to ${x.recipientName ?? 'the client'} for signature.`, link, actor: by })
+    if (x.signedAt) push({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'contract', text: x.signedBy ? `${x.signedBy} signed the contract ${q(x.title)} online.` : `${by} marked the contract ${q(x.title)} as signed${x.signedCopy ? ` (${x.signedCopy})` : ''}.`, link, actor: x.signedBy ?? by })
+    if (x.deletedAt) push({ id: `contract-d-${x.id}`, at: x.deletedAt, icon: 'contract', text: `${by} deleted the contract ${q(x.title)}.`, link: { label: 'See Contracts', href: `${base}/contracts` }, actor: by })
   }
 
   // Files, notes, questions, file comments. A trashed file (or anything inside a trashed folder) has no viewer route — its rows

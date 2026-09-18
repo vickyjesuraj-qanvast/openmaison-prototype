@@ -6,12 +6,13 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
+import { Crumbs } from '@/components/om/crumbs'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteSibling } from '@/lib/quotes/editor'
 import styles from './editor-header.module.css'
 
-export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments'
+export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments'
 
 /**
  * Page Header / Quotes (1201:33834 · 1260:31143 · the page's instance 1273:29264): back → the lead's Quotes tab ·
@@ -53,7 +54,7 @@ export function EditorHeader({
     <header className={styles.header}>
       {/* (REG-455, owner 2026-09-16) The mock's arrow_back is gone: the header opens on the crumb, and the close X is the way out. */}
       <div className={styles.titleBlock}>
-        <span className={styles.crumb}>Leads / {lead.name} / Quotes</span>
+        <Crumbs className={styles.crumb} items={[{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Quotes', href: `/leads/${lead.id}/quotes` }]} />   {/* (REG-536) */}
         <div className={styles.titleRow}>
           <span className={styles.anchor}>
             <button type="button" className={styles.switch} aria-haspopup="menu" aria-expanded={menu === 'switch'}
@@ -118,8 +119,8 @@ export function EditorHeader({
             <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={menu === 'more'}
                         onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} />
           </Tooltip>
-          {/* Dropdown Menu / Leads 1271:41512 — ≤1024 Preview and Comments fold in here (responsive.md). */}
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle={number}>
+          {/* Dropdown Menu / Leads 1271:41512 — ≤1024 Preview and Comments fold in here (responsive.md). 264 wide, as the template menus with long labels (REG-531): "Compare with another quote" wrapped at 200 and its second line was clipped. */}
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={264} sheetTitle={number}>
             {folded ? (
               <>
                 <DropdownItem onSelect={pick(() => onMenu('preview'))}>Preview</DropdownItem>
@@ -131,6 +132,8 @@ export function EditorHeader({
             <DropdownItem onSelect={pick(() => onMenu('rename'))}>Rename Quote</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('duplicate'))}>Duplicate and Edit</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('template'))}>Save as Template</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('xray'))}>Compare with another quote</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('contract'))}>Create contract from this quote</DropdownItem>   {/* (REG-534) */}
             <DropdownDivider />
             <DropdownItem onSelect={pick(() => onMenu('pdf'))}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('export'))}>Export</DropdownItem>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { ReadOnlyScope, useReadOnly } from '@/components/om/read-only'
 import { Icon } from '@/components/om/icon'
@@ -12,7 +12,7 @@ import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads
 import { displayDate, moneySGD } from '@/lib/format'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { Member } from '@/lib/db/schema'
-import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField } from './fields'
+import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
 import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
@@ -261,17 +261,6 @@ export function MetPanel({
  * Simulated upload (780:91263): any picked file shows "Uploading..." for a beat, then the panel shows the
  * mock's file. The timer lives here so the state can't outlive the panel.
  */
-function useUploadSim(ms = 1400) {
-  const [uploading, setUploading] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
-  const start = (onDone: () => void) => {
-    if (timer.current) clearTimeout(timer.current)
-    setUploading(true)
-    timer.current = setTimeout(() => { timer.current = null; setUploading(false); onDone() }, ms)
-  }
-  return { uploading, start }
-}
 
 /** One From System row (780:91468): the document's name, its meta line, and the amount a signed quote carries for the split. */
 export type SystemRow = { id: string; name: string; meta: string[]; amountMinor?: number }

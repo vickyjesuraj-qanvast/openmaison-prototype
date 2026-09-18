@@ -7,6 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
+import { Crumbs } from '@/components/om/crumbs'
 import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -110,7 +111,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
       <header className={styles.bar}>
         <Tooltip label="Back to the editor"><IconButton icon="arrow_back" label="Back to the editor" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={() => router.push(back)} /></Tooltip>
         <div className={styles.titleBlock}>
-          <span className={styles.crumb}>{quote.leadName} / {quote.number}</span>
+          <Crumbs className={styles.crumb} items={[{ label: quote.leadName, href: `/leads/${quote.leadId}/quotes` }, { label: quote.number, href: back }]} />   {/* (REG-536) */}
           <div className={styles.titleRow}>
             <h1 className={styles.title}>Preview</h1>
             <span className={styles.chips}>

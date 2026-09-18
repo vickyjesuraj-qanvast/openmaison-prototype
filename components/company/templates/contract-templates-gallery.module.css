@@ -1,0 +1,26 @@
+/* Contract templates gallery (REG-534): the Quotes gallery's stylesheet does the shell; this adds the paper thumbnail scale, the list table and the deleted sheet's rows. */
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.thumbPage { display: block; width: 200px; height: 260px; overflow: hidden; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); }
+.thumbScale { display: block; width: 600px; transform: scale(calc(200 / 600)); transform-origin: top left; pointer-events: none; }
+.table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: hidden; }
+.row { display: grid; grid-template-columns: minmax(280px, 1fr) 140px 160px 120px 280px; align-items: center; min-height: 60px; }
+.row[data-head] { min-height: 48px; background: var(--om-color-surface-bg); }
+.row[data-head] .cell { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+@media (hover: hover) { .row:not([data-head]):hover { background: var(--om-color-primary-variant); } }
+.cell { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titleCell { flex-direction: column; align-items: flex-start; gap: 2px; }
+.titleBtn { border: 0; background: none; padding: 0; cursor: pointer; text-align: left; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }
+.titleBtn:hover { color: var(--om-color-primary-default); text-decoration: underline; }
+.titleText { font: var(--om-type-subheading-m); }
+.excerpt { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.actionsCell { justify-content: flex-end; }
+.deletedHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-bottom: var(--om-spacing-4); }
+.emptyRow { padding: var(--om-spacing-8) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+@media (max-width: 767px) {
+  .row { grid-template-columns: 1fr; padding: var(--om-spacing-2) 0; }
+  .row[data-head] { display: none; }
+  .actionsCell { justify-content: flex-start; }
+  .thumbPage { width: 150px; height: 195px; }
+  .thumbScale { transform: scale(calc(150 / 600)); }
+}

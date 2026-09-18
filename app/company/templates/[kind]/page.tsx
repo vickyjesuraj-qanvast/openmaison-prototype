@@ -10,10 +10,10 @@ export async function generateMetadata({ params }: { params: Promise<{ kind: str
   return { title: templateKind(kind)?.title ?? 'Templates' }
 }
 
-/** Company › Templates › {Tasks · T&Cs · Payments · Contracts}: their own pages, coming in a later build (REG-484). */
+/** Company › Templates › {Tasks · T&Cs · Payments}: their own pages, coming in a later build (REG-484). Quotes and Contracts are live. */
 export default async function TemplateKindPage({ params }: { params: Promise<{ kind: string }> }) {
   const { kind } = await params
   const k = templateKind(kind)
-  if (!k || k.key === 'quotes') notFound()
+  if (!k || k.live) notFound()   // the live kinds have their own pages (quotes/, contracts/)
   return <TemplateKindSoon kind={k} />
 }

@@ -1,0 +1,67 @@
+/* Quote X-Ray — setup (REG-529): an intro card you can dismiss, the setup card beside Recent comparisons (360). Cards on the
+   table-card frame (r8, surface-variant stroke); every value is a token. */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
+.intro { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.introText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.introTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.introList { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.introList li { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.introList li > :first-child { color: var(--om-color-primary-default); flex-shrink: 0; margin-top: 1px; }
+.introNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.columns { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
+.card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.lockedLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; padding: 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }   /* (REG-530) the lead the page belongs to — read, not picked */
+.lockedName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quotes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.question { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); margin-top: var(--om-spacing-1); }
+.none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.link { color: var(--om-color-primary-default); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* Progress: the Recreate dialog's reading step, as a card — glyph, title, bar, the four steps. */
+.progress { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-3); padding: var(--om-spacing-8) var(--om-spacing-6); }
+.progressGlyph { width: 56px; height: 56px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); display: inline-flex; align-items: center; justify-content: center; }
+.progressTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.progressHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.bar { width: min(520px, 100%); height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; margin-top: var(--om-spacing-2); }
+.barFill { display: block; height: 100%; background: var(--om-color-primary-default); border-radius: var(--om-radius-full); transition: width var(--motion-toggle); }
+.steps { margin: var(--om-spacing-2) 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-2); align-items: flex-start; }
+.step { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.step[data-state='now'] { color: var(--om-color-on-surface-default); }
+.step[data-state='done'] .stepGlyph { color: var(--om-color-tertiary-green-default); }
+.step[data-state='now'] .stepGlyph { color: var(--om-color-primary-default); }
+.stepGlyph { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.dot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+/* Recent comparisons: a 360 card of rows — the Deleted sheets' link row with a chevron and a bare delete. */
+.recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentsEmpty { padding: var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.recentList { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.recent { display: flex; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-2) 0 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); transition: background-color var(--motion-hover); }
+.recent:first-child { border-top: 0; }
+@media (hover: hover) { .recent:hover { background: var(--om-color-primary-variant); } }
+.recentLink { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-5); color: inherit; text-decoration: none; min-height: 60px; }
+.recentLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; border-radius: var(--om-radius-1); }
+.recentText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.recentTitle { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recentMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chev { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+@media (max-width: 1024px) {
+  .columns { flex-direction: column; }
+  .recents { width: 100%; }
+}
+@media (max-width: 767px) {
+  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  .intro { padding: var(--om-spacing-4); }
+  .card { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  .grid { grid-template-columns: 1fr; gap: var(--om-spacing-4); }
+  .foot { flex-direction: column; align-items: stretch; }
+  .foot > :last-child { align-self: flex-end; }
+}

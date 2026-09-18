@@ -75,6 +75,29 @@ export function quoteTotals(items: Line[], q: QuotePricing): QuoteTotals {
   return { itemCount: lines.length, subtotalMinor, discountMinor, additionalMinor, gstMinor, totalMinor, costMinor, marginMinor, marginPct: net > 0 ? (marginMinor / net) * 100 : 0 }
 }
 
+/**
+ * (REG-532) By category, under the table: the counted lines' totals bucketed the way View by › Category buckets them — a line's own
+ * category, else its group's, else Uncategorized (items-table.tsx `buildDisplay`). Biggest share first, Uncategorized last; `pct` is the
+ * share of the subtotal, so the rows agree with the Subtotal line beside them. A bucket whose lines carry no price keeps its count.
+ */
+export type CategoryShare = { name: string; count: number; totalMinor: number; pct: number }
+export function categoryShares<T extends Line & { category: string | null }>(items: T[], unlabelled = 'Uncategorized'): CategoryShare[] {
+  const byId = new Map(items.map((i) => [i.id, i]))
+  const labelOf = (l: T) => l.category || (l.parentId ? byId.get(l.parentId)?.category : null) || unlabelled
+  const acc = new Map<string, CategoryShare>()
+  for (const l of countedLines(items)) {
+    const name = labelOf(l)
+    const cur = acc.get(name) ?? { name, count: 0, totalMinor: 0, pct: 0 }
+    cur.count += 1; cur.totalMinor += lineTotalMinor(l); acc.set(name, cur)
+  }
+  const subtotal = [...acc.values()].reduce((s, c) => s + c.totalMinor, 0)
+  return [...acc.values()]
+    .map((c) => ({ ...c, pct: subtotal > 0 ? (c.totalMinor / subtotal) * 100 : 0 }))
+    .sort((a, b) => (a.name === unlabelled ? 1 : b.name === unlabelled ? -1 : b.totalMinor - a.totalMinor || a.name.localeCompare(b.name)))
+}
+/** "44%" — one decimal under 10 so the small trades stay apart ("5.5%", "1.3%"). */
+export const sharePct = (p: number) => `${p < 10 ? p.toFixed(1) : Math.round(p)}%`
+
 /** "S$1,000.00" — the editor prints two decimals everywhere (1260:31277). */
 export function money2(minor: number): string {
   const v = minor / 100

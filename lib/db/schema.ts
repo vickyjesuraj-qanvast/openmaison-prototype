@@ -430,6 +430,20 @@ export const quoteTemplates = sqliteTable('quote_templates', {
 })
 export type QuoteTemplate = typeof quoteTemplates.$inferSelect
 
+/** (REG-529) Quote X-Ray: one comparison of a studio quote (or an uploaded one) against another studio's quote — the
+ *  computed result kept whole, so the record page and Recent comparisons read exactly what the studio saw. */
+export const quoteComparisons = sqliteTable('quote_comparisons', {
+  id: text('id').primaryKey(),
+  leadId: text('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+  quoteId: text('quote_id').references(() => quotes.id, { onDelete: 'set null' }),
+  yourLabel: text('your_label').notNull(),        // "OM-10008 · Whole-home renovation" or the uploaded file's name
+  otherStudio: text('other_studio').notNull(),    // the studio the other quote came from, read from the file
+  otherFile: text('other_file').notNull(),        // the uploaded file's name
+  resultJson: text('result_json').notNull(),      // XrayResult
+  createdBy: text('created_by').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+
 /** (REG-485) Every published version of a template, for History and Roll back — the design as it was, whole. */
 export const quoteTemplateVersions = sqliteTable('quote_template_versions', {
   id: text('id').primaryKey(),
@@ -458,9 +472,36 @@ export const contracts = sqliteTable(
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
     archivedAt: integer('archived_at', { mode: 'timestamp' }),
     deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+    /* (REG-534) The contract editor: the document itself and what the signing link needs. */
+    body: text('body'),                          // the editor's HTML — token chips (data-token) and signature fields (data-sign) inside; null = never opened in the editor
+    recipientName: text('recipient_name'),       // who signs — the lead's client by default
+    recipientPhone: text('recipient_phone'),     // 8 digits, +65 implied — the OTP goes here
+    contractDate: integer('contract_date', { mode: 'timestamp' }),
+    templateId: text('template_id'),             // the contract template it started from (contract_templates.id)
+    fromQuoteId: text('from_quote_id'),          // the quote it was raised from (the quote editor's "Create contract from this quote")
+    source: text('source').notNull().default('composed'),   // composed (written here) | uploaded (a PDF the studio already had)
+    fileName: text('file_name'),                 // the uploaded PDF's name (source = uploaded)
+    issuingEntity: text('issuing_entity'),       // null = the studio's own name
+    reminders: integer('reminders', { mode: 'boolean' }).notNull().default(false),   // Automation › remind the client to review
+    thankYou: integer('thank_you', { mode: 'boolean' }).notNull().default(false),    // Automation › thank the client once signed
+    signedBy: text('signed_by'),                 // the name the client typed when signing online; null = marked signed by the studio
+    createdBy: text('created_by'),               // members.id
   },
   (t) => [index('contracts_lead_idx').on(t.leadId)],
 )
+
+/** (REG-534) A contract template: a saved document — title + the editor's HTML with its token chips — the studio starts a contract from. Simple library, no versions. */
+export const contractTemplates = sqliteTable('contract_templates', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  createdBy: text('created_by'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+})
+export type ContractTemplate = typeof contractTemplates.$inferSelect
 
 /** Files and folders attached to the lead (FILES card 858:24943). `thumb` is a public asset path for image tiles. */
 export const leadFiles = sqliteTable(
@@ -696,3 +737,4 @@ export type Tag = typeof tags.$inferSelect
 export type TaskComment = typeof taskComments.$inferSelect
 export type TaskTemplate = typeof taskTemplates.$inferSelect
 export type TemplateTask = typeof templateTasks.$inferSelect
+export type QuoteComparison = typeof quoteComparisons.$inferSelect

@@ -386,7 +386,7 @@ function BucketRow({ d, all, columns, colW, autonumber, folded, onToggle }: { d:
   const total = lines.reduce((s, l) => s + lineTotalMinor(l), 0)
   const sum = (key: ColumnKey) => (key === 'cost' ? money2(cost) : key === 'markup' ? money2(markup) : key === 'unitPrice' ? money2(price) : '')
   return (
-    <div className={styles.bucket} role="row">
+    <div className={styles.bucket} role="row" data-bucket={d.key}>
       <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
       {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`}>{d.number}</div> : null}
       <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={colW.item ? { width: colW.item } : undefined}>

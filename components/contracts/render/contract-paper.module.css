@@ -1,0 +1,46 @@
+/* The contract page (REG-534): A4 at 96dpi (816 wide), letterhead from the brand kit, the document in the editor's type, the
+   signature boxes. Printed as is (Download as PDF · Print). */
+.paper { width: 816px; max-width: 100%; min-height: 1056px; padding: 64px; background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-1); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.paper[data-compact] { min-height: 0; padding: 32px; gap: var(--om-spacing-4); box-shadow: none; border: 0; border-radius: 0; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-bottom: var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.logo { height: 40px; width: auto; max-width: 200px; object-fit: contain; }
+.studio { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px; min-width: 0; }
+.studioName { font: var(--om-type-subheading-m); }
+.studioLine { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.body { flex: 1; font: var(--om-type-body-l); white-space: pre-wrap; overflow-wrap: anywhere; }
+.body p { margin: 0 0 var(--om-spacing-4); }
+.body h1 { margin: 0 0 var(--om-spacing-6); font: var(--om-type-heading-h1); font-size: 28px; line-height: 36px; }
+.body h2 { margin: var(--om-spacing-6) 0 var(--om-spacing-3); font: var(--om-type-heading-h3); }
+.body h3 { margin: var(--om-spacing-4) 0 var(--om-spacing-2); font: var(--om-type-heading-h5); }
+.body ul, .body ol { margin: 0 0 var(--om-spacing-4); padding-left: var(--om-spacing-6); white-space: normal; }
+.body li { margin-bottom: var(--om-spacing-1); }
+.body a { color: var(--om-color-primary-default); }
+.body img { max-width: 100%; height: auto; display: block; margin: 0 0 var(--om-spacing-4); border-radius: var(--om-radius-1); }
+.body strong, .body b { font-weight: var(--om-font-weight-bold, 700); }
+.body :global(.om-token-value) { font-weight: var(--om-font-weight-medium, 500); }
+/* Signature boxes: 280×88, the mark above a hairline and its caption; the client's box is the primary tint until signed. */
+.box { display: inline-flex; flex-direction: column; justify-content: flex-end; width: 280px; max-width: 100%; min-height: 88px; margin: var(--om-spacing-2) 0; }
+.box.initial { width: 120px; min-height: 64px; }
+.mark { display: flex; align-items: flex-end; min-height: 48px; padding-bottom: var(--om-spacing-1); border-bottom: var(--om-border-1) solid var(--om-color-on-surface-default); color: var(--om-color-on-surface-default); }
+.initial .mark { min-height: 32px; }
+.drawn { width: 200px; height: 40px; display: block; }
+.typed { font-family: var(--om-font-family-noto-serif, Georgia, serif); font-style: italic; font-size: 24px; line-height: 32px; }
+.initial .typed { font-size: 18px; line-height: 24px; }
+.blank { display: block; height: 40px; }
+.caption { padding-top: var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.client:not([data-signed='1']) .mark { border-bottom-color: var(--om-color-primary-default); }
+.client:not([data-signed='1']) .caption { color: var(--om-color-primary-default); }
+.client[data-signed='1'] .typed { color: var(--om-color-on-surface-default); }
+.foot { padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-align: center; }
+.paper[data-compact] .foot { display: none; }
+@media (max-width: 767px) {
+  .paper { padding: var(--om-spacing-6) var(--om-spacing-4); min-height: 0; }
+  .head { flex-direction: column; align-items: flex-start; }
+  .studio { align-items: flex-start; text-align: left; }
+  .box { width: 100%; }
+}
+@media print {
+  .paper { box-shadow: none; border: 0; width: 100%; padding: 0; min-height: 0; }
+  .client:not([data-signed='1']) .mark { border-bottom-color: var(--om-color-on-surface-default); }
+  .client:not([data-signed='1']) .caption { color: var(--om-color-on-surface-secondary); }
+}

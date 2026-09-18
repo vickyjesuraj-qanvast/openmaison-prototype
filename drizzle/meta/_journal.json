@@ -176,6 +176,20 @@
       "when": 1789713269176,
       "tag": "0024_goofy_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1789730385363,
+      "tag": "0025_purple_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1789735129096,
+      "tag": "0026_lonely_enchantress",
+      "breakpoints": true
     }
   ]
 }

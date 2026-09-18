@@ -208,7 +208,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
         backHref={origin ?? '/leads'}
-          crumb={fromLabel(origin) ? `${fromLabel(origin)} / Leads` : 'Leads'}
+          crumbs={[...(fromLabel(origin) && origin ? [{ label: fromLabel(origin)!, href: origin }] : []), { label: 'Leads', href: '/leads' }]}   /* (REG-536) clickable */
           title={lead.name}
           chips={
             <>
@@ -357,7 +357,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onCallLog={onNewContactLog}
             onNote={onNewNote}
             onMeeting={onNewContactLog}
-            onOther={() => comingSoon()}
+            onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(`/leads/${lead.id}`)}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else comingSoon() }}   /* (REG-529, REG-534) */   /* (REG-529) */
           />
         </div>
       </div>

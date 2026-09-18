@@ -1,0 +1,5 @@
+/* Send to client (REG-529): the message box fills the m modal's body; Reset to draft and the count sit under it. */
+.box { display: flex; flex-direction: column; }
+.box textarea { min-height: 280px; font: var(--om-type-body-m); }
+.under { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: calc(-1 * var(--om-spacing-2)); }
+.count { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

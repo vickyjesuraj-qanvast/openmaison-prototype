@@ -15,6 +15,8 @@ import styles from './tools-popover.module.css'
 /** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413). */
 export const TOOLS: { key: string; icon: string; label: string; href?: string }[] = [
   { key: 'quotes', icon: 'request_quote', label: 'Quotes', href: '/quotes' },
+  { key: 'xray', icon: 'scan', label: 'Quote X-Ray', href: '/quote-x-ray' },
+  { key: 'contracts', icon: 'contract', label: 'Contracts', href: '/contracts' },   /* (REG-534) Tools › Contracts — every contract in the studio */   /* (REG-529) */
   { key: 'visualizer', icon: 'wand_shine', label: 'AI Visualizer' },
   { key: 'isometric', icon: 'view_in_ar', label: 'Floorplan to 3D Isometric' },
   { key: 'insights', icon: 'trending_up', label: 'Market Insights' },
@@ -27,7 +29,7 @@ export const TOOLS: { key: string; icon: string; label: string; href?: string }[
  * Tools (the rail's item; design reference "Create Quote Reference" §Tools, approved 2026-09-11 — REG-422): the quick-links
  * tile grid inside the anchored-menu chrome, 8px to the right of the rail and aligned to the item's top, bottom-aligned
  * when it would run past the viewport. "TOOLS" eyebrow, 92×96 tiles three across (the Create strip's tile). Quotes opens
- * the studio-wide list; the other six answer coming soon. ≤767 (REG-353) it is a bottom sheet titled Tools, tiles 3-up.
+ * the studio-wide list; Quote X-Ray opens the comparison tool (REG-529); the other six answer coming soon. ≤767 (REG-353) it is a bottom sheet titled Tools, tiles 3-up.
  */
 export function ToolsPopover({ open, anchor, onClose }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void }) {
   const router = useRouter()
