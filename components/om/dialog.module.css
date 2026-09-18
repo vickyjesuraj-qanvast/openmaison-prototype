@@ -18,6 +18,9 @@
 .headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 .eyebrow { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* the crumb above a title (1238:33173) */
+.subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (REG-511) one secondary line under the title — the leads dialogs' subtitle, now the primitive's */
+/* (REG-511) xxl = fluid, 48 on every side (the Review imported leads sheet's rule) — the template preview window. */
+.dialog[data-fluid] { width: calc(100vw - 2 * var(--om-modal-xxl-margin)); height: calc(100dvh - 2 * var(--om-modal-xxl-margin)); max-height: none; }
 .dialog[data-size='compact'] .title { font: var(--om-type-heading-h4); }
 .close { flex-shrink: 0; }
 .body { padding: 0 var(--om-spacing-6) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
@@ -102,6 +105,7 @@
   .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
   .dialog[data-size='form']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
   .dialog[data-size='modal']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  .dialog[data-fluid] { height: min(88dvh, calc(100dvh - 56px)); }   /* (REG-511) the xxl window is the tallest bottom sheet on a phone */
   /* (REG-376) A confirmation stays the canvas' centred card (2e): 24px margins either side, height to content. */
   .dialog[data-alert] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
 }

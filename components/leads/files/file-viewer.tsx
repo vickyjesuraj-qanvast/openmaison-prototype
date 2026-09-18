@@ -10,9 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { MaisonFab } from '@/components/shell/maison-fab'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { FileCommentsPanel } from './file-comments-panel'
 import { ViewerSkeleton } from './viewer-skeleton'
@@ -64,7 +62,6 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const [renaming, setRenaming] = useState(false)
   const [trashing, setTrashing] = useState(false)
   const [moving, setMoving] = useState(false)
-  const [aiOpen, setAiOpen] = useState(false)
 
   const zoom = ZOOM_STEPS[zoomIdx] ?? 1
   /* Back to the Files tab — inside the open folder when the file sits in one (the tab reads `?folder=`). */
@@ -258,8 +255,6 @@ export function FileViewer({ data }: { data: FileViewData }) {
       />
 
       {/* Generic shell: Maison AI FAB + sheet (no lead brief here — the viewer carries no stage, so the sheet offers only its base controls). */}
-      <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-      <MaisonFab onPress={() => setAiOpen((o) => !o)} />
     </PageReveal>
   )
 }

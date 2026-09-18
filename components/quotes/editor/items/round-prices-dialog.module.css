@@ -1,0 +1,15 @@
+/* Round selling prices (REG-479): the two segmented controls on one row, the caption, the preview list of the lines that change. */
+.controls { display: flex; align-items: center; gap: var(--om-spacing-6); flex-wrap: wrap; }
+.field { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .04em; color: var(--om-color-on-surface-secondary); }
+.caption { margin: var(--om-spacing-4) 0 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.preview { margin-top: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-2); max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: thin; }
+.empty { padding: var(--om-spacing-10) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto 80px; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.line:first-child { border-top: 0; }
+.name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.from { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.arrow { color: var(--om-color-on-surface-secondary); }
+.to { font-weight: 600; }
+.delta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: right; }
+@media (max-width: 767px) { .line { grid-template-columns: minmax(0, 1fr) auto; } .from, .arrow { display: none; } }

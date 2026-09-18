@@ -6,13 +6,25 @@ import { withFrom } from '@/lib/nav'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
-import { useComingSoon } from '@/components/om/snackbar'
+import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { setQuoteStatus } from '@/app/leads/quotes-actions'
+import { saveQuoteAsTemplate, setQuoteTemplate, updateQuoteTemplateVersion } from '@/app/company/templates-actions'
+import { SaveAsTemplateDialog, TemplateCard, TemplateUpdateBanner } from './template-bar'
+import { ClientViewPane } from './client-view-pane'
+import { TemplatePicker } from '@/components/templates/template-picker'
+import { Dialog } from '@/components/om/dialog'
+import { Drawer } from '@/components/om/drawer'
+import { ConfirmDialog } from '@/components/om/confirm-dialog'
+import { docDataFromRecords, type DocData } from '@/lib/templates/data'
+import { clientColumnsOf, viewForTemplate } from '@/lib/templates/picker'
+import { updateItemsPrefs } from '@/app/quotes/items-actions'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import type { ItemsView } from '@/lib/quotes/items-model'
 import { saveQuoteGeneral, saveQuoteSections, sendQuote, type GeneralPatch } from '@/app/quotes/actions'
 import { displayDate, inputDate, parseInputDate } from '@/lib/format'
 import { duration } from '@/lib/motion'
@@ -63,11 +75,24 @@ function savedLabel(updatedAt: number, now: number): string {
  * Every section is live: Items (REG-415), the Payment Schedule (REG-418), Files (REG-419), Terms and Conditions / Additional
  * Notes (REG-420), Signature and Activity (REG-421).
  */
-export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: string }) {
-  const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, activity, now } = data
+export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; from?: string; /** (REG-490) the preview's Open links land on a section */ section?: string }) {
+  const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, activity, now, brand, studioDetails } = data
   const router = useRouter()
   const comingSoon = useComingSoon()
+  const snackbar = useSnackbar()
   const { run, fail } = useRun()
+  /* (REG-489) The template the quote prints through, pinned to a version; the banner offers the newer one. */
+  const [templateState, setTemplateState] = useState(data.templateState)
+  const [templateBusy, setTemplateBusy] = useState(false)
+  const [bannerKept, setBannerKept] = useState(false)
+  const [saveAsOpen, setSaveAsOpen] = useState(false)
+  /* (REG-496) Change / the strip's Templates open the picker; a change on a grouped table asks whether to regroup the template's way. */
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [regroup, setRegroup] = useState<{ view: ItemsView; label: string } | null>(null)
+  const [forceView, setForceView] = useState<{ key: ItemsView; nonce: number } | null>(null)
+  /* (REG-497) The live client view beside the sections (a drawer on a tablet). */
+  const [clientView, setClientView] = useState(false)
+  const tabletDown = useMediaQuery(TABLET_DOWN)
 
   /* ── state ── */
   const [status, setStatus] = useState(quote.status)
@@ -96,6 +121,8 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
 
   // The saved label ages on its own clock (30 s), the only place time is read on the client (no Date.now() in render).
   useEffect(() => { const t = setInterval(() => setClock(Date.now()), 30_000); return () => clearInterval(t) }, [])
+  // (REG-490) Arriving from the preview's "Open" lands on the section that needs work.
+  useEffect(() => { if (!section) return; const t = setTimeout(() => { document.getElementById(`section-${section}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }) }, 350); return () => clearTimeout(t) }, [section])
 
   /* ── autosave: merge every change into one pending patch, write 600 ms after the last one, flush on leave ── */
   const pending = useRef<GeneralPatch>({})
@@ -209,7 +236,65 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
     if (s === status) return
     void run('change the status', async () => { await setQuoteStatus(quote.id, s); setStatus(s); setUpdatedAt(Date.now()); setClock(Date.now()) }, `Quote marked ${s}`)
   }
-  const onMenu = (_action: HeaderMenuAction) => { comingSoon() }   // every kebab item, Preview and Comments: coming soon (owner 2026-09-11)
+  /* Preview, Download as PDF and Print open the quote through its template (REG-490); Save as Template makes a draft template
+     (REG-489); Rename, Duplicate, Export, Version History, Comments and Delete still answer coming soon (owner 2026-09-11). */
+  const onMenu = (action: HeaderMenuAction) => {
+    if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
+    if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(`/quotes/${quote.id}/preview?print=1${from ? `&from=${encodeURIComponent(from)}` : ''}`); return }
+    if (action === 'template') { setSaveAsOpen(true); return }
+    comingSoon()
+  }
+  const VIEW_WORD: Record<ItemsView, string> = { none: 'your own groups', category: 'Trade', room: 'Room', section: 'Section' }
+  const pickTemplate = (templateId: string) => {
+    setPickerOpen(false)
+    if (templateId === templateState.current?.id) return
+    setTemplateBusy(true)
+    void run('change the template', async () => {
+      await setQuoteTemplate(quote.id, templateId)
+      const t = templateState.picker.templates.find((x) => x.id === templateId) ?? null
+      setTemplateState((st) => ({ ...st, current: t ? { id: t.id, name: t.name, pinned: t.version, latest: t.version, note: '', design: t.design, defaults: t.defaults, deleted: false } : null }))
+      setBannerKept(false); stamp(Date.now())
+      // (REG-497) A grouped table on a template that groups another way: offer to regroup the way it prints.
+      if (t) { const v = viewForTemplate(t.design); if (v !== 'none' && lines.some((l) => l.kind === 'group')) setRegroup({ view: v, label: `${t.name} prints by ${VIEW_WORD[v]}` }) }
+    }, 'Template changed').finally(() => setTemplateBusy(false))
+  }
+  const doRegroup = (view: ItemsView) => {
+    setRegroup(null)
+    void run('regroup the items', async () => { await updateItemsPrefs(quote.id, { itemsView: view }); setForceView({ key: view, nonce: Date.now() }) }, `Items grouped by ${VIEW_WORD[view]}`)
+  }
+  /* (REG-496) Edit template opens the template editor in this tab with this quote as its origin: Back returns here, Preview with is this quote, Publish can update it. */
+  const editTemplate = () => {
+    const cur = templateState.current
+    if (!cur) return
+    void flushRef.current()
+    const here = from ? withFrom(`/quotes/${quote.id}`, from) : `/quotes/${quote.id}`
+    router.push(`/templates/${cur.id}?from=${encodeURIComponent(here)}&quote=${quote.id}`)
+  }
+  /* (REG-497) The client's pages from the editor's own state: the lines as the table holds them, General Info as typed, the schedule as it stands. */
+  const clientData: DocData = useMemo(() => docDataFromRecords({
+    quote: { ...quote, title: general.title, preparedBy: general.preparedBy, validUntil: general.validUntil ? parseInputDate(general.validUntil) : null, projectRef: general.projectRef || null, nric: general.nric || null, customerId: general.customerId || null, propertyType: general.propertyType || null, siteAddress: general.siteAddress || null, status },
+    lead: { name: lead.name, phone: lead.phone, email: lead.email }, studio: studioDetails, members, items: lines, payments: scheduleRows, totalMinor: amountMinor,
+  }), [quote, general, status, lead, studioDetails, members, lines, scheduleRows, amountMinor])
+  const clientDesign = templateState.current?.design ?? null
+  const clientColumns = useMemo(() => (clientDesign ? clientColumnsOf(clientDesign) : null), [clientDesign])
+  const updateTemplate = () => {
+    setTemplateBusy(true)
+    void run('update the template version', async () => {
+      const r = await updateQuoteTemplateVersion(quote.id)
+      setTemplateState((st) => (st.current ? { ...st, current: { ...st.current, pinned: r.version } } : st)); stamp(Date.now())
+    }, 'Quote moved to the latest template version').finally(() => setTemplateBusy(false))
+  }
+  const saveAsTemplate = (name: string) => {
+    setTemplateBusy(true)
+    void (async () => {
+      try {
+        await flushRef.current()
+        const id = await saveQuoteAsTemplate(quote.id, name)
+        setSaveAsOpen(false)
+        snackbar({ message: `${name.trim()} saved as a draft template`, actionLabel: 'Open', onAction: () => { window.open(`/templates/${id}`, '_blank', 'noopener') } })
+      } catch { fail('save the template') } finally { setTemplateBusy(false) }
+    })()
+  }
   /* (REG-465) Close returns where the editor was opened from — the Quotes tab, Tools › Quotes, a Qanvast-origin tab — the lead's tab when nothing says. */
   const backHref = from ?? `/leads/${lead.id}/quotes`
   const close = () => router.push(backHref)
@@ -219,7 +304,7 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
   const openOf = (k: SectionKey) => !(sections.find((s) => s.key === k)?.collapsed ?? true)
 
   const bodyOf = (k: SectionKey) => {
-    if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} />
+    if (k === 'general') return <GeneralInfo value={general} lead={lead} members={members} today={new Date(now)} onChange={changeGeneral} extra={<TemplateCard state={templateState} busy={templateBusy} onChange={() => setPickerOpen(true)} onEdit={editTemplate} onSaveAs={() => setSaveAsOpen(true)} />} />
     if (k === 'activity') return <ActivityBody events={activity} />
     return (
       <div className={styles.soon} role="status">
@@ -251,7 +336,7 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
   const movable = sections.filter((s) => !isFixedSection(s.key))
   // The Items section's seed never changes for a mounted editor (its own state takes over from the first render).
   const [itemsSeed] = useState<ItemsSeed>(() => ({
-    quoteId: quote.id, items, priceBook, studio, files, me,
+    quoteId: quote.id, number: quote.number, items, priceBook, studio, files, me,
     pricing: { additionalDiscountMode: quote.additionalDiscountMode === 'amount' ? 'amount' : 'pct', additionalDiscountValue: quote.additionalDiscountValue, gstEnabled: quote.gstEnabled, issuingEntity: quote.issuingEntity },
     view: quote.itemsView, density: quote.itemsDensity, columnsJson: quote.itemsColumns, labelsJson: quote.itemsLabels,
   }))
@@ -295,8 +380,12 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
           canSend={!!nextStep} sendHint={`Quote is ${status}`} statusSlot={statusPill}
           onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
           onSend={send} onMenu={onMenu} onClose={close}
+          clientViewOn={clientView} onClientView={() => setClientView((o) => !o)}
         />
         <EditorTabs items={tabs} active={active} onSelect={selectTab} className={styles.stickyTabs} />
+        {templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept ? (
+          <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} />
+        ) : null}
         <div className={styles.body}>
           <div className={styles.main}>
             <SectionCard id="section-general" title={titleOf('general')} open={openOf('general')} onToggle={() => toggle('general')}>
@@ -304,7 +393,7 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
             </SectionCard>
             <ItemsCard seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
-                       onTotal={setAmountMinor} onLines={setLines} />
+                       onTotal={setAmountMinor} onLines={setLines} clientColumns={clientColumns} forceView={forceView} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
@@ -327,9 +416,29 @@ export function QuoteEditor({ data, from }: { data: QuoteEditorData; from?: stri
               {bodyOf('activity')}
             </SectionCard>
           </div>
-          <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else comingSoon() }} />
+          {clientView && !tabletDown ? (
+            <aside className={styles.clientPane} aria-label="Client view">
+              <ClientViewPane data={clientData} design={templateState.current?.design ?? templateState.picker.templates.find((t) => t.isDefault)?.design ?? templateState.picker.templates[0]?.design ?? { page: { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' }, brand: {}, blocks: [] }} brand={brand}
+                              templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
+            </aside>
+          ) : null}
+          <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') setPickerOpen(true); else comingSoon() }} />
         </div>
+        {tabletDown ? (
+          <Drawer open={clientView} onClose={() => setClientView(false)} title="Client view" label="Client view" width={440}>
+            <ClientViewPane data={clientData} design={templateState.current?.design ?? templateState.picker.templates[0]?.design ?? { page: { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' }, brand: {}, blocks: [] }} brand={brand}
+                            templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
+          </Drawer>
+        ) : null}
+        <Dialog open={pickerOpen} onClose={() => setPickerOpen(false)} title="Choose a template" size="modal" width={1200} portal
+                subtitle="The quote keeps its lines; the template decides how they print and what the client sees.">
+          <TemplatePicker data={templateState.picker} currentId={templateState.current?.id ?? null} now={now} useLabel="Use this template" onUse={pickTemplate} />
+        </Dialog>
+        <ConfirmDialog open={regroup !== null} title="Regroup the items the way the template prints?" tone="primary" confirmLabel={regroup ? `Group by ${VIEW_WORD[regroup.view]}` : 'Regroup'} cancelLabel="Keep my groups"
+                       message={regroup ? `${regroup.label}. Your lines stay as they are; only View by changes, and you can change it back.` : ''}
+                       onCancel={() => setRegroup(null)} onConfirm={() => { if (regroup) doRegroup(regroup.view) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
+        <SaveAsTemplateDialog open={saveAsOpen} defaultName={`${general.title || quote.number} template`} busy={templateBusy} onClose={() => setSaveAsOpen(false)} onSave={saveAsTemplate} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>
     </PageReveal>

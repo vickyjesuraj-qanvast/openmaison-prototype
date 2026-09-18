@@ -1,4 +1,5 @@
-import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
+import 'server-only'
+import { countPendingTemplates } from '@/lib/templates/queries'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { isOverdue } from '@/lib/format'
@@ -89,6 +90,6 @@ export async function countOverdueTasks(): Promise<number> {
 
 /** What the rail draws on its items (REG-466): the Tasks item's overdue count, keyed by href; nothing when there is nothing to say. */
 export async function railBadges(): Promise<Record<string, number>> {
-  const overdue = await countOverdueTasks()
-  return overdue > 0 ? { '/tasks': overdue } : {}
+  const [overdue, pending] = await Promise.all([countOverdueTasks(), countPendingTemplates()])   // (REG-501) Company: templates awaiting approval
+  return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending > 0 ? { '/company': pending } : {}) }
 }

@@ -1,0 +1,36 @@
+/* Recreate from my current quote (REG-491): the Files tab's dropzone language (dashed border, cloud glyph), a reading state,
+   then the match card (168-wide first page · reasons) with the other house styles as small radio cards. */
+.drop {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-2);
+  padding: 56px var(--om-spacing-6); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-bg); cursor: pointer; transition: background-color var(--motion-hover), border-color var(--motion-hover);
+}
+.drop:hover, .drop[data-drag] { background: var(--om-color-hover-04p); border-color: var(--om-color-primary-default); }
+.drop:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.dropGlyph { color: var(--om-color-primary-default); }
+.dropTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.dropHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 52ch; }
+.reading { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-2); padding: 64px var(--om-spacing-6); }
+.spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--om-color-surface-variant); border-top-color: var(--om-color-primary-default); animation: spin .9s linear infinite; margin-bottom: var(--om-spacing-2); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.readingTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.readingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.result { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.match { display: flex; gap: var(--om-spacing-5); align-items: flex-start; padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.matchThumb { flex-shrink: 0; box-shadow: var(--om-elevation-level-2); border-radius: 2px; overflow: hidden; max-height: 200px; }
+.matchText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-tertiary-green-default); }
+.matchTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.matchFile { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.reasons { margin: var(--om-spacing-2) 0 0; padding-left: 18px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: flex; flex-direction: column; gap: 2px; }
+.matchActions { margin-left: calc(-1 * var(--om-spacing-3)); }
+.choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.choice { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; font: inherit; color: inherit; }
+.choice[data-on] { border-color: var(--om-color-primary-default); box-shadow: 0 0 0 1px var(--om-color-primary-default); }
+.choice:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.choiceThumb { height: 100px; overflow: hidden; border-radius: 2px; box-shadow: var(--om-elevation-level-1); }
+.choiceName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.nameField { max-width: 400px; }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .match { flex-direction: column; } .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

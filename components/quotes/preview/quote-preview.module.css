@@ -1,0 +1,50 @@
+/* Preview (REG-490): the quote editor's header language over the surface-bg canvas, the pages centred, an optional 360 panel on the right. */
+.page { min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }
+.bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 76px; padding: var(--om-spacing-3) var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.title { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.templateChip { display: inline-flex; align-items: center; gap: 2px; height: 22px; padding: 0 6px 0 8px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-default); cursor: pointer; }
+.templateChip:hover { background: var(--om-color-hover-04p); }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.internal { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.body { flex: 1; display: flex; align-items: flex-start; min-height: 0; }
+.column { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); align-items: stretch; }
+.stage { display: flex; justify-content: center; }
+.readiness { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); padding: var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-3); max-width: 900px; width: 100%; align-self: center; }
+.readiness[data-blocking] { border-color: var(--om-color-tertiary-red-default); }
+.readyHead { display: flex; align-items: center; gap: var(--om-spacing-2); color: var(--om-color-on-surface-default); }
+.readiness[data-blocking] .readyHead { color: var(--om-color-tertiary-red-default); }
+.readyTitle { font: var(--om-type-subheading-m); }
+.issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.issue { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 40px; padding: var(--om-spacing-1) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.issueText { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.issueDetail { color: var(--om-color-on-surface-secondary); }
+.internalCard { max-width: 900px; width: 100%; align-self: center; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-2); padding: var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-3); background: var(--om-color-surface-default); }
+.internalEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-tertiary-red-default); }
+.internalGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.internalGrid > span { display: flex; flex-direction: column; gap: 2px; }
+.internalLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.internalValue { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.panel { width: 360px; flex-shrink: 0; position: sticky; top: 76px; height: calc(100dvh - 76px); background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); display: flex; flex-direction: column; }
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); padding: var(--om-spacing-4) var(--om-spacing-5); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.panelTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.panelBody { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.panelNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.group { display: flex; flex-direction: column; gap: 2px; }
+.groupTitle { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); padding-bottom: var(--om-spacing-1); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 40px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.rowText { display: flex; flex-direction: column; min-width: 0; }
+.rowHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.hidden { padding-top: var(--om-spacing-2); }
+.panelFoot { padding: var(--om-spacing-3) var(--om-spacing-5); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+@media (max-width: 1024px) { .panel { position: fixed; right: 0; top: 0; height: 100dvh; z-index: 30; box-shadow: var(--om-elevation-level-3); } }
+@media (max-width: 767px) { .bar { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .column { padding: var(--om-spacing-4); } .internalGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel { width: 100vw; } }
+@media print {
+  .page { background: #fff; min-height: 0; }
+  .bar, .readiness, .internalCard, .panel { display: none !important; }
+  .column { padding: 0; gap: 0; }
+  .stage { display: block; }
+}

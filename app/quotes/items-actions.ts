@@ -47,7 +47,7 @@ const num = (v: unknown, lo: number, hi: number, fallback: number) => { const n 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : undefined)
 const label = (v: unknown) => (v === null ? null : str(v, 60)?.trim() || null)
 
-export type ItemPatch = Partial<Pick<QuoteItem, 'name' | 'description' | 'status' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section' | 'visibility' | 'collapsed' | 'icon' | 'thumb' | 'thumbCount'>>
+export type ItemPatch = Partial<Pick<QuoteItem, 'name' | 'description' | 'status' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section' | 'visibility' | 'collapsed' | 'icon' | 'thumb' | 'thumbCount' | 'optional'>>
 
 /** Public endpoint: every field is bounded and every enum checked before it is written. */
 function cleanPatch(p: ItemPatch): Partial<typeof quoteItems.$inferInsert> {
@@ -65,6 +65,7 @@ function cleanPatch(p: ItemPatch): Partial<typeof quoteItems.$inferInsert> {
   if (p.category !== undefined) set.category = label(p.category)
   if (p.section !== undefined) set.section = label(p.section)
   if (p.visibility !== undefined) { if (!isVisibility(p.visibility)) throw new Error(`Unknown visibility: ${p.visibility}`); set.visibility = p.visibility }
+  if (p.optional !== undefined) set.optional = !!p.optional   // (REG-492)
   if (p.collapsed !== undefined) set.collapsed = !!p.collapsed
   if (p.icon !== undefined) set.icon = p.icon === null ? null : isItemKind(p.icon) ? p.icon : null
   if (p.thumb !== undefined) set.thumb = p.thumb === null ? null : str(p.thumb, 300) ?? null
@@ -122,6 +123,36 @@ export async function createQuoteItem(quoteId: string, input: CreateItemInput = 
   await renumber(quoteId, parentId)
   await sync(q.id)
   return itemOf(id)
+}
+
+export type BulkLine = Pick<ItemPatch, 'name' | 'description' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section'>
+/** Paste from a spreadsheet (REG-476): the mapped lines land in ONE transaction — after `afterId` among `parentId`'s children, else
+    at the end of that list — every field bounded by `cleanPatch` as a cell edit is. Returns how many landed. */
+export async function createQuoteItems(quoteId: string, lines: BulkLine[], place: { parentId?: string | null; afterId?: string | null } = {}): Promise<number> {
+  const q = await quoteOf(quoteId)
+  const clean = lines.slice(0, 500).map((l) => cleanPatch(l))
+  if (!clean.length) return 0
+  let parentId = place.parentId ?? null
+  let status: QuoteItem['status'] = 'Pending'
+  if (parentId) { const p = await itemOf(parentId); if (p.quoteId !== quoteId || p.kind !== 'group') parentId = null; else status = p.status }
+  const sibs = (await linesOf(quoteId)).filter((i) => (i.parentId ?? null) === parentId)
+  let position = sibs.length
+  if (place.afterId) { const idx = sibs.findIndex((s) => s.id === place.afterId); if (idx >= 0) position = idx + 1 }
+  const now = new Date()
+  const values = clean.map((set, k) => ({
+    id: randomUUID(), quoteId, parentId, kind: 'item' as const, position: position + k,
+    name: set.name ?? 'Item', description: set.description ?? null, icon: null, thumb: null, thumbCount: 0, status,
+    qty: set.qty ?? 1, unit: set.unit ?? null, costMinor: set.costMinor ?? 0, markupMinor: Math.max(-(set.costMinor ?? 0), set.markupMinor ?? 0),
+    discountPct: set.discountPct ?? 0, gstPct: set.gstPct ?? 9, room: set.room ?? null, category: set.category ?? null, section: set.section ?? null,
+    visibility: 'visible' as const, collapsed: false, priceBookItemId: null, createdAt: now, updatedAt: now,
+  }))
+  await db.transaction(async (tx) => {
+    for (const s of sibs) if (s.position >= position) await tx.update(quoteItems).set({ position: s.position + values.length }).where(eq(quoteItems.id, s.id))
+    for (let at = 0; at < values.length; at += 50) await tx.insert(quoteItems).values(values.slice(at, at + 50))
+  })
+  await renumber(quoteId, parentId)
+  await sync(q.id)
+  return values.length
 }
 
 /** Inline cell edits, the status chip, the visibility menu, Use Icon, a group's fold (autosaved by the editor). */

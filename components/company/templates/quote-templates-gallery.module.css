@@ -1,0 +1,46 @@
+/* Quote templates gallery (REG-485): a toolbar (segmented filter · search · Upload), then cards on the table-card frame —
+   a 200-wide first page in a 220-tall well (surface-bg), name row with the Default tag, two meta lines, a kebab. */
+.newAnchor { position: relative; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+.kebabAnchor { position: relative; display: inline-flex; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.toolbarEnd { display: flex; align-items: center; gap: var(--om-spacing-3); }
+/* (REG-505) The grid / list toggle — the Files tab's (REG-354): gone on a phone, where the cards are the one view. */
+.viewToggle { display: contents; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: var(--om-spacing-4); }
+.card {
+  position: relative; display: flex; flex-direction: column;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+  background: var(--om-color-surface-default);
+  transition: box-shadow var(--motion-hover);
+  /* no overflow clip here (owner 2026-09-18: the kebab's menu was hidden) — the thumb clips itself and rounds the top corners */
+}
+.card:hover { box-shadow: var(--om-elevation-level-2); }
+.card[data-status='archived'] .thumb { opacity: .6; }
+.open { display: flex; flex-direction: column; width: 100%; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.thumb { position: relative; height: 220px; background: var(--om-color-surface-bg); display: flex; justify-content: center; align-items: flex-start; overflow: hidden; padding-top: var(--om-spacing-5); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; }
+.page { display: block; box-shadow: var(--om-elevation-level-2); border-radius: 2px; overflow: hidden; }
+.ribbon { position: absolute; top: var(--om-spacing-3); left: var(--om-spacing-3); font: var(--om-type-caption-s); padding: 2px 8px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-default); color: var(--om-color-surface-default); }
+.ribbon[data-tone='edits'] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.ribbon[data-tone='await'] { background: var(--om-color-primary-default); color: #fff; }
+/* Name over status (20 + 4 + 20 = 44), the kebab centred on that block at the right; the usage line under it. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) 44px var(--om-spacing-1) var(--om-spacing-4); min-width: 0; }
+.nameRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; height: 20px; }
+.name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (REG-495) "Used by n quotes" is a link over the meta line's words, to Tools › Quotes scoped to the template. */
+.usage { display: block; padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.usedLink { color: var(--om-color-primary-default); text-decoration: none; }
+.usedLink:hover { text-decoration: underline; }
+.kebab { position: absolute; right: var(--om-spacing-3); top: calc(220px + var(--om-spacing-3)); height: 44px; display: inline-flex; align-items: center; }
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--om-spacing-2); padding: 80px var(--om-spacing-6); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.emptyGlyph { width: 72px; height: 72px; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-2); }
+.emptyTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.emptyHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 44ch; }
+@media (max-width: 767px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+  .thumb { height: 160px; }
+  .kebab { top: calc(160px + var(--om-spacing-3)); }
+  .toolbarEnd { width: 100%; }
+  .viewToggle { display: none; }
+}

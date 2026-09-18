@@ -1,0 +1,12 @@
+/* Company section pages (REG-484, tabs since 2026-09-18): the L1 header and the sticky tab strip exactly as Qanvast Ops
+   draws them (qanvast-leads.module.css .stickyTabs) — the strip carries the block's level-1 — over the page's own content
+   frame (leads.module.css .content). */
+.stickyTabs.stickyTabs { position: sticky; top: calc(var(--om-spacing-2) + 68px); z-index: 19; }   /* doubled: om/tabs' `position: relative` must never win */
+@media (max-width: 767px) {
+  .stickyTabs.stickyTabs { top: calc(var(--app-mobile-bar-height) + 60px); }
+}
+
+/* Ghost */
+.ghostHead { display: flex; align-items: center; height: 68px; padding: 0 var(--om-spacing-6); }
+.ghostTabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
+.ghostGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--om-spacing-4); }

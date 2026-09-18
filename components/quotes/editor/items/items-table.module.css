@@ -105,8 +105,18 @@
 .row[data-density='single'] .descText { -webkit-line-clamp: 1; }
 .row[data-density='triple'] .descText { -webkit-line-clamp: 3; }
 /* Triple is also a taller row (owner 2026-09-16: "triple is not working" on a quote whose lines have short descriptions — three
-   lines never existed, so nothing changed): every row is at least the three-line row's 96, its content centred (REG-433). */
+   lines never existed, so nothing changed): every row is at least the three-line row's 96, its content centred (REG-433). Double
+   the same (owner 2026-09-17: "again double spacing is not working"): every row the two-line row's 80, so Single and Double
+   never look alike on a quote of short descriptions (REG-481). */
+.row[data-density='double'] { min-height: 80px; }
 .row[data-density='triple'] { min-height: 96px; }
+/* (owner 2026-09-17, REG-480) A pointer over an editable cell shows its box, so the eye knows what a click will edit: a number or
+   money input draws its resting border, the name its box around the text (the focus geometry in the border grey), the description
+   clamp and a select an outline set off the text — nothing moves, and the active row's 36px boxes are unchanged. */
+.row:not([data-active]) .cell .input:not([data-name]):not([data-desc]):hover { border-color: var(--om-color-on-surface-border); }
+.input[data-name]:hover:not(:focus) { height: 24px; margin: -2px calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
+.descText:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 2px; border-radius: 2px; }
+.row:not([data-active]) .pick:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 3px; }
 .descText[data-placeholder] { color: var(--om-color-on-surface-secondary); }
 /* While the row is active the clamp keeps its lines but goes invisible and the 24px field sits over its first line — so a
    two-line row stays 80 and nothing jumps (owner 2026-09-15: "while editing … there is some UI jerk"). */
@@ -157,19 +167,25 @@
    instead a primary line") — drawn around the text with negative margins so the row keeps its 72 and nothing shifts. */
 .input[data-name] { font: var(--om-type-subheading-m); height: 20px; width: auto; flex: 0 1 auto; max-width: 100%; field-sizing: content; }   /* the name's own 20 line: 20 + 4 + 16 in the 72 row */
 .input[data-name]:focus { height: 24px; margin: -2px calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2); border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); background: var(--om-color-surface-default); }
-/* The description field: hidden at rest (the clamp above shows), the 24px box over the clamp's first line while the row is active. */
+/* The description field: hidden at rest (the clamp above shows), the 24px box over the clamp's first line while the row is active.
+   (owner 2026-09-17, REG-482: "alignment of the add description needs to align to the item input") The box bleeds 8 into the cell's
+   padding on both sides exactly as the name's box does, so the two boxes' edges line up and the description's text stays where the
+   clamp had it — before, the box began at the text and pushed it 8 to the right. */
 .input[data-desc] { display: none; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); height: 24px; padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
-.row[data-active] .input[data-desc] { display: block; position: absolute; left: 0; right: 0; top: 24px; width: 100%; z-index: 1; }
+.row[data-active] .input[data-desc] { display: block; position: absolute; left: calc(-1 * var(--om-spacing-2)); right: calc(-1 * var(--om-spacing-2)); top: 24px; width: auto; z-index: 1; }
 .input[data-desc]:focus { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
-/* "Expand" (1271:40880): a floating 24px white button hanging 12 under the row — only while the row is active. */
+/* "Expand" (1271:40880 drew a chip with the word): a 24px icon-only button hanging 2 under the description box's right end — the
+   seat of the ✕ / ✓ pair (REG-472; owner 2026-09-17, REG-478) — only while the row is active. The box sits 24 under the name line
+   and is 24 tall (.input[data-desc] below), so the button starts at 50. */
 .expand {
-  position: absolute; left: 76px; bottom: -12px; z-index: 3;
-  display: none; align-items: center; gap: var(--om-spacing-1);
-  height: 24px; padding: 2px var(--om-spacing-3) 2px var(--om-spacing-2);
+  position: absolute; right: calc(-1 * var(--om-spacing-2)); top: calc(24px + 24px + 2px); z-index: 3;   /* under the box's right end, which bleeds 8 (REG-482) */
+  display: none; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
   border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
   background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2);
-  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); cursor: pointer;
+  color: var(--om-color-on-surface-secondary); cursor: pointer;
 }
+.expand:hover { background: var(--om-color-hover-08p); }
 /* Select-like cells (unit, room…): a button that reads as text, placeholder in secondary. */
 .pick { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; text-align: left; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; max-width: 100%; height: 24px; border-radius: var(--om-radius-1); }
 .pick[data-empty] { color: var(--om-color-on-surface-secondary); }
@@ -276,3 +292,19 @@
   .colTotal { box-shadow: none !important; }
   .scroller[data-scrolled] .colItem { box-shadow: none; }
 }
+
+/* ── The Excel benchmark, phases 2 · 3 (REG-476 / REG-477) ── */
+/* Drag-fill: the square at a focused box's corner (Excel's fill handle), the frame it needs, and the outline over the cells a drag will fill. */
+.row .cell[data-col] { position: relative; }
+.fillHandle { display: none; position: absolute; right: 4px; bottom: 14px; width: 8px; height: 8px; box-sizing: border-box; background: var(--om-color-primary-default); border: 1px solid var(--om-color-surface-default); border-radius: 1px; cursor: crosshair; z-index: 1; touch-action: none; }
+.row[data-active] .cell:focus-within .fillHandle { display: block; }
+.cell[data-fill] { box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+/* The sum row: every number column's total over the lines that price, before the Add Item row (a spreadsheet's SUM line). */
+.sumRow { display: flex; align-items: stretch; min-height: 56px; border-top: 2px solid var(--om-color-surface-variant); background: var(--om-color-surface-bg); }
+.sumRow .cell, .sumRow .colSel, .sumRow .colNum, .sumRow .colItem, .sumRow .colTotal { background: var(--om-color-surface-bg); }
+.sumRow .colItem { padding: var(--om-spacing-4); align-items: center; font: var(--om-type-subheading-m); }
+.sumRow .colTotal .sum { font-weight: 700; }
+
+/* (REG-497) The client eye on a head: 14px, secondary, 4 after the label; it never takes the head's click. */
+.clientEye { display: inline-flex; margin-left: 4px; vertical-align: middle; color: var(--om-color-on-surface-secondary); }
+.head [data-client='no'] { color: var(--om-color-on-surface-secondary); }

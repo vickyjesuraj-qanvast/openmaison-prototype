@@ -1,0 +1,18 @@
+/* Paste from a spreadsheet (REG-476): the mapping sheet — a pick per column over the first rows of the block. */
+.top { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.caption { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.header { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.sheet { overflow-x: auto; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); scrollbar-width: thin; }
+.head, .row { display: flex; align-items: stretch; min-width: max-content; }
+.head { background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.pick { width: 180px; flex: 0 0 auto; padding: var(--om-spacing-2); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.pick:last-child { border-right: 0; }
+.row { border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row:last-child { border-bottom: 0; }
+.cell { width: 180px; flex: 0 0 auto; padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.cell:last-child { border-right: 0; }
+.cell[data-skip] { color: var(--om-color-on-surface-secondary); text-decoration: line-through; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.more { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.place { width: 240px; }
+@media (max-width: 767px) { .place { width: 100%; } }

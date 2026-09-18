@@ -7,6 +7,7 @@
   position: sticky; top: var(--om-spacing-2); z-index: 20;
   display: flex;
   align-items: center;
+  min-height: 68px;   /* the mock's 68 (Page Header / Leads 1200×68) with or without action buttons — a header with none was 60, and a tab strip stuck at 8 + 68 sat 8px under it (owner 2026-09-18) */
   gap: var(--om-spacing-3);
   padding: var(--om-spacing-4) var(--om-spacing-6);
   background: transparent;   /* painted by ::after (rounded) */
@@ -36,7 +37,7 @@
 
 /* Responsive (REG-269): ≤767 the header wraps — title row, then actions — instead of clipping actions. */
 @media (max-width: 767px) {
-  .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; }
+  .header { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); border-radius: 0; min-height: 60px; }   /* 12 + 36 + 12, the mobile bar's own height */
   /* (REG-298, 1082:23387) The mobile header block — top bar + this — lifts on level-1 instead of the hairline.
      (REG-369) …unless a sticky tab strip follows it (Qanvast Ops), in which case the strip is the block's bottom
      edge and owns the shadow; this header keeps the 1px stroke its plate already draws. */

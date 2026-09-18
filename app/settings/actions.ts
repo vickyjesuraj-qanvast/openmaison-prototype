@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { settings } from '@/lib/db/schema'
-import { QUOTE_APPROVAL_KEY, STAGE_MOVEMENT_KEY } from '@/lib/settings/queries'
-import { parseQuoteApproval, parseStageMovement, type QuoteApproval, type StageMovement } from '@/lib/settings/types'
+import { QUOTE_APPROVAL_KEY, STAGE_MOVEMENT_KEY, TEMPLATE_APPROVAL_KEY } from '@/lib/settings/queries'
+import { parseQuoteApproval, parseStageMovement, parseTemplateApproval, type QuoteApproval, type StageMovement, type TemplateApproval } from '@/lib/settings/types'
 
 /** Settings › Leads › Stage movement. Upserts the studio setting and refreshes every screen that moves stages. */
 export async function setStageMovement(mode: StageMovement): Promise<void> {
@@ -28,4 +28,14 @@ export async function setQuoteApproval(mode: QuoteApproval): Promise<void> {
     .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: now } })
   revalidatePath('/settings')
   revalidatePath('/leads', 'layout')
+}
+
+/** Settings › Leads › Template approval (REG-501). Refreshes the Company pages and the template editor's Publish. */
+export async function setTemplateApproval(mode: TemplateApproval): Promise<void> {
+  const value = JSON.stringify(parseTemplateApproval(mode))
+  const now = new Date()
+  await db.insert(settings).values({ key: TEMPLATE_APPROVAL_KEY, value, updatedAt: now })
+    .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: now } })
+  revalidatePath('/settings')
+  revalidatePath('/company', 'layout')
 }

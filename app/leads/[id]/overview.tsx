@@ -14,8 +14,7 @@ import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { DetailSkeleton } from '@/components/shell/detail-skeleton'
-import { MaisonFab } from '@/components/shell/maison-fab'
-import { AiSheet } from '@/components/leads/ai-sheet'
+import { useMaisonAi } from '@/lib/maison-ai'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { DeleteLeadDialog } from '@/components/leads/delete-dialog'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
@@ -138,7 +137,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteReason, setDeleteReason] = useState('Spam')
-  const [aiOpen, setAiOpen] = useState(false)
   const [askOpen, setAskOpen] = useState(false)   // QUESTIONNAIRE card › Ask Client → the Ask the client dialog (931:46853)
   /* Qanvast lead return (931:48236, spec design-source/context/lead-return/): kebab › Return Lead → wizard; LEAD RETURNED › View Details → details; kebab › Invite to Portal (931:48844). */
   const [returnOpen, setReturnOpen] = useState(false)
@@ -202,6 +200,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     [lead, questionnaire],
   )
   const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, briefLead).flatMap((b) => b.actions))).slice(0, 3), [lead.stage, briefLead])
+  useMaisonAi(aiSuggestions)   /* (REG-507) the shell's FAB + sheet */
 
   return (
     <PageReveal skeleton={<DetailSkeleton wide={wide} />}>
@@ -541,8 +540,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           snackbar({ message: 'WhatsApp opened with the invite' })
         }}
       />
-      <AiSheet open={aiOpen} suggestions={aiSuggestions} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-      <MaisonFab onPress={() => setAiOpen((o) => !o)} />
     </PageReveal>
   )
 }

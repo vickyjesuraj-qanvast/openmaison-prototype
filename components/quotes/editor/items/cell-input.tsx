@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { money2 } from '@/lib/quotes/math'
+import { filterNumeric, readNumber } from '@/lib/quotes/arith'
 import styles from './items-table.module.css'
 
 /**
@@ -9,6 +10,7 @@ import styles from './items-table.module.css'
  * The value is committed on blur and the draft dropped on Escape; the parent decides what a change means. Enter, Tab and
  * the arrows belong to the table's grid (grid-keys.ts, REG-475): moving the focus on is what commits. `data-col` names the
  * column a vertical move keeps; `data-dirty` says the box holds typing the browser's own undo should take (Cmd+Z, REG-475).
+ * A number box also takes a sum — "=12*3.5", "=1200/4" — worked out on commit (lib/quotes/arith.ts, REG-477).
  *
  * Escape (REG-417): `blur()` fires onBlur synchronously, before React commits the cleared draft, so the commit closure
  * still holds the typed text — a `cancelled` ref is read live and makes that commit a no-op.
@@ -53,7 +55,7 @@ export function MoneyCell({ minor, onCommit, ariaLabel, fit }: { minor: number; 
   const [draft, setDraft] = useState<string | null>(null)
   const { cancel, takeCancel } = useCancel()
   const commit = () => {
-    if (!takeCancel() && draft !== null) { const n = Math.round(Number(draft.replace(/,/g, '')) * 100); if (Number.isFinite(n) && n !== minor) onCommit(n) }
+    if (!takeCancel() && draft !== null) { const n = Math.round(readNumber(draft) * 100); if (Number.isFinite(n) && n >= 0 && n !== minor) onCommit(n) }
     setDraft(null)
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
@@ -64,7 +66,7 @@ export function MoneyCell({ minor, onCommit, ariaLabel, fit }: { minor: number; 
            data-dirty={draft !== null && draft !== base ? '' : undefined}
            value={shown}
            onFocus={() => setDraft(base)}
-           onChange={(e) => setDraft(e.target.value.replace(/[^0-9.,]/g, ''))}
+           onChange={(e) => setDraft(filterNumeric(e.target.value, ','))}
            onBlur={commit} onKeyDown={onKey} />
   )
 }
@@ -77,7 +79,7 @@ export function NumberCell({ value, onCommit, ariaLabel, suffix = '', max = 1_00
   const { cancel, takeCancel } = useCancel()
   const shown = Number.isInteger(value) ? String(value) : value.toFixed(decimals).replace(/\.?0+$/, '')
   const commit = () => {
-    if (!takeCancel() && draft !== null) { const n = Number(draft); if (Number.isFinite(n) && n >= 0 && n <= max && n !== value) onCommit(n) }
+    if (!takeCancel() && draft !== null) { const n = readNumber(draft); if (Number.isFinite(n) && n >= 0 && n <= max && n !== value) onCommit(n) }
     setDraft(null)
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
@@ -86,7 +88,7 @@ export function NumberCell({ value, onCommit, ariaLabel, suffix = '', max = 1_00
            data-dirty={draft !== null && draft !== shown ? '' : undefined}
            value={draft ?? `${shown}${suffix}`}
            onFocus={() => setDraft(shown)}
-           onChange={(e) => setDraft(e.target.value.replace(/[^0-9.]/g, ''))}
+           onChange={(e) => setDraft(filterNumeric(e.target.value))}
            onBlur={commit} onKeyDown={onKey} />
   )
 }

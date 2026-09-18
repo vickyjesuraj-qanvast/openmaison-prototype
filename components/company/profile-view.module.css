@@ -1,0 +1,72 @@
+/* Company › Profile (REG-487): the Settings page's setting cards (border + r8, p24) in a form column, and a sticky preview
+   column on the right that draws the default template's first page with the kit as it is edited. */
+.layout { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
+.form { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.card {
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+  padding: var(--om-spacing-6);
+  display: flex; flex-direction: column; gap: var(--om-spacing-5);
+  scroll-margin-top: 96px;
+}
+.cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.cardTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin: 0; }
+.cardHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }
+
+/* Marks: logo · stamp wells 180×96 on surface-bg r4; badges as 56-tall chips. */
+.marks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
+.mark { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.markWide { grid-column: 1 / -1; }
+.markLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.well {
+  width: 100%; height: 112px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: var(--om-spacing-3);
+}
+.well img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.well:hover { background: var(--om-color-hover-04p); }
+.well:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.wellEmpty { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.markActions { display: flex; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-3)); }
+.badges { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); align-items: center; }
+.badge { position: relative; height: 56px; padding: var(--om-spacing-1); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: inline-flex; }
+.badge img { height: 100%; width: auto; }
+.badgeRemove { position: absolute; top: -8px; right: -8px; background: var(--om-color-surface-default); border-radius: var(--om-radius-full); box-shadow: var(--om-elevation-level-1); display: none; }
+.badge:hover .badgeRemove, .badge:focus-within .badgeRemove { display: inline-flex; }
+.badgeAdd { width: 56px; height: 56px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: transparent; color: var(--om-color-primary-default); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.badgeAdd:hover { background: var(--om-color-hover-04p); }
+
+/* Colours: swatch 56 r4 with the native picker behind it, hex field beside. */
+.colours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); }
+.colour { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.swatch { width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; overflow: hidden; cursor: pointer; }
+.swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); opacity: 0; cursor: pointer; }
+.colourField { flex: 1; min-width: 0; }
+
+/* Type roles: label · family · size · weight · sample. */
+.roles { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.role { display: grid; grid-template-columns: 96px minmax(0, 1fr) 88px 132px 40px; gap: var(--om-spacing-3); align-items: center; }
+.roleLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.roleFamily, .roleSize, .roleWeight { min-width: 0; }
+.roleSample { text-align: center; color: var(--om-color-on-surface-default); line-height: 1; }
+
+.details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); }
+.detailWide { grid-column: 1 / -1; }
+
+/* Preview column: 324 wide, sticky under the header; the page at 276 wide on surface-bg. */
+.preview { width: 324px; flex-shrink: 0; position: sticky; top: calc(var(--om-spacing-2) + 68px + var(--om-spacing-6)); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.previewPage { background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; justify-content: center; }
+.previewPage > * { box-shadow: var(--om-elevation-level-2); }
+.previewHint { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+@media (max-width: 1024px) {
+  .preview { display: none; }
+  .role { grid-template-columns: 80px minmax(0, 1fr) 80px 120px 32px; }
+}
+@media (max-width: 767px) {
+  .card { padding: var(--om-spacing-4); }
+  .marks, .colours, .details { grid-template-columns: 1fr; }
+  .role { grid-template-columns: 1fr 1fr; }
+  .roleLabel, .roleFamily { grid-column: 1 / -1; }
+  .roleSample { display: none; }
+}

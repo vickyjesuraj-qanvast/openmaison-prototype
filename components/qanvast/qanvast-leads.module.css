@@ -167,7 +167,7 @@
 
 /* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
    `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle); }   /* 0,2,0 — outranks the head cell's own `position: relative` */
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */   /* 0,2,0 — outranks the head cell's own `position: relative` */
 .head .pin { z-index: 3; }
 .row:hover .pin { background: var(--om-color-primary-variant); }
 .row[data-selected] .pin { background: var(--om-color-primary-variant); }

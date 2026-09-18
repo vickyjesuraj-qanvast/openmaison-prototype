@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
@@ -9,11 +9,12 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
+import { isBlock, sumLines } from '@/lib/quotes/clipboard'
 import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
 import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
-import { atEdge, focusCell, nextAcross, nextDown, type Target } from './grid-keys'
+import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
 
 /** The table's key in the user's stored column widths (lib/table-widths.ts). */
 export const ITEMS_TABLE = 'quote-items'
@@ -32,6 +33,10 @@ function measure(text: string, font: string): number {
   if (!canvas) return text.length * 8
   canvas.font = font
   return canvas.measureText(text).width
+}
+/** The sum row's figure for a column (REG-477): quantities add up, the money columns sum the lines that price. */
+function sumText(key: ColumnKey, sums: ReturnType<typeof sumLines>): string {
+  return key === 'qty' ? fmtNum(sums.qty) : key === 'cost' ? money2(sums.costMinor) : key === 'markup' ? money2(sums.markupMinor) : key === 'unitPrice' ? money2(sums.unitPriceMinor) : ''
 }
 /** What a column shows on every display row, as [text, extra px] — the extra is a glyph / chevron / chip chrome beside the text. */
 function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [string, number][] {
@@ -130,12 +135,15 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 export function ItemsTable({
   items, priceBook, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onViewPriceBook, onExport, addInputRef, addOpenTick,
+  query, onPasteBlock, clientColumns,
 }: {
   items: QuoteItem[]
   priceBook: PriceBookItem[]
   view: ItemsView
   density: ItemsDensity
   columns: ColumnKey[]
+  /** (REG-497) The columns the quote's template prints for the client: an eye on their heads, "internal" on the others' tooltips. */
+  clientColumns?: Set<string> | null
   /** A head dragged to a new place (REG-462): the visible keys in their new order. */
   onReorder: (keys: ColumnKey[]) => void
   details: ColumnSettings['details']
@@ -151,10 +159,15 @@ export function ItemsTable({
   onCreate: (name: string) => void
   onPickPriceBook: (id: string) => void
   onViewPriceBook: () => void
+  /** Export As → the house Export dialog (REG-478). */
   onExport: () => void
   addInputRef: React.RefObject<HTMLInputElement | null>
   /** Bumped by Create › From My Items: the popover opens without a keystroke. */
   addOpenTick: number
+  /** Find (REG-477): only the rows whose name or description carry this text. */
+  query: string
+  /** A block copied from a spreadsheet was pasted (REG-476): the text and the row it landed on. */
+  onPasteBlock: (text: string, anchorId: string | null) => void
 }) {
   const comingSoon = useComingSoon()
   const scroller = useRef<HTMLDivElement>(null)
@@ -183,6 +196,17 @@ export function ItemsTable({
   /* The fit is measured over EVERY line — groups unfolded, no bucket collapsed — so folding anything never changes a column's
      width (owner 2026-09-16: "expanded and collapsed width looks different because of this there is jerk", REG-447). */
   const fullDisplay = useMemo(() => buildDisplay(items.map((i) => (i.kind === 'group' && i.collapsed ? { ...i, collapsed: false } : i)), view, viewLabels, new Set()), [items, view, viewLabels])
+  /* Find (REG-477): the rows whose name or description carry the text, each under its group (the band its number needs) and its bucket. */
+  const q = query.trim().toLowerCase()
+  const shown = useMemo(() => {
+    if (!q) return display
+    const hit = (i: QuoteItem) => i.name.toLowerCase().includes(q) || (i.description ?? '').toLowerCase().includes(q)
+    const keep = new Set<string>()
+    for (const i of items) if (hit(i)) { keep.add(i.id); if (i.parentId) keep.add(i.parentId) }
+    const buckets = new Set(display.flatMap((d) => (d.kind === 'row' && keep.has(d.item.id) ? [d.bucket] : [])))
+    return display.filter((d) => (d.kind === 'row' ? keep.has(d.item.id) : buckets.has(d.key)))
+  }, [display, items, q])
+  const sums = useMemo(() => sumLines(items), [items])
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
@@ -195,10 +219,11 @@ export function ItemsTable({
     for (const c of columns) {
       let w = measure(COLUMN_LABEL[c].toUpperCase(), headFont)
       for (const [text, extra] of columnTexts(c, fullDisplay, items)) w = Math.max(w, measure(text, bodyFont) + extra)
+      w = Math.max(w, measure(sumText(c, sums), bodyFont))   // the sum row's figure (REG-477)
       next[c] = Math.max(MIN_COL, Math.ceil(w) + 36)   // the cell's 32 of padding + the input's 2 of border + 2 of slack (the box rounds up past the canvas measure)
     }
     setFit((cur) => (columns.every((c) => cur[c] === next[c]) && Object.keys(cur).length === columns.length ? cur : next))
-  }, [columns, fullDisplay, items, fontsReady])
+  }, [columns, fullDisplay, items, sums, fontsReady])
   // What every row lays its cells to: the user's width, else the fit, else the stylesheet's mocked width (item-row.tsx COL_CLASS).
   const colW: ColWidths = useMemo(() => {
     const w: ColWidths = {}
@@ -218,7 +243,7 @@ export function ItemsTable({
     /* Shift-click selects the run between the last row touched and this one over the rows as shown (a folded group's children
        are not in it); it only ever adds, so a run across a partly-ticked list fills the gaps (REG-475, the Tasks table's rule). */
     onSelect: (id, on, range) => {
-      const ids = display.flatMap((d) => (d.kind === 'row' ? [d.item.id] : []))
+      const ids = shown.flatMap((d) => (d.kind === 'row' ? [d.item.id] : []))
       const a = lastTouched.current ? ids.indexOf(lastTouched.current) : -1, b = ids.indexOf(id)
       if (range && a >= 0 && b >= 0) h.onSelectRun(ids.slice(Math.min(a, b), Math.max(a, b) + 1)); else h.onSelect(id, on)
       lastTouched.current = id
@@ -229,6 +254,48 @@ export function ItemsTable({
     onDragEnd: () => { setDrag(null); h.onDragEnd() },
   }
   const anyFolded = collapsedBuckets.size > 0
+
+  /* Drag-fill (REG-477): from the handle's press to the pointer's release the rows under the pointer join the range; on release the
+     source cell's value goes into every row in it (the section applies it under one snapshot). A group joins only for a label column. */
+  const [fill, setFill] = useState<{ col: ColumnKey; from: string; to: string | null } | null>(null)
+  const fillIds = useMemo(() => {
+    if (!fill || !fill.to || fill.to === fill.from) return new Set<string>()
+    const labelCol = fill.col === 'room' || fill.col === 'category' || fill.col === 'section'
+    const ids = shown.flatMap((d) => (d.kind === 'row' && (d.item.kind === 'item' || labelCol) ? [d.item.id] : []))
+    const a = ids.indexOf(fill.from), b = ids.indexOf(fill.to)
+    if (a < 0 || b < 0) return new Set<string>()
+    return new Set(ids.slice(Math.min(a, b), Math.max(a, b) + 1).filter((id) => id !== fill.from))
+  }, [fill, shown])
+  const fillRef = useRef({ fill, fillIds, h })
+  useEffect(() => { fillRef.current = { fill, fillIds, h } })
+  const filling = fill !== null
+  useEffect(() => {
+    if (!filling) return
+    const prev = document.body.style.userSelect
+    document.body.style.userSelect = 'none'
+    const move = (e: PointerEvent) => {
+      const row = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[role="row"][data-item-id]')
+      const id = row?.dataset.itemId
+      if (id) setFill((f) => (f && f.to !== id ? { ...f, to: id } : f))
+    }
+    const up = () => {
+      const { fill: f, fillIds: ids, h: handlers } = fillRef.current
+      if (f && ids.size) handlers.onFill(f.col, f.from, [...ids])
+      setFill(null)
+    }
+    document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up)
+    return () => { document.body.style.userSelect = prev; document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up) }
+  }, [filling])
+
+  /* Paste (REG-476): a block from a spreadsheet — tabs between cells, a line per row — goes to the mapping dialog instead of one box;
+     the Add Item field also takes a plain list of names. A single value pastes into its box as ever. */
+  const onPaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    const text = e.clipboardData.getData('text/plain')
+    const t = e.target instanceof HTMLElement ? e.target : null
+    if (!isBlock(text, t?.closest('[data-add-item]') ? 'add' : 'cell')) return
+    e.preventDefault()
+    onPasteBlock(text, t ? rowOf(t)?.dataset.itemId ?? null : null)
+  }
 
   /* The keyboard grid (REG-475, grid-keys.ts): Tab / Shift+Tab step across the cells, Enter / Shift+Enter and ↑ ↓ walk the column,
      ← → leave a box from its edge, F2 drops the caret at the end of a selected value; past the last row is the Add Item field.
@@ -251,7 +318,7 @@ export function ItemsTable({
   return (
     <div className={styles.wrap}>
       <div ref={scroller} className={styles.scroller} data-more={more || undefined} data-scrolled={scrolled || undefined}>
-        <div className={styles.table} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} onKeyDown={onGridKey}>
+        <div className={styles.table} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} onKeyDown={onGridKey} onPaste={onPaste}>
           <div ref={headRef} className={styles.head} role="row">
             <div role="columnheader" className={`${styles.cell} ${styles.colSel}`}>
               {view !== 'none' ? (
@@ -264,10 +331,10 @@ export function ItemsTable({
               <span className={styles.check}><Checkbox isSelected={allOn} isIndeterminate={!allOn && allIds.some((id) => selected.has(id))} isDisabled={allIds.length === 0} onChange={(on: boolean) => onSelectAll(on)} aria-label="Select all items" /></span>
             </div>
             {details.autonumber ? <div role="columnheader" className={`${styles.cell} ${styles.colNum}`}>#</div> : null}
-            <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item<ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} /></div>
+            <div role="columnheader" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Item{clientColumns ? <ClientEye /> : null}<ColumnResizer table={ITEMS_TABLE} column="item" label="Item" min={MIN_ITEM} /></div>
             {columns.map((c) => (
-              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} data-col={c} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...D.style(c) }} {...D.head(c)}>
-                {COLUMN_LABEL[c]}<ColumnResizer table={ITEMS_TABLE} column={c} label={COLUMN_LABEL[c]} min={MIN_COL} />
+              <div key={c} role="columnheader" className={`${styles.cell} ${COL_CLASS[c]}`} data-col={c} data-client={clientColumns ? (clientColumns.has(c) ? 'yes' : 'no') : undefined} title={clientColumns && !clientColumns.has(c) ? 'Internal — never printed for the client' : undefined} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...D.style(c) }} {...D.head(c)}>
+                {COLUMN_LABEL[c]}{clientColumns?.has(c) ? <ClientEye /> : null}<ColumnResizer table={ITEMS_TABLE} column={c} label={COLUMN_LABEL[c]} min={MIN_COL} />
               </div>
             ))}
             <div role="columnheader" className={`${styles.cell} ${styles.colAdd}`}>
@@ -275,19 +342,34 @@ export function ItemsTable({
                 <button type="button" className={styles.foldAll} aria-label="Add column" onClick={comingSoon}><Icon name="add_box" size={20} weight={300} /></button>
               </Tooltip>
             </div>
-            <div role="columnheader" className={`${styles.cell} ${styles.colTotal}`}>Total</div>
+            <div role="columnheader" className={`${styles.cell} ${styles.colTotal}`}>Total{clientColumns ? <ClientEye /> : null}</div>
           </div>
-          {display.map((d) => d.kind === 'bucket' ? (
+          {shown.map((d) => d.kind === 'bucket' ? (
             <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)} />
           ) : (
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
                      dragOver={drag && drag.over === d.item.id && drag.id !== d.item.id ? drag.where : null} dragging={drag?.id === d.item.id}
-                     showFull={showFull.has(d.item.id)} h={rowH} />
+                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} />
           ))}
+          <SumRow sums={sums} columns={columns} colW={colW} autonumber={details.autonumber} itemStyle={itemStyle} />
           <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} onCreate={onCreate} onPick={onPickPriceBook} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
         </div>
       </div>
+    </div>
+  )
+}
+
+/** The sum row (REG-477): the number columns' totals over the lines that price — a spreadsheet's SUM line under the table. */
+function SumRow({ sums, columns, colW, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; columns: ColumnKey[]; colW: ColWidths; autonumber: boolean; itemStyle?: CSSProperties }) {
+  return (
+    <div className={styles.sumRow} role="row" aria-label="Sum">
+      <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
+      {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Sum · {sums.count} {sums.count === 1 ? 'item' : 'items'}</div>
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={colW[c] ? { width: colW[c] } : undefined}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
+      <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
+      <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(sums.totalMinor)}</span></div>
     </div>
   )
 }
@@ -354,7 +436,7 @@ function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPri
   const onBlur = (e: FocusEvent<HTMLInputElement>) => { const t = e.relatedTarget; if (!(t instanceof Element && t.closest('[data-om-menu]'))) { setOpen(false); setActive(-1) } }
   const optId = (i: number) => `${listId}-opt-${i}`
   return (
-    <div className={styles.addRow} role="row">
+    <div className={styles.addRow} role="row" data-add-item="">
       <div className={styles.addInner} role="cell">
         {autonumber ? <span className={styles.addNum}>{number}</span> : null}
         <div ref={anchor} className={styles.addField}>
@@ -385,5 +467,14 @@ function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPri
         <button type="button" className={styles.link} onClick={onExport}>Export As</button>
       </div>
     </div>
+  )
+}
+
+/** (REG-497) The small eye on a head whose column prints for the client under the quote's template. */
+function ClientEye() {
+  return (
+    <Tooltip label="Prints for the client">
+      <span className={styles.clientEye} aria-label="Prints for the client" role="img"><Icon name="visibility" size={14} weight={300} /></span>
+    </Tooltip>
   )
 }

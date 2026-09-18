@@ -1,0 +1,30 @@
+/* (REG-496) The Template card in General Info: the first page at 72 wide, the name with its version chip, two meta lines, the
+   three text actions. (REG-489) The version banner under the tab strip keeps the Review banner's tint language. */
+.card { display: flex; gap: var(--om-spacing-4); align-items: flex-start; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-3) var(--om-spacing-4); width: 100%; }
+.cardThumb { flex-shrink: 0; display: inline-flex; border-radius: 2px; overflow: hidden; box-shadow: var(--om-elevation-level-1); background: var(--om-color-surface-bg); max-height: 100px; }
+.cardNone { width: 72px; height: 100px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: 2px; }
+.cardText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cardEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.cardName { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.cardMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-1); margin-left: calc(-1 * var(--om-spacing-3)); margin-top: var(--om-spacing-1); flex-wrap: wrap; }
+.banner {
+  display: flex; align-items: center; gap: var(--om-spacing-3);
+  margin: var(--om-spacing-6) var(--om-spacing-6) 0;
+  padding: var(--om-spacing-3) var(--om-spacing-4);
+  background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant);
+  border-radius: var(--om-radius-2);
+  font: var(--om-type-body-m);
+}
+.bannerIcon { display: inline-flex; flex-shrink: 0; }
+.bannerText { flex: 1; min-width: 0; }
+.bannerActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+@media (max-width: 767px) {
+  .banner { flex-wrap: wrap; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
+  .bannerActions { width: 100%; justify-content: flex-end; }
+  .card { flex-direction: column; }
+}
+/* Touch (REG-273): the text actions take 44px boxes on the phone and on touch tablets. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .actions button, .bannerActions button { min-height: 44px; }
+}

@@ -7,8 +7,8 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import styles from './create-strip.module.css'
 
 /**
- * The editor's Create strip (collapsed 1260:31160 · expanded 1271:40377): Maison AI · My Items · Templates · Recent
- * Quotes · Brand Catalog — the Lead Overview's quick-links strip (components/leads/detail/quick-links.tsx) with this
+ * The editor's Create strip (collapsed 1260:31160 · expanded 1271:40377): Maison AI · My Items · Templates · Brand Catalog
+ * (Recent Quotes removed, owner 2026-09-18; Templates opens the template picker, REG-496) — the Lead Overview's quick-links strip (components/leads/detail/quick-links.tsx) with this
  * page's five shortcuts. Remembered per browser in localStorage `om.quote.createStrip` (default collapsed), read through
  * useSyncExternalStore so a remembered "expanded" strip never hydrates against collapsed server markup.
  */
@@ -32,12 +32,11 @@ const write = (s: StripState) => {
 }
 const serverSnapshot = (): StripState => 'collapsed'
 
-export type StripLink = 'ai' | 'items' | 'templates' | 'recent' | 'catalog'
+export type StripLink = 'ai' | 'items' | 'templates' | 'catalog'
 const LINKS: { key: StripLink; icon: string | null; label: string }[] = [
   { key: 'ai', icon: null, label: 'Maison AI' },
   { key: 'items', icon: 'list_alt', label: 'My Items' },
   { key: 'templates', icon: 'description', label: 'Templates' },
-  { key: 'recent', icon: 'history_2', label: 'Recent Quotes' },
   { key: 'catalog', icon: 'menu_book', label: 'Brand Catalog' },
 ]
 

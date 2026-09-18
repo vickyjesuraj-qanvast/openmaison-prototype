@@ -10,6 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { requestSearchFocus } from './search-focus'
 import { ToolsPopover } from './tools-popover'
+import { CompanyPopover } from '@/components/company/company-popover'
 import styles from './app-rail.module.css'
 
 /**
@@ -24,7 +25,7 @@ const TOP_ITEMS = [
   { icon: 'business_center', label: 'Projects' },
   { icon: 'people_alt', label: 'Leads', href: '/leads' },
   { icon: 'storefront', label: 'Marketplace' },
-  { icon: 'domain', label: 'Company' },
+  { icon: 'domain', label: 'Company', panel: '/company' },   /* (REG-484) opens the Company panel beside the rail; lit on every /company page */
   { icon: 'account_balance', label: 'Qanvast Ops', href: '/qanvast-ops' },
 ]
 const BOTTOM_ITEMS = [
@@ -48,6 +49,8 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
   const [railHover, setRailHover] = useState(false)     // logo tile → expand icon (795:22541)
   const [toolsOpen, setToolsOpen] = useState(false)     // Tools › the tile grid beside the rail (REG-422)
   const toolsRef = useRef<HTMLButtonElement>(null)
+  const [companyOpen, setCompanyOpen] = useState(false)   // Company › the sections panel beside the rail (REG-484)
+  const companyRef = useRef<HTMLButtonElement>(null)
   const [scrolled, setScrolled] = useState(false)   // (REG-329) the rail body has scrolled under the logo → the head takes a shadow
 
   const onEnter = () => setRailHover(true)
@@ -61,8 +64,8 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
 
   // Collapsed rail: every control gets the shared tooltip (789:83369) to its right.
   // Items with an href are real destinations (Leads, Settings) and light up for their route; the rest answer "coming soon".
-  const navItem = (it: { icon: string; label: string; href?: string }, extra?: string) => {
-    const active = !!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))
+  const navItem = (it: { icon: string; label: string; href?: string; panel?: string }, extra?: string) => {
+    const active = (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel))
     const className = extra ? `${styles.item} ${extra}` : styles.item
     const inner = (
       <>
@@ -74,10 +77,20 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
              carry `fill: true` outright, so it read as selected from the Qanvast Ops and Settings pages too. */
           <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
-        {it.href && badges?.[it.href] ? <span className={styles.badge} aria-hidden>{badges[it.href]}</span> : null}
+        {(it.href && badges?.[it.href]) || (it.panel && badges?.[it.panel]) ? <span className={styles.badge} aria-hidden>{badges?.[it.href ?? it.panel ?? '']}</span> : null}
         <span className={styles.label}>{it.label}</span>
       </>
     )
+    if (it.panel) {
+      return (
+        <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || companyOpen}>
+          <button ref={companyRef} type="button" className={className} aria-label={it.label} data-active={active || companyOpen || undefined}
+                  aria-haspopup="menu" aria-expanded={companyOpen} aria-current={active ? 'page' : undefined} onClick={() => setCompanyOpen((o) => !o)}>
+            {inner}
+          </button>
+        </Tooltip>
+      )
+    }
     if (it.label === 'Tools') {
       return (
         <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || toolsOpen}>
@@ -171,6 +184,7 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
         </div>
       </nav>
       <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
+      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['/company'] ?? 0} />
     </div>
   )
 }

@@ -28,6 +28,8 @@ export type RowHandlers = {
   /** A checkbox press; `range` (Shift held) selects the run from the last row touched, as the Tasks table does (REG-475). */
   onSelect: (id: string, on: boolean, range?: boolean) => void
   onSelectRun: (ids: string[]) => void
+  /** Drag-fill released / Cmd+D (REG-477): the source cell's column value into every target line. */
+  onFill: (col: string, sourceId: string, targetIds: string[]) => void
   onInsertBelow: (item: QuoteItem) => void
   onMenu: (item: QuoteItem, action: RowMenuAction) => void
   onChooseGroup: (item: QuoteItem, groupId: string | null) => void
@@ -48,7 +50,7 @@ export type RowHandlers = {
  * inset and the client-visibility eye. Every cell edits in place and the row autosaves (items-section.tsx).
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
-export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragOver, dragging, showFull, h,
+export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragOver, dragging, showFull, fillCol, inFill, onFillStart, h,
 }: {
   item: QuoteItem
   all: QuoteItem[]
@@ -64,6 +66,10 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   dragOver: 'before' | 'after' | null
   dragging: boolean
   showFull: boolean
+  /** The drag-fill in progress (REG-477): its column, and whether this row is inside the range it will fill. */
+  fillCol: ColumnKey | null
+  inFill: boolean
+  onFillStart: (col: ColumnKey, id: string) => void
   h: RowHandlers
 }) {
   const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'thumb' | 'vis' | 'row' | null>(null)
@@ -102,71 +108,75 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
     h.onDragOver(item.id, e.clientY < r.top + r.height / 2 ? 'before' : 'after')
   }
 
+  /* Drag-fill (REG-477, the Excel benchmark's phase 3): the small square at a focused box's corner; every editable column cell can be
+     a source or a target — a group's only where it has the cell (its labels). `data-fill` outlines the cells a drag is about to fill. */
+  const FILLABLE: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section']
+  const fillable = (key: ColumnKey) => FILLABLE.includes(key) && (!isGroup || key === 'room' || key === 'category' || key === 'section')
   const cell = (key: ColumnKey) => {
     const cls = `${styles.cell} ${COL_CLASS[key]}`
     const st = colW[key] ? { width: colW[key] } : undefined
-    switch (key) {
-      case 'qty':
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />}</div>
-      case 'unit':
-        return (
-          <div key={key} role="cell" className={cls} style={st} data-col={key}>
-            {isGroup ? null : (
-              <>
-                <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')} onKeyDown={clearKey(!!item.unit, () => patch({ unit: null }))}>
-                  <span>{item.unit ?? 'Add Unit Type'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
-                </button>
-                <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
-              </>
-            )}
-          </div>
-        )
-      case 'cost':
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? <span className={styles.sum}>{money2(sums!.costMinor)}</span> : <MoneyCell minor={item.costMinor} onCommit={(v) => patch({ costMinor: v, markupMinor: Math.max(-v, item.markupMinor) })} ariaLabel={`Cost of ${item.name}`} />}</div>
-      case 'markup':
-        return (
-          <div key={key} role="cell" className={cls} style={st} data-col={key}>
-            {isGroup ? <><span className={styles.sum}>{money2(sums!.markupMinor)}</span><span className={styles.sub}>({pct(Number((sums!.costMinor > 0 ? (sums!.markupMinor / sums!.costMinor) * 100 : 0).toFixed(2)))})</span></> : (
-              <>
-                <MoneyCell fit minor={item.markupMinor} onCommit={(v) => patch({ markupMinor: v })} ariaLabel={`Markup of ${item.name}`} />
-                <span className={styles.sub}>({pct(Number(markupPct(item).toFixed(2)))})</span>
-              </>
-            )}
-          </div>
-        )
-      case 'unitPrice':
-        // Unit Price = Cost + Markup; the markup absorbs the change and never takes the price below zero (REG-417).
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? <span className={styles.sum}>{money2(sums!.unitPriceMinor)}</span> : <MoneyCell minor={unitPriceMinor(item)} onCommit={(v) => patch({ markupMinor: Math.max(-item.costMinor, v - item.costMinor) })} ariaLabel={`Unit price of ${item.name}`} />}</div>
-      case 'discount':
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.discountPct} suffix="%" max={100} onCommit={(v) => patch({ discountPct: v })} ariaLabel={`Discount of ${item.name}`} />}</div>
-      case 'gst':
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />}</div>
-      case 'room': case 'category': case 'section': {
-        const ref = key === 'room' ? roomRef : key === 'category' ? catRef : secRef
-        const value = item[key]
-        const options = key === 'room' ? labels.rooms : key === 'category' ? labels.categories : labels.sections
-        const empty = key === 'room' ? 'Add Room' : key === 'category' ? 'Add Category' : 'Add Section'
-        const title = key === 'room' ? 'Room' : key === 'category' ? 'Category' : 'Section'
-        return (
-          <div key={key} role="cell" className={cls} style={st} data-col={key}>
-            <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)} onKeyDown={clearKey(!!value, () => patch({ [key]: null } as ItemPatch))}>
-              <span>{value ?? empty}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
-            </button>
-            <LabelMenu open={menu === key} anchor={ref} options={options} value={value} onClose={() => setMenu(null)} title={title}
-                       onPick={(v) => patch({ [key]: v } as ItemPatch)} addLabel={empty} onAdd={() => h.onAddLabel(key)} />
-          </div>
-        )
+    const body = (() => {
+      switch (key) {
+        case 'qty':
+          return isGroup ? null : <NumberCell value={item.qty} onCommit={(v) => patch({ qty: v })} ariaLabel={`Quantity of ${item.name}`} />
+        case 'unit':
+          return isGroup ? null : (
+            <>
+              <button ref={unitRef} type="button" className={styles.pick} data-edit="" data-empty={item.unit ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'unit'} onClick={() => toggle('unit')} onKeyDown={clearKey(!!item.unit, () => patch({ unit: null }))}>
+                <span>{item.unit ?? 'Add Unit Type'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
+              </button>
+              <UnitMenu open={menu === 'unit'} anchor={unitRef} value={item.unit} onClose={() => setMenu(null)} onPick={(u) => patch({ unit: u })} />
+            </>
+          )
+        case 'cost':
+          return isGroup ? <span className={styles.sum}>{money2(sums!.costMinor)}</span> : <MoneyCell minor={item.costMinor} onCommit={(v) => patch({ costMinor: v, markupMinor: Math.max(-v, item.markupMinor) })} ariaLabel={`Cost of ${item.name}`} />
+        case 'markup':
+          return isGroup ? <><span className={styles.sum}>{money2(sums!.markupMinor)}</span><span className={styles.sub}>({pct(Number((sums!.costMinor > 0 ? (sums!.markupMinor / sums!.costMinor) * 100 : 0).toFixed(2)))})</span></> : (
+            <>
+              <MoneyCell fit minor={item.markupMinor} onCommit={(v) => patch({ markupMinor: v })} ariaLabel={`Markup of ${item.name}`} />
+              <span className={styles.sub}>({pct(Number(markupPct(item).toFixed(2)))})</span>
+            </>
+          )
+        case 'unitPrice':
+          // Unit Price = Cost + Markup; the markup absorbs the change and never takes the price below zero (REG-417).
+          return isGroup ? <span className={styles.sum}>{money2(sums!.unitPriceMinor)}</span> : <MoneyCell minor={unitPriceMinor(item)} onCommit={(v) => patch({ markupMinor: Math.max(-item.costMinor, v - item.costMinor) })} ariaLabel={`Unit price of ${item.name}`} />
+        case 'discount':
+          return isGroup ? null : <NumberCell value={item.discountPct} suffix="%" max={100} onCommit={(v) => patch({ discountPct: v })} ariaLabel={`Discount of ${item.name}`} />
+        case 'gst':
+          return isGroup ? null : <NumberCell value={item.gstPct} max={100} onCommit={(v) => patch({ gstPct: v })} ariaLabel={`GST of ${item.name}`} />
+        case 'room': case 'category': case 'section': {
+          const ref = key === 'room' ? roomRef : key === 'category' ? catRef : secRef
+          const value = item[key]
+          const options = key === 'room' ? labels.rooms : key === 'category' ? labels.categories : labels.sections
+          const empty = key === 'room' ? 'Add Room' : key === 'category' ? 'Add Category' : 'Add Section'
+          const title = key === 'room' ? 'Room' : key === 'category' ? 'Category' : 'Section'
+          return (
+            <>
+              <button ref={ref} type="button" className={styles.pick} data-edit="" data-empty={value ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === key} onClick={() => toggle(key)} onKeyDown={clearKey(!!value, () => patch({ [key]: null } as ItemPatch))}>
+                <span>{value ?? empty}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
+              </button>
+              <LabelMenu open={menu === key} anchor={ref} options={options} value={value} onClose={() => setMenu(null)} title={title}
+                         onPick={(v) => patch({ [key]: v } as ItemPatch)} addLabel={empty} onAdd={() => h.onAddLabel(key)} />
+            </>
+          )
+        }
+        case 'type':
+          return isGroup ? null : <span className={kind ? undefined : styles.muted}>{kind ? ITEM_KIND_LABEL[kind] : '–'}</span>
+        case 'margin': {
+          const price = isGroup ? sums!.unitPriceMinor : unitPriceMinor(item)
+          const cost = isGroup ? sums!.costMinor : item.costMinor
+          return price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–'
+        }
+        default:
+          return <span className={styles.muted}>–</span>
       }
-      case 'type':
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{isGroup ? null : <span className={kind ? undefined : styles.muted}>{kind ? ITEM_KIND_LABEL[kind] : '–'}</span>}</div>
-      case 'margin': {
-        const price = isGroup ? sums!.unitPriceMinor : unitPriceMinor(item)
-        const cost = isGroup ? sums!.costMinor : item.costMinor
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}>{price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–'}</div>
-      }
-      default:
-        return <div key={key} role="cell" className={cls} style={st} data-col={key}><span className={styles.muted}>–</span></div>
-    }
+    })()
+    return (
+      <div key={key} role="cell" className={cls} style={st} data-col={key} data-fill={(inFill && fillCol === key) || undefined}>
+        {body}
+        {fillable(key) ? <span className={styles.fillHandle} data-fill-handle aria-hidden onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); onFillStart(key, item.id) }} /> : null}
+      </div>
+    )
   }
 
   const total = isGroup ? sums!.totalMinor : lineTotalMinor(item)
@@ -217,6 +227,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
           <div className={styles.nameRow} onClick={(e) => { if (e.target === e.currentTarget) nameRef.current?.focus() }}>
             <TextCell value={item.name} kind="name" inputRef={nameRef} placeholder={isGroup ? 'New Group' : 'Type item name'} onCommit={(v) => patch({ name: v })} ariaLabel={isGroup ? 'Group name' : 'Item name'} />
             {isGroup ? <span className={styles.groupTag}><Tag appearance="outlined" color="blue">Group</Tag></span> : null}
+            {!isGroup && item.optional ? <span className={styles.groupTag}><Tag appearance="outlined">Optional</Tag></span> : null}   {/* (REG-492) */}
             {isGroup && childCount > 0 ? <span className={styles.groupCount}>{childCount} {childCount === 1 ? 'item' : 'items'}</span> : null}   {/* (REG-463) only once the group holds something */}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
             {child ? (
               <>
@@ -250,12 +261,17 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
               <TextCell value={item.description ?? ''} kind="desc" inputRef={descRef} placeholder="Add a description" onCommit={(v) => patch({ description: v })} ariaLabel="Description" />
             </>
           )}
+          {!isGroup && details.description ? (
+            /* (owner 2026-09-17, REG-478) The icon alone, hanging under the description box's right end as the ✕ / ✓ pair does
+               (REG-472) — the mock's chip carried the word (1271:40880). mousedown swallowed: the box keeps its focus, so the
+               row stays active through the press (the button only shows on an active row). */
+            <Tooltip label="Expand">
+              <button type="button" className={styles.expand} data-expand aria-label="Expand description" onMouseDown={(e) => e.preventDefault()} onClick={() => setDescOpen(true)}>
+                <Icon name="expand_content" size={20} />
+              </button>
+            </Tooltip>
+          ) : null}
         </div>
-        {!isGroup && details.description ? (
-          <button type="button" className={styles.expand} data-expand onMouseDown={(e) => e.preventDefault()} onClick={() => setDescOpen(true)}>   {/* keeps the box's focus, so the row stays active through the press (the chip only shows on an active row) */}
-            <Icon name="expand_content" size={20} />Expand
-          </button>
-        ) : null}
         {/* Expand = the S 400 modal with a bigger box (REG-444); Save writes through the row's patch, so it autosaves and undoes like a cell. */}
         <DescriptionDialog open={descOpen} name={item.name} value={item.description ?? ''} onClose={() => setDescOpen(false)}
                            onSave={(v) => { if (v !== (item.description ?? '')) patch({ description: v }) }} />

@@ -7,7 +7,6 @@ import { PageReveal } from '@/components/shell/page-reveal'
 import { ImportsSkeleton } from '@/components/shell/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
-import { MaisonFab } from '@/components/shell/maison-fab'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -185,8 +184,6 @@ function View({ imports }: { imports: ImportBatch[] }) {
             </div>
           )}
         </div>
-
-      <MaisonFab onPress={comingSoon} />
       <ImportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} onImport={onImport}
                     onDone={(r) => {
                       setWizardOpen(false)

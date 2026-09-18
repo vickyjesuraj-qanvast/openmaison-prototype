@@ -2,7 +2,7 @@ import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: 
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { settings } from '@/lib/db/schema'
-import { DEFAULT_QUOTE_APPROVAL, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, parseQuoteApproval, parseStageMovement, parseStudio, type QuoteApproval, type StageMovement, type Studio } from './types'
+import { DEFAULT_QUOTE_APPROVAL, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, DEFAULT_TEMPLATE_APPROVAL, parseQuoteApproval, parseStageMovement, parseStudio, parseTemplateApproval, type QuoteApproval, type StageMovement, type Studio, type TemplateApproval } from './types'
 
 export const STAGE_MOVEMENT_KEY = 'stage_movement'
 
@@ -29,4 +29,13 @@ export async function fetchStudio(): Promise<Studio> {
   const [row] = await db.select().from(settings).where(eq(settings.key, STUDIO_KEY)).limit(1)
   if (!row) return DEFAULT_STUDIO
   try { return parseStudio(JSON.parse(row.value)) } catch { return DEFAULT_STUDIO }
+}
+
+export const TEMPLATE_APPROVAL_KEY = 'template_approval'
+
+/** Studio setting (REG-501); unset → approval required. */
+export async function fetchTemplateApproval(): Promise<TemplateApproval> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, TEMPLATE_APPROVAL_KEY)).limit(1)
+  if (!row) return DEFAULT_TEMPLATE_APPROVAL
+  try { return parseTemplateApproval(JSON.parse(row.value)) } catch { return DEFAULT_TEMPLATE_APPROVAL }
 }

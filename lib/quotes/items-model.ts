@@ -83,4 +83,4 @@ export function parseLabels(json: string | null | undefined): ItemLabels {
 }
 
 /** Reference row menu (owner 2026-09-11; "Create Document(s)" dropped — REG-410). */
-export type RowMenuAction = 'library' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove'
+export type RowMenuAction = 'library' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove'

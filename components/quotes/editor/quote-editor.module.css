@@ -10,6 +10,8 @@
 /* Doubled class (specificity 0,2,0, the Lead Details rule): om/tabs' own `.tabs { position: relative }` must never win. */
 .stickyTabs.stickyTabs { position: sticky; top: 76px; z-index: 19; }
 .body { flex: 1; display: flex; align-items: stretch; min-height: 0; }
+/* (REG-497) The live client view: 420 wide, sticky under the header and tab strip like the Create strip, its pages scrolling inside. */
+.clientPane { width: 420px; flex-shrink: 0; align-self: flex-start; position: sticky; top: calc(76px + 48px); height: calc(100dvh - 76px - 48px); border-left: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }
 .main {
   flex: 1; min-width: 0;
   padding: var(--om-spacing-6);

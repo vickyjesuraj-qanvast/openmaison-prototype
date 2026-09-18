@@ -155,6 +155,27 @@
       "when": 1789562347528,
       "tag": "0021_cooing_grey_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1789637868008,
+      "tag": "0022_friendly_wasp",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1789712340284,
+      "tag": "0023_nosy_hellfire_club",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1789713269176,
+      "tag": "0024_goofy_fixer",
+      "breakpoints": true
     }
   ]
 }

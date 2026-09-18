@@ -23,7 +23,7 @@ export type DialogSize = 'compact' | 'standard' | 'form' | 'modal'
  */
 export function Dialog({
   open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
-  eyebrow, leading, headRule = true, height, portal = false,
+  eyebrow, leading, headRule = true, height, portal = false, fluid = false,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
   /** A footer is optional: a modal drawn without one (the templates library, 1238:33258) ends on its body. */
@@ -49,6 +49,8 @@ export function Dialog({
   /** Render through a portal on <body> (REG-444): a dialog opened from inside a sideways scroller with sticky cells is otherwise
    *  composited under the cells that follow it — the Items table's frozen block showed through the scrim. */
   portal?: boolean
+  /** (REG-511) The xxl modal: fluid, 48px margin on every side (`--om-modal-xxl-margin`); `width` / `height` are ignored. */
+  fluid?: boolean
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
@@ -64,7 +66,7 @@ export function Dialog({
       {open ? (
         <motion.div className={styles.overlay} data-nested={nested || undefined} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div ref={panel} className={styles.dialog} style={{ width, height }} variants={asSheet ? bottomSheet : modalPanel} data-size={size}
+          <motion.div ref={panel} className={styles.dialog} style={fluid ? undefined : { width, height }} variants={asSheet ? bottomSheet : modalPanel} data-size={size} data-fluid={fluid || undefined}
                       initial="initial" animate="animate" exit="exit"
                       data-alert={alert || undefined} data-norule={headRule ? undefined : ''}
                       role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
@@ -74,7 +76,8 @@ export function Dialog({
               <div className={styles.headText}>
                 {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
                 <span className={styles.title}>{title}</span>
-                {subtitle}
+                {/* (REG-511) The subtitle is the house 12/16 secondary line, whatever the caller passes — the template dialogs passed bare sentences that rendered at 16px over two lines. */}
+                {subtitle ? <span className={styles.subtitle}>{subtitle}</span> : null}
               </div>
               <Tooltip label="Close">
                 <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" className={styles.close} onClick={onClose} />

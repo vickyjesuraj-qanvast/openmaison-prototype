@@ -15,7 +15,7 @@ import styles from '@/components/om/column-settings.module.css'
  * default, which also forgets dragged widths (the caller's `onReset`). Columns the table cannot draw yet stay listed and
  * answer coming soon. (REG-459: the details rows were briefly information-only; the owner reverted to the mock the same day.)
  */
-export function ColumnSettingsDrawer({ open, value, onClose, onSave, onReset }: { open: boolean; value: ColumnSettings; onClose: () => void; onSave: (v: ColumnSettings) => void; onReset: () => void }) {
+export function ColumnSettingsDrawer({ open, value, onClose, onSave, onReset, clientColumns }: { open: boolean; value: ColumnSettings; onClose: () => void; onSave: (v: ColumnSettings) => void; onReset: () => void; /** (REG-497) the columns the template prints; the "Show only what the client sees" switch */ clientColumns?: Set<string> | null }) {
   const comingSoon = useComingSoon()
   const [details, setDetails] = useState(value.details)
   const [wasOpen, setWasOpen] = useState(open)
@@ -23,8 +23,29 @@ export function ColumnSettingsDrawer({ open, value, onClose, onSave, onReset }: 
   /* (REG-464) A detail switch reaches the table at once, like the column switches the shared drawer applies live. */
   useLiveApply(open, details, value.details, true, (d) => onSave({ details: d, columns: value.columns }), (a, b) => a.description === b.description && a.images === b.images && a.autonumber === b.autonumber)
   const toItems = (cols: ColumnSettings['columns']): ColumnItem[] => cols.map((c) => ({ key: c.key, label: COLUMN_LABEL[c.key], visible: c.on, pinned: false }))
+  /* (REG-497) On = every visible column prints for the client; switching it on hides the internal ones (cost, markup …) and remembers what was on. */
+  const [before, setBefore] = useState<ColumnSettings['columns'] | null>(null)
+  const clientOnly = !!clientColumns && value.columns.filter((c) => c.on).every((c) => clientColumns.has(c.key))
+  const setClientOnly = (on: boolean) => {
+    if (!clientColumns) return
+    if (on) { setBefore(value.columns); onSave({ details: value.details, columns: value.columns.map((c) => ({ ...c, on: c.on && clientColumns.has(c.key) })) }) }
+    else if (before) { onSave({ details: value.details, columns: before }); setBefore(null) }
+    else onSave({ details: value.details, columns: value.columns.map((c) => ({ ...c, on: c.on || RENDERABLE_COLUMNS.includes(c.key) })) })
+  }
   const extras = (
     <div className={styles.group}>
+      {clientColumns ? (
+        <>
+          <div className={styles.eyebrow}>Client view</div>
+          <ul className={styles.list}>
+            <li className={styles.row}>
+              <span className={styles.label}>Show only what the client sees</span>
+              <Switch size="sm" isSelected={clientOnly} onChange={(v: boolean) => setClientOnly(v)} aria-label="Show only what the client sees" />
+            </li>
+          </ul>
+          <div className={styles.divider} />
+        </>
+      ) : null}
       <div className={styles.eyebrow}>Item details</div>
       <ul className={styles.list}>
         {([['description', 'Show item description'], ['images', 'Show images'], ['autonumber', 'Show autonumber']] as const).map(([k, label]) => (

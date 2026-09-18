@@ -6,8 +6,9 @@ import { QuotesWorkspace } from '@/components/quotes/list/quotes-workspace'
 export const metadata: Metadata = { title: 'Quotes' }
 export const dynamic = 'force-dynamic'
 
-export default async function QuotesPage() {
+export default async function QuotesPage({ searchParams }: { searchParams: Promise<{ new?: string; template?: string }> }) {
+  const sp = await searchParams
   // `now` is stamped inside the loader: client render must not read Date.now() (purity rule).
   const data = await fetchStudioQuotes()
-  return <QuotesWorkspace data={data} />
+  return <QuotesWorkspace data={data} newTemplateId={typeof sp.new === 'string' ? sp.new : null} templateId={typeof sp.template === 'string' ? sp.template : null} />
 }

@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { SettingsSkeleton } from '@/components/shell/skeleton'
 import { PageHeader } from '@/components/shell/page-header'
-import { MaisonFab } from '@/components/shell/maison-fab'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, type QuoteApproval, type StageMovement } from '@/lib/settings/types'
-import { setQuoteApproval, setStageMovement } from './actions'
+import { QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, type QuoteApproval, type StageMovement, type TemplateApproval } from '@/lib/settings/types'
+import { setQuoteApproval, setStageMovement, setTemplateApproval } from './actions'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './settings.module.css'
 
@@ -22,7 +21,7 @@ const MODULES = [
   { key: 'finance', icon: 'account_balance_wallet', label: 'Finance' },
 ]
 
-export function SettingsView({ stageMovement, quoteApproval }: { stageMovement: StageMovement; quoteApproval: QuoteApproval }) {
+export function SettingsView({ stageMovement, quoteApproval, templateApproval }: { stageMovement: StageMovement; quoteApproval: QuoteApproval; templateApproval: TemplateApproval }) {
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const [mode, setMode] = useState<StageMovement>(stageMovement)
@@ -34,6 +33,22 @@ export function SettingsView({ stageMovement, quoteApproval }: { stageMovement: 
   const [seenApproval, setSeenApproval] = useState(quoteApproval)
   if (seenApproval !== quoteApproval) { setSeenApproval(quoteApproval); setApproval(quoteApproval) }
 
+  /* (REG-501) Template approval — the Quote approval pattern, applied to Company › Templates. */
+  const [tApproval, setTApproval] = useState<TemplateApproval>(templateApproval)
+  const [seenT, setSeenT] = useState(templateApproval)
+  if (seenT !== templateApproval) { setSeenT(templateApproval); setTApproval(templateApproval) }
+  const chooseTemplateApproval = async (next: TemplateApproval) => {
+    if (next === tApproval) return
+    const prev = tApproval
+    setTApproval(next)
+    try {
+      await setTemplateApproval(next)
+      snackbar({ message: `Template approval set to ${TEMPLATE_APPROVAL_OPTIONS.find((o) => o.key === next)?.title ?? next}` })
+    } catch {
+      setTApproval(prev)
+      snackbar({ message: 'Couldn’t save the setting — please try again' })
+    }
+  }
   const chooseApproval = async (next: QuoteApproval) => {
     if (next === approval) return
     const prev = approval
@@ -104,9 +119,20 @@ export function SettingsView({ stageMovement, quoteApproval }: { stageMovement: 
                 ))}
               </div>
             </div>
+            {/* Template approval (owner 2026-09-18, REG-501): lives beside Quote approval until the Quotes settings module is built. */}
+            <div className={styles.setting}>
+              <div className={styles.settingHead}>
+                <span className={styles.settingTitle}>Template approval</span>
+                <span className={styles.settingHelp}>Whether a designer’s quote template needs an Owner’s or Admin’s approval before the studio can use it. Applies to Company › Templates.</span>
+              </div>
+              <div className={styles.choices} role="radiogroup" aria-label="Template approval">
+                {TEMPLATE_APPROVAL_OPTIONS.map((o) => (
+                  <ChoiceCard key={o.key} title={o.title} help={o.help} selected={tApproval === o.key} onSelect={() => { void chooseTemplateApproval(o.key) }} />
+                ))}
+              </div>
+            </div>
           </section>
         </div>
-        <MaisonFab onPress={comingSoon} />
       </div>
     </PageReveal>
   )

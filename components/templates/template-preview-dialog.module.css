@@ -1,0 +1,5 @@
+/* Template preview window (REG-512): the pages on the surface-bg well, centred, the window's body scrolling. */
+.pages { flex: 1; min-height: 0; overflow: auto; background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); padding: var(--om-spacing-6); display: flex; justify-content: center; align-items: flex-start; }
+.doc { flex-shrink: 0; }
+.doc > * { pointer-events: none; }
+@media (max-width: 767px) { .pages { padding: var(--om-spacing-3); } }

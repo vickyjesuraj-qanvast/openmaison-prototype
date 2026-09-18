@@ -11,7 +11,7 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteSibling } from '@/lib/quotes/editor'
 import styles from './editor-header.module.css'
 
-export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments'
+export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'clientView'
 
 /**
  * Page Header / Quotes (1201:33834 · 1260:31143 · the page's instance 1273:29264): back → the lead's Quotes tab ·
@@ -22,7 +22,7 @@ export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'ex
  */
 export function EditorHeader({
   lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,
-  onSwitch, onSend, onMenu, onClose,
+  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView,
 }: {
   lead: EditorLead
   quoteId: string
@@ -42,6 +42,9 @@ export function EditorHeader({
   onSend: () => void
   onMenu: (action: HeaderMenuAction) => void
   onClose: () => void
+  /** (REG-497) The live client view toggle, beside Preview. */
+  clientViewOn?: boolean
+  onClientView?: () => void
 }) {
   const [menu, setMenu] = useState<'switch' | 'more' | null>(null)
   const folded = useMediaQuery(TABLET_DOWN)   // ≤1024 Preview and Comments live in the kebab (editor-header.module.css)
@@ -95,6 +98,13 @@ export function EditorHeader({
         </span>
       </span>
       <div className={styles.actions}>
+        {onClientView ? (
+          <span className={styles.foldable}>
+            <Tooltip label={clientViewOn ? 'Hide the client view' : 'See the quote as your client will'}>
+              <IconButton icon="visibility" label="Client view" selected={clientViewOn} aria-pressed={clientViewOn} onClick={onClientView} />
+            </Tooltip>
+          </span>
+        ) : null}
         <span className={styles.foldable}>
           <Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')}>Preview</Button>
         </span>
@@ -113,6 +123,7 @@ export function EditorHeader({
             {folded ? (
               <>
                 <DropdownItem onSelect={pick(() => onMenu('preview'))}>Preview</DropdownItem>
+                {onClientView ? <DropdownItem onSelect={pick(onClientView)}>{clientViewOn ? 'Hide client view' : 'Client view'}</DropdownItem> : null}
                 <DropdownItem onSelect={pick(() => onMenu('comments'))}>Comments</DropdownItem>
                 <DropdownDivider />
               </>

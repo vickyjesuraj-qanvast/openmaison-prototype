@@ -145,7 +145,8 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         onClose={() => setFiltersOpen(false)}
       />
       <CreateQuoteModal
-        open={createOpen} leadName={leadName} templates={templates} priceBookCount={priceBookCount} now={now}
+        open={createOpen} leadName={leadName} leadId={leadId} templates={templates} priceBookCount={priceBookCount} now={now}
+        render={{ brand: data.brand, sample: data.sample }} origin={here}
         onClose={() => setCreateOpen(false)}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}

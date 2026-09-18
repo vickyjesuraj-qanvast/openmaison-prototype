@@ -4,6 +4,9 @@ import { db } from '@/lib/db'
 import { count } from 'drizzle-orm'
 import { priceBookItems, quoteTemplates, quotes, type Quote, type QuoteTemplate, members } from '@/lib/db/schema'
 import type { Member } from '@/lib/db/schema'
+import { fetchBrand } from '@/lib/templates/queries'
+import { SAMPLE_DATA, type DocData } from '@/lib/templates/data'
+import type { BrandKit } from '@/lib/templates/model'
 
 /* Lead Details › Quotes (910-36240) — one loader for the tab. Archived / deleted quotes leave the list. The studio's
    design templates ride along for the Create Quote modal (REG-412): default first, then most recently used. */
@@ -15,18 +18,22 @@ export type LeadQuotesData = {
   templates: QuoteTemplate[]
   /** The studio's My Items count — the Create Quote modal's "n-item price book" (REG-412). */
   priceBookCount: number
+  /** (REG-489) The brand kit and the sample quote the Create Quote modal draws each template's first page with. */
+  brand: BrandKit
+  sample: DocData
   now: number
 }
 
 export async function fetchLeadQuotes(leadId: string): Promise<LeadQuotesData> {
-  const [rows, templates, book, team] = await Promise.all([
+  const [rows, templates, book, team, brand] = await Promise.all([
     db.select().from(quotes)
       .where(and(eq(quotes.leadId, leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt)))
       .orderBy(asc(quotes.createdAt)),
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.lastUsedAt), asc(quoteTemplates.createdAt)),
     db.select({ n: count() }).from(priceBookItems),
     db.select().from(members),
+    fetchBrand(),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
-  return { quotes: rows.map((q) => ({ ...q, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null })), templates, priceBookCount: book[0]?.n ?? 0, now: Date.now() }
+  return { quotes: rows.map((q) => ({ ...q, creator: q.createdBy ? byMember.get(q.createdBy) ?? null : null })), templates, priceBookCount: book[0]?.n ?? 0, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
 }

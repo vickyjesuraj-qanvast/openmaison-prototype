@@ -150,6 +150,7 @@ export function RowMenu({ open, anchor, item, groups, selectedCount, onClose, on
             {isItem ? <DropdownItem onSelect={() => act('group')}>Group {n} Item{n === 1 ? '' : 's'}</DropdownItem> : null}
             <DropdownDivider />
             <DropdownItem onSelect={() => act('showFull')}>Show Full Content</DropdownItem>
+            {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}   {/* (REG-492) prints in its own section, out of the totals */}
             <DropdownDivider />
             <DropdownItem submenu onSelect={() => setSub('add')}>Add Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
             <DropdownItem submenu onSelect={() => setSub('move')}>Move Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>

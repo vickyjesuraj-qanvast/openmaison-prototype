@@ -1,0 +1,10 @@
+/* (REG-497) The live client view: a 420 column beside the sections (sticky under the header and tab strip, like the Create strip). */
+.pane { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--om-color-surface-default); }
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); flex-shrink: 0; }
+.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.sub { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.area { flex: 1; min-height: 0; overflow: auto; background: var(--om-color-surface-bg); padding: var(--om-spacing-3); }
+.area > * { pointer-events: none; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); flex-shrink: 0; }
+.note { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

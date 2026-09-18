@@ -72,7 +72,8 @@ export function AiSheet({
             <span className={styles.spark}><img src="/figma-assets/brief-sparkle.svg" width={16} height={16} alt="" /></span>
             Maison AI
           </div>
-          <div className={styles.body}>
+          {/* (REG-507) A page with nothing scripted opens straight onto the foot — no empty body. */}
+          {suggestions.length > 0 ? <div className={styles.body}>
             {suggestions.map((s, i) => (
               <motion.button
                 key={s}
@@ -85,7 +86,7 @@ export function AiSheet({
                 {s}
               </motion.button>
             ))}
-          </div>
+          </div> : null}
           <div className={styles.foot}>
             <button type="button" className={styles.reset} onClick={() => setConfirmReset(true)}>
               <Icon name="restart_alt" size={18} />

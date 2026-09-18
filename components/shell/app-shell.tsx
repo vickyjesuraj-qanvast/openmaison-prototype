@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { AppRail } from '@/components/shell/app-rail'
 import { MobileChrome } from '@/components/shell/mobile-nav'
 import { SnackbarProvider } from '@/components/om/snackbar'
+import { MaisonAi } from '@/components/shell/maison-ai'
 import styles from './app-shell.module.css'
 
 /**
@@ -30,6 +31,8 @@ export function AppShell({ children, railBadges }: { children: ReactNode; railBa
             {children}
           </main>
         </div>
+        {/* (REG-507) Maison AI's FAB and sheet, once, for every page in the shell. */}
+        <MaisonAi />
       </div>
     </SnackbarProvider>
   )

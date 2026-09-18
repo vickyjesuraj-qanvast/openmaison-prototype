@@ -10,6 +10,9 @@ import { presetRows, scheduleAnchors } from '../lib/quotes/payments'
 import { resolveTokens, TEMPLATE_SEED } from '../lib/quotes/text'
 import { projectRef, VALIDITY_DAYS } from '../lib/quotes/refs'
 import { STAGES } from '../lib/leads/enums'
+import { PRESETS } from '../lib/templates/presets'
+import { DEFAULT_BRAND_SETTING } from '../lib/templates/brand'
+import { DEMO_BADGES } from '../lib/templates/assets'
 
 /**
  * Makes the demo data say what the UI shows (REG-343). Idempotent: every inserted row carries a deterministic id
@@ -699,6 +702,50 @@ async function main() {
   const stamped = await client.execute(`UPDATE quotes SET created_by = coalesce(prepared_by, (SELECT id FROM members WHERE is_you = 1 LIMIT 1)) WHERE created_by IS NULL`)
   console.log(`  ${stamped.rowsAffected} quote(s) given a creator`)
 
+  /* ── R31 · the brand kit and the studio's three templates as published designs (REG-485 / REG-487) ──────
+     Company › Profile reads one settings row (`brand`): the kit and the company details every template prints — seeded with
+     the demo studio's details and the reference quotes' accreditation badges. The three seeded templates (R22) keep their
+     mock names but carry real designs: the owner's three reference quotes as house styles — Default Quote PDF = Letter
+     (Dyel's Sales Contract), 4-Room BTO = Scope (Flo Design), 5-Room BTO = Form (Cove Interior) — published as v1 with
+     their version rows, so a quote created from one pins to v1 and the editor's history has a start. Quotes already on a
+     template pin to its version; the showcase quote OM-10008 prints through the Scope template. Existing designs are kept. */
+  console.log('\nR31 brand kit and template designs')
+  await client.execute({ sql: `INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES ('brand', ?, ?)`,
+    args: [JSON.stringify({ kit: { ...DEFAULT_BRAND_SETTING.kit, badges: DEMO_BADGES }, details: DEFAULT_BRAND_SETTING.details }), NOW - 30 * D] })
+  const houseStyle: Record<string, string> = { 'Default Quote PDF': 'letter', '4-Room BTO': 'scope', '5-Room BTO': 'form' }
+  let designed = 0
+  for (const [name, key] of Object.entries(houseStyle)) {
+    const id = sid(name, 'quote_template')
+    const preset = PRESETS.find((p) => p.key === key)!
+    const [row] = rows<{ design_json: string | null; created_at: number }>(await client.execute({ sql: `SELECT design_json, created_at FROM quote_templates WHERE id = ?`, args: [id] }))
+    if (!row || row.design_json) continue
+    const design = JSON.stringify(preset.design()), defaults = JSON.stringify(preset.defaults)
+    const publishedAt = row.created_at + H
+    await client.execute({ sql: `UPDATE quote_templates SET status = 'published', version = 1, published_at = ?, updated_at = ?, updated_by = 'dane', paper = ?, design_json = ?, defaults_json = ?, note = 'First published' WHERE id = ?`,
+      args: [publishedAt, publishedAt, preset.paper, design, defaults, id] })
+    await client.execute({ sql: `INSERT OR IGNORE INTO quote_template_versions (id, template_id, version, design_json, defaults_json, note, published_at, published_by) VALUES (?, ?, 1, ?, ?, 'First published', ?, 'dane')`,
+      args: [sid(`${name} v1`, 'quote_template_version'), id, design, defaults, publishedAt] })
+    designed++
+  }
+  await client.execute({ sql: `UPDATE quotes SET template_id = ?, template_version = 1 WHERE number = 'OM-10008' AND template_id IS NULL`, args: [sid('4-Room BTO', 'quote_template')] })
+  await client.execute(`UPDATE quotes SET template_version = (SELECT t.version FROM quote_templates t WHERE t.id = quotes.template_id) WHERE template_id IS NOT NULL AND template_version IS NULL`)
+  note(`brand kit present; ${designed} template(s) received their house-style design; quotes on a template pinned to its version`)
+
+  /* ── R32 · a template awaiting the owner's approval (REG-501) ────────────────────────────────────
+     The prototype is always signed in as Dane, the owner, so the designer's side cannot be clicked through; Sarah's
+     submission gives the owner's side something real — the gallery's Awaiting approval filter, the rail's Company badge,
+     the editor's review bar with Approve and publish · Request changes. A draft from the Presentation house style, never
+     published; kept as she left it if she is still waiting. */
+  console.log('\nR32 template awaiting approval')
+  {
+    const id = sid('Showflat Presentation', 'quote_template')
+    const preset = PRESETS.find((p) => p.key === 'presentation')!
+    await client.execute({ sql: `INSERT OR IGNORE INTO quote_templates (id, name, kind, is_default, created_at, status, version, paper, draft_json, draft_updated_at, updated_at, updated_by, submitted_by, submitted_at, submit_note)
+      VALUES (?, 'Showflat Presentation', 'design', 0, ?, 'draft', 0, ?, ?, ?, ?, 'sarah', 'sarah', ?, ?)`,
+      args: [id, NOW - 3 * H, preset.paper, JSON.stringify({ design: preset.design(), defaults: preset.defaults }), NOW - 2 * H, NOW - 2 * H, NOW - 2 * H, 'For the showflat launch — the cover in our colour, a page per room with photos, the investment summary.'] })
+    note('Showflat Presentation awaits approval, submitted by Sarah 2h ago')
+  }
+
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')
   const checks: [string, string][] = [
@@ -734,6 +781,12 @@ async function main() {
     ['text template library missing a kind', `SELECT k FROM (SELECT 'terms' AS k UNION SELECT 'notes') WHERE NOT EXISTS (SELECT 1 FROM quote_text_templates t WHERE t.kind = k)`],
     ['signed-in member with no signature (Signature section)', `SELECT name FROM members WHERE is_you = 1 AND signature_kind IS NULL`],
     ['demo quote with no Declined line to show the status', `SELECT 'OM-10008' WHERE NOT EXISTS (SELECT 1 FROM quote_items i JOIN quotes q ON q.id = i.quote_id WHERE q.number = 'OM-10008' AND i.status = 'Declined' AND i.parent_id IS NULL)`],
+    ['published template with no design (Company › Templates)', `SELECT name FROM quote_templates WHERE status = 'published' AND design_json IS NULL`],
+    ['published template with no version row', `SELECT name FROM quote_templates t WHERE t.status = 'published' AND NOT EXISTS (SELECT 1 FROM quote_template_versions v WHERE v.template_id = t.id AND v.version = t.version)`],
+    ['quote on a template with no pinned version', `SELECT number FROM quotes WHERE template_id IS NOT NULL AND template_version IS NULL`],
+    ['no brand kit record (Company › Profile)', `SELECT 'brand' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'brand')`],
+    ['template awaiting approval with no submitter or note', `SELECT name FROM quote_templates WHERE submitted_at IS NOT NULL AND (submitted_by IS NULL OR submit_note IS NULL)`],
+    ['default template deleted (Company › Templates)', `SELECT name FROM quote_templates WHERE is_default = 1 AND deleted_at IS NOT NULL`],
     ['keyboard-mash task left behind', `SELECT title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"') OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`],
   ]
   let failed = 0

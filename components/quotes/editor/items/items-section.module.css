@@ -109,3 +109,4 @@
 .descDialogName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .descDialogArea { width: 100%; }
 .descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */
+.find { display: inline-flex; width: 240px; }   /* Find (REG-477): the box the search glyph opens */

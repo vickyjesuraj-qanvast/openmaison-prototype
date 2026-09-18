@@ -48,3 +48,20 @@ export function parseStudio(v: unknown): Studio {
   const r = (v ?? {}) as Partial<Record<keyof Studio, unknown>>
   return { name: typeof r.name === 'string' && r.name.trim() ? r.name : DEFAULT_STUDIO.name, gstRegistered: r.gstRegistered !== false, phone: typeof r.phone === 'string' ? r.phone.trim() : '' }
 }
+
+/**
+ * Template approval — studio-level policy (owner 2026-09-18, REG-501): whether a Designer's template needs an Owner's or
+ * Admin's approval before it publishes. Owners and Admins always publish directly.
+ *   required      Draft → Awaiting approval → Published (Approve and publish · Request changes)
+ *   not-required  every member publishes
+ */
+export const TEMPLATE_APPROVALS = ['required', 'not-required'] as const
+export type TemplateApproval = (typeof TEMPLATE_APPROVALS)[number]
+export const DEFAULT_TEMPLATE_APPROVAL: TemplateApproval = 'required'
+export const TEMPLATE_APPROVAL_OPTIONS: { key: TemplateApproval; title: string; help: string }[] = [
+  { key: 'required', title: 'Required', help: 'A designer submits a template for approval; an Owner or Admin approves and publishes it, or requests changes. Owners and Admins publish directly.' },
+  { key: 'not-required', title: 'Not required', help: 'Every member publishes templates for the whole studio.' },
+]
+export function parseTemplateApproval(v: unknown): TemplateApproval {
+  return v === 'not-required' ? 'not-required' : 'required'
+}

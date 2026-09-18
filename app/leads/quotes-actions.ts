@@ -3,13 +3,19 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadTasks, leads, members, quoteTemplates, quotes, quotePayments, taskAssignees } from '@/lib/db/schema'
+import { leadTasks, leads, members, quoteTemplates, quoteTextTemplates, quotes, quotePayments, taskAssignees } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
 import { projectRef, validUntil } from '@/lib/quotes/refs'
+import { parseDefaults, parseDesign, type TemplateDefaults } from '@/lib/templates/model'
+import { cleanGroups, viewForTemplate } from '@/lib/templates/picker'
+import { presetByKey } from '@/lib/templates/presets'
+import { quoteItems } from '@/lib/db/schema'
+import { resolveTokens } from '@/lib/quotes/text'
+import { fetchStudio } from '@/lib/settings/queries'
 import { DEFAULT_DENSITY } from '@/lib/quotes/items-model'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
@@ -35,27 +41,47 @@ async function nextNumber(): Promise<string> {
 export async function createQuote(leadId: string, templateId: string | null = null): Promise<string> {
   const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, leadId))
   if (!lead) throw new Error('lead not found')
+  // (REG-489) The template's Defaults tab decides what the quote starts with; the quote pins the template's current version.
+  let template: { id: string; version: number; defaults: TemplateDefaults; view: 'none' | 'category' | 'room' | 'section' } | null = null
   if (templateId) {
-    const [t] = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
-    if (!t) throw new Error('template not found')
+    const [t] = await db.select({ id: quoteTemplates.id, version: quoteTemplates.version, defaultsJson: quoteTemplates.defaultsJson, designJson: quoteTemplates.designJson, status: quoteTemplates.status, deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
+    if (!t || t.deletedAt) throw new Error('template not found')
+    template = { id: t.id, version: t.version, defaults: parseDefaults(t.defaultsJson), view: viewForTemplate(parseDesign(t.designJson, presetByKey('letter').design())) }
   }
+  const defaults = template?.defaults ?? null
   // (REG-403) The editor's General Info opens filled from the records that exist: the lead's property type and address,
   // and the signed-in member as "Prepared by". The section order / state stays null = the default (lib/quotes/sections.ts).
-  const [me] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true))
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
   const id = randomUUID(); const now = new Date()
+  const studio = await fetchStudio()
+  const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
+  const textOf = async (textId: string | null) => { if (!textId) return null; const [t] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, textId)); return t ? resolveTokens(t.body, tokens) : null }
+  const [termsHtml, notesHtml] = await Promise.all([textOf(defaults?.termsTemplateId ?? null), textOf(defaults?.notesTemplateId ?? null)])
   // Project Ref # and Quote Valid Until are records from the start (REG-403 / lib/quotes/refs.ts): the property's family, the
   // day and its sequence; 30 days of validity. The description clamps to two lines by default (1260:31372).
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
   await db.insert(quotes).values({
     id, leadId, number: await nextNumber(), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
-    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId,
-    validUntil: validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
+    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId, templateVersion: template?.version ?? null,
+    validUntil: defaults ? new Date(now.getTime() + defaults.validityDays * 86_400_000) : validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
+    gstEnabled: defaults?.gstEnabled ?? true, clientSignatureRequired: defaults?.signatureRequired ?? true, termsHtml, notesHtml,
+    // (REG-497) With starter sections the groups ARE the structure (View by would bucket each group under itself); without them the table groups the way the template prints.
+    itemsView: cleanGroups(defaults?.starterGroups ?? []).length ? 'none' : template?.view ?? 'none',
   })
+  // (REG-497) The template's starter sections open as empty groups, carrying the trade or room the template groups by — so the document files their lines under them.
+  const groups = cleanGroups(defaults?.starterGroups ?? [])
+  if (groups.length) {
+    await db.insert(quoteItems).values(groups.map((name, position) => ({
+      id: randomUUID(), quoteId: id, parentId: null, kind: 'group', position, name, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: 9,
+      category: template?.view === 'category' ? name : null, room: template?.view === 'room' ? name : null, section: template?.view === 'section' ? name : null,
+      visibility: 'visible', collapsed: false, createdAt: now, updatedAt: now,
+    })))
+  }
   if (templateId) await db.update(quoteTemplates).set({ lastUsedAt: now }).where(eq(quoteTemplates.id, templateId))
   // (REG-418) Every quote starts on the studio's default split — the toolbar reads "Default: 10/30/30/30" from the first
   // open — with the deposit on approval and the rest estimated from the lead's start date and the property's renovation length.
-  const rows = presetRows('default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: now, propertyType: lead.propertyType }))
+  const rows = presetRows(defaults?.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: now, propertyType: lead.propertyType }))
   await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId: id, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
   touch(leadId); return id
 }

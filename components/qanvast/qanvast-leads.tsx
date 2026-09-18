@@ -4,7 +4,7 @@ import { useMemo, useState, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
 import { Button } from '@/components/ds'
-import { AiSheet } from '@/components/leads/ai-sheet'
+import { useMaisonAi } from '@/lib/maison-ai'
 import { Dropdown } from '@/components/leads/dropdown'
 import menuStyles from '@/components/leads/menus.module.css'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
@@ -15,7 +15,6 @@ import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Tabs } from '@/components/om/tabs'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
-import { MaisonFab } from '@/components/shell/maison-fab'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { QanvastSkeleton } from '@/components/shell/skeleton'
@@ -86,7 +85,7 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   // "No results found" only when the reader narrowed something — an empty Qanvast table keeps its bare head.
   const nothingMatches = rows.length > 0 && visible.length === 0 && (query.trim() !== '' || scope !== null)
 
-  const [aiOpen, setAiOpen] = useState(false)
+  useMaisonAi(AI_SUGGESTIONS)   /* (REG-507) the shell's FAB + sheet */
 
   /* Inert tabs: intercept the Link click before Next follows it (Link honours defaultPrevented) and answer coming soon. */
   const onTabsClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -214,8 +213,6 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
 
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
 
-      <AiSheet open={aiOpen} suggestions={AI_SUGGESTIONS} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-      <MaisonFab onPress={() => setAiOpen((o) => !o)} />
     </PageReveal>
   )
 }

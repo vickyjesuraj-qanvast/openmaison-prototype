@@ -12,7 +12,9 @@ import type { LeadRow } from '@/lib/leads/queries'
  * `title` and `download` (Export Tasks). Field label "Choose file format" as the mock types it.
  */
 export function ExportDialog({ open, rows = [], now, onClose, onDone, title = 'Export Leads', download }: {
-  open: boolean; rows?: LeadRow[]; now: number; onClose: () => void; onDone: (fileName: string, format: ExportFormat) => void
+  open: boolean; rows?: LeadRow[]; onClose: () => void; onDone: (fileName: string, format: ExportFormat) => void
+  /** The leads export's date stamp; a caller with its own `download` (Tasks, the quote editor's Items) needs none. */
+  now?: number
   title?: string
   /** Custom downloader (returns the file name); defaults to the leads export. */
   download?: (format: ExportFormat) => string
@@ -21,7 +23,7 @@ export function ExportDialog({ open, rows = [], now, onClose, onDone, title = 'E
   return (
     <Dialog open={open} onClose={onClose} title={title} width={400} size="form"
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-                     <Button onPress={() => { const name = download ? download(format) : downloadLeads(rows, format, new Date(now)); onDone(name, format); onClose() }}>Export</Button></>}>
+                     <Button onPress={() => { const name = download ? download(format) : downloadLeads(rows, format, new Date(now ?? Date.now())); onDone(name, format); onClose() }}>Export</Button></>}>
       <TextField label="Choose file format" value={format} mode="select" options={EXPORT_FORMATS} onChange={(v) => setFormat(v as ExportFormat)} />
     </Dialog>
   )

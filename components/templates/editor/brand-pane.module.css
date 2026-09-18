@@ -1,0 +1,28 @@
+/* Brand tab (REG-487): the kit's values with an "overridden on this template" mark and Reset to brand per value. */
+.pane { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.intro { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.introText { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.link { display: inline-flex; align-items: center; gap: 2px; font: var(--om-type-subtitle-m); color: var(--om-color-primary-default); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.title { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.logoRow { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.logoWell { height: 80px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); display: flex; align-items: center; justify-content: center; padding: var(--om-spacing-2); cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.logoWell img { max-height: 100%; max-width: 100%; object-fit: contain; }
+.logoActions { display: flex; align-items: center; gap: var(--om-spacing-2); margin-left: calc(-1 * var(--om-spacing-3)); min-height: 36px; }
+.fromKit { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); margin-left: var(--om-spacing-3); }
+.colours { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.colour { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 40px; padding: 2px var(--om-spacing-1); border-radius: var(--om-radius-1); }
+.colour[data-over] { background: var(--om-color-primary-variant); }
+.swatch { width: 28px; height: 28px; border-radius: var(--om-radius-full); border: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+.swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); opacity: 0; cursor: pointer; }
+.colourText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.colourLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.colourHex { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.roles { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.role { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-surface-variant); }
+.role[data-over] { border-color: var(--om-color-primary-default); }
+.roleHead { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
+.roleLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.foot { padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

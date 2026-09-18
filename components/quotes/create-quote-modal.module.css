@@ -14,6 +14,10 @@
 .panel {
   position: relative;
   width: var(--om-modal-xl); max-height: calc(100vh - 96px);
+  /* (REG-494) the picker mode fills the height it may take, so the grid scrolls inside rather than the whole body */
+}
+.panel[data-mode='all'] {
+  height: min(860px, calc(100vh - 96px));
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   box-shadow: var(--om-elevation-level-5);   /* the reference's level-5 panel (the Dialog shell's) */
@@ -27,6 +31,7 @@
   box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
   flex-shrink: 0;
 }
+.heading > :first-child:not(.title) { margin-left: calc(-1 * var(--om-spacing-2)); }
 .title { flex: 1; min-width: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .close {
   border: 0; background: none; padding: 0; cursor: pointer;
@@ -41,6 +46,9 @@
   display: flex; flex-direction: column; gap: var(--om-spacing-6);
 }
 .block { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.panel[data-mode='all'] .body { overflow: hidden; }
+.panel[data-mode='all'] .block { flex: 1; min-height: 0; }
+.panel[data-mode='all'] .block > * { flex: 1; min-height: 0; max-height: none; }
 .eyebrowRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; }
 .eyebrowRow .eyebrow { flex: 1; min-width: 0; }
 /* "FROM A DESIGN TEMPLATE · 3 SAVED" — caption-s uppercase secondary; the count in the same colour (AA at 12px). */
@@ -83,6 +91,8 @@
   background: var(--om-color-surface-default); border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0;
   padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-2);
 }
+/* (REG-489) The real first page: 132 wide, top-aligned in the well like the placeholder document, clipped at the well's foot. */
+.page { display: block; width: 132px; margin-top: 16px; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; overflow: hidden; box-shadow: var(--om-elevation-level-1); }
 .ln { height: 4px; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-variant); }
 .ln[data-h] { height: 8px; background: var(--om-color-on-surface-border); margin-bottom: var(--om-spacing-1); }
 .ln[data-tb] { margin-top: var(--om-spacing-2); background: var(--om-color-on-surface-border); }

@@ -1,0 +1,54 @@
+/* Inspector (REG-486; Claude Design 5b/5c corrected: five quick controls, then "More options"): a 320 column of
+   label-over-control fields in a two-column grid, sections divided by rules. Every control is a house primitive. */
+.inspector { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.head { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); min-height: 56px; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.headIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.headTitle { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.headActions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-4); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.field { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.field[data-wide] { grid-column: 1 / -1; }
+.fieldLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.hint { display: inline-flex; color: var(--om-color-on-surface-secondary); }
+.switchRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 36px; grid-column: 1 / -1; cursor: pointer; }
+.switchLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.txt { display: flex; align-items: flex-start; gap: var(--om-spacing-1); }
+.txt > :first-child { flex: 1; min-width: 0; }
+.area { width: 100%; min-height: 72px; }
+.fieldsAnchor { position: relative; display: inline-flex; flex-shrink: 0; margin-top: 10px; }
+.menuGroup { display: block; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.swatches { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.swatch { width: 24px; height: 24px; border-radius: var(--om-radius-full); border: var(--om-border-1) solid var(--om-color-surface-variant); cursor: pointer; padding: 0; position: relative; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); background: var(--om-color-surface-default); }
+.swatch[data-on] { box-shadow: 0 0 0 2px var(--om-color-surface-default), 0 0 0 4px var(--om-color-primary-default); }
+.swatch[data-none]::after { content: ''; position: absolute; width: 2px; height: 28px; background: var(--om-color-tertiary-red-default); transform: rotate(45deg); border-radius: 1px; }
+.swatch[data-custom] { overflow: hidden; }
+.swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); opacity: 0; cursor: pointer; }
+.swatch:focus-visible, .swatch:focus-within { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.toggles { display: flex; gap: 2px; }
+.style { grid-column: 1 / -1; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); }
+.styleHead { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 40px; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; background: none; cursor: pointer; text-align: left; color: var(--om-color-on-surface-default); }
+.styleHead:hover { background: var(--om-color-hover-04p); }
+.styleTitle { font: var(--om-type-subtitle-m); flex-shrink: 0; }
+.styleSummary { flex: 1; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.style .grid { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-3); }
+.group { grid-column: 1 / -1; border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding-top: var(--om-spacing-2); }
+.groupHead { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 36px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); text-align: left; }
+.group .grid { padding-top: var(--om-spacing-2); }
+/* Lists inside the inspector (columns, rows, elements, totals lines): 36-tall rows. */
+.list { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; }
+.row { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; padding: 2px 0; }
+.row[data-off] .rowLabel { color: var(--om-color-on-surface-secondary); }
+.rowLabel { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowField { flex: 1; min-width: 0; }
+.rowNarrow { width: 72px; flex-shrink: 0; }
+.rowBtn { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 36px; padding: 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.rowBtn:hover { background: var(--om-color-hover-04p); }
+.rowBtn[data-on] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.rowBtn .rowLabel { color: inherit; }
+.rowMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.addRow { grid-column: 1 / -1; margin-left: calc(-1 * var(--om-spacing-3)); position: relative; display: inline-flex; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--om-spacing-2); padding: 48px var(--om-spacing-4); color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); }
+.emptyGlyph { color: var(--om-color-on-surface-border); }
+.note { grid-column: 1 / -1; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from '@/components/ds'
+import { Button, SearchBar } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -18,10 +18,17 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
 import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
-import { quoteTotals, type QuoteTotals } from '@/lib/quotes/math'
-import { createQuoteItem, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, setQuoteItemParent, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
+import { quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
+import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
+import { ExportDialog } from '@/components/leads/export-dialog'
+import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
+import { createQuoteItem, createQuoteItems, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, setQuoteItemParent, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
 import { SectionCard } from '../section-card'
 import { ItemsTable, ITEMS_TABLE } from './items-table'
+import { PasteItemsDialog } from './paste-items-dialog'
+import { SetValueDialog, type SetField } from './set-value-dialog'
+import { RoundPricesDialog, type RoundChange } from './round-prices-dialog'
+import { rowOf } from './grid-keys'
 import { clearColumnWidths } from '@/lib/table-widths'
 import { ItemsSummary, maxAdditional, type Pricing } from './items-summary'
 import { ColumnSettingsDrawer } from './column-settings-drawer'
@@ -42,6 +49,8 @@ function AiMark() {
 
 export type ItemsSeed = {
   quoteId: string
+  /** The quote's number, for the export's file name (REG-476). */
+  number?: string
   items: QuoteItem[]
   priceBook: PriceBookItem[]
   studio: Studio
@@ -54,8 +63,6 @@ export type ItemsSeed = {
   labelsJson: string | null
 }
 
-const money = (minor: number) => new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', currencyDisplay: 'code' }).format(minor / 100).replace('SGD', 'S$').replace(/\s/g, '')
-
 /**
  * Items section (1260:31209 · 1271:40400 · the reference screenshots, owner 2026-09-11; spec 03/04 in
  * design-source/context/quote-editor/). Owns the section card: the toolbar in its head, the table, the Add Item row and
@@ -66,7 +73,7 @@ const money = (minor: number) => new Intl.NumberFormat('en-SG', { style: 'curren
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, clientColumns, forceView }: {
   seed: ItemsSeed
   open: boolean
   onToggle: () => void
@@ -76,6 +83,10 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /** The live total and lines, as the table shows them (the Payment Schedule's amounts and AI schedule follow, REG-418). */
   onTotal?: (totalMinor: number) => void
   onLines?: (items: QuoteItem[]) => void
+  /** (REG-497) The columns the quote's template prints for the client — an eye on their heads; null = no template known. */
+  clientColumns?: Set<string> | null
+  /** (REG-497) A View by pushed from outside (the regroup prompt after a template change): a new nonce applies it once. */
+  forceView?: { key: ItemsView; nonce: number } | null
 }) {
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -94,6 +105,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [labels, setLabels] = useState<ItemLabels>(() => parseLabels(seed.labelsJson))
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [collapsedBuckets, setCollapsedBuckets] = useState<Set<string>>(() => new Set())
+  const [seenForce, setSeenForce] = useState<number | null>(null)
+  if (forceView && forceView.nonce !== seenForce) { setSeenForce(forceView.nonce); setView(forceView.key); setCollapsedBuckets(new Set()) }   // (REG-497) render-phase adjust
   const [showFull, setShowFull] = useState<Set<string>>(() => new Set())
   const [history, setHistory] = useState<{ past: QuoteItem[][]; future: QuoteItem[][] }>({ past: [], future: [] })
   const [menu, setMenu] = useState<'view' | 'density' | 'create' | 'more' | null>(null)
@@ -120,6 +133,12 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [naming, setNaming] = useState<{ kind: 'room' | 'category' | 'section' } | null>(null)
   const [imageFor, setImageFor] = useState<QuoteItem | null>(null)
   const [addOpenTick, setAddOpenTick] = useState(0)
+  /* The Excel benchmark's phases 2 · 3 (REG-476 / REG-477): a pasted block waiting in the mapping dialog, the Set value dialog, the
+     Export dialog and the Find text (sort by head was built and removed the same day, REG-483). */
+  const [pasting, setPasting] = useState<{ text: string; anchorId: string | null } | null>(null)
+  const [setValueOpen, setSetValueOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const viewRef = useRef<HTMLSpanElement>(null)
   const densityRef = useRef<HTMLSpanElement>(null)
   const createRef = useRef<HTMLSpanElement>(null)
@@ -156,35 +175,17 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const discard = () => { for (const p of pending.current.values()) clearTimeout(p.timer); pending.current.clear() }
 
   /* ── history ── */
+  const reloadRef = useRef<() => Promise<void>>(async () => {})   // `reload` is declared with the structural edits below; undo / redo reach it here
   const snapshot = () => setHistory((h) => ({ past: [...h.past.slice(-29), itemsRef.current.map((i) => ({ ...i }))], future: [] }))
   const restore = async (next: QuoteItem[], undo: boolean) => {
     discard()
     const cur = itemsRef.current
     setItems(next)
     setHistory((h) => (undo ? { past: h.past.slice(0, -1), future: [cur, ...h.future] } : { past: [...h.past, cur], future: h.future.slice(1) }))
-    try { const r = await replaceQuoteItems(quoteId, next); onSaved(r.updatedAt, r.amountMinor); setItems(await listQuoteItems(quoteId)) } catch { fail(undo ? 'undo' : 'redo') }
+    try { const r = await replaceQuoteItems(quoteId, next); onSaved(r.updatedAt, r.amountMinor); await reloadRef.current() } catch { fail(undo ? 'undo' : 'redo') }
   }
   const undo = () => { const prev = history.past.at(-1); if (prev) void restore(prev, true) }
   const redo = () => { const next = history.future[0]; if (next) void restore(next, false) }
-  /* Cmd+Z / Cmd+Shift+Z (Ctrl+Z / Ctrl+Y as well) undo and redo the lines from the page's body or anywhere in this card (REG-475) — but
-     not from a box with typing in it, where the browser's own undo takes the keystrokes back, nor from another dialog or a menu. */
-  const keys = useRef({ undo, redo, live: open || expanded })
-  useEffect(() => { keys.current = { undo, redo, live: open || expanded } })
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const z = e.key === 'z' || e.key === 'Z', y = e.key === 'y' || e.key === 'Y'
-      if (!(e.metaKey || e.ctrlKey) || e.altKey || !(z || y) || !keys.current.live) return
-      const t = e.target instanceof HTMLElement ? e.target : null
-      if (t && t !== document.body && !t.closest('[id^="section-items"], [data-items-expanded]')) return
-      if (t?.closest('[role="dialog"]:not([data-items-expanded]), [role="menu"], [role="listbox"]') || document.querySelector('[role="dialog"]:not([data-items-expanded])')) return
-      if (t?.matches('input, textarea, [contenteditable="true"]') && (!t.hasAttribute('data-edit') || t.hasAttribute('data-dirty'))) return
-      e.preventDefault()
-      if (t?.hasAttribute('data-edit')) t.blur()
-      if (y || e.shiftKey) keys.current.redo(); else keys.current.undo()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
 
   const patchItem = (id: string, patch: ItemPatch, opts: { snapshot?: boolean } = {}) => {
     if (opts.snapshot !== false && !pending.current.size) snapshot()
@@ -196,7 +197,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   }
 
   /* ── structural edits: settle the queue, write, then reload the lines as stored ── */
-  const reload = async () => setItems(await listQuoteItems(quoteId))
+  /* A reload lands a beat after its write: the cell writes queued in that beat are merged over the stored rows so a value just typed
+     never shows stale, and a reload another reload has overtaken is dropped (REG-477). */
+  const reloadSeq = useRef(0)
+  const reload = async () => {
+    const seq = ++reloadSeq.current
+    const fresh = await listQuoteItems(quoteId)
+    if (seq !== reloadSeq.current) return
+    setItems(fresh.map((i) => { const p = pending.current.get(i.id); return p ? { ...i, ...p.patch } as QuoteItem : i }))
+  }
+  useEffect(() => { reloadRef.current = reload })
   const structural = async (what: string, fn: () => Promise<unknown>, done?: string, drop?: Set<string>) => {
     snapshot()
     await run(what, async () => { await settle(drop); await fn(); await reload() }, done)
@@ -210,6 +220,119 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     for (const i of itemsRef.current) if (i.parentId && gone.has(i.parentId)) gone.add(i.id)
     return structural('remove', async () => { const r = await deleteQuoteItems(list); if (r) onSaved(r.updatedAt, r.amountMinor) }, list.length === 1 ? 'Item removed' : `${list.length} items removed`, gone)
   }
+
+  /* ── the clipboard (REG-476, the Excel benchmark's phase 2) ── */
+  const pasteAnchor = pasting?.anchorId ? items.find((i) => i.id === pasting.anchorId) ?? null : null
+  /** The mapped lines land after the row the paste hit — inside a group when that row is one — or at the end. */
+  const addPasted = (lines: PasteLine[], place: 'after' | 'end') => {
+    const a = place === 'after' ? pasteAnchor : null
+    setPasting(null)
+    void structural('add the items', () => createQuoteItems(quoteId, lines, a ? (a.kind === 'group' ? { parentId: a.id } : { parentId: a.parentId ?? null, afterId: a.id }) : {}), `${lines.length} ${lines.length === 1 ? 'item' : 'items'} added`)
+  }
+  /** Bulk Copy · Cmd+C: the ticked rows as a sheet's rows (a header, tab-separated), so they paste straight into Excel. */
+  const copyRows = (ids: string[]) => {
+    const rows = exportRows(itemsRef.current, new Set(ids))
+    if (!rows.length) return
+    void navigator.clipboard?.writeText(toTsv([[...EXPORT_HEAD], ...rows])).then(() => snackbar({ message: `${rows.length} ${rows.length === 1 ? 'row' : 'rows'} copied — paste them into a sheet` }), () => fail('copy the rows'))
+  }
+  /** Export As → the house Export dialog (the leads' and the tasks' one, REG-478): every line in table order with the groups' sums,
+      as CSV · XLS · XLSX · PDF from the one writer (lib/leads/export.ts). Money prints with its two decimals. */
+  const downloadItems = (format: ExportFormat) => {
+    const body = exportRows(itemsRef.current).map((r) => r.map((c, i) => (c === null ? '' : typeof c === 'number' ? (EXPORT_MONEY_COLS.includes(i) ? c.toFixed(2) : String(c)) : c)))
+    return downloadBlob(buildTable('OpenMaison — Items', [...EXPORT_HEAD], body, format), `${seed.number ?? 'quote'}-items.${format.toLowerCase()}`)
+  }
+
+  /* ── fill, set, sort (REG-477, the Excel benchmark's phase 3) ── */
+  /** What a target line takes from the source's column: a cost keeps the target's markup in bounds, a unit price becomes the target's
+      own markup, a label lands on groups too. */
+  const fillPatch = (col: string, src: QuoteItem, t: QuoteItem): ItemPatch | null => {
+    const line = t.kind === 'item'
+    switch (col) {
+      case 'qty': return line ? { qty: src.qty } : null
+      case 'unit': return line ? { unit: src.unit } : null
+      case 'cost': return line ? { costMinor: src.costMinor, markupMinor: Math.max(-src.costMinor, t.markupMinor) } : null
+      case 'markup': return line ? { markupMinor: Math.max(-t.costMinor, src.markupMinor) } : null
+      case 'unitPrice': return line ? { markupMinor: Math.max(-t.costMinor, unitPriceMinor(src) - t.costMinor) } : null
+      case 'discount': return line ? { discountPct: src.discountPct } : null
+      case 'gst': return line ? { gstPct: src.gstPct } : null
+      case 'room': return { room: src.room }
+      case 'category': return { category: src.category }
+      case 'section': return { section: src.section }
+      case 'name': return { name: src.name }
+      case 'desc': return { description: src.description }
+      default: return null
+    }
+  }
+  /** Drag-fill released / Cmd+D: one snapshot, then every target patched (and autosaved) like a cell edit. */
+  const fillDown = (col: string, sourceId: string, targetIds: string[]) => {
+    const cur = itemsRef.current
+    const src = cur.find((i) => i.id === sourceId)
+    if (!src) return
+    const patches = targetIds.flatMap((id) => { const t = cur.find((i) => i.id === id); const p = t ? fillPatch(col, src, t) : null; return p ? [[id, p] as const] : [] })
+    if (!patches.length) return
+    snapshot()
+    for (const [id, p] of patches) patchItem(id, p, { snapshot: false })
+    snackbar({ message: `${patches.length} ${patches.length === 1 ? 'cell' : 'cells'} filled` })
+  }
+  /** Set value (the bulk bar): one field, one value, every ticked line — a markup as a share of each line's cost. */
+  const applySet = (field: SetField, value: string | number) => {
+    const cur = itemsRef.current
+    const label = field === 'room' || field === 'category' || field === 'section'
+    const targets = cur.filter((i) => selected.has(i.id) && (i.kind === 'item' || label))
+    setSetValueOpen(false)
+    if (!targets.length) return
+    const n = typeof value === 'number' ? value : 0
+    const str = typeof value === 'string' ? value.trim() || null : null
+    snapshot()
+    for (const t of targets) {
+      const p: ItemPatch | null =
+        field === 'qty' ? { qty: n } : field === 'unit' ? { unit: str } : field === 'cost' ? { costMinor: Math.round(n * 100), markupMinor: Math.max(-Math.round(n * 100), t.markupMinor) }
+        : field === 'markupPct' ? { markupMinor: Math.round(t.costMinor * n / 100) } : field === 'unitPrice' ? { markupMinor: Math.max(-t.costMinor, Math.round(n * 100) - t.costMinor) }
+        : field === 'discount' ? { discountPct: n } : field === 'gst' ? { gstPct: n } : field === 'room' ? { room: str } : field === 'category' ? { category: str } : field === 'section' ? { section: str } : null
+      if (p) patchItem(t.id, p, { snapshot: false })
+    }
+    snackbar({ message: `${targets.length} ${targets.length === 1 ? 'item' : 'items'} updated` })
+    setSelected(new Set())
+  }
+  /* Cmd+Z / Cmd+Shift+Z (Ctrl+Z / Ctrl+Y as well) undo and redo the lines from the page's body or anywhere in this card (REG-475) — but
+     not from a box with typing in it, where the browser's own undo takes the keystrokes back, nor from another dialog or a menu.
+     Cmd+C with rows ticked (and no box focused) copies them as a sheet's rows; Cmd+D fills the focused cell's value down into the
+     ticked rows, or — none ticked — the cell above into it, as Excel's Fill Down does (REG-476 / REG-477). */
+  const keys = useRef({ undo, redo, live: open || expanded, selected, copyRows, fillDown })
+  useEffect(() => { keys.current = { undo, redo, live: open || expanded, selected, copyRows, fillDown } })
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || !keys.current.live) return
+      const k = e.key.toLowerCase()
+      if (k !== 'z' && k !== 'y' && k !== 'c' && k !== 'd') return
+      const t = e.target instanceof HTMLElement ? e.target : null
+      if (t && t !== document.body && !t.closest('[id^="section-items"], [data-items-expanded]')) return
+      if (t?.closest('[role="dialog"]:not([data-items-expanded]), [role="menu"], [role="listbox"]') || document.querySelector('[role="dialog"]:not([data-items-expanded])')) return
+      const typing = !!t?.matches('input, textarea, [contenteditable="true"]')
+      if (k === 'z' || k === 'y') {
+        if (typing && (!t!.hasAttribute('data-edit') || t!.hasAttribute('data-dirty'))) return
+        e.preventDefault()
+        if (t?.hasAttribute('data-edit')) t.blur()
+        if (k === 'y' || e.shiftKey) keys.current.redo(); else keys.current.undo()
+      } else if (k === 'c') {
+        if (typing || e.shiftKey || !keys.current.selected.size) return
+        e.preventDefault()
+        keys.current.copyRows([...keys.current.selected])
+      } else if (k === 'd') {
+        if (!t?.hasAttribute('data-edit') || e.shiftKey) return
+        const col = t.closest<HTMLElement>('[data-col]')?.dataset.col, row = rowOf(t)
+        const id = row?.dataset.itemId
+        if (!col || !row || !id) return
+        e.preventDefault()
+        const ticked = [...keys.current.selected].filter((x) => x !== id)
+        if (ticked.length) { keys.current.fillDown(col, id, ticked); return }
+        const above = row.previousElementSibling instanceof HTMLElement ? row.previousElementSibling.dataset.itemId : undefined
+        if (above) { t.blur(); keys.current.fillDown(col, above, [id]); requestAnimationFrame(() => t.focus()) }
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   /* ── row menu ── */
   /* "+" on a group row (owner 2026-09-16, REG-441): the new line goes INTO the group, directly under its row — first among its
@@ -228,6 +351,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'copyName': void navigator.clipboard?.writeText(item.name).then(() => snackbar({ message: 'Name copied' }), () => fail('copy the name')); break
       case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('group the items', () => groupQuoteItems(quoteId, list), 'Group created'); setSelected(new Set()); break }
       case 'showFull': setShowFull((s) => { const n = new Set(s); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n }); break
+      case 'optional': patchItem(item.id, { optional: !item.optional }); snackbar({ message: item.optional ? 'Optional mark cleared' : 'Marked as optional — printed in its own section, out of the totals' }); break   /* REG-492 */
       case 'addAbove': void create({ parentId: item.parentId ?? null, beforeId: item.id }, true); break
       case 'addBelow': insertBelow(item); break
       case 'moveUp': void structural('move the item', () => moveQuoteItem(item.id, 'up')); break
@@ -266,26 +390,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     setPricing(next)
     void run('save the totals', async () => { const r = await updateQuotePricing(quoteId, patch); onSaved(r.updatedAt, r.amountMinor) })
   }
-  /* Round Prices: an S$ additional discount that lands the total on the hundred below it (REG-415, invented behaviour). */
-  const round = () => {
-    const t = totals
-    if (t.subtotalMinor === 0) { snackbar({ message: 'Add items to round' }); return }
-    const target = Math.floor(t.totalMinor / 10000) * 10000
-    if (target === t.totalMinor) { snackbar({ message: 'Total is already round' }); return }
-    if (target <= 0) { snackbar({ message: 'Total is under S$100 — nothing to round' }); return }   // (REG-417) never discount the whole quote to "S$0.00"
-    const net = t.totalMinor - t.gstMinor
-    const rate = net > 0 ? t.gstMinor / net : 0
-    // GST is rounded per line, so the closed form can land a cent off: nudge the discount until the total sits on the hundred.
-    let additional = Math.max(0, t.subtotalMinor - Math.round(target / (1 + rate))) / 100
-    for (let i = 0; i < 4; i++) {
-      const probe = quoteTotals(itemsRef.current, { ...pricing, additionalDiscountMode: 'amount', additionalDiscountValue: additional })
-      const off = probe.totalMinor - target
-      if (off === 0) break
-      additional = Math.max(0, additional + off / 100 / (1 + rate))
-      additional = Number(additional.toFixed(2))
-    }
-    changePricing({ additionalDiscountMode: 'amount', additionalDiscountValue: additional })
-    snackbar({ message: pricing.additionalDiscountMode === 'pct' && pricing.additionalDiscountValue > 0 ? `Rounded to ${money(target)} — the additional discount is now in S$` : `Rounded to ${money(target)}` })
+  /* Round Prices (REG-479, the owner's reference): the Round selling prices dialog rounds each line's unit price to a step — the markup
+     absorbs the difference, the cost never moves — under one snapshot, so one Cmd+Z takes the whole rounding back. */
+  const [roundOpen, setRoundOpen] = useState(false)
+  const applyRound = (changes: RoundChange[]) => {
+    setRoundOpen(false)
+    if (!changes.length) return
+    const cur = itemsRef.current
+    snapshot()
+    for (const c of changes) { const t = cur.find((i) => i.id === c.id); if (t) patchItem(t.id, { markupMinor: Math.max(-t.costMinor, c.toMinor - t.costMinor) }, { snapshot: false }) }
+    snackbar({ message: `${changes.length} ${changes.length === 1 ? 'price' : 'prices'} rounded` })
   }
   const savePrefs = (patch: Parameters<typeof updateItemsPrefs>[1]) => { void run('save the view', () => updateItemsPrefs(quoteId, patch)) }
   const closeMenus = () => { setMenu(null); setMoreSub(null) }
@@ -322,6 +436,21 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const createGroup = () => { void structural('create the group', () => groupQuoteItems(quoteId, selectedList, 'New Group'), 'Group created'); setSelected(new Set()) }
   const fromMyItems = () => { closeMenus(); setAddOpenTick((t) => t + 1); addInputRef.current?.focus() }
 
+  /* Find (REG-477): a search glyph that opens the DS SearchBar and folds back when left empty (Escape clears it). The tab toolbars' box
+     (components/om/toolbar-search.tsx) stands open on desktop; the mock's Items toolbar has no room for a standing box. */
+  const [findOpen, setFindOpen] = useState(false)
+  const findRef = useRef<HTMLSpanElement>(null)
+  useEffect(() => { if (findOpen) findRef.current?.querySelector('input')?.focus() }, [findOpen])
+  const find = findOpen || query !== '' ? (
+    <span ref={findRef} className={styles.find}
+          onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setFindOpen(false) }}
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setQuery(''); setFindOpen(false) } }}>
+      <SearchBar appearance="outlined" size="md" placeholder="Find items" aria-label="Find items" value={query} onChange={setQuery} />
+    </span>
+  ) : (
+    <Tooltip label="Find items"><IconButton icon="search" label="Find items" onClick={() => setFindOpen(true)} /></Tooltip>
+  )
+
   /* The radio rows View by / density share one rendering between the wide toolbar's menus and the folded kebab's levels. */
   const densityRows = DENSITIES.map((d) => <DropdownItem key={d} role="menuitemradio" checked={d === density} onSelect={() => chooseDensity(d)}><span className={styles.menuIcon} data-on={d === density || undefined}><Icon name={d === density ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{DENSITY_LABEL[d]}</DropdownItem>)
   const viewRows = ITEM_VIEWS.map((v) => <DropdownItem key={v} role="menuitemradio" checked={v === view} onSelect={() => chooseView(v)}><span className={styles.menuIcon} data-on={v === view || undefined}><Icon name={v === view ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{ITEM_VIEW_LABEL[v]}</DropdownItem>)
@@ -337,6 +466,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* ── toolbar (section-top actions, 1260:31216) ── */
   const toolbar = compact ? (
     <div className={styles.tools} data-compact="">
+      {find}
       <Tooltip label="Maison AI"><IconButton icon="auto_awesome" glyph={<AiMark />} label="Maison AI" variant="primary" onClick={onOpenAi} /></Tooltip>
       <span ref={createRef} className={styles.anchor}>
         <Tooltip label="Create" disabled={menu === 'create'}>
@@ -381,6 +511,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     </div>
   ) : (
     <div className={styles.tools}>
+      {find}
       {view === 'category' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'category' })}>Add Category</Button> : null}
       {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add Section</Button> : null}
       <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={createGroup}>Create Group</Button>
@@ -427,10 +558,12 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <div className={styles.body}>
           <ItemsTable
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
-            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels}
+            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
+            query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })}
             h={{
               onPatch: patchItem,
+              onFill: fillDown,
               onSelect: (id, on) => setSelected((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n }),
               onSelectRun: (ids) => setSelected((s) => new Set([...s, ...ids])),
               onInsertBelow: insertBelow,
@@ -450,11 +583,11 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             onCreate={(name) => { void create({ name }, !name) }}
             onPickPriceBook={(id) => { void create({ priceBookItemId: id }) }}
             onViewPriceBook={comingSoon}
-            onExport={comingSoon}
+            onExport={() => setExportOpen(true)}
             addInputRef={addInputRef}
             addOpenTick={addOpenTick}
           />
-          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} onPricing={changePricing} onRound={round} />
+          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
         </div>
   )
   return (
@@ -475,6 +608,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <DetailBulkBar
         count={selected.size}
         actions={[
+          { label: 'Copy', onClick: () => copyRows(selectedList) },
+          { label: 'Set value', onClick: () => setSetValueOpen(true) },
           { label: 'Group', onClick: () => { void structural('group the items', () => groupQuoteItems(quoteId, selectedList), 'Group created'); setSelected(new Set()) } },
           { label: 'Hide from client', onClick: () => { snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client` }); setSelected(new Set()) } },
           { label: 'Delete', tone: 'danger', onClick: () => setRemoving(selectedList) },
@@ -489,7 +624,12 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <AttachFilesModal open={!!imageFor} mode="image" chrome="quote" files={seed.files} attached={[]} onClose={() => setImageFor(null)}
                         onAttach={(fileIds) => { const f = seed.files.find((x) => x.id === fileIds[0]); if (imageFor && f) patchItem(imageFor.id, { thumb: f.thumb ?? null, thumbCount: f.thumb ? 1 : 0, icon: null }); setImageFor(null) }}
                         onUploadPicked={() => { if (imageFor) patchItem(imageFor.id, { thumb: '/figma-assets/file-thumb-1.png', thumbCount: 1, icon: null }); setImageFor(null) }} />
-      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} />
+      <PasteItemsDialog open={!!pasting} text={pasting?.text ?? ''} anchor={pasteAnchor ? { id: pasteAnchor.id, name: pasteAnchor.name } : null} onClose={() => setPasting(null)} onAdd={addPasted} />
+      <RoundPricesDialog open={roundOpen} items={items} onClose={() => setRoundOpen(false)} onApply={applyRound} />
+      <ExportDialog open={exportOpen} title="Export Items" download={downloadItems} onClose={() => setExportOpen(false)}
+                    onDone={(name, format) => snackbar({ message: `Exported ${lineCount} ${lineCount === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
+      <SetValueDialog open={setValueOpen} count={selected.size} labels={usedLabels} onClose={() => setSetValueOpen(false)} onApply={applySet} />
+      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} />
     </>
   )
 }

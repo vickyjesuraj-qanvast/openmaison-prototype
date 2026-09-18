@@ -10,7 +10,7 @@ import type { QuoteItem } from '@/lib/db/schema'
  * answer IS its children's — `countedLines` leaves out every line under a Declined group, and the server keeps the
  * children's own status in step with the group (app/quotes/items-actions.ts).
  */
-export type Line = Pick<QuoteItem, 'id' | 'parentId' | 'kind' | 'status' | 'qty' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct'>
+export type Line = Pick<QuoteItem, 'id' | 'parentId' | 'kind' | 'status' | 'qty' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct'> & { /** (REG-492) an optional line prints in its own section and leaves every total */ optional?: boolean }
 export type QuotePricing = { additionalDiscountMode: string; additionalDiscountValue: number; gstEnabled: boolean }
 
 export const unitPriceMinor = (l: Pick<Line, 'costMinor' | 'markupMinor'>) => l.costMinor + l.markupMinor
@@ -23,7 +23,7 @@ export const lineDiscountMinor = (l: Pick<Line, 'qty' | 'costMinor' | 'markupMin
 export const lineCostMinor = (l: Pick<Line, 'qty' | 'costMinor'>) => Math.round(l.qty * l.costMinor)
 const clampPct = (p: number) => Math.min(100, Math.max(0, Number.isFinite(p) ? p : 0))
 /** A Declined line stays on the table but leaves every total. */
-export const counts = (l: Pick<Line, 'kind' | 'status'>) => l.kind === 'item' && l.status !== 'Declined'
+export const counts = (l: Pick<Line, 'kind' | 'status' | 'optional'>) => l.kind === 'item' && l.status !== 'Declined' && !l.optional
 /** The lines that price: items the client has not declined, outside any group the client declined. */
 export function countedLines<T extends Line>(items: T[]): T[] {
   const declinedGroups = new Set(items.filter((i) => i.kind === 'group' && i.status === 'Declined').map((i) => i.id))

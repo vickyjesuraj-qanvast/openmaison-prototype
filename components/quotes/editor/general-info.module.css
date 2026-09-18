@@ -7,6 +7,10 @@
 }
 /* A pair shares one cell (Client · Property Type, Prepared by · Quote Valid Until, NRIC · Customer ID), 24 apart. */
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--om-spacing-6); }
+/* (REG-489) The Template row spans both columns: the field beside its two text actions. */
+.full { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.full > :first-child { flex: 0 1 611px; min-width: 240px; }
+.fullActions { display: flex; align-items: center; gap: var(--om-spacing-1); }
 /* Two-column field rows go single column ≤767 (responsive.md). */
 @media (max-width: 767px) {
   .grid { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }

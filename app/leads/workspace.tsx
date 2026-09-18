@@ -10,7 +10,6 @@ import { LeadsSkeleton } from '@/components/shell/skeleton'
 import { KanbanSkeleton } from '@/components/leads/kanban/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { PageHeader } from '@/components/shell/page-header'
-import { MaisonFab } from '@/components/shell/maison-fab'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { IconButton } from '@/components/om/icon-button'
 import { Icon } from '@/components/om/icon'
@@ -25,7 +24,7 @@ import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { resetColumnPrefs, saveColumnPrefs, useColumnPrefs } from '@/lib/column-prefs'
 import { reorderColumns } from '@/components/om/column-drag'
 import { clearColumnWidths } from '@/lib/table-widths'
-import { AiSheet } from '@/components/leads/ai-sheet'
+import { useMaisonAi } from '@/lib/maison-ai'
 import { LeadsEmptyState } from '@/components/leads/empty-state'
 import { StageDropdown } from '@/components/leads/stage-dropdown'
 import { StageFilterDropdown } from '@/components/leads/stage-filter-dropdown'
@@ -98,7 +97,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [addOpen, setAddOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
-  const [aiOpen, setAiOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
   // An optimistic assignee set is released once the refreshed row carries it (render-phase adjust, like pendingDrop below); a failed action drops its entry in applyAssign.
@@ -133,7 +131,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const [tasksFor, setTasksFor] = useState<({ id: string; el: HTMLElement } & TasksPos) | null>(null)
   const addRef = useRef<HTMLDivElement>(null)
-  const fabRef = useRef<HTMLDivElement>(null)   // the Maison AI FAB — the sheet exempts it from outside presses so the FAB toggles (REG-153)
   /* Return Lead from a row / kanban kebab (Qanvast leads only, REG-139) → the same wizard as the overview (931:48813, spec design-source/context/lead-return/).
      The listing has no files in memory, so they are fetched when the menu item is pressed. */
   const [returning, setReturning] = useState<{ leadId: string; files: LeadFile[] } | null>(null)
@@ -274,6 +271,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       'Which leads need follow-up today?',
     ]
   }, [newest])
+  useMaisonAi(aiSuggestions, docked)   /* (REG-507) the shell's FAB + sheet carry the listing's suggestions, raised above the review banner */
 
   /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
   const addMenu = (
@@ -719,16 +717,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           catch { snackbar({ message: 'Couldn’t empty the trash — please try again' }) }
         }}
       />
-      <AiSheet
-        open={aiOpen}
-        suggestions={aiSuggestions}
-        onSelect={() => { setAiOpen(false); comingSoon() }}
-        onClose={() => setAiOpen(false)}
-        anchorRef={fabRef}
-      />
-      <div ref={fabRef} style={{ display: 'contents' }}>
-        <MaisonFab onPress={() => setAiOpen((o) => !o)} raised={docked} />
-      </div>
     </PageReveal>
   )
 }

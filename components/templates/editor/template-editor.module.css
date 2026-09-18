@@ -1,0 +1,20 @@
+/* Template editor (REG-486): topbar 56, then [left 300 | canvas | right 320]. Panes are white on the surface-bg canvas
+   area; the pages sit centred with 32 around them. Preview and the phone hide the panes. */
+.editor { display: flex; flex-direction: column; height: 100dvh; background: var(--om-color-surface-bg); }
+.body { flex: 1; min-height: 0; display: flex; }
+.left, .right { flex: 0 0 auto; background: var(--om-color-surface-default); display: flex; flex-direction: column; min-height: 0; }
+.left { width: 300px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.right { width: 320px; border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.pane { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.paneBody { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tabs { display: flex; padding: 0 var(--om-spacing-2); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); flex-shrink: 0; }
+.tab { flex: 1; height: 44px; border: 0; background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); position: relative; }
+.tab[data-on] { color: var(--om-color-on-surface-default); }
+.tab[data-on]::after { content: ''; position: absolute; left: var(--om-spacing-2); right: var(--om-spacing-2); bottom: -1px; height: 2px; background: var(--om-color-primary-default); border-radius: 1px; }
+.tab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.area { flex: 1; min-width: 0; min-height: 0; overflow: auto; position: relative; }
+.stage { min-height: 100%; padding: 32px; display: flex; justify-content: center; align-items: flex-start; }
+.paneToggles { position: sticky; top: var(--om-spacing-3); z-index: 3; display: flex; gap: var(--om-spacing-2); justify-content: flex-end; padding: 0 var(--om-spacing-3); height: 0; overflow: visible; }
+.paneToggles > * { margin-top: 0; }
+.readOnlyNote { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-4); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-s); }
+@media (max-width: 767px) { .stage { padding: var(--om-spacing-4); } }

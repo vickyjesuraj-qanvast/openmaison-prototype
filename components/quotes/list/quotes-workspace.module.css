@@ -1,3 +1,7 @@
 /* Tools › Quotes (REG-422): the Quotes tab's frame on the listing page — toolbar and table 24 apart inside the page's 24. */
 .frame { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; padding: var(--om-spacing-6); }
 @media (max-width: 767px) { .frame { padding: var(--om-spacing-4); gap: var(--om-spacing-4); } }
+
+/* (REG-495) Arrived from a template's "Used by n quotes": the list is scoped to that template until Show all. */
+.templateChip { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.templateChip b { font-weight: 600; }

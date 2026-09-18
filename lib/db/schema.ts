@@ -258,6 +258,8 @@ export const quotes = sqliteTable(
     // and the new quote is set to default"); JSON of lib/quotes/sections.ts `QuoteSectionState[]`, null = the default.
     sections: text('sections'),
     templateId: text('template_id'),   // the design template the quote started from (Create Quote modal); null = blank
+    templateVersion: integer('template_version'),   // (REG-489) the template version this quote is pinned to; a newer publish shows the update banner
+    clientViewJson: text('client_view_json'),       // (REG-490) Preview › "What your client sees" — this quote's overrides of the template's client view; null = the template's
     // Items section (1260:31209, REG-415): quote-level pricing controls and the studio's table preferences for this quote.
     additionalDiscountMode: text('additional_discount_mode').notNull().default('pct'),   // pct | amount (the % ▾ select, 1271:36776)
     additionalDiscountValue: real('additional_discount_value').notNull().default(0),     // percent, or S$ when mode = amount
@@ -385,6 +387,7 @@ export const quoteItems = sqliteTable(
     visibility: text('visibility').notNull().default('visible'),   // visible | hidden | no-price
     collapsed: integer('collapsed', { mode: 'boolean' }).notNull().default(false),   // a group's children folded (1260:31467)
     priceBookItemId: text('price_book_item_id'),
+    optional: integer('optional', { mode: 'boolean' }).notNull().default(false),   // (REG-492) an optional line: printed in its own section, out of every total (Flo's Optional Works, Cove's Free Gifts)
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
   },
@@ -404,8 +407,41 @@ export const quoteTemplates = sqliteTable('quote_templates', {
   isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  // (REG-485) The template editor's record (Company › Templates › Quote templates): the lifecycle, the PUBLISHED design and
+  // defaults (lib/templates/model.ts, JSON), the working draft with its own stamp, the file it was rebuilt from, the last note.
+  status: text('status').notNull().default('published'),   // draft | published | archived
+  version: integer('version').notNull().default(1),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  updatedBy: text('updated_by'),                            // members.id
+  paper: text('paper').notNull().default('A4'),             // A4 | Letter
+  designJson: text('design_json'),                          // null = the Letter house style (lib/templates/presets.ts) until the studio saves one
+  defaultsJson: text('defaults_json'),
+  draftJson: text('draft_json'),                            // { design, defaults } — unpublished changes; null = none
+  draftUpdatedAt: integer('draft_updated_at', { mode: 'timestamp' }),
+  sourceFile: text('source_file'),                          // "Recreate from my current quote": the uploaded file's name
+  note: text('note'),                                       // the last publish's "what changed"
+  // (REG-501) Approval: a Designer submits (status 'pending'); an Owner / Admin approves (publishes) or requests changes (back to draft with the note).
+  submittedBy: text('submitted_by'),                        // members.id
+  submittedAt: integer('submitted_at', { mode: 'timestamp' }),
+  submitNote: text('submit_note'),                          // what the designer says changed
+  reviewNote: text('review_note'),                          // the owner's "changes requested" note, until the next submit
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-502) soft, like leads and quotes: out of every list and picker, restorable from Deleted templates; quotes on it keep printing their pinned version
 })
 export type QuoteTemplate = typeof quoteTemplates.$inferSelect
+
+/** (REG-485) Every published version of a template, for History and Roll back — the design as it was, whole. */
+export const quoteTemplateVersions = sqliteTable('quote_template_versions', {
+  id: text('id').primaryKey(),
+  templateId: text('template_id').notNull().references(() => quoteTemplates.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull(),
+  designJson: text('design_json').notNull(),
+  defaultsJson: text('defaults_json'),
+  note: text('note'),
+  publishedAt: integer('published_at', { mode: 'timestamp' }).notNull(),
+  publishedBy: text('published_by'),
+})
+export type QuoteTemplateVersion = typeof quoteTemplateVersions.$inferSelect
 
 /** A contract raised for the lead (Contracts tab 931:38609). Status: Draft | Sent to Client | Signed (invented — the mock shows Draft only). */
 export const contracts = sqliteTable(

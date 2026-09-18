@@ -1,0 +1,1 @@
+ALTER TABLE `quote_templates` ADD `deleted_at` integer;

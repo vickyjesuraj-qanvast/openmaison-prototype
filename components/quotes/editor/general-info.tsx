@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { DateField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
 import type { Member } from '@/lib/db/schema'
@@ -26,12 +27,14 @@ export type GeneralState = {
  * from the lead and the signed-in member when the quote was created (REG-403). Fields save as they change (quote-editor.tsx
  * autosaves). The status pill lives in the header (REG-404).
  */
-export function GeneralInfo({ value, lead, members, today, onChange }: {
+export function GeneralInfo({ value, lead, members, today, onChange, extra }: {
   value: GeneralState
   lead: EditorLead
   members: Member[]
   today: Date
   onChange: (patch: Partial<GeneralState>) => void
+  /** (REG-489) A fourth row under the mock's three — the Template field and its actions. */
+  extra?: ReactNode
 }) {
   const names = members.map((m) => m.name)
   const preparedName = members.find((m) => m.id === value.preparedBy)?.name ?? ''
@@ -59,6 +62,7 @@ export function GeneralInfo({ value, lead, members, today, onChange }: {
         <TextField label="NRIC" value={value.nric} onChange={(v) => onChange({ nric: v })} maxLength={20} />
         <TextField label="Customer ID" value={value.customerId} onChange={(v) => onChange({ customerId: v })} maxLength={60} />
       </div>
+      {extra ? <div className={styles.full}>{extra}</div> : null}
     </div>
   )
 }

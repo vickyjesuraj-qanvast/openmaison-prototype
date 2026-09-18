@@ -10,7 +10,7 @@
   position: relative;
   /* Height to content, viewport-capped (CLAUDE.md's modal rule) — 928 was the mock frame's height, which left an
      empty or short trash three-quarters blank. Moves with its twin, components/leads/files/deleted-files-sheet.module.css. */
-  width: var(--om-modal-xl); height: auto; max-height: calc(100vh - 96px);
+  width: var(--om-modal-xl); height: auto; min-height: 480px; max-height: calc(100vh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it */
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   display: flex; flex-direction: column;
