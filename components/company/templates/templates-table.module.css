@@ -76,7 +76,7 @@
 .thumb {
   width: 26px; height: 36px; flex-shrink: 0;
   display: inline-flex; align-items: flex-start; justify-content: center;
-  border-radius: 2px; overflow: hidden;
+  border-radius: var(--om-radius-0-5); overflow: hidden;
   box-shadow: var(--om-elevation-level-1);
   background: var(--om-color-surface-default);
 }
@@ -123,13 +123,15 @@
   .head, .row { width: max-content; min-width: 100%; }
   .pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
 }
-@media (hover: none) {
+@media (hover: none) and (max-width: 1024px) {
   .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }
 }
-@media (max-width: 1024px) and (hover: none) {
-  .cell.colBy { padding-right: 84px; }
+@media (hover: none) and (max-width: 1024px) {
+  .row > .cell:last-of-type { padding-right: 84px; }   /* whichever column is last after Column settings reserves the always-on kebab's band */
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .hSort { min-height: 44px; }
   .name { min-height: 44px; line-height: 44px; }
+  .touchBtn { min-width: 44px; min-height: 44px; }
 }
+@media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .pin { background: var(--om-color-surface-default); } }

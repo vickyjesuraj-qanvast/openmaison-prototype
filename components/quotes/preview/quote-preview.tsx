@@ -20,7 +20,9 @@ import { fallbackDesignClient } from '@/lib/templates/presets'
 import type { QuotePreviewData } from '@/lib/templates/queries'
 import { saveQuoteClientView, setQuoteTemplate } from '@/app/company/templates-actions'
 import { Dialog } from '@/components/om/dialog'
-import { TemplatePicker } from '@/components/templates/template-picker'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { Drawer } from '@/components/om/drawer'
+import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
 import { sendQuote } from '@/app/quotes/actions'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import styles from './quote-preview.module.css'
@@ -51,6 +53,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
   const [view, setView] = useState<ClientView>(data.view)
   const [internal, setInternal] = useState(false)
   const [panel, setPanel] = useState(false)
+  const tabletDown = useMediaQuery(TABLET_DOWN)
   const [pickerOpen, setPickerOpen] = useState(false)   /* (REG-496) the template chip opens the picker; a change re-pins and re-renders */
   const [status, setStatus] = useState(quote.status)
   const [busy, setBusy] = useState(false)
@@ -96,6 +99,11 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
   const changed = clientViewDiff(view, baseView).length
   const columns = (Object.keys(view.columns) as ItemsColumnKey[]).filter((k) => baseView.columns[k] || view.columns[k])
 
+  /* (REG-518) The picker's selection lives here; the dialog footer acts on it. */
+  const [pickedTpl, setPickedTpl] = useState<string | null>(null)
+  const pickerSel = defaultPick(data.picker, pickedTpl, template?.id ?? null)
+  const applyTemplate = (id: string) => { setPickerOpen(false); setPickedTpl(null); setBusy(true); void setQuoteTemplate(quote.id, id).then(() => { snackbar({ message: 'Template changed' }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }
+
   return (
     <div className={styles.page} data-print={print || undefined} data-testid="quote-preview">
       <style>{`@page { size: ${design.page.paper}; margin: 0 }`}</style>
@@ -120,8 +128,9 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
           {canSend ? <Button onPress={() => { void send() }} isDisabled={busy || !ready.ready}>Send</Button> : <Tooltip label={`Quote is ${status}`}><span><Button isDisabled>Send</Button></span></Tooltip>}
         </div>
       </header>
-      <Dialog open={pickerOpen} onClose={() => setPickerOpen(false)} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print.">
-        <TemplatePicker data={data.picker} currentId={template?.id ?? null} now={data.now} onUse={(id) => { setPickerOpen(false); setBusy(true); void setQuoteTemplate(quote.id, id).then(() => { snackbar({ message: 'Template changed' }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }} />
+      <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print."
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) applyTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (template?.id ?? null)}>{pickerSel && pickerSel === template?.id ? 'On this quote' : 'Use this template'}</Button></>}>
+        <TemplatePicker data={data.picker} picked={pickerSel} onPick={setPickedTpl} currentId={template?.id ?? null} now={data.now} onUse={applyTemplate} />
       </Dialog>
       <div className={styles.body}>
         <div ref={areaRef} className={styles.column}>
@@ -145,9 +154,9 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
             <section className={styles.internalCard} aria-label="Internal summary">
               <span className={styles.internalEyebrow}>Internal — never printed for the client</span>
               <div className={styles.internalGrid}>
-                <span><span className={styles.internalLabel}>Cost</span><span className={styles.internalValue}>S${money2(totals.costMinor)}</span></span>
-                <span><span className={styles.internalLabel}>Selling</span><span className={styles.internalValue}>S${money2(totals.subtotalMinor - totals.additionalMinor)}</span></span>
-                <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>S${money2(totals.marginMinor)} · {Math.round(totals.marginPct)}%</span></span>
+                <span><span className={styles.internalLabel}>Cost</span><span className={styles.internalValue}>{money2(totals.costMinor)}</span></span>
+                <span><span className={styles.internalLabel}>Selling</span><span className={styles.internalValue}>{money2(totals.subtotalMinor - totals.additionalMinor)}</span></span>
+                <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>{money2(totals.marginMinor)} · {Math.round(totals.marginPct)}%</span></span>
                 <span><span className={styles.internalLabel}>Lines</span><span className={styles.internalValue}>{totals.itemCount}</span></span>
               </div>
             </section>
@@ -156,12 +165,13 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
             <TemplateDocument design={design} brand={brand} data={data.data} view={view} zoom={zoom} onPaginated={onPaginated} watermark={internal ? 'Internal copy' : null} print={print} />
           </div>
         </div>
-        {panel ? (
+        {panel && !tabletDown ? (
           <aside className={styles.panel} aria-label="What your client sees">
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>What your client sees</span>
               <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={20} onClick={() => setPanel(false)} />
             </div>
+
             <div className={styles.panelBody}>
               <span className={styles.panelNote}>Applies to this quote only. The template decides the starting point.</span>
               <div className={styles.group}>
@@ -183,6 +193,34 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
             </div>
             <div className={styles.panelFoot}><Button appearance="outlined" variant="secondary" isDisabled={!changed} onPress={() => setView(baseView)}>Reset to template</Button></div>
           </aside>
+        ) : null}
+        {tabletDown ? (
+          /* (REG-525) ≤1024 the panel is the house Drawer (scrim, Esc, focus), as the template editor's panes are — not a hand-rolled fixed column. */
+          <Drawer open={panel} onClose={() => setPanel(false)} title="What your client sees" label="What your client sees" width={360}>
+            <div className={styles.drawerBody}>
+
+            <div className={styles.panelBody}>
+              <span className={styles.panelNote}>Applies to this quote only. The template decides the starting point.</span>
+              <div className={styles.group}>
+                <span className={styles.groupTitle}>Columns</span>
+                {columns.map((k) => (
+                  <label key={k} className={styles.row}><span>{ITEM_COLUMN_LABEL[k]}</span><Switch size="sm" isSelected={view.columns[k]} onChange={(v: boolean) => setView((x) => ({ ...x, columns: { ...x.columns, [k]: v } }))} aria-label={ITEM_COLUMN_LABEL[k]} /></label>
+                ))}
+              </div>
+              <div className={styles.group}>
+                <span className={styles.groupTitle}>Content</span>
+                {VIEW_ROWS.map((r) => (
+                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => setView((x) => ({ ...x, [r.key]: v }))} aria-label={r.label} /></label>
+                ))}
+                <div className={styles.hidden}>
+                  <TextField label="Hidden items" mode="select" value={view.hiddenItems === 'no-price' ? 'Shown without a price' : 'Left out'} options={['Left out', 'Shown without a price']}
+                             helper="Lines the editor hides from the client" onChange={(v) => setView((x) => ({ ...x, hiddenItems: v === 'Shown without a price' ? 'no-price' : 'omit' }))} />
+                </div>
+              </div>
+            </div>
+            <div className={styles.panelFoot}><Button appearance="outlined" variant="secondary" isDisabled={!changed} onPress={() => setView(baseView)}>Reset to template</Button></div>
+            </div>
+          </Drawer>
         ) : null}
       </div>
     </div>

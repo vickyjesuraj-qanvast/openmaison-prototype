@@ -17,10 +17,13 @@ import { TemplateThumb } from '@/components/templates/render/document'
 import type { BrandKit, TemplateSummary } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import { ago } from '@/lib/templates/ago'
-import { TEMPLATE_MENU_ITEMS, TemplateMenu, type TemplateAction } from './template-menu'
+import { TEMPLATE_MENU_ROWS, TemplateMenu, type TemplateAction } from './template-menu'
 import styles from './templates-table.module.css'
 
 /** The list's columns (REG-505): Template locked first; the user's order, visibility and pins come from Column settings (REG-454). */
+/** The one stamp the card's status line and the row's Updated column share: a published template's publish time, a draft's edit time. */
+export const updatedStamp = (t: TemplateSummary) => (t.status === 'published' && !t.hasDraft ? t.publishedAt ?? t.updatedAt : t.updatedAt)
+
 export const TEMPLATE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'name', label: 'Template', track: 'minmax(318px, 1fr)', locked: true },
   { key: 'status', label: 'Status', track: '236px' },
@@ -114,7 +117,7 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
             ? <Link href={`/quotes?template=${t.id}`} className={styles.usedLink} aria-label={`Quotes on ${t.name}`}>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</Link>
             : <span className={styles.muted}>Not used yet</span>),
           paper: () => cell('paper', styles.colPaper, t.paper),
-          updated: () => cell('updated', styles.colUpdated, ago(t.status === 'published' && !t.hasDraft ? t.publishedAt ?? t.updatedAt : t.updatedAt, now)),
+          updated: () => cell('updated', styles.colUpdated, ago(updatedStamp(t), now)),
           by: () => cell('by', styles.colBy, t.updatedBy ? (
             <>
               <Avatar name={t.updatedBy.name} color={t.updatedBy.color} size={24} tooltip={false} />
@@ -123,7 +126,7 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
           ) : '--'),
         }
         return (
-          <div key={t.id} className={styles.row} role="row" data-status={t.status} data-testid="template-row">
+          <div key={t.id} className={styles.row} role="row" data-testid="template-row">
             {columns.map((c) => <Fragment key={c.key}>{cells[c.key]?.()}</Fragment>)}
             <span className={styles.actions} data-open={open || undefined}>
               <span className={styles.actionsInner}>
@@ -132,7 +135,7 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
                     <Tooltip label="More options" disabled={open}>
                       <IconButton icon="more_vert" label={`More options for ${t.name}`} variant="primary" className={styles.touchBtn}
                                   aria-haspopup="menu" aria-expanded={open}
-                                  onClick={(e) => { if (!open) setMenuSide(menuSideFor(e.currentTarget, TEMPLATE_MENU_ITEMS)); setMenuRow((m) => (m === t.id ? null : t.id)) }} />
+                                  onClick={(e) => { if (!open) setMenuSide(menuSideFor(e.currentTarget, TEMPLATE_MENU_ROWS)); setMenuRow((m) => (m === t.id ? null : t.id)) }} />
                     </Tooltip>
                   </span>
                   <TemplateMenu t={t} open={open} side={menuSide} onClose={() => setMenuRow(null)} onPick={(a) => onRowMenu(t, a)} />

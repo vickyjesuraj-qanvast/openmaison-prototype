@@ -11,14 +11,14 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteSibling } from '@/lib/quotes/editor'
 import styles from './editor-header.module.css'
 
-export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'clientView'
+export type HeaderMenuAction = 'rename' | 'duplicate' | 'template' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments'
 
 /**
  * Page Header / Quotes (1201:33834 · 1260:31143 · the page's instance 1273:29264): back → the lead's Quotes tab ·
  * "Leads / {lead} / Quotes" over [{quote title} ▾] (the lead's other quotes) · OM-number · VERSION n · status chips ·
  * "Saved 2 mins ago" · [{status} ▾] · Send (primary) · Preview · comment · kebab (1271:41512) · rule · close. The title
  * is the QUOTE's (the lead's name lives in the crumb — audit 2026-09-15); the status pill is the host's (REG-404).
- * Preview, comment and every kebab item answer coming soon for now (owner 2026-09-11); Send and the quote switch are live.
+ * Send, the quote switch, Preview, PDF / Print and Save as template are live; the comment button and the rest of the kebab answer coming soon.
  */
 export function EditorHeader({
   lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,

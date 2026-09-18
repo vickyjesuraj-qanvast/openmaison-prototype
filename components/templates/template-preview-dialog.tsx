@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback, useState, type ReactNode } from 'react'
-import { Dialog } from '@/components/om/dialog'
+import { useCallback, useState } from 'react'
 import { TemplateDocument } from '@/components/templates/render/document'
 import { PAPER_MM, mm, type BrandKit, type TemplateDesign } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
@@ -33,20 +32,5 @@ export function TemplatePreviewPages({ paper, design, brand, sample, onPages }: 
         <TemplateDocument design={design} brand={brand} data={sample} zoom={zoom} onPaginated={({ pages: n }) => onPages?.(n)} />
       </div>
     </div>
-  )
-}
-
-/** The pages in their own xxl window (fluid, 48 on every side) — for a caller with no dialog of its own to host them. */
-export function TemplatePreviewDialog({ open, onClose, title, paper, design, brand, sample, footer, nested }: {
-  open: boolean; onClose: () => void; title: string; paper: TemplateDesign['page']['paper']
-  design: TemplateDesign; brand: BrandKit; sample: DocData; footer: ReactNode; nested?: boolean
-}) {
-  const [pages, setPages] = useState(0)
-  return (
-    <Dialog open={open} onClose={onClose} title={title} size="modal" fluid nested={nested} portal
-            subtitle={`${paper}${pages ? ` · ${pages} page${pages === 1 ? '' : 's'}` : ''} · drawn with your brand and a sample quote`}
-            footer={footer}>
-      <TemplatePreviewPages paper={paper} design={design} brand={brand} sample={sample} onPages={(n) => setPages((c) => (c === n ? c : n))} />
-    </Dialog>
   )
 }

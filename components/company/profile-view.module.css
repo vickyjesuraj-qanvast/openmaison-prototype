@@ -70,3 +70,5 @@
   .roleLabel, .roleFamily { grid-column: 1 / -1; }
   .roleSample { display: none; }
 }
+/* (REG-273) A finger cannot hover: the badge's Remove is always on where the pointer cannot. */
+@media (hover: none) { .badgeRemove { display: inline-flex; } }

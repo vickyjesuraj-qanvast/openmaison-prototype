@@ -24,7 +24,6 @@
 .tokenBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .tokenChev { display: inline-flex; transition: transform var(--motion-toggle); }
 .tokenChev[data-open] { transform: rotate(180deg); }
-.menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) {
   .headRow { flex-wrap: wrap; }
   .search { width: 100%; flex-basis: 100%; }

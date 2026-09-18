@@ -40,7 +40,10 @@
 .rowHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .hidden { padding-top: var(--om-spacing-2); }
 .panelFoot { padding: var(--om-spacing-3) var(--om-spacing-5); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-@media (max-width: 1024px) { .panel { position: fixed; right: 0; top: 0; height: 100dvh; z-index: 30; box-shadow: var(--om-elevation-level-3); } }
+/* ≤1024 the panel renders through the Drawer (quote-preview.tsx); its body keeps the column's rhythm. */
+.drawerBody { display: flex; flex-direction: column; min-height: 100%; }
+.drawerBody .panelBody { padding: var(--om-spacing-4) var(--om-spacing-6); }
+.drawerBody .panelFoot { margin-top: auto; padding: var(--om-spacing-3) var(--om-spacing-6); }
 @media (max-width: 767px) { .bar { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .column { padding: var(--om-spacing-4); } .internalGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel { width: 100vw; } }
 @media print {
   .page { background: #fff; min-height: 0; }

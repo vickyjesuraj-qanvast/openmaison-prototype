@@ -113,6 +113,7 @@ export async function discardTemplateDraft(id: string): Promise<{ removed: boole
  */
 export async function publishTemplate(id: string, opts: { note?: string; setDefault?: boolean; updateDrafts?: boolean } = {}): Promise<{ version: number }> {
   const row = await templateRow(id)
+  if (row.deletedAt) throw new Error('deleted')   // (REG-502) a deleted template cannot publish — the client flag was the only guard
   const now = new Date()
   // (REG-501) With approval required, only an Owner or Admin publishes; a Designer submits (submitTemplate).
   const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
@@ -136,7 +137,8 @@ export async function publishTemplate(id: string, opts: { note?: string; setDefa
 
 /** (REG-501) A Designer's Publish: the template waits for an Owner or Admin, with the designer's note on what changed. */
 export async function submitTemplate(id: string, note: string): Promise<void> {
-  await templateRow(id)
+  const row = await templateRow(id)
+  if (row.deletedAt) throw new Error('deleted')
   await db.update(quoteTemplates).set({ submittedBy: ME, submittedAt: new Date(), submitNote: note.trim() || null, reviewNote: null, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
@@ -151,12 +153,16 @@ export async function requestTemplateChanges(id: string, note: string): Promise<
 /** History › Roll back: the chosen version is published again as a new version, so nothing is ever lost. */
 export async function rollbackTemplate(id: string, version: number): Promise<{ version: number }> {
   const row = await templateRow(id)
+  if (row.deletedAt) throw new Error('deleted')
+  // (REG-501) A rollback publishes: under approval it is an Owner's / Admin's move, exactly like Publish.
+  const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
+  if (approval === 'required' && !(me?.role === 'Owner' || me?.role === 'Admin')) throw new Error('approval required')
   const [v] = await db.select().from(quoteTemplateVersions).where(and(eq(quoteTemplateVersions.templateId, id), eq(quoteTemplateVersions.version, version)))
   if (!v) throw new Error('version not found')
   const now = new Date()
   const next = row.version + 1
   const note = `Rolled back to v${version}`
-  await db.update(quoteTemplates).set({ status: 'published', version: next, designJson: v.designJson, defaultsJson: v.defaultsJson, publishedAt: now, updatedAt: now, updatedBy: ME, note }).where(eq(quoteTemplates.id, id))
+  await db.update(quoteTemplates).set({ status: 'published', version: next, designJson: v.designJson, defaultsJson: v.defaultsJson, draftJson: null, draftUpdatedAt: null, submittedBy: null, submittedAt: null, submitNote: null, reviewNote: null, publishedAt: now, updatedAt: now, updatedBy: ME, note }).where(eq(quoteTemplates.id, id))
   await db.insert(quoteTemplateVersions).values({ id: randomUUID(), templateId: id, version: next, designJson: v.designJson, defaultsJson: v.defaultsJson, note, publishedAt: now, publishedBy: ME })
   touch(id)
   return { version: next }
@@ -203,7 +209,7 @@ export async function restoreTemplate(id: string): Promise<void> {
 export async function deleteTemplateForever(id: string): Promise<void> {
   const row = await templateRow(id)
   if (!row.deletedAt) throw new Error('not deleted')
-  const [uses] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.templateId, id), isNull(quotes.deletedAt)))
+  const [uses] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.templateId, id), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))   // the gallery's usedBy predicate: live, unarchived quotes
   if ((uses?.n ?? 0) > 0) throw new Error('in use')
   await db.delete(quoteTemplates).where(eq(quoteTemplates.id, id))
   touch()
@@ -216,7 +222,7 @@ export async function setQuoteTemplate(quoteId: string, templateId: string | nul
   const [q] = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
   let version: number | null = null
-  if (templateId) { const t = await templateRow(templateId); if (t.deletedAt) throw new Error('deleted'); version = t.version }
+  if (templateId) { const t = await templateRow(templateId); if (t.deletedAt) throw new Error('deleted'); if (t.status !== 'published') throw new Error('unpublished'); version = t.version }
   await db.update(quotes).set({ templateId, templateVersion: version, clientViewJson: null, updatedAt: new Date() }).where(eq(quotes.id, quoteId))
   if (templateId) await db.update(quoteTemplates).set({ lastUsedAt: new Date() }).where(eq(quoteTemplates.id, templateId))
   touchQuote(quoteId)
@@ -250,8 +256,11 @@ export async function saveQuoteAsTemplate(quoteId: string, name: string): Promis
     const row = await templateRow(q.templateId)
     const now = new Date()
     const id = randomUUID()
-    const design = parseDesign(row.designJson, fallbackDesign())
     const [pays, quote] = await Promise.all([db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position), db.select().from(quotes).where(eq(quotes.id, quoteId))])
+    /* The design the quote actually prints: its pinned version when it is behind the template's latest. */
+    const pinned = quote[0]?.templateVersion ?? null
+    const pinnedRow = pinned !== null && pinned !== row.version ? (await db.select().from(quoteTemplateVersions).where(and(eq(quoteTemplateVersions.templateId, row.id), eq(quoteTemplateVersions.version, pinned))))[0] : null
+    const design = parseDesign(pinnedRow?.designJson ?? row.designJson, fallbackDesign())
     const defaults: TemplateDefaults = { ...parseDefaults(row.defaultsJson), gstEnabled: quote[0]?.gstEnabled ?? true, signatureRequired: quote[0]?.clientSignatureRequired ?? true, paymentPreset: pays.length ? presetOf(pays) : 'default' }
     await db.insert(quoteTemplates).values({ id, name: await uniqueName(name.trim() || 'Untitled template'), kind: 'design', isDefault: false, createdAt: now, status: 'draft', version: 0, paper: design.page.paper, draftJson: JSON.stringify({ design, defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME })
     touch(id)
@@ -291,4 +300,29 @@ export async function saveBrand(setting: BrandSetting): Promise<void> {
 export async function setItemOptional(quoteId: string, itemId: string, optional: boolean): Promise<void> {
   await db.update(quoteItems).set({ optional }).where(and(eq(quoteItems.id, itemId), eq(quoteItems.quoteId, quoteId)))
   touchQuote(quoteId)
+}
+
+/** (REG-524) The Deleted Templates sheet's bulk Restore — one action, one revalidation. */
+export async function restoreTemplates(ids: string[]): Promise<void> {
+  const now = new Date()
+  for (const id of ids) await db.update(quoteTemplates).set({ deletedAt: null, updatedAt: now, updatedBy: ME }).where(eq(quoteTemplates.id, id))
+  touch()
+}
+/** (REG-524) Bulk Delete Forever: the in-use ones are skipped (the sheet never offers them), the rest go in one pass. */
+export async function deleteTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
+  let removed = 0, kept = 0
+  for (const id of ids) {
+    const [row] = await db.select({ deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, id))
+    if (!row?.deletedAt) { kept++; continue }
+    const [uses] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.templateId, id), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))
+    if ((uses?.n ?? 0) > 0) { kept++; continue }
+    await db.delete(quoteTemplates).where(eq(quoteTemplates.id, id)); removed++
+  }
+  touch()
+  return { removed, kept }
+}
+/** (REG-524) Empty Trash: every deleted template no live quote prints through. */
+export async function emptyTemplateTrash(): Promise<{ removed: number; kept: number }> {
+  const rows = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(sql`${quoteTemplates.deletedAt} is not null`)
+  return deleteTemplatesForever(rows.map((r) => r.id))
 }

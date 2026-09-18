@@ -2,12 +2,11 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -15,27 +14,16 @@ import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { useSheetLayout } from '@/components/om/sheet'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
-import { displayDate } from '@/lib/format'
 import type { QuoteTemplate } from '@/lib/db/schema'
 import { TemplateThumb } from '@/components/templates/render/document'
-import { TemplatePicker } from '@/components/templates/template-picker'
-import { HouseStyleDialog } from '@/components/company/templates/house-style-dialog'
-import { RecreateDialog } from '@/components/company/templates/recreate-dialog'
-import { createTemplate } from '@/app/company/templates-actions'
+import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
+import { ago } from '@/lib/templates/ago'
 import { pickerTemplates, type PickerData } from '@/lib/templates/picker'
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import styles from './create-quote-modal.module.css'
 
 /** "used 2w ago" (the 1.0 card's meta): days under a week, weeks under a month, then the date. */
-function usedAgo(at: Date | null, now: number): string | null {
-  if (!at) return null
-  const days = Math.floor((now - at.getTime()) / 86_400_000)
-  if (days < 1) return 'used today'
-  if (days < 7) return `used ${days}d ago`
-  if (days < 30) return `used ${Math.floor(days / 7)}w ago`
-  return `used ${displayDate(at)}`
-}
 /** The rail shows the default and the most recently used; the rest sit behind View all (design reference). */
 const RAIL_MAX = 3
 type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null }
@@ -45,15 +33,14 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null }
  * reference of 2026-09-11): xl 1200 · "FROM A TEMPLATE · n SAVED" with View all / New template · a tile rail where Blank
  * Quote leads the studio's templates (the tile is the action, its kebab holds Preview · Set as default) · "MORE WAYS TO
  * START" (Upload a quote · Draft with Maison AI). Every count, name, tag and "used n ago" comes from `quote_templates`.
- * (REG-494) View all and Preview open the template picker INSIDE the modal; New template opens the house-style chooser
- * over it and the template editor with this page as its origin, so nobody leaves the lead to choose or make a template.
+ * (REG-494) View all and Preview open the template picker INSIDE the modal, with Cancel · Use this template in the footer
+ * (REG-518); making a template is Company › Templates' job — no New template here (REG-519).
  * Upload and Draft answer coming soon until their flows exist. ≤767 it is the canvas' bottom sheet (REG-353).
  */
-export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClose, onStart, onSetDefault, clients, priceBookCount, render, origin, preselect }: {
+export function CreateQuoteModal({ open, leadName, templates, now, onClose, onStart, onSetDefault, clients, priceBookCount, render, preselect }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
-  leadId?: string
   templates: QuoteTemplate[]
   now: number
   onClose: () => void
@@ -66,24 +53,17 @@ export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClo
   priceBookCount?: number
   /** (REG-489) With the brand kit and the sample quote, every tile draws the template's real first page. */
   render?: { brand: BrandKit; sample: DocData }
-  /** (REG-494) Where a template made from here returns to — this page's URL, so the template editor's Back and "Publish and start the quote" land back here. */
-  origin?: string
   /** (REG-495) Opened from a template ("Start a quote with this template"): the picker opens on it. */
   preselect?: string | null
 }) {
   useScrollLock(open)
-  const router = useRouter()
   const comingSoon = useComingSoon()
-  const snackbar = useSnackbar()
   const panel = useRef<HTMLDivElement>(null)
   const sheet = useSheetLayout()
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [clientError, setClientError] = useState(false)
   const [mode, setMode] = useState<Mode>(() => (preselect ? { kind: 'all', selectedId: preselect } : { kind: 'rail' }))   // (REG-495) opened on a template: the picker first
-  const [houseOpen, setHouseOpen] = useState(false)
-  const [recreateOpen, setRecreateOpen] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setClientId(null); setClientError(false); setMode(preselect ? { kind: 'all', selectedId: preselect } : { kind: 'rail' }) } }   // every opening starts afresh (render-phase adjust)
   const client = clients?.find((c) => c.id === clientId) ?? null
@@ -93,29 +73,16 @@ export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClo
   }
   /* A template's kebab menu and the chooser dialogs render over this panel, and the surface policy skips descendants (REG-287),
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
-  useEscapeLayer(open && menuFor === null && !houseOpen && !recreateOpen, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
+  useEscapeLayer(open && menuFor === null, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
   useDialogFocus(open, panel)
   /* (REG-489) Only published templates can start a quote; drafts and archived ones stay in Company › Templates. */
   const picker: PickerData | null = useMemo(() => (render ? { templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
-  const published = picker ? picker.templates : templates.filter((t) => t.status === 'published')
+  const published = picker ? picker.templates : templates.filter((t) => t.status === 'published' && !t.deletedAt)
   const rail = published.slice(0, RAIL_MAX)
   const forName = clients ? client?.name ?? '' : leadName
   const title = forName ? `Start a quote for ${forName}` : 'Start a quote'
-  const meta = (t: { version: number; lastUsedAt: number | Date | null }) => [`v${t.version}`, usedAgo(t.lastUsedAt instanceof Date ? t.lastUsedAt : t.lastUsedAt ? new Date(t.lastUsedAt) : null, now)].filter(Boolean).join(' · ')
-  /* (REG-494) A template made from here opens in the template editor with this page as its origin (and the lead, so Publish can start the quote). */
-  const makeTemplate = async (fn: () => Promise<string>) => {
-    if (busy) return
-    setBusy(true)
-    try {
-      const id = await fn()
-      const q = new URLSearchParams()
-      if (origin) q.set('from', origin)
-      if (leadId) q.set('lead', leadId)
-      router.push(`/templates/${id}${q.size ? `?${q.toString()}` : ''}`)
-    } catch { snackbar({ message: 'Couldn’t create the template — please try again' }) }
-    finally { setBusy(false) }
-  }
-
+  const pickedId = mode.kind === 'all' && picker ? defaultPick(picker, mode.selectedId) : null   /* (REG-518) the picker's selection; the footer acts on it */
+  const meta = (t: { version: number; lastUsedAt: number | Date | null }) => [`v${t.version}`, t.lastUsedAt ? `used ${ago(t.lastUsedAt instanceof Date ? t.lastUsedAt.getTime() : t.lastUsedAt, now)}` : null].filter(Boolean).join(' · ')
   return (
     <AnimatePresence>
       {open ? (
@@ -144,9 +111,9 @@ export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClo
               ) : null}
               {mode.kind === 'all' && picker ? (
                 /* (REG-494) Every published template, searchable, with the one in hand drawn large — inside the modal. */
-                <section className={styles.block} aria-label="All templates">
-                  <TemplatePicker data={picker} selectedId={mode.selectedId} now={now} useLabel="Use this template" onUse={(id) => start(id)}
-                                  onNew={() => setHouseOpen(true)} blank={{ label: 'Blank Quote', onUse: () => start(null) }} />
+                <section className={styles.block} data-fill aria-label="All templates">
+                  <TemplatePicker data={picker} picked={pickedId} onPick={(id) => setMode({ kind: 'all', selectedId: id })} now={now} onUse={(id) => start(id)}
+                                  blank={{ label: 'Blank Quote', onUse: () => start(null) }} />
                 </section>
               ) : (
                 <>
@@ -156,7 +123,6 @@ export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClo
                       <span className={styles.eyebrow}>From a template · {published.length} saved</span>
                       <div className={styles.eyebrowActions}>
                         <Button appearance="text" iconEnd={<Icon name="chevron_right" size={20} />} onPress={() => (picker ? setMode({ kind: 'all', selectedId: null }) : comingSoon())}>View all</Button>
-                        <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => (picker ? setHouseOpen(true) : comingSoon())}>New template</Button>
                       </div>
                     </div>
                     <div className={styles.rail}>
@@ -233,14 +199,12 @@ export function CreateQuoteModal({ open, leadName, leadId, templates, now, onClo
                 </>
               )}
             </div>
-            {picker ? (
-              <>
-                <HouseStyleDialog open={houseOpen} nested brand={picker.brand} sample={picker.sample} onClose={() => setHouseOpen(false)} createLabel="Create and open"
-                                  onRecreate={() => { setHouseOpen(false); setRecreateOpen(true) }}
-                                  onCreate={(key, name) => { setHouseOpen(false); void makeTemplate(() => createTemplate({ name, source: { kind: 'preset', key } })) }} />
-                <RecreateDialog open={recreateOpen} nested brand={picker.brand} sample={picker.sample} onClose={() => setRecreateOpen(false)}
-                                onCreate={(key, name, sourceFile) => { setRecreateOpen(false); void makeTemplate(() => createTemplate({ name, source: { kind: 'preset', key, sourceFile } })) }} />
-              </>
+            {mode.kind === 'all' ? (
+              /* (REG-518) The modal footer every dialog has: Cancel · the picker's action. */
+              <div className={styles.foot}>
+                <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
+                <Button onPress={() => { if (pickedId) start(pickedId) }} isDisabled={!pickedId}>Use this template</Button>
+              </div>
             ) : null}
           </motion.div>
         </motion.div>

@@ -16,7 +16,11 @@ import { setQuoteStatus } from '@/app/leads/quotes-actions'
 import { saveQuoteAsTemplate, setQuoteTemplate, updateQuoteTemplateVersion } from '@/app/company/templates-actions'
 import { SaveAsTemplateDialog, TemplateCard, TemplateUpdateBanner } from './template-bar'
 import { ClientViewPane } from './client-view-pane'
-import { TemplatePicker } from '@/components/templates/template-picker'
+import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
+import { fallbackDesignClient } from '@/lib/templates/presets'
+
+/** The built-in client design a quote with no template prints through — one instance, so the pane's memo holds. */
+const FALLBACK_CLIENT_DESIGN = fallbackDesignClient()
 import { Dialog } from '@/components/om/dialog'
 import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -92,6 +96,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   const [forceView, setForceView] = useState<{ key: ItemsView; nonce: number } | null>(null)
   /* (REG-497) The live client view beside the sections (a drawer on a tablet). */
   const [clientView, setClientView] = useState(false)
+  const [gstOn, setGstOn] = useState(true)   /* the Items card reports its GST switch on mount and on change; the text context prints "inclusive of GST" only when on */
+  const [addTick, setAddTick] = useState(0)   /* (REG-522) the Create strip's My Items */
   const tabletDown = useMediaQuery(TABLET_DOWN)
 
   /* ── state ── */
@@ -240,13 +246,14 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
      (REG-489); Rename, Duplicate, Export, Version History, Comments and Delete still answer coming soon (owner 2026-09-11). */
   const onMenu = (action: HeaderMenuAction) => {
     if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
-    if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(`/quotes/${quote.id}/preview?print=1${from ? `&from=${encodeURIComponent(from)}` : ''}`); return }
+    if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
     comingSoon()
   }
   const VIEW_WORD: Record<ItemsView, string> = { none: 'your own groups', category: 'Trade', room: 'Room', section: 'Section' }
   const pickTemplate = (templateId: string) => {
     setPickerOpen(false)
+    setPickedTpl(null)
     if (templateId === templateState.current?.id) return
     setTemplateBusy(true)
     void run('change the template', async () => {
@@ -275,6 +282,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     quote: { ...quote, title: general.title, preparedBy: general.preparedBy, validUntil: general.validUntil ? parseInputDate(general.validUntil) : null, projectRef: general.projectRef || null, nric: general.nric || null, customerId: general.customerId || null, propertyType: general.propertyType || null, siteAddress: general.siteAddress || null, status },
     lead: { name: lead.name, phone: lead.phone, email: lead.email }, studio: studioDetails, members, items: lines, payments: scheduleRows, totalMinor: amountMinor,
   }), [quote, general, status, lead, studioDetails, members, lines, scheduleRows, amountMinor])
+  /* The pane's design: the quote's template, else the studio default, else the first published, else the built-in client design — one chain for the aside and the tablet drawer. */
+  const clientPaneDesign = templateState.current?.design ?? templateState.picker.templates.find((t) => t.isDefault)?.design ?? templateState.picker.templates[0]?.design ?? FALLBACK_CLIENT_DESIGN
   const clientDesign = templateState.current?.design ?? null
   const clientColumns = useMemo(() => (clientDesign ? clientColumnsOf(clientDesign) : null), [clientDesign])
   const updateTemplate = () => {
@@ -291,7 +300,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
         await flushRef.current()
         const id = await saveQuoteAsTemplate(quote.id, name)
         setSaveAsOpen(false)
-        snackbar({ message: `${name.trim()} saved as a draft template`, actionLabel: 'Open', onAction: () => { window.open(`/templates/${id}`, '_blank', 'noopener') } })
+        snackbar({ message: `${name.trim()} saved as a draft template`, actionLabel: 'Open', onAction: () => { router.push(`/templates/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}&quote=${quote.id}`) } })
       } catch { fail('save the template') } finally { setTemplateBusy(false) }
     })()
   }
@@ -360,16 +369,20 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
       studio: studio.name, client: lead.name, member: tokens.member, number: quote.number,
       propertyType: general.propertyType || null, siteAddress: general.siteAddress || null,
       validUntil: general.validUntil ? parseInputDate(general.validUntil) : null, createdAt: quote.createdAt,
-      totalMinor: amountMinor, gstEnabled: true, works, itemCount: counted.length,
+      totalMinor: amountMinor, gstEnabled: gstOn, works, itemCount: counted.length,
       schedule: toRows(scheduleRows), start: new Date(paymentsSeed.anchors.start), weeks: paymentsSeed.anchors.weeks,
     }
-  }, [lines, studio.name, lead.name, tokens.member, quote.number, quote.createdAt, general.propertyType, general.siteAddress, general.validUntil, amountMinor, scheduleRows, paymentsSeed.anchors.start, paymentsSeed.anchors.weeks])
+  }, [lines, studio.name, lead.name, tokens.member, quote.number, quote.createdAt, general.propertyType, general.siteAddress, general.validUntil, amountMinor, scheduleRows, paymentsSeed.anchors.start, paymentsSeed.anchors.weeks, gstOn])
   const [signatureSeed] = useState<SignatureSeed>(() => ({
     quoteId: quote.id, required: quote.clientSignatureRequired, memberName: me?.name ?? '', studioName: studio.name, clientName: lead.name, nric: quote.nric,
     signature: me?.signatureKind === 'draw' || me?.signatureKind === 'type' ? { kind: me.signatureKind, name: me.signatureName ?? me.name, data: me.signatureData ?? null } : null,
   }))
   const stamp = (t: number) => { setUpdatedAt(t); setClock(Date.now()) }
   const stripExpanded = useStripExpanded()   // the Items bulk bar centres on the section column, not the viewport (quote-editor.module.css)
+
+  /* (REG-518) The picker's selection lives here; the dialog footer acts on it. */
+  const [pickedTpl, setPickedTpl] = useState<string | null>(null)
+  const pickerSel = defaultPick(templateState.picker, pickedTpl, templateState.current?.id ?? null)
 
   return (
     <PageReveal skeleton={<EditorSkeleton />}>
@@ -393,7 +406,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
             </SectionCard>
             <ItemsCard seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
-                       onTotal={setAmountMinor} onLines={setLines} clientColumns={clientColumns} forceView={forceView} />
+                       onTotal={setAmountMinor} onLines={setLines} onPricing={(p) => setGstOn(p.gstEnabled)} clientColumns={clientColumns} forceView={forceView} addTick={addTick} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
@@ -418,21 +431,22 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
           </div>
           {clientView && !tabletDown ? (
             <aside className={styles.clientPane} aria-label="Client view">
-              <ClientViewPane data={clientData} design={templateState.current?.design ?? templateState.picker.templates.find((t) => t.isDefault)?.design ?? templateState.picker.templates[0]?.design ?? { page: { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' }, brand: {}, blocks: [] }} brand={brand}
+              <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand}
                               templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
             </aside>
           ) : null}
-          <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') setPickerOpen(true); else comingSoon() }} />
+          <CreateStrip onOpen={(link) => { if (link === 'ai') setAiOpen(true); else if (link === 'templates') setPickerOpen(true); else if (link === 'items') { if (!openOf('items')) toggle('items'); setAddTick((t) => t + 1); } else comingSoon() }} />
         </div>
         {tabletDown ? (
-          <Drawer open={clientView} onClose={() => setClientView(false)} title="Client view" label="Client view" width={440}>
-            <ClientViewPane data={clientData} design={templateState.current?.design ?? templateState.picker.templates[0]?.design ?? { page: { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' }, brand: {}, blocks: [] }} brand={brand}
+          <Drawer open={clientView} onClose={() => setClientView(false)} title="Client view" label="Client view" width={420}>
+            <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand}
                             templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
           </Drawer>
         ) : null}
-        <Dialog open={pickerOpen} onClose={() => setPickerOpen(false)} title="Choose a template" size="modal" width={1200} portal
-                subtitle="The quote keeps its lines; the template decides how they print and what the client sees.">
-          <TemplatePicker data={templateState.picker} currentId={templateState.current?.id ?? null} now={now} useLabel="Use this template" onUse={pickTemplate} />
+        <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal
+                subtitle="The quote keeps its lines; the template decides how they print and what the client sees."
+                footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) pickTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (templateState.current?.id ?? null)}>{pickerSel && pickerSel === templateState.current?.id ? 'On this quote' : 'Use this template'}</Button></>}>
+          <TemplatePicker data={templateState.picker} picked={pickerSel} onPick={setPickedTpl} currentId={templateState.current?.id ?? null} now={now} onUse={pickTemplate} />
         </Dialog>
         <ConfirmDialog open={regroup !== null} title="Regroup the items the way the template prints?" tone="primary" confirmLabel={regroup ? `Group by ${VIEW_WORD[regroup.view]}` : 'Regroup'} cancelLabel="Keep my groups"
                        message={regroup ? `${regroup.label}. Your lines stay as they are; only View by changes, and you can change it back.` : ''}

@@ -73,7 +73,7 @@ export type ItemsSeed = {
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, clientColumns, forceView }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0 }: {
   seed: ItemsSeed
   open: boolean
   onToggle: () => void
@@ -82,6 +82,10 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   onCount: (n: number) => void
   /** The live total and lines, as the table shows them (the Payment Schedule's amounts and AI schedule follow, REG-418). */
   onTotal?: (totalMinor: number) => void
+  /** The GST / discount settings as they change — the editor's text context prints "inclusive of GST" only when it is on. */
+  onPricing?: (pricing: Pricing) => void
+  /** (REG-522) The Create strip's My Items: bumped by the editor, it opens the Add Item popover like Create ▾ › From My Items. */
+  addTick?: number
   onLines?: (items: QuoteItem[]) => void
   /** (REG-497) The columns the quote's template prints for the client — an eye on their heads; null = no template known. */
   clientColumns?: Set<string> | null
@@ -148,8 +152,11 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   useEffect(() => { itemsRef.current = items })
   const lineCount = items.filter((i) => i.kind === 'item').length
   useEffect(() => { onCount(lineCount) }, [lineCount, onCount])
+  /* "GST 9%" only while every line carries 9 — the per-line GST column is editable, so a mixed table reads plain "GST". */
+  const gstLabel = useMemo(() => { const pcts = [...new Set(items.filter((it) => it.kind === 'item').map((it) => it.gstPct))]; return pcts.length === 1 ? `GST ${pcts[0]}%` : 'GST' }, [items])
   const totals: QuoteTotals = useMemo(() => quoteTotals(items, pricing), [items, pricing])
   useEffect(() => { onTotal?.(totals.totalMinor) }, [totals.totalMinor, onTotal])
+  useEffect(() => { onPricing?.(pricing) }, [pricing, onPricing])
   useEffect(() => { onLines?.(items) }, [items, onLines])
   // Selection follows the lines that exist (render-phase adjust).
   const ids = useMemo(() => new Set(items.map((i) => i.id)), [items])
@@ -408,11 +415,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* (REG-464) The drawer applies live — a drag inside it streams reorders — so the table follows at once and the quote is written
      once the stream settles. */
   const persistColumns = useRef<number | null>(null)
+  const pendingColumns = useRef<ColumnSettings | null>(null)
   const saveColumns = (c: ColumnSettings) => {
     setColumns(c)
+    pendingColumns.current = c
     if (persistColumns.current) window.clearTimeout(persistColumns.current)
-    persistColumns.current = window.setTimeout(() => { persistColumns.current = null; savePrefs({ itemsColumns: c }) }, 400)
+    persistColumns.current = window.setTimeout(() => { persistColumns.current = null; pendingColumns.current = null; savePrefs({ itemsColumns: c }) }, 400)
   }
+  /* Leaving the editor inside the 400 ms window still writes the change (the cell queue and General Info flush the same way). */
+  const savePrefsRef = useRef(savePrefs); useEffect(() => { savePrefsRef.current = savePrefs })
+  useEffect(() => () => { if (persistColumns.current) { window.clearTimeout(persistColumns.current); persistColumns.current = null }; if (pendingColumns.current) { savePrefsRef.current({ itemsColumns: pendingColumns.current }); pendingColumns.current = null } }, [])
   const addLabel = (kind: 'room' | 'category' | 'section', name: string) => {
     const key = kind === 'room' ? 'rooms' : kind === 'category' ? 'categories' : 'sections'
     const next = { ...labels, [key]: labels[key].includes(name) ? labels[key] : [...labels[key], name] }
@@ -557,6 +569,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const body = (
         <div className={styles.body}>
           <ItemsTable
+            onAddColumn={() => setSettingsOpen(true)}
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
             items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
@@ -585,9 +598,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             onViewPriceBook={comingSoon}
             onExport={() => setExportOpen(true)}
             addInputRef={addInputRef}
-            addOpenTick={addOpenTick}
+            addOpenTick={addOpenTick + addTick}
           />
-          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
+          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} gstLabel={gstLabel} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
         </div>
   )
   return (
@@ -617,7 +630,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         onClear={() => setSelected(new Set())}
       />
       <ConfirmDialog open={!!removing} title={removing && removing.length > 1 ? `Remove ${removing.length} items?` : 'Remove this item?'}
-                     message="The line leaves the quote and its totals." confirmLabel="Remove"
+                     message={removing && removing.length > 1 ? `The ${removing.length} lines leave the quote and its totals.` : 'The line leaves the quote and its totals.'} confirmLabel="Remove"
                      onConfirm={() => { const list = removing ?? []; setRemoving(null); setSelected(new Set()); void removeItems(list) }} onCancel={() => setRemoving(null)} />
       <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section' : 'Add Category'} initial=""
                   onSave={(name) => { if (naming) addLabel(naming.kind, name.trim()); setNaming(null) }} onClose={() => setNaming(null)} />

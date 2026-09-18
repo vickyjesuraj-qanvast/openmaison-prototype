@@ -185,7 +185,12 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
          data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || undefined}
          data-dragover={dragOver ?? undefined} data-dragging={dragging || undefined} data-full={showFull || undefined}
          onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
-         onDragOver={onRowDragOver} onDrop={(e) => { e.preventDefault(); h.onDrop() }}>
+         onDragOver={onRowDragOver} onDrop={(e) => { e.preventDefault(); h.onDrop() }}
+         onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ix', `${Math.round(e.clientX - r.left)}px`) }}>
+      {/* (REG-527, owner 2026-09-18) A + on the row's bottom edge that follows the pointer, so adding a line below never means
+          travelling to the leading +. Bottom only (owner: "remove the top one"). Hover only — a finger keeps the leading + and the kebab. */}
+      <Tooltip label="Add item below"><button type="button" className={styles.edgeAdd} data-edge="bottom" aria-label={`Add item below ${item.name}`} tabIndex={-1} onClick={() => h.onInsertBelow(item)}><Icon name="add" size={16} /></button></Tooltip>
+      <span className={styles.edgeLine} data-edge="bottom" aria-hidden />
       <div role="cell" className={`${styles.cell} ${styles.colSel}`}>
         <Tooltip label="Drag to reorder">
           <button type="button" className={styles.handle} aria-label={`Drag to reorder ${item.name}`} draggable
@@ -248,7 +253,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             ) : null}
           </div>
           {!details.description ? null : showFull ? (
-            <span className={styles.desc} onClick={() => setDescOpen(true)}>{item.description || 'Add a description'}</span>
+            <button type="button" className={`${styles.desc} ${styles.descBtn}`} onClick={() => setDescOpen(true)}>{item.description || 'Add a description'}</button>
           ) : (
             <>
               {/* At rest the description is text clamped to the density's lines (1260:31372: the base state is two); while the

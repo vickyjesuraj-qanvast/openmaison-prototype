@@ -115,7 +115,7 @@
    clamp and a select an outline set off the text — nothing moves, and the active row's 36px boxes are unchanged. */
 .row:not([data-active]) .cell .input:not([data-name]):not([data-desc]):hover { border-color: var(--om-color-on-surface-border); }
 .input[data-name]:hover:not(:focus) { height: 24px; margin: -2px calc(-1 * var(--om-spacing-2)); padding: 0 var(--om-spacing-2); border-color: var(--om-color-on-surface-border); background: var(--om-color-surface-default); }
-.descText:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 2px; border-radius: 2px; }
+.descText:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 2px; border-radius: var(--om-radius-0-5); }
 .row:not([data-active]) .pick:hover { outline: var(--om-border-1) solid var(--om-color-on-surface-border); outline-offset: 3px; }
 .descText[data-placeholder] { color: var(--om-color-on-surface-secondary); }
 /* While the row is active the clamp keeps its lines but goes invisible and the 24px field sits over its first line — so a
@@ -200,11 +200,6 @@
 .row[data-active] .sub { display: none; }   /* the markup box stands alone while the row is active (1271:40867) */
 
 /* Status chip (1260:31267 / 31303 / 31337): p8 r4, [glyph 16 + label 14/400, g4] + keyboard_arrow_down 20, g8. */
-.chip { display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); border: 0; cursor: pointer; font: var(--om-type-body-m); white-space: nowrap; }
-.chipMain { display: inline-flex; align-items: center; gap: var(--om-spacing-1); }
-.chip[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-on-tertiary-yellow-variant); }
-.chip[data-tone='green'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-on-tertiary-green-variant); }
-.chip[data-tone='red'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
 
 /* Row kebab: a bare 24 in the frozen TOTAL cell, shown on hover / focus / while its menu is open (tasks-table .actions). */
 /* The hovered row's kebab is the listing's hover control (606:75167 / REG-163, owner 2026-09-16: "contextual menu when hovered is not
@@ -236,7 +231,6 @@
 .link:hover { color: var(--om-color-on-primary-variant); }
 
 /* Empty table: only the head and the Add Item row — the first line starts here. */
-.emptyNote { padding: var(--om-spacing-4) var(--om-spacing-6); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 
 /* ── The selection · # · ITEM block is FROZEN on the left at every width (owner 2026-09-15: "till the item column it is fixed",
    the sheet's freeze panes — REG-427; ≤1024 since REG-417): the line's name stays while the reader pans the number columns
@@ -251,7 +245,7 @@
 .row[data-child] .colSel, .row[data-child] .colNum, .row[data-child] .colItem { background: var(--group-child-tint); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
-.scroller[data-scrolled] .colItem { box-shadow: 6px 0 8px -4px rgba(0, 0, 0, .16); }
+.scroller[data-scrolled] .colItem { box-shadow: var(--om-shadow-frozen-column); }
 .row[data-active] .colItem { overflow: visible; }
 /* Row hover (owner 2026-09-15: "item table hover state is missing"): the 4 % wash every table's row takes (tasks / quotes
    rows fill #f2f2f2) — painted as an overlay on each cell, so the frozen cells' own fills, a child's tint and a selection all
@@ -277,7 +271,6 @@
   .eye::after { content: ''; position: absolute; inset: -12px -10px; }   /* 40 wide: its box must not reach into the name box beside it (REG-365) */
   .kebab button::after, .expand::after { content: ''; position: absolute; inset: -10px; }
   .link::after { content: ''; position: absolute; inset: -12px 0; }
-  .chip { min-height: 44px; }
   .row .cell .input:not([data-desc]):not([data-name]), .row[data-active] .cell .input:not([data-desc]):not([data-name]) { height: 44px; }
   .input[data-name] { height: 44px; margin: -12px 0; }   /* the name keeps its 20 line in the layout but takes a 44 box under a finger */
   .row .cell .pick, .row[data-active] .cell .pick { height: 44px; }
@@ -308,3 +301,28 @@
 /* (REG-497) The client eye on a head: 14px, secondary, 4 after the label; it never takes the head's click. */
 .clientEye { display: inline-flex; margin-left: 4px; vertical-align: middle; color: var(--om-color-on-surface-secondary); }
 .head [data-client='no'] { color: var(--om-color-on-surface-secondary); }
+/* The description as a real button (Show Full Content mode): keyboard-reachable, the text's own look. */
+.descBtn { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%; }
+.descBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-0-5); }
+
+/* ── Edge adds (REG-527) ───────────────────────────────────────────────────────────────────────────────
+   A 22px primary + on the row's bottom edge, at the pointer's x (`--ix`, written by the row's pointermove), shown
+   while the row is hovered; hovering the + draws a 2px primary line along that edge, the seam the new line goes into.
+   Above the frozen cells (z 2/3) and the parked kebab (z 4). Mouse only — no hover, no edge adds (the leading + stays). */
+.edgeAdd {
+  position: absolute; left: var(--ix, 50%); transform: translate(-50%, -50%);
+  width: 22px; height: 22px; border-radius: var(--om-radius-full); border: 0; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
+  box-shadow: var(--om-elevation-level-2);
+  z-index: 6; opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.edgeAdd[data-edge='bottom'] { top: 100%; }
+.edgeLine { position: absolute; left: 0; right: 0; height: 2px; background: var(--om-color-primary-default); z-index: 5; opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
+.edgeLine[data-edge='bottom'] { bottom: -1px; }
+@media (hover: hover) {
+  .row:hover .edgeAdd { opacity: 1; pointer-events: auto; }
+  .edgeAdd:hover + .edgeLine { opacity: 1; }
+}
+@media (hover: none) { .edgeAdd, .edgeLine { display: none; } }

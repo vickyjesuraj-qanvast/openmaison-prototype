@@ -5,8 +5,8 @@ import type { TemplateSummary } from '@/lib/templates/model'
 
 /** What a template's kebab offers — the same six items on a card and on a table row (REG-505). */
 export type TemplateAction = 'edit' | 'newQuote' | 'default' | 'duplicate' | 'rename' | 'delete'
-/** How many rows the menu draws (six items + a divider) — what menu-side.ts measures against. */
-export const TEMPLATE_MENU_ITEMS = 7
+/** The menu's item rows — what menu-side.ts measures against (the divider is a 1px rule, not a row). */
+export const TEMPLATE_MENU_ROWS = 6
 
 export function TemplateMenu({ t, open, onClose, onPick, side = 'down', width = 224 }: {
   t: TemplateSummary; open: boolean; onClose: () => void; onPick: (a: TemplateAction) => void; side?: 'down' | 'up'; width?: number

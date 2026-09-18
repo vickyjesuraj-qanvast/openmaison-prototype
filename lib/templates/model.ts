@@ -82,7 +82,6 @@ export type TextStyle = {
   letterSpacing?: number
   lineHeight?: number
 }
-export const BOLD: TextStyle = { weight: 700 }
 
 /* ── canvas elements ── */
 export type KVRow = { id: string; label: string; value: string }

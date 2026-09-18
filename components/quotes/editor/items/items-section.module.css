@@ -79,14 +79,7 @@
 /* Column settings (1271:41169): helper 14/400, 16 to the eyebrow (12/500 uppercase secondary), rows 56 (p16 around the 24
    switch) = handle 24 · label 14/600 · Switch; the lists 12 either side of a 1px rule. */
 .settings { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-.settingsHelp { margin: 0 0 var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
-.setGroup { display: flex; flex-direction: column; gap: 0; }
-.setRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 56px; }
-.setLabel { flex: 1; min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.setHandle { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border: 0; background: none; padding: 0; }
-.setList { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
-.setDivider { height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); }   /* flex-shrink 0: a 1px flex child of a scrolling body collapsed to nothing */
 
 /* ≤1024 the toolbar is folded (items-section.tsx `compact`): three 36px controls that always fit on the title row (REG-354 / REG-384). */
 .tools[data-compact] { flex-wrap: nowrap; }
@@ -102,11 +95,9 @@
   .tools button::after, .anchor > button::after { content: ''; position: absolute; inset: -4px; }
   .roundLink::after { content: ''; position: absolute; inset: -12px; }
   .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
-  .setRow { min-height: 44px; }
 }
 
 /* Expand's description modal (REG-444): the line's name under the title, the DS TextArea eight lines tall. */
-.descDialogName { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .descDialogArea { width: 100%; }
 .descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */
 .find { display: inline-flex; width: 240px; }   /* Find (REG-477): the box the search glyph opens */

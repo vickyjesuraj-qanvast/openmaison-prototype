@@ -22,7 +22,7 @@ export function DescriptionDialog({ open, name, value, onClose, onSave }: {
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setDraft(value) }   // every opening starts from what the line holds
   return (
-    <Dialog open={open} onClose={onClose} title="Description" subtitle={<span className={styles.descDialogName}>{name || 'New item'}</span>} size="form" width={400} portal
+    <Dialog open={open} onClose={onClose} title="Description" subtitle={name || 'New item'} size="form" width={400} portal
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => { onSave(draft); onClose() }}>Save</Button></>}>
       <TextArea aria-label="Description" placeholder="Add a description" value={draft} onChange={(v: string) => setDraft(v)} autoFocus className={styles.descDialogArea} />
     </Dialog>

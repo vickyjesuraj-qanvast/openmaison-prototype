@@ -20,7 +20,7 @@ type Step = { kind: 'pick' } | { kind: 'reading'; file: File } | { kind: 'matche
  * (curated for the three reference quotes, a later build reads any file), proposes the house style that reproduces it with
  * the reasons, and opens the editor on it with the file kept as a reference beside the canvas.
  */
-export function RecreateDialog({ open, brand, sample, onClose, onCreate, applyLabel = 'Open in the editor', title = 'Upload your existing quote', nested }: { open: boolean; brand: BrandKit; sample: DocData; onClose: () => void; onCreate: (key: PresetKey, name: string, sourceFile: string) => void; applyLabel?: string; title?: string; nested?: boolean }) {
+export function RecreateDialog({ open, brand, sample, onClose, onCreate, applyLabel = 'Open in the editor', title = 'Upload your existing quote' }: { open: boolean; brand: BrandKit; sample: DocData; onClose: () => void; onCreate: (key: PresetKey, name: string, sourceFile: string) => void; applyLabel?: string; title?: string }) {
   const [step, setStep] = useState<Step>({ kind: 'pick' })
   const [drag, setDrag] = useState(false)
   const input = useRef<HTMLInputElement>(null)
@@ -57,7 +57,7 @@ export function RecreateDialog({ open, brand, sample, onClose, onCreate, applyLa
   const preset = step.kind === 'matched' ? PRESETS.find((p) => p.key === step.key)! : null
 
   return (
-    <Dialog open={open} onClose={onClose} title={title} size="modal" width={800} nested={nested}
+    <Dialog open={open} onClose={onClose} title={title} size="modal" width={800}
             subtitle="The quote you send today, as a PDF, photo or scan — we match its layout and rebuild it."
             footer={step.kind === 'matched' ? <><Button variant="secondary" appearance="outlined" onPress={() => setStep({ kind: 'pick' })}>Start over</Button><Button onPress={create}>{applyLabel}</Button></> : <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>}>
       {step.kind === 'pick' ? (
@@ -66,7 +66,7 @@ export function RecreateDialog({ open, brand, sample, onClose, onCreate, applyLa
              onDragOver={(e) => { e.preventDefault(); setDrag(true) }} onDragLeave={() => setDrag(false)} onDrop={(e) => { e.preventDefault(); setDrag(false); take(e.dataTransfer.files) }}>
           <span className={styles.dropGlyph}><Icon name="cloud_upload" size={40} weight={300} /></span>
           <span className={styles.dropTitle}>Drop your quote here, or browse</span>
-          <span className={styles.dropHelp}>PDF · JPG · PNG. We read the layout — the letterhead, the table, the sign-off — and match it to a house style you can adjust.</span>
+          <span className={styles.dropHelp}>PDF · JPG · PNG. We read the layout — the letterhead, the table, the sign-off — and match it to a design you can adjust.</span>
           <input ref={input} type="file" accept=".pdf,image/*,application/pdf" hidden data-testid="recreate-file" onChange={(e) => { take(e.target.files); e.target.value = '' }} />
         </div>
       ) : step.kind === 'reading' ? (

@@ -1,0 +1,12 @@
+/* The template editor's ghost — the editor's own frame (template-editor.module.css): bar 56, left 300, right 320. */
+.page { display: flex; flex-direction: column; min-height: 100dvh; background: var(--om-color-surface-bg); }
+.bar { display: flex; align-items: center; gap: var(--om-spacing-3); height: 56px; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.grow { flex: 1; }
+.body { flex: 1; display: flex; min-height: 0; }
+.side { width: 300px; flex-shrink: 0; background: var(--om-color-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+.side:last-child { width: 320px; border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.side:first-child { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tabs { display: flex; gap: var(--om-spacing-6); height: 44px; align-items: center; margin-bottom: var(--om-spacing-2); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); height: 40px; }
+.stage { flex: 1; display: flex; justify-content: center; padding: var(--om-spacing-8); }
+@media (max-width: 1024px) { .side { display: none; } }

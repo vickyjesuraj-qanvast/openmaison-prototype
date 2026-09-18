@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { defaultBlock, isCanvas, newId, type Block, type BlockKind, type CanvasBlock, type CanvasElement, type TemplateDefaults, type TemplateDesign } from '@/lib/templates/model'
+import { defaultBlock, isCanvas, newId, type Block, type BlockKind, type CanvasElement, type TemplateDefaults, type TemplateDesign } from '@/lib/templates/model'
 
 /* The template editor's document state (REG-486): one undo history over { design, defaults }. A transient set (a drag in
    progress) replaces the present without a step; a coalesced set (typing in one field) folds into the previous step for a
@@ -95,4 +95,3 @@ export function defaultElement(kind: CanvasElement['kind']): CanvasElement {
     case 'pageno': return { id, kind, x: 140, y: 2, w: 34, format: 'Page {page} of {pages}', style: { role: 'small', align: 'right' } }
   }
 }
-export const canvasOf = (design: TemplateDesign, id: string | null | undefined): CanvasBlock | null => { const b = design.blocks.find((x) => x.id === id); return b && isCanvas(b) ? b : null }

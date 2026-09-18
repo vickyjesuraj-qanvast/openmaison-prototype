@@ -20,8 +20,9 @@ export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalM
  * Subtotal · n items, Discount, Additional Discount (% | S$ + amount), GST 9% switch, Total + Round Prices, and — for the
  * studio's owner only — the margin strip. Every figure is derived from the lines (lib/quotes/math.ts).
  */
-export function ItemsSummary({ totals, pricing, studio, owner, onPricing, onRound }: {
+export function ItemsSummary({ totals, pricing, studio, owner, gstLabel = 'GST 9%', onPricing, onRound }: {
   totals: QuoteTotals
+  gstLabel?: string
   pricing: Pricing
   studio: Studio
   owner: boolean
@@ -76,7 +77,7 @@ export function ItemsSummary({ totals, pricing, studio, owner, onPricing, onRoun
           </span>
         </div>
         <div className={styles.trow}>
-          <span className={styles.tlabel}>GST 9% <Switch size="sm" isSelected={pricing.gstEnabled} onChange={(v: boolean) => onPricing({ gstEnabled: v })} aria-label="Apply GST" /></span>
+          <span className={styles.tlabel}>{gstLabel} <Switch size="sm" isSelected={pricing.gstEnabled} onChange={(v: boolean) => onPricing({ gstEnabled: v })} aria-label="Apply GST" /></span>
           <span className={styles.tvalue}>{money2(totals.gstMinor)}</span>
         </div>
         <div className={styles.rule} />

@@ -10,20 +10,22 @@ import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/drop
 import type { TemplateStatus } from '@/lib/templates/model'
 import styles from './editor-topbar.module.css'
 
-export type TopbarMenuAction = 'duplicate' | 'match' | 'discard' | 'gallery' | 'start'
+export type TopbarMenuAction = 'duplicate' | 'match' | 'discard' | 'gallery' | 'start' | 'preview'
 export type SourceOption = { key: string; label: string; sub?: string }
 
 /**
  * The template editor's top bar (REG-486): back · the name (typed in place) · status chips · the autosave stamp, then
  * Preview with ▾ · zoom · undo / redo · History · ⋯ · Preview · Publish. 56 tall on the editor surface's white.
  */
-export function EditorTopbar({ name, onName, status, version, isDefault, hasChanges, savedLabel, saving, pages, source, sources, onSource, zoomLabel, onZoom, canUndo, canRedo, onUndo, onRedo, onHistory, preview, onPreview, onMenu, publishLabel, canPublish, onPublish, onBack, hasReference, compact, originLabel = null, backLabel = 'Back to Quote templates', canStart = false }: {
+export function EditorTopbar({ name, onName, status, version, isDefault, hasChanges, savedLabel, saving, pages, source, sources, onSource, zoomLabel, onZoom, canUndo, canRedo, onUndo, onRedo, onHistory, preview, onPreview, onMenu, publishLabel, canPublish, onPublish, onBack, hasReference, compact, originLabel = null, backLabel = 'Back to Quote templates', canStart = false, readOnly = false }: {
   name: string; onName: (v: string) => void
   status: TemplateStatus; version: number; isDefault: boolean; hasChanges: boolean; savedLabel: string; saving: boolean; pages: number
   source: string; sources: SourceOption[]; onSource: (key: string) => void
   zoomLabel: string; onZoom: (d: 'in' | 'out' | 'fit' | '100') => void
   canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void
   onHistory: () => void; preview: boolean; onPreview: (on: boolean) => void
+  /** A view-only editor (phone, awaiting lock): the bar shows the page count with no Exit preview. */
+  readOnly?: boolean
   onMenu: (a: TopbarMenuAction) => void; publishLabel: string; canPublish: boolean; onPublish: () => void; onBack: () => void
   hasReference: boolean; compact?: boolean
   /** (REG-495) "Editing for OM-10008 · Vivien Lee" when opened from a quote; Back names where it returns. */
@@ -49,7 +51,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
       {preview ? (
         <div className={styles.actions}>
           <span className={styles.pages}>{pages} page{pages === 1 ? '' : 's'}</span>
-          <Button appearance="outlined" variant="secondary" onPress={() => onPreview(false)}>Exit preview</Button>
+          {readOnly ? null : <Button appearance="outlined" variant="secondary" onPress={() => onPreview(false)}>Exit preview</Button>}
         </div>
       ) : (
         <div className={styles.actions}>
@@ -89,6 +91,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
               <DropdownItem onSelect={() => { setMenu(null); onMenu('start') }} disabled={!canStart} title={canStart ? undefined : 'Publish it first'}>Start a quote with this template</DropdownItem>
               <DropdownItem onSelect={() => { setMenu(null); onMenu('gallery') }}>All quote templates</DropdownItem>
               <DropdownDivider />
+              {compact ? <DropdownItem onSelect={() => { setMenu(null); onMenu('preview') }}>Preview</DropdownItem> : null}
               <DropdownItem tone="danger" onSelect={() => { setMenu(null); onMenu('discard') }}>{status === 'draft' ? 'Delete this draft' : 'Discard unpublished changes'}</DropdownItem>
             </Dropdown>
           </span>

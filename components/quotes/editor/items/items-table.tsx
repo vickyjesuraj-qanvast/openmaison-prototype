@@ -15,6 +15,7 @@ import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, 
 import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
+import styles from './items-table.module.css'
 
 /** The table's key in the user's stored column widths (lib/table-widths.ts). */
 export const ITEMS_TABLE = 'quote-items'
@@ -74,7 +75,6 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
   }
   return out
 }
-import styles from './items-table.module.css'
 import sec from './items-section.module.css'
 
 /** One display row: a line, or a view bucket's header (Category / Room / Section). */
@@ -135,8 +135,10 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 export function ItemsTable({
   items, priceBook, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onViewPriceBook, onExport, addInputRef, addOpenTick,
-  query, onPasteBlock, clientColumns,
+  query, onPasteBlock, clientColumns, onAddColumn,
 }: {
+  /** The head's + opens the Column settings drawer (its catalogue is where a column is added). */
+  onAddColumn?: () => void
   items: QuoteItem[]
   priceBook: PriceBookItem[]
   view: ItemsView
@@ -339,7 +341,7 @@ export function ItemsTable({
             ))}
             <div role="columnheader" className={`${styles.cell} ${styles.colAdd}`}>
               <Tooltip label="Add column">
-                <button type="button" className={styles.foldAll} aria-label="Add column" onClick={comingSoon}><Icon name="add_box" size={20} weight={300} /></button>
+                <button type="button" className={styles.foldAll} aria-label="Add column" onClick={onAddColumn ?? comingSoon}><Icon name="add_box" size={20} weight={300} /></button>
               </Tooltip>
             </div>
             <div role="columnheader" className={`${styles.cell} ${styles.colTotal}`}>Total{clientColumns ? <ClientEye /> : null}</div>
@@ -446,7 +448,7 @@ function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPri
             <div className={sec.popover}>
               <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>Create New Item</Button></div>
               <div className={sec.popHead}>My Items ({matches.length})</div>
-              {matches.length === 0 ? <div className={sec.popEmpty}>No items match “{q.trim()}”</div> : matches.map((p, i) => (
+              {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'Nothing in My Items yet'}</div> : matches.map((p, i) => (
                 <button key={p.id} id={optId(i)} type="button" role="option" aria-selected={i === active} data-active={i === active || undefined} className={sec.popRow} onClick={() => pick(p.id)}>
                   <span className={sec.popThumb}>
                     {p.thumb ? (

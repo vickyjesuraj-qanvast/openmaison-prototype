@@ -89,9 +89,13 @@ export function DeletedTemplatesSheet({ open, deleted, brand, sample, onClose, o
                   <span className={styles.crumb}>Templates / </span>
                   <span className={styles.title}>Deleted Templates</span>
                 </div>
-                <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>
-                  Empty Trash
-                </Button>
+                {deleted.length > 0 && deletable.length === 0 ? (
+                  <Tooltip label="Every deleted template still prints through a quote — restore them instead"><span><Button variant="secondary" appearance="outlined" isDisabled>Empty Trash</Button></span></Tooltip>
+                ) : (
+                  <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>
+                    Empty Trash
+                  </Button>
+                )}
                 <Tooltip label="Close">
                   <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
                     <Icon name="close" size={24} family="outlined" />
@@ -142,7 +146,8 @@ export function DeletedTemplatesSheet({ open, deleted, brand, sample, onClose, o
                                 onClick={() => { prune([t.id]); void run([t.id], () => onRestore([t.id])) }}>Restore</button>
                         {inUse(t) ? (
                           <Tooltip label={`${t.usedBy} quote${t.usedBy === 1 ? ' prints' : 's print'} through it — restore it instead`}>
-                            <button type="button" className={styles.link} data-danger disabled aria-disabled="true">Delete Forever</button>
+                            {/* aria-disabled, not disabled: a disabled button takes no pointer or focus, so the reason could never show */}
+                            <button type="button" className={styles.link} data-danger aria-disabled="true" onClick={(e) => e.preventDefault()}>Delete Forever</button>
                           </Tooltip>
                         ) : (
                           <button type="button" className={styles.link} data-danger disabled={pending.has(t.id)}

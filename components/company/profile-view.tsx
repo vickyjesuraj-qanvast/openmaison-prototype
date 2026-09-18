@@ -1,7 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -30,7 +29,6 @@ const DETAIL_FIELDS: { key: keyof StudioDetails; label: string }[] = [
  * template's first page on the right redraws as you edit.
  */
 export function ProfileView({ brand, previewDesign, previewName, sample }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData }) {
-  const router = useRouter()
   const snackbar = useSnackbar()
   const [kit, setKit] = useState<BrandKit>(brand.kit)
   const [details, setDetails] = useState<StudioDetails>(brand.details)
@@ -43,7 +41,7 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
 
   const save = async () => {
     setBusy(true)
-    try { await saveBrand({ kit, details }); setSaved({ kit, details }); snackbar({ message: 'Brand kit saved' }); router.refresh() }
+    try { await saveBrand({ kit, details }); setSaved({ kit, details }); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
     catch { snackbar({ message: 'Couldn’t save the brand kit — please try again' }) }
     finally { setBusy(false) }
   }
@@ -55,6 +53,16 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
     apply(await Promise.all(files.map((f) => readFileAsDataUrl(f, max))))
   }
   const hex = (v: string) => (/^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : null)
+  /* Drafts for the typed fields: the kit only takes a valid value, the box keeps what was typed until then. */
+  const [colorDraft, setColorDraft] = useState<Record<string, string>>({})
+  const [sizeDraft, setSizeDraft] = useState<Record<string, string>>({})
+  /* Unsaved edits are not lost to a tab or a reload without a word (checklist: discarding edits asks first). */
+  useEffect(() => {
+    if (!dirty) return
+    const onUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', onUnload)
+    return () => window.removeEventListener('beforeunload', onUnload)
+  }, [dirty])
 
   return (
     <CompanyShell title="Profile" actions={<>
@@ -120,7 +128,9 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
                     <input type="color" value={kit.colors[key]} aria-label={`${COLOR_LABEL[key]} colour`} onChange={(e) => setKit((k) => ({ ...k, colors: { ...k.colors, [key]: e.target.value.toUpperCase() } }))} />
                   </label>
                   <div className={styles.colourField}>
-                    <TextField label={COLOR_LABEL[key]} value={kit.colors[key]} maxLength={7} onChange={(v) => { const h = hex(v); if (h) setKit((k) => ({ ...k, colors: { ...k.colors, [key]: h } })) }} />
+                    <TextField label={COLOR_LABEL[key]} value={colorDraft[key] ?? kit.colors[key]} maxLength={7} error={colorDraft[key] !== undefined && !hex(colorDraft[key]!) ? 'Six hex digits, like #5500FF' : undefined}
+                               onChange={(v) => { const h = hex(v); setColorDraft((d) => ({ ...d, [key]: v })); if (h) { setKit((k) => ({ ...k, colors: { ...k.colors, [key]: h } })); setColorDraft((d) => { const n = { ...d }; delete n[key]; return n }) } }}
+                               onBlur={() => setColorDraft((d) => { const n = { ...d }; delete n[key]; return n })} />
                   </div>
                 </div>
               ))}
@@ -137,7 +147,7 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
                   <div key={role} className={styles.role}>
                     <span className={styles.roleLabel}>{FONT_ROLE_LABEL[role]}</span>
                     <div className={styles.roleFamily}><TextField label="Font" value={f.family} mode="select" options={[...FONT_FAMILIES]} onChange={(v) => set({ family: v })} /></div>
-                    <div className={styles.roleSize}><TextField label="Size" value={String(f.size)} numeric="amount" maxLength={4} onChange={(v) => { const n = Number(v); if (n > 0) set({ size: n }) }} /></div>
+                    <div className={styles.roleSize}><TextField label="Size" value={sizeDraft[role] ?? String(f.size)} numeric="digits" maxLength={3} onChange={(v) => { setSizeDraft((d) => ({ ...d, [role]: v })); const n = Number(v); if (n > 0) set({ size: n }) }} onBlur={() => setSizeDraft((d) => { const n = { ...d }; delete n[role]; return n })} /></div>
                     <div className={styles.roleWeight}><TextField label="Weight" value={WEIGHTS.find((w) => w.value === f.weight)?.label ?? 'Regular'} mode="select" options={WEIGHTS.map((w) => w.label)} onChange={(v) => set({ weight: WEIGHTS.find((w) => w.label === v)?.value ?? 400 })} /></div>
                     <span className={styles.roleSample} style={{ fontFamily: f.family, fontWeight: f.weight, fontSize: Math.max(11, Math.min(22, f.size * 1.5)) }}>Aa</span>
                   </div>

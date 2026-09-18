@@ -86,7 +86,9 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
     void run('save the setting', async () => { const r = await setQuoteTextVisible(quoteId, kind, v); onSaved(r.updatedAt) })
   }
   const addTemplate = (t: QuoteTextTemplate) => {
-    editor.current?.append(resolveTokens(t.body, tokens))
+    const body = resolveTokens(t.body, tokens)
+    if (editor.current) editor.current.append(body)
+    else change(html + body)   /* the section is collapsed (its editor unmounted): write the html and autosave, as append would */
     snackbar({ message: `“${t.title}” added` })
   }
   const write = () => {

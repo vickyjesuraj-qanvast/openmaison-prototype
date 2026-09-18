@@ -1,8 +1,19 @@
 /* Template picker (REG-494): the grid (tiles on surface-bg, the Create Quote modal's tile module at 148 wide) and the
    large preview column (360) with the template's pages and what a quote from it starts with. */
-.picker { display: flex; gap: var(--om-spacing-6); min-height: 520px; max-height: min(70vh, 720px); }
+.picker { display: flex; gap: var(--om-spacing-6); min-height: 520px; max-height: min(70dvh, 720px); }
 .list { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); min-height: 0; }
-.listHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.listHead { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.headEnd { margin-left: auto; display: flex; align-items: center; gap: var(--om-spacing-3); }
+/* (REG-528) The list twin of the grid: 56-tall rows, the whole name, the same selection ring. */
+.rows { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: 2px; }
+.rowTile { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: var(--om-spacing-2) var(--om-spacing-3); text-align: left; border: var(--om-border-2) solid transparent; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); cursor: pointer; font: inherit; color: inherit; min-width: 0; transition: background-color var(--motion-hover), border-color var(--motion-hover); }
+@media (hover: hover) { .rowTile:hover { background: var(--om-color-hover-04p); } }
+.rowTile[data-on] { border-color: var(--om-color-primary-default); }
+.rowTile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.rowThumb { width: 26px; height: 36px; flex-shrink: 0; display: inline-flex; align-items: flex-start; justify-content: center; border-radius: var(--om-radius-0-5); overflow: hidden; box-shadow: var(--om-elevation-level-1); background: var(--om-color-surface-default); }
+.rowThumb[data-blank] { box-shadow: none; background: transparent; border: var(--om-border-1) dashed var(--om-color-on-surface-border); align-items: center; color: var(--om-color-primary-default); }
+.rowName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; }
+.rowMeta { margin-left: auto; flex-shrink: 0; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .count { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
 .grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: var(--om-spacing-3); align-content: start; padding: 2px; }
 .tile {
@@ -11,12 +22,12 @@
   border: var(--om-border-2) solid transparent; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg);
   cursor: pointer; font: inherit; color: inherit; transition: background-color var(--motion-hover), border-color var(--motion-hover);
 }
-.tile:hover { background: var(--om-color-hover-04p); }
+@media (hover: hover) { .tile:hover { background: var(--om-color-hover-04p); } }
 .tile[data-on] { border-color: var(--om-color-primary-default); }
 .tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .well { height: 132px; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-variant); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
 .well[data-blank] { background: transparent; border: var(--om-border-1) dashed var(--om-color-on-surface-border); align-items: center; color: var(--om-color-primary-default); }
-.page { display: block; width: 116px; margin-top: 12px; border-radius: 2px 2px 0 0; overflow: hidden; box-shadow: var(--om-elevation-level-1); }
+.page { display: block; width: 116px; margin-top: 12px; border-radius: var(--om-radius-0-5) var(--om-radius-0-5) 0 0; overflow: hidden; box-shadow: var(--om-elevation-level-1); }
 .nameRow { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; padding: var(--om-spacing-2) var(--om-spacing-1) 0; }
 .name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tile[data-blank] .name, .tile[data-new] .name { padding: var(--om-spacing-2) var(--om-spacing-1) 0; }
@@ -32,11 +43,12 @@
 .facts > div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: var(--om-spacing-2); font: var(--om-type-body-s); }
 .facts dt { color: var(--om-color-on-surface-secondary); }
 .facts dd { margin: 0; color: var(--om-color-on-surface-default); }
-.detailFoot { display: flex; justify-content: flex-end; }
 .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2); color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); }
 @media (max-width: 1024px) { .detail { width: 300px; } }
 @media (max-width: 767px) {
+  .listHead { flex-wrap: wrap; }
   .picker { flex-direction: column; max-height: none; min-height: 0; }
+  .list, .detail { flex: 0 0 auto; min-height: auto; }   /* (REG-521) stacked, nothing shrinks — the grid was squeezed to 0 inside a fixed-height host */
   .detail { width: 100%; border-left: 0; padding-left: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding-top: var(--om-spacing-4); }
   .pages { max-height: 280px; }
   .grid { max-height: 360px; }

@@ -162,7 +162,7 @@ export function CanvasView({ block, ctx, width, height }: { block: CanvasBlock; 
   return (
     <div className={styles.canvas} data-kind={block.kind} data-block-id={block.id} data-selected={selected || undefined}
          style={{ width: mm(width), height: height !== undefined ? height : mm(block.height), background: block.background ? resolveColor(block.background, brand) : undefined, borderBottom: block.rule ? `${pt(block.rule.weight)}px solid ${resolveColor(block.rule.color, brand)}` : undefined }}
-         onPointerDown={interactive ? (e) => { if (e.target === e.currentTarget) interactive.onSelect({ blockId: block.id }) } : undefined}>
+         onPointerDown={interactive ? (e) => { if (e.target === e.currentTarget) { e.stopPropagation(); interactive.onSelect({ blockId: block.id }) } } : undefined}>
       {block.elements.map((el) => <Element key={el.id} el={el} block={block} ctx={ctx} width={width} />)}
     </div>
   )

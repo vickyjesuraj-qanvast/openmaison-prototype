@@ -7,7 +7,7 @@
   background: var(--om-color-surface-default);
   transition: border-color var(--motion-hover), box-shadow var(--motion-hover);
 }
-.card:hover { box-shadow: var(--om-elevation-level-1); }
+@media (hover: hover) { .card:hover { box-shadow: var(--om-elevation-level-1); } }
 .card[data-on] { border-color: var(--om-color-primary-default); box-shadow: 0 0 0 1px var(--om-color-primary-default); }
 .pickBtn {
   display: flex; flex-direction: column; text-align: left; gap: var(--om-spacing-1); flex: 1;
@@ -15,7 +15,7 @@
 }
 .pickBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 .thumb { height: 300px; background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); display: flex; justify-content: center; align-items: flex-start; padding-top: var(--om-spacing-3); overflow: hidden; }
-.page { box-shadow: var(--om-elevation-level-2); border-radius: 2px; overflow: hidden; }
+.page { box-shadow: var(--om-elevation-level-2); border-radius: var(--om-radius-0-5); overflow: hidden; }
 .name { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); padding: 0 var(--om-spacing-1); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .paper { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .blurb { padding: 0 var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
@@ -32,4 +32,5 @@
 .nameRow2 { display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
 .nameField { flex: 0 1 400px; min-width: 240px; }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .previewBtn { min-height: 44px; } }
-@media (max-width: 767px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .thumb { height: 150px; } }
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }   /* a 220-wide page needs ~236 per card: two across on a tablet */
+@media (max-width: 767px) { .thumb { height: 150px; } }

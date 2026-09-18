@@ -52,7 +52,7 @@ export function RoundPricesDialog({ open, items, onClose, onApply }: {
   const caption = (n === 0 ? 'No line prices would change at this step.' : `${n} line ${n === 1 ? 'price' : 'prices'} would change.`) + (plan.skipped ? ` ${plan.skipped} skipped (no chargeable price).` : '')
 
   return (
-    <Dialog open={open} onClose={onClose} title="Round selling prices" width={800} size="form"
+    <Dialog open={open} onClose={onClose} title="Round selling prices" width={800} size="modal"
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <Button onPress={() => onApply(plan.changes)} isDisabled={n === 0}>Apply</Button>

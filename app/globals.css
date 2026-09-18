@@ -274,6 +274,7 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
 :root {
   --motion-hover: 50ms ease-out;
   --motion-toggle: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-modal: 200ms cubic-bezier(0, 0, 0.2, 1);   /* (REG-525) lib/motion's duration.modal + ease.decelerate — nine stylesheets asked for it through a fallback */
 }
 
 /* prefers-reduced-motion: every CSS transition collapses to an 80ms fade (lib/motion.ts contract). Motion-driven surfaces

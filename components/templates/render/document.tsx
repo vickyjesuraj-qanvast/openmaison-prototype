@@ -94,7 +94,7 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
   // The signature covers what a slice's height depends on — the flow blocks, the brand, the page, the view, the data — so a
   // header element dragged across its canvas never re-measures, and the pages keep the last measurement while a new one lands.
   const flow = useMemo(() => design.blocks.filter((b) => !isCanvas(b)), [design.blocks])
-  const sig = useMemo(() => hash(JSON.stringify({ b: flow, br: design.brand, p: design.page, v: cv, n: data.items.length, q: data.quote.number, t: totals.totalMinor, w: bodyW, f: fontsReady, k: built.slices.map((s) => s.key) })), [flow, design.brand, design.page, cv, data.items.length, data.quote.number, totals.totalMinor, bodyW, fontsReady, built.slices])
+  const sig = useMemo(() => hash(JSON.stringify({ b: flow, br: [design.brand, studioBrand], p: design.page, v: cv, n: data.items.length, q: data.quote.number, t: totals.totalMinor, w: bodyW, f: fontsReady, k: built.slices.map((s) => s.key) })), [flow, design.brand, design.page, cv, data.items.length, data.quote.number, totals.totalMinor, bodyW, fontsReady, built.slices])
   const [measured, setMeasured] = useState<{ sig: string; heights: Record<string, number> } | null>(null)
   const measureRef = useRef<HTMLDivElement>(null)
   const measuring = measured?.sig !== sig

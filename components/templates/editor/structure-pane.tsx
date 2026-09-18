@@ -70,7 +70,7 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
         {cover ? <div className={styles.marker}>Page 1 · cover</div> : null}
         {cover ? row(cover) : null}
         {header ? row(header) : null}
-        <Reorder.Group as="div" axis="y" values={flow.map((b) => b.id)} onReorder={(ids: string[]) => onDesign((d) => reorderFlow(d, ids))} className={styles.flow}>
+        <Reorder.Group as="div" axis="y" values={flow.map((b) => b.id)} onReorder={(ids: string[]) => onDesign((d) => reorderFlow(d, ids), { coalesce: 'reorder' })} className={styles.flow}>
           {flow.map((b) => <FlowRow key={b.id} id={b.id} marker={markers[b.id] ?? null}>{row(b, undefined)}</FlowRow>)}
         </Reorder.Group>
         {footer ? row(footer) : null}

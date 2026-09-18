@@ -18,7 +18,6 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, calendars and accounting' },
   ] },
 ]
-export const COMPANY_SECTIONS: CompanySection[] = COMPANY_GROUPS.flatMap((g) => g.items)
 
 export type TemplateKind = { key: string; icon: string; label: string; title: string; help: string; href: string; live: boolean }
 /* (REG-508) No Notes kind — owner 2026-09-18: a quote's Additional Notes are free text with their own My Templates in the quote editor. */

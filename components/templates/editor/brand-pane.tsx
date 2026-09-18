@@ -22,7 +22,9 @@ const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular'
 export function BrandPane({ design, brand, onDesign }: Props) {
   const o = design.brand
   const merged = mergeBrand(brand, o)
-  const setO = (fn: (x: BrandOverrides) => BrandOverrides, coalesce?: string) => onDesign((d) => ({ ...d, brand: fn(d.brand) }), coalesce ? { coalesce } : undefined)
+  /* Empty `colors` / `fonts` containers are dropped, so a reset really equals the published design. */
+  const prune = (x: BrandOverrides): BrandOverrides => { const y = { ...x }; if (y.colors && !Object.keys(y.colors).length) delete y.colors; if (y.fonts && !Object.keys(y.fonts).length) delete y.fonts; return y }
+  const setO = (fn: (x: BrandOverrides) => BrandOverrides, coalesce?: string) => onDesign((d) => ({ ...d, brand: prune(fn(d.brand)) }), coalesce ? { coalesce } : undefined)
   const logoInput = useRef<HTMLInputElement>(null)
   const overridden = Object.keys(o).length > 0 || Object.keys(o.colors ?? {}).length > 0 || Object.keys(o.fonts ?? {}).length > 0
   const fontOverride = (role: (typeof FONT_ROLES)[number]) => !!o.fonts?.[role] && Object.keys(o.fonts[role]!).length > 0

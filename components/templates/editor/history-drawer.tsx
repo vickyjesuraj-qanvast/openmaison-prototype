@@ -10,8 +10,14 @@ import { ago } from '@/lib/templates/ago'
 import styles from './history-drawer.module.css'
 
 /** History (REG-493): every published version, newest first, with Roll back — which publishes that version again as a new one. */
-export function HistoryDrawer({ open, onClose, versions, current, now, busy, onRollback }: { open: boolean; onClose: () => void; versions: TemplateVersion[]; current: number; now: number; busy: boolean; onRollback: (version: number) => void }) {
+export function HistoryDrawer({ open, onClose, versions, current, now, busy, onRollback, canRollback = true }: {
+  open: boolean; onClose: () => void; versions: TemplateVersion[]; current: number; now: number; busy: boolean; onRollback: (version: number) => void
+  /** (REG-501) Roll back publishes — off for a gated Designer and for a deleted template. */
+  canRollback?: boolean
+}) {
   const [confirm, setConfirm] = useState<number | null>(null)
+  const [shown, setShown] = useState<number | null>(null)   // the exit frame keeps its version instead of 'vnull' (render-phase adjust, no ref in render)
+  if (confirm !== null && shown !== confirm) setShown(confirm)
   return (
     <>
       <Drawer open={open} onClose={onClose} title="History" label="Template history">
@@ -26,15 +32,15 @@ export function HistoryDrawer({ open, onClose, versions, current, now, busy, onR
                 {v.note ? <span className={styles.note}>{v.note}</span> : null}
                 <div className={styles.itemFoot}>
                   {v.publishedBy ? <span className={styles.by}><Avatar name={v.publishedBy.name} color={v.publishedBy.color} size={20} tooltip={false} /> {v.publishedBy.name}</span> : <span />}
-                  {v.version !== current ? <Button appearance="text" isDisabled={busy} onPress={() => setConfirm(v.version)}>Roll back</Button> : null}
+                  {v.version !== current && canRollback ? <Button appearance="text" isDisabled={busy} onPress={() => setConfirm(v.version)}>Roll back</Button> : null}
                 </div>
               </li>
             ))}
           </ol>
         )}
       </Drawer>
-      <ConfirmDialog open={confirm !== null} title={`Roll back to v${confirm}?`} tone="primary" confirmLabel="Roll back"
-                     message={`v${confirm} is published again as v${current + 1}. Quotes already sent keep the version they were sent with; new quotes use the rolled-back design.`}
+      <ConfirmDialog open={confirm !== null} title={`Roll back to v${shown}?`} tone="primary" confirmLabel="Roll back"
+                     message={`v${shown} is published again as v${current + 1}. Quotes already sent keep the version they were sent with; new quotes use the rolled-back design.`}
                      onCancel={() => setConfirm(null)} onConfirm={() => { const v = confirm; setConfirm(null); if (v !== null) onRollback(v) }} />
     </>
   )

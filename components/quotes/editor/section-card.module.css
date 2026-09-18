@@ -12,7 +12,7 @@
   min-height: 68px;
   padding: var(--om-spacing-4) var(--om-spacing-6);
 }
-.card[data-open] .top { min-height: 69px; padding-bottom: calc(var(--om-spacing-4) + var(--om-border-1)); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.card[data-open] .top { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
 /* section-label-group: [drag_indicator 24 Light disabled] + [title 16/700 + chevron 20 secondary], g8 / g4. */
 .label { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .handle {

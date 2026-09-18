@@ -45,21 +45,22 @@ function summary(row: QuoteTemplate, usedBy: number, team: Member[]): TemplateSu
   }
 }
 
-export type TemplatesData = { templates: TemplateSummary[]; /** (REG-502) the soft-deleted ones, for the Deleted templates sheet */ deleted: TemplateSummary[]; brand: BrandKit; studio: StudioDetails; sample: DocData; now: number }
+export type TemplatesData = { templates: TemplateSummary[]; /** (REG-502) the soft-deleted ones, for the Deleted templates sheet */ deleted: TemplateSummary[]; brand: BrandKit; studio: StudioDetails; sample: DocData; now: number; /** (REG-501) the studio's approval setting — the gallery hides an empty Awaiting filter when it is off */ approval: TemplateApproval }
 
 /** The gallery: every template that is not archived first, archived last; usage = live quotes that started from it. */
 export async function fetchTemplates(): Promise<TemplatesData> {
-  const [rows, team, uses, brand] = await Promise.all([
+  const [rows, team, uses, brand, approval] = await Promise.all([
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.updatedAt), asc(quoteTemplates.createdAt)),
     db.select().from(members),
     db.select({ templateId: quotes.templateId, n: sql<number>`count(*)` }).from(quotes).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt))).groupBy(quotes.templateId),
     fetchBrand(),
+    fetchTemplateApproval(),
   ])
   const usedBy = new Map(uses.map((u) => [u.templateId, u.n]))
   const all = rows.map((r) => summary(r, usedBy.get(r.id) ?? 0, team))
   const templates = all.filter((t) => !t.deletedAt)
   const deleted = all.filter((t) => !!t.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0))
-  return { templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { approval,  templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
 }
 
 export async function fetchTemplate(id: string): Promise<TemplateRecord | null> {

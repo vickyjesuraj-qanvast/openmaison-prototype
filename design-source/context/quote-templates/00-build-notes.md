@@ -80,3 +80,11 @@ The gallery toolbar's end: search · `tune` (list only) · the Files tab's `Segm
 ## Delete (REG-502, 2026-09-18)
 
 `quote_templates.deleted_at` (migration 0024). `deleteTemplate` (soft; refuses the default and a template awaiting approval), `restoreTemplate`, `deleteTemplateForever` (refuses while a live quote is on it). `pickerTemplates` and every published-templates query exclude deleted rows; `fetchTemplates` returns `deleted` for `DeletedTemplatesSheet` (the gallery's header kebab). `QuoteTemplateState.current.deleted` → the Template card's "Deleted · vN still prints"; the editor of a deleted template shows a Restore bar and cannot publish. Archive is gone.
+
+## Deep audit (REG-520…526, 2026-09-18)
+
+Four read-only reviewers (quote editor · template editor · templates surfaces · style / motion / responsive) plus a live Playwright sweep (`sweep.cjs`: console errors, missing glyphs, broken images, overflow, sticky-cell lag at 1440 / 768 touch / 390 touch / 320) — 147 findings, the confirmed ones fixed in REG-520…525, the rest logged in REG-526. Things the next edit must keep: the ≤767 card placements in the Quotes / Contracts stylesheets need `!important` (the layout hook's inline placement, REG-520); `ItemsCard` reports `onPricing` (GST → the text context) and takes `addTick` (the strip's My Items); the template editor locks while a submission waits (`awaitingLock`); `rollbackTemplate` publishes and is guarded like `publishTemplate`; the Deleted Templates sheet uses the bulk actions; the Profile's typed fields hold drafts.
+
+## Picker head and the edge add (REG-527 / 528, 2026-09-18)
+
+`template-picker.tsx` head: count · Manage Templates (`withFrom` to the gallery) · search · grid / list (`om.picker.list`); the list rows are `.rowTile`. The Items row's bottom-edge + (`.edgeAdd`, `--ix` from the row's pointermove) is mouse-only. Probes: `probe-picker.cjs` (9), `probe-edge-add.cjs` (6).

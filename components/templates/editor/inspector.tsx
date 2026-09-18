@@ -28,6 +28,8 @@ const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')
  * The inspector (REG-486; 5b/5c corrected): what the selected block or element can change — the five controls that
  * matter first, everything else under More options. No block has a settings page of its own.
  */
+const TOTAL_LINE_LABEL: Record<string, string> = { pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }
+
 export function Inspector({ design, brand, selection, onDesign, onSelect }: Props) {
   const block = design.blocks.find((b) => b.id === selection?.blockId) ?? null
   if (!block) {
@@ -61,7 +63,7 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect }: { block
             <Tooltip label="Move down"><IconButton icon="arrow_downward" label="Move down" size={24} variant="bare" iconSize={18} disabled={at < 0 || at >= flow.length - 1} onClick={() => onDesign((d) => moveBlock(d, b.id, 1))} /></Tooltip>
           </> : null}
           <Tooltip label={b.hidden ? 'Show' : 'Hide'}><IconButton icon={b.hidden ? 'visibility_off' : 'visibility'} label={b.hidden ? 'Show block' : 'Hide block'} size={24} variant="bare" iconSize={18} onClick={() => upd({ hidden: !b.hidden })} /></Tooltip>
-          {!singleton ? <Tooltip label="Duplicate"><IconButton icon="content_copy" label="Duplicate block" size={24} variant="bare" iconSize={18} onClick={() => onDesign((d) => { const r = duplicateBlock(d, b.id); onSelect({ blockId: r.id }); return r.design })} /></Tooltip> : null}
+          {!singleton ? <Tooltip label="Duplicate"><IconButton icon="content_copy" label="Duplicate block" size={24} variant="bare" iconSize={18} onClick={() => { const r = duplicateBlock(design, b.id); onDesign(() => r.design); onSelect({ blockId: r.id }) }} /></Tooltip> : null}
           <Tooltip label="Delete"><IconButton icon="delete" label="Delete block" size={24} variant="bare" iconSize={18} onClick={() => { onSelect(null); onDesign((d) => removeBlock(d, b.id)) }} /></Tooltip>
         </span>
       </div>
@@ -86,8 +88,8 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect }: { block
             <div className={styles.list} role="group" aria-label="Lines">
               {b.lines.map((l, i) => (
                 <div key={l.key} className={styles.row} data-off={!l.on || undefined}>
-                  <Sw label="" value={l.on} onChange={(on) => upd({ lines: b.lines.map((x, j) => (j === i ? { ...x, on } : x)) })} />
-                  <span className={styles.rowField}><TextField label={{ pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }[l.key]} value={l.label} onChange={(v) => upd({ lines: b.lines.map((x, j) => (j === i ? { ...x, label: v } : x)) }, `line-${l.key}`)} /></span>
+                  <Sw label={TOTAL_LINE_LABEL[l.key] ?? l.key} value={l.on} onChange={(on) => upd({ lines: b.lines.map((x, j) => (j === i ? { ...x, on } : x)) })} />
+                  <span className={styles.rowField}><TextField label={TOTAL_LINE_LABEL[l.key] ?? l.key} value={l.label} onChange={(v) => upd({ lines: b.lines.map((x, j) => (j === i ? { ...x, label: v } : x)) }, `line-${l.key}`)} /></span>
                 </div>
               ))}
             </div>
@@ -333,7 +335,7 @@ function ItemsFields({ b, upd, style }: { b: ItemsBlock; upd: (p: Record<string,
         <div className={styles.list}>
           {b.columns.map((c, i) => (
             <div key={c.key} className={styles.row} data-off={!c.on || undefined}>
-              <Sw label="" value={c.on} onChange={(on) => col(i, { on })} />
+              <Sw label={ITEM_COLUMN_LABEL[c.key]} value={c.on} onChange={(on) => col(i, { on })} />
               <span className={styles.rowField}><TextField label={ITEM_COLUMN_LABEL[c.key]} value={c.label} onChange={(v) => col(i, { label: v })} /></span>
               {c.key !== 'item' ? <span className={styles.rowNarrow}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.rowMeta}>fills</span>}
               <Tooltip label={`Align ${c.align}`}><IconButton icon={`format_align_${c.align}`} label={`Align ${c.align}`} size={24} variant="bare" iconSize={18} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>

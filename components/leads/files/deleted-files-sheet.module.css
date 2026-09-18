@@ -12,7 +12,7 @@
   /* xl width as mocked; the height follows the trash (the modal rule: height to content, viewport-capped). The mock's
      ~13 rows still measure 928 (heading 80 + body p48 + head 56 + n × 60); an empty or 3-row trash hugs instead of
      standing 928 tall, and .body keeps scrolling once the cap bites. */
-  width: var(--om-modal-xl); height: auto; min-height: 480px; max-height: calc(100vh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it */
+  width: var(--om-modal-xl); height: auto; min-height: 480px; max-height: calc(100dvh - 96px);   /* (REG-513) a floor of 480 — head + room for five rows — so a one-row trash is not a strip; the three Deleted sheets share it */
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   display: flex; flex-direction: column;
@@ -201,3 +201,5 @@
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 .row:hover, .row:hover .colSel, .row:hover .colTitle { background: var(--om-color-primary-variant); }
 .row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant-hover); }
+/* (REG-525) A finger cannot hover: the row keeps its fill after a tap. */
+@media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .colSel, .row:hover .colTitle, .row:hover .pin, .row:hover .selCell { background: var(--om-color-surface-default); } .row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant); } }

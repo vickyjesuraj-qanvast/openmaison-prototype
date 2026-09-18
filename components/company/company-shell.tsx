@@ -40,13 +40,13 @@ export function CompanyShell({ title, tabs, actions, children }: {
 export const templateTabs = () => TEMPLATE_KINDS.map((k) => ({ label: k.label, href: k.href }))
 
 /** The route's ghost (loading.tsx + PageReveal): header, the tab strip, a grid of card bones. */
-export function CompanySkeleton({ tabs = true }: { tabs?: boolean }) {
+export function CompanySkeleton({ tabs = true, form = false }: { tabs?: boolean; form?: boolean }) {
   return (
     <GhostSheet label="Loading company">
       <div className={styles.ghostHead}><Bone w={160} h={28} /></div>
-      {tabs ? <div className={styles.ghostTabs} aria-hidden>{[96, 56, 48, 48, 52, 76, 80].map((w, i) => <Bone key={i} w={w} h={14} />)}</div> : null}
+      {tabs ? <div className={styles.ghostTabs} aria-hidden>{[52, 44, 40, 72, 76].map((w, i) => <Bone key={i} w={w} h={14} />)}</div> : null}
       <div className={pageStyles.content} aria-hidden>
-        <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>
+        {form ? <div className={styles.ghostGrid}>{[0, 1].map((i) => <Bone key={i} w="100%" h={360} r={8} />)}</div> : <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>}
       </div>
     </GhostSheet>
   )

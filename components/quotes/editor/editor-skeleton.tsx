@@ -11,7 +11,6 @@ export function EditorSkeleton() {
     <GhostSheet label="Loading quote">
       <div className={styles.page}>
         <div className={styles.header}>
-          <Bone w={24} h={24} r={4} />
           <div className={styles.titleCol}>
             <Bone w={180} h={12} />
             <div className={styles.titleRow}>
@@ -55,7 +54,7 @@ export function EditorSkeleton() {
           </div>
           <div className={styles.strip}>
             <Bone w={20} h={20} r={4} />
-            {[0, 1, 2, 3, 4].map((i) => <Bone key={i} w={24} h={24} r={4} />)}
+            {[0, 1, 2, 3].map((i) => <Bone key={i} w={24} h={24} r={4} />)}
           </div>
         </div>
       </div>

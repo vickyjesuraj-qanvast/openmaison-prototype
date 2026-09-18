@@ -5,9 +5,9 @@
  * current quote" returns one as the match, and the studio's three seeded templates wear the first three. Client-safe.
  */
 import { DEMO_BADGES, payQrSvg } from './assets'
-import { defaultBlock, newId, type BrandOverrides, type CanvasElement, type ItemsBlock, type ItemsColumn, type TemplateDefaults, type TemplateDesign, type TextStyle, DEFAULT_DEFAULTS } from './model'
+import { defaultBlock, newId, type CanvasElement, type ItemsBlock, type ItemsColumn, type TemplateDefaults, type TemplateDesign, type TextStyle, DEFAULT_DEFAULTS } from './model'
 
-export const PRESET_KEYS = ['letter', 'scope', 'form', 'presentation'] as const
+const PRESET_KEYS = ['letter', 'scope', 'form', 'presentation'] as const
 export type PresetKey = (typeof PRESET_KEYS)[number]
 export const isPresetKey = (s: unknown): s is PresetKey => typeof s === 'string' && (PRESET_KEYS as readonly string[]).includes(s)
 export type Preset = { key: PresetKey; name: string; blurb: string; paper: 'A4' | 'Letter'; design: () => TemplateDesign; defaults: TemplateDefaults }
@@ -90,7 +90,7 @@ function scope(): TemplateDesign {
         { id: newId('c'), heading: 'Confirmed & Agreed By Owner:', lines: ['Name:'], image: 'client' },
       ] },
       { id: newId(), kind: 'payments', title: 'Payment Terms', layout: 'list', showAmounts: false, showDue: false, letters: true, style: { role: 'body' }, titleStyle: { role: 'body', weight: 700, underline: true }, band: false, startNewPage: true },
-      { id: newId(), kind: 'text', html: '<p><em>* Any default in payment will result in stop of project, strictly not negotiable.</em></p><p>Please make cheques payable to <strong>{studio_name}</strong><br>Bank transfer to OCBC Business Account: <strong>712-460179-001</strong><br>PAYNOW UEN: <strong>{studio_uen}</strong></p>', style: { role: 'body' }, box: 'none', spaceBefore: 4 },
+      { id: newId(), kind: 'text', html: '<p><em>* Any default in payment will result in stop of project, strictly not negotiable.</em></p><p>Please make cheques payable to <strong>{studio_name}</strong><br>Bank transfer details are on the invoice<br>PAYNOW UEN: <strong>{studio_uen}</strong></p>', style: { role: 'body' }, box: 'none', spaceBefore: 4 },
       { id: newId(), kind: 'image', src: payQrSvg('demo-studio-paynow'), width: 26, align: 'left', caption: 'SCAN TO PAY' },
       { id: newId(), kind: 'terms', title: 'Terms and Conditions', titleStyle: { role: 'body', weight: 700, underline: true }, style: { role: 'table', size: 8 }, numbered: true, grid: false, startNewPage: true },
       { id: newId(), kind: 'footer', height: 20, repeat: 'every', elements: [
@@ -187,7 +187,6 @@ export const PRESETS: Preset[] = [
 ]
 export const presetByKey = (key: PresetKey) => PRESETS.find((p) => p.key === key)!
 /** The brand overrides a preset carries, for the Brand pane's "Reset to brand". */
-export const presetBrand = (key: PresetKey): BrandOverrides => presetByKey(key).design().brand
 
 /** The design a quote prints through when it has no template and the studio has no default: the Letter house style. */
 export const fallbackDesignClient = (): TemplateDesign => presetByKey('letter').design()

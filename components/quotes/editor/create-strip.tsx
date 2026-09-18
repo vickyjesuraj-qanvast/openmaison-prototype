@@ -9,7 +9,7 @@ import styles from './create-strip.module.css'
 /**
  * The editor's Create strip (collapsed 1260:31160 · expanded 1271:40377): Maison AI · My Items · Templates · Brand Catalog
  * (Recent Quotes removed, owner 2026-09-18; Templates opens the template picker, REG-496) — the Lead Overview's quick-links strip (components/leads/detail/quick-links.tsx) with this
- * page's five shortcuts. Remembered per browser in localStorage `om.quote.createStrip` (default collapsed), read through
+ * page's four shortcuts. Remembered per browser in localStorage `om.quote.createStrip` (default collapsed), read through
  * useSyncExternalStore so a remembered "expanded" strip never hydrates against collapsed server markup.
  */
 type StripState = 'expanded' | 'collapsed'

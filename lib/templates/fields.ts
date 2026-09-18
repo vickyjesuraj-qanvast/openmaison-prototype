@@ -22,7 +22,6 @@ export const FIELD_GROUPS: { label: string; fields: { key: string; label: string
   { label: 'People', fields: [{ key: 'prepared_by', label: 'Prepared by' }, { key: 'prepared_by_phone', label: 'Prepared by · phone' }, { key: 'prepared_by_role', label: 'Prepared by · role' }] },
   { label: 'Page', fields: [{ key: 'page', label: 'Page number' }, { key: 'pages', label: 'Page count' }] },
 ]
-export const FIELD_KEYS = FIELD_GROUPS.flatMap((g) => g.fields.map((f) => f.key))
 export const FIELD_LABEL: Record<string, string> = Object.fromEntries(FIELD_GROUPS.flatMap((g) => g.fields.map((f) => [f.key, f.label])))
 
 export type PageInfo = { page: number; pages: number }
@@ -51,5 +50,5 @@ export function resolveFields(text: string, values: Record<string, string>): str
 }
 /** True when the text is nothing but fields that all resolved to nothing — a "Hide if empty" element goes. */
 export function isEmptyResolved(text: string, values: Record<string, string>): boolean {
-  return resolveFields(text, values).replace(/[\s·,:/-]+/g, '') === '' && TOKEN.test(text)
+  return resolveFields(text, values).replace(/[\s·,:/-]+/g, '') === '' && new RegExp(TOKEN.source).test(text)
 }

@@ -25,14 +25,14 @@ const HEIGHT = 960
  * it in the other modals which has back so that there is no ui jump and both has the same modal sizes". A name, Create.
  * The xl 1200 modal with 220-wide pages in 300-tall wells. The studio's three reference quotes are the first three.
  */
-export function HouseStyleDialog({ open, brand, sample, onClose, onCreate, nested, onRecreate, createLabel = 'Create template' }: { open: boolean; brand: BrandKit; sample: DocData; onClose: () => void; onCreate: (key: PresetKey, name: string) => void; nested?: boolean; onRecreate?: () => void; createLabel?: string }) {
+export function HouseStyleDialog({ open, brand, sample, onClose, onCreate }: { open: boolean; brand: BrandKit; sample: DocData; onClose: () => void; onCreate: (key: PresetKey, name: string) => void }) {
   const [key, setKey] = useState<PresetKey>('letter')
   const [name, setName] = useState('')
   const [touched, setTouched] = useState(false)
   const [previewKey, setPreviewKey] = useState<PresetKey | null>(null)
   const [pages, setPages] = useState<Record<string, number>>({})
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) setPreviewKey(null) }   // reopen on the cards
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setPreviewKey(null); setKey('letter'); setName(''); setTouched(false) } }   // every opening starts clean, on the cards
   const designs = useMemo(() => Object.fromEntries(PRESETS.map((p) => [p.key, p.design()])), [])
   const preset = PRESETS.find((p) => p.key === key)!
   const previewed = previewKey ? PRESETS.find((p) => p.key === previewKey)! : null
@@ -41,21 +41,21 @@ export function HouseStyleDialog({ open, brand, sample, onClose, onCreate, neste
   const preview = (k: PresetKey) => { pick(k); setPreviewKey(k) }
   const count = previewed ? pages[previewed.key] : undefined
   return (
-    <Dialog open={open} onClose={onClose} size="modal" width={1200} height={HEIGHT} nested={nested}
+    <Dialog open={open} onClose={onClose} size="modal" width={1200} height={HEIGHT}
             title={previewed ? `${previewed.name} design` : 'Choose a ready-made design'}
             eyebrow={previewed ? 'Choose a ready-made design /' : undefined}
             leading={previewed ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to designs" size={24} variant="bare" iconSize={24} onClick={() => setPreviewKey(null)} /></Tooltip> : undefined}
             subtitle={previewed
               ? `${previewed.paper}${count ? ` · ${count} page${count === 1 ? '' : 's'}` : ''} · drawn with your brand and a sample quote`
               : 'Four complete designs, drawn with your brand — preview each, change anything after.'}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => onCreate(key, finalName)}>{createLabel}</Button></>}>
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={() => onCreate(key, finalName)}>Create template</Button></>}>
       {previewed ? (
         /* (REG-512) The design's every page at 100%, in the same panel — no jump. */
         <TemplatePreviewPages key={previewed.key} paper={previewed.paper} design={designs[previewed.key]!} brand={brand} sample={sample}
                               onPages={(n) => setPages((c) => (c[previewed.key] === n ? c : { ...c, [previewed.key]: n }))} />
       ) : (
         <>
-          <div className={styles.grid} role="radiogroup" aria-label="House style">
+          <div className={styles.grid} role="radiogroup" aria-label="Ready-made designs">
             {PRESETS.map((p) => (
               <div key={p.key} className={styles.card} data-on={key === p.key || undefined}>
                 <button type="button" role="radio" aria-checked={key === p.key} className={styles.pickBtn} onClick={() => pick(p.key)}>
@@ -72,7 +72,6 @@ export function HouseStyleDialog({ open, brand, sample, onClose, onCreate, neste
           </div>
           <div className={styles.nameRow2}>
             <div className={styles.nameField}><TextField label="Template name" value={touched ? name : preset.name} onChange={(v) => { setTouched(true); setName(v) }} /></div>
-            {onRecreate ? <Button appearance="text" iconStart={<Icon name="upload_file" size={20} />} onPress={onRecreate}>Or upload my existing quote</Button> : null}
           </div>
         </>
       )}

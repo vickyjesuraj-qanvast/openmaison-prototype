@@ -107,7 +107,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         query={query} onQuery={setQuery}
         onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={comingSoon}
+        onMenu={(a) => (a === 'templates' ? router.push('/company/templates/quotes') : comingSoon())}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */
       />
       {quotes.length === 0 ? (
         <QuotesEmpty onFromScratch={openCreate} onFromTemplate={openCreate} />
@@ -145,8 +145,8 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         onClose={() => setFiltersOpen(false)}
       />
       <CreateQuoteModal
-        open={createOpen} leadName={leadName} leadId={leadId} templates={templates} priceBookCount={priceBookCount} now={now}
-        render={{ brand: data.brand, sample: data.sample }} origin={here}
+        open={createOpen} leadName={leadName} templates={templates} priceBookCount={priceBookCount} now={now}
+        render={{ brand: data.brand, sample: data.sample }}
         onClose={() => setCreateOpen(false)}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}

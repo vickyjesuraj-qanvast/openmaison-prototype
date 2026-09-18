@@ -84,7 +84,7 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
     if (it.panel) {
       return (
         <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || companyOpen}>
-          <button ref={companyRef} type="button" className={className} aria-label={it.label} data-active={active || companyOpen || undefined}
+          <button ref={companyRef} type="button" className={className} aria-label={badges?.[it.panel] ? `${it.label} (${badges[it.panel]} awaiting approval)` : it.label} data-active={active || companyOpen || undefined}
                   aria-haspopup="menu" aria-expanded={companyOpen} aria-current={active ? 'page' : undefined} onClick={() => setCompanyOpen((o) => !o)}>
             {inner}
           </button>

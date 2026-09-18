@@ -17,6 +17,7 @@ import { attachQuoteFiles, detachQuoteFile, setQuoteFilesVisible, uploadQuoteFil
 import { downloadBlob } from '@/lib/leads/export'
 import type { LeadFile } from '@/lib/db/schema'
 import { SectionCard } from '../section-card'
+import { withFrom } from '@/lib/nav'
 import styles from './files-section.module.css'
 
 export type FilesSeed = {
@@ -102,7 +103,7 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
       downloadBlob(blob, /\.[a-z0-9]+$/i.test(file.name) ? file.name : `${file.name}.${ext}`)
     } catch { fail('download the file') }
   }
-  const openFile = (file: LeadFile) => router.push(`/leads/${leadId}/files/${file.id}`)
+  const openFile = (file: LeadFile) => router.push(withFrom(`/leads/${leadId}/files/${file.id}`, `/quotes/${quoteId}`))   /* (REG-465) Back returns to the quote */
 
   const toolbar = (
     <label className={styles.switchRow}>Show in client view <Switch size="sm" isSelected={visible} onChange={toggleVisible} aria-label="Show in client view" /></label>

@@ -3,6 +3,7 @@
 .newAnchor { position: relative; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .kebabAnchor { position: relative; display: inline-flex; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.filters { min-width: 0; }
 .toolbarEnd { display: flex; align-items: center; gap: var(--om-spacing-3); }
 /* (REG-505) The grid / list toggle — the Files tab's (REG-354): gone on a phone, where the cards are the one view. */
 .viewToggle { display: contents; }
@@ -14,15 +15,14 @@
   transition: box-shadow var(--motion-hover);
   /* no overflow clip here (owner 2026-09-18: the kebab's menu was hidden) — the thumb clips itself and rounds the top corners */
 }
-.card:hover { box-shadow: var(--om-elevation-level-2); }
-.card[data-status='archived'] .thumb { opacity: .6; }
+@media (hover: hover) { .card:hover { box-shadow: var(--om-elevation-level-2); } }
 .open { display: flex; flex-direction: column; width: 100%; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
 .open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 .thumb { position: relative; height: 220px; background: var(--om-color-surface-bg); display: flex; justify-content: center; align-items: flex-start; overflow: hidden; padding-top: var(--om-spacing-5); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; }
-.page { display: block; box-shadow: var(--om-elevation-level-2); border-radius: 2px; overflow: hidden; }
+.page { display: block; box-shadow: var(--om-elevation-level-2); border-radius: var(--om-radius-0-5); overflow: hidden; }
 .ribbon { position: absolute; top: var(--om-spacing-3); left: var(--om-spacing-3); font: var(--om-type-caption-s); padding: 2px 8px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-default); color: var(--om-color-surface-default); }
 .ribbon[data-tone='edits'] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
-.ribbon[data-tone='await'] { background: var(--om-color-primary-default); color: #fff; }
+.ribbon[data-tone='await'] { background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
 /* Name over status (20 + 4 + 20 = 44), the kebab centred on that block at the right; the usage line under it. */
 .body { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) 44px var(--om-spacing-1) var(--om-spacing-4); min-width: 0; }
 .nameRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; height: 20px; }
@@ -41,6 +41,11 @@
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
   .thumb { height: 160px; }
   .kebab { top: calc(160px + var(--om-spacing-3)); }
-  .toolbarEnd { width: 100%; }
+  /* (REG-521) One toolbar row on a phone (REG-354): the status filter scrolls sideways in its own rail, the search glyph keeps the row's end. */
+  .toolbar { flex-wrap: nowrap; }
+  .filters { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters > * { width: max-content; }
+  .toolbarEnd { flex-shrink: 0; }
   .viewToggle { display: none; }
 }

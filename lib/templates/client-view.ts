@@ -27,7 +27,7 @@ export function clientViewFromDesign(design: TemplateDesign): ClientView {
   const totals = design.blocks.find((b) => b.kind === 'totals')
   return {
     columns, descriptions: (items?.descriptions ?? 'none') !== 'none', photos: items?.photos ?? false, hiddenItems: items?.hiddenItems ?? 'omit', optionalWorks: items?.optionalSection ?? true,
-    subtotalBreakdown: totals?.kind === 'totals' ? totals.lines.some((l) => l.on && l.key !== 'total') : true, paymentSchedule: has('payments'), terms: has('terms'), notes: has('notes'), signature: has('signature') || design.blocks.some((b) => (b.kind === 'footer' || b.kind === 'header') && b.elements.some((e) => e.kind === 'signature')),
+    subtotalBreakdown: totals?.kind === 'totals' ? totals.lines.some((l) => l.on && l.key !== 'total') : true, paymentSchedule: has('payments'), terms: has('terms'), notes: has('notes'), signature: has('signature') || design.blocks.some((b) => (b.kind === 'footer' || b.kind === 'header') && !b.hidden && b.elements.some((e) => e.kind === 'signature')),
     approvePerLine: false, branding: true,
   }
 }
