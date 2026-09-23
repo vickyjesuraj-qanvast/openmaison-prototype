@@ -2,6 +2,8 @@
    a 200-wide first page in a 220-tall well (surface-bg), name row with the Default tag, two meta lines, a kebab. */
 .newAnchor { position: relative; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .kebabAnchor { position: relative; display: inline-flex; }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; }
 .filters { min-width: 0; }
 .toolbarEnd { display: flex; align-items: center; gap: var(--om-spacing-3); }

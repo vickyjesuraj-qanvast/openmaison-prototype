@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { DatePicker } from '@/components/om/date-picker'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
+import { withFrom } from '@/lib/nav'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { STUDIO_TASK_COLUMN_DEFS, TasksTable } from './tasks-table'
 import { AddTaskButton, TasksMoreButton, TasksToolbar, type TasksMenuAction } from './tasks-toolbar'
@@ -74,9 +75,11 @@ const rowText = (t: TaskRow): (string | null | undefined)[] => [
 /** `leadId` null = the rail's Tasks page (REG-466): every lead's tasks and the studio's own, with a Lead column, a scope chip and Lead / Stage filters. */
 export function LeadTasks({ leadId, data, header }: { leadId: string | null; data: LeadTasksData & { leads?: TaskLead[] }; /** (REG-466) The rail page's L1 header, given Add Task and the kebab to carry as the Leads header carries Add Lead. */ header?: (controls: { add: ReactNode; more: ReactNode }) => ReactNode }) {
   const studio = leadId === null
+  const router = useRouter()
+  /* (REG-538) Manage Templates lands on Company › Templates › Tasks, which comes back here. */
+  const manageTemplates = () => router.push(withFrom('/company/templates/tasks', studio ? '/tasks' : `/leads/${leadId}/tasks`))
   const { tasks, tags, files, templates, team, now } = data
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
   const { run } = useRun()
   const me = team.find((m) => m.isYou) ?? team[0]!
 
@@ -199,7 +202,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
 
   const menuAction = (action: TasksMenuAction) => {
     if (action === 'saveAll') setSaveTemplateFor(tasks.map((t) => t.id))
-    if (action === 'manage') comingSoon()
+    if (action === 'manage') manageTemplates()
     if (action === 'export') setExportOpen(true)
     if (action === 'deleteAll') setDeleting({ ids: tasks.map((t) => t.id), all: true })
   }
@@ -350,7 +353,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
       <ChooseTemplateDialog
         open={chooseTemplate} templates={templates}
         onSelect={(id) => { setChooseTemplate(false); void run('apply the template', async () => { const n = await applyTemplate(studio ? null : leadId, id); snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added from the template` }) }) }}
-        onManage={comingSoon}
+        onManage={() => { setChooseTemplate(false); manageTemplates() }}
         onClose={() => setChooseTemplate(false)}
       />
       <SaveTemplateDialog

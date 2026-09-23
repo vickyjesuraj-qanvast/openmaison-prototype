@@ -94,16 +94,16 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                   /* Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 → folder 24 · texts (name 14/Semi Bold,
                      "n items" 10/Regular secondary) · more_vert 24/Light. Selected (frame 97): fill #eee5ff. */
                   <div key={f.id} className={styles.folder} data-testid="folder-card" data-selected={isOn || undefined}>
-                    {/* (REG-273) ≤767 only: the card's selection affordance, so the tap itself can open. */}
+                    {/* The card's selection affordance: inline on touch (REG-273, the tap opens); over the folder icon on
+                        hover / while selected with a mouse (REG-544, tester feedback: a click opens the folder everywhere —
+                        it used to select, with double-click to open). */}
                     <span className={styles.pick}>
                       <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
                     </span>
                     <button
                       type="button" className={styles.folderMain}
-                      aria-pressed={touch ? undefined : isOn}
-                      aria-label={touch ? `Open ${f.name}` : `${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
-                      onClick={() => (touch ? onOpenFolder(f) : toggle(f.id))}
-                      onDoubleClick={() => onOpenFolder(f)}
+                      aria-label={`Open ${f.name}`}
+                      onClick={() => onOpenFolder(f)}
                     >
                       <Icon name="folder" size={24} className={styles.folderIcon} />
                       <span className={styles.folderTexts}>

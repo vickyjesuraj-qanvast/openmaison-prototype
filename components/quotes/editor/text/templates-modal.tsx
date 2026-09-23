@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { Button, SearchBar } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -45,6 +47,8 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   onTemplates: (next: QuoteTextTemplate[]) => void
 }) {
   const { run } = useRun()
+  const router = useRouter()
+  const pathname = usePathname()
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<{ id: string | null; title: string; body: string } | null>(null)
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -106,6 +110,8 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
                 <div className={styles.headRow}>
                   <SearchBar appearance="outlined" size="md" placeholder="Search" aria-label="Search templates" value={query} onChange={setQuery} className={styles.search} />
                   <span className={styles.spacer} />
+                  {/* (REG-538) The library has a page now — Company › Templates › T&Cs & Notes — which comes back here. */}
+                  <Button variant="secondary" appearance="text" iconStart={<Icon name="style" size={18} weight={300} />} onPress={() => { close(); router.push(withFrom('/company/templates/terms', pathname)) }}>Manage Templates</Button>
                   <Button onPress={() => setEditing({ id: null, title: '', body: '' })}>Create New</Button>
                 </div>
               }>

@@ -94,7 +94,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <PageHeader title="Contracts" />
         <div className={styles.frame}>
           <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} onNew={onNew} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-                            onMenu={(a) => (a === 'templates' ? router.push('/company/templates/contracts') : a === 'deleted' ? setDeletedOpen(true) : comingSoon())} />
+                            onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'deleted' ? setDeletedOpen(true) : comingSoon())} />
           {contracts.length === 0 ? (
             <ContractsEmpty onFromScratch={() => setPending({ kind: 'blank' })} onFromTemplate={() => setPickerOpen(true)} />
           ) : nothingMatches ? (
@@ -111,7 +111,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates}
                                 onUse={(templateId) => { setPickerOpen(false); setPending({ kind: 'template', templateId }) }} onStarter={() => { setPickerOpen(false); setPending({ kind: 'template', templateId: null }) }} />
         <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={(o) => { setImportOpen(false); setPending({ kind: 'import', ...o }) }} />
-        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} onPick={(leadId) => { const p = pending; setPending(null); if (p) void createFor(leadId, p) }} />
+        <PickLeadDialog open={!!pending} onClose={() => setPending(null)} leads={leads} onPick={(leadId) => { const p = pending; setPending(null); if (p && leadId) void createFor(leadId, p) }} />
         <DeletedContractsSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb="Tools / Contracts" showLead
                                onRestore={(ids) => run('restore', () => restoreContracts(ids), ids.length === 1 ? 'Contract restored' : `${ids.length} contracts restored`)}
                                onDeleteForever={(ids) => run('delete', () => deleteContractsForever(ids), 'Contract deleted forever')}

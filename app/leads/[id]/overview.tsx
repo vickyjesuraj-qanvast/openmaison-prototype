@@ -186,9 +186,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
-  /** (REG-337, user 2026-09-04) Create quick links › Contact Log and Meeting: a contact-log draft on the Notes tab, the way Task and Note
-   *  hand off — they used to open the Move stage window at Contacted / Met, which is a stage move, not a record. Notes has no meeting
-   *  kind yet (the Meetings tab waits for mocks), so Meeting starts a contact log too. */
+  /** (REG-337, user 2026-09-04) Create quick links › Contact Log: a contact-log draft on the Notes tab, the way Task and Note
+   *  hand off — it used to open the Move stage window at Contacted, which is a stage move, not a record.
+   *  (REG-551 → REG-552, owner 2026-09-23) The Meeting quick link is gone with the Meetings tab until their mocks land. */
   const onNewContactLog = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'contact' } })); else router.push(href('notes', 'new=contact')) }
   const tabItems = DETAIL_TABS.map((t) => ({ label: t.label, href: href(t.slug) }))
   const activeTab = DETAIL_TABS.find((t) => t.slug === tab) ?? DETAIL_TABS[0]
@@ -356,7 +356,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onQuote={onNewQuote}
             onCallLog={onNewContactLog}
             onNote={onNewNote}
-            onMeeting={onNewContactLog}
             onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(`/leads/${lead.id}`)}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else comingSoon() }}   /* (REG-529, REG-534) */   /* (REG-529) */
           />
         </div>

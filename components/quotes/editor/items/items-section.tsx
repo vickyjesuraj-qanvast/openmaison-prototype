@@ -73,7 +73,7 @@ export type ItemsSeed = {
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0 }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, exportTick = 0 }: {
   seed: ItemsSeed
   open: boolean
   onToggle: () => void
@@ -91,6 +91,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   clientColumns?: Set<string> | null
   /** (REG-497) A View by pushed from outside (the regroup prompt after a template change): a new nonce applies it once. */
   forceView?: { key: ItemsView; nonce: number } | null
+  /** (REG-538) The header kebab's Export: a new tick opens the Items export dialog. */
+  exportTick?: number
 }) {
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -142,6 +144,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [pasting, setPasting] = useState<{ text: string; anchorId: string | null } | null>(null)
   const [setValueOpen, setSetValueOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
+  const [seenExport, setSeenExport] = useState(exportTick)   // seeded with the current tick: a remount (Apply defaults reseeds the card) must not replay an old Export
+  if (exportTick !== seenExport) { setSeenExport(exportTick); setExportOpen(true) }   // render-phase adjust (REG-538)
   const [query, setQuery] = useState('')
   const viewRef = useRef<HTMLSpanElement>(null)
   const densityRef = useRef<HTMLSpanElement>(null)

@@ -121,6 +121,15 @@
 /* The mobile-only selection affordances (REG-273, see the touch block below) — never rendered on the desktop mock. */
 .pick, .tilePick { display: none; }
 
+/* (REG-544) With a mouse the folder card opens on click, so selection moves to a checkbox that takes the folder icon's
+   place on hover and while selected — the card's geometry never shifts, and the mock's card at rest is untouched.
+   `(hover: hover)` and ≥768 keep the touch block below (inline checkbox, tap opens) and the stacked phone card as they are. */
+@media (hover: hover) and (min-width: 768px) {
+  .pick { position: absolute; left: var(--om-spacing-3); top: 50%; transform: translateY(-50%); z-index: 1; align-items: center; }
+  .folder:hover .pick, .folder[data-selected] .pick { display: inline-flex; }
+  .folder:hover .folderIcon, .folder[data-selected] .folderIcon { visibility: hidden; }
+}
+
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────
    Tablet and down: fluid tracks — minmax 220 (160 at mobile, below); the tile gives up its fixed
    262/200 so the image band scales with the track at the mock's 291:200 crop; the caption keeps

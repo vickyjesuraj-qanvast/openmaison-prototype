@@ -290,6 +290,8 @@ export type TemplateSummary = {
   reviewNote: string | null
   /** (REG-502) Soft-deleted: listed only in Deleted templates; the quotes on it keep printing their pinned version. */
   deletedAt: number | null
+  /** (REG-538) Who deleted it — the sheet's "Deleted by" (it used to show whoever last edited). */
+  deletedBy: { name: string; color: string } | null
   /** The published design (or the draft's, for a draft) — what the thumbnail draws. */
   design: TemplateDesign
 }

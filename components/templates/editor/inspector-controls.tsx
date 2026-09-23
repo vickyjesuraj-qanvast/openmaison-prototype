@@ -33,7 +33,8 @@ export function Seg<T extends string>({ label, value, options, onChange, wide = 
   )
 }
 
-export function Sel<T extends string>({ label, value, options, onChange, wide }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; wide?: boolean }) {
+/** (REG-542) A select spans the pane unless paired on purpose: a half column truncated "Restart per section" to "Restart per r…". */
+export function Sel<T extends string>({ label, value, options, onChange, wide = true }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; wide?: boolean }) {
   const current = options.find((o) => o.value === value)?.label ?? ''
   return (
     <Field wide={wide}>
@@ -68,7 +69,7 @@ export function Sw({ label, value, onChange, hint }: { label: string; value: boo
 export function Txt({ label, value, onChange, multiline, fields = true, wide = true }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean }) {
   const [open, setOpen] = useState(false)
   return (
-    <Field wide={wide}>
+    <Field wide={wide} label={multiline ? label : undefined}>   {/* (REG-542) a paragraph field keeps its label above it — a placeholder vanished as soon as one typed */}
       <div className={styles.txt}>
         {multiline ? (
           <TextArea aria-label={label} placeholder={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />
@@ -120,7 +121,7 @@ export function ColorPick({ label, value, onChange, brand, none, wide }: { label
   )
 }
 
-const WEIGHTS: { value: 'inherit' | '400' | '600' | '700'; label: string }[] = [{ value: 'inherit', label: 'Role weight' }, { value: '400', label: 'Regular' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]
+const WEIGHTS: { value: 'inherit' | '400' | '600' | '700'; label: string }[] = [{ value: 'inherit', label: 'Same as the text style' }, { value: '400', label: 'Regular' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]
 
 /** A TextStyle: the role it follows, then what it changes on top — font, size, weight, B/I/U/Aa, alignment, colour. */
 export function StyleEditor({ label, value, onChange, brand, align = true, more = false }: { label: string; value: TextStyle; onChange: (s: TextStyle) => void; brand: BrandKit; align?: boolean; more?: boolean }) {
@@ -138,10 +139,10 @@ export function StyleEditor({ label, value, onChange, brand, align = true, more 
       </button>
       {open ? (
         <div className={styles.grid}>
-          <Sel label="Role" value={role} options={FONT_ROLES.map((r) => ({ value: r, label: `${FONT_ROLE_LABEL[r]} · ${brand.fonts[r].family} ${brand.fonts[r].size}pt` }))} onChange={(r) => set({ role: r })} wide />
-          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Role font' }, ...FONT_FAMILIES.map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} />
+          <Sel label="Text style" value={role} options={FONT_ROLES.map((r) => ({ value: r, label: `${FONT_ROLE_LABEL[r]} · ${brand.fonts[r].family} ${brand.fonts[r].size}pt` }))} onChange={(r) => set({ role: r })} wide />
+          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Same as the text style' }, ...FONT_FAMILIES.map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} wide={false} />
           <Num label="Size" unit="pt" value={value.size ?? brand.fonts[role].size} min={4} max={72} step={0.5} onChange={(n) => set({ size: n })} />
-          <Sel label="Weight" value={value.weight ? (String(value.weight) as '400' | '600' | '700') : 'inherit'} options={WEIGHTS} onChange={(w) => set({ weight: w === 'inherit' ? undefined : (Number(w) as 400 | 600 | 700) })} />
+          <Sel label="Weight" value={value.weight ? (String(value.weight) as '400' | '600' | '700') : 'inherit'} options={WEIGHTS} onChange={(w) => set({ weight: w === 'inherit' ? undefined : (Number(w) as 400 | 600 | 700) })} wide={false} />
           <Field label="Emphasis">
             <div className={styles.toggles} role="group" aria-label="Emphasis">
               <IconButton icon="format_bold" label="Bold" size={36} variant="bare" iconSize={20} selected={bold} onClick={() => set({ weight: bold ? 400 : 700 })} />
@@ -162,13 +163,18 @@ export function StyleEditor({ label, value, onChange, brand, align = true, more 
   )
 }
 
-/** A collapsible group of fields ("More options"). */
-export function Group({ title, children, open: initial = false }: { title: string; children: ReactNode; open?: boolean }) {
+/** (REG-542) A caption that splits a long group into readable parts — "Table look", "Amounts", "Placement". */
+export function Sub({ children }: { children: ReactNode }) {
+  return <span className={styles.subHead}>{children}</span>
+}
+
+/** A collapsible group of fields ("More options"); `sub` is a muted summary beside the title (the page setup's "A4 · 12/18/10/18 mm"). */
+export function Group({ title, sub, children, open: initial = false }: { title: string; sub?: string; children: ReactNode; open?: boolean }) {
   const [open, setOpen] = useState(initial)
   return (
     <div className={styles.group}>
       <button type="button" className={styles.groupHead} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span>{title}</span><Icon name={open ? 'expand_less' : 'expand_more'} size={20} weight={300} />
+        <span className={styles.groupTitle}>{title}{sub ? <span className={styles.groupSub}>{sub}</span> : null}</span><Icon name={open ? 'expand_less' : 'expand_more'} size={20} weight={300} />
       </button>
       {open ? <div className={styles.grid}>{children}</div> : null}
     </div>

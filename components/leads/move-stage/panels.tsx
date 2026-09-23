@@ -114,7 +114,7 @@ function LogCard({
       {/* (REG-320, user 2026-09-02) Where this log lives afterwards — only here, the Notes tab is already that place. */}
       <p className={fieldStyles.callout}>
         <Icon name="info" size={16} weight={300} />
-        <span>This log is saved under Lead Details › Notes › Contact Log.</span>
+        <span>This log is saved under Lead Details › Notes & Logs › Contact Log.</span>
       </p>
       <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={log.channel}
                    onChange={(v) => onChange({ channel: v })} error={err('channel')} />
@@ -219,7 +219,7 @@ function MeetingCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        <SectionRow label="Attach meeting documents"
+        <SectionRow label="Attach meeting documents (optional)"   /* (REG-543) no longer required */
                     action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
         {log.files.length ? (
           <div className={styles.tiles}>
@@ -406,7 +406,7 @@ export function QuoteSentPanel({
       ) : null}
       <Divider />
       <div className={styles.stack12}>
-        <SectionRow label="Attach meeting documents"
+        <SectionRow label="Attach meeting documents (optional)"   /* (REG-543) no longer required */
                     action={<LinkButton icon="attach_file" onClick={() => setMeetingFiles((f) => [...f, 'Q-101'])}>Attach</LinkButton>} />
         {meetingFiles.length ? (
           <div className={styles.tiles}>

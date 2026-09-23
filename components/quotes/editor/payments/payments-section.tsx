@@ -16,7 +16,12 @@ import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { QuotePayment } from '@/lib/db/schema'
 import { money2 } from '@/lib/quotes/math'
-import { blankRow, dueLabel, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, toRows, PRESETS, type PaymentRow, type ScheduleAnchors } from '@/lib/quotes/payments'
+import { blankRow, dueLabel, findSplit, paymentAmounts, presetLabel, presetOf, presetRows, scheduleBalance, splitWord, toRows, type PaymentRow, type PaymentSplit, type ScheduleAnchors } from '@/lib/quotes/payments'
+import { usePathname, useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
+import { Dialog } from '@/components/om/dialog'
+import { TextField } from '@/components/om/text-field'
+import { saveQuoteScheduleAsTemplate } from '@/app/company/payment-templates-actions'
 import { createQuotePayment, deleteQuotePayment, reorderQuotePayments, replaceQuotePayments, updateQuotePayment, type PaymentPatch } from '@/app/quotes/payments-actions'
 import { SectionCard } from '../section-card'
 import { useLevelFocus } from '../items/table-menus'
@@ -27,6 +32,8 @@ export type PaymentsSeed = {
   rows: QuotePayment[]
   /** Where the estimates hang from (lib/quotes/payments.ts `scheduleAnchors`), as plain numbers for the client. */
   anchors: { start: number; weeks: number }
+  /** (REG-538) The presets ▾: the studio's payment templates (Company › Templates › Payments), the four presets first. */
+  splits: PaymentSplit[]
 }
 
 type Field = 'name' | 'description' | 'pct' | 'amount'
@@ -61,6 +68,9 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const snackbar = useSnackbar()
   const { run } = useRun()
   const { quoteId } = seed
+  const router = useRouter(); const pathname = usePathname()
+  const [splits, setSplits] = useState<PaymentSplit[]>(seed.splits)   // (REG-538) grows when this quote's split is saved as a template
+  const [saveSplit, setSaveSplit] = useState<string | null>(null)   // the Save-as dialog's name (null = closed)
   const anchors: ScheduleAnchors = { start: new Date(seed.anchors.start), weeks: seed.anchors.weeks }
   const phone = useMediaQuery(MOBILE)
   const colWidths = useColumnWidths(PAY_TABLE)
@@ -92,7 +102,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   })
   const amounts = paymentAmounts(live, totalMinor)
   const balance = scheduleBalance(live, totalMinor)
-  const preset = presetOf(rows)
+  const preset = presetOf(rows, splits)
+  const custom = !findSplit(preset, splits)
 
   /* ── writes ── */
   const replace = async (next: PaymentRow[]) => {
@@ -109,7 +120,18 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
     setMenu(null); setMoreSub(null)
     if (key === preset) return
     previous.current = toRows(rowsRef.current)
-    void run('apply the preset', () => replace(presetRows(key, anchors)), { message: `Schedule set to ${presetLabel(key).replace('Default: ', '')}`, actionLabel: 'Undo', onAction: () => restore('undo the preset') })
+    void run('apply the preset', () => replace(presetRows(key, anchors, splits)), { message: `Schedule set to ${presetLabel(key, splits).replace('Default: ', '')}`, actionLabel: 'Undo', onAction: () => restore('undo the preset') })
+  }
+  /* (REG-538) Save this split as a template: the rows as they stand, named, into the Payments library — and straight into this menu. */
+  const doSaveSplit = () => {
+    const name = (saveSplit ?? '').trim()
+    setSaveSplit(null)
+    if (!name) return
+    let id = ''
+    void run('save the template', async () => {
+      id = await saveQuoteScheduleAsTemplate(quoteId, name)
+      setSplits((s) => [...s, { id, name, rows: rowsRef.current.map((r) => ({ name: r.name, description: r.description, pct: r.pct })), isPreset: false }])
+    }, { message: `${name} saved as a payment template`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/templates/payments/${id}`, pathname)) })
   }
   const patchRow = (id: string, patch: PaymentPatch) => {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch, dueAt: patch.dueAt !== undefined ? (patch.dueAt ? new Date(patch.dueAt) : null) : r.dueAt } as QuotePayment : r)))
@@ -174,11 +196,24 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   }
 
   /* ── toolbar (1271:37377) ── */
-  const presetRowsUi = PRESETS.map((p) => (
-    <DropdownItem key={p.key} role="menuitemradio" checked={p.key === preset} onSelect={() => applyPreset(p.key)}>
-      <span className={styles.menuText}>{p.label}</span>{p.key === preset ? <span className={styles.menuCurrent}>current</span> : null}
-    </DropdownItem>
-  ))
+  const presetRowsUi = (
+    <>
+      {splits.map((p) => (
+        <DropdownItem key={p.id} role="menuitemradio" checked={p.id === preset} onSelect={() => applyPreset(p.id)}>
+          <span className={styles.menuText}>{p.name}</span>{p.id === preset ? <span className={styles.menuCurrent}>current</span> : null}
+        </DropdownItem>
+      ))}
+      {custom ? (
+        <DropdownItem role="menuitemradio" checked onSelect={() => { setMenu(null); setMoreSub(null) }}>
+          <span className={styles.menuText}>Custom · {splitWord(live)}</span><span className={styles.menuCurrent}>current</span>
+        </DropdownItem>
+      ) : null}
+      <DropdownDivider />
+      {/* (REG-538) The library behind the menu: save what this quote settled on, or manage the templates. */}
+      {custom ? <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); setSaveSplit('') }}><span className={styles.menuIcon}><Icon name="library_add" size={20} /></span>Save this split as a template</DropdownItem> : null}
+      <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); router.push(withFrom('/company/templates/payments', pathname)) }}><span className={styles.menuIcon}><Icon name="style" size={20} /></span>Manage payment templates</DropdownItem>
+    </>
+  )
   const toolbar = phone ? (
     <div className={styles.tools}>
       <span ref={moreRef} className={styles.anchor}>
@@ -194,7 +229,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
               </>
             ) : (
               <>
-                <DropdownItem submenu onSelect={() => setMoreSub('preset')}>Preset: {presetLabel(preset).replace('Default: ', '')}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+                <DropdownItem submenu onSelect={() => setMoreSub('preset')}>Preset: {presetLabel(preset, splits).replace('Default: ', '')}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
                 <DropdownDivider />
                 <DropdownItem onSelect={() => { setMenu(null); addRow() }}><span className={styles.menuIcon}><Icon name="add" size={20} /></span>Add a Payment</DropdownItem>
               </>
@@ -209,7 +244,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
         <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={menu === 'preset'}
                 iconEnd={<span className={styles.chev} data-open={menu === 'preset' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                 onPress={() => setMenu((m) => (m === 'preset' ? null : 'preset'))}>
-          {presetLabel(preset)}
+          {presetLabel(preset, splits)}
         </Button>
         <PortalMenu open={menu === 'preset'} anchor={presetRef} onClose={() => setMenu(null)} role="menu" width={220} align="right">
           {presetRowsUi}
@@ -221,6 +256,12 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   const dueRow = dueFor ? rows.find((r) => r.id === dueFor) ?? null : null
   return (
     <SectionCard id="section-payment" title="Payment Schedule" open={open} onToggle={onToggle} actions={toolbar} onHandlePointerDown={onHandlePointerDown}>
+      {/* (REG-538) Save this split as a template. */}
+      <Dialog open={saveSplit !== null} onClose={() => setSaveSplit(null)} title="Save split as a template" size="form" width={400} portal
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => setSaveSplit(null)}>Cancel</Button><Button onPress={doSaveSplit} isDisabled={!(saveSplit ?? '').trim()}>Save template</Button></>}>
+        <TextField label="Template name" required value={saveSplit ?? ''} onChange={setSaveSplit} autoFocus helper={`${splitWord(live)} — saved under Company › Templates › Payments and offered on every quote.`}
+                   onKeyDown={(e) => { if (e.key === 'Enter' && (saveSplit ?? '').trim()) { e.preventDefault(); doSaveSplit() } }} />
+      </Dialog>
       <div className={styles.body}>
           <div ref={payFrame} className={styles.table} role="table" aria-label="Payment schedule" data-cols={PAY_TABLE} data-overflow={payOverflowing || undefined}
                style={{ ...(tracks ? { '--pay-tracks': tracks } : {}), '--pay-min': `${payFloor}px` } as React.CSSProperties}

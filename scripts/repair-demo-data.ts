@@ -10,7 +10,7 @@ import { DATABASE_AUTH_TOKEN, DATABASE_URL } from './env'
 import { emptyWizardData, SYSTEM_CONTRACT, SYSTEM_QUOTE, type WizardData } from '../lib/leads/stage-data'
 import { displayDate, formatInputDateTime } from '../lib/format'
 import { quoteTotals } from '../lib/quotes/math'
-import { presetRows, scheduleAnchors } from '../lib/quotes/payments'
+import { PRESET_SPLITS, presetRows, scheduleAnchors } from '../lib/quotes/payments'
 import { resolveTokens, TEMPLATE_SEED } from '../lib/quotes/text'
 import { projectRef, VALIDITY_DAYS } from '../lib/quotes/refs'
 import { STAGES } from '../lib/leads/enums'
@@ -796,7 +796,27 @@ async function main() {
     console.log(`  ${bare.length} contract documents written · ${tpl.length} templates`)
   }
 
+  /* ── R35 · the template libraries behind Company › Templates (REG-538) ─────────────────────────────
+     The four payment presets are rows of `payment_templates` under their old keys (so every stored `paymentPreset`
+     still resolves); every text and task template names its author and carries an update stamp, the way the galleries
+     print them. */
+  console.log('\nR35 template libraries')
+  {
+    const nowS = Math.floor(Date.now() / 1000)
+    for (const [i, p] of PRESET_SPLITS.entries()) {
+      await client.execute({ sql: `INSERT OR IGNORE INTO payment_templates (id, name, rows_json, is_preset, created_by, created_at, updated_at) VALUES (?, ?, ?, 1, NULL, ?, ?)`, args: [p.id, p.name, JSON.stringify(p.rows), nowS - (120 - i) * 86400, nowS - (120 - i) * 86400] })
+    }
+    const a = await client.execute(`UPDATE quote_text_templates SET created_by = 'dane' WHERE created_by IS NULL`)
+    const b = await client.execute(`UPDATE task_templates SET created_by = COALESCE(created_by, 'dane'), updated_at = COALESCE(updated_at, created_at) WHERE created_by IS NULL OR updated_at IS NULL`)
+    await client.execute(`UPDATE payment_templates SET last_used_at = (SELECT max(q.created_at) FROM quotes q WHERE q.deleted_at IS NULL) WHERE id = 'default' AND last_used_at IS NULL`)
+    console.log(`  ${PRESET_SPLITS.length} payment presets present · ${a.rowsAffected} text templates named their author · ${b.rowsAffected} task templates stamped`)
+  }
+
   const checks: [string, string][] = [
+    ['payment preset missing from the library (REG-538)', `SELECT 'payment_templates' WHERE (SELECT count(*) FROM payment_templates WHERE is_preset = 1 AND deleted_at IS NULL) < 4`],
+    ['text template with no author (REG-538)', `SELECT title FROM quote_text_templates WHERE created_by IS NULL`],
+    ['task template with no author or stamp (REG-538)', `SELECT name FROM task_templates WHERE created_by IS NULL OR updated_at IS NULL`],
+    ['quote template default pointing at a missing text template (REG-538)', `SELECT name FROM quote_templates t WHERE t.deleted_at IS NULL AND ((json_extract(t.defaults_json, '$.termsTemplateId') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.id = json_extract(t.defaults_json, '$.termsTemplateId') AND x.deleted_at IS NULL)) OR (json_extract(t.defaults_json, '$.notesTemplateId') IS NOT NULL AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.id = json_extract(t.defaults_json, '$.notesTemplateId') AND x.deleted_at IS NULL)))`],
     ['composed contract with no document (REG-534)', `SELECT title FROM contracts WHERE source = 'composed' AND body IS NULL`],
     ['contract with no recipient (REG-534)', `SELECT title FROM contracts WHERE recipient_name IS NULL OR recipient_phone IS NULL`],
     ['quote with no creator', `SELECT number FROM quotes WHERE created_by IS NULL`],

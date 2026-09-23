@@ -103,7 +103,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title="Quotes" />
         <div className={styles.frame}>
-          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={(a) => (a === 'templates' ? router.push('/company/templates/quotes') : comingSoon())}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */ />
+          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', '/quotes')) : comingSoon())}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */ />
           {templateFilter ? (
             <div className={styles.templateChip} role="status">
               <Icon name="style" size={18} weight={300} /> Quotes on <b>{templateFilter.name}</b>
@@ -126,7 +126,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <QuotesFiltersModal open={filtersOpen} value={filters} now={now} approval={approval} onApply={setFilters}   /* (REG-464) live — the modal closes on Done */ onClose={() => setFiltersOpen(false)} />
         <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null) }}
-                          render={{ brand: data.brand, sample: data.sample }} preselect={preselect}
+                          render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }} />
         <DeleteQuotesDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}

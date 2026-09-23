@@ -14,7 +14,7 @@ import { SOURCES, PROPERTY_TYPES } from '@/lib/leads/enums'
 import { bottomSheet, modalPanel, overlayFade, ease, duration } from '@/lib/motion'
 import { useSheetLayout } from '@/components/om/sheet'
 import { EMAIL_RE, MSG, hasErrors, type FieldErrors } from '@/lib/forms'
-import { parseInputDate, groupDigits, inputDate, phoneDigits, phoneTyped } from '@/lib/format'
+import { parseInputDate, groupDigits, inputDate, isSgPhone, phoneDigits, phoneTyped } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
@@ -24,7 +24,7 @@ import { Tooltip } from '@/components/om/tooltip'
 
 /* Only 'Contemporary' / 'Collected' / 'New' are mock-visible; the rest are
    invented so a one-option select doesn't look broken (REG — needs design sign-off). */
-export const STYLE_OPTIONS = ['Contemporary', 'Modern', 'Minimalist', 'Scandinavian', 'Industrial'] as const
+export const STYLE_OPTIONS = ['Contemporary', 'Modern', 'Minimalist', 'Scandinavian', 'Japandi', 'Industrial', 'Mid-century', 'Classic', 'Luxury', 'Eclectic', 'Peranakan', 'Others'] as const   // (REG-549) the styles a Singapore studio hears, plus Others (tester feedback 2026-09-13)
 export const KEY_COLLECTION_OPTIONS = ['Collected', 'Not yet collected'] as const
 export const CONDITION_OPTIONS = ['New', 'Resale', 'Renovated'] as const
 export const AREA_UNITS = ['sq ft', 'sq m'] as const
@@ -96,7 +96,7 @@ export function validateLeadForm(data: LeadFormData, requireAssignee = false): L
   const errors: LeadFormErrors = {}
   if (requireAssignee && data.assignees.length === 0) errors.assignees = MSG.assignee
   if (!data.name.trim()) errors.name = MSG.required
-  if (phoneDigits(data.phone).length !== 8) errors.phone = MSG.phone   // (REG-287) the one phone rule, not a local copy
+  if (!isSgPhone(phoneDigits(data.phone))) errors.phone = MSG.phone   // (REG-287 / REG-547) the one phone rule, not a local copy
   if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) errors.email = MSG.email
   const budgetDigits = data.budget.replace(/,/g, '').trim()
   if (budgetDigits && !/^\d+$/.test(budgetDigits)) errors.budget = MSG.number

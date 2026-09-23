@@ -5,6 +5,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
+import emptyStyles from '@/components/leads/search-empty.module.css'
 import { displayDateTimeDot } from '@/lib/format'
 import type { NoteFilter, NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-list.module.css'
@@ -33,6 +34,8 @@ export type NotesListProps = {
   /** (REG-318) The kind filter, drawn as the mock's head chips (931:44884) inside the column again. */
   filter: NoteFilter
   onFilter: (f: NoteFilter) => void
+  /** (REG-546) The empty kind filter's own New — the toolbar's New ▾ › Note / Contact Log. */
+  onNew: (kind: NoteKind) => void
 }
 
 /** Head chips (931:44884): All · Notes (sticky_note_2) · Contact Log (call_log, REG-278) — one per NoteFilter, in the mock's order. */
@@ -55,7 +58,7 @@ type OpenMenu = { kind: 'item'; id: string } | null
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  * The whole item (except the kebab) is the select button.
  */
-export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter }: NotesListProps) {
+export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter, onNew }: NotesListProps) {
   const [menu, setMenu] = useState<OpenMenu>(null)
   const close = () => setMenu(null)
 
@@ -82,7 +85,18 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
           The unsaved draft is never filtered out, so this only ever answers a search / filter, never "no notes". */}
       {items.length === 0 ? (
         <div className={styles.empty}>
-          <TabSearchEmpty noun="notes" searching={searching} onClearAll={onClearAll} />
+          {searching || filter === 'all' ? (
+            <TabSearchEmpty noun="notes" searching={searching} onClearAll={onClearAll} />
+          ) : (
+            /* (REG-546, tester feedback 2026-09-15) A kind chip with nothing behind it used to answer "No results found ·
+               Clear All" beside an empty pane, which read as a dead end. The same card now names what is missing and
+               offers to write it — the toolbar's New ▾ for that kind. Copy is invented. */
+            <div className={emptyStyles.card} data-testid="notes-kind-empty">
+              <span className={emptyStyles.title}>{filter === 'note' ? 'No notes yet' : 'No contact logs yet'}</span>
+              <span className={emptyStyles.sub}>{filter === 'note' ? 'Write the first note for this lead.' : 'Log the first call or message with this lead.'}</span>
+              <button type="button" className={emptyStyles.clear} onClick={() => onNew(filter)}>{filter === 'note' ? 'New note' : 'New contact log'}</button>
+            </div>
+          )}
         </div>
       ) : (
         <div className={styles.items} role="list" aria-label="Notes">

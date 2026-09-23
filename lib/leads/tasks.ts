@@ -40,7 +40,7 @@ async function loadTasks(scope: { leadId: string } | 'studio'): Promise<LeadTask
     db.select().from(members),
     db.select().from(tags).orderBy(asc(tags.createdAt)),
     db.select().from(leadFiles).where(leadId ? and(eq(leadFiles.leadId, leadId), isNull(leadFiles.deletedAt)) : isNull(leadFiles.deletedAt)).orderBy(asc(leadFiles.createdAt)),   // trashed files leave the library (Files tab)
-    db.select().from(taskTemplates).orderBy(asc(taskTemplates.createdAt)),
+    db.select().from(taskTemplates).where(isNull(taskTemplates.deletedAt)).orderBy(asc(taskTemplates.createdAt)),   // (REG-538) deleted templates leave the chooser
     db.select({ id: leads.id, name: leads.name, stage: leads.stage }).from(leads).where(leadId ? eq(leads.id, leadId) : isNull(leads.deletedAt)).orderBy(asc(leads.name)),
   ])
   const ids = rows.map((t) => t.id)

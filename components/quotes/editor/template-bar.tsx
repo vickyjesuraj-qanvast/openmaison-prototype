@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ds'
+import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Dialog } from '@/components/om/dialog'
 import { MetaChip } from '@/components/om/meta-chip'
@@ -56,14 +56,16 @@ export function TemplateUpdateBanner({ current, busy, onUpdate, onKeep }: { curr
 }
 
 /** ⋯ › Save as Template (REG-489): a Draft template from this quote's settings, opened in the editor on request. */
-export function SaveAsTemplateDialog({ open, defaultName, busy, onClose, onSave }: { open: boolean; defaultName: string; busy: boolean; onClose: () => void; onSave: (name: string) => void }) {
+export function SaveAsTemplateDialog({ open, defaultName, busy, onClose, onSave }: { open: boolean; defaultName: string; busy: boolean; onClose: () => void; onSave: (name: string, opts: { includeText: boolean }) => void }) {
   const [name, setName] = useState(defaultName)
+  const [includeText, setIncludeText] = useState(true)   /* (REG-538) the quote's Terms and Notes ride along as text templates */
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setName(defaultName) }
   return (
     <Dialog open={open} onClose={onClose} title="Save as template" size="form" width={400}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSave(name)} isDisabled={busy || !name.trim()}>{busy ? 'Saving…' : 'Save template'}</Button></>}>
-      <TextField label="Template name" required value={name} onChange={setName} autoFocus helper="Saved as a draft under Company › Templates › Quotes, with this quote’s payment split, GST and signature settings as its defaults." onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !busy) { e.preventDefault(); onSave(name) } }} />
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSave(name, { includeText })} isDisabled={busy || !name.trim()}>{busy ? 'Saving…' : 'Save template'}</Button></>}>
+      <TextField label="Template name" required value={name} onChange={setName} autoFocus helper="Saved as a draft under Company › Templates › Quotes, with this quote’s payment split, validity, GST and signature settings as its defaults." onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !busy) { e.preventDefault(); onSave(name, { includeText }) } }} />
+      <label className={styles.saveRow}>Also save its Terms and Notes as text templates <Switch size="sm" isSelected={includeText} onChange={setIncludeText} aria-label="Also save its Terms and Notes as text templates" /></label>
     </Dialog>
   )
 }

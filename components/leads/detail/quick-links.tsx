@@ -41,7 +41,7 @@ const write = (s: QuickLinksState) => {
 }
 const serverSnapshot = (): QuickLinksState => 'collapsed'
 
-type Link = { icon: string; label: string; kind: 'task' | 'quote' | 'callLog' | 'note' | 'meeting' | 'other' }
+type Link = { icon: string; label: string; kind: 'task' | 'quote' | 'callLog' | 'note' | 'other' }
 /**
  * Glyphs as the mock lists them, and its order top → bottom — except that Note sits ABOVE Contact Log
  * (REG-289, owner 2026-09-02; the mock draws Contact Log first). One list drives both the expanded tiles
@@ -53,7 +53,7 @@ const LINKS: Link[] = [
   { icon: 'contract', label: 'Contract', kind: 'other' },   /* (REG-534) a new contract on this lead, straight into the editor */
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
   { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
-  { icon: 'event', label: 'Meeting', kind: 'meeting' },
+  /* (REG-552) Meeting (icon `event`) is hidden with the Meetings tab until its mocks land. */
   { icon: 'wand_shine', label: 'AI Visualiser', kind: 'other' },
   { icon: 'scan', label: 'Quote X-Ray', kind: 'other' },
   { icon: 'deployed_code', label: '3D Space Planner', kind: 'other' },
@@ -64,7 +64,6 @@ export function QuickLinks({
   onQuote,
   onCallLog,
   onNote,
-  onMeeting,
   onOther,
 }: {
   onTask: () => void
@@ -73,7 +72,6 @@ export function QuickLinks({
   onCallLog: () => void
   /** "Note" → the Notes tab's new-note path (931-44865); absent, the link answers like the other inert ones (onOther). */
   onNote?: () => void
-  onMeeting: () => void
   onOther: (label: string) => void
 }) {
   const state = useSyncExternalStore(subscribe, read, serverSnapshot)
@@ -91,7 +89,6 @@ export function QuickLinks({
     else if (link.kind === 'quote') { if (onQuote) onQuote(); else onOther(link.label) }
     else if (link.kind === 'callLog') onCallLog()
     else if (link.kind === 'note') { if (onNote) onNote(); else onOther(link.label) }
-    else if (link.kind === 'meeting') onMeeting()
     else onOther(link.label)
   }
 

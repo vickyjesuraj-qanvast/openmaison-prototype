@@ -150,3 +150,9 @@ export type ContractTemplateOption = { id: string; title: string; body: string; 
 export async function fetchContractTemplateOptions(): Promise<ContractTemplateOption[]> {
   return db.select({ id: contractTemplates.id, title: contractTemplates.title, body: contractTemplates.body, updatedAt: contractTemplates.updatedAt }).from(contractTemplates).where(isNull(contractTemplates.deletedAt)).orderBy(desc(contractTemplates.lastUsedAt), asc(contractTemplates.title))
 }
+/** (REG-538) New template › From a contract…: every composed contract with a document, newest first. */
+export async function fetchContractOptions(): Promise<{ id: string; title: string; leadName: string; updatedAt: Date }[]> {
+  const rows = await db.select({ id: contracts.id, title: contracts.title, leadName: leads.name, updatedAt: contracts.updatedAt, createdAt: contracts.createdAt }).from(contracts).innerJoin(leads, eq(leads.id, contracts.leadId))
+    .where(and(isNull(contracts.deletedAt), eq(contracts.source, 'composed'), isNotNull(contracts.body))).orderBy(desc(contracts.updatedAt))
+  return rows.map((r) => ({ id: r.id, title: r.title, leadName: r.leadName, updatedAt: r.updatedAt ?? r.createdAt }))
+}

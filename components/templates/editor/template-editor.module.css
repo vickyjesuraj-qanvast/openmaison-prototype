@@ -1,6 +1,7 @@
 /* Template editor (REG-486): topbar 56, then [left 300 | canvas | right 320]. Panes are white on the surface-bg canvas
    area; the pages sit centred with 32 around them. Preview and the phone hide the panes. */
-.editor { display: flex; flex-direction: column; height: 100dvh; background: var(--om-color-surface-bg); }
+/* (REG-542) An app frame: pinned to the viewport, so nothing outside it — a portal, an overlay, a transient layout — can scroll the panes off the top of the window. */
+.editor { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }
 .body { flex: 1; min-height: 0; display: flex; }
 .left, .right { flex: 0 0 auto; background: var(--om-color-surface-default); display: flex; flex-direction: column; min-height: 0; }
 .left { width: 300px; border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
@@ -17,4 +18,7 @@
 .paneToggles { position: sticky; top: var(--om-spacing-3); z-index: 3; display: flex; gap: var(--om-spacing-2); justify-content: flex-end; padding: 0 var(--om-spacing-3); height: 0; overflow: visible; }
 .paneToggles > * { margin-top: 0; }
 .readOnlyNote { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-4); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-s); }
-@media (max-width: 767px) { .stage { padding: var(--om-spacing-4); } }
+/* (REG-542) The first-visit hint under the top bar. */
+.hint { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; padding: var(--om-spacing-1) var(--om-spacing-4); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-m); flex-shrink: 0; }
+.hintText { flex: 1; min-width: 0; }
+@media (max-width: 767px) { .stage { padding: var(--om-spacing-4); } .hint { align-items: flex-start; padding: var(--om-spacing-2) var(--om-spacing-3); } }

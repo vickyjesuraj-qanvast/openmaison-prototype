@@ -40,10 +40,13 @@ export function LeadStagesCard({ timeline, parked, daysInPipeline, blocked, onOp
       aria-disabled={why ? true : undefined}
       onClick={why ? undefined : () => onOpenStage(step.stage)}
       aria-current={step.state === 'current' ? 'step' : undefined}
+      data-logged={step.logged || undefined}
     >
-      {/* Completed stages take the FILLED green check, as the Move stage rail and the task tick already do. */}
-      {step.state === 'current' ? <Icon name="radio_button_checked" size={20} className={styles.icon} />
-        : step.state === 'done' ? <Icon name="check_circle" size={20} weight={300} fill className={styles.icon} />
+      {/* Completed stages take the FILLED green check, as the Move stage rail and the task tick already do.
+          (REG-548) So does a current stage whose log is saved: the fill and "current" still say where the lead is, the
+          tick says nothing is owed here — the mock's radio (858:24890) stays for a current stage with nothing logged. */}
+      {step.state === 'current' && !step.logged ? <Icon name="radio_button_checked" size={20} className={styles.icon} />
+        : step.state === 'done' || step.state === 'current' ? <Icon name="check_circle" size={20} weight={300} fill className={styles.icon} />
         : <Icon name="radio_button_unchecked" size={20} weight={300} className={styles.icon} />}
       <span className={styles.label}>
         <span className={styles.nameGroup}>

@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadTasks, leads, members, quoteTemplates, quoteTextTemplates, quotes, quotePayments, taskAssignees } from '@/lib/db/schema'
+import { leadTasks, leads, members, quoteFiles, quoteTemplates, quoteTextTemplates, quotes, quotePayments, taskAssignees, type QuoteItem, type QuotePayment } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
@@ -16,7 +16,8 @@ import { presetByKey } from '@/lib/templates/presets'
 import { quoteItems } from '@/lib/db/schema'
 import { resolveTokens } from '@/lib/quotes/text'
 import { fetchStudio } from '@/lib/settings/queries'
-import { DEFAULT_DENSITY } from '@/lib/quotes/items-model'
+import { COLUMN_KEYS, DEFAULT_COLUMNS, DEFAULT_DENSITY, type ColumnKey, type ColumnSettings } from '@/lib/quotes/items-model'
+import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
 import { fetchLeadContracts } from '@/lib/leads/contracts'
@@ -46,6 +47,7 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   if (templateId) {
     const [t] = await db.select({ id: quoteTemplates.id, version: quoteTemplates.version, defaultsJson: quoteTemplates.defaultsJson, designJson: quoteTemplates.designJson, status: quoteTemplates.status, deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
     if (!t || t.deletedAt) throw new Error('template not found')
+    if (t.status !== 'published') throw new Error('template not published')   // (REG-538) a draft reached by URL cannot start a quote
     template = { id: t.id, version: t.version, defaults: parseDefaults(t.defaultsJson), view: viewForTemplate(parseDesign(t.designJson, presetByKey('letter').design())) }
   }
   const defaults = template?.defaults ?? null
@@ -66,6 +68,7 @@ export async function createQuote(leadId: string, templateId: string | null = nu
     preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId, templateVersion: template?.version ?? null,
     validUntil: defaults ? new Date(now.getTime() + defaults.validityDays * 86_400_000) : validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
     gstEnabled: defaults?.gstEnabled ?? true, clientSignatureRequired: defaults?.signatureRequired ?? true, termsHtml, notesHtml,
+    itemsColumns: columnsJson(defaults?.columns ?? null),   // (REG-538) the template's working columns
     // (REG-497) With starter sections the groups ARE the structure (View by would bucket each group under itself); without them the table groups the way the template prints.
     itemsView: cleanGroups(defaults?.starterGroups ?? []).length ? 'none' : template?.view ?? 'none',
   })
@@ -81,9 +84,90 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   if (templateId) await db.update(quoteTemplates).set({ lastUsedAt: now }).where(eq(quoteTemplates.id, templateId))
   // (REG-418) Every quote starts on the studio's default split — the toolbar reads "Default: 10/30/30/30" from the first
   // open — with the deposit on approval and the rest estimated from the lead's start date and the property's renovation length.
-  const rows = presetRows(defaults?.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: now, propertyType: lead.propertyType }))
+  const rows = presetRows(defaults?.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: now, propertyType: lead.propertyType }), await fetchPaymentSplits())   // (REG-538) the Payments library
   await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId: id, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
   touch(leadId); return id
+}
+
+/** (REG-538) A template's working columns as the Items table stores them (null = the table's own default). */
+const columnsJson = (cols: ColumnKey[] | null): string | null =>
+  cols ? JSON.stringify({ details: DEFAULT_COLUMNS.details, columns: COLUMN_KEYS.map((key) => ({ key, on: cols.includes(key) })) } satisfies ColumnSettings) : null
+
+export type AppliedDefaults = {
+  updatedAt: number; validUntil: number | null; gstEnabled: boolean; signatureRequired: boolean
+  termsHtml: string | null; notesHtml: string | null; itemsColumns: string | null; itemsView: string
+  payments: QuotePayment[]; items: QuoteItem[]
+}
+/**
+ * (REG-538) Change template on a Draft, then "Apply defaults": the template's Defaults tab lands on the quote the way a
+ * new quote would start — the payment schedule, validity from today, GST, the signature switch, the Terms and Notes
+ * templates (only where the template names one), the working columns, and the starter sections when the table is still
+ * empty. The lines stay. Never silent: the editor asks first.
+ */
+export async function applyTemplateDefaults(quoteId: string, templateId: string): Promise<AppliedDefaults> {
+  const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
+  if (!q) throw new Error('quote not found')
+  if (q.status !== 'Draft') throw new Error('only a draft takes a template’s defaults')
+  const [t] = await db.select({ defaultsJson: quoteTemplates.defaultsJson, designJson: quoteTemplates.designJson, status: quoteTemplates.status, deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
+  if (!t || t.deletedAt || t.status !== 'published') throw new Error('template not published')
+  const defaults = parseDefaults(t.defaultsJson)
+  const view = viewForTemplate(parseDesign(t.designJson, presetByKey('letter').design()))
+  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, q.leadId))
+  if (!lead) throw new Error('lead not found')
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
+  const studio = await fetchStudio()
+  const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
+  const textOf = async (textId: string | null) => { if (!textId) return null; const [x] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, textId)); return x ? resolveTokens(x.body, tokens) : null }
+  const [termsHtml, notesHtml] = await Promise.all([textOf(defaults.termsTemplateId), textOf(defaults.notesTemplateId)])
+  const now = new Date()
+  const rows = presetRows(defaults.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: q.createdAt, propertyType: q.propertyType ?? lead.propertyType }), await fetchPaymentSplits())
+  await db.delete(quotePayments).where(eq(quotePayments.quoteId, quoteId))
+  await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
+  const [had] = await db.select({ n: sql<number>`count(*)` }).from(quoteItems).where(eq(quoteItems.quoteId, quoteId))
+  const groups = cleanGroups(defaults.starterGroups)
+  const seedGroups = (had?.n ?? 0) === 0 && groups.length > 0
+  if (seedGroups) {
+    await db.insert(quoteItems).values(groups.map((name, position) => ({
+      id: randomUUID(), quoteId, parentId: null, kind: 'group', position, name, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: 9,
+      category: view === 'category' ? name : null, room: view === 'room' ? name : null, section: view === 'section' ? name : null,
+      visibility: 'visible', collapsed: false, createdAt: now, updatedAt: now,
+    })))
+  }
+  const patch = {
+    validUntil: new Date(now.getTime() + defaults.validityDays * 86_400_000), gstEnabled: defaults.gstEnabled, clientSignatureRequired: defaults.signatureRequired,
+    termsHtml: termsHtml ?? q.termsHtml, notesHtml: notesHtml ?? q.notesHtml, itemsColumns: columnsJson(defaults.columns) ?? q.itemsColumns,
+    itemsView: seedGroups ? 'none' : q.itemsView, updatedAt: now,
+  }
+  await db.update(quotes).set(patch).where(eq(quotes.id, quoteId))
+  const [payments, items] = await Promise.all([
+    db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position),
+    db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId)).orderBy(quoteItems.position, quoteItems.createdAt),
+  ])
+  touch(q.leadId); revalidatePath(`/quotes/${quoteId}`); revalidatePath(`/quotes/${quoteId}/preview`)
+  return { updatedAt: now.getTime(), validUntil: patch.validUntil.getTime(), gstEnabled: patch.gstEnabled, signatureRequired: patch.clientSignatureRequired, termsHtml: patch.termsHtml, notesHtml: patch.notesHtml, itemsColumns: patch.itemsColumns, itemsView: patch.itemsView, payments, items }
+}
+
+/** (REG-538) ⋯ › Duplicate and Edit: a Draft copy of the quote — lines, schedule, files, settings, template — with its own number, titled "(copy)". */
+export async function duplicateQuote(quoteId: string): Promise<string> {
+  const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
+  if (!q) throw new Error('quote not found')
+  const [me] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true))
+  const id = randomUUID(); const now = new Date()
+  await db.insert(quotes).values({
+    ...q, id, number: await nextNumber(), title: `${q.title} (copy)`, status: 'Draft', createdAt: now, updatedAt: now, createdBy: me?.id ?? q.createdBy,
+    sentAt: null, approvedAt: null, dueAt: null, archivedAt: null, deletedAt: null, validUntil: q.validUntil && q.validUntil > now ? q.validUntil : validUntil(now),
+  })
+  const [items, payments, files] = await Promise.all([
+    db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId)).orderBy(quoteItems.position, quoteItems.createdAt),
+    db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position),
+    db.select().from(quoteFiles).where(eq(quoteFiles.quoteId, quoteId)),
+  ])
+  const ids = new Map(items.map((i) => [i.id, randomUUID()]))
+  if (items.length) await db.insert(quoteItems).values(items.map((i) => ({ ...i, id: ids.get(i.id)!, quoteId: id, parentId: i.parentId ? ids.get(i.parentId) ?? null : null, createdAt: now, updatedAt: now })))
+  if (payments.length) await db.insert(quotePayments).values(payments.map((p) => ({ ...p, id: randomUUID(), quoteId: id, createdAt: now, updatedAt: now })))
+  if (files.length) await db.insert(quoteFiles).values(files.map((f) => ({ ...f, quoteId: id, createdAt: now })))
+  touch(q.leadId); revalidatePath('/quotes')
+  return id
 }
 
 /** Template tile kebab › Set as default (REG-412): one default at a time, studio-wide. */

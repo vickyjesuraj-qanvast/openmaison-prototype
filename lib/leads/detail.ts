@@ -14,7 +14,26 @@ import type { QuoteApproval, StageMovement } from '@/lib/settings/types'
 /* Lead Details › Overview (858-24770) — everything the page reads, derived on the server so the client never touches Date.now(). */
 
 export type ActiveStage = (typeof STAGES)[number]
-export type StageStep = { stage: ActiveStage; state: 'done' | 'current' | 'future'; days: number | null }
+/** (REG-548) Whether the lead's current stage already holds the record that completes it — the same test the Move stage
+    rail applies when it ticks the stage the lead is in (tester feedback 2026-09-15: a saved log, then "no green tick" on
+    the Overview). Linear movement always leaves one behind; Flexible movement's instant moves can leave a stage bare. */
+function stageLogged(stage: ActiveStage, lead: LeadRow): boolean {
+  const d = lead.stageData
+  switch (stage) {
+    case 'New': return lead.assignees.length > 0
+    case 'Contacted': return (d.logs?.length ?? 0) > 0
+    case 'Met': return (d.meetings?.length ?? 0) > 0
+    case 'Quote Sent': return !!(d.quoteSelected || d.quoteUploaded)
+    case 'Won': return !!(d.wonQuote || d.wonQuoteUploaded)
+    default: return false
+  }
+}
+
+export type StageStep = {
+  stage: ActiveStage; state: 'done' | 'current' | 'future'; days: number | null
+  /** (REG-548) A current stage whose completing record exists — the card ticks it, as the Move stage rail already does. */
+  logged?: boolean
+}
 export type ParkedStep = { stage: 'On Hold' | 'Lost'; days: number; till: string | null }
 export type ActivityItem = { at: Date; text: string }
 /**
@@ -89,7 +108,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     }
     // the stage the lead is in (or left from, when parked)
     if (parkedLog) return { stage, state: 'done', days: start !== undefined && parkedAt !== null ? daysBetween(start, parkedAt) : null }
-    return { stage, state: 'current', days: start !== undefined ? daysBetween(start, now) : null }
+    return { stage, state: 'current', days: start !== undefined ? daysBetween(start, now) : null, logged: stageLogged(stage, lead) }
   })
   const parked: ParkedStep | null = parkedLog && (lead.stage === 'On Hold' || lead.stage === 'Lost')
     ? { stage: lead.stage, days: daysBetween(parkedLog.createdAt.getTime(), now), till: lead.onHoldFollowUp }

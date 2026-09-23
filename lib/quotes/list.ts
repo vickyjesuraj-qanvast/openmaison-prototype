@@ -5,7 +5,8 @@ import { leads, priceBookItems, quoteTemplates, quotes, type Quote, type QuoteTe
 import type { Member } from '@/lib/db/schema'
 import { fetchQuoteApproval } from '@/lib/settings/queries'
 import type { QuoteApproval } from '@/lib/settings/types'
-import { fetchBrand } from '@/lib/templates/queries'
+import { fetchBrand, pickerExtras } from '@/lib/templates/queries'
+import type { PickerExtras } from '@/lib/templates/picker'
 import { SAMPLE_DATA, type DocData } from '@/lib/templates/data'
 import type { BrandKit } from '@/lib/templates/model'
 
@@ -21,11 +22,13 @@ export type StudioQuotesData = {
   approval: QuoteApproval
   brand: BrandKit
   sample: DocData
+  /** (REG-538) The picker's facts: the payment library's names and the text templates' titles. */
+  extras: PickerExtras
   now: number
 }
 
 export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
-  const [rows, clients, templates, approval, book, team, brand] = await Promise.all([
+  const [rows, clients, templates, approval, book, team, brand, extras] = await Promise.all([
     db.select({ quote: quotes, leadName: leads.name }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
       .where(and(isNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt))).orderBy(asc(quotes.createdAt)),
     db.select({ id: leads.id, name: leads.name }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
@@ -34,7 +37,8 @@ export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
     db.select({ n: count() }).from(priceBookItems),
     db.select().from(members),
     fetchBrand(),
+    pickerExtras(),
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
-  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, extras, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
 }

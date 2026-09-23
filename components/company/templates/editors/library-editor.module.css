@@ -1,0 +1,65 @@
+/* (REG-538) The library editors' bodies — text · tasks · payments — on the contract editor's page / meta row (contract-editor.module.css).
+   One centred column of cards, 816 wide like the paper, on the surface-bg canvas. */
+.body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance, 96px); }
+.card { width: 816px; max-width: 100%; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.cardHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 68px; padding: var(--om-spacing-4) var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.cardTitle { flex: 1; min-width: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.cardHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); }
+.kindChip { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-caption-s); white-space: nowrap; }
+.switches { display: flex; align-items: center; gap: var(--om-spacing-5); flex-wrap: wrap; }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
+.note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Steps (tasks): a row = handle · number · title over description · due · members · tags · delete. */
+.steps { display: flex; flex-direction: column; gap: var(--om-spacing-3); list-style: none; margin: 0; padding: 0; }
+.step { display: grid; grid-template-columns: 24px 28px minmax(0, 1fr) 132px auto auto 36px; align-items: start; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); position: relative; }
+.step[data-dragging] { z-index: 2; box-shadow: var(--om-elevation-level-3); }
+.handle { width: 24px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; color: var(--om-color-on-surface-disabled); cursor: grab; touch-action: none; border-radius: var(--om-radius-1); }
+.handle:active { cursor: grabbing; }
+.stepNo { height: 36px; display: inline-flex; align-items: center; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.stepFields { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.stepPick { position: relative; display: inline-flex; }
+.chipBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; transition: background-color var(--motion-hover); }
+.chipBtn:hover { background: var(--om-color-hover-04p); }
+.chipBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.chipBtn[data-on] { border-color: var(--om-color-primary-default); }
+.avatars { display: inline-flex; }
+.avatars > * + * { margin-left: -6px; }
+.addRow { align-self: flex-start; }
+.stepsEmpty { padding: var(--om-spacing-6); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-2); }
+
+/* Milestones (payments): the Payment Schedule's table language — name · description · share · due · delete; a total row. */
+.milestones { display: grid; grid-template-columns: 24px minmax(160px, 1fr) minmax(160px, 1fr) 120px 150px 36px; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-2); align-items: center; }
+.mHead { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); padding: 0 var(--om-spacing-1); }
+.mRow { display: contents; }
+.mDue { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.mTotal { grid-column: 2 / 4; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.mTotalPct { font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; padding: var(--om-spacing-2) var(--om-spacing-1) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.mTotalPct[data-over] { color: var(--om-color-tertiary-red-default); }
+.mTotalPct[data-under] { color: var(--om-color-on-surface-secondary); }
+.mTotalNote { grid-column: 5 / -1; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.mTotalNote[data-over] { color: var(--om-color-tertiary-red-default); }
+.bar { display: flex; height: 12px; border-radius: var(--om-radius-full); overflow: hidden; background: var(--om-color-surface-variant); gap: 2px; }
+.seg { height: 100%; background: var(--om-color-primary-default); min-width: 2px; }
+.seg:nth-child(2n) { background: var(--om-color-on-primary-variant); }
+.seg:nth-child(3n) { background: var(--om-color-primary-variant); }
+
+/* The text editor's card holds the framed rich editor. */
+.textEditor { padding: 0; }
+.textEditor > * { border: 0 !important; }
+
+@media (max-width: 767px) {
+  .body { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); gap: var(--om-spacing-4); }
+  /* The head stacks (title over its help line) and the two Keep switches stand in a column: at 390 they overlapped. */
+  .cardHead { flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); min-height: 0; padding: var(--om-spacing-3) var(--om-spacing-4); }
+  .cardTitle { flex: none; }
+  .switches { flex-direction: column; align-items: flex-start; gap: var(--om-spacing-2); }
+  .cardBody { padding: var(--om-spacing-4); }
+  .step { grid-template-columns: 24px 28px minmax(0, 1fr) 36px; }
+  .step > :nth-child(4), .step > :nth-child(5), .step > :nth-child(6) { grid-column: 3; }
+  .milestones { grid-template-columns: 24px minmax(0, 1fr) 96px 36px; }
+  .milestones > :nth-child(3), .mRow > :nth-child(3), .mRow > :nth-child(5), .mHead:nth-child(3), .mHead:nth-child(5) { display: none; }
+  .mTotal { grid-column: 2 / 3; }
+  .mTotalNote { grid-column: 1 / -1; border-top: 0; padding-top: 0; }
+}

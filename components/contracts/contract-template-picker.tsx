@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -21,6 +23,7 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
   onStarter: () => void | Promise<void>
 }) {
   const [items, setItems] = useState<ContractTemplateOption[] | null>(null)
+  const pathname = usePathname()
   const [picked, setPicked] = useState<string | null>(null)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null) } }   // render-phase reset: the list ghosts until the fetch lands
@@ -32,7 +35,7 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
   }, [open, load])
   return (
     <Dialog open={open} onClose={onClose} title="Choose a contract template" size="modal" width={1200} portal
-            subtitle={<span className={styles.sub}>Pick a template to start the contract from. <Link href="/company/templates/contracts" className={styles.manage}>Manage Templates</Link></span>}
+            subtitle={<span className={styles.sub}>Pick a template to start the contract from. <Link href={withFrom('/company/templates/contracts', pathname)} className={styles.manage}>Manage Templates</Link></span>}
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={() => { void onStarter() }}>Start from the studio agreement</Button>
               <Button isDisabled={!picked} onPress={() => { if (picked) void onUse(picked) }}>Use template</Button>

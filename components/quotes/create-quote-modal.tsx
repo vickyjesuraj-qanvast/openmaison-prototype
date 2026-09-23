@@ -18,7 +18,7 @@ import type { QuoteTemplate } from '@/lib/db/schema'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
 import { ago } from '@/lib/templates/ago'
-import { pickerTemplates, type PickerData } from '@/lib/templates/picker'
+import { pickerTemplates, type PickerData, type PickerExtras } from '@/lib/templates/picker'
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import styles from './create-quote-modal.module.css'
@@ -52,7 +52,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   /** The studio's My Items count — the 1.0 row's "your 8-item price book" (REG-412), from the record. */
   priceBookCount?: number
   /** (REG-489) With the brand kit and the sample quote, every tile draws the template's real first page. */
-  render?: { brand: BrandKit; sample: DocData }
+  render?: { brand: BrandKit; sample: DocData; extras?: PickerExtras }
   /** (REG-495) Opened from a template ("Start a quote with this template"): the picker opens on it. */
   preselect?: string | null
 }) {
@@ -76,7 +76,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   useEscapeLayer(open && menuFor === null, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
   useDialogFocus(open, panel)
   /* (REG-489) Only published templates can start a quote; drafts and archived ones stay in Company › Templates. */
-  const picker: PickerData | null = useMemo(() => (render ? { templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
+  const picker: PickerData | null = useMemo(() => (render ? { ...render.extras, templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
   const published = picker ? picker.templates : templates.filter((t) => t.status === 'published' && !t.deletedAt)
   const rail = published.slice(0, RAIL_MAX)
   const forName = clients ? client?.name ?? '' : leadName

@@ -51,7 +51,16 @@ export function AssigneeField({ team, value, onChange, error, inputRef }: {
   }
 
   return (
-    <div className={styles.wrap} data-field="assignees" ref={wrap}>
+    <div
+      className={styles.wrap} data-field="assignees" ref={wrap}
+      /* (REG-545, tester feedback) The whole box opens the list — the chip row under the search used to be dead. A press
+         on the padding or the chips' row focuses the search (which opens the list); preventDefault keeps the input from
+         blurring on the way. Buttons (a chip's remove) and the input itself keep their own behaviour. */
+      onMouseDown={(e) => {
+        if ((e.target as HTMLElement).closest('button, input')) return
+        e.preventDefault(); input.current?.focus(); setOpen(true)
+      }}
+    >
       <TextField
         label="Assign member"
         value={query}
@@ -67,7 +76,8 @@ export function AssigneeField({ team, value, onChange, error, inputRef }: {
         below={picked.length > 0 ? picked.map((m) => (
           <button key={m.id} type="button" className={styles.chip} aria-label={`Remove ${m.name}`}
                   onClick={() => onChange(value.filter((v) => v !== m.id))}>
-            <TagChip appearance="outlined" iconEnd={<Icon name="close" size={12} />}>{m.name}</TagChip>
+            {/* (REG-545) The member's own avatar leads the chip — a grey chip read as "invisible" to a tester. */}
+            <TagChip appearance="outlined" iconStart={<Avatar name={m.name} color={m.color} size={20} tooltip={false} />} iconEnd={<Icon name="close" size={12} />}>{m.name}</TagChip>
           </button>
         )) : null}
       />

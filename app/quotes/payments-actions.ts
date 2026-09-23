@@ -52,10 +52,6 @@ function clean(p: PaymentPatch, current?: Pick<QuotePayment, 'dueKind' | 'dueAt'
   return set
 }
 
-export async function listQuotePayments(quoteId: string): Promise<QuotePayment[]> {
-  return list(quoteId)
-}
-
 /** Presets, Add Payments with AI and undo write the whole schedule at once — validated first, then one transaction. */
 export async function replaceQuotePayments(quoteId: string, rows: PaymentInput[]): Promise<{ updatedAt: number; rows: QuotePayment[] }> {
   await quoteOf(quoteId)

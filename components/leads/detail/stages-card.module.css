@@ -28,6 +28,7 @@
 .icon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
 .row[data-state='current'] .icon { color: var(--om-color-primary-default); }
 .row[data-state='done'] .icon { color: var(--om-color-tertiary-green-default); }
+.row[data-state='current'][data-logged] .icon { color: var(--om-color-tertiary-green-default); }   /* (REG-548) the logged current stage's tick */
 .row[data-state='lost'] .icon { color: var(--om-color-tertiary-red-default); }
 .row[data-state='hold'] .icon { color: var(--om-color-tertiary-yellow-default); }
 

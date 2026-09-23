@@ -4,12 +4,14 @@ import { randomUUID } from 'node:crypto'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quotes, settings } from '@/lib/db/schema'
+import { quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quotes, settings } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { STUDIO_KEY, fetchTemplateApproval } from '@/lib/settings/queries'
 import { members } from '@/lib/db/schema'
-import { presetOf } from '@/lib/quotes/payments'
+import { findSplit, presetOf } from '@/lib/quotes/payments'
+import { fetchPaymentSplits } from '@/lib/company/payment-templates'
+import { createPaymentTemplate } from '@/app/company/payment-templates-actions'
 import { DEFAULT_DEFAULTS, isPaper, parseDefaults, parseDesign, type Paper, type TemplateDefaults, type TemplateDesign } from '@/lib/templates/model'
 import { isPresetKey, presetByKey, type PresetKey } from '@/lib/templates/presets'
 import { fallbackDesign, fetchQuoteDocData } from '@/lib/templates/queries'
@@ -197,7 +199,7 @@ export async function deleteTemplate(id: string): Promise<void> {
   const row = await templateRow(id)
   if (row.isDefault) throw new Error('default')
   if (row.submittedAt) throw new Error('awaiting approval')
-  await db.update(quoteTemplates).set({ deletedAt: new Date(), updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
+  await db.update(quoteTemplates).set({ deletedAt: new Date(), deletedBy: ME, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))   // (REG-538) deletedBy: the sheet's "Deleted by"
   touch(id)
 }
 export async function restoreTemplate(id: string): Promise<void> {
@@ -249,7 +251,7 @@ export async function saveQuoteClientView(quoteId: string, view: ClientView | nu
 }
 
 /** Quote editor › ⋯ › Save as template: a Draft template from the quote's own settings (its house style is the default's). */
-export async function saveQuoteAsTemplate(quoteId: string, name: string): Promise<string> {
+export async function saveQuoteAsTemplate(quoteId: string, name: string, opts: { includeText?: boolean } = {}): Promise<string> {
   const [q] = await db.select({ templateId: quotes.templateId }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
   if (q.templateId) {
@@ -263,10 +265,51 @@ export async function saveQuoteAsTemplate(quoteId: string, name: string): Promis
     const design = parseDesign(pinnedRow?.designJson ?? row.designJson, fallbackDesign())
     const defaults: TemplateDefaults = { ...parseDefaults(row.defaultsJson), gstEnabled: quote[0]?.gstEnabled ?? true, signatureRequired: quote[0]?.clientSignatureRequired ?? true, paymentPreset: pays.length ? presetOf(pays) : 'default' }
     await db.insert(quoteTemplates).values({ id, name: await uniqueName(name.trim() || 'Untitled template'), kind: 'design', isDefault: false, createdAt: now, status: 'draft', version: 0, paper: design.page.paper, draftJson: JSON.stringify({ design, defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME })
+    await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false)
     touch(id)
     return id
   }
-  return createTemplate({ name, source: { kind: 'quote', quoteId } })
+  const id = await createTemplate({ name, source: { kind: 'quote', quoteId } })
+  await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false)
+  touch(id)
+  return id
+}
+
+/**
+ * (REG-538) Save as template keeps what the quote wrote instead of dropping it: its Terms and Notes become text templates
+ * (when the dialog's switch says so), a split no library template matches becomes a payment template, and the draft's
+ * Defaults point at them — so a quote from the new template opens the way this one reads.
+ */
+async function carryQuoteExtras(templateId: string, quoteId: string, name: string, includeText: boolean): Promise<void> {
+  const [q] = await db.select({ termsHtml: quotes.termsHtml, notesHtml: quotes.notesHtml }).from(quotes).where(eq(quotes.id, quoteId))
+  const row = await templateRow(templateId)
+  let draft: { design: TemplateDesign; defaults: TemplateDefaults }
+  try { draft = JSON.parse(row.draftJson ?? '') as { design: TemplateDesign; defaults: TemplateDefaults } } catch { return }
+  if (!q || !draft || typeof draft !== 'object') return
+  const patch: Partial<TemplateDefaults> = {}
+  const now = new Date()
+  const base = name.trim() || 'Untitled template'
+  if (includeText) {
+    const add = async (kind: 'terms' | 'notes', html: string | null) => {
+      const body = (html ?? '').trim()
+      if (!body || /^<p>(<br\s*\/?>)?<\/p>$/.test(body)) return null
+      const id = randomUUID()
+      await db.insert(quoteTextTemplates).values({ id, kind, title: `${base} — ${kind === 'terms' ? 'Terms and Conditions' : 'Additional Notes'}`, body, createdAt: now, updatedAt: now, createdBy: ME })
+      return id
+    }
+    const [t, n] = await Promise.all([add('terms', q.termsHtml), add('notes', q.notesHtml)])
+    if (t) patch.termsTemplateId = t
+    if (n) patch.notesTemplateId = n
+  }
+  const pays = await db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(quotePayments.position)
+  if (pays.length) {
+    const splits = await fetchPaymentSplits()
+    const key = presetOf(pays, splits)
+    patch.paymentPreset = findSplit(key, splits) ? key : await createPaymentTemplate({ name: `${base} split`, source: { kind: 'quote', quoteId } })
+  }
+  if (!Object.keys(patch).length) return
+  draft.defaults = { ...parseDefaults(JSON.stringify(draft.defaults ?? {})), ...patch }
+  await db.update(quoteTemplates).set({ draftJson: JSON.stringify(draft), updatedAt: now, updatedBy: ME }).where(eq(quoteTemplates.id, templateId))
 }
 
 /** Editor › ⋯ › Match an existing template: the reference file this template is being rebuilt from (REG-491). */

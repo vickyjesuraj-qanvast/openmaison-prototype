@@ -121,7 +121,7 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
         const k = (f: string) => `meetings.${i}.${f}`
         if (!m.where) e[k('where')] = MSG.required
         if (!m.when) e[k('when')] = MSG.required; else if (!parseInputDateTime(m.when)) e[k('when')] = MSG.dateTime
-        if (m.files.length === 0) e[k('files')] = MSG.attach
+        // (REG-543) Meeting documents are optional — a meeting is logged by where and when (tester feedback 2026-09-15).
       })
       break
     case 'Quote Sent':

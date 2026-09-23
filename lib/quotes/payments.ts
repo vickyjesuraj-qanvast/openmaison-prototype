@@ -5,8 +5,9 @@ import { countedLines, flattenItems, lineTotalMinor, type Line } from './math'
 
 /**
  * Payment Schedule maths (1238:29290, REG-418) — client-safe. A schedule is rows of { name, description, pct, due }; every
- * amount is the quote's total × pct (REG-403: the mock's S$10,000 rows are placeholders). Presets are the studio's usual
- * splits (owner 2026-09-11: "10/30/30/30 + a few options"); Custom is whatever the studio edits them into. Due dates are
+ * amount is the quote's total × pct (REG-403: the mock's S$10,000 rows are placeholders). The splits the studio offers are
+ * **payment templates** (REG-538 — Company › Templates › Payments): the four presets are seeded as templates with their old
+ * keys as ids, so a stored `paymentPreset` still resolves; "Custom" is whatever the studio edits a schedule into. Due dates are
  * either the deposit's "On Approval", an ESTIMATE derived from the lead's start date and the property's renovation length
  * ("~ 21 Oct ’26"), or a date the studio picked.
  */
@@ -15,27 +16,46 @@ export type DueKind = (typeof DUE_KINDS)[number]
 export const isDueKind = (s: string): s is DueKind => (DUE_KINDS as readonly string[]).includes(s)
 
 export type PaymentRow = { name: string; description: string | null; pct: number; dueKind: DueKind; dueAt: Date | null }
+/** One milestone of a split as a template stores it. */
+export type SplitRow = { name: string; description: string | null; pct: number }
+/** A payment template as every surface reads it (the DB row parsed, or a seeded preset). */
+export type PaymentSplit = { id: string; name: string; rows: SplitRow[]; isPreset: boolean }
 type PresetRow = { name: string; description: string; pct: number }
 export type Preset = { key: string; label: string; rows: PresetRow[] }
 
-/** The presets behind the toolbar's "Default: 10/30/30/30 ▾" (the Won wizard's own split first, lib/leads/stage-data.ts). */
+/** The seeded presets (the Won wizard's own split first, lib/leads/stage-data.ts) — repair R35 writes them as payment templates. */
 export const PRESETS: Preset[] = [
   { key: 'default', label: 'Default: 10/30/30/30', rows: DEFAULT_MILESTONES.map((m) => ({ name: m.name, description: m.meta, pct: m.pct })) },
   { key: '20-40-40', label: '20/40/40', rows: [{ name: 'Deposit', description: 'Upon signing', pct: 20 }, { name: 'Commencement', description: 'Works commence', pct: 40 }, { name: 'Completion', description: 'Handover', pct: 40 }] },
   { key: '30-70', label: '30/70', rows: [{ name: 'Deposit', description: 'Upon signing', pct: 30 }, { name: 'Completion', description: 'Handover', pct: 70 }] },
   { key: '50-50', label: '50/50', rows: [{ name: 'Deposit', description: 'Upon signing', pct: 50 }, { name: 'Completion', description: 'Handover', pct: 50 }] },
 ]
+export const PRESET_SPLITS: PaymentSplit[] = PRESETS.map((p) => ({ id: p.key, name: p.label, rows: p.rows.map((r) => ({ ...r })), isPreset: true }))
+export const DEFAULT_SPLIT_ID = 'default'
 export const CUSTOM_LABEL = 'Custom'
 
-/** Which preset the rows ARE (names and shares in order), or 'custom' once the studio has changed anything that matters. */
-export function presetOf(rows: Pick<PaymentRow, 'name' | 'pct'>[]): string {
-  for (const p of PRESETS) {
+/** `rows_json` → rows (bad JSON = no rows). */
+export function parseSplitRows(json: string | null | undefined): SplitRow[] {
+  if (!json) return []
+  try {
+    const raw = JSON.parse(json) as unknown
+    if (!Array.isArray(raw)) return []
+    return raw.map((r) => { const x = (r ?? {}) as Partial<SplitRow>; return { name: typeof x.name === 'string' ? x.name : 'Payment', description: typeof x.description === 'string' ? x.description : null, pct: typeof x.pct === 'number' && Number.isFinite(x.pct) ? x.pct : 0 } })
+  } catch { return [] }
+}
+/** "10/30/30/30" — the split as a label. */
+export const splitWord = (rows: Pick<SplitRow, 'pct'>[]) => rows.map((r) => (Number.isInteger(r.pct) ? String(r.pct) : r.pct.toFixed(1))).join('/')
+
+/** Which template the rows ARE (names and shares in order), or 'custom' once the studio has changed anything that matters. */
+export function presetOf(rows: Pick<PaymentRow, 'name' | 'pct'>[], splits: PaymentSplit[] = PRESET_SPLITS): string {
+  for (const p of splits) {
     if (p.rows.length !== rows.length) continue
-    if (p.rows.every((r, i) => r.name === rows[i]!.name && Math.abs(r.pct - rows[i]!.pct) < 0.005)) return p.key
+    if (p.rows.every((r, i) => r.name === rows[i]!.name && Math.abs(r.pct - rows[i]!.pct) < 0.005)) return p.id
   }
   return 'custom'
 }
-export const presetLabel = (key: string) => PRESETS.find((p) => p.key === key)?.label ?? CUSTOM_LABEL
+export const presetLabel = (key: string | null | undefined, splits: PaymentSplit[] = PRESET_SPLITS) => splits.find((p) => p.id === key)?.name ?? CUSTOM_LABEL
+export const findSplit = (key: string | null | undefined, splits: PaymentSplit[] = PRESET_SPLITS): PaymentSplit | null => splits.find((p) => p.id === key) ?? null
 
 /** Amounts in cents: total × pct each; when the shares add up to exactly 100 % the last row absorbs the rounding, so the amounts sum to the total. */
 export function paymentAmounts(rows: Pick<PaymentRow, 'pct'>[], totalMinor: number): number[] {
@@ -82,10 +102,13 @@ export function withEstimates<T extends { dueKind: DueKind; dueAt: Date | null }
   })
 }
 
-/** A preset as schedule rows: the deposit is On Approval, every other row an estimate on the anchors. */
-export function presetRows(key: string, a: ScheduleAnchors): PaymentRow[] {
-  const p = PRESETS.find((x) => x.key === key) ?? PRESETS[0]!
-  return withEstimates(p.rows.map((r, i) => ({ name: r.name, description: r.description, pct: r.pct, dueKind: i === 0 ? 'approval' as const : 'estimate' as const, dueAt: null })), a)
+/** A split as schedule rows: the deposit is On Approval, every other row an estimate on the anchors. */
+export function splitRows(split: PaymentSplit, a: ScheduleAnchors): PaymentRow[] {
+  return withEstimates(split.rows.map((r, i) => ({ name: r.name, description: r.description, pct: r.pct, dueKind: i === 0 ? 'approval' as const : 'estimate' as const, dueAt: null })), a)
+}
+/** A template by id as schedule rows; an unknown id (a deleted template, the old 'custom') falls back to the studio default. */
+export function presetRows(key: string | null | undefined, a: ScheduleAnchors, splits: PaymentSplit[] = PRESET_SPLITS): PaymentRow[] {
+  return splitRows(findSplit(key, splits) ?? findSplit(DEFAULT_SPLIT_ID, splits) ?? PRESET_SPLITS[0]!, a)
 }
 
 /** A row the studio adds by hand ("Add a Payment"): nothing scheduled yet, due at handover until it is moved. */
@@ -98,11 +121,12 @@ export function blankRow(a: ScheduleAnchors): PaymentRow {
  * SECTION of works in the order the lines run down the quote (a line's section, else its category), each sized to that
  * section's share of the total, and a completion payment at handover. 10 % deposit, 10 % completion, the rest by share
  * (whole percentages; the largest section absorbs the rounding). A quote with no priced lines gets the default split.
+ * Kept for the Maison AI suggestions to come (REG-436 removed the button).
  */
 export function aiSchedule(items: (Line & { position: number; section: string | null; category: string | null })[], a: ScheduleAnchors): PaymentRow[] {
   const lines = countedLines(flattenItems(items))
   const total = lines.reduce((s, l) => s + lineTotalMinor(l), 0)
-  if (total <= 0) return presetRows('default', a)
+  if (total <= 0) return presetRows(DEFAULT_SPLIT_ID, a)
   const groups: { key: string; minor: number }[] = []
   for (const l of lines) {
     const key = (l.section ?? l.category ?? 'Works').trim() || 'Works'
@@ -111,7 +135,6 @@ export function aiSchedule(items: (Line & { position: number; section: string | 
   }
   const middle = 80
   let pcts = groups.map((g) => Math.round((g.minor / total) * middle))
-  // whole percentages must add up to 80: the largest section takes the difference; a section rounded to 0 folds into it
   const largest = pcts.indexOf(Math.max(...pcts))
   const kept = groups.map((g, i) => ({ ...g, pct: pcts[i]! })).filter((g, i) => g.pct > 0 || i === largest)
   pcts = kept.map((g) => g.pct)

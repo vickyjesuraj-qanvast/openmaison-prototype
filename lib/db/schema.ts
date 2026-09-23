@@ -161,6 +161,7 @@ export const leadTasks = sqliteTable(
     description: text('description'),
     seenAt: integer('seen_at', { mode: 'timestamp' }),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
+    templateId: text('template_id'),             // (REG-538) the task template it was added from — the gallery's "Added to n leads"
   },
   (t) => [index('lead_tasks_lead_idx').on(t.leadId)],
 )
@@ -308,8 +309,30 @@ export const quoteTextTemplates = sqliteTable('quote_text_templates', {
   body: text('body').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  /* (REG-538) The library page: who wrote it, soft delete with a Deleted sheet, when a quote last took it. */
+  createdBy: text('created_by'),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
 })
 export type QuoteTextTemplate = typeof quoteTextTemplates.$inferSelect
+
+/**
+ * (REG-538) Payment templates — the studio's milestone splits, a library instead of a hardcoded list. The four presets are
+ * seeded with their old keys as ids ('default' · '20-40-40' · '30-70' · '50-50'), so every stored `paymentPreset` still resolves.
+ * `rows_json` = [{ name, description, pct }]; the deposit is due on approval, the rest are estimated on the schedule.
+ */
+export const paymentTemplates = sqliteTable('payment_templates', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  rowsJson: text('rows_json').notNull(),
+  isPreset: integer('is_preset', { mode: 'boolean' }).notNull().default(false),
+  createdBy: text('created_by'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+})
+export type PaymentTemplate = typeof paymentTemplates.$inferSelect
 
 /**
  * Payment Schedule (1238:29290, REG-418): the milestones a quote is paid in. `pct` is the row's share of the quote's total
@@ -427,6 +450,7 @@ export const quoteTemplates = sqliteTable('quote_templates', {
   submitNote: text('submit_note'),                          // what the designer says changed
   reviewNote: text('review_note'),                          // the owner's "changes requested" note, until the next submit
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-502) soft, like leads and quotes: out of every list and picker, restorable from Deleted templates; quotes on it keep printing their pinned version
+  deletedBy: text('deleted_by'),               // (REG-538) the Deleted sheet's \"Deleted by\" — it used to show whoever last edited
 })
 export type QuoteTemplate = typeof quoteTemplates.$inferSelect
 
@@ -718,6 +742,10 @@ export const taskTemplates = sqliteTable('task_templates', {
   keepMembers: integer('keep_members', { mode: 'boolean' }).notNull().default(true),
   keepDescription: integer('keep_description', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  /* (REG-538) The library page: who made it, when it changed, soft delete. */
+  createdBy: text('created_by'),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 })
 
 export const templateTasks = sqliteTable(
@@ -729,6 +757,10 @@ export const templateTasks = sqliteTable(
     description: text('description'),
     kind: text('kind').notNull().default('General'),
     sortOrder: integer('sort_order').notNull().default(0),
+    /* (REG-538) What "Team Members" keeps, and the two facts a checklist step carries: who, which tags, due how many days after it lands. */
+    memberIds: text('member_ids'),               // JSON string[] of members.id
+    tagIds: text('tag_ids'),                     // JSON string[] of tags.id
+    dueDays: integer('due_days'),                // null = no due date
   },
   (t) => [index('template_tasks_template_idx').on(t.templateId)],
 )

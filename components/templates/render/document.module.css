@@ -24,8 +24,10 @@
 .el { position: absolute; box-sizing: border-box; }
 .el[data-selected] { outline: 1.5px solid var(--om-color-primary-default); outline-offset: 2px; z-index: 2; }
 .el[data-dragging] { cursor: grabbing; user-select: none; }
+/* (REG-542) Keyboard focus on a block, a canvas or an element. */
+.blockGroup:focus-visible, .canvas:focus-visible, .el:focus-visible { outline: 2px dashed var(--om-color-primary-default); outline-offset: 3px; }
 .el img { -webkit-user-drag: none; user-select: none; }
-.resize { position: absolute; right: -5px; bottom: -5px; width: 9px; height: 9px; background: var(--om-color-surface-default); border: 1.5px solid var(--om-color-primary-default); border-radius: 1px; cursor: nwse-resize; }
+.resize { position: absolute; right: -7px; bottom: -7px; width: 13px; height: 13px; background: var(--om-color-surface-default); border: 1.5px solid var(--om-color-primary-default); border-radius: 1px; cursor: nwse-resize; }
 .text { white-space: pre-line; overflow-wrap: anywhere; min-height: 1em; }
 .imgBox { width: 100%; height: 100%; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; }
 .imgBox img { width: 100%; height: 100%; object-fit: contain; object-position: left center; }

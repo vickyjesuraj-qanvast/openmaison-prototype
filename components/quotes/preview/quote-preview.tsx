@@ -25,6 +25,7 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
 import { sendQuote } from '@/app/quotes/actions'
+import { setQuoteTextVisible } from '@/app/quotes/text-actions'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import styles from './quote-preview.module.css'
 
@@ -184,7 +185,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
               <div className={styles.group}>
                 <span className={styles.groupTitle}>Content</span>
                 {VIEW_ROWS.map((r) => (
-                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => setView((x) => ({ ...x, [r.key]: v }))} aria-label={r.label} /></label>
+                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => { setView((x) => ({ ...x, [r.key]: v })); if (r.key === 'terms' || r.key === 'notes') void setQuoteTextVisible(quote.id, r.key, v).catch(() => snackbar({ message: 'Couldn’t save the setting — please try again' })) }} aria-label={r.label} /></label>
                 ))}
                 <div className={styles.hidden}>
                   <TextField label="Hidden items" mode="select" value={view.hiddenItems === 'no-price' ? 'Shown without a price' : 'Left out'} options={['Left out', 'Shown without a price']}
@@ -211,7 +212,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
               <div className={styles.group}>
                 <span className={styles.groupTitle}>Content</span>
                 {VIEW_ROWS.map((r) => (
-                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => setView((x) => ({ ...x, [r.key]: v }))} aria-label={r.label} /></label>
+                  <label key={r.key} className={styles.row}><span className={styles.rowText}><span>{r.label}</span>{r.help ? <span className={styles.rowHelp}>{r.help}</span> : null}</span><Switch size="sm" isSelected={view[r.key]} onChange={(v: boolean) => { setView((x) => ({ ...x, [r.key]: v })); if (r.key === 'terms' || r.key === 'notes') void setQuoteTextVisible(quote.id, r.key, v).catch(() => snackbar({ message: 'Couldn’t save the setting — please try again' })) }} aria-label={r.label} /></label>
                 ))}
                 <div className={styles.hidden}>
                   <TextField label="Hidden items" mode="select" value={view.hiddenItems === 'no-price' ? 'Shown without a price' : 'Left out'} options={['Left out', 'Shown without a price']}

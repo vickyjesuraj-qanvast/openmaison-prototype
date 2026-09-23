@@ -10,7 +10,7 @@ import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/drop
 import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, type Block, type BlockKind, type Paper, type TemplateDesign } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { flowBlocks, patchBlock, reorderFlow } from './editor-state'
-import { Group, Num, Seg, Txt } from './inspector-controls'
+import { Group, Num, Seg, Sub, Txt } from './inspector-controls'
 import styles from './structure-pane.module.css'
 
 type Props = {
@@ -24,7 +24,7 @@ const sub = (b: Block): string => {
     case 'cover': return 'Its own page'
     case 'items': return `${b.groupBy === 'none' ? 'Quote groups' : { category: 'By trade', room: 'By room', section: 'By section' }[b.groupBy]}${b.subGroupBy !== 'none' ? ` › ${b.subGroupBy}` : ''} · ${b.columns.filter((c) => c.on).length} columns`
     case 'totals': return `${b.lines.filter((l) => l.on).length} lines`
-    case 'payments': return b.layout
+    case 'payments': return `${b.layout.charAt(0).toUpperCase()}${b.layout.slice(1)} layout`
     case 'signature': return `${b.columns.length} columns`
     case 'text': return b.html.replace(/<[^>]+>/g, '').slice(0, 40)
     case 'title': return b.title || b.subject || ''
@@ -49,7 +49,7 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
         <Icon name={BLOCK_ICON[b.kind]} size={20} weight={300} />
         <span className={styles.rowText}><span className={styles.rowLabel}>{BLOCK_LABEL[b.kind]}</span>{sub(b) ? <span className={styles.rowSub}>{sub(b)}</span> : null}</span>
       </button>
-      <Tooltip label={b.hidden ? 'Show' : 'Hide'}><IconButton icon={b.hidden ? 'visibility_off' : 'visibility'} label={b.hidden ? `Show ${BLOCK_LABEL[b.kind]}` : `Hide ${BLOCK_LABEL[b.kind]}`} size={24} variant="bare" iconSize={18} onClick={() => toggle(b)} className={styles.eye} /></Tooltip>
+      <Tooltip label={b.hidden ? 'Show on the page' : 'Hide from the page'}><IconButton icon={b.hidden ? 'visibility_off' : 'visibility'} label={b.hidden ? `Show ${BLOCK_LABEL[b.kind]}` : `Hide ${BLOCK_LABEL[b.kind]}`} size={36} variant="bare" iconSize={20} onClick={() => toggle(b)} className={styles.eye} /></Tooltip>
     </div>
   )
   const markers: Record<string, number | null> = {}
@@ -58,10 +58,12 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
   return (
     <div className={styles.pane}>
       <div className={styles.setup}>
-        <Group title={`Page · ${design.page.paper}, ${design.page.margins.top}/${design.page.margins.right}/${design.page.margins.bottom}/${design.page.margins.left} mm`}>
+        {/* (REG-542) "Page setup" with the summary beside it — "Page · A4, 12/18/10/18 mm" read as a code; the margins are captioned and named by side. */}
+        <Group title="Page setup" sub={`${design.page.paper} · ${design.page.margins.top}/${design.page.margins.right}/${design.page.margins.bottom}/${design.page.margins.left} mm`}>
           <Seg label="Paper" value={design.page.paper} options={[{ value: 'A4' as Paper, label: 'A4' }, { value: 'Letter' as Paper, label: 'Letter' }]} onChange={(p) => onDesign((d) => ({ ...d, page: { ...d.page, paper: p } }))} />
+          <Sub>Margins</Sub>
           {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
-            <Num key={side} label={`Margin ${side}`} unit="mm" value={design.page.margins[side]} min={0} max={60} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, margins: { ...d.page.margins, [side]: v } } }), { coalesce: `margin-${side}` })} />
+            <Num key={side} label={`${side.charAt(0).toUpperCase()}${side.slice(1)}`} unit="mm" value={design.page.margins[side]} min={0} max={60} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, margins: { ...d.page.margins, [side]: v } } }), { coalesce: `margin-${side}` })} />
           ))}
           <Txt label="Watermark" value={design.page.watermark} fields={false} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, watermark: v } }), { coalesce: 'watermark' })} />
         </Group>

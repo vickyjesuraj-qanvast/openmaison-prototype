@@ -18,7 +18,7 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { TextField } from '@/components/om/text-field'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSnackbar } from '@/components/om/snackbar'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CompanyShell, templateTabs } from '@/components/company/company-shell'
 import { TemplateThumb } from '@/components/templates/render/document'
@@ -32,6 +32,7 @@ import type { TemplatesData } from '@/lib/templates/queries'
 import type { TemplateSummary } from '@/lib/templates/model'
 import { ago } from '@/lib/templates/ago'
 import { withFrom } from '@/lib/nav'
+import { LibraryKebab, LibraryNewButton } from './library-toolbar-actions'
 import styles from './quote-templates-gallery.module.css'
 
 type Filter = 'all' | 'awaiting' | 'published' | 'draft'
@@ -41,7 +42,7 @@ type Filter = 'all' | 'awaiting' | 'published' | 'draft'
  * Published vN · Default), who touched it and when, how many live quotes use it — with New template ▾ (Blank · From a house
  * style · Recreate from my current quote — the one way in, owner 2026-09-18: no second Upload button) and a kebab per card. A card opens the editor.
  */
-export function QuoteTemplatesGallery({ data }: { data: TemplatesData }) {
+export function QuoteTemplatesGallery({ data, from }: { data: TemplatesData; from?: string }) {
   const { templates, deleted, brand, sample, now, approval } = data
   const [kebabOpen, setKebabOpen] = useState(false)
   const [deletedOpen, setDeletedOpen] = useState(false)
@@ -100,24 +101,7 @@ export function QuoteTemplatesGallery({ data }: { data: TemplatesData }) {
   }
 
   return (
-    <CompanyShell title="Templates" tabs={templateTabs()} actions={
-      <span className={styles.newAnchor}>
-        <Button iconStart={<Icon name="add" size={20} />} iconEnd={<Icon name="keyboard_arrow_down" size={20} />} onPress={() => setNewOpen((o) => !o)} aria-haspopup="menu" aria-expanded={newOpen}>New template</Button>
-        <Dropdown open={newOpen} onClose={() => setNewOpen(false)} align="right" width={264} sheetTitle="New template">
-          <DropdownItem onSelect={() => { setNewOpen(false); void create(() => createTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
-          <DropdownItem onSelect={() => { setNewOpen(false); setHouseOpen(true) }}>Use a ready-made design</DropdownItem>
-          <DropdownDivider />
-          <DropdownItem onSelect={() => { setNewOpen(false); setRecreateOpen(true) }}>Upload my existing quote</DropdownItem>
-        </Dropdown>
-        {/* (REG-502) The page's kebab — the Leads header's: Deleted templates. */}
-        <span className={styles.kebabAnchor}>
-          <Tooltip label="More options" disabled={kebabOpen}><IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} /></Tooltip>
-          <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Templates">
-            <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Templates{deleted.length ? ` · ${deleted.length}` : ''}</DropdownItem>
-          </Dropdown>
-        </span>
-      </span>
-    }>
+    <CompanyShell title="Templates" tabs={templateTabs()} from={from}>
       <div className={styles.toolbar}>
         <div className={styles.filters}>
         <SegmentedButton aria-label="Show" selectedKeys={[filter]} onSelectionChange={(keys) => { const k = [...keys][0]; if (k === 'all' || k === 'awaiting' || k === 'published' || k === 'draft') setFilter(k) }}>
@@ -128,6 +112,13 @@ export function QuoteTemplatesGallery({ data }: { data: TemplatesData }) {
         </SegmentedButton>
         </div>
         <div className={styles.toolbarEnd}>
+          {/* (REG-541) The tab's own New ▾ leads the cluster: Blank · a ready-made design · upload the quote sent today (REG-500); its kebab closes it. */}
+          <LibraryNewButton open={newOpen} onOpenChange={setNewOpen}>
+            <DropdownItem onSelect={() => { setNewOpen(false); void create(() => createTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
+            <DropdownItem onSelect={() => { setNewOpen(false); setHouseOpen(true) }}>Use a ready-made design</DropdownItem>
+            <DropdownDivider />
+            <DropdownItem onSelect={() => { setNewOpen(false); setRecreateOpen(true) }}>Upload my existing quote</DropdownItem>
+          </LibraryNewButton>
           <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search templates" label="Search templates" />
           {/* (REG-505) Column settings for the list, then the grid / list toggle — the Files tab's toolbar order. */}
           {view === 'list' ? (
@@ -138,6 +129,7 @@ export function QuoteTemplatesGallery({ data }: { data: TemplatesData }) {
                                  options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]}
                                  onChange={(v) => setListPref(v === 'list')} />
           </span>
+          <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} />
         </div>
       </div>
 

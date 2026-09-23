@@ -39,7 +39,7 @@ function AiMark() {
  * APPENDS its body with the tokens resolved to the quote's records (owner 2026-09-11); Write with AI composes the section
  * from the quote's own items, schedule, sum and validity, with Undo.
  */
-export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, tokens, context }: {
+export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, tokens, context, onVisible }: {
   seed: TextSeed
   open: boolean
   onToggle: () => void
@@ -47,6 +47,8 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
   onSaved: (updatedAt: number) => void
   tokens: TokenValues
   context: TextContext
+  /** (REG-538) The switch is the one source of truth for the client view and Preview: the host redraws the pane. */
+  onVisible?: (visible: boolean) => void
 }) {
   const snackbar = useSnackbar()
   const { run, fail } = useRun()
@@ -82,7 +84,7 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
   }
 
   const toggleVisible = (v: boolean) => {
-    setVisible(v)
+    setVisible(v); onVisible?.(v)
     void run('save the setting', async () => { const r = await setQuoteTextVisible(quoteId, kind, v); onSaved(r.updatedAt) })
   }
   const addTemplate = (t: QuoteTextTemplate) => {

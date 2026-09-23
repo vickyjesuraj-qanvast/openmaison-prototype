@@ -4,12 +4,22 @@ import { db } from '@/lib/db'
 import { leads, members, quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quotes, settings, type Member, type QuoteTemplate } from '@/lib/db/schema'
 import { fetchStudio, fetchTemplateApproval } from '@/lib/settings/queries'
 import type { TemplateApproval } from '@/lib/settings/types'
-import { PRESETS as PAYMENT_PRESETS } from '@/lib/quotes/payments'
+import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { isPaper, parseDefaults, parseDesign, isTemplateStatus, type BrandKit, type StudioDetails, type TemplateDefaults, type TemplateDesign, type TemplateRecord, type TemplateSummary, type TemplateVersion } from './model'
 import { BRAND_KEY, DEFAULT_BRAND_SETTING, parseBrandSetting, type BrandSetting } from './brand'
 import { presetByKey } from './presets'
 import { clientViewFromDesign, parseClientView, type ClientView } from './client-view'
 import { docDataFromRecords, SAMPLE_DATA, type DocData } from './data'
+import type { PickerExtras } from './picker'
+
+/** (REG-538) What every picker names beside a template's defaults: the payment library's names and the live text templates' titles. */
+export async function pickerExtras(): Promise<PickerExtras> {
+  const [splits, texts] = await Promise.all([
+    fetchPaymentSplits(),
+    db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)).orderBy(asc(quoteTextTemplates.createdAt)),
+  ])
+  return { splits: splits.map((s) => ({ id: s.id, name: s.name })), texts }
+}
 import { readiness, type Readiness } from './readiness'
 import { pickerTemplates, type PickerData } from './picker'
 
@@ -41,7 +51,7 @@ function summary(row: QuoteTemplate, usedBy: number, team: Member[]): TemplateSu
     updatedAt: stamp(row.updatedAt) ?? stamp(row.publishedAt) ?? stamp(row.createdAt), updatedBy: who(row.updatedBy, team), publishedAt: stamp(row.publishedAt), lastUsedAt: stamp(row.lastUsedAt),
     usedBy, hasDraft: !!row.draftJson, sourceFile: row.sourceFile, design: status === 'draft' && draft ? draft.design : published,
     submitted: row.submittedAt ? { by: who(row.submittedBy, team), at: row.submittedAt.getTime(), note: row.submitNote ?? '' } : null, reviewNote: row.reviewNote,
-    deletedAt: stamp(row.deletedAt),
+    deletedAt: stamp(row.deletedAt), deletedBy: who(row.deletedBy, team),
   }
 }
 
@@ -52,12 +62,13 @@ export async function fetchTemplates(): Promise<TemplatesData> {
   const [rows, team, uses, brand, approval] = await Promise.all([
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.updatedAt), asc(quoteTemplates.createdAt)),
     db.select().from(members),
-    db.select({ templateId: quotes.templateId, n: sql<number>`count(*)` }).from(quotes).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt))).groupBy(quotes.templateId),
+    db.select({ templateId: quotes.templateId, n: sql<number>`count(*)` }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId)).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt), isNull(leads.deletedAt))).groupBy(quotes.templateId),   // (REG-538) quotes on a deleted lead do not count
     fetchBrand(),
     fetchTemplateApproval(),
   ])
   const usedBy = new Map(uses.map((u) => [u.templateId, u.n]))
-  const all = rows.map((r) => summary(r, usedBy.get(r.id) ?? 0, team))
+  const blank = usedBy.get(null) ?? 0   // (REG-538) a quote with no template prints through the studio default: it counts for it
+  const all = rows.map((r) => summary(r, (usedBy.get(r.id) ?? 0) + (r.isDefault && !r.deletedAt ? blank : 0), team))
   const templates = all.filter((t) => !t.deletedAt)
   const deleted = all.filter((t) => !!t.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0))
   return { approval,  templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
@@ -109,15 +120,16 @@ export async function fetchTemplateEditor(id: string): Promise<TemplateEditorDat
     fetchBrand(),
     db.select({ id: quotes.id, number: quotes.number, title: quotes.title, leadName: leads.name, status: quotes.status }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
       .where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt), isNull(leads.deletedAt))).orderBy(desc(quotes.updatedAt), desc(quotes.createdAt)).limit(12),
-    db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title }).from(quoteTextTemplates).orderBy(asc(quoteTextTemplates.createdAt)),
+    db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)).orderBy(asc(quoteTextTemplates.createdAt)),
     db.select().from(members),
     fetchTemplateApproval(),
   ])
+  const splits = await fetchPaymentSplits()   // (REG-538) the Payment schedule select reads the library
   const me = team.find((m) => m.isYou) ?? null
   return {
     approval, canApprove: me?.role === 'Owner' || me?.role === 'Admin',
     template, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, quotes: recent, textTemplates: texts,
-    paymentPresets: PAYMENT_PRESETS.map((p) => ({ key: p.key, label: p.label })), me: me ? { id: me.id, name: me.name, role: me.role } : null, now: Date.now(),
+    paymentPresets: splits.map((p) => ({ key: p.id, label: p.name })), me: me ? { id: me.id, name: me.name, role: me.role } : null, now: Date.now(),
   }
 }
 
@@ -187,11 +199,12 @@ export async function fetchQuotePreview(quoteId: string): Promise<QuotePreviewDa
     template = { id: row.id, name: row.name, version: quote.templateVersion ?? row.version, latest: row.version, design, defaults, isDefault: row.isDefault, deleted: !!row.deletedAt }
   }
   const design = template?.design ?? fallbackDesign()
-  const baseView = clientViewFromDesign(design)
-  const view = parseClientView(quote.clientViewJson, baseView)
+  /* (REG-538) Terms / Notes visibility belongs to the quote's own switches (the editor's "Show in client view"): both the base and the view read them, so the panel never disagrees with the editor. */
+  const baseView = { ...clientViewFromDesign(design), terms: quote.termsVisible, notes: quote.notesVisible }
+  const view = { ...parseClientView(quote.clientViewJson, baseView), terms: quote.termsVisible, notes: quote.notesVisible }
   return {
     quote: { id: quote.id, number: quote.number, title: quote.title, status: quote.status, leadId: quote.leadId, leadName: leadRows[0]?.name ?? '', templateId: quote.templateId, templateVersion: quote.templateVersion, visibility: quote.visibility },
-    data, template, templates: all.map((t) => ({ id: t.id, name: t.name, version: t.version, isDefault: t.isDefault })), picker: { templates: pickerTemplates(all), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } }, brand: brand.kit, baseView, view, readiness: readiness(data, design, view), now: Date.now(),
+    data, template, templates: all.map((t) => ({ id: t.id, name: t.name, version: t.version, isDefault: t.isDefault })), picker: { ...(await pickerExtras()), templates: pickerTemplates(all), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } }, brand: brand.kit, baseView, view, readiness: readiness(data, design, view), now: Date.now(),
   }
 }
 
@@ -219,7 +232,7 @@ export async function fetchQuoteTemplateState(quote: { templateId: string | null
       if (!rows.some((t) => t.id === row.id)) list.push({ id: row.id, name: row.name, version: row.version, isDefault: row.isDefault, status: row.status })
     }
   }
-  return { templates: list, current, picker: { templates: pickerTemplates(rows), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } } }
+  return { templates: list, current, picker: { ...(await pickerExtras()), templates: pickerTemplates(rows), brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details } } }
 }
 
 /** (REG-501) Templates awaiting an Owner's approval — the rail's Company badge and the panel's "n awaiting". */

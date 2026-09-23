@@ -10,7 +10,7 @@ import { useCopy } from '@/components/om/use-copy'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
 import { PORTAL_LINK } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MSG } from '@/lib/forms'
-import { digitsOnly, phoneTyped } from '@/lib/format'
+import { digitsOnly, isSgPhone, phoneTyped } from '@/lib/format'
 import styles from './invite-portal-modal.module.css'
 
 /**
@@ -44,7 +44,7 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
 
   // The mock shows a filled 8-digit number; the spec sets no rule, so the lead form's phone rule applies (MSG.phone,
   // shown after the first press like the wizard).
-  const phoneError = phone.length !== 8 ? MSG.phone : undefined
+  const phoneError = isSgPhone(phone) ? undefined : MSG.phone   // (REG-547)
   const send = () => {
     if (phoneError) { setPressed(true); return }
     onSend(phone, showHistory)

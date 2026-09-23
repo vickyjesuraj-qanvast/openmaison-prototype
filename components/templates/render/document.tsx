@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { isCanvas, mm, mergeBrand, PAPER_MM, resolveColor, type BrandKit, type CanvasBlock, type TemplateDesign } from '@/lib/templates/model'
+import { BLOCK_LABEL, isCanvas, mm, mergeBrand, PAPER_MM, resolveColor, type BrandKit, type CanvasBlock, type TemplateDesign } from '@/lib/templates/model'
 import { fieldValues } from '@/lib/templates/fields'
 import { clientViewFromDesign, type ClientView } from '@/lib/templates/client-view'
 import { docTotals, type DocData } from '@/lib/templates/data'
@@ -133,8 +133,12 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
     if (p.pageTotalTable && built.tables[p.pageTotalTable]?.pageTotals) add(p.pageTotalTable, <div key="pt" className={styles.slice}>{built.tables[p.pageTotalTable]!.pageTotal(pc)}</div>)
     return out.map((g, i) => {
       const selected = interactive?.selected?.blockId === g.blockId && !interactive.selected.elementId
+      const kind = design.blocks.find((b) => b.id === g.blockId)?.kind
       return (
         <div key={`${g.blockId}-${i}`} className={styles.blockGroup} data-block-id={g.blockId} data-selected={selected || undefined}
+             /* (REG-542) each block is a keyboard stop: Tab reaches it, Enter selects it */
+             role={interactive ? 'group' : undefined} tabIndex={interactive ? 0 : undefined} aria-label={interactive && kind ? BLOCK_LABEL[kind] : undefined}
+             onKeyDown={interactive ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); interactive.onSelect({ blockId: g.blockId }) } } : undefined}
              onPointerDown={interactive ? (e) => { e.stopPropagation(); interactive.onSelect({ blockId: g.blockId }) } : undefined}>
           {g.nodes}
         </div>

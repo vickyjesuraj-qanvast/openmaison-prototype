@@ -21,7 +21,9 @@ export type PickerTemplate = {
   design: TemplateDesign
   defaults: TemplateDefaults
 }
-export type PickerData = { templates: PickerTemplate[]; brand: BrandKit; sample: DocData }
+/** (REG-538) `splits` and `texts` name what a template's defaults point at — the payment library and the text library — so the facts read "Deposit-heavy 20/40/40" and "Standard T&Cs", not a key. */
+export type PickerData = { templates: PickerTemplate[]; brand: BrandKit; sample: DocData; splits?: { id: string; name: string }[]; texts?: { id: string; kind: string; title: string }[] }
+export type PickerExtras = Pick<PickerData, 'splits' | 'texts'>
 
 export function toPickerTemplate(row: QuoteTemplate): PickerTemplate {
   return {
@@ -34,13 +36,15 @@ export const pickerTemplates = (rows: QuoteTemplate[]): PickerTemplate[] =>
   rows.filter((r) => r.status === 'published' && !r.deletedAt).map(toPickerTemplate).sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0))
 
 /** The words a picker prints under a template: what a quote from it starts with. */
-export function startsWith(t: PickerTemplate, paymentLabel: (key: string | null) => string): { sections: string; payments: string; validity: string; grouping: string } {
+export function startsWith(t: PickerTemplate, paymentLabel: (key: string | null) => string, texts: { id: string; kind: string; title: string }[] = []): { sections: string; payments: string; validity: string; grouping: string; text: string } {
   const items = t.design.blocks.find((b): b is ItemsBlock => b.kind === 'items')
   const grouping = !items || items.groupBy === 'none' ? 'Your own groups' : `${{ category: 'By trade', room: 'By room', section: 'By section' }[items.groupBy]}${items.subGroupBy !== 'none' ? ` › ${items.subGroupBy}` : ''}`
   return {
     sections: cleanGroups(t.defaults.starterGroups).length ? cleanGroups(t.defaults.starterGroups).join(' · ') : 'No starter sections',
     payments: paymentLabel(t.defaults.paymentPreset), validity: `Valid ${t.defaults.validityDays} days${t.defaults.gstEnabled ? ' · GST' : ' · no GST'}${t.defaults.signatureRequired ? ' · client signs' : ''}`,
     grouping,
+    // (REG-538) Which Terms and Notes templates a new quote opens with — 'None' when the quote writes its own.
+    text: [t.defaults.termsTemplateId ? texts.find((x) => x.id === t.defaults.termsTemplateId)?.title ?? null : null, t.defaults.notesTemplateId ? texts.find((x) => x.id === t.defaults.notesTemplateId)?.title ?? null : null].filter((x): x is string => !!x).join(' · ') || 'None — written on the quote',
   }
 }
 

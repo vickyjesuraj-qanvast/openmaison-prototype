@@ -98,7 +98,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'blank' ? newBlank() : kind === 'template' ? setPickerOpen(true) : kind === 'import' ? setImportOpen(true) : comingSoon())}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={(a) => (a === 'templates' ? router.push('/company/templates/contracts') : a === 'deleted' ? setDeletedOpen(true) : comingSoon())}
+        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'deleted' ? setDeletedOpen(true) : comingSoon())}
       />
       {contracts.length === 0 ? (
         <ContractsEmpty onFromScratch={newBlank} onFromTemplate={() => setPickerOpen(true)} />

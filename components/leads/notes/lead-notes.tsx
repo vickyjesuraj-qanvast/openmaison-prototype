@@ -413,13 +413,14 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           selectedId={selectedId} onSelect={select}
           onItemMenu={itemMenu}
           filter={filter} onFilter={setFilter}
+          onNew={startDraft}   /* (REG-546) */
         />
       </div>
       <div className={styles.pane}>
         {/* Mobile-only back affordance, above the pane's own content (hidden ≥768 by CSS). */}
         <button type="button" className={styles.back} onClick={() => setMobilePane(false)}>
           <Icon name="arrow_back" size={24} weight={300} />
-          Notes
+          Notes & Logs
         </button>
 
         {/* The pane toolbar, back at the TOP (REG-277, owner 2026-09-01: REG-254 had docked it to the foot and

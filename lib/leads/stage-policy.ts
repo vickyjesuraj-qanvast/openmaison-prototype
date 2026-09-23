@@ -98,8 +98,9 @@ export const DETAIL_TABS = [
   { label: 'Quotes', slug: 'quotes' },
   { label: 'Contracts', slug: 'contracts' },
   { label: 'Files', slug: 'files' },
-  { label: 'Notes', slug: 'notes' },
-  { label: 'Meetings', slug: 'meetings' },
+  { label: 'Notes & Logs', slug: 'notes' },   // (REG-550) the tab names the logs it holds (tester feedback 2026-09-15)
+  /* (REG-552, owner 2026-09-23) Meetings is hidden until its mocks land — its slug 404s and the Meeting quick link is gone too.
+     Restore: `{ label: 'Meetings', slug: 'meetings' }` here and the link in components/leads/detail/quick-links.tsx. */
   { label: 'Questionnaire', slug: 'questionnaire' },
   { label: 'Activity', slug: 'activity' },
 ] as const

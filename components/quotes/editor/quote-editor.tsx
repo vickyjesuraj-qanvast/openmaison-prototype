@@ -13,7 +13,12 @@ import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { setQuoteStatus } from '@/app/leads/quotes-actions'
+import { applyTemplateDefaults, deleteQuotes, duplicateQuote, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { fetchContractTemplateOptionsAction } from '@/app/contracts/read-actions'
+import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
+import { DeleteQuotesDialog } from '@/components/leads/quotes/delete-dialog'
+import { RenameQuoteDialog } from './rename-dialog'
+import { clientViewFromDesign, parseClientView } from '@/lib/templates/client-view'
 import { saveQuoteAsTemplate, setQuoteTemplate, updateQuoteTemplateVersion } from '@/app/company/templates-actions'
 import { SaveAsTemplateDialog, TemplateCard, TemplateUpdateBanner } from './template-bar'
 import { ClientViewPane } from './client-view-pane'
@@ -81,7 +86,7 @@ function savedLabel(updatedAt: number, now: number): string {
  * Notes (REG-420), Signature and Activity (REG-421).
  */
 export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; from?: string; /** (REG-490) the preview's Open links land on a section */ section?: string }) {
-  const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, activity, now, brand, studioDetails } = data
+  const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, paymentSplits, activity, now, brand, studioDetails } = data
   const router = useRouter()
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
@@ -99,6 +104,15 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   const [clientView, setClientView] = useState(false)
   const [gstOn, setGstOn] = useState(true)   /* the Items card reports its GST switch on mount and on change; the text context prints "inclusive of GST" only when on */
   const [addTick, setAddTick] = useState(0)   /* (REG-522) the Create strip's My Items */
+  /* (REG-538) The kebab's own dialogs — Rename · Duplicate · Delete · Export — and the contract template picker. */
+  const [exportTick, setExportTick] = useState(0)
+  const [renameOpen, setRenameOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [contractPicker, setContractPicker] = useState(false)
+  /* (REG-538) Change template on a Draft asks whether the template's defaults land too; the REG-497 regroup question waits behind it. */
+  const [applyTpl, setApplyTpl] = useState<{ id: string; name: string; regroup: { view: ItemsView; label: string } | null } | null>(null)
+  const [seedNonce, setSeedNonce] = useState(0)   /* bumps when defaults land: the seeded cards remount on their new seeds */
+  const [textVisible, setTextVisible] = useState({ terms: quote.termsVisible, notes: quote.notesVisible })   /* the two "Show in client view" switches, for the live pane */
   const tabletDown = useMediaQuery(TABLET_DOWN)
 
   /* ── state ── */
@@ -244,14 +258,18 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     void run('change the status', async () => { await setQuoteStatus(quote.id, s); setStatus(s); setUpdatedAt(Date.now()); setClock(Date.now()) }, `Quote marked ${s}`)
   }
   /* Preview, Download as PDF and Print open the quote through its template (REG-490); Save as Template makes a draft template
-     (REG-489); Rename, Duplicate, Export, Version History, Comments and Delete still answer coming soon (owner 2026-09-11). */
+     (REG-489); Rename, Duplicate and Edit, Export and Delete are live (REG-538); Version History and Comments still answer coming soon (owner 2026-09-11). */
   const onMenu = (action: HeaderMenuAction) => {
     if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
-    if (action === 'contract') { void flushRef.current(); void createContractDoc({ leadId: lead.id, fromQuoteId: quote.id }).then((id) => router.push(`/contracts/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}`), () => snackbar({ message: 'Couldn’t create the contract — please try again' })); return }   /* (REG-534) the agreement's Quote chips read this quote */
+    if (action === 'contract') { void flushRef.current(); setContractPicker(true); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
     if (action === 'xray') { void flushRef.current(); router.push(`/quote-x-ray?lead=${lead.id}&quote=${quote.id}&from=${encodeURIComponent(`/quotes/${quote.id}`)}`); return }   /* (REG-529) Quote X-Ray on this quote */
-    comingSoon()
+    if (action === 'rename') { setRenameOpen(true); return }
+    if (action === 'duplicate') { void flushRef.current(); void run('duplicate the quote', async () => { const id = await duplicateQuote(quote.id); router.push(withFrom(`/quotes/${id}`, from)) }, 'Quote duplicated — this is the copy'); return }
+    if (action === 'delete') { setDeleteOpen(true); return }
+    if (action === 'export') { if (!openOf('items')) toggle('items'); setExportTick((t) => t + 1); return }   /* the Items export (REG-478) */
+    comingSoon()   /* Version History · Comments */
   }
   const VIEW_WORD: Record<ItemsView, string> = { none: 'your own groups', category: 'Trade', room: 'Room', section: 'Section' }
   const pickTemplate = (templateId: string) => {
@@ -265,8 +283,26 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
       setTemplateState((st) => ({ ...st, current: t ? { id: t.id, name: t.name, pinned: t.version, latest: t.version, note: '', design: t.design, defaults: t.defaults, deleted: false } : null }))
       setBannerKept(false); stamp(Date.now())
       // (REG-497) A grouped table on a template that groups another way: offer to regroup the way it prints.
-      if (t) { const v = viewForTemplate(t.design); if (v !== 'none' && lines.some((l) => l.kind === 'group')) setRegroup({ view: v, label: `${t.name} prints by ${VIEW_WORD[v]}` }) }
+      const regroupAsk = t ? (() => { const v = viewForTemplate(t.design); return v !== 'none' && lines.some((l) => l.kind === 'group') ? { view: v, label: `${t.name} prints by ${VIEW_WORD[v]}` } : null })() : null
+      // (REG-538) On a Draft the template's Defaults can land too — asked, never silent; the regroup question follows it.
+      if (t && status === 'Draft') setApplyTpl({ id: t.id, name: t.name, regroup: regroupAsk })
+      else if (regroupAsk) setRegroup(regroupAsk)
     }, 'Template changed').finally(() => setTemplateBusy(false))
+  }
+  const closeApply = () => { const pending = applyTpl?.regroup ?? null; setApplyTpl(null); if (pending) setRegroup(pending) }
+  const doApplyDefaults = () => {
+    const tpl = applyTpl; closeApply(); if (!tpl) return
+    setTemplateBusy(true)
+    void run('apply the template’s defaults', async () => {
+      await flushRef.current()
+      const r = await applyTemplateDefaults(quote.id, tpl.id)
+      setGeneral((g) => ({ ...g, validUntil: r.validUntil ? inputDate(new Date(r.validUntil)) : '' }))
+      setItemsSeed((sd) => ({ ...sd, items: r.items, pricing: { ...sd.pricing, gstEnabled: r.gstEnabled }, columnsJson: r.itemsColumns, view: r.itemsView as ItemsSeed['view'] }))
+      setPaymentsSeed((sd) => ({ ...sd, rows: r.payments }))
+      setTermsSeed((sd) => ({ ...sd, html: r.termsHtml ?? '' })); setNotesSeed((sd) => ({ ...sd, html: r.notesHtml ?? '' }))
+      setSignatureSeed((sd) => ({ ...sd, required: r.signatureRequired }))
+      setSeedNonce((n) => n + 1); stamp(r.updatedAt)
+    }, `${tpl.name}’s defaults applied`).finally(() => setTemplateBusy(false))
   }
   const doRegroup = (view: ItemsView) => {
     setRegroup(null)
@@ -287,6 +323,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   }), [quote, general, status, lead, studioDetails, members, lines, scheduleRows, amountMinor])
   /* The pane's design: the quote's template, else the studio default, else the first published, else the built-in client design — one chain for the aside and the tablet drawer. */
   const clientPaneDesign = templateState.current?.design ?? templateState.picker.templates.find((t) => t.isDefault)?.design ?? templateState.picker.templates[0]?.design ?? FALLBACK_CLIENT_DESIGN
+  /* (REG-538) The pane's view: the quote's own client view over the design, with the editor's Terms / Notes switches on top — Preview draws the same. */
+  const clientPaneView = useMemo(() => ({ ...parseClientView(quote.clientViewJson, clientViewFromDesign(clientPaneDesign)), terms: textVisible.terms, notes: textVisible.notes }), [quote.clientViewJson, clientPaneDesign, textVisible])
   const clientDesign = templateState.current?.design ?? null
   const clientColumns = useMemo(() => (clientDesign ? clientColumnsOf(clientDesign) : null), [clientDesign])
   const updateTemplate = () => {
@@ -296,12 +334,12 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
       setTemplateState((st) => (st.current ? { ...st, current: { ...st.current, pinned: r.version } } : st)); stamp(Date.now())
     }, 'Quote moved to the latest template version').finally(() => setTemplateBusy(false))
   }
-  const saveAsTemplate = (name: string) => {
+  const saveAsTemplate = (name: string, opts: { includeText: boolean }) => {
     setTemplateBusy(true)
     void (async () => {
       try {
         await flushRef.current()
-        const id = await saveQuoteAsTemplate(quote.id, name)
+        const id = await saveQuoteAsTemplate(quote.id, name, opts)
         setSaveAsOpen(false)
         snackbar({ message: `${name.trim()} saved as a draft template`, actionLabel: 'Open', onAction: () => { router.push(`/templates/${id}?from=${encodeURIComponent(`/quotes/${quote.id}`)}&quote=${quote.id}`) } })
       } catch { fail('save the template') } finally { setTemplateBusy(false) }
@@ -347,18 +385,18 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
 
   const movable = sections.filter((s) => !isFixedSection(s.key))
   // The Items section's seed never changes for a mounted editor (its own state takes over from the first render).
-  const [itemsSeed] = useState<ItemsSeed>(() => ({
+  const [itemsSeed, setItemsSeed] = useState<ItemsSeed>(() => ({
     quoteId: quote.id, number: quote.number, items, priceBook, studio, files, me,
     pricing: { additionalDiscountMode: quote.additionalDiscountMode === 'amount' ? 'amount' : 'pct', additionalDiscountValue: quote.additionalDiscountValue, gstEnabled: quote.gstEnabled, issuingEntity: quote.issuingEntity },
     view: quote.itemsView, density: quote.itemsDensity, columnsJson: quote.itemsColumns, labelsJson: quote.itemsLabels,
   }))
-  const [paymentsSeed] = useState<PaymentsSeed>(() => {
+  const [paymentsSeed, setPaymentsSeed] = useState<PaymentsSeed>(() => {
     const a = scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: quote.createdAt, propertyType: quote.propertyType ?? lead.propertyType })
-    return { quoteId: quote.id, rows: payments, anchors: { start: a.start.getTime(), weeks: a.weeks } }
+    return { quoteId: quote.id, rows: payments, anchors: { start: a.start.getTime(), weeks: a.weeks }, splits: paymentSplits }
   })
   const [filesSeed] = useState<FilesSeed>(() => ({ quoteId: quote.id, leadId: lead.id, files: quoteFiles, leadFiles: files, visible: quote.filesVisible }))
-  const [termsSeed] = useState<TextSeed>(() => ({ quoteId: quote.id, kind: 'terms', html: quote.termsHtml ?? '', visible: quote.termsVisible, templates: textTemplates.filter((t) => t.kind === 'terms') }))
-  const [notesSeed] = useState<TextSeed>(() => ({ quoteId: quote.id, kind: 'notes', html: quote.notesHtml ?? '', visible: quote.notesVisible, templates: textTemplates.filter((t) => t.kind === 'notes') }))
+  const [termsSeed, setTermsSeed] = useState<TextSeed>(() => ({ quoteId: quote.id, kind: 'terms', html: quote.termsHtml ?? '', visible: quote.termsVisible, templates: textTemplates.filter((t) => t.kind === 'terms') }))
+  const [notesSeed, setNotesSeed] = useState<TextSeed>(() => ({ quoteId: quote.id, kind: 'notes', html: quote.notesHtml ?? '', visible: quote.notesVisible, templates: textTemplates.filter((t) => t.kind === 'notes') }))
   // What a template's tokens and Write with AI resolve to — the quote's records (REG-403 / REG-420), live where the editor changes them.
   const tokens: TokenValues = useMemo(() => ({
     client: lead.name, studio: studio.name, studioPhone: studio.phone,
@@ -376,7 +414,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
       schedule: toRows(scheduleRows), start: new Date(paymentsSeed.anchors.start), weeks: paymentsSeed.anchors.weeks,
     }
   }, [lines, studio.name, lead.name, tokens.member, quote.number, quote.createdAt, general.propertyType, general.siteAddress, general.validUntil, amountMinor, scheduleRows, paymentsSeed.anchors.start, paymentsSeed.anchors.weeks, gstOn])
-  const [signatureSeed] = useState<SignatureSeed>(() => ({
+  const [signatureSeed, setSignatureSeed] = useState<SignatureSeed>(() => ({
     quoteId: quote.id, required: quote.clientSignatureRequired, memberName: me?.name ?? '', studioName: studio.name, clientName: lead.name, nric: quote.nric,
     signature: me?.signatureKind === 'draw' || me?.signatureKind === 'type' ? { kind: me.signatureKind, name: me.signatureName ?? me.name, data: me.signatureData ?? null } : null,
   }))
@@ -407,7 +445,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
             <SectionCard id="section-general" title={titleOf('general')} open={openOf('general')} onToggle={() => toggle('general')}>
               {bodyOf('general')}
             </SectionCard>
-            <ItemsCard seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')}
+            <ItemsCard key={`items-${seedNonce}`} seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')} exportTick={exportTick}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
                        onTotal={setAmountMinor} onLines={setLines} onPricing={(p) => setGstOn(p.gstEnabled)} clientColumns={clientColumns} forceView={forceView} addTick={addTick} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
@@ -415,14 +453,15 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
                                 onDrop={() => persistSections(sectionsRef.current)}
                                 render={s.key === 'payment' ? (onHandle) => (
-                                  <PaymentsCard seed={paymentsSeed} open={!s.collapsed} onToggle={() => toggle('payment')} onHandlePointerDown={onHandle}
+                                  <PaymentsCard key={`pay-${seedNonce}`} seed={paymentsSeed} open={!s.collapsed} onToggle={() => toggle('payment')} onHandlePointerDown={onHandle}
                                                 totalMinor={amountMinor} today={new Date(now)} onSaved={stamp} onRows={setScheduleRows} />
                                 ) : s.key === 'files' ? (onHandle) => (
                                   <FilesCard seed={filesSeed} open={!s.collapsed} onToggle={() => toggle('files')} onHandlePointerDown={onHandle} onSaved={stamp} onCount={setFileCount} />
                                 ) : s.key === 'terms' || s.key === 'notes' ? (onHandle) => (
-                                  <TextCard seed={s.key === 'terms' ? termsSeed : notesSeed} open={!s.collapsed} onToggle={() => toggle(s.key)} onHandlePointerDown={onHandle} onSaved={stamp} tokens={tokens} context={textContext} />
+                                  <TextCard key={`${s.key}-${seedNonce}`} seed={s.key === 'terms' ? termsSeed : notesSeed} open={!s.collapsed} onToggle={() => toggle(s.key)} onHandlePointerDown={onHandle} onSaved={stamp} tokens={tokens} context={textContext}
+                                            onVisible={(v) => setTextVisible((x) => ({ ...x, [s.key]: v }))} />
                                 ) : s.key === 'signature' ? (onHandle) => (
-                                  <SignatureCard seed={signatureSeed} open={!s.collapsed} onToggle={() => toggle('signature')} onHandlePointerDown={onHandle} onSaved={stamp} nric={general.nric} />
+                                  <SignatureCard key={`sig-${seedNonce}`} seed={signatureSeed} open={!s.collapsed} onToggle={() => toggle('signature')} onHandlePointerDown={onHandle} onSaved={stamp} nric={general.nric} />
                                 ) : undefined}>
                   {bodyOf(s.key)}
                 </MovableSection>
@@ -434,7 +473,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
           </div>
           {clientView && !tabletDown ? (
             <aside className={styles.clientPane} aria-label="Client view">
-              <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand}
+              <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand} view={clientPaneView}
                               templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
             </aside>
           ) : null}
@@ -442,7 +481,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
         </div>
         {tabletDown ? (
           <Drawer open={clientView} onClose={() => setClientView(false)} title="Client view" label="Client view" width={420}>
-            <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand}
+            <ClientViewPane data={clientData} design={clientPaneDesign} brand={brand} view={clientPaneView}
                             templateName={templateState.current?.name ?? 'Studio default'} version={templateState.current?.pinned ?? null} onOpenPreview={() => onMenu('preview')} onClose={() => setClientView(false)} />
           </Drawer>
         ) : null}
@@ -456,6 +495,16 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
                        onCancel={() => setRegroup(null)} onConfirm={() => { if (regroup) doRegroup(regroup.view) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
         <SaveAsTemplateDialog open={saveAsOpen} defaultName={`${general.title || quote.number} template`} busy={templateBusy} onClose={() => setSaveAsOpen(false)} onSave={saveAsTemplate} />
+        {/* (REG-538) Change template on a Draft: apply its defaults? — then the regroup question, if any. */}
+        <ConfirmDialog open={applyTpl !== null} title={applyTpl ? `Apply ${applyTpl.name}’s defaults to this quote?` : ''} tone="primary" confirmLabel="Apply defaults" cancelLabel="Keep mine"
+                       message="Its payment schedule, validity, GST and signature settings, Terms and Notes templates and working columns replace what this quote has. Your lines stay as they are."
+                       onCancel={closeApply} onConfirm={doApplyDefaults} />
+        <RenameQuoteDialog open={renameOpen} title={general.title} onClose={() => setRenameOpen(false)} onSave={(title) => changeGeneral({ title })} />
+        <DeleteQuotesDialog open={deleteOpen} count={1} onNo={() => setDeleteOpen(false)}
+                            onYes={() => { setDeleteOpen(false); void run('delete the quote', async () => { await deleteQuotes([quote.id]); router.push(backHref) }, 'Quote deleted') }} />
+        <ContractTemplatePicker open={contractPicker} onClose={() => setContractPicker(false)} load={fetchContractTemplateOptionsAction}
+                                onUse={(templateId) => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id, templateId }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }}
+                                onStarter={() => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>
     </PageReveal>

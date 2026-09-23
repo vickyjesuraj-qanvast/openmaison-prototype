@@ -41,7 +41,9 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
   const manage = () => router.push(withFrom('/company/templates/quotes', `${pathname}${search.size ? `?${search.toString()}` : ''}`))
   const shown = useMemo(() => { const q = query.trim().toLowerCase(); return q ? data.templates.filter((t) => t.name.toLowerCase().includes(q)) : data.templates }, [data.templates, query])
   const sel: PickerTemplate | null = data.templates.find((t) => t.id === picked) ?? null
-  const words = sel ? startsWith(sel, (k) => presetLabel(k ?? 'default')) : null
+  /* (REG-538) The payment label reads the library when the data carries it (a custom split has a name there), else the built-in presets. */
+  const paymentLabel = (k: string | null) => (data.splits ? data.splits.find((s) => s.id === (k ?? 'default'))?.name ?? presetLabel(k ?? 'default') : presetLabel(k ?? 'default'))
+  const words = sel ? startsWith(sel, paymentLabel, data.texts ?? []) : null
   return (
     <div className={styles.picker} data-testid="template-picker">
       <div className={styles.list}>
@@ -109,6 +111,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
               <div><dt>Items</dt><dd>{words.grouping}</dd></div>
               <div><dt>Payments</dt><dd>{words.payments}</dd></div>
               <div><dt>Terms</dt><dd>{words.validity}</dd></div>
+              <div><dt>Text</dt><dd>{words.text}</dd></div>   {/* (REG-538) */}
             </dl>
           </>
         ) : (

@@ -1,0 +1,42 @@
+/* The simple libraries' gallery (REG-538): the Quotes gallery's stylesheet does the shell; these are the kinds' thumbs and the odd bit. */
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* A document page in the 220 band: a 150×195 sheet with the title and ruled excerpt lines (the picker's thumb). */
+.sheet { display: flex; flex-direction: column; gap: 6px; width: 150px; height: 195px; padding: 16px 14px; background: var(--om-color-surface-default); border-radius: var(--om-radius-0-5); box-shadow: var(--om-elevation-level-2); overflow: hidden; }
+.sheetTitle { font: var(--om-type-caption-s); font-weight: 700; color: var(--om-color-on-surface-default); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sheetKind { font-size: 8px; line-height: 12px; color: var(--om-color-primary-default); text-transform: uppercase; letter-spacing: .04em; }
+.sheetText { font-size: 8px; line-height: 12px; color: var(--om-color-on-surface-secondary); overflow: hidden; }
+/* The 26×36 list glyph: a page with a title bar and rules. */
+.glyph.glyph { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: 5px 4px; border: var(--om-border-1) solid var(--om-color-surface-variant); box-sizing: border-box; }
+.glyphTitle { display: block; width: 70%; height: 3px; border-radius: 1px; background: var(--om-color-on-surface-default); }
+.glyphLines { display: block; flex: 1; max-height: 16px; margin-top: 2px; background-image: repeating-linear-gradient(to bottom, var(--om-color-on-surface-border) 0 1px, transparent 1px 4px); background-size: 100% 4px; }
+/* A checklist in the band: up to four steps with an empty box each. */
+.checklist { display: flex; flex-direction: column; gap: 8px; width: 200px; padding: 18px 16px; background: var(--om-color-surface-default); border-radius: var(--om-radius-0-5); box-shadow: var(--om-elevation-level-2); }
+.checkRow { display: flex; align-items: center; gap: 8px; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.checkRow > :first-child { color: var(--om-color-on-surface-border); flex-shrink: 0; }
+.checkText { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.checkMore { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.glyphChecks { display: flex; flex-direction: column; gap: 3px; padding: 6px 5px; }
+.glyphCheck { display: flex; align-items: center; gap: 2px; }
+.glyphCheck::before { content: ''; width: 4px; height: 4px; border: 1px solid var(--om-color-on-surface-border); border-radius: 1px; flex-shrink: 0; }
+.glyphCheck::after { content: ''; flex: 1; height: 2px; background: var(--om-color-surface-variant); }
+/* A split in the band: one bar, segments sized to the shares, the share under each. */
+.split { display: flex; flex-direction: column; gap: 10px; width: 200px; padding: 20px 16px; background: var(--om-color-surface-default); border-radius: var(--om-radius-0-5); box-shadow: var(--om-elevation-level-2); }
+.splitBar { display: flex; height: 14px; border-radius: var(--om-radius-full); overflow: hidden; background: var(--om-color-surface-variant); gap: 2px; }
+.splitSeg { height: 100%; background: var(--om-color-primary-default); min-width: 2px; }
+.splitSeg:nth-child(2n) { background: var(--om-color-on-primary-variant); }
+.splitSeg:nth-child(3n) { background: var(--om-color-primary-variant); }
+.splitRows { display: flex; flex-direction: column; gap: 4px; }
+.splitRow { display: flex; justify-content: space-between; gap: 8px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.splitRow > :first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--om-color-on-surface-secondary); }
+.splitRow > :last-child { font-variant-numeric: tabular-nums; }
+.glyphSplit { display: flex; align-items: center; gap: 1px; padding: 0 3px; }
+.glyphSplit > span { height: 6px; background: var(--om-color-primary-default); border-radius: 1px; }
+.glyphSplit > span:nth-child(2n) { background: var(--om-color-on-primary-variant); }
+/* The kind chip on a card (Terms · Notes) and on a list row. */
+.kindChip { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }
+.muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 767px) {
+  .sheet { width: 110px; height: 140px; padding: 12px 10px; }
+  .checklist, .split { width: 150px; padding: 14px 12px; }
+}

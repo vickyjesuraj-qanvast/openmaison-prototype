@@ -7,7 +7,7 @@ export const MSG = {
   date: 'Enter a valid date (d/m/yyyy)',
   dateTime: 'Choose a date and time',
   email: 'Enter a valid email address',
-  phone: 'Enter an 8-digit phone number',
+  phone: 'Enter a valid 8-digit Singapore number',   // (REG-547) 6 / 8 / 9 first
   amount: 'Enter an amount',
   number: 'Enter a number',
   attach: 'Attach at least one file',

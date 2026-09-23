@@ -115,6 +115,11 @@ export function groupDigits(raw: string): string {
  * both sides, so the number copied out of the listing ("+65 91234567") finds its own lead when pasted back
  * into the box — before this it matched nothing, because "6591234567" is not a substring of "91234567".
  */
+/** (REG-547, tester feedback 2026-09-15: "12345678" saved) The one validity rule for a Singapore number: eight digits
+    starting 6 (landline), 8 or 9 (mobile). Every phone box — the lead form, Invite to Portal, the contract's signing
+    recipient — asks this of the bare digits, never a local length check. */
+export const isSgPhone = (digits: string): boolean => /^[689]\d{7}$/.test(digits)
+
 export function phoneDigits(raw: string | null | undefined): string {
   const d = digitsOnly(raw ?? '')
   return d.length === 10 && d.startsWith('65') ? d.slice(2) : d   // the +65 country code is implied, never stored

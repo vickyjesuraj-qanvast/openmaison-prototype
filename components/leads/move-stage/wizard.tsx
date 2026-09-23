@@ -117,7 +117,7 @@ export function MoveStageWizard({
   const [autoFillFor, setAutoFillFor] = useState<number | null>(null)
   const autoFillOpen = autoFillFor !== null
   const [suggestOpen, setSuggestOpen] = useState(false)
-  const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set([SUGGESTED]))
+  const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set())   // (REG-553) suggestions start unticked — the tick is the reader's choice, as the Notes tab's dialog already does
   const [autoAddedTask, setAutoAddedTask] = useState('')
 
   // (REG-269) Mobile: the stage rail is a horizontal strip across the top of the sheet, so the open stage has to be

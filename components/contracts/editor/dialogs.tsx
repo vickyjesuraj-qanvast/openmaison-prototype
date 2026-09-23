@@ -9,7 +9,7 @@ import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
 import { Dropdown } from '@/components/leads/dropdown'
 import { Dropzone, FileTile, useUploadSim } from '@/components/leads/move-stage/fields'
-import { digitsOnly, inputDate, parseInputDate, phoneTyped } from '@/lib/format'
+import { digitsOnly, inputDate, isSgPhone, parseInputDate, phoneTyped } from '@/lib/format'
 import styles from './contract-editor.module.css'
 
 /* The contract editor's dialogs (REG-534): Send for digital signature (1.0's WhatsApp link, on our m 600 Dialog) · Mark as
@@ -31,9 +31,9 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setName(defaults.name); setPhone(defaults.phone); setText(draft(defaults.name)); setTouched(false) } }
   const { copied, copy } = useCopy(link, { done: 'Signing link copied' })
-  const phoneOk = digitsOnly(phone).length === 8
+  const phoneOk = isSgPhone(digitsOnly(phone))   // (REG-547)
   const nameOk = name.trim().length > 0
-  const err = touched && !phoneOk ? 'Enter the 8-digit mobile number' : undefined
+  const err = touched && !phoneOk ? 'Enter a valid 8-digit mobile number' : undefined
   return (
     <Dialog open={open} onClose={onClose} title="Send for digital signature" size="modal" width={600}
             subtitle="Your client reviews and signs in their browser. A one-time code on their phone confirms it’s them."
@@ -89,7 +89,7 @@ export function RecipientDialog({ open, onClose, name, phone, onSave }: { open: 
   const [p, setP] = useState(phone)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setN(name); setP(phone) } }
-  const ok = n.trim().length > 0 && digitsOnly(p).length === 8
+  const ok = n.trim().length > 0 && isSgPhone(digitsOnly(p))   // (REG-547)
   return (
     <Dialog open={open} onClose={onClose} title="Edit recipient" size="form" width={400}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!ok} onPress={() => { void onSave({ name: n.trim(), phone: digitsOnly(p) }) }}>Save</Button></>}>

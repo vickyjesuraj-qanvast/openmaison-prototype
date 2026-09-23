@@ -28,3 +28,6 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .actions button, .bannerActions button { min-height: 44px; }
 }
+
+/* (REG-538) The Save as template dialog's switch row. */
+.saveRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface); cursor: pointer; }

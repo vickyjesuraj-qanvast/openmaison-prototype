@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { mm, MM_PX, resolveColor, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type TextStyle } from '@/lib/templates/model'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type TextStyle } from '@/lib/templates/model'
 import { isEmptyResolved, resolveFields } from '@/lib/templates/fields'
 import { stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
@@ -70,6 +70,16 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
   const [drag, setDrag] = useState<{ mode: 'move' | 'resize'; sx: number; sy: number; x: number; y: number; w: number; h: number } | null>(null)
   const dragRef = useRef(drag)
   const [editing, setEditing] = useState(false)
+  /* (REG-542) React never auto-focuses a div, so the in-place editor opened without the caret and the first keystrokes went
+     nowhere; it takes focus with the caret at the end as soon as it mounts. */
+  const editRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!editing) return
+    const node = editRef.current; if (!node) return
+    node.focus()
+    const range = document.createRange(); range.selectNodeContents(node); range.collapse(false)
+    const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
+  }, [editing])
   const base: CSSProperties = { left: mm(el.x), top: mm(el.y), width: mm(el.w), height: el.h !== undefined ? mm(el.h) : undefined }
 
   let inner: ReactNode = null
@@ -78,7 +88,7 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
       if (!editing && el.hideIfEmpty && isEmptyResolved(el.text, values)) return null
       const text = editing ? el.text : resolveFields(el.text, values)
       inner = editing ? (
-        <div className={styles.text} style={textCss(el.style, brand)} contentEditable suppressContentEditableWarning autoFocus
+        <div ref={editRef} className={styles.text} style={textCss(el.style, brand)} contentEditable suppressContentEditableWarning
              onBlur={(e) => { setEditing(false); interactive?.onEditText(block.id, el.id, 'text', e.currentTarget.innerText) }}
              onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); (e.currentTarget as HTMLElement).blur() } }}>{el.text}</div>
       ) : <div className={styles.text} style={textCss(el.style, brand)}>{text}</div>
@@ -146,7 +156,10 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
     interactive.onMoveElement(block.id, el.id, {}, true)
   }
   return (
-    <div className={styles.el} style={{ ...base, maxWidth: mm(width) }} data-selected={selected || undefined} data-dragging={drag ? '' : undefined} data-el-id={el.id}
+    <div className={styles.el} style={{ ...base, maxWidth: mm(width) }} data-selected={selected || undefined} data-dragging={drag ? '' : undefined} data-el-id={el.id} data-el-kind={el.kind}
+         /* (REG-542) reachable by keyboard: Tab lands on it, Enter selects it, Enter again on a text edits it in place */
+         role="group" tabIndex={editing ? -1 : 0} aria-label={`${ELEMENT_LABEL[el.kind]} in the ${BLOCK_LABEL[block.kind]}`}
+         onKeyDown={(e) => { if (editing || e.target !== e.currentTarget) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selected && el.kind === 'text' && !el.locked) setEditing(true); else interactive.onSelect({ blockId: block.id, elementId: el.id }) } }}
          onPointerDown={(e) => onDown(e, 'move')} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
          onDoubleClick={(e) => { if (el.kind === 'text' && !el.locked) { e.stopPropagation(); setEditing(true) } }}>
       {inner}
@@ -162,6 +175,8 @@ export function CanvasView({ block, ctx, width, height }: { block: CanvasBlock; 
   return (
     <div className={styles.canvas} data-kind={block.kind} data-block-id={block.id} data-selected={selected || undefined}
          style={{ width: mm(width), height: height !== undefined ? height : mm(block.height), background: block.background ? resolveColor(block.background, brand) : undefined, borderBottom: block.rule ? `${pt(block.rule.weight)}px solid ${resolveColor(block.rule.color, brand)}` : undefined }}
+         role={interactive ? 'group' : undefined} tabIndex={interactive ? 0 : undefined} aria-label={interactive ? BLOCK_LABEL[block.kind] : undefined}
+         onKeyDown={interactive ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); interactive.onSelect({ blockId: block.id }) } } : undefined}
          onPointerDown={interactive ? (e) => { if (e.target === e.currentTarget) { e.stopPropagation(); interactive.onSelect({ blockId: block.id }) } } : undefined}>
       {block.elements.map((el) => <Element key={el.id} el={el} block={block} ctx={ctx} width={width} />)}
     </div>

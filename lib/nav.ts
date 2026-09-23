@@ -23,5 +23,12 @@ export function fromLabel(from: string | undefined): string | undefined {
   if (!p) return undefined
   if (p.startsWith('/qanvast-ops')) return 'Qanvast Ops'
   if (p.startsWith('/quotes')) return 'Quotes'
+  /* (REG-538) The Company pages honour `from` too, so every origin an editor can send names itself. */
+  if (p.startsWith('/contracts')) return 'Contracts'
+  if (p.startsWith('/tasks')) return 'Tasks'
+  if (p.startsWith('/leads/') ) return 'Lead'
+  if (p.startsWith('/leads')) return 'Leads'
+  if (p.startsWith('/templates/')) return 'Template editor'
+  if (p.startsWith('/company')) return 'Company'
   return undefined
 }

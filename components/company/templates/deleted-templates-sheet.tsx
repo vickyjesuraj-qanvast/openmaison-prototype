@@ -133,12 +133,12 @@ export function DeletedTemplatesSheet({ open, deleted, brand, sample, onClose, o
                       <div className={`${styles.cell} ${styles.colVersion}`} role="cell"><span className={styles.plain}>{t.status === 'draft' ? 'Draft' : `v${t.version}`}</span></div>
                       <div className={`${styles.cell} ${styles.colDeleted}`} role="cell"><span className={styles.plain}>{t.deletedAt ? displayDate(new Date(t.deletedAt)) : '--'}</span></div>
                       <div className={`${styles.cell} ${styles.colBy}`} role="cell">
-                        {t.updatedBy ? (
+                        {(t.deletedBy ?? t.updatedBy) ? (
                           <>
-                            <Avatar name={t.updatedBy.name} color={t.updatedBy.color} size={24} tooltip={false} />
-                            <span className={styles.plain}>{t.updatedBy.name}</span>
+                            <Avatar name={(t.deletedBy ?? t.updatedBy)!.name} color={(t.deletedBy ?? t.updatedBy)!.color} size={24} tooltip={false} />
+                            <span className={styles.plain}>{(t.deletedBy ?? t.updatedBy)!.name}</span>
                           </>
-                        ) : <span className={styles.plain}>--</span>}
+                        ) : <span className={styles.plain}>--</span>}{/* (REG-538) who deleted it */}
                       </div>
                       <div className={`${styles.cell} ${styles.colQuotes}`} role="cell"><span className={styles.plain}>{quotesOn(t)}</span></div>
                       <div className={`${styles.cell} ${styles.colActions}`} role="cell">

@@ -6,6 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import { mm, PAPER_MM, type BrandKit, type TemplateDesign } from '@/lib/templates/model'
+import type { ClientView } from '@/lib/templates/client-view'
 import type { DocData } from '@/lib/templates/data'
 import styles from './client-view-pane.module.css'
 
@@ -13,8 +14,8 @@ import styles from './client-view-pane.module.css'
  * (REG-497) Client view, live: the quote drawn through its template as it is built — the same renderer as the Preview and
  * the PDF, redrawn from the editor's own lines, fields and schedule. Beside the sections on a desktop, a drawer on a tablet.
  */
-export function ClientViewPane({ data, design, brand, templateName, version, onOpenPreview, onClose }: {
-  data: DocData; design: TemplateDesign; brand: BrandKit; templateName: string; version: number | null; onOpenPreview: () => void; onClose: () => void
+export function ClientViewPane({ data, design, brand, templateName, version, view, onOpenPreview, onClose }: {
+  data: DocData; design: TemplateDesign; brand: BrandKit; templateName: string; version: number | null; /** (REG-538) the quote's own client-view switches, as Preview draws them */ view?: ClientView; onOpenPreview: () => void; onClose: () => void
 }) {
   const areaRef = useRef<HTMLDivElement>(null)
   const [areaW, setAreaW] = useState(0)
@@ -38,7 +39,7 @@ export function ClientViewPane({ data, design, brand, templateName, version, onO
         <IconButton icon="close" label="Close client view" size={24} variant="bare" iconSize={20} onClick={onClose} />
       </div>
       <div ref={areaRef} className={styles.area}>
-        <TemplateDocument design={design} brand={brand} data={data} zoom={zoom} onPaginated={onPaginated} />
+        <TemplateDocument design={design} brand={brand} data={data} view={view} zoom={zoom} onPaginated={onPaginated} />
       </div>
       <div className={styles.foot}>
         <span className={styles.note}><Icon name="info" size={16} weight={300} /> Redraws as you build. Cost and markup never print.</span>

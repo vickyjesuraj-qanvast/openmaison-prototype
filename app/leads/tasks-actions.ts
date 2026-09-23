@@ -160,33 +160,49 @@ export async function detachFile(taskId: string, fileId: string): Promise<void> 
   touch(t.leadId)
 }
 
-/* ── templates (902:29198 · 902:29220) ── */
+/* ── templates (902:29198 · 902:29220; REG-538: the library keeps members, tags and due offsets) ── */
+const idsJson = (list: string[]) => JSON.stringify([...new Set(list)])
+const parseIds = (json: string | null): string[] => { if (!json) return []; try { const v = JSON.parse(json) as unknown; return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [] } catch { return [] } }
 export async function saveTemplate(input: { taskIds: string[]; name?: string; templateId?: string; keepMembers: boolean; keepDescription: boolean }): Promise<string> {
   const rows = await db.select().from(leadTasks).where(inArray(leadTasks.id, input.taskIds))
+  const [links, tagLinks] = rows.length ? await Promise.all([db.select().from(taskAssignees).where(inArray(taskAssignees.taskId, rows.map((r) => r.id))), db.select().from(taskTags).where(inArray(taskTags.taskId, rows.map((r) => r.id)))]) : [[], []]
   const id = input.templateId ?? randomUUID()
+  const now = new Date()
   // (REG-286) The template header and the tasks under it are one record: a failure between them published an empty
   // template ("Untitled template", no rows) that "Use Template" then applied as nothing.
   await db.transaction(async (tx) => {
     if (!input.templateId) {
-      await tx.insert(taskTemplates).values({ id, name: (input.name ?? 'Untitled template').trim(), keepMembers: input.keepMembers, keepDescription: input.keepDescription, createdAt: new Date() })
+      await tx.insert(taskTemplates).values({ id, name: (input.name ?? 'Untitled template').trim(), keepMembers: input.keepMembers, keepDescription: input.keepDescription, createdAt: now, createdBy: ME, updatedAt: now })
     } else {
-      await tx.update(taskTemplates).set({ keepMembers: input.keepMembers, keepDescription: input.keepDescription }).where(eq(taskTemplates.id, id))
+      await tx.update(taskTemplates).set({ keepMembers: input.keepMembers, keepDescription: input.keepDescription, updatedAt: now }).where(eq(taskTemplates.id, id))
     }
     const existing = await tx.select().from(templateTasks).where(eq(templateTasks.templateId, id))
-    if (rows.length) await tx.insert(templateTasks).values(rows.map((r, i) => ({ id: randomUUID(), templateId: id, title: r.title, description: input.keepDescription ? r.description : null, kind: r.kind, sortOrder: existing.length + i })))
+    // (REG-538) A step keeps its members (when the switch says so), its tags, and its due date as days from now — "Team Members" is no longer a promise.
+    if (rows.length) await tx.insert(templateTasks).values(rows.map((r, i) => ({
+      id: randomUUID(), templateId: id, title: r.title, description: input.keepDescription ? r.description : null, kind: r.kind, sortOrder: existing.length + i,
+      memberIds: idsJson(input.keepMembers ? links.filter((l) => l.taskId === r.id).map((l) => l.memberId) : []), tagIds: idsJson(tagLinks.filter((l) => l.taskId === r.id).map((l) => l.tagId)),
+      dueDays: r.dueAt ? Math.max(0, Math.round((r.dueAt.getTime() - now.getTime()) / 86_400_000)) : null,
+    })))
   })
-  revalidateEveryLead(); return id
+  revalidateEveryLead(); revalidatePath('/company/templates/tasks'); return id
 }
-/** "Use Template": the template's tasks land on the lead as new open tasks (assignees only when the template kept them — the demo keeps none). */
+/** "Use Template": the template's steps land on the lead as new open tasks — with their members (when the template keeps them), tags and due dates (REG-538). */
 export async function applyTemplate(leadId: string | null, templateId: string): Promise<number> {
+  const [tpl] = await db.select().from(taskTemplates).where(eq(taskTemplates.id, templateId))
+  if (!tpl || tpl.deletedAt) throw new Error('template not found')
   const rows = await db.select().from(templateTasks).where(eq(templateTasks.templateId, templateId)).orderBy(templateTasks.sortOrder)
   const now = new Date()
   // (REG-286) All the template's tasks or none: a half-applied template is a checklist with steps missing, and the
   // count the snackbar reports ("n tasks added") is then a lie.
   await db.transaction(async (tx) => {
     for (const r of rows) {
-      await tx.insert(leadTasks).values({ id: randomUUID(), leadId, title: r.title, kind: r.kind, dueAt: null, done: false, createdAt: now, creatorId: ME, description: r.description, seenAt: null, updatedAt: now })
+      const taskId = randomUUID()
+      await tx.insert(leadTasks).values({ id: taskId, leadId, title: r.title, kind: r.kind, dueAt: r.dueDays === null ? null : new Date(now.getTime() + r.dueDays * 86_400_000), done: false, createdAt: now, creatorId: ME, description: tpl.keepDescription ? r.description : null, seenAt: null, updatedAt: now, templateId })
+      const memberIds = tpl.keepMembers ? parseIds(r.memberIds) : []
+      if (memberIds.length) await tx.insert(taskAssignees).values(memberIds.map((memberId) => ({ taskId, memberId })))
+      const tagIds = parseIds(r.tagIds)
+      if (tagIds.length) await tx.insert(taskTags).values(tagIds.map((tagId) => ({ taskId, tagId })))
     }
   })
-  touch(leadId); return rows.length
+  touch(leadId); revalidatePath('/company/templates/tasks'); return rows.length
 }

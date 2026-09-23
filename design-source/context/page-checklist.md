@@ -63,7 +63,7 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
       A selection the user did not make — a fallback after a search, a filter or a delete moved it — never takes
       focus either: autofocus follows intent, not mounting (REG-294). Typing in a search box must never lose the caret.
 - Every text input is `TextField` (`components/om/text-field.tsx`) — never a raw `<input>` with a label. Label inside when empty, floats on focus/value; five DS states (empty / active / filled / error / disabled — 836:23125, 836:23276).
-- **Numbers are filtered as typed**, never only validated: any field that holds digits (amounts, phone, area, %, counts) uses `TextField numeric="digits"` or `numeric="amount"` (thousands grouping) — letters and symbols must never appear in the box (REG-150).
+- **Numbers are filtered as typed**, never only validated: any field that holds digits (amounts, phone, area, %, counts) uses `TextField numeric="digits"` or `numeric="amount"` (thousands grouping) — letters and symbols must never appear in the box (REG-150). A phone box validates through `isSgPhone` (`lib/format.ts`, REG-547) — never a local length check.
 - Dates are `DateField`; dates with time are `DateTimeField` — read-only triggers over the Material picker. No free-typed dates anywhere.
 - Every field except notes validates: required + format, computed by a pure `validate(...)`, shown inline only after the first submit attempt, re-computed live so errors clear as fixed. Messages come from `lib/forms.ts` `MSG` — add to that vocabulary, don't inline strings.
 - Non-text controls (chip groups, attach rows, tables) show `<FieldError/>` under the control; chip groups pass `error` to `ChoiceChips`.
