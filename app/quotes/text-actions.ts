@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { quoteTextTemplates, quotes, type QuoteTextTemplate } from '@/lib/db/schema'
+import { quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isBlankHtml, isTextKind, type TextKind } from '@/lib/quotes/text'
 import { stampQuote } from '@/lib/quotes/stamp'
@@ -73,7 +73,21 @@ export async function duplicateTextTemplate(id: string): Promise<string> {
 }
 /** Delete is soft (REG-538): the template leaves the modal and the Defaults selects and waits in Deleted Templates. */
 export async function deleteTextTemplate(id: string): Promise<void> {
-  await db.update(quoteTextTemplates).set({ deletedAt: new Date() }).where(eq(quoteTextTemplates.id, id)); touch(id)
+  await db.update(quoteTextTemplates).set({ deletedAt: new Date() }).where(eq(quoteTextTemplates.id, id))
+  await clearTextFromTemplateDefaults(id)   // (REG-581) no quote template keeps naming it — what the delete dialog promises
+  touch(id)
+}
+/** (REG-581) A deleted text leaves every quote template's New quotes — published and draft — so no new quote is seeded from it. */
+async function clearTextFromTemplateDefaults(id: string): Promise<void> {
+  type D = { termsTemplateId?: string | null; notesTemplateId?: string | null }
+  const drop = (d: D | undefined | null) => { let hit = false; if (d?.termsTemplateId === id) { d.termsTemplateId = null; hit = true } if (d?.notesTemplateId === id) { d.notesTemplateId = null; hit = true } return hit }
+  const rows = await db.select({ id: quoteTemplates.id, defaultsJson: quoteTemplates.defaultsJson, draftJson: quoteTemplates.draftJson }).from(quoteTemplates)
+  for (const r of rows) {
+    const set: { defaultsJson?: string; draftJson?: string } = {}
+    try { if (r.defaultsJson) { const d = JSON.parse(r.defaultsJson) as D; if (drop(d)) set.defaultsJson = JSON.stringify(d) } } catch { /* ignore */ }
+    try { if (r.draftJson) { const j = JSON.parse(r.draftJson) as { defaults?: D }; if (drop(j.defaults)) set.draftJson = JSON.stringify(j) } } catch { /* ignore */ }
+    if (Object.keys(set).length) await db.update(quoteTemplates).set(set).where(eq(quoteTemplates.id, r.id))
+  }
 }
 export async function restoreTextTemplates(ids: string[]): Promise<void> {
   if (!ids.length) return

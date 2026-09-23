@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadTasks, leads, members, quoteFiles, quoteTemplates, quoteTextTemplates, quotes, quotePayments, taskAssignees, type QuoteItem, type QuotePayment } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
@@ -9,13 +9,15 @@ import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
-import { projectRef, validUntil } from '@/lib/quotes/refs'
+import { projectRef, validUntil, propertyFamily } from '@/lib/quotes/refs'
 import { parseDefaults, parseDesign, type TemplateDefaults } from '@/lib/templates/model'
 import { cleanGroups, viewForTemplate } from '@/lib/templates/picker'
 import { presetByKey } from '@/lib/templates/presets'
 import { quoteItems } from '@/lib/db/schema'
 import { resolveTokens } from '@/lib/quotes/text'
-import { fetchStudio } from '@/lib/settings/queries'
+import { fetchStudio, fetchNumbering, NUMBERING_KEY, fetchQuoteApproval, fetchQuoteRules, isApprover } from '@/lib/settings/queries'
+import { formatQuoteNumber, initialsOf, isDefaultNumbering } from '@/lib/settings/types'
+import { settings } from '@/lib/db/schema'
 import { COLUMN_KEYS, DEFAULT_COLUMNS, DEFAULT_DENSITY, type ColumnKey, type ColumnSettings } from '@/lib/quotes/items-model'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
@@ -28,10 +30,27 @@ import { fetchLeadContracts } from '@/lib/leads/contracts'
 const touch = (leadId: string) => revalidateLead(leadId)
 const ME = SESSION_MEMBER_ID
 
-/** Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). */
-async function nextNumber(): Promise<string> {
-  const [row] = await db.select({ max: sql<number | null>`max(cast(substr(${quotes.number}, 4) as integer))` }).from(quotes)
-  return `OM-${(row?.max ?? 10000) + 1}`
+/**
+ * Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). (REG-561) A studio with its own
+ * pattern (Settings › Quotes) gets prefix · initials · year-month · a running number instead — the sequence is the setting's
+ * `next`, never below the highest number already given under that prefix; the numbers already on quotes stay as they are.
+ */
+async function nextNumber(creator?: { name: string } | null, at = new Date(), propertyType: string | null = null): Promise<string> {
+  const n = await fetchNumbering()
+  if (isDefaultNumbering(n)) {
+    const [row] = await db.select({ max: sql<number | null>`max(cast(substr(${quotes.number}, 4) as integer))` }).from(quotes)
+    return `OM-${(row?.max ?? 10000) + 1}`
+  }
+  // (REG-586) Commercial work — an office or a shop, by the lead's property type — runs on the second sequence when the studio keeps one.
+  const commercial = n.commercial.on && propertyFamily(propertyType) === 'COMM'
+  const prefix = commercial ? n.commercial.prefix : n.prefix
+  const all = await db.select({ number: quotes.number }).from(quotes)
+  const tail = (x: string) => { const m = /(\d+)$/.exec(x); return m ? Number(m[1]) : 0 }
+  const highest = all.filter((q) => q.number.startsWith(`${prefix}-`)).reduce((m, q) => Math.max(m, tail(q.number)), 0)
+  const seq = Math.max((commercial ? n.commercial.next : n.next) || 1, highest + 1)
+  const value = JSON.stringify(commercial ? { ...n, commercial: { ...n.commercial, next: seq + 1 } } : { ...n, next: seq + 1 })
+  await db.insert(settings).values({ key: NUMBERING_KEY, value, updatedAt: at }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: at } })
+  return formatQuoteNumber(n, seq, { initials: creator ? initialsOf(creator.name) : undefined, date: at, commercial })
 }
 
 /**
@@ -50,21 +69,28 @@ export async function createQuote(leadId: string, templateId: string | null = nu
     if (t.status !== 'published') throw new Error('template not published')   // (REG-538) a draft reached by URL cannot start a quote
     template = { id: t.id, version: t.version, defaults: parseDefaults(t.defaultsJson), view: viewForTemplate(parseDesign(t.designJson, presetByKey('letter').design())) }
   }
-  const defaults = template?.defaults ?? null
+  /* (REG-580) A Blank Quote prints through the studio's default template, so it starts with that template's settings too — the same
+     split, validity, GST, signature, texts and working columns a quote from it would get, with an empty table (no starter sections). */
+  let blank: TemplateDefaults | null = null
+  if (!templateId) {
+    const [def] = await db.select({ defaultsJson: quoteTemplates.defaultsJson }).from(quoteTemplates).where(and(eq(quoteTemplates.isDefault, true), eq(quoteTemplates.status, 'published'), isNull(quoteTemplates.deletedAt)))
+    if (def) blank = { ...parseDefaults(def.defaultsJson), starterGroups: [] }
+  }
+  const defaults = template?.defaults ?? blank
   // (REG-403) The editor's General Info opens filled from the records that exist: the lead's property type and address,
   // and the signed-in member as "Prepared by". The section order / state stays null = the default (lib/quotes/sections.ts).
   const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
   const id = randomUUID(); const now = new Date()
   const studio = await fetchStudio()
   const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
-  const textOf = async (textId: string | null) => { if (!textId) return null; const [t] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, textId)); return t ? resolveTokens(t.body, tokens) : null }
+  const textOf = async (textId: string | null) => { if (!textId) return null; const [t] = await db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.id, textId), isNull(quoteTextTemplates.deletedAt))); return t ? resolveTokens(t.body, tokens) : null }   // (REG-581) a deleted text never seeds
   const [termsHtml, notesHtml] = await Promise.all([textOf(defaults?.termsTemplateId ?? null), textOf(defaults?.notesTemplateId ?? null)])
   // Project Ref # and Quote Valid Until are records from the start (REG-403 / lib/quotes/refs.ts): the property's family, the
   // day and its sequence; 30 days of validity. The description clamps to two lines by default (1260:31372).
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
   await db.insert(quotes).values({
-    id, leadId, number: await nextNumber(), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
+    id, leadId, number: await nextNumber(me ?? null, now, lead.propertyType), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
     preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId, templateVersion: template?.version ?? null,
     validUntil: defaults ? new Date(now.getTime() + defaults.validityDays * 86_400_000) : validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
     gstEnabled: defaults?.gstEnabled ?? true, clientSignatureRequired: defaults?.signatureRequired ?? true, termsHtml, notesHtml,
@@ -117,12 +143,17 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
   const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
   const studio = await fetchStudio()
   const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
-  const textOf = async (textId: string | null) => { if (!textId) return null; const [x] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, textId)); return x ? resolveTokens(x.body, tokens) : null }
+  const textOf = async (textId: string | null) => { if (!textId) return null; const [x] = await db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.id, textId), isNull(quoteTextTemplates.deletedAt))); return x ? resolveTokens(x.body, tokens) : null }   // (REG-581)
   const [termsHtml, notesHtml] = await Promise.all([textOf(defaults.termsTemplateId), textOf(defaults.notesTemplateId)])
   const now = new Date()
   const rows = presetRows(defaults.paymentPreset ?? 'default', scheduleAnchors({ estimatedStart: lead.estimatedStartDate, quoteCreated: q.createdAt, propertyType: q.propertyType ?? lead.propertyType }), await fetchPaymentSplits())
-  await db.delete(quotePayments).where(eq(quotePayments.quoteId, quoteId))
-  await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
+  /* (REG-589) With the schedule locked to Owners and Admins, a designer's Apply defaults leaves the milestones as they are. */
+  const [rules, [meRole]] = await Promise.all([fetchQuoteRules(), db.select({ role: members.role }).from(members).where(eq(members.isYou, true))])
+  const keepPayments = rules.paymentLock && !(meRole?.role === 'Owner' || meRole?.role === 'Admin')
+  if (!keepPayments) {
+    await db.delete(quotePayments).where(eq(quotePayments.quoteId, quoteId))
+    await db.insert(quotePayments).values(rows.map((r, position) => ({ id: randomUUID(), quoteId, position, name: r.name, description: r.description, pct: r.pct, dueKind: r.dueKind, dueAt: r.dueAt, createdAt: now, updatedAt: now })))
+  }
   const [had] = await db.select({ n: sql<number>`count(*)` }).from(quoteItems).where(eq(quoteItems.quoteId, quoteId))
   const groups = cleanGroups(defaults.starterGroups)
   const seedGroups = (had?.n ?? 0) === 0 && groups.length > 0
@@ -151,10 +182,10 @@ export async function applyTemplateDefaults(quoteId: string, templateId: string)
 export async function duplicateQuote(quoteId: string): Promise<string> {
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
-  const [me] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true))
+  const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
   const id = randomUUID(); const now = new Date()
   await db.insert(quotes).values({
-    ...q, id, number: await nextNumber(), title: `${q.title} (copy)`, status: 'Draft', createdAt: now, updatedAt: now, createdBy: me?.id ?? q.createdBy,
+    ...q, id, number: await nextNumber(me ?? null, now, q.propertyType), title: `${q.title} (copy)`, status: 'Draft', createdAt: now, updatedAt: now, createdBy: me?.id ?? q.createdBy, revisedAt: null, discountsJson: q.discountsJson,
     sentAt: null, approvedAt: null, dueAt: null, archivedAt: null, deletedAt: null, validUntil: q.validUntil && q.validUntil > now ? q.validUntil : validUntil(now),
   })
   const [items, payments, files] = await Promise.all([
@@ -195,10 +226,13 @@ export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Prom
   if (!isQuoteStatus(status)) throw new Error(`Unknown quote status: ${String(status)}`)
   const [q] = await db.select().from(quotes).where(eq(quotes.id, quoteId))
   if (!q) return
+  /* (REG-590) With approval required, Approved is an approver's word: an Owner, an Admin or the studio's backup approver. */
+  if (status === 'Approved' && (await fetchQuoteApproval()) === 'required') { const [meRow] = await db.select({ id: members.id, role: members.role }).from(members).where(eq(members.isYou, true)); if (!(await isApprover(meRow?.id, meRow?.role))) throw new Error('only an approver marks a quote Approved') }
   const now = new Date()
   const patch: Partial<typeof quotes.$inferInsert> = { status, updatedAt: now }
   if ((status === 'Sent for Approval' || status === 'Sent to Client') && !q.sentAt) patch.sentAt = now
   if (status === 'Approved' && !q.approvedAt) patch.approvedAt = now
+  if (status === 'Confirmed' && !q.confirmedAt) { patch.confirmedAt = now; if (!q.sentAt) patch.sentAt = now }   // (REG-587) marked by hand — the client said so on the phone
   await db.update(quotes).set(patch).where(eq(quotes.id, quoteId))
   touch(q.leadId)
 }

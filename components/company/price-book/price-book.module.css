@@ -1,0 +1,27 @@
+/* Company › Price book (REG-594): the dialogs' field stacks and the cards' pictures. */
+.fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-4); }
+@media (max-width: 767px) { .pair { grid-template-columns: 1fr; } }
+.pasteBox textarea { min-height: 168px; font-family: var(--om-font-family-mono, ui-monospace, Menlo, monospace); font-size: 12px; white-space: pre; }
+.pasteBox { display: block; }
+
+/* The item card's picture: the kind's glyph on the thumb band with the unit price under it. */
+.itemThumb { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2); width: 100%; height: 100%; color: var(--om-color-on-surface-secondary); }
+.itemThumb[data-kind='purchase'] { color: var(--om-color-primary-default); }
+.itemPrice { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.itemUnit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.glyph { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 36px; border-radius: 4px; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--om-color-on-surface-secondary); }
+.oneLine { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-width: 0; }
+
+/* The section editor's line rows. */
+.lines { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.lineRow { display: grid; grid-template-columns: minmax(0, 1fr) 88px 128px auto; gap: var(--om-spacing-2); align-items: center; }
+.lineTools { display: inline-flex; gap: 2px; }
+.subHead { display: flex; align-items: center; gap: var(--om-spacing-3); margin-top: var(--om-spacing-2); }
+.subHead > :first-child { flex: 1; min-width: 0; }
+.subLines { padding-left: var(--om-spacing-5); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.addLine { align-self: flex-start; }
+@media (max-width: 767px) { .lineRow { grid-template-columns: 1fr 72px; } .lineRow > :nth-child(3) { grid-column: 1; } .lineTools { grid-column: 2; justify-self: end; } }

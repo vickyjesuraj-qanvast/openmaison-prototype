@@ -17,7 +17,12 @@ export type ClientView = {
   signature: boolean
   approvePerLine: boolean
   branding: boolean
+  /** (REG-585) What the client sees priced: every line · one amount per section (the template's lump sum) · the total only. */
+  amounts: 'lines' | 'sections' | 'total'
+  /** (REG-595) On a revision: the removed lines struck through, the new and changed ones marked. */
+  changes: boolean
 }
+export const AMOUNTS_LABEL: Record<ClientView['amounts'], string> = { lines: 'A price on every line', sections: 'One amount per section', total: 'The total only' }
 
 /** The template's own client view — what its blocks print. */
 export function clientViewFromDesign(design: TemplateDesign): ClientView {
@@ -29,6 +34,8 @@ export function clientViewFromDesign(design: TemplateDesign): ClientView {
     columns, descriptions: (items?.descriptions ?? 'none') !== 'none', photos: items?.photos ?? false, hiddenItems: items?.hiddenItems ?? 'omit', optionalWorks: items?.optionalSection ?? true,
     subtotalBreakdown: totals?.kind === 'totals' ? totals.lines.some((l) => l.on && l.key !== 'total') : true, paymentSchedule: has('payments'), terms: has('terms'), notes: has('notes'), signature: has('signature') || design.blocks.some((b) => (b.kind === 'footer' || b.kind === 'header') && !b.hidden && b.elements.some((e) => e.kind === 'signature')),
     approvePerLine: false, branding: true,
+    amounts: items?.lumpSum ? 'sections' : 'lines',
+    changes: true,
   }
 }
 

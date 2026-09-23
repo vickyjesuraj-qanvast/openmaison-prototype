@@ -1,5 +1,7 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, SearchBar } from '@/components/ds'
@@ -15,25 +17,29 @@ import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
-import type { LeadFile, Member, PriceBookItem, QuoteItem } from '@/lib/db/schema'
+import type { LeadFile, Member, PriceBookItem, PriceBookSection, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemLabels, type ItemsDensity, type ItemsView, type RowMenuAction } from '@/lib/quotes/items-model'
-import { categoryShares, counts, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
+import { categoryShares, counts, descendantIds, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
+import { scrollParentOf } from '@/components/om/use-stuck'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
-import { createQuoteItem, createQuoteItems, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, setQuoteItemParent, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
+import { createQuoteItem, createQuoteItems, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, insertPriceBookSection, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, saveSectionToPriceBook, setQuoteItemParent, ungroupQuoteItem, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
+import { PrintAsDialog } from './print-as-dialog'
 import { SectionCard } from '../section-card'
 import { ItemsTable, ITEMS_TABLE } from './items-table'
 import { PasteItemsDialog } from './paste-items-dialog'
 import { SetValueDialog, type SetField } from './set-value-dialog'
 import { RoundPricesDialog, type RoundChange } from './round-prices-dialog'
 import { rowOf } from './grid-keys'
+import type { DropSlot } from './row-drag'
 import { clearColumnWidths } from '@/lib/table-widths'
 import { ItemsSummary, maxAdditional, type Pricing } from './items-summary'
 import { ColumnSettingsDrawer } from './column-settings-drawer'
 import { useLevelFocus } from './table-menus'
 import styles from './items-section.module.css'
+import { roundToStep, type RoundStep } from '@/lib/settings/types'
 
 const AUTOSAVE_MS = 600
 
@@ -53,6 +59,16 @@ export type ItemsSeed = {
   number?: string
   items: QuoteItem[]
   priceBook: PriceBookItem[]
+  /** (REG-566) The studio's saved sections (My Sections). */
+  priceBookSections: PriceBookSection[]
+  /** (REG-561) The studio's trades (Settings › Quotes): the Category menu's base list. */
+  trades: string[]
+  /** (REG-556) The brand kit's colours by key — the Highlight bar and swatches. */
+  brandColors: Record<string, string>
+  /** (REG-562 · REG-593) The issuing entities from Company › Profile, each with its GST registration. */
+  entities: { name: string; gstRegistered: boolean }[]
+  /** (REG-584) The studio's rounding step for selling prices (0 = none). */
+  roundStep: RoundStep
   studio: Studio
   files: LeadFile[]
   me: Member | null
@@ -96,6 +112,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
 }) {
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
+  const router = useRouter()
   const { run, fail } = useRun()
   const { quoteId } = seed
   /* ≤1024 the toolbar is one row (REG-354 / REG-384): the AI mark, Create as its icon and a kebab that folds the rest. */
@@ -104,6 +121,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* ── state ── */
   const [items, setItems] = useState<QuoteItem[]>(seed.items)
   const [priceBook, setPriceBook] = useState<PriceBookItem[]>(seed.priceBook)
+  const [priceBookSections, setPriceBookSections] = useState<PriceBookSection[]>(seed.priceBookSections)
+  const [printAsOpen, setPrintAsOpen] = useState(false)   /* (REG-555) the bulk bar's Print as */
+  const [labelling, setLabelling] = useState<QuoteItem | null>(null)   /* (REG-555) a section's sub-total label */
   const [pricing, setPricing] = useState<Pricing>(seed.pricing)
   const [view, setView] = useState<ItemsView>(ITEM_VIEWS.includes(seed.view as ItemsView) ? (seed.view as ItemsView) : 'none')
   const [density, setDensity] = useState<ItemsDensity>(DENSITIES.includes(seed.density as ItemsDensity) ? (seed.density as ItemsDensity) : DEFAULT_DENSITY)
@@ -114,6 +134,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [seenForce, setSeenForce] = useState<number | null>(null)
   if (forceView && forceView.nonce !== seenForce) { setSeenForce(forceView.nonce); setView(forceView.key); setCollapsedBuckets(new Set()) }   // (REG-497) render-phase adjust
   const [showFull, setShowFull] = useState<Set<string>>(() => new Set())
+  const [fresh, setFresh] = useState<Set<string>>(() => new Set())   /* (REG-573) the rows that just arrived — one pulse each */
   const [history, setHistory] = useState<{ past: QuoteItem[][]; future: QuoteItem[][] }>({ past: [], future: [] })
   const [menu, setMenu] = useState<'view' | 'density' | 'create' | 'more' | null>(null)
   /* Expand (REG-434): the whole card as a full-page layer over the editor; Escape (with no menu or dialog up) and the toolbar's
@@ -136,6 +157,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const moreLevel = useLevelFocus(moreSub)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [removing, setRemoving] = useState<string[] | null>(null)
+  const removingSection = removing && removing.length === 1 && items.find((i) => i.id === removing[0])?.kind === 'group' ? items.filter((i) => i.parentId === removing[0] || (i.parentId && items.find((p) => p.id === i.parentId)?.parentId === removing[0])).filter((i) => i.kind === 'item').length : 0   /* (REG-558) a section's confirm names its lines */
   const [naming, setNaming] = useState<{ kind: 'room' | 'category' | 'section' } | null>(null)
   const [imageFor, setImageFor] = useState<QuoteItem | null>(null)
   const [addOpenTick, setAddOpenTick] = useState(0)
@@ -157,7 +179,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const lineCount = items.filter((i) => i.kind === 'item').length
   useEffect(() => { onCount(lineCount) }, [lineCount, onCount])
   /* "GST 9%" only while every line carries 9 — the per-line GST column is editable, so a mixed table reads plain "GST". */
-  const gstLabel = useMemo(() => { const pcts = [...new Set(items.filter((it) => it.kind === 'item').map((it) => it.gstPct))]; return pcts.length === 1 ? `GST ${pcts[0]}%` : 'GST' }, [items])
+  const gstLabel = useMemo(() => { if (!pricing.gstEnabled) return 'GST'; const pcts = [...new Set(items.filter((it) => it.kind === 'item').map((it) => it.gstPct))]; return pcts.length === 1 ? `GST ${pcts[0]}%` : 'GST' }, [items, pricing.gstEnabled])   // (REG-583) no rate beside an off switch
   const totals: QuoteTotals = useMemo(() => quoteTotals(items, pricing), [items, pricing])
   const shares = useMemo(() => categoryShares(items, UNLABELLED.category), [items])   // (REG-532) By category under the table
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -201,6 +223,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const redo = () => { const next = history.future[0]; if (next) void restore(next, false) }
 
   const patchItem = (id: string, patch: ItemPatch, opts: { snapshot?: boolean } = {}) => {
+    /* (REG-584) The studio's rounding rule: a selling price typed or filled lands on the step — the markup absorbs it, Round Prices' own rule. */
+    if (seed.roundStep && (patch.costMinor !== undefined || patch.markupMinor !== undefined)) { const cur = itemsRef.current.find((i) => i.id === id); if (cur && cur.kind === 'item') { const cost = patch.costMinor ?? cur.costMinor; patch = { ...patch, markupMinor: roundToStep(cost, patch.markupMinor ?? cur.markupMinor, seed.roundStep) } } }
     if (opts.snapshot !== false && !pending.current.size) snapshot()
     // A group's answer is its children's (spec 03: a child's STATUS cell is empty) — the server cascades it, the screen at once.
     setItems((cur) => cur.map((i) => (i.id === id ? { ...i, ...patch } as QuoteItem : patch.status !== undefined && i.parentId === id ? { ...i, status: patch.status } : i)))
@@ -220,14 +244,39 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     setItems(fresh.map((i) => { const p = pending.current.get(i.id); return p ? { ...i, ...p.patch } as QuoteItem : i }))
   }
   useEffect(() => { reloadRef.current = reload })
-  const structural = async (what: string, fn: () => Promise<unknown>, done?: string, drop?: Set<string>) => {
+  const structural = async <T,>(what: string, fn: () => Promise<T>, done?: string, drop?: Set<string>): Promise<{ ok: true; value: T } | { ok: false }> => {
     snapshot()
-    await run(what, async () => { await settle(drop); await fn(); await reload() }, done)
+    let value: T | undefined
+    const ok = await run(what, async () => { await settle(drop); value = await fn(); await reload() }, done)
+    return ok ? { ok: true, value: value as T } : { ok: false }
   }
-  const create = (input: Parameters<typeof createQuoteItem>[1], focusName = false) => structural('add the item', async () => {
-    const row = await createQuoteItem(quoteId, input)
-    if (focusName) setTimeout(() => document.querySelector<HTMLInputElement>(`[data-item-id="${row.id}"] input[data-name]`)?.focus(), 50)
-  })
+  /* (REG-573, owner 2026-09-23: "when I add a new section it adds at the bottom and there is no auto scroll") Every row that just
+     arrived is brought into view (centred when it sits under the sticky heads or off the screen), pulses once (`data-fresh`), and —
+     for a new line or section — takes the caret in its name with the words selected, so typing replaces "New section". Runs two
+     frames after the reload, once the rows exist. `which` is the ids, or the set of ids from BEFORE: then every row not in it. */
+  const attention = (which: string[] | Set<string>, opts: { focus?: boolean } = {}) => {
+    let tries = 0
+    const tick = () => {
+      const ids = Array.isArray(which) ? which : itemsRef.current.filter((i) => !which.has(i.id)).map((i) => i.id)
+      const first = ids[0]
+      const row = first ? bodyRef.current?.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(first)}"]`) ?? null : null
+      if (!row) { if (++tries < 60) requestAnimationFrame(tick); return }   // the reload's render lands a frame or two later on a busy thread — wait up to a second
+      const r = row.getBoundingClientRect()
+      const sc = scrollParentOf(row)
+      const bar = bodyRef.current?.querySelector<HTMLElement>('[data-head-bar]')
+      const top = Math.max(sc ? sc.getBoundingClientRect().top : 0, bar ? bar.getBoundingClientRect().bottom : 0)
+      const bottom = sc ? sc.getBoundingClientRect().bottom : window.innerHeight
+      if (r.top < top || r.bottom > bottom) row.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      if (opts.focus) { const input = row.querySelector<HTMLInputElement>('input[data-name]'); if (input) { input.focus({ preventScroll: true }); input.select() } }
+      setFresh(new Set(ids))
+      window.setTimeout(() => setFresh((f) => (ids.some((id) => f.has(id)) ? new Set([...f].filter((id) => !ids.includes(id))) : f)), 1500)
+    }
+    requestAnimationFrame(() => requestAnimationFrame(tick))
+  }
+  const create = async (input: Parameters<typeof createQuoteItem>[1], focusName = false) => {
+    const r = await structural('add the item', () => createQuoteItem(quoteId, input))
+    if (r.ok) attention([r.value.id], { focus: focusName })
+  }
   const removeItems = (list: string[]) => {
     const gone = new Set(list)
     for (const i of itemsRef.current) if (i.parentId && gone.has(i.parentId)) gone.add(i.id)
@@ -240,7 +289,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const addPasted = (lines: PasteLine[], place: 'after' | 'end') => {
     const a = place === 'after' ? pasteAnchor : null
     setPasting(null)
-    void structural('add the items', () => createQuoteItems(quoteId, lines, a ? (a.kind === 'group' ? { parentId: a.id } : { parentId: a.parentId ?? null, afterId: a.id }) : {}), `${lines.length} ${lines.length === 1 ? 'item' : 'items'} added`)
+    const before = new Set(itemsRef.current.map((i) => i.id))
+    void structural('add the items', () => createQuoteItems(quoteId, lines, a ? (a.kind === 'group' ? { parentId: a.id } : { parentId: a.parentId ?? null, afterId: a.id }) : {}), `${lines.length} ${lines.length === 1 ? 'item' : 'items'} added`).then((r) => { if (r.ok) attention(before) })
   }
   /** Bulk Copy · Cmd+C: the ticked rows as a sheet's rows (a header, tab-separated), so they paste straight into Excel. */
   const copyRows = (ids: string[]) => {
@@ -271,6 +321,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'room': return { room: src.room }
       case 'category': return { category: src.category }
       case 'section': return { section: src.section }
+      case 'rebate': return line ? { rebateMinor: src.rebateMinor } : null   // (REG-596)
       case 'name': return { name: src.name }
       case 'desc': return { description: src.description }
       default: return null
@@ -360,42 +411,67 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const onMenu = (item: QuoteItem, action: RowMenuAction) => {
     switch (action) {
       case 'library': void run('save to My Items', async () => { const p = await saveItemToPriceBook(item.id); setPriceBook((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Saved to My Items'); break
-      case 'duplicate': void structural('duplicate the item', () => duplicateQuoteItem(item.id), 'Item duplicated'); break
+      case 'saveSection': void run('save the section to My Items', async () => { const p = await saveSectionToPriceBook(item.id); setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Items — find it under My Sections in the Add Item box'); break   /* REG-566 */
+      case 'noNumber': patchItem(item.id, { noNumber: !item.noNumber }); snackbar({ message: item.noNumber ? 'The line is numbered again' : 'The line prints without a number' }); break   /* REG-558 */
+      case 'ungroup': void structural('ungroup the section', async () => { const r = await ungroupQuoteItem(item.id); onSaved(r.updatedAt, r.amountMinor) }, 'Section removed — its lines stay. Undo with ⌘Z'); break   /* REG-558 */
+      case 'subtotalLabel': setLabelling(item); break   /* REG-555 (T-3) */
+      case 'oneLine': patchItem(item.id, { printOneLine: !item.printOneLine }); snackbar({ message: item.printOneLine ? 'The section prints every line again' : 'The section prints as one line — its name and its total; the lines stay yours' }); break   /* REG-585 */
+      case 'description': break
+      case 'duplicate': void structural('duplicate the item', () => duplicateQuoteItem(item.id), 'Item duplicated').then((r) => { if (r.ok) attention([r.value.id]) }); break
       case 'copyName': void navigator.clipboard?.writeText(item.name).then(() => snackbar({ message: 'Name copied' }), () => fail('copy the name')); break
-      case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('group the items', () => groupQuoteItems(quoteId, list), 'Group created'); setSelected(new Set()); break }
+      case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('put the items in a section', () => groupQuoteItems(quoteId, list), 'Section created').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) }); setSelected(new Set()); break }
       case 'showFull': setShowFull((s) => { const n = new Set(s); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); return n }); break
       case 'optional': patchItem(item.id, { optional: !item.optional }); snackbar({ message: item.optional ? 'Optional mark cleared' : 'Marked as optional — printed in its own section, out of the totals' }); break   /* REG-492 */
       case 'addAbove': void create({ parentId: item.parentId ?? null, beforeId: item.id }, true); break
       case 'addBelow': insertBelow(item); break
-      case 'moveUp': void structural('move the item', () => moveQuoteItem(item.id, 'up')); break
-      case 'moveDown': void structural('move the item', () => moveQuoteItem(item.id, 'down')); break
+      case 'moveUp': void structural('move the item', () => moveQuoteItem(item.id, 'up')).then((r) => { if (r.ok) attention([item.id]) }); break
+      case 'moveDown': void structural('move the item', () => moveQuoteItem(item.id, 'down')).then((r) => { if (r.ok) attention([item.id]) }); break
       case 'remove': setRemoving([item.id]); break
     }
   }
 
-  /* ── drag reorder (the handle): drop before / after a sibling of the same parent ── */
-  const drag = useRef<{ id: string; over: string | null; where: 'before' | 'after' | null } | null>(null)
-  const onDrop = () => {
-    const d = drag.current; drag.current = null
-    if (!d || !d.over || d.over === d.id) return
+  /* ── the pointer drag's drop (REG-571, row-drag.ts): the slot follows the row under the pointer — before / after it among ITS
+     siblings, or first inside an open section — so a line can leave one section for another by drag (the owner's call, 2026-09-23;
+     Move to section stays in the row menu for the keyboard and a finger). The order shown is the order stored: the lines move at
+     once, the parent change (if any) and the new sibling order are written after, and a failed write reloads the lines. */
+  const commitDrag = (id: string, slot: DropSlot) => {
     const cur = itemsRef.current
-    const a = cur.find((i) => i.id === d.id); const b = cur.find((i) => i.id === d.over)
-    if (!a || !b || (a.parentId ?? null) !== (b.parentId ?? null)) { snackbar({ message: 'Drop a line beside its own siblings — use Choose New Group to move it into a group' }); return }
-    const parent = a.parentId ?? null
-    const sibs = cur.filter((i) => (i.parentId ?? null) === parent).sort((x, y) => x.position - y.position).map((i) => i.id).filter((id) => id !== a.id)
-    const at = sibs.indexOf(b.id) + (d.where === 'after' ? 1 : 0)
-    sibs.splice(at, 0, a.id)
+    const a = cur.find((i) => i.id === id)
+    if (!a) return
+    const target = slot.parentId
+    const sibs = cur.filter((i) => (i.parentId ?? null) === target && i.id !== id).sort((x, y) => x.position - y.position).map((i) => i.id)
+    let at = 0
+    if (slot.where !== 'inside') { const k = sibs.indexOf(slot.anchorId ?? ''); if (k < 0) return; at = k + (slot.where === 'after' ? 1 : 0) }
+    sibs.splice(at, 0, id)
+    const from = a.parentId ?? null
+    const moved = from !== target
+    const host = target ? cur.find((i) => i.id === target) ?? null : null
+    const status = moved && host ? host.status : a.status   // a line joining a section carries its answer (setQuoteItemParent's rule)
+    const under = moved ? descendantIds(cur, [id]) : new Set<string>()
+    const fromSibs = cur.filter((i) => (i.parentId ?? null) === from && i.id !== id).sort((x, y) => x.position - y.position).map((i) => i.id)
     snapshot()
-    setItems((c) => c.map((i) => ((i.parentId ?? null) === parent ? { ...i, position: sibs.indexOf(i.id) } : i)))
-    // The order shown is the order stored: the write stamps the quote like every other, and a failed write reloads the lines.
-    void run('reorder', async () => {
+    setItems((c) => c.map((i) => {
+      if (i.id === id) return { ...i, parentId: target, position: sibs.indexOf(id), status }
+      if ((i.parentId ?? null) === target) return { ...i, position: sibs.indexOf(i.id) }
+      if (moved && (i.parentId ?? null) === from) return { ...i, position: fromSibs.indexOf(i.id) }
+      if (moved && under.has(i.id)) return { ...i, status }
+      return i
+    }).sort((x, y) => x.position - y.position))   // the array stays in position order, as the store hands it out
+    attention([id])
+    void run('move the line', async () => {
       await settle()
-      try { const r = await reorderQuoteItems(quoteId, parent, sibs); onSaved(r.updatedAt, r.amountMinor) } catch (e) { await reload(); throw e }
-    })
+      try {
+        if (moved) await setQuoteItemParent(id, target)
+        const r = await reorderQuoteItems(quoteId, target, sibs)
+        onSaved(r.updatedAt, r.amountMinor)
+      } catch (e) { await reload(); throw e }
+    }, moved ? (host ? `Moved into “${host.name}”` : 'Moved out of the section') : undefined)
   }
 
   /* ── quote-level ── */
   const changePricing = (patch: Partial<Pricing>) => {
+    /* (REG-593) An entity that is not GST-registered turns GST off with it — said, never silent. */
+    if (patch.issuingEntity !== undefined && patch.gstEnabled !== undefined && patch.gstEnabled !== pricing.gstEnabled) snackbar({ message: `GST ${patch.gstEnabled ? 'on' : 'off'} — ${patch.issuingEntity ?? seed.studio.name} is ${patch.gstEnabled ? '' : 'not '}GST-registered` })
     const next = { ...pricing, ...patch }
     // The value shown is the value applied: % ≤ 100, S$ ≤ the subtotal (REG-417) — the server holds the same bound.
     const max = maxAdditional(next.additionalDiscountMode, totals.subtotalMinor)
@@ -438,9 +514,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   }
   const usedLabels = useMemo(() => ({
     rooms: [...new Set([...labels.rooms, ...items.map((i) => i.room).filter((x): x is string => !!x)])],
-    categories: [...new Set([...labels.categories, ...items.map((i) => i.category).filter((x): x is string => !!x)])],
+    categories: [...new Set([...seed.trades, ...labels.categories, ...items.map((i) => i.category).filter((x): x is string => !!x)])],   // (REG-561) the studio's trades first
     sections: [...new Set([...labels.sections, ...items.map((i) => i.section).filter((x): x is string => !!x)])],
-  }), [items, labels])
+  }), [items, labels, seed.trades])
   const bucketKeys = useMemo(() => {
     if (view === 'none') return []
     const list = view === 'room' ? usedLabels.rooms : view === 'category' ? usedLabels.categories : usedLabels.sections
@@ -458,11 +534,30 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     window.setTimeout(() => bodyRef.current?.querySelector(`[data-bucket="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60)
   }
 
-  const visibleColumns = columns.columns.filter((c) => c.on).map((c) => c.key) as ColumnKey[]
+  /* (REG-583) The GST (%) column rests while the quote's GST is off — a "9" down the table beside an off switch read as a contradiction;
+     the lines keep their rate and the column returns with the switch. */
+  const isOwner = seed.me?.role === 'Owner'
+  /* (REG-596) The Rebate column exists for Owners alone: a designer never sees it, in the table or in Column settings. */
+  const visibleColumns = columns.columns.filter((c) => c.on && (c.key !== 'gst' || pricing.gstEnabled) && (c.key !== 'rebate' || isOwner)).map((c) => c.key) as ColumnKey[]
   const selectedList = [...selected]
   const nextNumber = items.filter((i) => !i.parentId).length + 1
   const owner = seed.me?.role === 'Owner'
-  const createGroup = () => { void structural('create the group', () => groupQuoteItems(quoteId, selectedList, 'New Group'), 'Group created'); setSelected(new Set()) }
+  const createGroup = (ids: string[] = selectedList) => { void structural('create the section', () => groupQuoteItems(quoteId, ids, 'New section'), 'Section created').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) }); setSelected(new Set()) }   /* (REG-573) the new section is brought into view and named at once */
+  /* (REG-555 · REG-556) Print as and Highlight from the row menu and the bulk bar: cell-like patches, one snapshot for a run. */
+  const setPrintAs = (ids: string[], v: PrintAs | null, text: string | null = null) => {
+    const targets = itemsRef.current.filter((i) => ids.includes(i.id) && i.kind === 'item')
+    if (!targets.length) return
+    snapshot()
+    for (const t of targets) patchItem(t.id, { printAs: v, printAsText: v === 'custom' ? text ?? t.printAsText : null }, { snapshot: false })
+    snackbar({ message: v ? `${targets.length === 1 ? 'The line prints' : `${targets.length} lines print`} as ${v === 'custom' ? `“${text ?? ''}”` : PRINT_AS_LABEL[v]}${v === 'behalf' ? ' — counted, no GST' : ' — not counted'}` : `${targets.length === 1 ? 'The line prints' : `${targets.length} lines print`} the price again` })
+  }
+  const setHighlight = (ids: string[], v: Highlight | null) => {
+    const targets = itemsRef.current.filter((i) => ids.includes(i.id))
+    if (!targets.length) return
+    snapshot()
+    for (const t of targets) patchItem(t.id, { highlight: v }, { snapshot: false })
+    snackbar({ message: v ? `Highlighted — ${HIGHLIGHT_LABEL[v]}` : 'Highlight removed' })
+  }
   const fromMyItems = () => { closeMenus(); setAddOpenTick((t) => t + 1); addInputRef.current?.focus() }
 
   /* Find (REG-477): a search glyph that opens the DS SearchBar and folds back when left empty (Escape clears it). The tab toolbars' box
@@ -486,7 +581,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const createMenu = (
     <PortalMenu open={menu === 'create'} anchor={createRef} onClose={closeMenus} role="menu" width={200} align="right" sheetTitle="Create">
       <DropdownItem onSelect={() => { closeMenus(); void create({}, true) }}>New Item</DropdownItem>
-      <DropdownItem onSelect={() => { closeMenus(); void structural('create the group', () => groupQuoteItems(quoteId, [], 'New Group'), 'Group created') }}>New Group</DropdownItem>
+      <DropdownItem onSelect={() => { closeMenus(); createGroup([]) }}>New section</DropdownItem>
       <DropdownDivider />
       <DropdownItem onSelect={fromMyItems}>From My Items</DropdownItem>
     </PortalMenu>
@@ -522,8 +617,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             ) : (
               <>
                 {view === 'category' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'category' }) }}>Add Category</DropdownItem> : null}
-                {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add Section</DropdownItem> : null}
-                <DropdownItem onSelect={() => { closeMenus(); createGroup() }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>Create Group</DropdownItem>
+                {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add Section label</DropdownItem> : null}
+                <DropdownItem onSelect={() => { closeMenus(); createGroup(selectedList) }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>New section</DropdownItem>
                 <DropdownItem disabled={history.past.length === 0} onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
                 <DropdownItem disabled={history.future.length === 0} onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
                 <DropdownDivider />
@@ -542,8 +637,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     <div className={styles.tools}>
       {find}
       {view === 'category' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'category' })}>Add Category</Button> : null}
-      {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add Section</Button> : null}
-      <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={createGroup}>Create Group</Button>
+      {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add Section label</Button> : null}
+      <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={() => createGroup(selectedList)}>New section</Button>   {/* (REG-567) the mock's "Create Group" */}
       <span className={styles.seg}>
         <Tooltip label="Undo"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
         <Tooltip label="Redo"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
@@ -588,7 +683,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           <ItemsTable
             onAddColumn={() => setSettingsOpen(true)}
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
-            items={items} priceBook={priceBook} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null}
+            items={items} priceBook={priceBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
             query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })}
             h={{
@@ -598,26 +693,27 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
               onSelectRun: (ids) => setSelected((s) => new Set([...s, ...ids])),
               onInsertBelow: insertBelow,
               onMenu,
-              onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the group' : 'Moved out of the group') },
+              onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the section' : 'Moved out of the section').then((r) => { if (r.ok) attention([item.id]) }) },
+              onPrintAs: (item, v) => { if (v === 'custom') { setSelected(new Set([item.id])); setPrintAsOpen(true) } else setPrintAs([item.id], v) },
+              onHighlight: (item, v) => setHighlight([item.id], v),
               onUploadImage: (item) => setImageFor(item),
               onComingSoon: comingSoon,
               onAddLabel: (kind) => setNaming({ kind }),
-              onDragStart: (id) => { drag.current = { id, over: null, where: null } },
-              onDragOver: (id, where) => { if (drag.current) drag.current = { ...drag.current, over: id, where } },
-              onDrop,
-              onDragEnd: () => { drag.current = null },
             }}
+            onDropRow={commitDrag}
+            fresh={fresh}
             onSelectAll={(on) => setSelected(on ? new Set(items.map((i) => i.id)) : new Set())}
             onToggleBucket={(k) => setCollapsedBuckets((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n })}
             onToggleAllBuckets={() => setCollapsedBuckets((s) => (s.size ? new Set() : new Set(bucketKeys)))}
             onCreate={(name) => { void create({ name }, !name) }}
             onPickPriceBook={(id) => { void create({ priceBookItemId: id }) }}
-            onViewPriceBook={comingSoon}
+            onPickSection={(id) => { void structural('insert the section', () => insertPriceBookSection(quoteId, id), 'Section added from My Items').then((r) => { if (r.ok) attention([r.value.id]) }) }}
+            onViewPriceBook={() => router.push(withFrom('/company/price-book', `/quotes/${quoteId}`))}   /* (REG-594) Company › Price book, with the way back */
             onExport={() => setExportOpen(true)}
             addInputRef={addInputRef}
             addOpenTick={addOpenTick + addTick}
           />
-          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
+          <ItemsSummary totals={totals} pricing={pricing} studio={seed.studio} entities={seed.entities} owner={owner} gstLabel={gstLabel} shares={shares} onPickCategory={pickCategory} onPricing={changePricing} onRound={() => setRoundOpen(true)} />
         </div>
   )
   return (
@@ -633,24 +729,30 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           )}
         </>
       ) : (
-        <SectionCard id="section-items" title={title} open={open} onToggle={onToggle} actions={toolbar}>{body}</SectionCard>
+        /* (REG-570) `sticky`: the top holds while the table scrolls. */
+        <SectionCard id="section-items" title={title} open={open} onToggle={onToggle} actions={toolbar} sticky>{body}</SectionCard>
       )}
       <DetailBulkBar
         count={selected.size}
         actions={[
           { label: 'Copy', onClick: () => copyRows(selectedList) },
           { label: 'Set value', onClick: () => setSetValueOpen(true) },
-          { label: 'Group', onClick: () => { void structural('group the items', () => groupQuoteItems(quoteId, selectedList), 'Group created'); setSelected(new Set()) } },
+          { label: 'Section', onClick: () => createGroup(selectedList) },
+          { label: 'Print as', onClick: () => setPrintAsOpen(true) },
           { label: 'Hide from client', onClick: () => { snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client` }); setSelected(new Set()) } },
           { label: 'Delete', tone: 'danger', onClick: () => setRemoving(selectedList) },
         ]}
         onClear={() => setSelected(new Set())}
       />
-      <ConfirmDialog open={!!removing} title={removing && removing.length > 1 ? `Remove ${removing.length} items?` : 'Remove this item?'}
-                     message={removing && removing.length > 1 ? `The ${removing.length} lines leave the quote and its totals.` : 'The line leaves the quote and its totals.'} confirmLabel="Remove"
+      <ConfirmDialog open={!!removing} title={removing && removing.length > 1 ? `Remove ${removing.length} items?` : removingSection ? 'Remove this section?' : 'Remove this item?'}
+                     message={removing && removing.length > 1 ? `The ${removing.length} lines leave the quote and its totals.` : removingSection ? `The section and its ${removingSection} ${removingSection === 1 ? 'line leave' : 'lines leave'} the quote and its totals. To keep the lines, use Ungroup instead.` : 'The line leaves the quote and its totals.'} confirmLabel="Remove"
                      onConfirm={() => { const list = removing ?? []; setRemoving(null); setSelected(new Set()); void removeItems(list) }} onCancel={() => setRemoving(null)} />
-      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section' : 'Add Category'} initial=""
+      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section label' : 'Add Category'} initial=""
                   onSave={(name) => { if (naming) addLabel(naming.kind, name.trim()); setNaming(null) }} onClose={() => setNaming(null)} />
+      {/* (REG-555, T-3) A word beside the section's sub-total — "Approximate", "Estimate" — through the house name dialog. */}
+      <NameDialog open={!!labelling} title="Label the sub-total" initial={labelling?.printAsText ?? ''}
+                  onSave={(name) => { if (labelling) { patchItem(labelling.id, { printAsText: name.trim() || null }); snackbar({ message: name.trim() ? `The sub-total prints “${name.trim()}”` : 'Sub-total label removed' }) } setLabelling(null) }} onClose={() => setLabelling(null)} />
+      <PrintAsDialog open={printAsOpen} count={selected.size} onClose={() => setPrintAsOpen(false)} onApply={(v, text) => { setPrintAsOpen(false); setPrintAs(selectedList, v, text); setSelected(new Set()) }} />
       <AttachFilesModal open={!!imageFor} mode="image" chrome="quote" files={seed.files} attached={[]} onClose={() => setImageFor(null)}
                         onAttach={(fileIds) => { const f = seed.files.find((x) => x.id === fileIds[0]); if (imageFor && f) patchItem(imageFor.id, { thumb: f.thumb ?? null, thumbCount: f.thumb ? 1 : 0, icon: null }); setImageFor(null) }}
                         onUploadPicked={() => { if (imageFor) patchItem(imageFor.id, { thumb: '/figma-assets/file-thumb-1.png', thumbCount: 1, icon: null }); setImageFor(null) }} />
@@ -659,7 +761,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <ExportDialog open={exportOpen} title="Export Items" download={downloadItems} onClose={() => setExportOpen(false)}
                     onDone={(name, format) => snackbar({ message: `Exported ${lineCount} ${lineCount === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <SetValueDialog open={setValueOpen} count={selected.size} labels={usedLabels} onClose={() => setSetValueOpen(false)} onApply={applySet} />
-      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} />
+      <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} hidden={owner ? [] : ['rebate']} />
     </>
   )
 }

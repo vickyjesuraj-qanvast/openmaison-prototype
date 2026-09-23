@@ -47,10 +47,10 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
         <span className={styles.chips}>
           <MetaChip>{status === 'draft' ? 'Draft' : status === 'archived' ? `Archived · v${version}` : `Published v${version}`}</MetaChip>
           {isDefault ? <MetaChip>Default</MetaChip> : null}
-          {status !== 'draft' && hasChanges ? <MetaChip>Unpublished changes</MetaChip> : null}
+          {status !== 'draft' && hasChanges ? <MetaChip>Edited since v{version}</MetaChip> : null}   {/* (REG-577) the gallery's words */}
           {originLabel ? <span className={styles.origin} data-testid="origin-chip"><Icon name="request_quote" size={16} weight={300} /> {originLabel}</span> : null}
-          <span className={styles.saved}>{saving ? <><Icon name="progress_activity" size={16} weight={300} className={styles.spin} /> Saving…</> : <><Icon name="check_circle" size={16} weight={300} className={styles.savedIcon} /> {savedLabel}</>}</span>
         </span>
+        <span className={styles.saved}>{saving ? <><Icon name="progress_activity" size={16} weight={300} className={styles.spin} /> Saving…</> : <><Icon name="check_circle" size={16} weight={300} className={styles.savedIcon} /> {savedLabel}</>}</span>
       </div>
       {preview ? (
         <div className={styles.actions}>
@@ -99,7 +99,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
               <DropdownItem onSelect={() => { setMenu(null); onMenu('gallery') }}>All quote templates</DropdownItem>
               <DropdownDivider />
               {compact ? <DropdownItem onSelect={() => { setMenu(null); onMenu('preview') }}>Preview</DropdownItem> : null}
-              <DropdownItem tone="danger" onSelect={() => { setMenu(null); onMenu('discard') }}>{status === 'draft' ? 'Delete this draft' : 'Discard unpublished changes'}</DropdownItem>
+              <DropdownItem tone="danger" onSelect={() => { setMenu(null); onMenu('discard') }}>{status === 'draft' ? 'Delete this draft' : `Discard the edits since v${version}`}</DropdownItem>
             </Dropdown>
           </span>
           {!compact ? <span className={styles.rule} /> : null}

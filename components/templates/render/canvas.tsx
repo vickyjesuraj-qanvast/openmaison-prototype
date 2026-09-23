@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type TextStyle } from '@/lib/templates/model'
 import { isEmptyResolved, resolveFields } from '@/lib/templates/fields'
 import { stampSvg } from '@/lib/templates/assets'
@@ -63,8 +63,9 @@ function imageSrc(src: string, brand: BrandKit): string | null {
   return src || null
 }
 
-/** One element of a canvas, drawn in mm; in edit mode it selects, drags and resizes. */
-function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBlock; ctx: RenderCtx; width: number }) {
+/** One element of a canvas, drawn in mm; in edit mode it selects, drags and resizes. `shift` (REG-569) is how far the layout pushed it
+    down to clear the element above it — a transform, so the stored position stays the studio's. */
+function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; block: CanvasBlock; ctx: RenderCtx; width: number; shift?: number }) {
   const { brand, values, interactive } = ctx
   const selected = interactive?.selected?.blockId === block.id && interactive.selected.elementId === el.id
   const [drag, setDrag] = useState<{ mode: 'move' | 'resize'; sx: number; sy: number; x: number; y: number; w: number; h: number } | null>(null)
@@ -80,7 +81,7 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
     const range = document.createRange(); range.selectNodeContents(node); range.collapse(false)
     const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(range)
   }, [editing])
-  const base: CSSProperties = { left: mm(el.x), top: mm(el.y), width: mm(el.w), height: el.h !== undefined ? mm(el.h) : undefined }
+  const base: CSSProperties = { left: mm(el.x), top: mm(el.y), width: mm(el.w), height: el.h !== undefined ? mm(el.h) : undefined, transform: shift ? `translateY(${shift}px)` : undefined }
 
   let inner: ReactNode = null
   switch (el.kind) {
@@ -129,7 +130,7 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
     case 'pageno': inner = <div className={styles.text} style={textCss(el.style, brand)}>{resolveFields(el.format, values)}</div>; break
   }
 
-  if (!interactive) return <div className={styles.el} style={base}>{inner}</div>
+  if (!interactive) return <div className={styles.el} style={base} data-el-id={el.id} data-el-kind={el.kind}>{inner}</div>
 
   const zoom = interactive.zoom || 1
   const onDown = (e: ReactPointerEvent<HTMLElement>, mode: 'move' | 'resize') => {
@@ -168,17 +169,60 @@ function Element({ el, block, ctx, width }: { el: CanvasElement; block: CanvasBl
   )
 }
 
-/** A canvas block: the header, the footer or the cover — elements placed in mm on a band of the block's height. */
-export function CanvasView({ block, ctx, width, height }: { block: CanvasBlock; ctx: RenderCtx; width: number; height?: number }) {
+/* (REG-569) Elements whose height comes from their content — a Details box with one more row, a signature, a paragraph of text —
+   push down whatever sits under them, and the canvas grows to hold everything (a box or a picture is a background, never a pusher).
+   The gap a pushed element keeps from the one above it, in mm. */
+const PUSH_GAP_MM = 1
+const PUSHES = new Set<CanvasElement['kind']>(['text', 'kv', 'signature', 'badges', 'pageno'])
+
+/** A canvas block: the header, the footer or the cover — elements placed in mm on a band of the block's height. `onMeasure` reports how
+    tall the content really is (px at 1:1) so the document can give the header or the footer the room it needs (REG-569). */
+export function CanvasView({ block, ctx, width, height, onMeasure, measureKey = '' }: { block: CanvasBlock; ctx: RenderCtx; width: number; height?: number; onMeasure?: (blockId: string, contentPx: number) => void; measureKey?: string }) {
   const { brand, interactive } = ctx
   const selected = interactive?.selected?.blockId === block.id && !interactive.selected.elementId
+  const root = useRef<HTMLDivElement>(null)
+  const [shifts, setShifts] = useState<Record<string, number>>({})
+  const onMeasureRef = useRef(onMeasure); useEffect(() => { onMeasureRef.current = onMeasure })
+  const sig = `${JSON.stringify(block.elements)}|${JSON.stringify(ctx.values)}|${measureKey}`
+  useLayoutEffect(() => {
+    const el = root.current
+    if (!el) return
+    /* The pages may be drawn under a CSS zoom: the canvas's own style height against its drawn height gives the factor. */
+    const styleH = parseFloat(el.style.height) || 0
+    const drawnH = el.getBoundingClientRect().height
+    const scale = styleH > 0 && drawnH > 0 ? drawnH / styleH : 1
+    type Box = { id: string; kind: CanvasElement['kind']; x: number; w: number; top: number; h: number }
+    const boxes: Box[] = block.elements.map((e) => {
+      const node = el.querySelector<HTMLElement>(`[data-el-id="${e.id}"]`)
+      const h = node ? node.getBoundingClientRect().height / scale : e.h !== undefined ? mm(e.h) : 0
+      return { id: e.id, kind: e.kind, x: mm(e.x), w: mm(e.w), top: mm(e.y), h }
+    })
+    const gap = mm(PUSH_GAP_MM)
+    const next: Record<string, number> = {}
+    const placed: (Box & { bottom: number })[] = []
+    for (const b of [...boxes].sort((a, c) => a.top - c.top || a.x - c.x)) {
+      let top = b.top
+      for (const p of placed) {
+        if (!PUSHES.has(p.kind)) continue
+        const across = p.x < b.x + b.w && b.x < p.x + p.w
+        // an element that STARTS inside the one above it steps down under it; one already clear of it stays where the studio put it
+        if (across && b.top >= p.top && b.top < p.bottom + gap) top = Math.max(top, p.bottom + gap)
+      }
+      const shift = Math.round(top - b.top)
+      if (shift > 0) next[b.id] = shift
+      placed.push({ ...b, bottom: top + b.h })
+    }
+    setShifts((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next))
+    const content = placed.reduce((m, p) => Math.max(m, p.bottom), 0)
+    onMeasureRef.current?.(block.id, content)
+  }, [sig, block.id, block.elements])
   return (
-    <div className={styles.canvas} data-kind={block.kind} data-block-id={block.id} data-selected={selected || undefined}
+    <div ref={root} className={styles.canvas} data-kind={block.kind} data-block-id={block.id} data-selected={selected || undefined}
          style={{ width: mm(width), height: height !== undefined ? height : mm(block.height), background: block.background ? resolveColor(block.background, brand) : undefined, borderBottom: block.rule ? `${pt(block.rule.weight)}px solid ${resolveColor(block.rule.color, brand)}` : undefined }}
          role={interactive ? 'group' : undefined} tabIndex={interactive ? 0 : undefined} aria-label={interactive ? BLOCK_LABEL[block.kind] : undefined}
          onKeyDown={interactive ? (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); interactive.onSelect({ blockId: block.id }) } } : undefined}
          onPointerDown={interactive ? (e) => { if (e.target === e.currentTarget) { e.stopPropagation(); interactive.onSelect({ blockId: block.id }) } } : undefined}>
-      {block.elements.map((el) => <Element key={el.id} el={el} block={block} ctx={ctx} width={width} />)}
+      {block.elements.map((el) => <Element key={el.id} el={el} block={block} ctx={ctx} width={width} shift={shifts[el.id] ?? 0} />)}
     </div>
   )
 }

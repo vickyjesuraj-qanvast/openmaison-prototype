@@ -6,7 +6,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
-import { displayDateLong, phoneDisplay } from '@/lib/format'
+import { displayDateLong, isNric, maskNric, phoneDisplay } from '@/lib/format'
 import type { SigningData } from '@/lib/contracts/queries'
 import { signContractOnline } from '@/app/contracts/actions'
 import { ContractPaper } from '@/components/contracts/render/contract-paper'
@@ -29,15 +29,17 @@ export function SigningPage({ data }: { data: SigningData }) {
   const [step, setStep] = useState<Step>(contract.signedAt ? 'done' : 'review')
   const [code, setCode] = useState('')
   const [name, setName] = useState(recipient)
+  const [nric, setNric] = useState('')   /* (REG-563) optional; only its masked form ever leaves the page */
   const [busy, setBusy] = useState(false)
-  const [signed, setSigned] = useState<{ name: string; at: Date } | null>(contract.signedAt ? { name: contract.signedBy ?? recipient, at: contract.signedAt } : null)
+  const [signed, setSigned] = useState<{ name: string; at: Date; nric?: string | null } | null>(contract.signedAt ? { name: contract.signedBy ?? recipient, at: contract.signedAt, nric: contract.signedNric } : null)
   const masked = phoneDisplay(phone).replace(/^(\+65 )?(\d{4}) (\d{4})$/, (_m, cc: string | undefined, a: string, b: string) => `${cc ?? ''}•••• ${b}${a ? '' : ''}`)
+  const nricOk = !nric.trim() || isNric(nric)
   const sign = async () => {
-    if (!name.trim() || busy) return
+    if (!name.trim() || busy || !nricOk) return
     setBusy(true)
     try {
-      const r = await signContractOnline(contract.id, name.trim())
-      setSigned({ name: name.trim(), at: new Date(r.signedAt) }); setStep('done')
+      const r = await signContractOnline(contract.id, name.trim(), nric.trim() || null)
+      setSigned({ name: name.trim(), at: new Date(r.signedAt), nric: nric.trim() && isNric(nric) ? maskNric(nric) : null }); setStep('done')
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t sign — please try again' }) } finally { setBusy(false) }
   }
@@ -98,8 +100,12 @@ export function SigningPage({ data }: { data: SigningData }) {
                   <p className={styles.cardText}>Type your full name. It becomes your signature on the agreement.</p>
                   <TextField label="Your full name" required value={name} onChange={setName} autoFocus onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void sign() } }} />
                   {name.trim() ? <span className={styles.preview}>{name.trim()}</span> : null}
+                  {/* (REG-563) The NRIC / FIN, optional: the page keeps only its last four characters, masked, and prints those under the signature. */}
+                  <TextField label="NRIC / FIN (optional)" value={nric} onChange={(v) => setNric(v.toUpperCase().slice(0, 9))} maxLength={9} error={!nricOk ? 'Enter a valid NRIC or FIN, like S1234567A' : undefined}
+                             helper={nric.trim() && nricOk ? `Kept as ${maskNric(nric)} — only the last four characters are stored` : 'Only the last four characters are kept, masked: •••••567A'}
+                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void sign() } }} />
                   <p className={styles.fine}>By signing you agree to the terms above. Signed on {displayDateLong(new Date(data.now))}.</p>
-                  <Button isDisabled={!name.trim() || busy} onPress={() => { void sign() }}>{busy ? 'Signing…' : 'Sign agreement'}</Button>
+                  <Button isDisabled={!name.trim() || busy || !nricOk} onPress={() => { void sign() }}>{busy ? 'Signing…' : 'Sign agreement'}</Button>
                 </>
               ) : null}
             </>

@@ -770,6 +770,69 @@ async function main() {
     }
   }
 
+  /* ── R36 · round 1 of the testers' asks (REG-555…567) ────────────────────────────────────────────
+     Every member has a work email on the studio's domain (`{prepared_by_email}`, REG-560); the brand record carries the
+     studio as its first issuing entity with a tagline and social line left EMPTY (nothing invented — Company › Profile is
+     where the studio fills them, REG-562); the showcase quote OM-10008 prints its zero-cost permit line as FOC through
+     Print as (REG-555) — the same word the templates already gave a S$0 line, now a record on the line — and its lines'
+     descriptions stay plain. A brand record from before REG-562 gains the entities list in place. */
+  console.log('\nR36 member emails, issuing entities, a Print as line')
+  {
+    const domain = (DEFAULT_BRAND_SETTING.details.email.split('@')[1] ?? 'demostudio.sg').toLowerCase()
+    const team = rows<{ id: string; name: string; email: string | null }>(await client.execute(`SELECT id, name, email FROM members`))
+    let mailed = 0
+    for (const m of team) if (!m.email) { await client.execute({ sql: `UPDATE members SET email = ? WHERE id = ?`, args: [`${m.name.split(/\s+/)[0]!.toLowerCase()}@${domain}`, m.id] }); mailed++ }
+    const [brandRow] = rows<{ value: string }>(await client.execute(`SELECT value FROM settings WHERE key = 'brand'`))
+    let entitiesAdded = 0
+    if (brandRow) {
+      const b = JSON.parse(brandRow.value) as { kit: unknown; details: Record<string, unknown> }
+      const d = b.details ?? {}
+      if (!Array.isArray(d.entities) || !d.entities.length) {
+        d.entities = [{ name: String(d.name ?? DEFAULT_BRAND_SETTING.details.name), bankName: '', accountName: '', accountNo: '', payNow: '', payNowQr: null }]
+        if (typeof d.tagline !== 'string') d.tagline = ''
+        if (typeof d.social !== 'string') d.social = ''
+        await client.execute({ sql: `UPDATE settings SET value = ? WHERE key = 'brand'`, args: [JSON.stringify({ ...b, details: d })] })
+        entitiesAdded = 1
+      }
+    }
+    const foc = await client.execute(`UPDATE quote_items SET print_as = 'foc' WHERE print_as IS NULL AND kind = 'item' AND cost_minor = 0 AND markup_minor = 0 AND status <> 'Declined' AND optional = 0 AND quote_id = (SELECT id FROM quotes WHERE number = 'OM-10008')`)
+    note(`${mailed} member email(s) set on @${domain}; ${entitiesAdded ? 'the studio added as its first issuing entity' : 'issuing entities present'}; ${foc.rowsAffected} zero-cost line(s) on OM-10008 marked FOC`)
+  }
+
+  /* ── R37 · the Letter design's footer (REG-569) ────────────────────────────────────────────────────
+     The house style put the studio's address at 16 mm under a signature block that is ~20 mm tall, so the two printed over each
+     other on every quote through Default Quote PDF. The preset moved the address to 22 mm in a 36 mm footer; every stored copy of
+     that design — the template, its draft, its versions — is moved the same way, and only where it still sits at 16. */
+  console.log('\nR37 Letter footer geometry')
+  {
+    type Design = { blocks?: { kind?: string; height?: number; elements?: { kind?: string; y?: number; text?: string }[] }[] }
+    const fix = (json: string | null): string | null => {
+      if (!json) return null
+      let d: Design
+      try { d = JSON.parse(json) as Design } catch { return null }
+      const footer = d.blocks?.find((b) => b.kind === 'footer')
+      if (!footer || !Array.isArray(footer.elements)) return null
+      const sig = footer.elements.find((e) => e.kind === 'signature')
+      const addr = footer.elements.find((e) => e.kind === 'text' && e.y === 16 && typeof e.text === 'string' && e.text.startsWith('{studio_name}'))
+      if (!sig || !addr) return null
+      addr.y = 22
+      if ((footer.height ?? 0) < 36) footer.height = 36
+      return JSON.stringify(d)
+    }
+    let moved = 0
+    for (const r of rows<{ id: string; design_json: string | null; draft_json: string | null }>(await client.execute(`SELECT id, design_json, draft_json FROM quote_templates`))) {
+      const design = fix(r.design_json)
+      let draft: string | null = null
+      if (r.draft_json) { try { const j = JSON.parse(r.draft_json) as { design?: unknown }; const fixed = fix(JSON.stringify(j.design ?? null)); if (fixed) draft = JSON.stringify({ ...j, design: JSON.parse(fixed) }) } catch { draft = null } }
+      if (design || draft) { await client.execute({ sql: `UPDATE quote_templates SET design_json = COALESCE(?, design_json), draft_json = COALESCE(?, draft_json) WHERE id = ?`, args: [design, draft, r.id] }); moved++ }
+    }
+    for (const v of rows<{ id: string; design_json: string | null }>(await client.execute(`SELECT id, design_json FROM quote_template_versions`))) {
+      const design = fix(v.design_json)
+      if (design) { await client.execute({ sql: `UPDATE quote_template_versions SET design_json = ? WHERE id = ?`, args: [design, v.id] }); moved++ }
+    }
+    note(`${moved} stored Letter design(s) moved the address under the signature`)
+  }
+
   /* ── R20 · prove it ───────────────────────────────────────────────────────────────────────────── */
   console.log('\nR20 verification')
   /* ── R34 · contract documents and the two contract templates (REG-534) ─────────────────────────────
@@ -809,10 +872,43 @@ async function main() {
     const a = await client.execute(`UPDATE quote_text_templates SET created_by = 'dane' WHERE created_by IS NULL`)
     const b = await client.execute(`UPDATE task_templates SET created_by = COALESCE(created_by, 'dane'), updated_at = COALESCE(updated_at, created_at) WHERE created_by IS NULL OR updated_at IS NULL`)
     await client.execute(`UPDATE payment_templates SET last_used_at = (SELECT max(q.created_at) FROM quotes q WHERE q.deleted_at IS NULL) WHERE id = 'default' AND last_used_at IS NULL`)
+    /* (REG-554) The brand record's company details and the studio record name the same studio: the studio record (REG-415) wins,
+       so a Brand kit save never "changes" the phone it merely re-reads. */
+    const c = await client.execute(`UPDATE settings SET value = json_set(value, '$.details.name', (SELECT json_extract(s.value, '$.name') FROM settings s WHERE s.key = 'studio'), '$.details.phone', (SELECT json_extract(s.value, '$.phone') FROM settings s WHERE s.key = 'studio'))
+      WHERE key = 'brand' AND EXISTS (SELECT 1 FROM settings s WHERE s.key = 'studio') AND (json_extract(value, '$.details.name') IS NOT (SELECT json_extract(s.value, '$.name') FROM settings s WHERE s.key = 'studio') OR json_extract(value, '$.details.phone') IS NOT (SELECT json_extract(s.value, '$.phone') FROM settings s WHERE s.key = 'studio'))`)
+    if (c.rowsAffected) console.log(`  brand kit details aligned with the studio record`)
     console.log(`  ${PRESET_SPLITS.length} payment presets present · ${a.rowsAffected} text templates named their author · ${b.rowsAffected} task templates stamped`)
   }
 
+  /* ── R38 · the Price book's demo entries (REG-594) ─────────────────────────────────────────────────
+     Vendors on the items the studio buys in (the same tile from two suppliers is two entries — Urban Home's ask), and one
+     saved section built from a real quote's lines so My Sections has something to show. Idempotent by id. */
+  console.log('\nR38 price book vendors + a saved section')
+  {
+    const nowS = Math.floor(Date.now() / 1000)
+    const v = await client.execute(`UPDATE price_book_items SET vendor = 'Floor Xpert' WHERE name = 'Vinyl flooring, supply and install' AND vendor IS NULL`)
+    const tiles: [string, string, number, number][] = [['pb-tiles-hafary', 'Hafary', 85000, 25000], ['pb-tiles-sbh', 'Soon Bee Huat', 82000, 28000]]
+    let added = 0
+    for (const [id, vendor, cost, markup] of tiles) {
+      const r = await client.execute({ sql: `INSERT OR IGNORE INTO price_book_items (id, name, description, kind, unit, cost_minor, markup_minor, category, thumb, vendor, created_at, updated_at) VALUES (?, 'Homogeneous tiles 600×600, supply and lay', 'Matt finish, rectified edges, laid on screed', 'purchase', 'sqft', ?, ?, 'Tiling', NULL, ?, ?, ?)`, args: [id, cost, markup, vendor, nowS - 40 * 86400, nowS - 40 * 86400] })
+      added += r.rowsAffected
+    }
+    const src = await client.execute(`SELECT g.id, g.name, g.description FROM quote_items g JOIN quotes q ON q.id = g.quote_id WHERE q.number = 'OM-10008' AND g.kind = 'group' AND g.parent_id IS NULL AND g.name = 'Bathrooms' LIMIT 1`)
+    const g = src.rows[0]
+    let section = 0
+    if (g) {
+      const lines = await client.execute({ sql: `SELECT name, description, description_html, qty, unit, cost_minor, markup_minor, discount_pct, gst_pct, room, category, section, print_as, print_as_text, highlight, icon FROM quote_items WHERE parent_id = ? AND kind = 'item' ORDER BY position`, args: [String(g.id)] })
+      const body = { name: 'Bathrooms — full works', description: String(g.description ?? '') || null, descriptionHtml: null, subs: [], lines: lines.rows.map((l) => ({ name: String(l.name), description: l.description == null ? null : String(l.description), descriptionHtml: l.description_html == null ? null : String(l.description_html), qty: Number(l.qty), unit: l.unit == null ? null : String(l.unit), costMinor: Number(l.cost_minor), markupMinor: Number(l.markup_minor), discountPct: Number(l.discount_pct), gstPct: Number(l.gst_pct), room: l.room == null ? null : String(l.room), category: l.category == null ? null : String(l.category), section: l.section == null ? null : String(l.section), printAs: l.print_as == null ? null : String(l.print_as), printAsText: l.print_as_text == null ? null : String(l.print_as_text), highlight: l.highlight == null ? null : String(l.highlight), icon: l.icon == null ? null : String(l.icon) })) }
+      const r = await client.execute({ sql: `INSERT OR IGNORE INTO price_book_sections (id, name, description, lines_json, created_at, updated_at, last_used_at) VALUES ('pbs-bathrooms-full-works', ?, ?, ?, ?, ?, NULL)`, args: [body.name, body.description, JSON.stringify(body), nowS - 21 * 86400, nowS - 21 * 86400] })
+      section = r.rowsAffected
+    }
+    console.log(`  ${v.rowsAffected} vendor named · ${added} tile entries added · ${section} saved section added`)
+  }
+
   const checks: [string, string][] = [
+    ['price book section unreadable (REG-594)', `SELECT name FROM price_book_sections WHERE NOT json_valid(lines_json) OR json_type(lines_json, '$.lines') IS NOT 'array'`],
+    ['price book item with an empty name (REG-594)', `SELECT id FROM price_book_items WHERE trim(name) = ''`],
+    ['brand kit details disagree with the studio record (REG-554)', `SELECT 'brand' FROM settings b JOIN settings s ON s.key = 'studio' WHERE b.key = 'brand' AND (json_extract(b.value, '$.details.name') IS NOT json_extract(s.value, '$.name') OR json_extract(b.value, '$.details.phone') IS NOT json_extract(s.value, '$.phone'))`],
     ['payment preset missing from the library (REG-538)', `SELECT 'payment_templates' WHERE (SELECT count(*) FROM payment_templates WHERE is_preset = 1 AND deleted_at IS NULL) < 4`],
     ['text template with no author (REG-538)', `SELECT title FROM quote_text_templates WHERE created_by IS NULL`],
     ['task template with no author or stamp (REG-538)', `SELECT name FROM task_templates WHERE created_by IS NULL OR updated_at IS NULL`],
@@ -858,6 +954,12 @@ async function main() {
     ['no brand kit record (Company › Profile)', `SELECT 'brand' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'brand')`],
     ['template awaiting approval with no submitter or note', `SELECT name FROM quote_templates WHERE submitted_at IS NOT NULL AND (submitted_by IS NULL OR submit_note IS NULL)`],
     ['default template deleted (Company › Templates)', `SELECT name FROM quote_templates WHERE is_default = 1 AND deleted_at IS NOT NULL`],
+    ['member with no work email (REG-560)', `SELECT name FROM members WHERE email IS NULL OR email = ''`],
+    ['brand record with no issuing entity (REG-562)', `SELECT 'brand' FROM settings WHERE key = 'brand' AND json_array_length(json_extract(value, '$.details.entities')) IS NOT 1 AND json_array_length(json_extract(value, '$.details.entities')) IS NULL`],
+    ['custom Print as with no word (REG-555)', `SELECT q.number || ' · ' || i.name FROM quote_items i JOIN quotes q ON q.id = i.quote_id WHERE i.print_as = 'custom' AND (i.print_as_text IS NULL OR i.print_as_text = '')`],
+    ['section nested deeper than one level (REG-558)', `SELECT q.number || ' · ' || c.name FROM quote_items c JOIN quote_items p ON p.id = c.parent_id JOIN quote_items g ON g.id = p.parent_id JOIN quotes q ON q.id = c.quote_id WHERE c.kind = 'group' OR g.parent_id IS NOT NULL`],
+    ['kept version whose quote is at or below it (REG-565)', `SELECT q.number FROM quote_versions v JOIN quotes q ON q.id = v.quote_id WHERE v.version >= q.version`],
+    ['Letter footer address still under the signature (REG-569)', `SELECT name FROM quote_templates WHERE design_json LIKE '%"kind":"footer"%' AND design_json LIKE '%"y":16,"w":174,"text":"{studio_name}%'`],
     ['keyboard-mash task left behind', `SELECT title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"') OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`],
   ]
   let failed = 0

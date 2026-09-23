@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { SegmentedButton, SegmentedButtonItem, Switch, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { resolveFields } from '@/lib/templates/fields'
 import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLE_LABEL, FONT_ROLES, isColorKey, type Align, type BrandKit, type TextStyle } from '@/lib/templates/model'
 import { FIELD_GROUPS } from '@/lib/templates/fields'
 import styles from './inspector.module.css'
@@ -65,30 +67,37 @@ export function Sw({ label, value, onChange, hint }: { label: string; value: boo
   )
 }
 
-/** Text with an "Insert field" menu that appends a {field}. Multiline for intros and paragraphs. */
-export function Txt({ label, value, onChange, multiline, fields = true, wide = true }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean }) {
+/**
+ * Text with an "Insert field" menu that appends a {field}. Multiline for intros and paragraphs. (REG-569) The menu is a portal, so the
+ * pane's edge never clips it; and when `values` are given, a field in the text shows what it prints as ("Prints as: Mr & Mrs Tan") —
+ * the words in braces read as code to a studio owner, the line under them says what they mean.
+ */
+export function Txt({ label, value, onChange, multiline, fields = true, wide = true, values }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean; fields?: boolean; wide?: boolean; values?: Record<string, string> }) {
   const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
+  const preview = values && /\{[a-z_]+\}/.test(value) ? resolveFields(value, values).replace(/\s+/g, ' ').trim() : null
+  const helper = preview !== null ? (preview ? `Prints as: ${preview}` : 'Prints as: nothing on this quote') : undefined
   return (
     <Field wide={wide} label={multiline ? label : undefined}>   {/* (REG-542) a paragraph field keeps its label above it — a placeholder vanished as soon as one typed */}
       <div className={styles.txt}>
         {multiline ? (
-          <TextArea aria-label={label} placeholder={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />
+          <span className={styles.txtGrow}><TextArea aria-label={label} placeholder={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />{helper ? <span className={styles.helper}>{helper}</span> : null}</span>
         ) : (
-          <TextField label={label} value={value} onChange={onChange} />
+          <span className={styles.txtGrow}><TextField label={label} value={value} onChange={onChange} helper={helper} /></span>
         )}
         {fields ? (
-          <span className={styles.fieldsAnchor}>
-            <Tooltip label="Insert field" disabled={open}>
-              <IconButton icon="data_object" label="Insert field" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
+          <span ref={anchor} className={styles.fieldsAnchor}>
+            <Tooltip label="Insert a field — the client’s name, the date, the quote number…" disabled={open}>
+              <IconButton icon="data_object" label="Insert a field" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
             </Tooltip>
-            <Dropdown open={open} onClose={() => setOpen(false)} align="right" width={240} sheetTitle="Insert field">
+            <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={260} role="menu" sheetTitle="Insert a field">
               {FIELD_GROUPS.map((g) => (
                 <div key={g.label}>
                   <span className={styles.menuGroup}>{g.label}</span>
                   {g.fields.map((f) => <DropdownItem key={f.key} onSelect={() => { setOpen(false); onChange(value ? `${value}${value.endsWith(' ') || value.endsWith('\n') ? '' : ' '}{${f.key}}` : `{${f.key}}`) }}>{f.label}</DropdownItem>)}
                 </div>
               ))}
-            </Dropdown>
+            </PortalMenu>
           </span>
         ) : null}
       </div>
@@ -121,7 +130,7 @@ export function ColorPick({ label, value, onChange, brand, none, wide }: { label
   )
 }
 
-const WEIGHTS: { value: 'inherit' | '400' | '600' | '700'; label: string }[] = [{ value: 'inherit', label: 'Same as the text style' }, { value: '400', label: 'Regular' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]
+const WEIGHTS: { value: 'inherit' | '400' | '600' | '700'; label: string }[] = [{ value: 'inherit', label: 'As the style' }, { value: '400', label: 'Regular' }, { value: '600', label: 'Semibold' }, { value: '700', label: 'Bold' }]
 
 /** A TextStyle: the role it follows, then what it changes on top — font, size, weight, B/I/U/Aa, alignment, colour. */
 export function StyleEditor({ label, value, onChange, brand, align = true, more = false }: { label: string; value: TextStyle; onChange: (s: TextStyle) => void; brand: BrandKit; align?: boolean; more?: boolean }) {
@@ -140,7 +149,7 @@ export function StyleEditor({ label, value, onChange, brand, align = true, more 
       {open ? (
         <div className={styles.grid}>
           <Sel label="Text style" value={role} options={FONT_ROLES.map((r) => ({ value: r, label: `${FONT_ROLE_LABEL[r]} · ${brand.fonts[r].family} ${brand.fonts[r].size}pt` }))} onChange={(r) => set({ role: r })} wide />
-          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Same as the text style' }, ...FONT_FAMILIES.map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} wide={false} />
+          <Sel label="Font" value={value.font ?? 'inherit'} options={[{ value: 'inherit', label: 'Same as the text style' }, ...FONT_FAMILIES.map((f) => ({ value: f, label: f }))]} onChange={(f) => set({ font: f === 'inherit' ? undefined : f })} wide />   {/* (REG-569) a half column cut "Same as the text style" to "Same as th…" */}
           <Num label="Size" unit="pt" value={value.size ?? brand.fonts[role].size} min={4} max={72} step={0.5} onChange={(n) => set({ size: n })} />
           <Sel label="Weight" value={value.weight ? (String(value.weight) as '400' | '600' | '700') : 'inherit'} options={WEIGHTS} onChange={(w) => set({ weight: w === 'inherit' ? undefined : (Number(w) as 400 | 600 | 700) })} wide={false} />
           <Field label="Emphasis">

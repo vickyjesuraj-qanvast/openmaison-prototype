@@ -18,6 +18,17 @@ export function displayDateLong(d: Date): string {
   return `${DAYS[d.getDay()]}, ${displayDate(d)}`
 }
 
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+/** (REG-592) A template's long date: "17 September 2026". */
+export function displayDateFull(d: Date): string {
+  return `${d.getDate()} ${MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}`
+}
+/** (REG-592) The long date with the day's name — "Sunday, 7 February 2026", Dyel's format. */
+export function displayDateFullWeekday(d: Date): string {
+  return `${DAYS_FULL[d.getDay()]}, ${displayDateFull(d)}`
+}
+
 /** My work card head (858:24989): "Wed, 26 Aug". */
 export function displayDayMonth(d: Date): string {
   return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`
@@ -208,3 +219,8 @@ export function formatInputDateTime(d: Date): string {
 export function titleCaseName(input: string): string {
   return input.trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-'’])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase())
 }
+
+/** (REG-563) A Singapore NRIC / FIN as typed: a letter, seven digits, a letter — spaces ignored, case free. */
+export const isNric = (v: string) => /^[STFGM]\d{7}[A-Z]$/i.test(v.replace(/\s+/g, ''))
+/** (REG-563) "S1234567A" → "•••••567A": only the last four characters are kept, which is all a signed document shows. */
+export const maskNric = (v: string) => { const t = v.replace(/\s+/g, '').toUpperCase(); return `${'•'.repeat(Math.max(0, t.length - 4))}${t.slice(-4)}` }

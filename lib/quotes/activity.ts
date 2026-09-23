@@ -1,4 +1,4 @@
-import type { LeadFile, Member, Quote, QuoteItem, QuotePayment } from '@/lib/db/schema'
+import type { LeadFile, Member, Quote, QuoteItem, QuotePayment, QuoteVersion } from '@/lib/db/schema'
 import { presetLabel, presetOf } from './payments'
 
 /**
@@ -8,7 +8,7 @@ import { presetLabel, presetOf } from './payments'
  */
 export type QuoteEvent = { id: string; at: Date; text: string }
 
-export function deriveQuoteActivity(q: Quote, items: QuoteItem[], payments: QuotePayment[], files: { createdAt: Date }[] | LeadFile[], members: Member[]): QuoteEvent[] {
+export function deriveQuoteActivity(q: Quote, items: QuoteItem[], payments: QuotePayment[], files: { createdAt: Date }[] | LeadFile[], members: Member[], versions: QuoteVersion[] = []): QuoteEvent[] {
   const who = (id: string | null) => members.find((m) => m.id === id)?.name ?? 'the studio'
   const ev: QuoteEvent[] = [{ id: 'created', at: q.createdAt, text: `Quote created by ${who(q.preparedBy)}` }]
   const lines = items.filter((i) => i.kind === 'item')
@@ -17,5 +17,6 @@ export function deriveQuoteActivity(q: Quote, items: QuoteItem[], payments: Quot
   if (files.length) ev.push({ id: 'files', at: new Date(Math.max(...files.map((f) => f.createdAt.getTime()))), text: `${files.length} ${files.length === 1 ? 'file' : 'files'} attached` })
   if (q.sentAt) ev.push({ id: 'sent', at: q.sentAt, text: q.status === 'Sent for Approval' ? 'Quote sent for approval' : 'Quote sent to the client' })
   if (q.approvedAt) ev.push({ id: 'approved', at: q.approvedAt, text: 'Quote approved' })
+  for (const v of versions) ev.push({ id: `rev-${v.id}`, at: v.createdAt, text: `Version ${v.version} kept and version ${v.version + 1} started by ${who(v.createdBy)}` })   // (REG-565)
   return ev.sort((a, b) => b.at.getTime() - a.at.getTime())
 }

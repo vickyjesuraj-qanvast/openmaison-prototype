@@ -69,7 +69,7 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
   }
 
   const actions = (
-    <label className={styles.switchRow}>Client Signature Required <Switch size="sm" isSelected={required} onChange={toggleRequired} aria-label="Client Signature Required" /></label>
+    <label className={styles.switchRow}>Client signs online <Switch size="sm" isSelected={required} onChange={toggleRequired} aria-label="Client signs online" /></label>   /* (REG-578) the template's words: off = the client signs the printed quote */
   )
   const nricShown = (nric || seed.nric || '').trim()
 

@@ -12,11 +12,12 @@ export async function generateMetadata({ params }: { params: Promise<{ quoteId: 
   return { title: data ? `${data.quote.number} · Preview` : 'Preview' }
 }
 
-/** Preview (REG-490): the quote through its template, as the client sees it; `?print=1` prints the same pages (Download as PDF · Print). */
-export default async function QuotePreviewPage({ params, searchParams }: { params: Promise<{ quoteId: string }>; searchParams: Promise<{ from?: string; print?: string }> }) {
+/** Preview (REG-490): the quote through its template, as the client sees it; `?print=1` prints the same pages (Download as PDF · Print); `?version=n` opens a kept earlier version (REG-565). */
+export default async function QuotePreviewPage({ params, searchParams }: { params: Promise<{ quoteId: string }>; searchParams: Promise<{ from?: string; print?: string; version?: string }> }) {
   const { quoteId } = await params
   const sp = await searchParams
-  const data = await fetchQuotePreview(quoteId)
+  const version = sp.version && /^\d+$/.test(sp.version) ? Number(sp.version) : undefined   // (REG-565) a kept version, read-only
+  const data = await fetchQuotePreview(quoteId, version)
   if (!data) notFound()
   return <QuotePreview data={data} from={readFrom(sp.from)} print={sp.print === '1'} />
 }

@@ -15,7 +15,7 @@ import { ColorPick, Field, Group, Num, Seg, Sel, StyleEditor, Sub, Sw, Txt } fro
 import styles from './inspector.module.css'
 
 export type DesignSetter = (fn: (d: TemplateDesign) => TemplateDesign, opts?: { coalesce?: string }) => void
-type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void }
+type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string> }
 
 const ALIGN_OPTS: { value: Align; label: string; icon: string }[] = [{ value: 'left', label: 'Left', icon: 'format_align_left' }, { value: 'center', label: 'Centre', icon: 'format_align_center' }, { value: 'right', label: 'Right', icon: 'format_align_right' }]
 const ELEMENT_KINDS: CanvasElement['kind'][] = ['text', 'image', 'kv', 'rule', 'box', 'signature', 'badges', 'pageno']
@@ -30,7 +30,7 @@ const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')
  */
 const TOTAL_LINE_LABEL: Record<string, string> = { pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }
 
-export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement }: Props) {
+export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, values }: Props) {
   const block = design.blocks.find((b) => b.id === selection?.blockId) ?? null
   if (!block) {
     /* (REG-542) The resting state says what to do in three plain steps — "Inspector" meant nothing to a studio owner. */
@@ -41,7 +41,7 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
           <span className={styles.emptyGlyph}><Icon name="tune" size={40} weight={300} /></span>
           Click any part of the page to change it here.
           <div className={styles.emptySteps}>
-            <span className={styles.emptyStep}><span className={styles.emptyNo}>1</span><span>Pick a part of the page, or a row under Structure</span></span>
+            <span className={styles.emptyStep}><span className={styles.emptyNo}>1</span><span>Pick a part of the page, or a row under Page</span></span>
             <span className={styles.emptyStep}><span className={styles.emptyNo}>2</span><span>Change its words, columns or look here</span></span>
             <span className={styles.emptyStep}><span className={styles.emptyNo}>3</span><span>Press Publish when it looks right</span></span>
           </div>
@@ -50,11 +50,11 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
     )
   }
   const element = isCanvas(block) && selection?.elementId ? block.elements.find((e) => e.id === selection.elementId) ?? null : null
-  if (element && isCanvas(block)) return <ElementInspector block={block} element={element} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteElement} />
-  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} />
+  if (element && isCanvas(block)) return <ElementInspector block={block} element={element} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteElement} values={values} />
+  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} values={values} />
 }
 
-function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void }) {
+function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, values }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; values?: Record<string, string> }) {
   const upd = (patch: Record<string, unknown>, coalesce?: string) => onDesign((d) => patchBlock(d, b.id, (x) => ({ ...x, ...patch }) as Block), coalesce ? { coalesce: `${b.id}:${coalesce}` } : undefined)
   const style = (key: string, label: string, more = false) => <StyleEditor label={label} value={(b as unknown as Record<string, TextStyle>)[key] ?? {}} onChange={(s) => upd({ [key]: s })} brand={brand} more={more} />
   const flow = flowBlocks(design)
@@ -71,25 +71,25 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete 
             <Tooltip label="Move up"><IconButton icon="arrow_upward" label="Move up" size={36} variant="bare" iconSize={20} disabled={at <= 0} onClick={() => onDesign((d) => moveBlock(d, b.id, -1))} /></Tooltip>
             <Tooltip label="Move down"><IconButton icon="arrow_downward" label="Move down" size={36} variant="bare" iconSize={20} disabled={at < 0 || at >= flow.length - 1} onClick={() => onDesign((d) => moveBlock(d, b.id, 1))} /></Tooltip>
           </> : null}
-          <Tooltip label={b.hidden ? 'Show' : 'Hide'}><IconButton icon={b.hidden ? 'visibility_off' : 'visibility'} label={b.hidden ? 'Show block' : 'Hide block'} size={36} variant="bare" iconSize={20} onClick={() => upd({ hidden: !b.hidden })} /></Tooltip>
-          {!singleton ? <Tooltip label="Duplicate"><IconButton icon="content_copy" label="Duplicate block" size={36} variant="bare" iconSize={20} onClick={() => { const r = duplicateBlock(design, b.id); onDesign(() => r.design); onSelect({ blockId: r.id }) }} /></Tooltip> : null}
-          <Tooltip label="Remove"><IconButton icon="delete" label="Remove block" size={36} variant="bare" iconSize={20} onClick={() => { if (onDelete) onDelete(b.id); else { onSelect(null); onDesign((d) => removeBlock(d, b.id)) } }} /></Tooltip>
+          <Tooltip label={b.hidden ? 'Show on the page' : 'Hide from the page'}><IconButton icon={b.hidden ? 'visibility_off' : 'visibility'} label={b.hidden ? 'Show on the page' : 'Hide from the page'} size={36} variant="bare" iconSize={20} onClick={() => upd({ hidden: !b.hidden })} /></Tooltip>
+          {!singleton ? <Tooltip label="Duplicate"><IconButton icon="content_copy" label="Duplicate" size={36} variant="bare" iconSize={20} onClick={() => { const r = duplicateBlock(design, b.id); onDesign(() => r.design); onSelect({ blockId: r.id }) }} /></Tooltip> : null}
+          <Tooltip label="Remove from the page"><IconButton icon="delete" label="Remove from the page" size={36} variant="bare" iconSize={20} onClick={() => { if (onDelete) onDelete(b.id); else { onSelect(null); onDesign((d) => removeBlock(d, b.id)) } }} /></Tooltip>
         </span>
       </div>
       <div className={styles.body}>
         <div className={styles.grid}>
           {canvas ? <CanvasFields block={b} brand={brand} upd={upd} onDesign={onDesign} onSelect={onSelect} /> : null}
           {b.kind === 'details' ? <>
-            <Seg label="Layout" value={b.layout} options={[{ value: 'columns', label: 'Two columns' }, { value: 'stacked', label: 'Stacked' }, { value: 'form', label: 'Form lines' }]} onChange={(v) => upd({ layout: v })} />
-            <Num label="Label width" unit="mm" value={b.labelWidth} min={8} max={80} onChange={(v) => upd({ labelWidth: v })} />
-            <KvRows label="Left column" rows={b.left} onChange={(rows) => upd({ left: rows }, 'left')} />
-            <KvRows label="Right column" rows={b.right} onChange={(rows) => upd({ right: rows }, 'right')} />
+            <Seg label="Layout" value={b.layout} options={[{ value: 'columns', label: 'Two columns' }, { value: 'stacked', label: 'One column' }, { value: 'form', label: 'Form lines' }]} onChange={(v) => upd({ layout: v })} />
+            <Num label="Label width" unit="mm" value={b.labelWidth} min={8} max={80} onChange={(v) => upd({ labelWidth: v })} wide />
+            <KvRows label="Left column" rows={b.left} onChange={(rows) => upd({ left: rows }, 'left')} values={values} />
+            <KvRows label="Right column" rows={b.right} onChange={(rows) => upd({ right: rows }, 'right')} values={values} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'title' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} />
-            <Txt label="Subject line" value={b.subject} onChange={(v) => upd({ subject: v }, 'subject')} />
-            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Txt label="Subject line" value={b.subject} onChange={(v) => upd({ subject: v }, 'subject')} values={values} />
+            <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} />
             <Group title="More options"><Sub>Text styles</Sub>{style('titleStyle', 'Title')}{style('subjectStyle', 'Subject')}{style('introStyle', 'Introduction')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} /> : null}
@@ -103,56 +103,66 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete 
                 </div>
               ))}
             </div>
-            <Seg label="Layout" value={b.layout} options={[{ value: 'right', label: 'Right block' }, { value: 'full', label: 'Full width' }]} onChange={(v) => upd({ layout: v })} />
-            {b.layout === 'right' ? <Num label="Width" unit="mm" value={b.width} min={40} max={200} onChange={(v) => upd({ width: v })} /> : null}
-            <Sel label="Rules" value={b.rules} options={[{ value: 'none', label: 'None' }, { value: 'top', label: 'Rule above the total' }, { value: 'double', label: 'Double rule under the total' }, { value: 'grid', label: 'Boxed' }]} onChange={(v) => upd({ rules: v })} />
+            <Seg label="Where it sits" value={b.layout} options={[{ value: 'right', label: 'On the right' }, { value: 'full', label: 'Full width' }]} onChange={(v) => upd({ layout: v })} />
+            {b.layout === 'right' ? <Num label="Width" unit="mm" value={b.width} min={40} max={200} onChange={(v) => upd({ width: v })} wide /> : null}
+            <Sel label="Lines" value={b.rules} options={[{ value: 'none', label: 'None' }, { value: 'top', label: 'A line above the total' }, { value: 'double', label: 'A double line under the total' }, { value: 'grid', label: 'Boxed' }]} onChange={(v) => upd({ rules: v })} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('totalStyle', 'Grand total')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'payments' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} />
-            <Seg label="Layout" value={b.layout} options={[{ value: 'table', label: 'Table' }, { value: 'list', label: 'List' }, { value: 'cards', label: 'Cards' }]} onChange={(v) => upd({ layout: v })} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Seg label="Shown as" value={b.layout} options={[{ value: 'table', label: 'Table' }, { value: 'list', label: 'List' }, { value: 'cards', label: 'Cards' }]} onChange={(v) => upd({ layout: v })} />
             <Sw label="Show amounts" value={b.showAmounts} onChange={(v) => upd({ showAmounts: v })} />
             <Sw label="Show due dates" value={b.showDue} onChange={(v) => upd({ showDue: v })} />
-            <Sw label="Letter the milestones" value={b.letters} onChange={(v) => upd({ letters: v })} />
+            <Sw label="Letter the milestones (A, B, C)" value={b.letters} onChange={(v) => upd({ letters: v })} />
+            <Sw label="Total line under the milestones" value={!!b.showTotal} onChange={(v) => upd({ showTotal: v })} hint="The percentages' sum and, with amounts on, the quote total" />   {/* (REG-560, T-2) */}
             <Group title="More options"><Sw label="Title as a black band" value={b.band} onChange={(v) => upd({ band: v })} /><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
+          {b.kind === 'bank' ? <>
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
+            <Seg label="PayNow QR sits" value={b.layout} options={[{ value: 'row', label: 'Beside the details' }, { value: 'stacked', label: 'Below them' }]} onChange={(v) => upd({ layout: v })} />
+            <Sw label="PayNow QR" value={b.qr} onChange={(v) => upd({ qr: v })} hint="Prints when the issuing entity has a QR uploaded in Company › Profile" />
+            {b.qr ? <Num label="QR size" unit="mm" value={b.qrWidth} min={12} max={60} onChange={(v) => upd({ qrWidth: v })} /> : null}
+            <Sel label="Box" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
+            <span className={styles.note}>The bank, account and PayNow come from Company › Profile › Issuing entities; the quote’s Issuing Entity picks which one prints.</span>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+          </> : null}
           {b.kind === 'terms' || b.kind === 'notes' ? <>
-            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} />
+            <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
             <Sw label="Number the paragraphs" value={b.numbered} onChange={(v) => upd({ numbered: v })} />
             <Sw label="Box each paragraph" value={b.grid} onChange={(v) => upd({ grid: v })} />
             <span className={styles.note}>{b.kind === 'terms' ? 'The text is each quote’s Terms and Conditions section; the Defaults tab picks the template a new quote starts with.' : 'The text is each quote’s Additional Notes section.'}</span>
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Paragraphs')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'signature' ? <>
-            <SignatureColumns columns={b.columns} onChange={(columns) => upd({ columns }, 'columns')} />
-            <Num label="Line weight" unit="pt" value={b.lineWeight} min={0} max={4} step={0.25} onChange={(v) => upd({ lineWeight: v })} />
+            <SignatureColumns columns={b.columns} onChange={(columns) => upd({ columns }, 'columns')} values={values} />
+            <Num label="Line thickness" unit="pt" value={b.lineWeight} min={0} max={4} step={0.25} onChange={(v) => upd({ lineWeight: v })} />
             <ColorPick label="Line colour" value={b.lineColor} onChange={(c) => upd({ lineColor: c ?? 'ink' })} brand={brand} />
-            <Txt label="Line above the signatures" value={b.preamble ?? ''} onChange={(v) => upd({ preamble: v || undefined }, 'preamble')} />
+            <Txt label="Sentence above the signatures" value={b.preamble ?? ''} onChange={(v) => upd({ preamble: v || undefined }, 'preamble')} values={values} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('headingStyle', 'Names')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'text' ? <>
-            <Txt label="Text" value={htmlToText(b.html)} multiline onChange={(v) => upd({ html: textToHtml(v) }, 'html')} />
-            <Seg label="Box" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
+            <Txt label="Text" value={htmlToText(b.html)} multiline onChange={(v) => upd({ html: textToHtml(v) }, 'html')} values={values} />
+            <Seg label="Box around it" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Text', true)}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'image' ? <>
             <ImageSource value={b.src} onChange={(src) => upd({ src })} />
-            <Num label="Width" unit="mm" value={b.width} min={5} max={200} onChange={(v) => upd({ width: v })} />
-            <Seg label="Align" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} />
-            <Txt label="Caption" value={b.caption ?? ''} onChange={(v) => upd({ caption: v || undefined }, 'caption')} />
+            <Num label="Width" unit="mm" value={b.width} min={5} max={200} onChange={(v) => upd({ width: v })} wide />
+            <Seg label="Sits on the" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} />
+            <Txt label="Caption" value={b.caption ?? ''} onChange={(v) => upd({ caption: v || undefined }, 'caption')} values={values} />
             <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'divider' ? <>
-            <Num label="Weight" unit="pt" value={b.weight} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} />
+            <Num label="Thickness" unit="pt" value={b.weight} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} wide />
             <ColorPick label="Colour" value={b.color} onChange={(c) => upd({ color: c ?? 'ink' })} brand={brand} wide />
             <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
           {b.kind === 'spacer' ? <><Num label="Height" unit="mm" value={b.height} min={1} max={200} onChange={(v) => upd({ height: v })} wide /><Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group></> : null}
-          {b.kind === 'pagebreak' ? <span className={styles.note}>Everything after this block starts on a new page.</span> : null}
+          {b.kind === 'pagebreak' ? <span className={styles.note}>Everything after this point starts on a new page.</span> : null}
           {b.kind === 'badges' ? <>
             <Num label="Height" unit="mm" value={b.height} min={4} max={40} onChange={(v) => upd({ height: v })} />
-            <Seg label="Align" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} wide={false} />
-            <span className={styles.note}>The badges come from the brand kit — Company › Profile.</span>
+            <Seg label="Sit on the" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} wide={false} />
+            <span className={styles.note}>The badges come from the brand kit — Templates › Brand kit.</span>
             <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
           </> : null}
         </div>
@@ -167,7 +177,7 @@ function BlockOptions({ b, upd }: { b: Block; upd: (patch: Record<string, unknow
   return (
     <>
       <Sw label="Start on a new page" value={!!b.startNewPage} onChange={(v) => upd({ startNewPage: v || undefined })} />
-      <Sw label="Keep with the next block" value={!!b.keepWithNext} onChange={(v) => upd({ keepWithNext: v || undefined })} hint="Moves to the next page together with the block after it" />
+      <Sw label="Keep together with what follows" value={!!b.keepWithNext} onChange={(v) => upd({ keepWithNext: v || undefined })} hint="Moves to the next page together with the part after it" />
       <Num label="Space before" unit="mm" value={b.spaceBefore ?? 0} min={0} max={100} onChange={(v) => upd({ spaceBefore: v || undefined })} />
       <Num label="Space after" unit="mm" value={b.spaceAfter ?? 0} min={0} max={100} onChange={(v) => upd({ spaceAfter: v || undefined })} />
     </>
@@ -181,12 +191,13 @@ function CanvasFields({ block: b, brand, upd, onDesign, onSelect }: { block: Can
       {b.kind !== 'cover' ? <Num label="Height" unit="mm" value={b.height} min={6} max={150} onChange={(v) => upd({ height: v })} /> : null}
       {b.kind !== 'cover' ? <Sel label="Show on" value={b.repeat} options={[{ value: 'every', label: 'Every page' }, { value: 'first', label: 'First page only' }, { value: 'not-first', label: 'Every page after the first' }]} onChange={(v) => upd({ repeat: v })} /> : null}
       <ColorPick label="Background" value={b.background} onChange={(c) => upd({ background: c })} brand={brand} none wide />
-      <Sw label={b.kind === 'footer' ? 'Rule above' : 'Rule below'} value={!!b.rule} onChange={(v) => upd({ rule: v ? { weight: 0.5, color: 'ink' } : null })} />
+      <Sw label={b.kind === 'footer' ? 'A line above it' : 'A line under it'} value={!!b.rule} onChange={(v) => upd({ rule: v ? { weight: 0.5, color: 'ink' } : null })} />
       {b.rule ? <>
-        <Num label="Rule weight" unit="pt" value={b.rule.weight} min={0.25} max={4} step={0.25} onChange={(v) => upd({ rule: { ...b.rule, weight: v } })} />
-        <ColorPick label="Rule colour" value={b.rule.color} onChange={(c) => upd({ rule: { ...b.rule, color: c ?? 'ink' } })} brand={brand} />
+        <Num label="Line thickness" unit="pt" value={b.rule.weight} min={0.25} max={4} step={0.25} onChange={(v) => upd({ rule: { ...b.rule, weight: v } })} />
+        <ColorPick label="Line colour" value={b.rule.color} onChange={(c) => upd({ rule: { ...b.rule, color: c ?? 'ink' } })} brand={brand} />
       </> : null}
-      <Field label="Elements" wide>
+      <span className={styles.note}>Whatever grows — a Details box with one more row, a longer sentence — pushes down what sits under it, and the {BLOCK_LABEL[b.kind].toLowerCase()} grows with it.</span>
+      <Field label={`On the ${BLOCK_LABEL[b.kind].toLowerCase()}`} wide>
         <div className={styles.list}>
           {b.elements.map((e) => (
             <button key={e.id} type="button" className={styles.rowBtn} onClick={() => onSelect({ blockId: b.id, elementId: e.id })}>
@@ -195,21 +206,21 @@ function CanvasFields({ block: b, brand, upd, onDesign, onSelect }: { block: Can
               {e.locked ? <Icon name="lock" size={16} weight={300} /> : null}
             </button>
           ))}
-          {b.elements.length === 0 ? <span className={styles.note}>Nothing on this canvas yet.</span> : null}
+          {b.elements.length === 0 ? <span className={styles.note}>Nothing on it yet.</span> : null}
         </div>
       </Field>
       <span className={styles.addRow}>
-        <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add element</Button>
-        <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" width={200} sheetTitle="Add element">
+        <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add to the {BLOCK_LABEL[b.kind].toLowerCase()}</Button>
+        <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" width={200} sheetTitle={`Add to the ${BLOCK_LABEL[b.kind].toLowerCase()}`}>
           {ELEMENT_KINDS.map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); const el = defaultElement(k); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: [...x.elements, el] } : x))); onSelect({ blockId: b.id, elementId: el.id }) }}>{ELEMENT_LABEL[k]}</DropdownItem>)}
         </Dropdown>
       </span>
-      <Group title="More options"><Sw label="Hidden" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} /></Group>
+      <Group title="More options"><Sw label="Hidden from the page" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} /></Group>
     </>
   )
 }
 
-function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onDelete }: { block: CanvasBlock; element: CanvasElement; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (blockId: string, elId: string) => void }) {
+function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onDelete, values }: { block: CanvasBlock; element: CanvasElement; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (blockId: string, elId: string) => void; values?: Record<string, string> }) {
   const upd = (patch: Record<string, unknown>, coalesce?: string) => onDesign((d) => patchElement(d, b.id, e.id, (x) => ({ ...x, ...patch }) as CanvasElement), coalesce ? { coalesce: `${e.id}:${coalesce}` } : undefined)
   const style = (key: string, label: string, more = false) => <StyleEditor label={label} value={(e as unknown as Record<string, TextStyle>)[key] ?? {}} onChange={(s) => upd({ [key]: s })} brand={brand} more={more} />
   const hasH = e.h !== undefined
@@ -217,17 +228,17 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
     <div className={styles.inspector} data-testid="inspector">
       <div className={styles.head}>
         <Tooltip label={`Back to ${BLOCK_LABEL[b.kind]}`}><IconButton icon="arrow_back" label={`Back to ${BLOCK_LABEL[b.kind]}`} size={36} variant="bare" iconSize={20} onClick={() => onSelect({ blockId: b.id })} /></Tooltip>
-        <span className={styles.headTitle}>{ELEMENT_LABEL[e.kind]}<span className={styles.headSub}> · {BLOCK_LABEL[b.kind]}</span></span>
+        <span className={styles.headTitle}>{ELEMENT_LABEL[e.kind]}<span className={styles.headSub}> in the {BLOCK_LABEL[b.kind].toLowerCase()}</span></span>   {/* (REG-569) "Details · Header" read as a code */}
         <span className={styles.headActions}>
           <Tooltip label={e.locked ? 'Unlock' : 'Lock in place'}><IconButton icon={e.locked ? 'lock' : 'lock_open'} label={e.locked ? 'Unlock' : 'Lock in place'} size={36} variant="bare" iconSize={20} selected={!!e.locked} onClick={() => upd({ locked: !e.locked || undefined })} /></Tooltip>
           <Tooltip label="Duplicate"><IconButton icon="content_copy" label="Duplicate element" size={36} variant="bare" iconSize={20} onClick={() => { const copy = { ...JSON.parse(JSON.stringify(e)) as CanvasElement, id: newId('e'), y: e.y + 4 }; onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: [...x.elements, copy] } : x))); onSelect({ blockId: b.id, elementId: copy.id }) }} /></Tooltip>
-          <Tooltip label="Remove"><IconButton icon="delete" label="Remove element" size={36} variant="bare" iconSize={20} onClick={() => { if (onDelete) onDelete(b.id, e.id); else { onSelect({ blockId: b.id }); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: x.elements.filter((y) => y.id !== e.id) } : x))) } }} /></Tooltip>
+          <Tooltip label="Remove"><IconButton icon="delete" label="Remove" size={36} variant="bare" iconSize={20} onClick={() => { if (onDelete) onDelete(b.id, e.id); else { onSelect({ blockId: b.id }); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: x.elements.filter((y) => y.id !== e.id) } : x))) } }} /></Tooltip>
         </span>
       </div>
       <div className={styles.body}>
         <div className={styles.grid}>
           {e.kind === 'text' ? <>
-            <Txt label="Text" value={e.text} multiline onChange={(v) => upd({ text: v }, 'text')} />
+            <Txt label="Text" value={e.text} multiline onChange={(v) => upd({ text: v }, 'text')} values={values} />
             <span className={styles.note}>Tip: double-click the text on the page to type straight into it.</span>
             {style('style', 'Style', true)}
             <Sw label="Hide when every field is empty" value={!!e.hideIfEmpty} onChange={(v) => upd({ hideIfEmpty: v || undefined })} />
@@ -238,35 +249,35 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
             <ColorPick label="Box behind" value={e.box} onChange={(c) => upd({ box: c })} brand={brand} none wide />
           </> : null}
           {e.kind === 'kv' ? <>
-            <KvRows label="Rows" rows={e.rows} onChange={(rows) => upd({ rows }, 'rows')} />
-            <Num label="Label width" unit="mm" value={e.labelWidth} min={4} max={80} onChange={(v) => upd({ labelWidth: v })} />
-            <Num label="Row gap" unit="mm" value={e.gap} min={0} max={10} step={0.1} onChange={(v) => upd({ gap: v })} />
-            <Seg label="Value lines" value={e.lines} options={[{ value: 'none', label: 'None' }, { value: 'under', label: 'Underlined (form)' }]} onChange={(v) => upd({ lines: v })} />
+            <KvRows label="Rows" rows={e.rows} onChange={(rows) => upd({ rows }, 'rows')} values={values} />
+            <Num label="Label column width" unit="mm" value={e.labelWidth} min={4} max={80} onChange={(v) => upd({ labelWidth: v })} wide />
+            <Num label="Space between rows" unit="mm" value={e.gap} min={0} max={10} step={0.1} onChange={(v) => upd({ gap: v })} wide />
+            <Sw label="Underline the values, like a form" value={e.lines === 'under'} onChange={(v) => upd({ lines: v ? 'under' : 'none' })} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}</Group>
           </> : null}
           {e.kind === 'rule' ? <>
-            <Num label="Weight" unit="pt" value={e.weight} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} />
+            <Num label="Thickness" unit="pt" value={e.weight} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} />
             <ColorPick label="Colour" value={e.color} onChange={(c) => upd({ color: c ?? 'ink' })} brand={brand} />
           </> : null}
           {e.kind === 'box' ? <>
             <ColorPick label="Fill" value={e.fill} onChange={(c) => upd({ fill: c })} brand={brand} none wide />
             <ColorPick label="Outline" value={e.stroke} onChange={(c) => upd({ stroke: c })} brand={brand} none wide />
-            {e.stroke ? <Num label="Outline weight" unit="pt" value={e.weight ?? 0.5} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} /> : null}
+            {e.stroke ? <Num label="Outline thickness" unit="pt" value={e.weight ?? 0.5} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} /> : null}
           </> : null}
           {e.kind === 'signature' ? <>
-            <SignatureColumns columns={e.columns} onChange={(columns) => upd({ columns }, 'columns')} />
-            <Num label="Line weight" unit="pt" value={e.lineWeight} min={0} max={4} step={0.25} onChange={(v) => upd({ lineWeight: v })} />
+            <SignatureColumns columns={e.columns} onChange={(columns) => upd({ columns }, 'columns')} values={values} />
+            <Num label="Line thickness" unit="pt" value={e.lineWeight} min={0} max={4} step={0.25} onChange={(v) => upd({ lineWeight: v })} />
             <ColorPick label="Line colour" value={e.lineColor} onChange={(c) => upd({ lineColor: c ?? 'ink' })} brand={brand} />
-            <Txt label="Line above" value={e.preamble ?? ''} onChange={(v) => upd({ preamble: v || undefined }, 'preamble')} />
+            <Txt label="Sentence above the signatures" value={e.preamble ?? ''} onChange={(v) => upd({ preamble: v || undefined }, 'preamble')} values={values} />
             <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('headingStyle', 'Names')}</Group>
           </> : null}
           {e.kind === 'badges' ? <>
-            <Seg label="Align" value={e.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} wide={false} />
-            <Num label="Gap" unit="mm" value={e.gap} min={0} max={20} step={0.5} onChange={(v) => upd({ gap: v })} />
-            <span className={styles.note}>The badges come from the brand kit — Company › Profile.</span>
+            <Seg label="Sit on the" value={e.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} wide={false} />
+            <Num label="Space between" unit="mm" value={e.gap} min={0} max={20} step={0.5} onChange={(v) => upd({ gap: v })} />
+            <span className={styles.note}>The badges come from the brand kit — Templates › Brand kit.</span>
           </> : null}
           {e.kind === 'pageno' ? <>
-            <Txt label="Format" value={e.format} onChange={(v) => upd({ format: v }, 'format')} />
+            <Txt label="Reads" value={e.format} onChange={(v) => upd({ format: v }, 'format')} values={values} />
             {style('style', 'Style')}
           </> : null}
           <Group title="Position and size" open>
@@ -281,38 +292,48 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
   )
 }
 
-function KvRows({ label, rows, onChange }: { label: string; rows: KVRow[]; onChange: (rows: KVRow[]) => void }) {
+/** Swap two neighbours — the ▲ ▼ on the Details rows (REG-560, T-8) and the Items columns (REG-560, T-1). */
+const swap = <T,>(list: T[], i: number, j: number): T[] => { if (j < 0 || j >= list.length) return list; const next = [...list]; const a = next[i]!; next[i] = next[j]!; next[j] = a; return next }
+
+/** (REG-569) A Details row as a card: the label with its move / remove buttons, then the value with its field menu and what it prints as. */
+function KvRows({ label, rows, onChange, values }: { label: string; rows: KVRow[]; onChange: (rows: KVRow[]) => void; values?: Record<string, string> }) {
   return (
     <Field label={label} wide>
       <div className={styles.list}>
         {rows.map((r, i) => (
-          <div key={r.id} className={styles.row}>
-            <span className={styles.rowNarrow} style={{ width: 96 }}><TextField label="Label" value={r.label} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, label: v } : x)))} /></span>
-            <span className={styles.rowField}><Txt label="Value" value={r.value} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, value: v } : x)))} wide={false} /></span>
-            <IconButton icon="close" label="Remove row" size={36} variant="bare" iconSize={20} onClick={() => onChange(rows.filter((_, j) => j !== i))} />
+          <div key={r.id} className={styles.card} data-testid="kv-row">
+            <div className={styles.cardLine}>
+              <span className={styles.cardGrow}><TextField label="Label" value={r.label} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, label: v } : x)))} /></span>
+              <span className={styles.cardActions}>
+                <Tooltip label="Move up"><IconButton icon="arrow_upward" label="Move the row up" size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => onChange(swap(rows, i, i - 1))} /></Tooltip>
+                <Tooltip label="Move down"><IconButton icon="arrow_downward" label="Move the row down" size={36} variant="bare" iconSize={20} disabled={i === rows.length - 1} onClick={() => onChange(swap(rows, i, i + 1))} /></Tooltip>
+                <Tooltip label="Remove the row"><IconButton icon="close" label="Remove the row" size={36} variant="bare" iconSize={20} onClick={() => onChange(rows.filter((_, j) => j !== i))} /></Tooltip>
+              </span>
+            </div>
+            <Txt label="Value" value={r.value} onChange={(v) => onChange(rows.map((x, j) => (j === i ? { ...x, value: v } : x)))} values={values} />
           </div>
         ))}
-        <span className={styles.addRow}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => onChange([...rows, { id: newId('r'), label: 'Label', value: '' }])}>Add row</Button></span>
+        <span className={styles.addRow}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => onChange([...rows, { id: newId('r'), label: 'Label', value: '' }])}>Add a row</Button></span>
       </div>
     </Field>
   )
 }
 
-function SignatureColumns({ columns, onChange }: { columns: SignatureColumn[]; onChange: (c: SignatureColumn[]) => void }) {
+function SignatureColumns({ columns, onChange, values }: { columns: SignatureColumn[]; onChange: (c: SignatureColumn[]) => void; values?: Record<string, string> }) {
   const set = (i: number, patch: Partial<SignatureColumn>) => onChange(columns.map((c, j) => (j === i ? { ...c, ...patch } : c)))
   return (
-    <Field label={`Columns · ${columns.length}`} wide>
+    <Field label={`Who signs · ${columns.length} ${columns.length === 1 ? 'column' : 'columns'}`} wide>
       <div className={styles.list}>
         {columns.map((c, i) => (
           <div key={c.id} className={styles.grid} style={{ padding: '8px 0', borderTop: i ? '1px solid var(--om-color-surface-variant)' : undefined }}>
-            <Txt label="Name line" value={c.heading} onChange={(v) => set(i, { heading: v })} />
-            <Txt label="Lines under it" value={c.lines.join('\n')} multiline onChange={(v) => set(i, { lines: v.split('\n') })} />
-            <Sel label="Mark" value={c.image} options={[{ value: 'none', label: 'Line only' }, { value: 'member', label: 'Your signature' }, { value: 'client', label: 'Client’s signature' }, { value: 'stamp', label: 'Company stamp' }]} onChange={(v) => set(i, { image: v })} />
-            <Field><TextField label="Caption" value={c.caption ?? ''} onChange={(v) => set(i, { caption: v || undefined })} /></Field>
-            {columns.length > 1 ? <span className={styles.addRow}><Button appearance="text" onPress={() => onChange(columns.filter((_, j) => j !== i))}>Remove column</Button></span> : null}
+            <Txt label="Name" value={c.heading} onChange={(v) => set(i, { heading: v })} values={values} />
+            <Txt label="Lines under the name" value={c.lines.join('\n')} multiline onChange={(v) => set(i, { lines: v.split('\n') })} values={values} />
+            <Sel label="Above the line" value={c.image} options={[{ value: 'none', label: 'Nothing — a line to sign on' }, { value: 'member', label: 'Your signature' }, { value: 'client', label: 'The client’s signature' }, { value: 'stamp', label: 'The company stamp' }]} onChange={(v) => set(i, { image: v })} />
+            <Field wide><TextField label="Small print under it" value={c.caption ?? ''} onChange={(v) => set(i, { caption: v || undefined })} /></Field>
+            {columns.length > 1 ? <span className={styles.addRow}><Button appearance="text" onPress={() => onChange(columns.filter((_, j) => j !== i))}>Remove this column</Button></span> : null}
           </div>
         ))}
-        {columns.length < 4 ? <span className={styles.addRow}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => onChange([...columns, { id: newId('c'), heading: 'Name', lines: [], image: 'none' }])}>Add column</Button></span> : null}
+        {columns.length < 4 ? <span className={styles.addRow}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => onChange([...columns, { id: newId('c'), heading: 'Name', lines: [], image: 'none' }])}>Add a column</Button></span> : null}
       </div>
     </Field>
   )
@@ -335,53 +356,64 @@ function ImageSource({ value, onChange, dark }: { value: string; onChange: (src:
 function ItemsFields({ b, upd, style }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode }) {
   const col = (i: number, patch: Partial<ItemsBlock['columns'][number]>) => upd({ columns: b.columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) }, `col-${i}`)
   const nextAlign = (a: Align): Align => (a === 'left' ? 'center' : a === 'center' ? 'right' : 'left')
+  const ALIGN_WORD: Record<Align, string> = { left: 'left', center: 'centre', right: 'right' }
   return (
     <>
-      <Sel label="Group by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own groups' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section' }]} onChange={(v) => upd({ groupBy: v })} wide={false} />
-      <Sel label="Then by" value={b.subGroupBy} options={[{ value: 'none', label: 'Nothing' }, { value: 'room', label: 'Room' }, { value: 'category', label: 'Trade' }]} onChange={(v) => upd({ subGroupBy: v })} wide={false} />
-      <Seg label="Section labels" value={b.sectionLabel} options={[{ value: 'letters', label: 'A · B · C' }, { value: 'numbers', label: '1 · 2 · 3' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ sectionLabel: v })} />
-      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Restart per section' }, { value: 'area', label: 'Restart per room' }, { value: 'continuous', label: 'Run through' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ numbering: v })} />
-      <Sel label="Section bands" value={b.bandStyle} options={[{ value: 'grey', label: 'Grey band' }, { value: 'accent', label: 'Accent band' }, { value: 'black', label: 'Black band' }, { value: 'underlined', label: 'Underlined text' }, { value: 'inline', label: 'In the description column' }]} onChange={(v) => upd({ bandStyle: v })} />
+      <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section label' }]} onChange={(v) => upd({ groupBy: v })} />
+      <Sel label="Then split each by" value={b.subGroupBy} options={[{ value: 'none', label: 'Nothing' }, { value: 'room', label: 'Room' }, { value: 'category', label: 'Trade' }]} onChange={(v) => upd({ subGroupBy: v })} />
+      <Seg label="Sections are marked" value={b.sectionLabel} options={[{ value: 'letters', label: 'A · B · C' }, { value: 'numbers', label: '1 · 2 · 3' }, { value: 'none', label: 'Not at all' }]} onChange={(v) => upd({ sectionLabel: v })} />
+      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ numbering: v })} />
+      <Sel label="Section headings" value={b.bandStyle} options={[{ value: 'grey', label: 'Grey band' }, { value: 'accent', label: 'Accent band' }, { value: 'black', label: 'Black band' }, { value: 'underlined', label: 'Underlined words' }, { value: 'inline', label: 'In the description column' }]} onChange={(v) => upd({ bandStyle: v })} />
       <Field label="Columns" wide>
         <div className={styles.list}>
           {b.columns.map((c, i) => (
-            <div key={c.key} className={styles.row} data-off={!c.on || undefined}>
-              {/* (REG-542) switch · the printed heading labelled with the column's name · width · alignment: one row that reads, where a label-plus-field pair truncated "Unit price" to "R…" */}
-              <Switch size="sm" isSelected={c.on} onChange={(on: boolean) => col(i, { on })} aria-label={`Print the ${ITEM_COLUMN_LABEL[c.key]} column`} />
-              <span className={styles.rowField}><TextField label={ITEM_COLUMN_LABEL[c.key]} value={c.label} onChange={(v) => col(i, { label: v })} /></span>
-              {c.key !== 'item' ? <span className={styles.rowNarrow}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.rowMeta}>fills</span>}
-              <Tooltip label={`Align ${c.align}`}><IconButton icon={`format_align_${c.align}`} label={`Align ${c.align}`} size={36} variant="bare" iconSize={20} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>
+            /* (REG-569) A column as a card: the switch and the column's name with its order buttons, then the printed heading, the width and the alignment — the one-line row had squeezed the heading box to a letter. */
+            <div key={c.key} className={styles.card} data-off={!c.on || undefined} data-testid="column-card">
+              <div className={styles.cardLine}>
+                <Switch size="sm" isSelected={c.on} onChange={(on: boolean) => col(i, { on })} aria-label={`Print the ${ITEM_COLUMN_LABEL[c.key]} column`} />
+                <span className={styles.cardName}>{ITEM_COLUMN_LABEL[c.key]}</span>
+                <span className={styles.cardActions}>
+                  <Tooltip label={`Aligned ${ALIGN_WORD[c.align]} — press to change`}><IconButton icon={`format_align_${c.align}`} label={`Aligned ${ALIGN_WORD[c.align]} — press to change`} size={36} variant="bare" iconSize={20} onClick={() => col(i, { align: nextAlign(c.align) })} /></Tooltip>
+                  <Tooltip label="Move left on the page"><IconButton icon="arrow_upward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} left`} size={36} variant="bare" iconSize={20} disabled={i === 0} onClick={() => upd({ columns: swap(b.columns, i, i - 1) })} /></Tooltip>
+                  <Tooltip label="Move right on the page"><IconButton icon="arrow_downward" label={`Move ${ITEM_COLUMN_LABEL[c.key]} right`} size={36} variant="bare" iconSize={20} disabled={i === b.columns.length - 1} onClick={() => upd({ columns: swap(b.columns, i, i + 1) })} /></Tooltip>
+                </span>
+              </div>
+              <div className={styles.cardLine}>
+                <span className={styles.cardGrow}><TextField label="Heading on the page" value={c.label} onChange={(v) => col(i, { label: v })} /></span>   {/* the column's name is on the line above; "mm" keeps the width box short */}
+                {c.key !== 'item' ? <span className={styles.rowMm}><TextField label="mm" value={String(c.width)} numeric="digits" maxLength={3} onChange={(v) => { const n = Number(v); if (n > 0) col(i, { width: n }) }} /></span> : <span className={styles.cardMeta}>takes the rest</span>}
+              </div>
             </div>
           ))}
         </div>
+        <span className={styles.note}>Top to bottom here is left to right on the page.</span>
       </Field>
       <Group title="More options">
         <Sub>Table look</Sub>
-        <Sel label="Header row" value={b.headerRow} options={[{ value: 'plain', label: 'Plain' }, { value: 'ruled', label: 'Ruled' }, { value: 'band', label: 'Grey band' }, { value: 'black', label: 'Black band' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ headerRow: v })} />
-        <Sel label="Row height" value={b.density} options={[{ value: 'compact', label: 'Compact' }, { value: 'normal', label: 'Normal' }, { value: 'relaxed', label: 'Relaxed' }]} onChange={(v) => upd({ density: v })} />
-        <Sel label="Descriptions" value={b.descriptions} options={[{ value: 'none', label: 'Hidden' }, { value: 'first', label: 'First line' }, { value: 'full', label: 'Every line' }, { value: 'bullets', label: 'As bullets' }]} onChange={(v) => upd({ descriptions: v })} />
-        <Sw label="Photos" value={b.photos} onChange={(v) => upd({ photos: v })} />
+        <Sel label="Column headings" value={b.headerRow} options={[{ value: 'plain', label: 'Plain words' }, { value: 'ruled', label: 'With a line under them' }, { value: 'band', label: 'On a grey band' }, { value: 'black', label: 'On a black band' }, { value: 'none', label: 'No headings' }]} onChange={(v) => upd({ headerRow: v })} />
+        <Sel label="Row height" value={b.density} options={[{ value: 'compact', label: 'Compact' }, { value: 'normal', label: 'Normal' }, { value: 'relaxed', label: 'Roomy' }]} onChange={(v) => upd({ density: v })} />
+        <Sel label="Descriptions" value={b.descriptions} options={[{ value: 'none', label: 'Not printed' }, { value: 'first', label: 'First line only' }, { value: 'full', label: 'Every line' }, { value: 'bullets', label: 'As bullet points' }]} onChange={(v) => upd({ descriptions: v })} />
+        <Sw label="Item photos" value={b.photos} onChange={(v) => upd({ photos: v })} />
         <Sw label="Grid lines" value={b.grid} onChange={(v) => upd({ grid: v })} />
-        <Sw label="Rule under each row" value={b.ruled} onChange={(v) => upd({ ruled: v })} />
-        <Sw label="Zebra rows" value={b.zebra} onChange={(v) => upd({ zebra: v })} />
+        <Sw label="A line under each row" value={b.ruled} onChange={(v) => upd({ ruled: v })} />
+        <Sw label="Shade every other row" value={b.zebra} onChange={(v) => upd({ zebra: v })} />
         <Sub>Amounts</Sub>
-        <Sel label="Currency" value={b.currency} options={[{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ (spaced)' }, { value: 'none', label: 'Figures only' }]} onChange={(v) => upd({ currency: v })} />
-        <Sel label="Zero amounts" value={b.zeroAmount} options={[{ value: 'FOC', label: 'FOC' }, { value: 'Inclusive', label: 'Inclusive' }, { value: '0.00', label: '0.00' }, { value: 'blank', label: 'Blank' }]} onChange={(v) => upd({ zeroAmount: v })} />
-        <Sel label="Hidden items" value={b.hiddenItems} options={[{ value: 'omit', label: 'Leave out' }, { value: 'no-price', label: 'Show without a price' }]} onChange={(v) => upd({ hiddenItems: v })} />
-        <Sw label="Sub-total per section" value={b.subtotals} onChange={(v) => upd({ subtotals: v })} />
-        {b.subtotals ? <Txt label="Sub-total label" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} /> : null}
-        <Sw label="Lump sum per section" value={b.lumpSum} onChange={(v) => upd({ lumpSum: v })} hint="Prints one amount per section instead of a price on every line" />
-        <Sw label="Total for each page" value={b.pageTotals} onChange={(v) => upd({ pageTotals: v })} />
-        {b.pageTotals ? <Txt label="Page total label" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} /> : null}
+        <Sel label="Currency" value={b.currency} options={[{ value: 'S$', label: 'S$' }, { value: '$ ', label: '$ with a space' }, { value: 'none', label: 'Figures only' }]} onChange={(v) => upd({ currency: v })} />
+        <Sel label="A line that costs nothing prints" value={b.zeroAmount} options={[{ value: 'FOC', label: 'FOC' }, { value: 'Inclusive', label: 'Inclusive' }, { value: '0.00', label: '0.00' }, { value: 'blank', label: 'Nothing' }]} onChange={(v) => upd({ zeroAmount: v })} />
+        <Sel label="Items hidden from the client" value={b.hiddenItems} options={[{ value: 'omit', label: 'Left out' }, { value: 'no-price', label: 'Shown without a price' }]} onChange={(v) => upd({ hiddenItems: v })} />
+        <Sw label="Sub-total under each section" value={b.subtotals} onChange={(v) => upd({ subtotals: v })} />
+        {b.subtotals ? <Txt label="Sub-total reads" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} /> : null}
+        <Sw label="One lump sum per section" value={b.lumpSum} onChange={(v) => upd({ lumpSum: v })} hint="Prints one amount per section instead of a price on every line" />
+        <Sw label="A total for each page" value={b.pageTotals} onChange={(v) => upd({ pageTotals: v })} />
+        {b.pageTotals ? <Txt label="Page total reads" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} /> : null}
         <Sub>Sections and pages</Sub>
-        <Sw label="Notes under section bands" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="The group's description in the quote editor" />
+        <Sw label="Section notes" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="The note under a section's name in the quote editor prints under its heading" />
         <Sw label="Optional works section" value={b.optionalSection} onChange={(v) => upd({ optionalSection: v })} hint="Lines marked optional print here, out of the totals" />
-        {b.optionalSection ? <Txt label="Optional section title" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} /> : null}
+        {b.optionalSection ? <Txt label="That section is called" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} /> : null}
         <Sw label="Keep a section on one page" value={b.keepGroups} onChange={(v) => upd({ keepGroups: v })} />
         <Sw label="Each section on a new page" value={b.groupNewPage} onChange={(v) => upd({ groupNewPage: v })} />
         <Sw label="Fill the page with empty rows" value={b.fillPage} onChange={(v) => upd({ fillPage: v })} />
         <Sub>Text styles</Sub>
-        {style('style', 'Rows')}{style('headerStyle', 'Header row')}{style('areaStyle', 'Section and room labels')}{style('groupNoteStyle', 'Section notes')}{style('descriptionStyle', 'Descriptions')}
+        {style('style', 'Rows')}{style('headerStyle', 'Column headings')}{style('areaStyle', 'Section and room names')}{style('groupNoteStyle', 'Section notes')}{style('descriptionStyle', 'Descriptions')}
         <Sub>Placement</Sub>
         <BlockOptions b={b} upd={upd} />
       </Group>

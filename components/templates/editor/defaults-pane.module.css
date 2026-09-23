@@ -7,3 +7,8 @@
 .columnsLabel { font: var(--om-type-label-m); color: var(--om-color-on-surface); }
 .columnsNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+
+/* (REG-578) "Not published yet" under the intro: the primary ink, so the eye stops on it. */
+.note { color: var(--om-color-on-primary-variant); }
+/* A helper line inside the two-column grid spans both columns; in a half cell it wrapped into a narrow tower. */
+.full { grid-column: 1 / -1; }

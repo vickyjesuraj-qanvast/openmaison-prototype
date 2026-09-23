@@ -17,13 +17,15 @@ const colLetter = (c: number) => String.fromCharCode(65 + (c % 26))
  * shapes of the values are), the first rows preview under the picks, and "Add n items" writes the lines in one go —
  * after the row the paste landed on, or at the end. The L 800 modal shell (REG-418), size "modal".
  */
-export function PasteItemsDialog({ open, text, anchor, onClose, onAdd }: {
+export function PasteItemsDialog({ open, text, anchor, onClose, onAdd, target = 'quote' }: {
   open: boolean
   text: string
   /** The row the paste landed on (null = the Add Item field / nowhere in particular). */
   anchor: { id: string; name: string } | null
   onClose: () => void
   onAdd: (lines: PasteLine[], place: 'after' | 'end') => void
+  /** (REG-594) `book` = Company › Price book's Import from a spreadsheet: the same mapping, the lines become My Items. */
+  target?: 'quote' | 'book'
 }) {
   const rows = useMemo(() => parseBlock(text), [text])
   const width = rows[0]?.length ?? 0
@@ -42,10 +44,10 @@ export function PasteItemsDialog({ open, text, anchor, onClose, onAdd }: {
   const add = () => { if (named && lines.length) onAdd(lines, anchor && place === 'after' ? 'after' : 'end') }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Paste from a spreadsheet" width={800} size="modal"
+    <Dialog open={open} onClose={onClose} title={target === 'book' ? 'Import into My Items' : 'Paste from a spreadsheet'} width={800} size="modal"
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-              <Button onPress={add} isDisabled={!named || lines.length === 0}>{lines.length === 1 ? 'Add 1 item' : `Add ${lines.length} items`}</Button>
+              <Button onPress={add} isDisabled={!named || lines.length === 0}>{target === 'book' ? (lines.length === 1 ? 'Import 1 item' : `Import ${lines.length} items`) : lines.length === 1 ? 'Add 1 item' : `Add ${lines.length} items`}</Button>
             </>}>
       <div className={styles.top}>
         <p className={styles.caption}>{rows.length} {rows.length === 1 ? 'row' : 'rows'} · {width} {width === 1 ? 'column' : 'columns'} from the clipboard. Pick what each column becomes.</p>
@@ -68,10 +70,12 @@ export function PasteItemsDialog({ open, text, anchor, onClose, onAdd }: {
       </div>
       <div className={styles.foot}>
         <span className={styles.more}>{body.length > PREVIEW_ROWS ? `+ ${body.length - PREVIEW_ROWS} more ${body.length - PREVIEW_ROWS === 1 ? 'row' : 'rows'}` : named ? '' : 'Map one column to Item to add these lines.'}</span>
-        <div className={styles.place}>
-          <TextField label="Add" size="s" mode="select" options={placeOptions} value={anchor && place === 'after' ? placeOptions[0]! : 'At the end'}
-                     onChange={(v) => setPlace(v === 'At the end' ? 'end' : 'after')} />
-        </div>
+        {target === 'book' ? null : (
+          <div className={styles.place}>
+            <TextField label="Add" size="s" mode="select" options={placeOptions} value={anchor && place === 'after' ? placeOptions[0]! : 'At the end'}
+                       onChange={(v) => setPlace(v === 'At the end' ? 'end' : 'after')} />
+          </div>
+        )}
       </div>
     </Dialog>
   )

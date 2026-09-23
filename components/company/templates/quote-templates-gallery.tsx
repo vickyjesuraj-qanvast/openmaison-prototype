@@ -87,7 +87,9 @@ export function QuoteTemplatesGallery({ data, from }: { data: TemplatesData; fro
     const who = t.updatedBy ? ` by ${t.updatedBy.name}` : ''
     if (t.submitted) return `Awaiting approval · ${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}`   /* REG-501 */
     if (t.status === 'draft') return `Draft · edited ${ago(t.updatedAt, now)}${who}`
-    return `Published v${t.version} · ${ago(updatedStamp(t), now)}${who}${t.hasDraft ? ' · unpublished changes' : ''}`
+    /* (REG-577) With edits after the publish the line tells both in order — "Published v1 · 3 days ago · edited just now by Dane" — never "Published … just now" off the edit's stamp beside "Unpublished changes". */
+    if (t.hasDraft) return `Published v${t.version} · ${ago(t.publishedAt ?? t.updatedAt, now)} · edited ${ago(t.updatedAt, now)}${who}`
+    return `Published v${t.version} · ${ago(updatedStamp(t), now)}${who}`
   }
   const usage = (t: TemplateSummary) => (t.usedBy === 0 ? 'Not used yet' : `Used by ${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)
   /** The kebab's six items, on a card or a table row (template-menu.tsx). */
@@ -148,7 +150,7 @@ export function QuoteTemplatesGallery({ data, from }: { data: TemplatesData; fro
               <button type="button" className={styles.open} onClick={() => open(t.id)} aria-label={`Open ${t.name}`}>
                 <span className={styles.thumb}>
                   <span className={styles.page}><TemplateThumb design={t.design} brand={brand} data={sample} width={phone ? 150 : 200} /></span>
-                  {t.submitted ? <span className={styles.ribbon} data-tone="await">Awaiting approval</span> : t.status === 'draft' ? <span className={styles.ribbon}>Draft</span> : t.hasDraft ? <span className={styles.ribbon} data-tone="edits">Unpublished changes</span> : null}
+                  {t.submitted ? <span className={styles.ribbon} data-tone="await">Awaiting approval</span> : t.status === 'draft' ? <span className={styles.ribbon}>Draft</span> : t.hasDraft ? <span className={styles.ribbon} data-tone="edits">Edited since v{t.version}</span> : null}
                 </span>
                 <span className={styles.body}>
                   <span className={styles.nameRow}>

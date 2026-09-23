@@ -3,6 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox } from '@/components/ds'
 import { useColumnDrag } from '@/components/om/column-drag'
+import { useStuck } from '@/components/om/use-stuck'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
@@ -12,9 +13,14 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { isBlock, sumLines } from '@/lib/quotes/clipboard'
 import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
 import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
-import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
+import { countedLines, descendantIds, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, numberItems, pct, unitPriceMinor } from '@/lib/quotes/math'
+import type { PriceBookSection } from '@/lib/db/schema'
+import { parseSavedSection, savedSectionCount } from '@/lib/quotes/items-model'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
+import { useRowDrag, type DragRow, type DropSlot } from './row-drag'
+import { ItemCards } from './item-cards'
+import { useSheetLayout } from '@/components/om/sheet'
 import styles from './items-table.module.css'
 
 /** The table's key in the user's stored column widths (lib/table-widths.ts). */
@@ -55,7 +61,7 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
     const sums = isGroup ? groupTotals(items, i.id) : null
     switch (key) {
       case 'qty': if (!isGroup) out.push([fmtNum(i.qty), 0]); break
-      case 'unit': if (!isGroup) out.push([i.unit ?? 'Add Unit Type', 24]); break   // + the select's chevron 16 and gap
+      case 'unit': if (!isGroup) out.push([i.unit ?? 'Unit · e.g. sqft', 24]); break   // + the select's chevron 16 and gap (REG-560: the empty cell's hint)
       case 'cost': out.push([money2(isGroup ? sums!.costMinor : i.costMinor), 0]); break
       case 'markup': {
         const m = isGroup ? sums!.markupMinor : i.markupMinor
@@ -67,8 +73,9 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
       case 'gst': if (!isGroup) out.push([fmtNum(i.gstPct), 0]); break
       case 'room': out.push([i.room ?? 'Add Room', 24]); break
       case 'category': out.push([i.category ?? 'Add Category', 24]); break
-      case 'section': out.push([i.section ?? 'Add Section', 24]); break
+      case 'section': out.push([i.section ?? 'Add label', 24]); break
       case 'type': if (!isGroup) out.push([isItemKind(i.icon) ? ITEM_KIND_LABEL[i.icon] : '–', 0]); break
+      case 'rebate': if (!isGroup) out.push([money2(i.rebateMinor), 0]); break   // (REG-596)
       case 'margin': { const price = isGroup ? sums!.unitPriceMinor : unitPriceMinor(i); const cost = isGroup ? sums!.costMinor : i.costMinor; out.push([price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–', 0]); break }
       default: out.push(['–', 0])
     }
@@ -86,24 +93,18 @@ type Display =
 export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string[], collapsedBuckets: Set<string>): Display[] {
   const flat = flattenItems(items)
   const folded = new Set(items.filter((i) => i.kind === 'group' && i.collapsed).map((i) => i.id))
+  /* (REG-558) A folded section hides everything under it, sub-sections included; the numbers are the maths' (1 · 1.1 · 1.1.1, a
+     "no number" line blank). */
+  const hidden = descendantIds(items, folded)
+  for (const id of folded) hidden.delete(id)
   if (view === 'none') {
-    const out: Display[] = []
-    const num = new Map<string, string>()
-    let n = 0
-    const childN = new Map<string, number>()
-    for (const i of flat) {
-      if (!i.parentId) { n += 1; num.set(i.id, String(n)) }
-      else { const k = (childN.get(i.parentId) ?? 0) + 1; childN.set(i.parentId, k); num.set(i.id, `${num.get(i.parentId)}.${k}`) }
-      if (i.parentId && folded.has(i.parentId)) continue
-      out.push({ kind: 'row', item: i, number: num.get(i.id)!, bucket: null })
-    }
-    return out
+    const num = numberItems(items)
+    return flat.filter((i) => !hidden.has(i.id)).map((i) => ({ kind: 'row', item: i, number: num.get(i.id) ?? '', bucket: null }))
   }
   const field = view
   const labelOf = (i: QuoteItem): string => {
-    const own = i[field]
-    if (own) return own
-    if (i.parentId) { const p = items.find((x) => x.id === i.parentId); if (p?.[field]) return p[field]! }
+    let cur: QuoteItem | undefined = i
+    while (cur) { const own = cur[field]; if (own) return own; cur = cur.parentId ? items.find((x) => x.id === cur!.parentId) : undefined }
     return UNLABELLED[field]
   }
   const top = flat.filter((i) => !i.parentId)
@@ -116,7 +117,7 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
   order.forEach((label, bi) => {
     const rows = top.filter((i) => labelOf(i) === label)
     const lines: QuoteItem[] = []
-    for (const r of rows) { if (r.kind === 'group') lines.push(...items.filter((c) => c.parentId === r.id)); else lines.push(r) }
+    for (const r of rows) { if (r.kind === 'group') { const under = descendantIds(items, [r.id]); lines.push(...items.filter((c) => c.id !== r.id && under.has(c.id) && c.kind === 'item')) } else lines.push(r) }
     if (rows.length === 0 && !labels.includes(label)) return
     const bn = String(bi + 1)
     out.push({ kind: 'bucket', key: label, name: label, number: bn, ids: rows.map((r) => r.id), lines })
@@ -124,23 +125,29 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
     rows.forEach((r, ri) => {
       const rn = `${bn}.${ri + 1}`
       out.push({ kind: 'row', item: r, number: rn, bucket: label })
-      if (r.kind === 'group' && !folded.has(r.id)) {
-        items.filter((c) => c.parentId === r.id).sort((a, b) => a.position - b.position).forEach((c, ci) => out.push({ kind: 'row', item: c, number: `${rn}.${ci + 1}`, bucket: label }))
-      }
+      if (r.kind !== 'group') return
+      // The section's own numbering under the bucket's: its lines and sub-sections in row order, a folded one hiding its rows.
+      const inner = numberItems(items, r.id, `${rn}.`)
+      for (const c of flat.filter((x) => x.id !== r.id && descendantIds(items, [r.id]).has(x.id))) if (!hidden.has(c.id)) out.push({ kind: 'row', item: c, number: inner.get(c.id) ?? '', bucket: label })
     })
   })
   return out
 }
 
 export function ItemsTable({
-  items, priceBook, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h,
-  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onViewPriceBook, onExport, addInputRef, addOpenTick,
+  items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
+  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick,
   query, onPasteBlock, clientColumns, onAddColumn,
 }: {
   /** The head's + opens the Column settings drawer (its catalogue is where a column is added). */
   onAddColumn?: () => void
   items: QuoteItem[]
   priceBook: PriceBookItem[]
+  /** (REG-566) The studio's saved sections — the popover's "My Sections". */
+  priceBookSections: PriceBookSection[]
+  onPickSection: (id: string) => void
+  /** (REG-556) The brand kit's colours by key, for the Highlight bar and swatches. */
+  brandColors: Record<string, string>
   view: ItemsView
   density: ItemsDensity
   columns: ColumnKey[]
@@ -154,7 +161,11 @@ export function ItemsTable({
   collapsedBuckets: Set<string>
   showFull: Set<string>
   nextNumber: number
-  h: RowHandlers
+  h: Omit<RowHandlers, 'onDragPointerDown'>
+  /** (REG-571) A row dropped by the pointer drag: where it goes (row-drag.ts). */
+  onDropRow: (id: string, slot: DropSlot) => void
+  /** (REG-573) Rows that just arrived — they pulse once. */
+  fresh: Set<string>
   onSelectAll: (on: boolean) => void
   onToggleBucket: (key: string) => void
   onToggleAllBuckets: () => void
@@ -172,8 +183,13 @@ export function ItemsTable({
   onPasteBlock: (text: string, anchorId: string | null) => void
 }) {
   const comingSoon = useComingSoon()
+  const phone = useSheetLayout()   /* (REG-597) ≤767 the lines are cards with a sheet each; the grid stays for every wider screen */
+  const wrap = useRef<HTMLDivElement>(null)
   const scroller = useRef<HTMLDivElement>(null)
+  const headBar = useRef<HTMLDivElement>(null)
+  const sentinel = useRef<HTMLDivElement>(null)
   const headRef = useRef<HTMLDivElement>(null)
+  const headStuck = useStuck(headBar, sentinel)   // (REG-570) the held head casts its rule + shadow
   const [more, setMore] = useState(true)
   const [scrolled, setScrolled] = useState(false)
   const stored = useColumnWidths(ITEMS_TABLE)   // the widths the user dragged (REG-427)
@@ -192,6 +208,25 @@ export function ItemsTable({
     const ro = new ResizeObserver(update); ro.observe(el)
     return () => { el.removeEventListener('scroll', update); ro.disconnect() }
   }, [items.length, columns.length])
+  /* (REG-570) The head bar and the body scroll sideways as one: each follows the other's scrollLeft. A value one side set on the other
+     comes back as that side's own scroll event a frame later — that echo is recognised and dropped, otherwise it would write a stale
+     offset back into a body that is mid-way through a smooth pan and stop it. */
+  useEffect(() => {
+    const body = scroller.current, head = headBar.current
+    if (!body || !head) return
+    let setHead = -1, setBody = -1
+    const fromBody = () => {
+      if (body.scrollLeft === setBody) { setBody = -1; return }
+      if (head.scrollLeft !== body.scrollLeft) { setHead = body.scrollLeft; head.scrollLeft = body.scrollLeft }
+    }
+    const fromHead = () => {
+      if (head.scrollLeft === setHead) { setHead = -1; return }
+      if (body.scrollLeft !== head.scrollLeft) { setBody = head.scrollLeft; body.scrollLeft = head.scrollLeft }
+    }
+    body.addEventListener('scroll', fromBody, { passive: true }); head.addEventListener('scroll', fromHead, { passive: true })
+    fromBody()
+    return () => { body.removeEventListener('scroll', fromBody); head.removeEventListener('scroll', fromHead) }
+  }, [])
 
   const viewLabels = useMemo(() => (view === 'room' ? labels.rooms : view === 'category' ? labels.categories : view === 'section' ? labels.sections : []), [view, labels])
   const display = useMemo(() => buildDisplay(items, view, viewLabels, collapsedBuckets), [items, view, viewLabels, collapsedBuckets])
@@ -214,7 +249,7 @@ export function ItemsTable({
     const head = headRef.current
     if (!head) return
     const headCell = head.querySelector<HTMLElement>('[role="columnheader"]:last-child')
-    const bodyCell = head.parentElement?.querySelector<HTMLElement>('[role="row"][data-item-id] [role="cell"]') ?? null
+    const bodyCell = scroller.current?.querySelector<HTMLElement>('[role="row"][data-item-id] [role="cell"]') ?? null
     const fontOf = (el: HTMLElement | null, fallback: string) => { if (!el) return fallback; const cs = getComputedStyle(el); return `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}` }
     const headFont = fontOf(headCell, '500 12px Inter'), bodyFont = fontOf(bodyCell, '400 14px Inter')
     const next: Partial<Record<ColumnKey, number>> = {}
@@ -238,7 +273,12 @@ export function ItemsTable({
   const D = useColumnDrag(columns.map((key) => ({ key })), (keys) => onReorder(keys as ColumnKey[]))   /* drag a head to reorder (REG-462); the frozen blocks and Total are not in the list */
   const allIds = items.map((i) => i.id)
   const allOn = allIds.length > 0 && allIds.every((id) => selected.has(id))
-  const [drag, setDrag] = useState<{ id: string; over: string | null; where: 'before' | 'after' | null } | null>(null)
+  /* (REG-571) The pointer drag over the rows as shown — what the slot rules need per row, refreshed after every render. */
+  const dragRows = useRef<DragRow[]>([])
+  useEffect(() => {
+    dragRows.current = shown.flatMap((d) => (d.kind === 'row' ? [{ id: d.item.id, parentId: d.item.parentId ?? null, kind: d.item.kind === 'group' ? 'group' as const : 'item' as const, bucket: d.bucket, open: d.item.kind === 'group' && !d.item.collapsed, hasSubs: d.item.kind === 'group' && items.some((x) => x.parentId === d.item.id && x.kind === 'group') }] : []))
+  })
+  const R = useRowDrag({ root: wrap, rowsRef: dragRows, onDrop: onDropRow })
   const lastTouched = useRef<string | null>(null)
   const rowH: RowHandlers = {
     ...h,
@@ -250,10 +290,7 @@ export function ItemsTable({
       if (range && a >= 0 && b >= 0) h.onSelectRun(ids.slice(Math.min(a, b), Math.max(a, b) + 1)); else h.onSelect(id, on)
       lastTouched.current = id
     },
-    onDragStart: (id) => { setDrag({ id, over: null, where: null }); h.onDragStart(id) },
-    onDragOver: (id, where) => { setDrag((d) => (d ? { ...d, over: id, where } : d)); h.onDragOver(id, where) },
-    onDrop: () => { setDrag(null); h.onDrop() },
-    onDragEnd: () => { setDrag(null); h.onDragEnd() },
+    onDragPointerDown: (id, e) => R.start(id, e),
   }
   const anyFolded = collapsedBuckets.size > 0
 
@@ -317,10 +354,21 @@ export function ItemsTable({
     }
   }
 
+  if (phone) {
+    return (
+      <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
+        <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
+                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} />
+        <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
+      </div>
+    )
+  }
   return (
-    <div className={styles.wrap}>
-      <div ref={scroller} className={styles.scroller} data-more={more || undefined} data-scrolled={scrolled || undefined}>
-        <div className={styles.table} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} onKeyDown={onGridKey} onPaste={onPaste}>
+    <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root=""
+         data-more={more || undefined} data-scrolled={scrolled || undefined} onKeyDown={onGridKey} onPaste={onPaste}>
+      <div ref={sentinel} className={styles.sentinel} aria-hidden />
+      {/* (REG-570) The column heads: a sticky bar above the body's scroller, scrolled sideways in step with it. */}
+      <div ref={headBar} className={styles.headBar} role="rowgroup" data-head-bar="" data-stuck={headStuck || undefined}>
           <div ref={headRef} className={styles.head} role="row">
             <div role="columnheader" className={`${styles.cell} ${styles.colSel}`}>
               {view !== 'none' ? (
@@ -346,30 +394,88 @@ export function ItemsTable({
             </div>
             <div role="columnheader" className={`${styles.cell} ${styles.colTotal}`}>Total{clientColumns ? <ClientEye /> : null}</div>
           </div>
+      </div>
+      <div ref={scroller} className={styles.scroller}>
+        <div className={styles.table} role="rowgroup">
           {shown.map((d) => d.kind === 'bucket' ? (
-            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)} />
+            <BucketRow key={`b-${d.key}`} d={d} all={items} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} folded={collapsedBuckets.has(d.key)} onToggle={() => onToggleBucket(d.key)} />
           ) : (
-            <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} details={details} density={density}
+            <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
-                     dragOver={drag && drag.over === d.item.id && drag.id !== d.item.id ? drag.where : null} dragging={drag?.id === d.item.id}
-                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} />
+                     {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)}
+                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} />
           ))}
-          <SumRow sums={sums} columns={columns} colW={colW} autonumber={details.autonumber} itemStyle={itemStyle} />
-          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} onCreate={onCreate} onPick={onPickPriceBook} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
+          <SumRow sums={sums} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
+          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
         </div>
       </div>
+      <SideScrollbar scroller={scroller} />
+    </div>
+  )
+}
+
+/**
+ * (REG-570) The sideways scrollbar that stays in reach: a bar stuck to the bottom of the viewport (or the Expand's scroller) while
+ * the table runs on below it — a pager at each end, a track whose thumb is the visible share. Drag the thumb, press the track
+ * (pages toward the press), or press a pager; the body's own scroll moves the thumb. Not drawn while the table fits.
+ */
+function SideScrollbar({ scroller }: { scroller: React.RefObject<HTMLDivElement | null> }) {
+  const [st, setSt] = useState({ on: false, left: 0, width: 0, pct: 0 })
+  const track = useRef<HTMLDivElement>(null)
+  const [held, setHeld] = useState(false)
+  useEffect(() => {
+    const el = scroller.current, tr = track.current
+    if (!el || !tr) return
+    const measure = () => {
+      const on = el.scrollWidth > el.clientWidth + 1
+      const tw = tr.clientWidth || 1
+      const width = on ? Math.max(32, (el.clientWidth / el.scrollWidth) * tw) : 0
+      const room = Math.max(1, el.scrollWidth - el.clientWidth)
+      const left = on ? (el.scrollLeft / room) * (tw - width) : 0
+      const pct = on ? Math.round((el.scrollLeft / room) * 100) : 0
+      setSt((s) => (s.on === on && Math.abs(s.left - left) < 0.5 && Math.abs(s.width - width) < 0.5 && s.pct === pct ? s : { on, left, width, pct }))
+    }
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el); ro.observe(tr)
+    for (const c of Array.from(el.children)) ro.observe(c)
+    return () => { el.removeEventListener('scroll', measure); ro.disconnect() }
+  }, [scroller])
+  const page = (dir: -1 | 1) => { const el = scroller.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: 'smooth' }) }
+  const onTrack = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scroller.current, tr = track.current
+    if (!el || !tr || e.button !== 0) return
+    const x = e.clientX - tr.getBoundingClientRect().left
+    if (x >= st.left && x <= st.left + st.width) {
+      // the thumb: drag it
+      e.preventDefault()
+      const x0 = e.clientX, s0 = el.scrollLeft, ratio = (el.scrollWidth - el.clientWidth) / Math.max(1, tr.clientWidth - st.width)
+      setHeld(true)
+      const move = (ev: PointerEvent) => { el.scrollLeft = s0 + (ev.clientX - x0) * ratio }
+      const up = () => { setHeld(false); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up) }
+      document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up)
+    } else page(x < st.left ? -1 : 1)
+  }
+  return (
+    <div className={styles.hbar} data-on={st.on || undefined} data-side-scroll="" aria-hidden={st.on ? undefined : true}>
+      <Tooltip label="Scroll left"><button type="button" className={styles.pager} aria-label="Scroll the columns left" onClick={() => page(-1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_left" size={20} /></button></Tooltip>
+      <div ref={track} className={styles.track} role="scrollbar" aria-orientation="horizontal" aria-valuenow={st.pct} aria-label="Scroll the columns" onPointerDown={onTrack}>
+        <span className={styles.thumb} data-dragging={held || undefined} style={{ left: st.left, width: st.width }} />
+      </div>
+      <Tooltip label="Scroll right"><button type="button" className={styles.pager} aria-label="Scroll the columns right" onClick={() => page(1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_right" size={20} /></button></Tooltip>
     </div>
   )
 }
 
 /** The sum row (REG-477): the number columns' totals over the lines that price — a spreadsheet's SUM line under the table. */
-function SumRow({ sums, columns, colW, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; columns: ColumnKey[]; colW: ColWidths; autonumber: boolean; itemStyle?: CSSProperties }) {
+function SumRow({ sums, columns, colW, colStyle, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
   return (
     <div className={styles.sumRow} role="row" aria-label="Sum">
       <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
       {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
-      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Sum · {sums.count} {sums.count === 1 ? 'item' : 'items'}</div>
-      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={colW[c] ? { width: colW[c] } : undefined}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Sum · {sums.count} priced {sums.count === 1 ? 'item' : 'items'}</div>   {/* (REG-576) "priced": the title's count is every line; this one is the lines that price */}
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(sums.totalMinor)}</span></div>
     </div>
@@ -377,7 +483,7 @@ function SumRow({ sums, columns, colW, autonumber, itemStyle }: { sums: ReturnTy
 }
 
 /** A view bucket's header row (reference "1 · Design Time"): name, fold chevron and the sums of its lines. */
-function BucketRow({ d, all, columns, colW, autonumber, folded, onToggle }: { d: Extract<Display, { kind: 'bucket' }>; all: QuoteItem[]; columns: ColumnKey[]; colW: ColWidths; autonumber: boolean; folded: boolean; onToggle: () => void }) {
+function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onToggle }: { d: Extract<Display, { kind: 'bucket' }>; all: QuoteItem[]; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; folded: boolean; onToggle: () => void }) {
   const counted = new Set(countedLines(all).map((l) => l.id))
   const lines = d.lines.filter((l) => counted.has(l.id))
   const cost = lines.reduce((s, l) => s + lineCostMinor(l), 0)
@@ -397,7 +503,7 @@ function BucketRow({ d, all, columns, colW, autonumber, folded, onToggle }: { d:
           </button>
         </Tooltip>
       </div>
-      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={colW[c] ? { width: colW[c] } : undefined}><span className={styles.sum}>{sum(c)}</span></div>)}
+      {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sum(c)}</span></div>)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(total)}</span></div>
     </div>
@@ -410,8 +516,8 @@ function BucketRow({ d, all, columns, colW, autonumber, folded, onToggle }: { d:
  * matches, Enter adds the active one — or, with nothing active, a blank line named as typed ("Item" when nothing is typed,
  * like Create ▾ › New Item). "Create New Item" is always live (spec 04 draws it enabled). The field keeps focus for the next line.
  */
-function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPriceBook, onExport, inputRef, openTick }: {
-  number: number; autonumber: boolean; priceBook: PriceBookItem[]; onCreate: (name: string) => void; onPick: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
+function AddItemRow({ number, autonumber, priceBook, sections, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick }: {
+  number: number; autonumber: boolean; priceBook: PriceBookItem[]; sections: PriceBookSection[]; onCreate: (name: string) => void; onPick: (id: string) => void; onPickSection: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
   inputRef: React.RefObject<HTMLInputElement | null>
   openTick: number
 }) {
@@ -424,8 +530,13 @@ function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPri
   const anchor = useRef<HTMLDivElement>(null)
   const matches = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return (s ? priceBook.filter((p) => p.name.toLowerCase().includes(s) || (p.description ?? '').toLowerCase().includes(s)) : priceBook).slice(0, 8)
+    return (s ? priceBook.filter((p) => p.name.toLowerCase().includes(s) || (p.description ?? '').toLowerCase().includes(s) || (p.vendor ?? '').toLowerCase().includes(s)) : priceBook).slice(0, 8)   /* (REG-594) a vendor's name finds its items */
   }, [q, priceBook])
+  /* (REG-566) The saved sections that match, with their line counts; a pick inserts the whole section at the end of the table. */
+  const sectionMatches = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return sections.filter((x) => !s || x.name.toLowerCase().includes(s)).slice(0, 6).map((x) => { const body = parseSavedSection(x.linesJson); return { id: x.id, name: x.name, count: body ? savedSectionCount(body) : 0 } })
+  }, [q, sections])
   const create = () => { onCreate(q.trim()); setQ(''); setActive(-1); setOpen(false) }
   const pick = (id: string) => { onPick(id); setQ(''); setActive(-1); setOpen(false) }
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
@@ -458,10 +569,24 @@ function AddItemRow({ number, autonumber, priceBook, onCreate, onPick, onViewPri
                   </span>
                   <span className={sec.popText}>
                     <span className={sec.popName}>{p.name}</span>
-                    <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}</span>
+                    <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}{p.vendor ? ` · by ${p.vendor}` : ''}</span>   {/* (REG-594) */}
                   </span>
                 </button>
               ))}
+              {sectionMatches.length ? (
+                <>
+                  <div className={sec.popHead}>My Sections ({sectionMatches.length})</div>
+                  {sectionMatches.map((x) => (
+                    <button key={x.id} type="button" role="option" aria-selected={false} className={sec.popRow} data-testid="my-section" onClick={() => { onPickSection(x.id); setQ(''); setActive(-1); setOpen(false) }}>
+                      <span className={sec.popThumb}><Icon name="folder" size={24} weight={300} /></span>
+                      <span className={sec.popText}>
+                        <span className={sec.popName}>{x.name}</span>
+                        <span className={sec.popMeta}>Section · {x.count} {x.count === 1 ? 'item' : 'items'}</span>
+                      </span>
+                    </button>
+                  ))}
+                </>
+              ) : null}
             </div>
           </PortalMenu>
         </div>

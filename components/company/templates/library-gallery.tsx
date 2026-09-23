@@ -82,10 +82,21 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   usageWord: (t: T) => string
   empty: { title: string; help: string }
   children?: ReactNode
+  /** (REG-594) Another Company section on the same gallery: its shell (title + tab strip) and what an entry is called. */
+  shell?: { title: string; tabs: { label: string; href: string }[] }
+  noun?: { one: string; many: string }
+  /** The list's first column head (default "Template"). */
+  nameLabel?: string
+  /** The kebab's row (default "Deleted Templates"). */
+  deletedLabel?: string
+  /** The New ▾ menu's rows are the caller's; this replaces "Open" as the first kebab row (e.g. "Edit"). */
+  openLabel?: string
 }
 
 export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>) {
   const { items, deleted, now, kind } = p
+  const noun = p.noun ?? { one: 'template', many: 'templates' }
+  const Noun = noun.one.charAt(0).toUpperCase() + noun.one.slice(1)
   const { run } = useRun()
   const phone = useMediaQuery(MOBILE)
   const [query, setQuery] = useState('')
@@ -95,11 +106,12 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   const [newOpen, setNewOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [cardSide, setCardSide] = useState<'up' | 'down'>('down')   /* (REG-286) measured on the press: a card near the screen's foot opens its menu upward */
   const [rename, setRename] = useState<{ id: string; name: string } | null>(null)
   const [del, setDel] = useState<T | null>(null)
   const [deletedOpen, setDeletedOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
-  const defs = useMemo<readonly TableColumnDef[]>(() => [{ key: 'name', label: 'Template', track: 'minmax(318px, 1fr)', locked: true }, ...p.columns.map(({ key, label, track, hidden }) => ({ key, label, track, hidden })), { key: 'updated', label: 'Updated', track: '132px' }, { key: 'by', label: 'Updated by', track: '200px' }], [p.columns])
+  const defs = useMemo<readonly TableColumnDef[]>(() => [{ key: 'name', label: p.nameLabel ?? 'Template', track: 'minmax(318px, 1fr)', locked: true }, ...p.columns.map(({ key, label, track, hidden }) => ({ key, label, track, hidden })), { key: 'updated', label: 'Updated', track: '132px' }, ...(p.shell ? [] : [{ key: 'by', label: 'Updated by', track: '200px' }])], [p.columns, p.nameLabel, p.shell])
   const columnPrefs = useTableColumns(p.tableKey, defs, phone)
   const counts = useMemo(() => Object.fromEntries((p.filters ?? []).map((f) => [f.key, items.filter(f.test).length])), [items, p.filters])
   const shown = useMemo(() => {
@@ -109,21 +121,21 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
     return q ? base.filter((t) => t.title.toLowerCase().includes(q) || (p.searchText?.(t).toLowerCase().includes(q) ?? false)) : base
   }, [items, filter, query, p])
 
-  const rows = (t: T): LibraryKebabItem[] => [{ label: 'Open', onSelect: () => p.onOpen(t) }, ...(p.kebab?.(t) ?? [])]
+  const rows = (t: T): LibraryKebabItem[] => [{ label: p.openLabel ?? 'Open', onSelect: () => p.onOpen(t) }, ...(p.kebab?.(t) ?? [])]
   const menu = (t: T, open: boolean, side: 'up' | 'down', onClose: () => void) => (
     <Dropdown open={open} onClose={onClose} align="right" side={side} width={264} sheetTitle={t.title}>
       {rows(t).map((it) => <DropdownItem key={it.label} onSelect={() => { onClose(); it.onSelect() }} disabled={it.disabled} title={it.title}>{it.label}</DropdownItem>)}
       <DropdownDivider />
-      <DropdownItem onSelect={() => { onClose(); void run('duplicate the template', async () => { await p.onDuplicate(t) }) }}>Duplicate</DropdownItem>
+      <DropdownItem onSelect={() => { onClose(); void run(`duplicate the ${noun.one}`, async () => { await p.onDuplicate(t) }) }}>Duplicate</DropdownItem>
       <DropdownItem onSelect={() => { onClose(); setRename({ id: t.id, name: t.title }) }}>Rename</DropdownItem>
       <DropdownDivider />
       <DropdownItem tone="danger" onSelect={() => { onClose(); setDel(t) }}>Delete</DropdownItem>
     </Dropdown>
   )
-  const doRename = () => { const r = rename; if (!r || !r.name.trim()) return; const t = items.find((x) => x.id === r.id); setRename(null); if (t) void run('rename the template', async () => { await p.onRename(t, r.name.trim()) }, 'Template renamed') }
+  const doRename = () => { const r = rename; if (!r || !r.name.trim()) return; const t = items.find((x) => x.id === r.id); setRename(null); if (t) void run(`rename the ${noun.one}`, async () => { await p.onRename(t, r.name.trim()) }, `${Noun} renamed`) }
 
   return (
-    <CompanyShell title="Templates" tabs={templateTabs()} from={p.from}>
+    <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell?.tabs ?? templateTabs()} from={p.from}>
       <div className={gallery.toolbar}>
         <div className={gallery.filters}>
           {p.filters?.length ? (
@@ -131,24 +143,24 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
               <SegmentedButtonItem id="all">All · {items.length}</SegmentedButtonItem>
               {p.filters.map((f) => <SegmentedButtonItem key={f.key} id={f.key}>{f.label} · {counts[f.key] ?? 0}</SegmentedButtonItem>)}
             </SegmentedButton>
-          ) : <span className={styles.count}>{items.length} {items.length === 1 ? 'template' : 'templates'}</span>}
+          ) : <span className={styles.count}>{items.length} {items.length === 1 ? noun.one : noun.many}</span>}
         </div>
         <div className={gallery.toolbarEnd}>
           {/* (REG-541) The tab's own New ▾ leads the cluster; its kebab (Deleted Templates) closes it — the tab toolbars' order. */}
           <LibraryNewButton open={newOpen} onOpenChange={setNewOpen}>{p.newMenu(() => setNewOpen(false))}</LibraryNewButton>
-          <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search templates" label="Search templates" />
+          <ToolbarSearch query={query} onQuery={setQuery} placeholder={`Search ${noun.many}`} label={`Search ${noun.many}`} />
           {view === 'list' ? <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setColumnsOpen(true)} /></Tooltip> : null}
           <span className={gallery.viewToggle}>
             <SegmentedIconToggle label="View" value={view} options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]} onChange={(v) => setListPref(v === 'list')} />
           </span>
-          <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} />
+          <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} label={p.deletedLabel} sheetTitle={p.shell?.title} />
         </div>
       </div>
 
       {shown.length === 0 ? (
         <div className={gallery.empty} role="status">
           <span className={gallery.emptyGlyph}><Icon name={kind.icon} size={40} weight={300} /></span>
-          <span className={gallery.emptyTitle}>{query ? 'No templates match' : filter !== 'all' ? `Nothing under ${(p.filters ?? []).find((f) => f.key === filter)?.label ?? filter}` : p.empty.title}</span>
+          <span className={gallery.emptyTitle}>{query ? `No ${noun.many} match` : filter !== 'all' ? `Nothing under ${(p.filters ?? []).find((f) => f.key === filter)?.label ?? filter}` : p.empty.title}</span>
           <span className={gallery.emptyHelp}>{query ? 'Try another name.' : p.empty.help}</span>
         </div>
       ) : view === 'list' ? (
@@ -167,26 +179,27 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
               <span className={gallery.usage}>{p.usage(t)} · edited {ago(t.updatedAt.getTime(), now)}{t.author ? ` by ${t.author}` : ''}</span>
               <span className={gallery.kebab}>
                 <Tooltip label="More options" disabled={menuFor === t.id}>
-                  <IconButton icon="more_vert" label={`More options for ${t.title}`} size={24} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuFor === t.id} onClick={() => setMenuFor((m) => (m === t.id ? null : t.id))} />
+                  <IconButton icon="more_vert" label={`More options for ${t.title}`} size={24} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuFor === t.id}
+                              onClick={(e) => { if (menuFor !== t.id) setCardSide(menuSideFor(e.currentTarget, rows(t).length + 3)); setMenuFor((m) => (m === t.id ? null : t.id)) }} />
                 </Tooltip>
-                {menu(t, menuFor === t.id, 'down', () => setMenuFor(null))}
+                {menu(t, menuFor === t.id, cardSide, () => setMenuFor(null))}
               </span>
             </div>
           ))}
         </div>
       )}
 
-      <Dialog open={!!rename} onClose={() => setRename(null)} title="Rename template" size="form" width={400}
+      <Dialog open={!!rename} onClose={() => setRename(null)} title={`Rename ${noun.one}`} size="form" width={400}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => setRename(null)}>Cancel</Button><Button isDisabled={!rename?.name.trim()} onPress={doRename}>Rename</Button></>}>
-        <TextField label="Template name" required value={rename?.name ?? ''} autoFocus onChange={(v) => setRename((r) => (r ? { ...r, name: v } : r))} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doRename() } }} />
+        <TextField label={`${Noun} name`} required value={rename?.name ?? ''} autoFocus onChange={(v) => setRename((r) => (r ? { ...r, name: v } : r))} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); doRename() } }} />
       </Dialog>
-      <ConfirmDialog open={!!del} title={`Delete ${del?.title ?? 'template'}?`} confirmLabel="Delete" message={del ? p.deleteMessage(del) : ''}
-                     onCancel={() => setDel(null)} onConfirm={() => { const t = del; setDel(null); if (t) void run('delete the template', async () => { await p.onDelete(t) }, { message: `${t.title} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the template', () => p.onRestore([t.id]), `${t.title} restored`) } }) }} />
+      <ConfirmDialog open={!!del} title={`Delete ${del?.title ?? noun.one}?`} confirmLabel="Delete" message={del ? p.deleteMessage(del) : ''}
+                     onCancel={() => setDel(null)} onConfirm={() => { const t = del; setDel(null); if (t) void run(`delete the ${noun.one}`, async () => { await p.onDelete(t) }, { message: `${t.title} deleted`, actionLabel: 'Undo', onAction: () => { void run(`restore the ${noun.one}`, () => p.onRestore([t.id]), `${t.title} restored`) } }) }} />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
-      <LibraryDeletedSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} rows={deleted} crumb={`Templates / ${kind.label}`} ariaLabel={`Deleted ${kind.label.toLowerCase()} templates`}
+      <LibraryDeletedSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} rows={deleted} crumb={`${p.shell?.title ?? 'Templates'} / ${kind.label}`} ariaLabel={p.shell ? `Deleted ${kind.label.toLowerCase()}` : `Deleted ${kind.label.toLowerCase()} templates`}
                            glyph={p.glyph} meta={p.deletedMeta} usage={p.usageWord} keepReason={p.keepReason}
-                           onRestore={(ids) => run('restore', () => p.onRestore(ids), ids.length === 1 ? `${deleted.find((t) => t.id === ids[0])?.title ?? 'Template'} restored` : `${ids.length} templates restored`)}
-                           onDeleteForever={(ids) => run('delete', () => p.onDeleteForever(ids), ids.length === 1 ? `${deleted.find((t) => t.id === ids[0])?.title ?? 'Template'} deleted forever` : `${ids.length} templates deleted forever`)}
+                           onRestore={(ids) => run('restore', () => p.onRestore(ids), ids.length === 1 ? `${deleted.find((t) => t.id === ids[0])?.title ?? Noun} restored` : `${ids.length} ${noun.many} restored`)}
+                           onDeleteForever={(ids) => run('delete', () => p.onDeleteForever(ids), ids.length === 1 ? `${deleted.find((t) => t.id === ids[0])?.title ?? Noun} deleted forever` : `${ids.length} ${noun.many} deleted forever`)}
                            onEmptyTrash={() => run('empty the trash', () => p.onEmptyTrash(), 'Trash emptied')} />
       {p.children}
     </CompanyShell>

@@ -72,3 +72,27 @@
 }
 /* (REG-273) A finger cannot hover: the badge's Remove is always on where the pointer cannot. */
 @media (hover: none) { .badgeRemove { display: inline-flex; } }
+
+/* (REG-554) The Brand kit page's lead line, and Profile's way to the kit. */
+.lead { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 720px; }
+.kitLink { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-4) var(--om-spacing-5); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); text-decoration: none; transition: background-color var(--motion-hover); }
+.kitLink:hover { background: var(--om-color-hover-04p); }
+.kitLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.kitLinkIcon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); flex-shrink: 0; }
+.kitLinkText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kitLinkTitle { font: var(--om-type-subheading-m); }
+
+/* (REG-562) Issuing entities: one bordered block each — name row, the four bank fields, the PayNow QR well. */
+.entity { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.entityHead { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; }
+.entityName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); flex: 1; min-width: 0; }
+.entityNameField { flex: 1; min-width: 0; }
+.qrRow { display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.qrWell { width: 96px; height: 96px; flex-shrink: 0; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: var(--om-spacing-2); }
+.qrWell img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.qrWell:hover { background: var(--om-color-hover-04p); }
+.qrWell:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.qrWell .wellEmpty { flex-direction: column; font: var(--om-type-caption-m); text-align: center; }
+
+/* (REG-593) The entity's GST switch row. */
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-height: 36px; cursor: pointer; }

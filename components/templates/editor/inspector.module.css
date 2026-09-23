@@ -16,6 +16,8 @@
 .switchLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .txt { display: flex; align-items: flex-start; gap: var(--om-spacing-1); }
 .txt > :first-child { flex: 1; min-width: 0; }
+.txtGrow { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.helper { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-3); }
 .area { width: 100%; min-height: 72px; }
 .fieldsAnchor { position: relative; display: inline-flex; flex-shrink: 0; margin-top: 10px; }
 .menuGroup { display: block; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
@@ -48,6 +50,7 @@
 .rowLabel { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rowField { flex: 1; min-width: 0; }
 .rowNarrow { width: 72px; flex-shrink: 0; }
+.rowMm { width: 72px; flex-shrink: 0; }   /* the "mm" label needs the box the old row gave it; 60 cut it to "m…" */
 .rowBtn { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 36px; padding: 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .rowBtn:hover { background: var(--om-color-hover-04p); }
 .rowBtn[data-on] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
@@ -62,3 +65,16 @@
 .note { grid-column: 1 / -1; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* (REG-525) Touch tablets open the inspector as a drawer: rows and swatches take a 44 box (REG-273 / REG-312). */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .row { min-height: 44px; } .swatch { position: relative; } .swatch::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; } }
+
+/* (REG-560) The ▲ ▼ pair on the Details rows and the Items columns. */
+.rowMoves { display: inline-flex; flex-shrink: 0; margin-left: calc(-1 * var(--om-spacing-1)); }
+
+/* (REG-569) A list entry as a card — a Details row, a printed column — on two lines with room for its words: the label and its actions,
+   then the value with its field menu. The old single line squeezed the value box to a sliver. */
+.card { grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); background: var(--om-color-surface-bg); border-radius: var(--om-radius-1); }
+.card[data-off] { opacity: .72; }
+.cardLine { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.cardGrow { flex: 1; min-width: 0; }
+.cardName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardActions { display: inline-flex; flex-shrink: 0; margin-right: calc(-1 * var(--om-spacing-1)); }
+.cardMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

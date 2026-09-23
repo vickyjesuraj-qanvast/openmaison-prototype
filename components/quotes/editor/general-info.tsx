@@ -7,6 +7,8 @@ import type { Member } from '@/lib/db/schema'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'
 import type { EditorLead } from '@/lib/quotes/editor'
 import styles from './general-info.module.css'
+import { useState } from 'react'
+import { Button } from '@/components/ds'
 
 /** What General Info edits — the editor's local copy of the quote's fields (dates as the DateField's d/m/yyyy string). */
 export type GeneralState = {
@@ -18,6 +20,9 @@ export type GeneralState = {
   customerId: string
   propertyType: string
   siteAddress: string
+  /** (REG-588) A second client — co-owners: printed with the first, named on the signing link. */
+  client2Name: string
+  client2Nric: string
 }
 
 /**
@@ -38,6 +43,7 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra }: {
 }) {
   const names = members.map((m) => m.name)
   const preparedName = members.find((m) => m.id === value.preparedBy)?.name ?? ''
+  const [second, setSecond] = useState(!!(value.client2Name || value.client2Nric))   /* (REG-588) */
   return (
     <div className={styles.grid}>
       {/* Row 1 */}
@@ -62,6 +68,15 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra }: {
         <TextField label="NRIC" value={value.nric} onChange={(v) => onChange({ nric: v })} maxLength={20} />
         <TextField label="Customer ID" value={value.customerId} onChange={(v) => onChange({ customerId: v })} maxLength={60} />
       </div>
+      {/* (REG-588) A second client — co-owners sign together: {client_name} prints "A & B", the NRICs print side by side, both are named on the signing link. */}
+      {second ? (
+        <div className={styles.pair}>
+          <TextField label="Second client" value={value.client2Name} onChange={(v) => onChange({ client2Name: v })} maxLength={120} />
+          <TextField label="NRIC (second client)" value={value.client2Nric} onChange={(v) => onChange({ client2Nric: v })} maxLength={20} />
+        </div>
+      ) : (
+        <div className={styles.pair}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></div>
+      )}
       {extra ? <div className={styles.full}>{extra}</div> : null}
     </div>
   )

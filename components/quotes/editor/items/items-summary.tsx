@@ -7,11 +7,11 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { DropdownItem } from '@/components/leads/dropdown'
 import { Tooltip } from '@/components/om/tooltip'
-import { money2, pct, sharePct, type CategoryShare, type QuoteTotals } from '@/lib/quotes/math'
+import { money2, pct, sharePct, type CategoryShare, type NamedDiscount, type QuoteTotals } from '@/lib/quotes/math'
 import type { Studio } from '@/lib/settings/types'
 import styles from './items-section.module.css'
 
-export type Pricing = { additionalDiscountMode: 'pct' | 'amount'; additionalDiscountValue: number; gstEnabled: boolean; issuingEntity: string | null }
+export type Pricing = { additionalDiscountMode: 'pct' | 'amount'; additionalDiscountValue: number; gstEnabled: boolean; issuingEntity: string | null; /** (REG-559) the named discounts after the additional one */ discounts: NamedDiscount[] }
 
 /** The most an additional discount can be in its mode: 100 % or the whole subtotal (REG-417 — the card shows the applied value). */
 export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalMinor: number) => (mode === 'pct' ? 100 : Math.max(0, subtotalMinor) / 100)
@@ -21,8 +21,10 @@ export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalM
  * Subtotal · n items, Discount, Additional Discount (% | S$ + amount), GST 9% switch, Total + Round Prices, and — for the
  * studio's owner only — the margin strip. Every figure is derived from the lines (lib/quotes/math.ts).
  */
-export function ItemsSummary({ totals, pricing, studio, owner, gstLabel = 'GST 9%', shares, onPickCategory, onPricing, onRound }: {
+export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabel = 'GST 9%', shares, onPickCategory, onPricing, onRound }: {
   totals: QuoteTotals
+  /** (REG-562 · REG-593) The studio's issuing entities (Company › Profile) with their GST registration; the first is the studio itself. */
+  entities: { name: string; gstRegistered: boolean }[]
   /** (REG-532) By category — the subtotal split by the lines' categories; a row opens that bucket in View by: Category. */
   shares: CategoryShare[]
   onPickCategory: (name: string) => void
@@ -50,11 +52,19 @@ export function ItemsSummary({ totals, pricing, studio, owner, gstLabel = 'GST 9
     if (e.key === 'Escape') { e.preventDefault(); cancelled.current = true; e.currentTarget.blur() }
   }
   const entity = pricing.issuingEntity ?? studio.name
+  const entityOptions = [...new Set([studio.name, ...entities.map((e) => e.name), ...(pricing.issuingEntity ? [pricing.issuingEntity] : [])])]
+  /* (REG-593) The picked entity's GST registration — the studio's own from Settings, the others' from Company › Profile. */
+  const registered = pricing.issuingEntity ? (entities.find((e) => e.name === pricing.issuingEntity)?.gstRegistered ?? true) : studio.gstRegistered
+  /* (REG-559) Named discounts: each row edits in place and writes the whole list; the applied amount prints on the right. */
+  const discounts = pricing.discounts
+  const setDiscounts = (next: NamedDiscount[]) => onPricing({ discounts: next })
+  const patchDiscount = (id: string, patch: Partial<NamedDiscount>) => setDiscounts(discounts.map((d) => (d.id === id ? { ...d, ...patch } : d)))
   return (
     <div className={styles.below}>
       <div className={styles.entity}>
-        <TextField label="Issuing Entity" value={entity} mode="select" size="s" options={[studio.name]} onChange={(v) => onPricing({ issuingEntity: v === studio.name ? null : v })} />
-        {studio.gstRegistered ? <span className={styles.entityHelper}>GST-Registered</span> : null}
+        <TextField label="Issuing Entity" value={entity} mode="select" size="s" options={entityOptions}
+                   onChange={(v) => { const e = entities.find((x) => x.name === v); const reg = v === studio.name ? studio.gstRegistered : (e?.gstRegistered ?? true); onPricing({ issuingEntity: v === studio.name ? null : v, gstEnabled: reg }) }} />   {/* (REG-593) the entity brings its GST with it */}
+        <span className={styles.entityHelper}>{registered ? 'GST-Registered' : 'Not GST-registered — no GST on this quote'}</span>
       </div>
       {shares.length ? <ItemsBreakdown shares={shares} onPick={onPickCategory} /> : null}
       <div className={styles.totals} data-testid="quote-totals">
@@ -81,6 +91,12 @@ export function ItemsSummary({ totals, pricing, studio, owner, gstLabel = 'GST 9
                    onChange={(e) => setDraft(e.target.value.replace(/[^0-9.]/g, ''))} onBlur={commit} onKeyDown={onKey} />
           </span>
         </div>
+        {discounts.map((d) => <DiscountRow key={d.id} d={d} applied={totals.discountLines.find((x) => x.id === d.id)?.minor ?? 0} subtotalMinor={totals.subtotalMinor} onPatch={(p) => patchDiscount(d.id, p)} onRemove={() => setDiscounts(discounts.filter((x) => x.id !== d.id))} />)}
+        {discounts.length < 10 ? (
+          <button type="button" className={styles.addDisc} data-testid="add-discount" onClick={() => setDiscounts([...discounts, { id: `d-${Date.now().toString(36)}`, label: '', mode: 'pct', value: 0 }])}>
+            <Icon name="add" size={16} />Add a discount
+          </button>
+        ) : null}
         <div className={styles.trow}>
           <span className={styles.tlabel}>{gstLabel} <Switch size="sm" isSelected={pricing.gstEnabled} onChange={(v: boolean) => onPricing({ gstEnabled: v })} aria-label="Apply GST" /></span>
           <span className={styles.tvalue}>{money2(totals.gstMinor)}</span>
@@ -98,6 +114,38 @@ export function ItemsSummary({ totals, pricing, studio, owner, gstLabel = 'GST 9
           </div>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+/**
+ * (REG-559) One named discount (the testers' "several additional discounts with their own words"): the word the client reads, its
+ * % | S$ select, the value, and the applied amount on the right — rows of the totals card's own 24px boxes. Remove drops the row.
+ */
+function DiscountRow({ d, applied, subtotalMinor, onPatch, onRemove }: { d: NamedDiscount; applied: number; subtotalMinor: number; onPatch: (p: Partial<NamedDiscount>) => void; onRemove: () => void }) {
+  const [modeOpen, setModeOpen] = useState(false)
+  const modeRef = useRef<HTMLButtonElement>(null)
+  const [label, setLabel] = useState<string | null>(null)
+  const [value, setValue] = useState<string | null>(null)
+  const max = maxAdditional(d.mode, subtotalMinor)
+  const commitLabel = () => { if (label !== null && label.trim() !== d.label) onPatch({ label: label.trim() }); setLabel(null) }
+  const commitValue = () => { if (value !== null) { const n = Math.min(max, Number(value)); if (Number.isFinite(n) && n >= 0 && n !== d.value) onPatch({ value: n }) } setValue(null) }
+  const onKey = (commit: () => void) => (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } if (e.key === 'Escape') { e.preventDefault(); setLabel(null); setValue(null); e.currentTarget.blur(); commit() } }
+  return (
+    <div className={`${styles.trow} ${styles.discRow}`} data-testid="named-discount">
+      <input className={`${styles.mini} ${styles.discLabel}`} aria-label="Discount name" placeholder="Discount name" value={label ?? d.label}
+             onFocus={() => setLabel(d.label)} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} onKeyDown={onKey(commitLabel)} />
+      <button ref={modeRef} type="button" className={`${styles.mini} ${styles.miniSelect}`} aria-haspopup="menu" aria-expanded={modeOpen} aria-label="Discount unit" onClick={() => setModeOpen((o) => !o)}>
+        {d.mode === 'amount' ? 'S$' : '%'}<Icon name="expand_more" size={16} />
+      </button>
+      <PortalMenu open={modeOpen} anchor={modeRef} onClose={() => setModeOpen(false)} role="menu" width={120} sheetTitle="Discount unit">
+        <DropdownItem role="menuitemradio" checked={d.mode === 'pct'} onSelect={() => { setModeOpen(false); onPatch({ mode: 'pct', value: Math.min(100, d.value) }) }}>%</DropdownItem>
+        <DropdownItem role="menuitemradio" checked={d.mode === 'amount'} onSelect={() => { setModeOpen(false); onPatch({ mode: 'amount' }) }}>S$</DropdownItem>
+      </PortalMenu>
+      <input className={`${styles.mini} ${styles.miniInput} ${styles.discValue}`} inputMode="decimal" aria-label="Discount value" value={value ?? (d.value ? String(d.value) : '0.00')}
+             onFocus={() => setValue(d.value ? String(d.value) : '')} onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, ''))} onBlur={commitValue} onKeyDown={onKey(commitValue)} />
+      <span className={styles.discAmount}>−{money2(applied)}</span>
+      <Tooltip label="Remove this discount"><button type="button" className={styles.discRemove} aria-label="Remove this discount" onClick={onRemove}><Icon name="close" size={16} /></button></Tooltip>
     </div>
   )
 }

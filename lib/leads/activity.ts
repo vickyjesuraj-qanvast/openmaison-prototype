@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quoteVersions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
 import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
@@ -49,12 +49,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(quoteComparisons).where(eq(quoteComparisons.leadId, leadId)),   // (REG-529) Quote X-Ray
   ])
   const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id), quoteIds = qs.map((x) => x.id)
-  const [tComments, fComments, qLines, qPays, qFiles] = await Promise.all([
+  const [tComments, fComments, qLines, qPays, qFiles, qVersions] = await Promise.all([
     taskIds.length ? db.select().from(taskComments).where(inArray(taskComments.taskId, taskIds)) : Promise.resolve([]),
     fileIds.length ? db.select().from(fileComments).where(inArray(fileComments.fileId, fileIds)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quoteItems).where(inArray(quoteItems.quoteId, quoteIds)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quotePayments).where(inArray(quotePayments.quoteId, quoteIds)).orderBy(asc(quotePayments.position)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quoteFiles).where(inArray(quoteFiles.quoteId, quoteIds)) : Promise.resolve([]),
+    quoteIds.length ? db.select().from(quoteVersions).where(inArray(quoteVersions.quoteId, quoteIds)) : Promise.resolve([]),   // (REG-565) Revise
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const who = (id: string | null | undefined): string => (!id ? 'System' : id === ME ? 'You' : byMember.get(id)?.name ?? 'System')
@@ -115,6 +116,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     push({ id: `quote-${x.id}`, at: x.createdAt, icon: 'docs', text: `You created the quote ${q(x.number)}.`, link, actor: 'You' })
     if (x.sentAt) push({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
     if (x.approvedAt) push({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `You approved the quote ${q(x.number)}.`, link, actor: 'You' })   // fixed copy: the status can move on after the stamp
+    if (x.confirmedAt) push({ id: `quote-c-${x.id}`, at: x.confirmedAt, icon: 'docs', text: `${x.confirmedBy ?? 'The client'} confirmed the quote ${q(x.number)} on its link.`, link, actor: x.confirmedBy ?? 'Client' })   // (REG-587)
     if (x.deletedAt) push({ id: `quote-d-${x.id}`, at: x.deletedAt, icon: 'docs', text: `You deleted the quote ${q(x.number)}.`, link, actor: 'You' })
     // The editor's own records (REG-343: a new record type gets its Activity branch): the lines written (REG-415) and the
     // payment schedule set (REG-418) — dated by the records themselves, linked to the editor.
@@ -123,6 +125,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     if (lines.length) push({ id: `quote-i-${x.id}`, at: new Date(Math.min(...lines.map((l) => l.createdAt.getTime()))), icon: 'docs', text: `You added ${lines.length} ${lines.length === 1 ? 'item' : 'items'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
     const pays = qPays.filter((p) => p.quoteId === x.id)
     if (pays.length) push({ id: `quote-p-${x.id}`, at: new Date(Math.max(...pays.map((p) => (p.updatedAt ?? p.createdAt).getTime()))), icon: 'docs', text: `You set the payment schedule of the quote ${q(x.number)} to ${presetLabel(presetOf(pays)).replace('Default: ', '')}.`, link: editor, actor: 'You' })
+    for (const v of qVersions.filter((v) => v.quoteId === x.id)) push({ id: `quote-v-${v.id}`, at: v.createdAt, icon: 'docs', text: `${who(v.createdBy)} revised the quote ${q(x.number)} — version ${v.version} kept, version ${v.version + 1} started.`, link: editor, actor: who(v.createdBy) })   // (REG-565)
     const attached = qFiles.filter((f) => f.quoteId === x.id)
     if (attached.length) push({ id: `quote-f-${x.id}`, at: new Date(Math.max(...attached.map((f) => f.createdAt.getTime()))), icon: 'docs', text: `You attached ${attached.length} ${attached.length === 1 ? 'file' : 'files'} to the quote ${q(x.number)}.`, link: editor, actor: 'You' })
   }

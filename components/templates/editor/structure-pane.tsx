@@ -10,7 +10,7 @@ import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/drop
 import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, type Block, type BlockKind, type Paper, type TemplateDesign } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { flowBlocks, patchBlock, reorderFlow } from './editor-state'
-import { Group, Num, Seg, Sub, Txt } from './inspector-controls'
+import { Group, Num, Seg, Sub, Txt, Sel } from './inspector-controls'
 import styles from './structure-pane.module.css'
 
 type Props = {
@@ -22,9 +22,10 @@ const sub = (b: Block): string => {
   switch (b.kind) {
     case 'header': case 'footer': return b.repeat === 'every' ? 'Every page' : b.repeat === 'first' ? 'First page' : 'After the first page'
     case 'cover': return 'Its own page'
-    case 'items': return `${b.groupBy === 'none' ? 'Quote groups' : { category: 'By trade', room: 'By room', section: 'By section' }[b.groupBy]}${b.subGroupBy !== 'none' ? ` › ${b.subGroupBy}` : ''} · ${b.columns.filter((c) => c.on).length} columns`
+    case 'items': return `${b.groupBy === 'none' ? 'Quote sections' : { category: 'By trade', room: 'By room', section: 'By section label' }[b.groupBy]}${b.subGroupBy !== 'none' ? ` › ${b.subGroupBy}` : ''} · ${b.columns.filter((c) => c.on).length} columns`
     case 'totals': return `${b.lines.filter((l) => l.on).length} lines`
     case 'payments': return `${b.layout.charAt(0).toUpperCase()}${b.layout.slice(1)} layout`
+    case 'bank': return b.qr ? 'With the PayNow QR' : 'Bank and account'
     case 'signature': return `${b.columns.length} columns`
     case 'text': return b.html.replace(/<[^>]+>/g, '').slice(0, 40)
     case 'title': return b.title || b.subject || ''
@@ -59,16 +60,18 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
     <div className={styles.pane}>
       <div className={styles.setup}>
         {/* (REG-542) "Page setup" with the summary beside it — "Page · A4, 12/18/10/18 mm" read as a code; the margins are captioned and named by side. */}
-        <Group title="Page setup" sub={`${design.page.paper} · ${design.page.margins.top}/${design.page.margins.right}/${design.page.margins.bottom}/${design.page.margins.left} mm`}>
+        <Group title="Page setup" sub={design.page.paper}>   {/* (REG-569) the margins code "12/18/10/18 mm" is inside, named by side */}
           <Seg label="Paper" value={design.page.paper} options={[{ value: 'A4' as Paper, label: 'A4' }, { value: 'Letter' as Paper, label: 'Letter' }]} onChange={(p) => onDesign((d) => ({ ...d, page: { ...d.page, paper: p } }))} />
           <Sub>Margins</Sub>
           {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
             <Num key={side} label={`${side.charAt(0).toUpperCase()}${side.slice(1)}`} unit="mm" value={design.page.margins[side]} min={0} max={60} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, margins: { ...d.page.margins, [side]: v } } }), { coalesce: `margin-${side}` })} />
           ))}
           <Txt label="Watermark" value={design.page.watermark} fields={false} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, watermark: v } }), { coalesce: 'watermark' })} />
+          {/* (REG-592) How the dates print — Dyel's "Sunday, 7 February 2026". */}
+          <Sel label="Dates print as" value={design.page.dateFormat} options={[{ value: 'short', label: '17 Sep ’26' }, { value: 'long', label: '17 September 2026' }, { value: 'weekday', label: 'Sunday, 17 September 2026' }]} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, dateFormat: v } }))} />
         </Group>
       </div>
-      <div className={styles.outline} role="list" aria-label="Blocks">
+      <div className={styles.outline} role="list" aria-label="On the page">
         {cover ? <div className={styles.marker}>Page 1 · cover</div> : null}
         {cover ? row(cover) : null}
         {header ? row(header) : null}
@@ -80,8 +83,8 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
       </div>
       <div className={styles.foot}>
         <span className={styles.addAnchor}>
-          <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add block</Button>
-          <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" side="up" width={232} sheetTitle="Add block">
+          <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add to the page</Button>   {/* (REG-569) "block" was the code's word */}
+          <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" side="up" width={232} sheetTitle="Add to the page">
             {BLOCK_KINDS.filter((k) => !isCanvasKind(k)).map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); onAddBlock(k) }} disabled={SINGLETON_KINDS.includes(k) && present.has(k)} title={SINGLETON_KINDS.includes(k) && present.has(k) ? 'Already in the template' : undefined}>{BLOCK_LABEL[k]}</DropdownItem>)}
             <DropdownDivider />
             {(['cover', 'header', 'footer'] as BlockKind[]).map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); onAddBlock(k) }} disabled={present.has(k)} title={present.has(k) ? 'Already in the template' : undefined}>{k === 'cover' ? 'Cover page' : BLOCK_LABEL[k]}</DropdownItem>)}

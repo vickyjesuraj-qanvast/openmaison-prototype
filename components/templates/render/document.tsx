@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { BLOCK_LABEL, isCanvas, mm, mergeBrand, PAPER_MM, resolveColor, type BrandKit, type CanvasBlock, type TemplateDesign } from '@/lib/templates/model'
 import { fieldValues } from '@/lib/templates/fields'
 import { clientViewFromDesign, type ClientView } from '@/lib/templates/client-view'
@@ -80,7 +80,7 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
   const pageW = mm(paper.w), pageH = mm(paper.h)
   const bodyW = mm(paper.w - m.left - m.right)
   const totals = useMemo(() => docTotals(data), [data])
-  const baseValues = useMemo(() => fieldValues(data, totals), [data, totals])
+  const baseValues = useMemo(() => fieldValues(data, totals, undefined, design.page.dateFormat), [data, totals, design.page.dateFormat])   // (REG-592) dates as the page says
   const cv = useMemo(() => view ?? clientViewFromDesign(design), [view, design])
   const ctx: RenderCtx = useMemo(() => ({ brand, data, values: baseValues, interactive }), [brand, data, baseValues, interactive])
   const built = useMemo(() => buildSlices(design, ctx, cv, totals), [design, ctx, cv, totals])
@@ -105,9 +105,16 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
     setMeasured({ sig, heights })
   }, [measuring, sig])
   const heights = measured?.heights ?? {}
+  /* (REG-569) A header or footer whose content outgrows its set height takes the room it needs; the body starts under the header's real
+     bottom and stops above the footer's real top, so nothing on a canvas ever prints over the letter. */
+  const [canvasH, setCanvasH] = useState<Record<string, number>>({})
+  const onCanvasMeasure = useCallback((id: string, px: number) => setCanvasH((c) => (Math.abs((c[id] ?? 0) - px) < 0.5 ? c : { ...c, [id]: px })), [])
+  const hdrH = header ? Math.max(mm(header.height), canvasH[header.id] ?? 0) : 0
+  const ftrH = footer ? Math.max(mm(footer.height), canvasH[footer.id] ?? 0) : 0
+  const measureKey = `${fontsReady ? 'f' : ''}${zoom}`
 
-  const bodyH = (bodyIndex: number) => pageH - mm(m.top) - mm(m.bottom) - (header && shows(header, bodyIndex) ? mm(header.height) : 0) - (footer && shows(footer, bodyIndex) ? mm(footer.height) : 0)
-  const pages = useMemo(() => (measured ? plan(built.slices, heights, built.tables, { bodyH, hasCover: !!cover }) : []), [measured, built, heights, cover, header, footer, pageH, m.top, m.bottom])   // eslint-disable-line react-hooks/exhaustive-deps
+  const bodyH = (bodyIndex: number) => pageH - mm(m.top) - mm(m.bottom) - (header && shows(header, bodyIndex) ? hdrH : 0) - (footer && shows(footer, bodyIndex) ? ftrH : 0)
+  const pages = useMemo(() => (measured ? plan(built.slices, heights, built.tables, { bodyH, hasCover: !!cover }) : []), [measured, built, heights, cover, header, footer, pageH, m.top, m.bottom, hdrH, ftrH])   // eslint-disable-line react-hooks/exhaustive-deps
   const pageTotals = pages.filter((p) => !p.cover).map((p) => p.pageTotalMinor)
   const onPaginatedRef = useRef(onPaginated); useEffect(() => { onPaginatedRef.current = onPaginated })
   useEffect(() => {
@@ -172,21 +179,21 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
           const pctx: RenderCtx = { ...ctx, values }
           const showHead = !p.cover && header && shows(header, bodyIndex)
           const showFoot = !p.cover && footer && shows(footer, bodyIndex)
-          const bodyTop = mm(m.top) + (showHead ? mm(header.height) : 0)
+          const bodyTop = mm(m.top) + (showHead ? hdrH : 0)
           const last = i === pages.length - 1
           return (
             <div key={i} className={styles.page} style={pageStyle} data-page={i + 1}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {underlay && i === 0 ? <img className={styles.underlay} src={underlay.src} alt="" style={{ opacity: underlay.opacity }} /> : null}
               {p.cover && cover ? (
-                <div className={styles.cover}><CanvasView block={cover} ctx={pctx} width={paper.w} height={pageH} /></div>
+                <div className={styles.cover}><CanvasView block={cover} ctx={pctx} width={paper.w} height={pageH} measureKey={measureKey} /></div>
               ) : (
                 <>
-                  {showHead ? <div className={styles.hdr} style={{ top: mm(m.top), left: mm(m.left) }}><CanvasView block={header} ctx={pctx} width={paper.w - m.left - m.right} /></div> : null}
+                  {showHead ? <div className={styles.hdr} style={{ top: mm(m.top), left: mm(m.left) }}><CanvasView block={header} ctx={pctx} width={paper.w - m.left - m.right} height={hdrH} onMeasure={onCanvasMeasure} measureKey={measureKey} /></div> : null}
                   <div className={styles.body} style={{ top: bodyTop, left: mm(m.left), width: bodyW, height: bodyH(bodyIndex) }}>
                     {groups(p, pc)}
                   </div>
-                  {showFoot ? <div className={styles.ftr} style={{ bottom: mm(m.bottom), left: mm(m.left) }}><CanvasView block={footer} ctx={pctx} width={paper.w - m.left - m.right} /></div> : null}
+                  {showFoot ? <div className={styles.ftr} style={{ bottom: mm(m.bottom), left: mm(m.left) }}><CanvasView block={footer} ctx={pctx} width={paper.w - m.left - m.right} height={ftrH} onMeasure={onCanvasMeasure} measureKey={measureKey} /></div> : null}
                 </>
               )}
               {wm ? <div className={styles.watermark} aria-hidden>{wm}</div> : null}

@@ -37,14 +37,14 @@ export function LibraryNewButton({ open, onOpenChange, children, sheetTitle = 'N
 }
 
 /** The tab's kebab beside its New ▾ (REG-502 → REG-541): Deleted Templates of this kind. */
-export function LibraryKebab({ open, onOpenChange, deletedCount, onDeleted }: { open: boolean; onOpenChange: (open: boolean) => void; deletedCount: number; onDeleted: () => void }) {
+export function LibraryKebab({ open, onOpenChange, deletedCount, onDeleted, label = 'Deleted Templates', sheetTitle = 'Templates' }: { open: boolean; onOpenChange: (open: boolean) => void; deletedCount: number; onDeleted: () => void; label?: string; sheetTitle?: string }) {
   return (
     <span className={styles.kebabAnchor}>
       <Tooltip label="More options" disabled={open}>
         <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={open} onClick={() => onOpenChange(!open)} />
       </Tooltip>
-      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" sheetTitle="Templates">
-        <DropdownItem onSelect={() => { onOpenChange(false); onDeleted() }}>Deleted Templates{deletedCount ? ` · ${deletedCount}` : ''}</DropdownItem>
+      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" sheetTitle={sheetTitle}>
+        <DropdownItem onSelect={() => { onOpenChange(false); onDeleted() }}>{label}{deletedCount ? ` · ${deletedCount}` : ''}</DropdownItem>
       </Dropdown>
     </span>
   )

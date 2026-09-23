@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Button } from '@/components/ds'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
@@ -10,52 +11,51 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell } from './company-shell'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { saveBrand } from '@/app/company/templates-actions'
-import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLES, FONT_ROLE_LABEL, type BrandKit, type ColorKey, type FontRole, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
+import { EMPTY_ENTITY, type IssuingEntity, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
 import type { BrandSetting } from '@/lib/templates/brand'
-import { DEMO_BADGES, stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
-import { readFileAsDataUrl } from '@/lib/templates/files'
 import styles from './profile-view.module.css'
 
-const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular', value: 400 }, { label: 'Semibold', value: 600 }, { label: 'Bold', value: 700 }]
-const DETAIL_FIELDS: { key: keyof StudioDetails; label: string }[] = [
-  { key: 'name', label: 'Company name' }, { key: 'uen', label: 'UEN / Co. Reg. No.' }, { key: 'address', label: 'Address' }, { key: 'phone', label: 'Phone' }, { key: 'fax', label: 'Fax' },
+type TextKey = Exclude<keyof StudioDetails, 'entities'>
+const DETAIL_FIELDS: { key: TextKey; label: string; wide?: boolean; helper?: string }[] = [
+  { key: 'name', label: 'Company name' }, { key: 'uen', label: 'UEN / Co. Reg. No.' }, { key: 'address', label: 'Address', wide: true }, { key: 'phone', label: 'Phone' }, { key: 'fax', label: 'Fax' },
   { key: 'email', label: 'Email' }, { key: 'website', label: 'Website' }, { key: 'gstReg', label: 'GST Reg. No.' }, { key: 'licence', label: 'HDB licence' },
+  /* (REG-562) The testers' tagline and social links: two fields, two template fields. */
+  { key: 'tagline', label: 'Tagline', wide: true, helper: 'Prints where a template places {studio_tagline} — a cover, a footer.' },
+  { key: 'social', label: 'Social links', wide: true, helper: 'Handles or links, as you want them printed — {studio_social}.' },
+]
+const ENTITY_FIELDS: { key: Exclude<keyof IssuingEntity, 'payNowQr' | 'name' | 'gstRegistered'>; label: string }[] = [
+  { key: 'bankName', label: 'Bank' }, { key: 'accountName', label: 'Account name' }, { key: 'accountNo', label: 'Account number' }, { key: 'payNow', label: 'PayNow (UEN or mobile)' },
 ]
 
 /**
- * Company › Profile (REG-487): the brand kit every quote template starts from — logo, stamp, accreditation badges, the six
- * named colours, the four type roles — and the company details the templates print. Saved as one record; the default
- * template's first page on the right redraws as you edit.
+ * Company › Profile (REG-487 → REG-554): the company details every template prints through its fields — name, UEN,
+ * address, phone, GST registration, licence, and (REG-562) a tagline and social links. **Issuing entities & bank details**
+ * (REG-562, the testers' ask): the studio itself and any other company it quotes under, each with its bank, account and
+ * PayNow plus a PayNow QR; the quote's Issuing Entity picks one and the template's Bank details block prints it. The brand
+ * kit (logo, stamp, badges, colours, type) lives beside the templates it serves: Company › Templates › Brand kit (owner
+ * 2026-09-23, "inside the template is better"). Both save the one `brand` record; the default template's first page on the
+ * right redraws as you edit.
  */
 export function ProfileView({ brand, previewDesign, previewName, sample }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData }) {
   const snackbar = useSnackbar()
-  const [kit, setKit] = useState<BrandKit>(brand.kit)
   const [details, setDetails] = useState<StudioDetails>(brand.details)
-  const [saved, setSaved] = useState<BrandSetting>(brand)
+  const [saved, setSaved] = useState<StudioDetails>(brand.details)
   const [busy, setBusy] = useState(false)
-  const dirty = JSON.stringify({ kit, details }) !== JSON.stringify(saved)
-  const logoInput = useRef<HTMLInputElement>(null)
-  const stampInput = useRef<HTMLInputElement>(null)
-  const badgeInput = useRef<HTMLInputElement>(null)
+  const dirty = JSON.stringify(details) !== JSON.stringify(saved)
+  const entities = details.entities.length ? details.entities : [EMPTY_ENTITY(details.name)]
+  const setEntity = (i: number, patch: Partial<IssuingEntity>) => setDetails((d) => ({ ...d, entities: entities.map((e, j) => (j === i ? { ...e, ...patch } : e)) }))
 
   const save = async () => {
     setBusy(true)
-    try { await saveBrand({ kit, details }); setSaved({ kit, details }); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
-    catch { snackbar({ message: 'Couldn’t save the brand kit — please try again' }) }
+    try {
+      const next = { ...details, entities: entities.map((e, i) => (i === 0 ? { ...e, name: details.name } : e)) }
+      await saveBrand({ kit: brand.kit, details: next }); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })
+    }
+    catch { snackbar({ message: 'Couldn’t save the company details — please try again' }) }
     finally { setBusy(false) }
   }
-  const discard = () => { setKit(saved.kit); setDetails(saved.details) }
-  const pick = async (input: HTMLInputElement | null, apply: (urls: string[]) => void, max = 1600) => {
-    const files = Array.from(input?.files ?? [])
-    if (input) input.value = ''
-    if (!files.length) return
-    apply(await Promise.all(files.map((f) => readFileAsDataUrl(f, max))))
-  }
-  const hex = (v: string) => (/^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : null)
-  /* Drafts for the typed fields: the kit only takes a valid value, the box keeps what was typed until then. */
-  const [colorDraft, setColorDraft] = useState<Record<string, string>>({})
-  const [sizeDraft, setSizeDraft] = useState<Record<string, string>>({})
+  const discard = () => setDetails(saved)
   /* Unsaved edits are not lost to a tab or a reload without a word (checklist: discarding edits asks first). */
   useEffect(() => {
     if (!dirty) return
@@ -63,116 +63,70 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
     window.addEventListener('beforeunload', onUnload)
     return () => window.removeEventListener('beforeunload', onUnload)
   }, [dirty])
+  /* The PayNow QR: any picked image lands as the sample QR asset (the prototype keeps no uploads, REG-415's rule). */
+  const pickQr = (i: number) => {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'
+    input.onchange = () => { if (input.files?.length) { setEntity(i, { payNowQr: '/figma-assets/paynow-qr.svg' }); snackbar({ message: 'PayNow QR added' }) } }
+    input.click()
+  }
 
   return (
     <CompanyShell title="Profile" actions={<>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </>}>
-      <div className={styles.layout}>
+      <div className={styles.layout} data-testid="profile">
         <div className={styles.form}>
-          <section id="marks" className={styles.card} aria-labelledby="profile-marks">
-            <div className={styles.cardHead}><h2 id="profile-marks" className={styles.cardTitle}>Logo and marks</h2><p className={styles.cardHelp}>The logo, the company stamp and the accreditation badges a template can place. PNG, JPG or SVG.</p></div>
-            <div className={styles.marks}>
-              <div className={styles.mark}>
-                <span className={styles.markLabel}>Logo</span>
-                <button type="button" className={styles.well} onClick={() => logoInput.current?.click()} aria-label="Change logo">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {kit.logo ? <img src={kit.logo} alt="" /> : <span className={styles.wellEmpty}><Icon name="add_photo_alternate" size={24} weight={300} />Add logo</span>}
-                </button>
-                <input ref={logoInput} type="file" accept="image/*" hidden onChange={() => { void pick(logoInput.current, ([u]) => setKit((k) => ({ ...k, logo: u ?? k.logo }))) }} />
-                <div className={styles.markActions}>
-                  <Button appearance="text" onPress={() => logoInput.current?.click()}>Upload</Button>
-                  {kit.logo && kit.logo !== '/figma-assets/logo.svg' ? <Button appearance="text" onPress={() => setKit((k) => ({ ...k, logo: '/figma-assets/logo.svg' }))}>Reset</Button> : null}
-                </div>
-              </div>
-              <div className={styles.mark}>
-                <span className={styles.markLabel}>Stamp</span>
-                <button type="button" className={styles.well} onClick={() => stampInput.current?.click()} aria-label="Change stamp">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={kit.stamp ?? stampSvg(details.name, details.uen)} alt="" />
-                </button>
-                <input ref={stampInput} type="file" accept="image/*" hidden onChange={() => { void pick(stampInput.current, ([u]) => setKit((k) => ({ ...k, stamp: u ?? k.stamp })), 800) }} />
-                <div className={styles.markActions}>
-                  <Button appearance="text" onPress={() => stampInput.current?.click()}>Upload</Button>
-                  {kit.stamp ? <Button appearance="text" onPress={() => setKit((k) => ({ ...k, stamp: null }))}>Use generated</Button> : null}
-                </div>
-              </div>
-              <div className={`${styles.mark} ${styles.markWide}`}>
-                <span className={styles.markLabel}>Badges</span>
-                <div className={styles.badges}>
-                  {kit.badges.map((b, i) => (
-                    <span key={i} className={styles.badge}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={b} alt="" />
-                      <span className={styles.badgeRemove}><IconButton icon="close" label="Remove badge" size={24} variant="bare" iconSize={16} onClick={() => setKit((k) => ({ ...k, badges: k.badges.filter((_, j) => j !== i) }))} /></span>
-                    </span>
-                  ))}
-                  <button type="button" className={styles.badgeAdd} onClick={() => badgeInput.current?.click()} aria-label="Add badge"><Icon name="add" size={20} weight={300} /></button>
-                </div>
-                <input ref={badgeInput} type="file" accept="image/*" multiple hidden onChange={() => { void pick(badgeInput.current, (urls) => setKit((k) => ({ ...k, badges: [...k.badges, ...urls] })), 400) }} />
-                <div className={styles.markActions}>
-                  <Button appearance="text" onPress={() => badgeInput.current?.click()}>Upload</Button>
-                  {kit.badges.length === 0 ? <Button appearance="text" onPress={() => setKit((k) => ({ ...k, badges: DEMO_BADGES }))}>Use the demo badges</Button> : <Button appearance="text" onPress={() => setKit((k) => ({ ...k, badges: [] }))}>Clear</Button>}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="colours" className={styles.card} aria-labelledby="profile-colours">
-            <div className={styles.cardHead}><h2 id="profile-colours" className={styles.cardTitle}>Colours</h2><p className={styles.cardHelp}>Six named colours every template refers to by name — change one here and every template that uses it follows.</p></div>
-            <div className={styles.colours}>
-              {COLOR_KEYS.map((key: ColorKey) => (
-                <div key={key} className={styles.colour}>
-                  <label className={styles.swatch} style={{ background: kit.colors[key] }}>
-                    <input type="color" value={kit.colors[key]} aria-label={`${COLOR_LABEL[key]} colour`} onChange={(e) => setKit((k) => ({ ...k, colors: { ...k.colors, [key]: e.target.value.toUpperCase() } }))} />
-                  </label>
-                  <div className={styles.colourField}>
-                    <TextField label={COLOR_LABEL[key]} value={colorDraft[key] ?? kit.colors[key]} maxLength={7} error={colorDraft[key] !== undefined && !hex(colorDraft[key]!) ? 'Six hex digits, like #5500FF' : undefined}
-                               onChange={(v) => { const h = hex(v); setColorDraft((d) => ({ ...d, [key]: v })); if (h) { setKit((k) => ({ ...k, colors: { ...k.colors, [key]: h } })); setColorDraft((d) => { const n = { ...d }; delete n[key]; return n }) } }}
-                               onBlur={() => setColorDraft((d) => { const n = { ...d }; delete n[key]; return n })} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section id="type" className={styles.card} aria-labelledby="profile-type">
-            <div className={styles.cardHead}><h2 id="profile-type" className={styles.cardTitle}>Type</h2><p className={styles.cardHelp}>Four roles a template’s text takes. Sizes are in points, as on paper.</p></div>
-            <div className={styles.roles}>
-              {FONT_ROLES.map((role: FontRole) => {
-                const f = kit.fonts[role]
-                const set = (patch: Partial<typeof f>) => setKit((k) => ({ ...k, fonts: { ...k.fonts, [role]: { ...k.fonts[role], ...patch } } }))
-                return (
-                  <div key={role} className={styles.role}>
-                    <span className={styles.roleLabel}>{FONT_ROLE_LABEL[role]}</span>
-                    <div className={styles.roleFamily}><TextField label="Font" value={f.family} mode="select" options={[...FONT_FAMILIES]} onChange={(v) => set({ family: v })} /></div>
-                    <div className={styles.roleSize}><TextField label="Size" value={sizeDraft[role] ?? String(f.size)} numeric="digits" maxLength={3} onChange={(v) => { setSizeDraft((d) => ({ ...d, [role]: v })); const n = Number(v); if (n > 0) set({ size: n }) }} onBlur={() => setSizeDraft((d) => { const n = { ...d }; delete n[role]; return n })} /></div>
-                    <div className={styles.roleWeight}><TextField label="Weight" value={WEIGHTS.find((w) => w.value === f.weight)?.label ?? 'Regular'} mode="select" options={WEIGHTS.map((w) => w.label)} onChange={(v) => set({ weight: WEIGHTS.find((w) => w.label === v)?.value ?? 400 })} /></div>
-                    <span className={styles.roleSample} style={{ fontFamily: f.family, fontWeight: f.weight, fontSize: Math.max(11, Math.min(22, f.size * 1.5)) }}>Aa</span>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
           <section id="details" className={styles.card} aria-labelledby="profile-details">
             <div className={styles.cardHead}><h2 id="profile-details" className={styles.cardTitle}>Company details</h2><p className={styles.cardHelp}>What the templates print through their fields — {'{studio_name}'}, {'{studio_uen}'}, {'{studio_address}'} and the rest.</p></div>
             <div className={styles.details}>
               {DETAIL_FIELDS.map((f) => (
-                <div key={f.key} className={f.key === 'address' ? styles.detailWide : undefined}>
-                  <TextField label={f.label} value={details[f.key]} onChange={(v) => setDetails((d) => ({ ...d, [f.key]: v }))} />
+                <div key={f.key} className={f.wide ? styles.detailWide : undefined}>
+                  <TextField label={f.label} value={details[f.key]} onChange={(v) => setDetails((d) => ({ ...d, [f.key]: v }))} helper={f.helper} />
                 </div>
               ))}
             </div>
           </section>
+          {/* (REG-562) Issuing entities and where the money goes. */}
+          <section id="entities" className={styles.card} aria-labelledby="profile-entities" data-testid="entities">
+            <div className={styles.cardHead}><h2 id="profile-entities" className={styles.cardTitle}>Issuing entities &amp; bank details</h2><p className={styles.cardHelp}>The companies you quote under. A quote’s Issuing Entity picks one; a template’s Bank details block prints its bank, account and PayNow QR.</p></div>
+            {entities.map((e, i) => (
+              <div key={i} className={styles.entity} data-testid="entity">
+                <div className={styles.entityHead}>
+                  {i === 0 ? <span className={styles.entityName}>{details.name || 'The studio'} <span className={styles.cardHelp}>· the studio itself</span></span>
+                    : <div className={styles.entityNameField}><TextField label="Entity name" value={e.name} onChange={(v) => setEntity(i, { name: v })} /></div>}
+                  {i > 0 ? <Tooltip label="Remove this entity"><IconButton icon="delete" label="Remove this entity" size={36} variant="bare" iconSize={20} onClick={() => setDetails((d) => ({ ...d, entities: entities.filter((_, j) => j !== i) }))} /></Tooltip> : null}
+                </div>
+                <div className={styles.details}>
+                  {ENTITY_FIELDS.map((f) => <div key={f.key}><TextField label={f.label} value={e[f.key]} onChange={(v) => setEntity(i, { [f.key]: v })} /></div>)}
+                </div>
+                {/* (REG-593) Dyel's four companies, one GST-registered: an entity that is not turns GST off on the quotes raised under it. The studio's own registration is Settings'. */}
+                {i > 0 ? <label className={styles.switchRow}><Switch size="sm" isSelected={e.gstRegistered} onChange={(v: boolean) => setEntity(i, { gstRegistered: v })} aria-label={`${e.name || 'This entity'} is GST-registered`} /><span>GST-registered <span className={styles.cardHelp}>· off turns GST off on quotes raised under it</span></span></label> : null}
+                <div className={styles.qrRow}>
+                  <button type="button" className={styles.qrWell} onClick={() => pickQr(i)} aria-label={e.payNowQr ? 'Replace the PayNow QR' : 'Add a PayNow QR'}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {e.payNowQr ? <img src={e.payNowQr} alt="" /> : <span className={styles.wellEmpty}><Icon name="add_photo_alternate" size={20} weight={300} /> PayNow QR</span>}
+                  </button>
+                  <span className={styles.cardHelp}>{e.payNowQr ? 'Prints beside the bank details where the block shows the QR.' : 'Upload the PayNow QR your bank gives you; it prints beside the bank details.'}</span>
+                  {e.payNowQr ? <Button appearance="text" variant="secondary" onPress={() => setEntity(i, { payNowQr: null })}>Remove QR</Button> : null}
+                </div>
+              </div>
+            ))}
+            {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('')] }))}>Add an entity</Button></span> : null}
+          </section>
+          {/* (REG-554) The kit lives with the templates now; this is the way there for whoever comes here for the logo. */}
+          <Link href="/company/templates/brand" className={styles.kitLink} data-testid="brand-kit-link">
+            <span className={styles.kitLinkIcon}><Icon name="palette" size={24} weight={300} /></span>
+            <span className={styles.kitLinkText}><span className={styles.kitLinkTitle}>Brand kit</span><span className={styles.cardHelp}>Logo, stamp, badges, colours and type — under Templates, beside the templates that use them.</span></span>
+            <Icon name="chevron_right" size={24} weight={300} />
+          </Link>
         </div>
         <aside className={styles.preview} aria-label="Preview">
           <span className={styles.previewLabel}>{previewName ? `Default template · ${previewName}` : 'Sample quote'}</span>
           <div className={styles.previewPage}>
-            {previewDesign ? <TemplateThumb design={previewDesign} brand={kit} data={{ ...sample, studio: details }} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
+            {previewDesign ? <TemplateThumb design={previewDesign} brand={brand.kit} data={{ ...sample, studio: details }} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
           </div>
-          <Tooltip label="The first page of the studio's default template, drawn with the kit as you edit it">
+          <Tooltip label="The first page of the studio's default template, drawn with these details as you edit them">
             <span className={styles.previewHint}><Icon name="info" size={16} weight={300} /> Redraws as you edit</span>
           </Tooltip>
         </aside>

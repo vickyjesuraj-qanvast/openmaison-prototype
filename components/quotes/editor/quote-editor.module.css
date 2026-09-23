@@ -1,7 +1,7 @@
 /* Quote editor page (frame 208, 1260:31139): 1440 wide with NO rail — a full-page surface over the page the user came
    from (owner 2026-09-11). Header 76 + tab strip 48 (REG-364) stick at the top; the body is the section column
    (p24, cards 24 apart = 1320 wide at 1440) beside the 72 / 140 Create strip. Page canvas = surface-bg. */
-.page { flex: 1; min-width: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); --bulk-bar-shift: -36px; }
+.page { flex: 1; min-width: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); --bulk-bar-shift: -36px; --editor-sticky: 124px; }   /* --editor-sticky: header 76 + tab strip 48 — where a card's sticky top holds (REG-570) */
 /* The floating bulk bar (detail-bulk-bar.module.css) centres on the section column: half the Create strip's width to the left
    (72 collapsed · 140 expanded; ≤1024 collapsed-only; ≤767 no strip). */
 .page[data-strip='expanded'] { --bulk-bar-shift: -70px; }
@@ -44,6 +44,7 @@
 @media (max-width: 767px) {
   .page[data-strip] { --bulk-bar-shift: 0px; }
   .stickyTabs.stickyTabs { top: 0; }   /* the header leaves the sticky stack ≤767 (editor-header.module.css) */
+  .page { --editor-sticky: 48px; }
   .main { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); gap: var(--om-spacing-4); }
   .group { gap: var(--om-spacing-4); }
 }

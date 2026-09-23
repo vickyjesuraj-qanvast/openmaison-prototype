@@ -26,6 +26,7 @@ import { createQuotePayment, deleteQuotePayment, reorderQuotePayments, replaceQu
 import { SectionCard } from '../section-card'
 import { useLevelFocus } from '../items/table-menus'
 import styles from './payments-section.module.css'
+import { MetaChip } from '@/components/om/meta-chip'
 
 export type PaymentsSeed = {
   quoteId: string
@@ -54,7 +55,7 @@ const money0 = (minor: number) => money2(Math.round(minor / 100) * 100).replace(
  * total × each row's share (REG-403); every edit writes at once and stamps the quote's "Saved …". Presets and a removed row
  * can be undone.
  */
-export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalMinor, today, onSaved, onRows }: {
+export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalMinor, today, onSaved, onRows, locked = false }: {
   seed: PaymentsSeed
   open: boolean
   onToggle: () => void
@@ -64,6 +65,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   onSaved: (updatedAt: number) => void
   /** The schedule as shown — Write with AI (REG-420) reads it. */
   onRows?: (rows: QuotePayment[]) => void
+  /** (REG-589) The studio keeps the schedule to Owners and Admins: this member reads it, nothing edits. */
+  locked?: boolean
 }) {
   const snackbar = useSnackbar()
   const { run } = useRun()
@@ -154,6 +157,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
 
   /* ── inline edit (1271:37609): the cell becomes the 2px primary box with ✕ / ✓ under it; Enter and ✓ commit, Esc and ✕ discard ── */
   const startEdit = (row: QuotePayment, field: Field, i: number) => {
+    if (locked) return   /* (REG-589) */
     if (field === 'amount' && totalMinor <= 0) { snackbar({ message: 'Amounts follow the quote total — add items first' }); return }
     // The amount opens as the figure the cell showed ("S$10,000.00", 1271:37797); what is typed is read as a number.
     const draft = field === 'name' ? row.name : field === 'description' ? (row.description ?? '') : field === 'pct' ? String(Number(row.pct.toFixed(2))) : money2(amounts[i] ?? 0)
@@ -214,7 +218,10 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       <DropdownItem onSelect={() => { setMenu(null); setMoreSub(null); router.push(withFrom('/company/templates/payments', pathname)) }}><span className={styles.menuIcon}><Icon name="style" size={20} /></span>Manage payment templates</DropdownItem>
     </>
   )
-  const toolbar = phone ? (
+  const toolbar = locked ? (
+    /* (REG-589) Locked: the split's name as a chip, no menu — the owner set it. */
+    <div className={styles.tools}><MetaChip>Set by the studio · {presetLabel(preset, splits).replace('Default: ', '')}</MetaChip></div>
+  ) : phone ? (
     <div className={styles.tools}>
       <span ref={moreRef} className={styles.anchor}>
         <Tooltip label="More options" disabled={menu === 'more'}>
@@ -276,28 +283,30 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
             </div>
             <Reorder.Group as="div" axis="y" values={rows.map((r) => r.id)} onReorder={reorder} className={styles.rows}>
               {rows.map((row, i) => (
-                <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragEnd={persistOrder}>
+                <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragEnd={persistOrder} locked={locked}>
                   <div role="cell" className={`${styles.cell} ${styles.cName}`} data-editing={editing(row.id, 'name') || undefined}>
-                    {editing(row.id, 'name') ? editBox(row, 'name', i) : <button type="button" className={styles.cellBtn} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
+                    {editing(row.id, 'name') ? editBox(row, 'name', i) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cDesc}`} data-editing={editing(row.id, 'description') || undefined}>
-                    {editing(row.id, 'description') ? editBox(row, 'description', i) : <button type="button" className={styles.cellBtn} data-empty={row.description ? undefined : ''} onClick={() => startEdit(row, 'description', i)}>{row.description ?? 'Add a description'}</button>}
+                    {editing(row.id, 'description') ? editBox(row, 'description', i) : <button type="button" className={styles.cellBtn} data-empty={row.description ? undefined : ''} disabled={locked} onClick={() => startEdit(row, 'description', i)}>{row.description ?? (locked ? '' : 'Add a description')}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cPct}`} data-editing={editing(row.id, 'pct') || undefined}>
-                    {editing(row.id, 'pct') ? editBox(row, 'pct', i, true) : <button type="button" className={styles.cellBtn} onClick={() => startEdit(row, 'pct', i)}>{fmtPct(live[i]!.pct)}</button>}
+                    {editing(row.id, 'pct') ? editBox(row, 'pct', i, true) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'pct', i)}>{fmtPct(live[i]!.pct)}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cAmount}`} data-editing={editing(row.id, 'amount') || undefined}>
-                    {editing(row.id, 'amount') ? editBox(row, 'amount', i, true) : <button type="button" className={styles.cellBtn} onClick={() => startEdit(row, 'amount', i)}>{money2(amounts[i] ?? 0)}</button>}
+                    {editing(row.id, 'amount') ? editBox(row, 'amount', i, true) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'amount', i)}>{money2(amounts[i] ?? 0)}</button>}
                   </div>
                   <div role="cell" className={`${styles.cell} ${styles.cDue}`}>
-                    <button type="button" className={styles.cellBtn} aria-haspopup="dialog" aria-expanded={dueFor === row.id}
+                    <button type="button" className={styles.cellBtn} aria-haspopup="dialog" aria-expanded={dueFor === row.id} disabled={locked}
                             onClick={(e) => { dueAnchor.current = e.currentTarget; setDueFor((d) => (d === row.id ? null : row.id)) }}>
                       {dueLabel(row)}
                     </button>
                   </div>
+                  {locked ? null : (
                   <Tooltip label="Remove">
                     <IconButton icon="delete" label={`Remove ${row.name}`} iconSize={20} className={styles.del} onClick={() => removeRow(row)} />
                   </Tooltip>
+                  )}
                 </PaymentRowView>
               ))}
             </Reorder.Group>
@@ -313,9 +322,11 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
         {balance.over ? (
           <p className={styles.error} role="alert">Your upcoming scheduled payments are {money0(balance.overMinor)} above the proposal’s balance of {money0(totalMinor)}</p>
         ) : null}
+        {locked ? null : (
         <div className={styles.foot}>
           <Button variant="primary" appearance="outlined" onPress={addRow}>Add a Payment</Button>
         </div>
+        )}
       </div>
       <DatePicker open={!!dueRow} anchorRef={dueAnchor} anchorKey={dueFor ?? ''} value={dueRow?.dueAt ?? null} today={today} label="Due date"
                   onSelect={(d) => { if (dueFor) patchRow(dueFor, { dueKind: 'fixed', dueAt: d }); setDueFor(null) }} onClose={() => setDueFor(null)} />
@@ -324,18 +335,20 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
 }
 
 /** One schedule row (44): the drag handle (pointer drag through motion, so a finger can reorder too), then the cells. */
-function PaymentRowView({ row, amount, onDragEnd, children }: { row: QuotePayment; amount: number; onDragEnd: () => void; children: React.ReactNode }) {
+function PaymentRowView({ row, amount, onDragEnd, locked, children }: { row: QuotePayment; amount: number; onDragEnd: () => void; locked?: boolean; children: React.ReactNode }) {
   const controls = useDragControls()
   const [dragging, setDragging] = useState(false)
   return (
     <Reorder.Item as="div" value={row.id} dragListener={false} dragControls={controls} className={styles.row} role="row" data-dragging={dragging || undefined}
                   data-amount={amount} onDragStart={() => setDragging(true)} onDragEnd={() => { setDragging(false); onDragEnd() }}>
       <div role="cell" className={`${styles.cell} ${styles.cSel}`}>
+        {locked ? null : (   /* (REG-589) no handle while the studio keeps the schedule */
         <Tooltip label="Drag to reorder">
           <button type="button" className={styles.handle} aria-label={`Drag to reorder ${row.name}`} onPointerDown={(e) => controls.start(e)}>
             <Icon name="drag_indicator" size={24} weight={300} />
           </button>
         </Tooltip>
+        )}
       </div>
       {children}
     </Reorder.Item>

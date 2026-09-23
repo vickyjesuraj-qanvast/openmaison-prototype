@@ -8,9 +8,10 @@ export type CompanyGroup = { title: string; items: CompanySection[] }
 
 export const COMPANY_GROUPS: CompanyGroup[] = [
   { title: 'Studio', items: [
-    { key: 'profile', icon: 'store', label: 'Profile', help: 'Brand kit and company details', href: '/company/profile' },
+    { key: 'profile', icon: 'store', label: 'Profile', help: 'Company details', href: '/company/profile' },   /* (REG-554) the kit moved to Templates › Brand kit */
     { key: 'members', icon: 'group', label: 'Members', help: 'People, roles and access' },
-    { key: 'templates', icon: 'style', label: 'Templates', help: 'Quotes, tasks, T&Cs and more', href: '/company/templates/quotes' },
+    { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
+    { key: 'price-book', icon: 'menu_book', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-594) */
   ] },
   { title: 'Operations', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },
@@ -22,6 +23,8 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
 export type TemplateKind = { key: string; icon: string; label: string; title: string; help: string; href: string; live: boolean }
 /* (REG-535, owner 2026-09-18) Contracts sits beside Quotes — the two live kinds first. (REG-508) No Notes kind — owner 2026-09-18: a quote's Additional Notes are free text with their own My Templates in the quote editor. */
 export const TEMPLATE_KINDS: TemplateKind[] = [
+  /* (REG-554, owner 2026-09-23: "inside the template is better") The kit every template starts from is the strip's first tab; Templates still lands on Quotes (REG-500). */
+  { key: 'brand', icon: 'palette', label: 'Brand kit', title: 'Brand kit', help: 'The logo, stamp, badges, colours and type every template starts from.', href: '/company/templates/brand', live: true },
   { key: 'quotes', icon: 'request_quote', label: 'Quotes', title: 'Quote templates', help: 'How your quotes look and what they start with.', href: '/company/templates/quotes', live: true },
   { key: 'contracts', icon: 'contract', label: 'Contracts', title: 'Contract templates', help: 'The agreement a signed quote becomes.', href: '/company/templates/contracts', live: true },   /* (REG-534) live */
   { key: 'tasks', icon: 'task', label: 'Tasks', title: 'Task templates', help: 'Checklists the team adds to a lead in one go.', href: '/company/templates/tasks', live: true },   /* (REG-538) live */
@@ -29,3 +32,10 @@ export const TEMPLATE_KINDS: TemplateKind[] = [
   { key: 'payments', icon: 'payments', label: 'Payments', title: 'Payment templates', help: 'Milestone splits the studio offers.', href: '/company/templates/payments', live: true },   /* (REG-538) live */
 ]
 export const templateKind = (key: string) => TEMPLATE_KINDS.find((k) => k.key === key)
+
+/** (REG-594) Company › Price book: the two libraries a quote line can start from, as the section's tab strip. */
+export const PRICE_BOOK_TABS = [{ label: 'My Items', href: '/company/price-book' }, { label: 'My Sections', href: '/company/price-book/sections' }] as const
+export const PRICE_BOOK_KINDS: Record<'items' | 'sections', TemplateKind> = {
+  items: { key: 'items', icon: 'menu_book', label: 'My Items', title: 'My Items', help: 'Every product and service the studio prices, ready to drop into a quote.', href: '/company/price-book', live: true },
+  sections: { key: 'sections', icon: 'folder', label: 'My Sections', title: 'My Sections', help: 'Whole sections saved from quotes — a room or a trade with its lines.', href: '/company/price-book/sections', live: true },
+}

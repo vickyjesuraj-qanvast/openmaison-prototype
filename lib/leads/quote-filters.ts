@@ -6,7 +6,8 @@ import type { QuoteApproval } from '@/lib/settings/types'   // types only — sa
 /* Lead Details › Quotes (910-36240) — pure model shared by the table, the status menu and the Filters modal. */
 
 /** Status menu order (910:36673) — five statuses, verbatim. */
-export const QUOTE_STATUSES = ['Draft', 'Sent for Approval', 'Approved', 'Sent to Client', 'Signed'] as const
+/* (REG-587) Confirmed = the client said yes on the confirmation link, before the T&Cs and the signature. */
+export const QUOTE_STATUSES = ['Draft', 'Sent for Approval', 'Approved', 'Sent to Client', 'Confirmed', 'Signed'] as const
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
 export const isQuoteStatus = (s: string): s is QuoteStatus => (QUOTE_STATUSES as readonly string[]).includes(s)
 

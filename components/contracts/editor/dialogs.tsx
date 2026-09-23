@@ -17,12 +17,14 @@ import styles from './contract-editor.module.css'
 
 /** Send: the signing card's fields (client name · phone for the code) over the message the link travels in. Send via
  *  WhatsApp opens the chat with the message and marks the contract Sent to Client; Copy link copies the signing page. */
-export function SendContractDialog({ open, onClose, defaults, link, draft, onSend }: {
+export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, title = 'Send for digital signature', subtitle = 'Your client reviews and signs in their browser. A one-time code on their phone confirms it’s them.', copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)' }: {
   open: boolean; onClose: () => void
   defaults: { name: string; phone: string }
   link: string
   draft: (name: string) => string
   onSend: (o: { name: string; phone: string; message: string }) => void | Promise<void>
+  /** (REG-587) The quote's Send for confirmation reuses this dialog with its own words. */
+  title?: string; subtitle?: string; copyDone?: string; phoneLabel?: string
 }) {
   const [name, setName] = useState(defaults.name)
   const [phone, setPhone] = useState(defaults.phone)
@@ -30,13 +32,13 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   const [touched, setTouched] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setName(defaults.name); setPhone(defaults.phone); setText(draft(defaults.name)); setTouched(false) } }
-  const { copied, copy } = useCopy(link, { done: 'Signing link copied' })
+  const { copied, copy } = useCopy(link, { done: copyDone })
   const phoneOk = isSgPhone(digitsOnly(phone))   // (REG-547)
   const nameOk = name.trim().length > 0
   const err = touched && !phoneOk ? 'Enter a valid 8-digit mobile number' : undefined
   return (
-    <Dialog open={open} onClose={onClose} title="Send for digital signature" size="modal" width={600}
-            subtitle="Your client reviews and signs in their browser. A one-time code on their phone confirms it’s them."
+    <Dialog open={open} onClose={onClose} title={title} size="modal" width={600}
+            subtitle={subtitle}
             footer={<>
               <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={() => { void copy() }}>{copied ? 'Copied' : 'Copy link'}</Button>
               <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk} onPress={() => { setTouched(true); if (!phoneOk || !nameOk) return; void onSend({ name: name.trim(), phone: digitsOnly(phone), message: text }) }}>Send via WhatsApp</Button>
@@ -45,7 +47,7 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
         <TextField label="Client name" required value={name} onChange={(v) => { setName(v); setText((t) => (t === draft(name) ? draft(v) : t)) }} error={touched && !nameOk ? 'Enter the client’s name' : undefined} />
         <div className={styles.phoneRow}>
           <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
-          <span className={styles.phoneNum}><TextField label="Client phone (for the code)" required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
+          <span className={styles.phoneNum}><TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
         </div>
         <div className={styles.sendBox}>
           <TextArea aria-label="Message to the client" value={text} onChange={(v: string) => setText(v)} />

@@ -43,7 +43,7 @@ export function PublishDialog({ open, onClose, name, nextVersion, isDefault, use
         </label>
         {nextVersion > 1 ? (
         <label className={styles.row}>
-          <span className={styles.rowText}><span className={styles.rowLabel}>Move open draft quotes to this version</span><span className={styles.rowHelp}>{usedBy ? `${usedBy} quote${usedBy === 1 ? '' : 's'} started from this template. ` : ''}Sent quotes keep the version they were sent with.</span></span>
+          <span className={styles.rowText}><span className={styles.rowLabel}>Move open draft quotes to this version</span><span className={styles.rowHelp}>{usedBy ? `${usedBy} quote${usedBy === 1 ? '' : 's'} started from this template. ` : ''}Their own settings stay as they are; sent quotes keep the version they were sent with.</span></span>
           <Switch size="sm" isSelected={updateDrafts} onChange={(v: boolean) => setUpdateDrafts(v)} aria-label="Move open draft quotes to this version" />
         </label>
         ) : null}

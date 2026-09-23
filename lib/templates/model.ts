@@ -17,8 +17,11 @@ export const mm = (v: number) => v * MM_PX
 export const isPaper = (s: unknown): s is Paper => typeof s === 'string' && (PAPERS as readonly string[]).includes(s)
 
 export type Margins = { top: number; right: number; bottom: number; left: number }
-export type PageSettings = { paper: Paper; margins: Margins; watermark: string }
-export const DEFAULT_PAGE: PageSettings = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' }
+/** (REG-592) How `{date}` and `{valid_until}` print: "17 Sep ’26" · "17 September 2026" · "Sunday, 17 September 2026". */
+export type DateFormat = 'short' | 'long' | 'weekday'
+export const isDateFormat = (v: unknown): v is DateFormat => v === 'short' || v === 'long' || v === 'weekday'
+export type PageSettings = { paper: Paper; margins: Margins; watermark: string; dateFormat: DateFormat }
+export const DEFAULT_PAGE: PageSettings = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '', dateFormat: 'short' }
 
 /* ── brand ── */
 export const COLOR_KEYS = ['ink', 'grey', 'accent', 'light', 'band', 'red'] as const
@@ -38,7 +41,17 @@ const FONT_STACK: Record<string, string> = {
 }
 export const fontStack = (family: string) => FONT_STACK[family] ?? `${family}, sans-serif`
 
-export type StudioDetails = { name: string; address: string; phone: string; fax: string; email: string; website: string; uen: string; gstReg: string; licence: string }
+/** (REG-562) An issuing entity and where its money goes: the studio itself first, then any other company it quotes under. The
+    PayNow QR is an uploaded image path; empty strings print nothing. */
+export type IssuingEntity = { name: string; bankName: string; accountName: string; accountNo: string; payNow: string; payNowQr: string | null; /** (REG-593) off = quotes raised under it carry no GST */ gstRegistered: boolean }
+export const EMPTY_ENTITY = (name: string): IssuingEntity => ({ name, bankName: '', accountName: '', accountNo: '', payNow: '', payNowQr: null, gstRegistered: true })
+export type StudioDetails = {
+  name: string; address: string; phone: string; fax: string; email: string; website: string; uen: string; gstReg: string; licence: string
+  /** (REG-562) A tagline and the studio's social handles, for footers and covers — `{studio_tagline}` · `{studio_social}`. */
+  tagline: string; social: string
+  /** (REG-562) The issuing entities with their bank details; the quote's Issuing Entity picks one, the Bank details block prints it. */
+  entities: IssuingEntity[]
+}
 export type BrandKit = {
   logo: string | null
   logoDark: string | null
@@ -98,7 +111,7 @@ export type CanvasElement = ElementBase & (
   | { kind: 'pageno'; format: string; style: TextStyle }
 )
 export type ElementKind = CanvasElement['kind']
-export const ELEMENT_LABEL: Record<ElementKind, string> = { text: 'Text', image: 'Image', kv: 'Details', rule: 'Rule', box: 'Box', signature: 'Signature', badges: 'Badges', pageno: 'Page number' }
+export const ELEMENT_LABEL: Record<ElementKind, string> = { text: 'Text', image: 'Picture', kv: 'Details', rule: 'Line', box: 'Box', signature: 'Signature', badges: 'Badges', pageno: 'Page number' }
 
 /* ── blocks ── */
 export type Repeat = 'every' | 'first' | 'not-first'
@@ -116,7 +129,7 @@ export type ItemsBlock = BlockBase & {
   groupBy: 'none' | 'category' | 'room' | 'section'
   subGroupBy: 'none' | 'room' | 'category'
   sectionLabel: 'letters' | 'numbers' | 'none'
-  numbering: 'group' | 'area' | 'continuous' | 'none'
+  numbering: 'group' | 'area' | 'continuous' | 'none' | 'nested'   // (REG-558) nested = 1 · 1.1 · a b c: the section's number, its lines, a sub-section's lines lettered
   bandStyle: 'grey' | 'accent' | 'black' | 'underlined' | 'inline'
   groupNotes: boolean
   groupNoteStyle: TextStyle
@@ -148,7 +161,9 @@ export type ItemsBlock = BlockBase & {
 }
 export type TotalsLineKey = 'pages' | 'subtotal' | 'discount' | 'additional' | 'gst' | 'total'
 export type TotalsBlock = BlockBase & { kind: 'totals'; lines: { key: TotalsLineKey; label: string; on: boolean }[]; layout: 'right' | 'full'; width: number; style: TextStyle; totalStyle: TextStyle; rules: 'none' | 'top' | 'double' | 'grid' }
-export type PaymentsBlock = BlockBase & { kind: 'payments'; title: string; layout: 'table' | 'list' | 'cards'; showAmounts: boolean; showDue: boolean; letters: boolean; style: TextStyle; titleStyle: TextStyle; band: boolean }
+export type PaymentsBlock = BlockBase & { kind: 'payments'; title: string; layout: 'table' | 'list' | 'cards'; showAmounts: boolean; showDue: boolean; letters: boolean; style: TextStyle; titleStyle: TextStyle; band: boolean; /** (REG-560) a Total line under the milestones */ showTotal?: boolean }
+/** (REG-562) Bank details: the issuing entity's bank, account and PayNow, with its QR beside — from Company › Profile. */
+export type BankBlock = BlockBase & { kind: 'bank'; title: string; titleStyle: TextStyle; style: TextStyle; layout: 'row' | 'stacked'; qr: boolean; qrWidth: number; box: 'none' | 'tint' | 'outline' }
 export type TextSourceBlock = BlockBase & { kind: 'terms' | 'notes'; title: string; titleStyle: TextStyle; style: TextStyle; numbered: boolean; grid: boolean }
 export type SignatureBlock = BlockBase & { kind: 'signature'; columns: SignatureColumn[]; lineWeight: number; lineColor: string; style: TextStyle; headingStyle: TextStyle; preamble?: string }
 export type TextBlock = BlockBase & { kind: 'text'; html: string; style: TextStyle; box: 'none' | 'tint' | 'outline' }
@@ -157,20 +172,20 @@ export type DividerBlock = BlockBase & { kind: 'divider'; weight: number; color:
 export type SpacerBlock = BlockBase & { kind: 'spacer'; height: number }
 export type PageBreakBlock = BlockBase & { kind: 'pagebreak' }
 export type BadgesBlock = BlockBase & { kind: 'badges'; items: string[]; height: number; align: Align }
-export type Block = CanvasBlock | DetailsBlock | TitleBlock | ItemsBlock | TotalsBlock | PaymentsBlock | TextSourceBlock | SignatureBlock | TextBlock | ImageBlock | DividerBlock | SpacerBlock | PageBreakBlock | BadgesBlock
+export type Block = CanvasBlock | DetailsBlock | TitleBlock | ItemsBlock | TotalsBlock | PaymentsBlock | BankBlock | TextSourceBlock | SignatureBlock | TextBlock | ImageBlock | DividerBlock | SpacerBlock | PageBreakBlock | BadgesBlock
 export type BlockKind = Block['kind']
-export const BLOCK_KINDS: readonly BlockKind[] = ['cover', 'header', 'footer', 'details', 'title', 'items', 'totals', 'payments', 'terms', 'notes', 'signature', 'text', 'image', 'divider', 'spacer', 'pagebreak', 'badges']
+export const BLOCK_KINDS: readonly BlockKind[] = ['cover', 'header', 'footer', 'details', 'title', 'items', 'totals', 'payments', 'bank', 'terms', 'notes', 'signature', 'text', 'image', 'divider', 'spacer', 'pagebreak', 'badges']
 export const BLOCK_LABEL: Record<BlockKind, string> = {
   cover: 'Cover', header: 'Header', footer: 'Footer', details: 'Quote details', title: 'Title & intro', items: 'Items table', totals: 'Totals', payments: 'Payment schedule',
-  terms: 'Terms and Conditions', notes: 'Additional notes', signature: 'Signature', text: 'Text', image: 'Image', divider: 'Divider', spacer: 'Spacer', pagebreak: 'Page break', badges: 'Badges',
+  bank: 'Bank details', terms: 'Terms and Conditions', notes: 'Additional notes', signature: 'Signature', text: 'Text', image: 'Picture', divider: 'Line across', spacer: 'Blank space', pagebreak: 'New page', badges: 'Badges',
 }
 export const BLOCK_ICON: Record<BlockKind, string> = {
   cover: 'crop_portrait', header: 'vertical_align_top', footer: 'vertical_align_bottom', details: 'list_alt', title: 'title', items: 'table_chart', totals: 'functions', payments: 'calendar_month',
-  terms: 'contract', notes: 'sticky_note_2', signature: 'draw', text: 'text_fields', image: 'image', divider: 'horizontal_rule', spacer: 'space_bar', pagebreak: 'insert_page_break', badges: 'verified',
+  bank: 'account_balance', terms: 'contract', notes: 'sticky_note_2', signature: 'draw', text: 'text_fields', image: 'image', divider: 'horizontal_rule', spacer: 'space_bar', pagebreak: 'insert_page_break', badges: 'verified',
 }
 export const isCanvas = (b: Block): b is CanvasBlock => b.kind === 'header' || b.kind === 'footer' || b.kind === 'cover'
 /** Blocks a template holds once (adding a second makes no sense on a quote). */
-export const SINGLETON_KINDS: readonly BlockKind[] = ['cover', 'header', 'footer', 'items', 'totals', 'payments', 'terms', 'notes']
+export const SINGLETON_KINDS: readonly BlockKind[] = ['cover', 'header', 'footer', 'items', 'totals', 'payments', 'bank', 'terms', 'notes']
 
 /* ── the template ── */
 export type TemplateDesign = { page: PageSettings; brand: BrandOverrides; blocks: Block[] }
@@ -239,7 +254,8 @@ export function defaultBlock(kind: BlockKind): Block {
     case 'totals': return { id, kind, layout: 'right', width: 76, rules: 'top', style: { role: 'body' }, totalStyle: { role: 'body', weight: 700, size: 11 }, lines: [
       { key: 'pages', label: 'Total for page {n}', on: false }, { key: 'subtotal', label: 'Subtotal', on: true }, { key: 'discount', label: 'Discount', on: true }, { key: 'additional', label: 'Additional discount', on: true }, { key: 'gst', label: 'GST {gst_rate}', on: true }, { key: 'total', label: 'Grand total', on: true },
     ] }
-    case 'payments': return { id, kind, title: 'Payment schedule', layout: 'table', showAmounts: true, showDue: true, letters: false, style: { role: 'body' }, titleStyle: { role: 'body', weight: 700 }, band: false }
+    case 'payments': return { id, kind, title: 'Payment schedule', layout: 'table', showAmounts: true, showDue: true, letters: false, style: { role: 'body' }, titleStyle: { role: 'body', weight: 700 }, band: false, showTotal: true }
+    case 'bank': return { id, kind, title: 'Payment details', titleStyle: { role: 'body', weight: 700 }, style: { role: 'body' }, layout: 'row', qr: true, qrWidth: 22, box: 'tint' }
     case 'terms': return { id, kind, title: 'Terms and Conditions', titleStyle: { role: 'body', weight: 700, underline: true }, style: { role: 'small' }, numbered: true, grid: false, startNewPage: true }
     case 'notes': return { id, kind, title: 'Notes', titleStyle: { role: 'body', weight: 700 }, style: { role: 'small' }, numbered: false, grid: false }
     case 'signature': return { id, kind, lineWeight: 0.5, lineColor: 'ink', style: { role: 'body' }, headingStyle: { role: 'small', weight: 700 }, columns: [
@@ -261,7 +277,7 @@ export function parseDesign(json: string | null | undefined, fallback: TemplateD
   try {
     const raw = JSON.parse(json) as Partial<TemplateDesign>
     if (!raw || !Array.isArray(raw.blocks)) return fallback
-    const page = raw.page && isPaper(raw.page.paper) ? { ...DEFAULT_PAGE, ...raw.page, margins: { ...DEFAULT_PAGE.margins, ...(raw.page.margins ?? {}) } } : fallback.page
+    const page = raw.page && isPaper(raw.page.paper) ? { ...DEFAULT_PAGE, ...raw.page, margins: { ...DEFAULT_PAGE.margins, ...(raw.page.margins ?? {}) }, dateFormat: isDateFormat(raw.page.dateFormat) ? raw.page.dateFormat : 'short' } : fallback.page
     return { page, brand: raw.brand ?? {}, blocks: raw.blocks.filter((b): b is Block => !!b && typeof b === 'object' && (BLOCK_KINDS as readonly string[]).includes((b as Block).kind)) }
   } catch { return fallback }
 }

@@ -10,9 +10,10 @@ import type { Contract } from '@/lib/db/schema'
 import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters, searchContracts, type ContractFilters, type ContractStatus } from '@/lib/leads/contract-filters'
 import type { LeadContractsData } from '@/lib/leads/contracts'
 import { withFrom } from '@/lib/nav'
-import { signingLink } from '@/lib/contracts/model'
+import { bundleMessage, bundleSigningLink, firstName, signingLink } from '@/lib/contracts/model'
 import { archiveContract, deleteContracts, setContractStatus } from '@/app/leads/contracts-actions'
-import { createContractDoc, deleteContractsForever, emptyContractTrash, restoreContracts } from '@/app/contracts/actions'
+import { createContractDoc, deleteContractsForever, emptyContractTrash, restoreContracts, sendBundle } from '@/app/contracts/actions'
+import { SendBundleDialog } from '@/components/contracts/send-bundle-dialog'
 import { fetchContractTemplateOptionsAction, fetchDeletedContractsAction } from '@/app/contracts/read-actions'
 import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
 import { ImportContractDialog } from '@/components/contracts/import-contract-dialog'
@@ -61,7 +62,9 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const [pickerOpen, setPickerOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [deletedOpen, setDeletedOpen] = useState(false)
+  const [bundleOpen, setBundleOpen] = useState(false)   /* (REG-591) */
   const [creating, setCreating] = useState(false)
+  const bundleable = useMemo(() => contracts.filter((c) => c.status !== 'Signed'), [contracts])
 
   const openEditor = (id: string) => router.push(withFrom(`/contracts/${id}`, from))
   /* One contract per press (RACE-05), then straight into the editor. */
@@ -82,7 +85,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   }
   const rowMenu = (contract: Contract, action: ContractRowAction) => {
     if (action === 'share') router.push(withFrom(`/contracts/${contract.id}/preview`, from))
-    else if (action === 'copy') void navigator.clipboard?.writeText(signingLink(contract.id)).then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
+    else if (action === 'copy') void navigator.clipboard?.writeText(contract.bundleId ? bundleSigningLink(contract.bundleId) : signingLink(contract.id)).then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))   /* (REG-591) a bundled document's link is the bundle's */
     else if (action === 'pdf' || action === 'print') router.push(withFrom(`/contracts/${contract.id}/preview?print=1`, from))
     else if (action === 'archive') {
       // The Undo snackbar rides with the success (RACE-03): a failed archive shows only "Couldn’t archive the contract".
@@ -98,7 +101,8 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'blank' ? newBlank() : kind === 'template' ? setPickerOpen(true) : kind === 'import' ? setImportOpen(true) : comingSoon())}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'deleted' ? setDeletedOpen(true) : comingSoon())}
+        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundleOpen(true) : comingSoon())}
+        bundleCount={bundleable.length}
       />
       {contracts.length === 0 ? (
         <ContractsEmpty onFromScratch={newBlank} onFromTemplate={() => setPickerOpen(true)} />
@@ -128,6 +132,14 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
                               onStarter={() => { setPickerOpen(false); newBlank() }} />
       <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)}
                             onImport={(o) => { setImportOpen(false); void create({ upload: { fileName: o.fileName, signed: o.signed, title: o.title } }, o.signed ? 'Signed contract imported' : 'Contract imported') }} />
+      {/* (REG-591) Send together: the WhatsApp window opens on the press (a popup blocker eats one opened after the round trip — REG-534), then the bundle is recorded. */}
+      <SendBundleDialog open={bundleOpen} onClose={() => setBundleOpen(false)} contracts={bundleable} defaults={{ name: data.lead.name, phone: data.lead.phone }}
+                        draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
+                        onSend={({ bundleId, contractIds, name, phone, message }) => {
+                          setBundleOpen(false)
+                          window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')
+                          void run('send the documents', () => sendBundle(bundleId, contractIds, { name, phone }), `${contractIds.length} documents sent under one link`)
+                        }} />
       <DeletedContractsSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb="Lead Details / Contracts"
                              onRestore={(ids) => run('restore', () => restoreContracts(ids), ids.length === 1 ? 'Contract restored' : `${ids.length} contracts restored`)}
                              onDeleteForever={(ids) => run('delete', () => deleteContractsForever(ids), 'Contract deleted forever')}

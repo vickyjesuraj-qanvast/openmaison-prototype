@@ -31,7 +31,7 @@ const items = (over: Partial<ItemsBlock>): ItemsBlock => ({ ...(defaultBlock('it
 function letter(): TemplateDesign {
   const body: TextStyle = { role: 'body' }
   return {
-    page: { paper: 'A4', margins: { top: 12, right: 18, bottom: 10, left: 18 }, watermark: '' },
+    page: { paper: 'A4', margins: { top: 12, right: 18, bottom: 10, left: 18 }, watermark: '', dateFormat: 'short' },
     brand: { colors: { band: '#D9D9D9', ink: '#1A1A1A', grey: '#444444' }, fonts: { heading: { family: 'Arial', size: 10, weight: 700 }, body: { family: 'Arial', size: 8.5, weight: 400 }, table: { family: 'Arial', size: 8.5, weight: 400 }, small: { family: 'Courier New', size: 8, weight: 400 } } },
     blocks: [
       { id: newId(), kind: 'header', height: 76, repeat: 'every', elements: [
@@ -51,12 +51,13 @@ function letter(): TemplateDesign {
       ], spaceBefore: 6 },
       { id: newId(), kind: 'payments', title: 'Terms & Mode of Payment', layout: 'list', showAmounts: false, showDue: false, letters: true, style: { role: 'body' }, titleStyle: { role: 'body', weight: 700, underline: true }, band: false, startNewPage: true },
       { id: newId(), kind: 'terms', title: 'Terms and Conditions', titleStyle: { role: 'body', weight: 700, underline: true }, style: { role: 'table', size: 8 }, numbered: true, grid: false },
-      { id: newId(), kind: 'footer', height: 30, repeat: 'every', elements: [
+      { id: newId(), kind: 'footer', height: 36, repeat: 'every', elements: [
         { id: newId('e'), kind: 'signature', x: 0, y: 0, w: 174, columns: [
           { id: newId('c'), heading: '{prepared_by} Designer', lines: ['H/P {prepared_by_phone}'], image: 'none' },
           { id: newId('c'), heading: '{client_name}', lines: ['{client_phone}'], image: 'none' },
         ], style: { role: 'body' }, headingStyle: { role: 'body', weight: 700 }, lineWeight: 0.5, lineColor: 'ink' },
-        t(0, 16, 174, '{studio_name}\n{studio_address} Tel:{studio_phone} Fax:{studio_fax}\n{studio_website}\nGST Reg. No : {studio_gst}', { role: 'small', underline: true }),
+        /* (REG-569) the signature block is ~20 mm tall (mark, line, name, phone); the address sat at 16 and printed over it */
+        t(0, 22, 174, '{studio_name}\n{studio_address} Tel:{studio_phone} Fax:{studio_fax}\n{studio_website}\nGST Reg. No : {studio_gst}', { role: 'small', underline: true }),
       ] },
     ],
   }
@@ -66,7 +67,7 @@ function letter(): TemplateDesign {
 function scope(): TemplateDesign {
   const red = 'red'
   return {
-    page: { paper: 'A4', margins: { top: 10, right: 14, bottom: 10, left: 14 }, watermark: '' },
+    page: { paper: 'A4', margins: { top: 10, right: 14, bottom: 10, left: 14 }, watermark: '', dateFormat: 'short' },
     brand: { badges: DEMO_BADGES, colors: { red: '#C00000', band: '#D9D9D9', ink: '#111111' }, fonts: { heading: { family: 'Times New Roman', size: 10, weight: 700 }, body: { family: 'Times New Roman', size: 8.5, weight: 400 }, table: { family: 'Times New Roman', size: 8.5, weight: 400 }, small: { family: 'Arial', size: 7, weight: 400 } } },
     blocks: [
       { id: newId(), kind: 'header', height: 66, repeat: 'every', elements: [
@@ -105,7 +106,7 @@ function scope(): TemplateDesign {
 function form(): TemplateDesign {
   const lbl: TextStyle = { role: 'small', weight: 700 }
   return {
-    page: { paper: 'Letter', margins: { top: 12, right: 16, bottom: 10, left: 16 }, watermark: '' },
+    page: { paper: 'Letter', margins: { top: 12, right: 16, bottom: 10, left: 16 }, watermark: '', dateFormat: 'short' },
     brand: { colors: { band: '#000000', ink: '#000000', light: '#000000' }, fonts: { heading: { family: 'Arial', size: 12, weight: 700 }, body: { family: 'Arial', size: 8.5, weight: 400 }, table: { family: 'Arial', size: 8, weight: 400 }, small: { family: 'Arial', size: 6.5, weight: 700 } } },
     blocks: [
       { id: newId(), kind: 'header', height: 66, repeat: 'every', elements: [
@@ -140,7 +141,7 @@ function form(): TemplateDesign {
 /* ── Presentation · the design studio's deck ── */
 function presentation(): TemplateDesign {
   return {
-    page: { paper: 'A4', margins: { top: 16, right: 18, bottom: 16, left: 18 }, watermark: '' },
+    page: { paper: 'A4', margins: { top: 16, right: 18, bottom: 16, left: 18 }, watermark: '', dateFormat: 'short' },
     brand: { fonts: { heading: { family: 'Fraunces', size: 16, weight: 600 }, body: { family: 'Inter', size: 9, weight: 400 }, table: { family: 'Inter', size: 8.5, weight: 400 }, small: { family: 'Inter', size: 7.5, weight: 400 } } },
     blocks: [
       { id: newId(), kind: 'cover', height: 0, repeat: 'first', elements: [

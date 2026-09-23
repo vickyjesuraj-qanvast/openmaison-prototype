@@ -92,6 +92,7 @@ export const members = sqliteTable('members', {
   role: text('role').notNull(),              // Owner | Designer
   color: text('color').notNull(),            // avatar tint hex, or 'photo'
   isYou: integer('is_you', { mode: 'boolean' }).notNull().default(false),
+  email: text('email'),                      // (REG-560) the member's work email — `{prepared_by_email}` on quotes; seeded on the studio's domain by repair R36
   // Quote editor › Signature (1240:34176, REG-421; owner 2026-09-11: "signature saved per member"): how the member signs —
   // `draw` keeps an SVG path in `signatureData` (viewBox 752×140), `type` prints `signatureName` in the signature face.
   signatureKind: text('signature_kind'),     // draw | type | null = not set up
@@ -279,9 +280,56 @@ export const quotes = sqliteTable(
     notesVisible: integer('notes_visible', { mode: 'boolean' }).notNull().default(true),
     // Signature (1240:34176, REG-421): the section-top "Client Signature Required" switch — off keeps the client block (owner: "default: don't hide").
     clientSignatureRequired: integer('client_signature_required', { mode: 'boolean' }).notNull().default(true),
+    // (REG-559) Named discounts under the Additional Discount: JSON `NamedDiscount[]` (lib/quotes/math.ts); each prints as its own Totals line.
+    discountsJson: text('discounts_json'),
+    // (REG-565) Revisions: when this quote last became a new version (Revise); the earlier versions are `quote_versions` rows.
+    revisedAt: integer('revised_at', { mode: 'timestamp' }),
+    /* (REG-587) Sent for confirmation: when the client confirmed the quote on its link (status Confirmed), before the T&Cs and the signature. */
+    confirmedAt: integer('confirmed_at', { mode: 'timestamp' }),
+    confirmedBy: text('confirmed_by'),       // the name the client typed
+    /* (REG-588) A second client on the quote (co-owners): printed by the Details block and the Signature block when filled. */
+    client2Name: text('client2_name'),
+    client2Nric: text('client2_nric'),
   },
   (t) => [index('quotes_lead_idx').on(t.leadId)],
 )
+
+/**
+ * (REG-565) A quote's earlier versions: Revise keeps the sent version whole — its fields, lines and payment rows as one JSON
+ * snapshot — and the quote row moves on as version n+1 under the same number. The snapshot is read-only (the preview at
+ * `?version=n`) and is what Version History lists.
+ */
+export const quoteVersions = sqliteTable(
+  'quote_versions',
+  {
+    id: text('id').primaryKey(),
+    quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
+    snapshotJson: text('snapshot_json').notNull(),   // { quote: {...fields}, items: QuoteItem[], payments: QuotePayment[] }
+    note: text('note'),
+    createdBy: text('created_by'),                   // members.id — who pressed Revise
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [index('quote_versions_quote_idx').on(t.quoteId)],
+)
+export type QuoteVersion = typeof quoteVersions.$inferSelect
+
+/**
+ * (REG-566) A saved section in My Items: a group with its lines (and sub-sections) the studio inserts whole — "Save section to
+ * My Items" on a group, "My Sections" in the Add Item popover. `linesJson` is `SavedSection` (lib/quotes/items-model.ts).
+ */
+export const priceBookSections = sqliteTable('price_book_sections', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  linesJson: text('lines_json').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-594)
+})
+export type PriceBookSection = typeof priceBookSections.$inferSelect
+
 
 /**
  * Files section (1238:32938, REG-419): the lead's files a quote carries. The quote never owns a file — every attachment is
@@ -373,8 +421,10 @@ export const priceBookItems = sqliteTable('price_book_items', {
   markupMinor: integer('markup_minor').notNull().default(0),
   category: text('category'),
   thumb: text('thumb'),
+  vendor: text('vendor'),   // (REG-594) who supplies it — the same product from two vendors is two entries
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-594) Company › Price book deletes softly, as the templates do (REG-502)
 })
 export type PriceBookItem = typeof priceBookItems.$inferSelect
 
@@ -411,6 +461,17 @@ export const quoteItems = sqliteTable(
     collapsed: integer('collapsed', { mode: 'boolean' }).notNull().default(false),   // a group's children folded (1260:31467)
     priceBookItemId: text('price_book_item_id'),
     optional: integer('optional', { mode: 'boolean' }).notNull().default(false),   // (REG-492) an optional line: printed in its own section, out of every total (Flo's Optional Works, Cove's Free Gifts)
+    /* (REG-555) Print as: the word that prints in place of the amount — foc | inclusive | kiv | behalf | packaged | custom — with its
+       counting rule (lib/quotes/math.ts `counts`); null = the price. On a group, `printAsText` is the word beside its sub-total ("Approximate"). */
+    printAs: text('print_as'),
+    printAsText: text('print_as_text'),
+    highlight: text('highlight'),                            // (REG-556) one of the kit's colour keys on the whole line (accent | red | grey = ink; light | band = fill); null = none
+    noNumber: integer('no_number', { mode: 'boolean' }).notNull().default(false),   // (REG-558) the line prints without a number and the numbering skips it
+    /* (REG-585) A section that prints as ONE line for the client — its name and its sum — while the studio keeps every line inside with its cost and margin. */
+    printOneLine: integer('print_one_line', { mode: 'boolean' }).notNull().default(false),
+    /* (REG-596) A vendor rebate on the line, Owners only: never printed, never shown to a designer; the owner's margin counts it. */
+    rebateMinor: integer('rebate_minor').notNull().default(0),
+    descriptionHtml: text('description_html'),               // (REG-557) the formatted description (bullets · bold · underline) the in-house editor writes; `description` keeps its plain text
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
   },
@@ -509,10 +570,27 @@ export const contracts = sqliteTable(
     reminders: integer('reminders', { mode: 'boolean' }).notNull().default(false),   // Automation › remind the client to review
     thankYou: integer('thank_you', { mode: 'boolean' }).notNull().default(false),    // Automation › thank the client once signed
     signedBy: text('signed_by'),                 // the name the client typed when signing online; null = marked signed by the studio
+    signedNric: text('signed_nric'),             // (REG-563) the NRIC / FIN the client typed when signing, kept MASKED ("•••••567A") — never the full number
     createdBy: text('created_by'),               // members.id
+    bundleId: text('bundle_id'),                 // (REG-591) sent together with the bundle's other documents under one signing link
   },
   (t) => [index('contracts_lead_idx').on(t.leadId)],
 )
+
+/** (REG-591) Several documents sent together for signature: one link, one signature that covers them all, each document keeping its own signed copy. */
+export const contractBundles = sqliteTable('contract_bundles', {
+  id: text('id').primaryKey(),
+  leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
+  recipientName: text('recipient_name'),
+  recipientPhone: text('recipient_phone'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  sentAt: integer('sent_at', { mode: 'timestamp' }),
+  signedAt: integer('signed_at', { mode: 'timestamp' }),
+  signedBy: text('signed_by'),
+  signedNric: text('signed_nric'),
+  createdBy: text('created_by'),
+})
+export type ContractBundle = typeof contractBundles.$inferSelect
 
 /** (REG-534) A contract template: a saved document — title + the editor's HTML with its token chips — the studio starts a contract from. Simple library, no versions. */
 export const contractTemplates = sqliteTable('contract_templates', {

@@ -1,12 +1,12 @@
 'use client'
 
 import type { CSSProperties, ReactNode } from 'react'
-import { mm, resolveColor, type DetailsBlock, type ItemsBlock, type ItemsColumn, type PaymentsBlock, type SignatureBlock, type TextSourceBlock, type TitleBlock, type TotalsBlock, type TemplateDesign } from '@/lib/templates/model'
+import { mm, resolveColor, type BankBlock, type DetailsBlock, type ItemsBlock, type ItemsColumn, type PaymentsBlock, type SignatureBlock, type TextSourceBlock, type TitleBlock, type TotalsBlock, type TemplateDesign } from '@/lib/templates/model'
 import { resolveFields } from '@/lib/templates/fields'
 import type { ClientView } from '@/lib/templates/client-view'
-import type { DocItem, DocTotals } from '@/lib/templates/data'
-import { lineTotalMinor, unitPriceMinor } from '@/lib/quotes/math'
-import { UNLABELLED } from '@/lib/quotes/items-model'
+import { docEntity, type DocItem, type DocTotals } from '@/lib/templates/data'
+import { lineTotalMinor, printsWord, unitPriceMinor, lineCostMinor } from '@/lib/quotes/math'
+import { HIGHLIGHT_KIND, htmlToPlain, isHighlight, printAsWord, UNLABELLED } from '@/lib/quotes/items-model'
 import { SignatureColumns, type RenderCtx } from './canvas'
 import { moneyText, pt, ROW_PAD, textCss } from './styles'
 import styles from './document.module.css'
@@ -42,27 +42,61 @@ function paragraphs(h: string): string[] {
 
 /* ── items ── */
 type Line = DocItem & { noPrice: boolean }
-type Area = { label: string; lines: Line[] }
-type Section = { id: string; label: string; note: string | null; areas: Area[]; lines: Line[]; totalMinor: number }
+/** A run of lines under a label — a room under a trade, or (REG-558) a sub-section with its own note and highlight. */
+type Area = { label: string; lines: Line[]; sub?: boolean; note?: string | null; noteHtml?: string | null; highlight?: string | null }
+type Section = { id: string; label: string; note: string | null; noteHtml?: string | null; areas: Area[]; lines: Line[]; totalMinor: number; /** (REG-555, T-3) the word beside the sub-total */ subLabel?: string | null; highlight?: string | null }
 
 function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Section[]; optional: Line[] } {
   const groups = items.filter((i) => i.kind === 'group')
   const declinedGroups = new Set(groups.filter((g) => g.status === 'Declined').map((g) => g.id))
-  const lines: Line[] = items
-    .filter((i) => i.kind === 'item' && i.status !== 'Declined' && !(i.parentId && declinedGroups.has(i.parentId)))
+  const underDeclined = (i: DocItem): boolean => { let cur = i.parentId; const seen = new Set<string>(); while (cur && !seen.has(cur)) { if (declinedGroups.has(cur)) return true; seen.add(cur); cur = items.find((x) => x.id === cur)?.parentId ?? null } return false }
+  const rawLines: Line[] = items
+    .filter((i) => i.kind === 'item' && i.status !== 'Declined' && !underDeclined(i))
     .filter((i) => i.visibility !== 'hidden' || view.hiddenItems === 'no-price')
+    .filter((i) => view.changes || i.change !== 'removed')   // (REG-595) the removed lines print only while the quote shows its changes
     .map((i) => ({ ...i, noPrice: i.visibility !== 'visible' }))
+  /* (REG-585) A section that prints as one line: its lines fold into one priced line — the section's name, its description, its sum —
+     at the section's own place; the studio keeps every line inside. A folded section inside a folded one folds with it. */
+  const parentOf = new Map(items.map((i) => [i.id, i.parentId ?? null]))
+  const chain = (id: string): string[] => { const out: string[] = []; let cur = parentOf.get(id) ?? null; const seen = new Set<string>(); while (cur && !seen.has(cur)) { out.push(cur); seen.add(cur); cur = parentOf.get(cur) ?? null } return out }
+  const rolled = groups.filter((g) => g.printOneLine && g.status !== 'Declined' && !underDeclined(g))
+  const rolledIds = new Set(rolled.map((g) => g.id))
+  const underRolled = (id: string) => chain(id).some((a) => rolledIds.has(a))
+  const rollup = (g: DocItem): Line => {
+    const under = rawLines.filter((l) => !l.optional && l.change !== 'removed' && chain(l.id).includes(g.id))
+    const total = under.reduce((s, l) => s + (l.noPrice || printsWord(l) ? 0 : lineTotalMinor(l)), 0)
+    const cost = under.reduce((s, l) => s + lineCostMinor(l), 0)
+    return { ...g, kind: 'item', qty: 1, unit: null, costMinor: cost, markupMinor: total - cost, discountPct: 0, gstPct: 9, visibility: 'visible', optional: false, printAs: null, printAsText: null, noNumber: false, noPrice: false }
+  }
+  const lines: Line[] = [...rawLines.filter((l) => !underRolled(l.id)), ...rolled.filter((g) => !underRolled(g.id)).map(rollup)]
   const optional = lines.filter((l) => l.optional)
   const priced = lines.filter((l) => !l.optional)
   const byPos = (a: DocItem, c: DocItem) => a.position - c.position
-  const noteOf = (label: string) => (b.groupNotes ? groups.find((g) => g.name.trim().toLowerCase() === label.trim().toLowerCase())?.description ?? null : null)
+  const groupOf = (label: string) => groups.find((g) => g.name.trim().toLowerCase() === label.trim().toLowerCase())
+  const noteOf = (label: string) => (b.groupNotes ? groupOf(label)?.description ?? null : null)
   let main: Section[] = []
   if (b.groupBy === 'none') {
     const top = items.filter((i) => !i.parentId).sort(byPos)
     let loose: Line[] = []
     const flushLoose = () => { if (loose.length) { main.push({ id: `loose-${main.length}`, label: '', note: null, areas: [], lines: loose, totalMinor: 0 }); loose = [] } }
     for (const t of top) {
-      if (t.kind === 'group') { flushLoose(); if (t.status === 'Declined') continue; main.push({ id: t.id, label: t.name, note: b.groupNotes ? t.description : null, areas: [], lines: priced.filter((l) => l.parentId === t.id).sort(byPos), totalMinor: 0 }) }
+      if (t.kind === 'group' && !t.printOneLine) {
+        flushLoose(); if (t.status === 'Declined') continue
+        // (REG-558) The section's rows in order: runs of its own lines, and each sub-section as an area with its lines.
+        const kids = items.filter((i) => i.parentId === t.id).sort(byPos)
+        const areas: Area[] = []
+        const own: Line[] = []
+        let run: Line[] = []
+        const flushRun = () => { if (run.length) { areas.push({ label: '', lines: run }); run = [] } }
+        for (const k of kids) {
+          if (k.kind === 'group' && !k.printOneLine) { if (k.status === 'Declined') continue; flushRun(); const sl = priced.filter((l) => l.parentId === k.id).sort(byPos); if (sl.length) areas.push({ label: k.name, lines: sl, sub: true, note: b.groupNotes ? k.description : null, noteHtml: b.groupNotes ? k.descriptionHtml : null, highlight: k.highlight }) }
+          else { const l = priced.find((x) => x.id === k.id); if (l) { run.push(l); own.push(l) } }
+        }
+        flushRun()
+        const hasSubs = areas.some((a) => a.sub)
+        const all = areas.flatMap((a) => a.lines)
+        main.push({ id: t.id, label: t.name, note: b.groupNotes ? t.description : null, noteHtml: b.groupNotes ? t.descriptionHtml : null, areas: hasSubs ? areas : [], lines: hasSubs ? all : own, totalMinor: 0, subLabel: t.printAsText, highlight: t.highlight })
+      }
       else { const l = priced.find((x) => x.id === t.id); if (l) loose.push(l) }
     }
     flushLoose()
@@ -71,11 +105,12 @@ function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Se
     const labelOf = (l: Line) => (l[field] ?? items.find((g) => g.id === l.parentId)?.[field] ?? UNLABELLED[field])
     const order: string[] = []
     for (const l of priced.sort(byPos)) { const k = labelOf(l); if (!order.includes(k)) order.push(k) }
-    main = order.map((label, i) => ({ id: `sec-${i}`, label, note: noteOf(label), areas: [], lines: priced.filter((l) => labelOf(l) === label), totalMinor: 0 }))
+    // A label bucket that matches one of the quote's sections by name carries that section's note, sub-total label and highlight (REG-555 · REG-556).
+    main = order.map((label, i) => ({ id: `sec-${i}`, label, note: noteOf(label), noteHtml: b.groupNotes ? groupOf(label)?.descriptionHtml ?? null : null, areas: [], lines: priced.filter((l) => labelOf(l) === label), totalMinor: 0, subLabel: groupOf(label)?.printAsText ?? null, highlight: groupOf(label)?.highlight ?? null }))
   }
   for (const s of main) {
-    s.totalMinor = s.lines.reduce((sum, l) => sum + (l.noPrice ? 0 : lineTotalMinor(l)), 0)
-    if (b.subGroupBy !== 'none') {
+    s.totalMinor = s.lines.reduce((sum, l) => sum + (l.noPrice || printsWord(l) || l.change === 'removed' ? 0 : lineTotalMinor(l)), 0)
+    if (b.subGroupBy !== 'none' && !s.areas.length) {
       const f = b.subGroupBy
       const order: string[] = []
       for (const l of s.lines) { const k = l[f] ?? ''; if (!order.includes(k)) order.push(k) }
@@ -107,43 +142,69 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
     const m = moneyText(minor, b.currency === 'none' ? 'none' : b.currency)
     return <span className={styles.amt}><span>{m.sign}</span><span>{m.figure}</span></span>
   }
+  /* (REG-555) The word a line prints in place of its amount, bold like the zero-amount word; "On behalf" keeps its amount and adds the note. */
+  const wordCell = (l: Line) => <span className={styles.amt}><span /><span className={styles.foc}>{printAsWord(l)}</span></span>
   const cell = (c: ItemsColumn, content: ReactNode, extra?: CSSProperties) => (
     <td key={c.key} style={{ textAlign: c.align, color: c.color ? resolveColor(c.color, brand) : undefined, ...extra }}>{content}</td>
   )
+  /* (REG-556) Highlight: an ink colours the row's words, a fill tints its cells — the kit's colour either way. */
+  const hlStyle = (key: string | null | undefined): CSSProperties | undefined => {
+    if (!isHighlight(key)) return undefined
+    const c = resolveColor(key, brand)
+    return HIGHLIGHT_KIND[key] === 'fill' ? { background: c } : { color: c }
+  }
   const span = cols.length || 1
-  const bandRow = (label: string, key: string, tone: 'section' | 'optional' = 'section') => {
+  const bandRow = (label: string, key: string, tone: 'section' | 'optional' = 'section', hl?: string | null) => {
     const style = b.bandStyle
-    const bg = style === 'grey' ? resolveColor('band', brand) : style === 'accent' ? resolveColor('accent', brand) : style === 'black' ? '#000' : undefined
-    const fg = style === 'black' || style === 'accent' ? '#fff' : ink
+    const h = hlStyle(hl)
+    const bg = h?.background ? String(h.background) : style === 'grey' ? resolveColor('band', brand) : style === 'accent' ? resolveColor('accent', brand) : style === 'black' ? '#000' : undefined
+    const fg = h?.color ? String(h.color) : style === 'black' || style === 'accent' ? '#fff' : ink
     const text = <span style={{ ...textCss({ ...b.areaStyle, weight: 700, underline: style === 'underlined' || style === 'inline' || style === 'grey' }, brand, 'table'), color: fg }}>{label}</span>
     if (style === 'inline') return table(<tr key={key} data-band>{cols.map((c, i) => cell(c, i === (cols.findIndex((x) => x.key === 'item')) ? text : null))}</tr>)
     return table(<tr key={key} data-band><td colSpan={span} style={{ background: bg, color: fg, padding: pad }}>{text}</td></tr>, tone === 'optional' ? styles.optional : undefined)
   }
-  const noteRow = (note: string, key: string) => table(<tr key={key}><td colSpan={span} style={{ ...textCss(b.groupNoteStyle, brand, 'table'), paddingLeft: mm(cols[0]?.key === 'no' ? cols[0].width : 0) + 4 }}>{resolveFields(note, values)}</td></tr>)
-  const areaRow = (label: string, key: string) => table(<tr key={key}><td colSpan={span} style={{ ...textCss(b.areaStyle, brand, 'table'), paddingLeft: mm(cols[0]?.key === 'no' ? cols[0].width : 0) + 4 }}>{label}</td></tr>)
+  const inset = mm(cols[0]?.key === 'no' ? cols[0].width : 0) + 4
+  /* (REG-557) A formatted note prints its paragraphs and lists; a plain one its text. */
+  const noteRow = (note: string, key: string, noteHtml?: string | null) => table(<tr key={key}><td colSpan={span} style={{ ...textCss(b.groupNoteStyle, brand, 'table'), paddingLeft: inset }}>{noteHtml ? <div className={styles.rich} dangerouslySetInnerHTML={html(noteHtml, values)} /> : resolveFields(note, values)}</td></tr>)
+  /* A room label under a section — or (REG-558) a sub-section's own row: numbered in the nested mode, highlighted like its lines. */
+  const areaRow = (label: string, key: string, no = '', hl?: string | null) => table(<tr key={key} data-area>{no && cols[0]?.key === 'no' ? <><td style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl), textAlign: cols[0].align }}>{no}</td><td colSpan={span - 1} style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl) }}>{label}</td></> : <td colSpan={span} style={{ ...textCss(b.areaStyle, brand, 'table'), ...hlStyle(hl), paddingLeft: inset }}>{label}</td>}</tr>)
   const lineRow = (l: Line, no: string, key: string, hideAmount: boolean) => {
-    const descLines = descriptions === 'none' || !l.description ? [] : descriptions === 'first' ? [l.description.split('\n')[0]!] : l.description.split('\n').filter(Boolean)
+    const plain = l.descriptionHtml ? htmlToPlain(l.descriptionHtml) : l.description
+    const descLines = descriptions === 'none' || !plain ? [] : descriptions === 'first' ? [plain.split('\n')[0]!] : plain.split('\n').filter(Boolean)
+    /* (REG-557) A formatted description prints its own shape (lists, bold, underline) unless the template asks for the first line only. */
+    const richDesc = descriptions !== 'none' && descriptions !== 'first' && l.descriptionHtml ? l.descriptionHtml : null
     const total = l.noPrice ? 0 : lineTotalMinor(l)
+    const word = printsWord(l)   // (REG-555) the word stands where the amount would; "On behalf" keeps the amount
+    const hl = hlStyle(l.highlight)   // (REG-556)
+    /* (REG-595) A revision's marks: a removed line struck through in the kit's red, a new one marked, a changed figure with the old one struck beside it. */
+    const removed = view.changes && l.change === 'removed'
+    const added = view.changes && l.change === 'added'
+    const was = view.changes && l.change === 'changed' ? l.was ?? null : null
+    const st: CSSProperties | undefined = removed ? { ...hl, color: resolveColor('red', brand), textDecoration: 'line-through' } : hl
+    const strike = (m: number) => <span className={styles.was}>{money(m, false, false)}</span>
+    const amount = (minor: number, zeroText: boolean) => (word ? wordCell(l) : l.printAs === 'behalf' ? <>{money(minor, l.noPrice, zeroText)}<div style={{ ...textCss(b.descriptionStyle, brand, 'small'), textAlign: 'right' }}>on behalf</div></> : money(minor, l.noPrice, zeroText))
     return table(
-      <tr key={key} data-line>
+      <tr key={key} data-line data-removed={removed || undefined} data-added={added || undefined}>
         {cols.map((c) => {
           switch (c.key) {
-            case 'no': return cell(c, no)
+            case 'no': return cell(c, l.noNumber ? '' : no, st)
             case 'item': return cell(c, (
               <div className={styles.item} data-photo={photos && l.thumb ? '' : undefined}>
                 {photos && l.thumb ? <img className={styles.thumb} src={l.thumb} alt="" /> : null}
                 <div>
-                  <div>{l.name}</div>
-                  {descLines.map((d, i) => <div key={i} style={textCss(b.descriptionStyle, brand, 'small')}>{descriptions === 'bullets' ? `• ${d}` : d}</div>)}
+                  <div>{l.name}{added ? <span className={styles.newMark}>New</span> : null}</div>
+                  {was && was.name !== l.name ? <div className={styles.was} style={textCss(b.descriptionStyle, brand, 'small')}>{was.name}</div> : null}
+                  {richDesc ? <div className={styles.rich} style={textCss(b.descriptionStyle, brand, 'small')} dangerouslySetInnerHTML={{ __html: richDesc }} />
+                    : descLines.map((d, i) => <div key={i} style={textCss(b.descriptionStyle, brand, 'small')}>{descriptions === 'bullets' && !d.startsWith('• ') ? `• ${d}` : d}</div>)}
                 </div>
               </div>
-            ))
-            case 'qty': return cell(c, l.qty ? String(l.qty) : '')
-            case 'unit': return cell(c, l.unit ?? '')
-            case 'qtyUnit': return cell(c, l.qty && l.unit ? `${l.qty} ${l.unit}` : l.unit ?? (l.qty > 1 ? String(l.qty) : ''))
-            case 'unitPrice': return cell(c, hideAmount ? null : money(unitPriceMinor(l), l.noPrice, false))
-            case 'discount': return cell(c, l.discountPct ? `${l.discountPct}%` : '')
-            case 'total': return cell(c, hideAmount ? null : money(total, l.noPrice))
+            ), st)
+            case 'qty': return cell(c, <>{was && was.qty !== l.qty ? <span className={styles.was}>{String(was.qty)}</span> : null}{l.qty ? String(l.qty) : ''}</>, st)
+            case 'unit': return cell(c, l.unit ?? '', st)
+            case 'qtyUnit': { const qu = (n: number) => (n && l.unit ? `${n} ${l.unit}` : l.unit ?? (n > 1 ? String(n) : '')); return cell(c, <>{was && was.qty !== l.qty ? <span className={styles.was}>{qu(was.qty)}</span> : null}{qu(l.qty)}</>, st) }   /* (REG-595) the old quantity struck before the new */
+            case 'unitPrice': return cell(c, hideAmount ? null : word ? null : <>{was && was.unitPriceMinor !== unitPriceMinor(l) ? strike(was.unitPriceMinor) : null}{amount(unitPriceMinor(l), false)}</>, st)
+            case 'discount': return cell(c, l.discountPct && !word ? `${l.discountPct}%` : '', st)
+            case 'total': return cell(c, hideAmount ? null : <>{was && was.totalMinor !== total ? strike(was.totalMinor) : null}{amount(total, true)}</>, st)
           }
         })}
       </tr>,
@@ -173,30 +234,41 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   tables[tid] = { head, filler, pageTotal, fillPage: b.fillPage, pageTotals: b.pageTotals, keepGroups: b.keepGroups }
 
   const push = (s: Omit<Slice, 'blockId' | 'tableId'>) => out.push({ ...s, blockId: b.id, tableId: tid })
+  const hideAmount = view.amounts !== 'lines'   // (REG-585) one amount per section, or the total only: no price on the lines
   if (head) push({ key: `${tid}:head`, node: head, isHead: true, keepWithNext: true })
   let counter = 0
+  const nested = b.numbering === 'nested'   // (REG-558) 1 · 1.1 · a b c
   main.forEach((s, si) => {
-    const label = b.sectionLabel === 'letters' ? `${LETTERS[si % 26]}  ${s.label}` : b.sectionLabel === 'numbers' ? `${si + 1}  ${s.label}` : s.label
+    const label = b.sectionLabel === 'letters' ? `${LETTERS[si % 26]}  ${s.label}` : b.sectionLabel === 'numbers' || nested ? `${si + 1}  ${s.label}` : s.label
     const gk = s.id
-    if (s.label) push({ key: `${tid}:${s.id}:band`, node: bandRow(label, `${s.id}-band`), groupKey: gk, groupStart: true, keepWithNext: true, breakBefore: b.groupNewPage && si > 0 })
-    if (s.note) push({ key: `${tid}:${s.id}:note`, node: noteRow(s.note, `${s.id}-note`), groupKey: gk, keepWithNext: true })
-    if (b.numbering === 'group') counter = 0
+    if (s.label) push({ key: `${tid}:${s.id}:band`, node: bandRow(label, `${s.id}-band`, 'section', s.highlight), groupKey: gk, groupStart: true, keepWithNext: true, breakBefore: b.groupNewPage && si > 0 })
+    if (s.note || s.noteHtml) push({ key: `${tid}:${s.id}:note`, node: noteRow(s.note ?? '', `${s.id}-note`, s.noteHtml), groupKey: gk, keepWithNext: true })
+    if (b.numbering === 'group' || nested) counter = 0
     const areas = s.areas.length ? s.areas : [{ label: '', lines: s.lines }]
+    let subCounter = 0
     areas.forEach((a, ai) => {
-      if (a.label) push({ key: `${tid}:${s.id}:a${ai}`, node: areaRow(a.label, `${s.id}-a${ai}`), groupKey: gk, keepWithNext: true })
+      // A sub-section in the nested mode takes the section's next number ("1.3") and letters its lines (a, b, c).
+      const subNo = a.sub && nested ? `${si + 1}.${++counter}` : ''
+      if (a.label) push({ key: `${tid}:${s.id}:a${ai}`, node: areaRow(a.label, `${s.id}-a${ai}`, subNo, a.highlight), groupKey: gk, keepWithNext: true })
+      if (a.sub && (a.note || a.noteHtml)) push({ key: `${tid}:${s.id}:a${ai}:note`, node: noteRow(a.note ?? '', `${s.id}-a${ai}-note`, a.noteHtml), groupKey: gk, keepWithNext: true })
       if (b.numbering === 'area') counter = 0
+      if (a.sub) subCounter = 0
       a.lines.forEach((l) => {
-        counter += 1
-        const no = b.numbering === 'none' ? '' : String(counter)
-        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, b.lumpSum), groupKey: gk, amountMinor: l.noPrice ? 0 : lineTotalMinor(l) })
+        let no = ''
+        if (!l.noNumber) {   // (REG-558) a "no number" line is passed over
+          if (nested) { if (a.sub) { subCounter += 1; no = LETTERS[(subCounter - 1) % 26]!.toLowerCase() } else { counter += 1; no = `${si + 1}.${counter}` } }
+          else { counter += 1; no = b.numbering === 'none' ? '' : String(counter) }
+        }
+        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, hideAmount), groupKey: gk, amountMinor: l.noPrice || printsWord(l) || l.change === 'removed' ? 0 : lineTotalMinor(l) })
       })
     })
-    if (b.lumpSum) push({ key: `${tid}:${s.id}:lump`, node: sumRow('Lump sum', s.totalMinor, `${s.id}-lump`), groupKey: gk })
-    else if (b.subtotals && s.label) push({ key: `${tid}:${s.id}:sub`, node: sumRow(b.subtotalLabel.replace('{section}', s.label), s.totalMinor, `${s.id}-sub`), groupKey: gk })
+    const subLabel = s.subLabel ? ` (${s.subLabel})` : ''   // (REG-555, T-3) "Sub-total for Masonry (Approximate)"
+    if (view.amounts === 'sections') push({ key: `${tid}:${s.id}:lump`, node: sumRow(`Lump sum${subLabel}`, s.totalMinor, `${s.id}-lump`), groupKey: gk })
+    else if (view.amounts === 'lines' && b.subtotals && s.label) push({ key: `${tid}:${s.id}:sub`, node: sumRow(`${b.subtotalLabel.replace('{section}', s.label)}${subLabel}`, s.totalMinor, `${s.id}-sub`), groupKey: gk })
   })
   if (optional.length && b.optionalSection && view.optionalWorks) {
     push({ key: `${tid}:opt:band`, node: bandRow(b.optionalTitle, 'opt-band', 'optional'), groupKey: 'optional', groupStart: true, keepWithNext: true })
-    optional.forEach((l, i) => push({ key: `${tid}:opt:${l.id}`, node: lineRow(l, String(i + 1), `opt-${l.id}`, false), groupKey: 'optional' }))
+    optional.forEach((l, i) => push({ key: `${tid}:opt:${l.id}`, node: lineRow(l, String(i + 1), `opt-${l.id}`, hideAmount), groupKey: 'optional' }))
   }
 }
 
@@ -217,7 +289,13 @@ function totalsNode(b: TotalsBlock, ctx: RenderCtx, view: ClientView, t: DocTota
         case 'pages': pc.pageTotals.forEach((v, i) => rows.push({ label: label.replace('{n}', String(i + 1)), value: m(v) })); break
         case 'subtotal': rows.push({ label, value: m(t.subtotalMinor) }); break
         case 'discount': if (t.discountMinor > 0) rows.push({ label, value: `−${m(t.discountMinor)}` }); break
-        case 'additional': if (t.additionalMinor > 0) rows.push({ label, value: `−${m(t.additionalMinor)}` }); break
+        case 'additional': {
+          // (REG-559) The additional discount, then every named discount on its own line — its word as typed on the quote.
+          const named = t.discountLines.reduce((s, d) => s + d.minor, 0)
+          if (t.additionalMinor - named > 0) rows.push({ label, value: `−${m(t.additionalMinor - named)}` })
+          for (const d of t.discountLines) if (d.minor > 0) rows.push({ label: d.label || label, value: `−${m(d.minor)}` })
+          break
+        }
         case 'gst': if (data.quote.gstEnabled) rows.push({ label, value: m(t.gstMinor) }); break
         case 'total': rows.push({ label, value: m(t.totalMinor), strong: true }); break
       }
@@ -243,11 +321,15 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
   const rows = data.payments
   const m = (minor: number) => moneyText(minor, 'S$').figure
   if (!rows.length) return <div style={style}>{title}<div className={styles.muted}>No payment schedule on this quote.</div></div>
+  /* (REG-560) The Total line under the milestones — the sum of the amounts, and the percentages' sum — unless the template hides it. */
+  const totalMinor = rows.reduce((s, p) => s + p.amountMinor, 0), totalPct = rows.reduce((s, p) => s + p.pct, 0)
+  const totalLine = b.showTotal ? <div className={styles.payTotal} style={{ borderTopColor: ink }}><span>Total</span><span>{totalPct}%{b.showAmounts ? ` · ${m(totalMinor)}` : ''}</span></div> : null
   if (b.layout === 'list') return (
     <div style={style}>{title}
       <ol className={styles.payList} data-letters={b.letters || undefined}>
         {rows.map((p, i) => <li key={i}><span>{b.letters ? `${LETTERS[i % 26]}  ` : ''}{p.description || p.name} - <b style={{ color: resolveColor('red', brand) }}>{p.pct}%</b>{b.showAmounts ? ` (${m(p.amountMinor)})` : ''}{b.showDue && p.due ? ` · ${p.due}` : ''}</span></li>)}
       </ol>
+      {totalLine}
     </div>
   )
   if (b.layout === 'cards') return (
@@ -255,6 +337,7 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
       <div className={styles.payCards}>
         {rows.map((p, i) => <div key={i} className={styles.payCard} style={{ borderColor: resolveColor('light', brand) }}><div className={styles.payPct}>{p.name} · {p.pct}%</div>{b.showAmounts ? <div className={styles.payAmt}>{m(p.amountMinor)}</div> : null}<div className={styles.muted}>{p.description}{b.showDue && p.due ? ` · ${p.due}` : ''}</div></div>)}
       </div>
+      {totalLine}
     </div>
   )
   return (
@@ -269,8 +352,37 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
               {b.showAmounts ? <td style={{ width: mm(30), textAlign: 'right' }}>{m(p.amountMinor)}</td> : null}
             </tr>
           ))}
+          {b.showTotal ? (
+            <tr data-sum>
+              <td />
+              <td><b>Total</b></td>
+              {b.showDue ? <td /> : null}
+              {b.showAmounts ? <td style={{ textAlign: 'right' }}>{m(totalMinor)}</td> : <td style={{ textAlign: 'right' }}>{totalPct}%</td>}
+            </tr>
+          ) : null}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+/** (REG-562) Bank details: the issuing entity's bank, account name and number, PayNow — and its QR beside, when uploaded. */
+function bankNode(b: BankBlock, ctx: RenderCtx): ReactNode {
+  const { brand, data, values } = ctx
+  const e = docEntity(data)
+  const style = textCss(b.style, brand)
+  const rows: [string, string][] = e ? ([['Bank', e.bankName], ['Account name', e.accountName], ['Account number', e.accountNo], ['PayNow', e.payNow]] as [string, string][]).filter((r) => !!r[1]) : []
+  const title = b.title ? <div className={styles.textTitle} style={textCss(b.titleStyle, brand)}>{resolveFields(b.title, values)}</div> : null
+  const body = rows.length ? (
+    <table className={styles.kv} style={{ borderSpacing: `0 ${mm(0.6)}px` }}><tbody>
+      {rows.map(([k, v]) => <tr key={k}><td className={styles.kvLabel} style={{ width: mm(30), opacity: .75 }}>{k}</td><td>{v}</td></tr>)}
+    </tbody></table>
+  ) : <div className={styles.muted}>{e ? `No bank details for ${e.name} yet — add them in Company › Profile.` : 'No issuing entity.'}</div>
+  const qr = b.qr && e?.payNowQr ? <img src={e.payNowQr} alt="PayNow QR" style={{ width: mm(b.qrWidth), height: mm(b.qrWidth), objectFit: 'contain', flex: '0 0 auto' }} /> : null
+  return (
+    <div className={styles.textBlock} data-box={b.box !== 'none' ? b.box : undefined} style={{ ...style, ['--tint' as string]: resolveColor('band', brand), ['--ink' as string]: resolveColor('ink', brand) }}>
+      {title}
+      <div className={styles.bank} data-layout={b.layout}>{body}{qr}</div>
     </div>
   )
 }
@@ -336,6 +448,7 @@ export function buildSlices(design: TemplateDesign, ctx: RenderCtx, view: Client
       case 'items': itemsSlices(b, design, ctx, view, out, tables); break
       case 'totals': out.push({ key: b.id, blockId: b.id, node: totalsNode(b, ctx, view, totals) }); break
       case 'payments': if (view.paymentSchedule) out.push({ key: b.id, blockId: b.id, node: paymentsNode(b, ctx) }); break
+      case 'bank': out.push({ key: b.id, blockId: b.id, node: bankNode(b, ctx) }); break
       case 'terms': if (view.terms) textSourceSlices(b, ctx, out); break
       case 'notes': if (view.notes) textSourceSlices(b, ctx, out); break
       case 'signature': if (view.signature) out.push({ key: b.id, blockId: b.id, node: <SignatureColumns columns={(b as SignatureBlock).columns} style={b.style} headingStyle={b.headingStyle} lineWeight={b.lineWeight} lineColor={b.lineColor} preamble={b.preamble} ctx={ctx} /> }); break

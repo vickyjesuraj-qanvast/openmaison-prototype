@@ -65,7 +65,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
               <button type="button" role="option" aria-selected={false} className={styles.rowTile} data-blank onClick={blank.onUse} aria-label={blank.label}>
                 <span className={styles.rowThumb} data-blank><Icon name="add" size={20} weight={300} /></span>
                 <span className={styles.rowName}>{blank.label}</span>
-                <span className={styles.rowMeta}>Empty table, the studio default’s look</span>
+                <span className={styles.rowMeta}>Empty table, the studio default’s look and settings</span>
               </button>
             ) : null}
             {shown.map((t) => (
@@ -84,7 +84,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
               <button type="button" className={styles.tile} data-blank onClick={blank.onUse} aria-label={blank.label}>
                 <span className={styles.well} data-blank><Icon name="add" size={32} weight={300} /></span>
                 <span className={styles.name}>{blank.label}</span>
-                <span className={styles.meta}>Empty table, the studio default’s look</span>
+                <span className={styles.meta}>Empty table, the studio default’s look and settings</span>
               </button>
             ) : null}
             {shown.map((t) => (

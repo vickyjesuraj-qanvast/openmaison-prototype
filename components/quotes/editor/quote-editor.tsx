@@ -35,14 +35,18 @@ import { clientColumnsOf, viewForTemplate } from '@/lib/templates/picker'
 import { updateItemsPrefs } from '@/app/quotes/items-actions'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { ItemsView } from '@/lib/quotes/items-model'
-import { saveQuoteGeneral, saveQuoteSections, sendQuote, type GeneralPatch } from '@/app/quotes/actions'
+import { reviseQuote, saveQuoteGeneral, saveQuoteSections, sendQuote, sendQuoteForConfirmation, type GeneralPatch } from '@/app/quotes/actions'
+import { confirmLink, confirmMessage } from '@/lib/quotes/confirm'
+import { firstName } from '@/lib/contracts/model'
+import { SendContractDialog } from '@/components/contracts/editor/dialogs'
+import { VersionHistoryDrawer } from './version-history'
 import { displayDate, inputDate, parseInputDate } from '@/lib/format'
 import { duration } from '@/lib/motion'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteEditorData } from '@/lib/quotes/editor'
 import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
 import { SECTION_LABELS, isFixedSection, parseSections, pinFixed, type QuoteSectionState, type SectionKey } from '@/lib/quotes/sections'
-import { EditorHeader, type HeaderMenuAction } from './editor-header'
+import { EditorHeader, type HeaderMenuAction, type SendKind, type SendMode } from './editor-header'
 import { EditorTabs } from './editor-tabs'
 import { CreateStrip, useStripExpanded } from './create-strip'
 import { SectionCard } from './section-card'
@@ -53,7 +57,7 @@ import { FilesCard, type FilesSeed } from './files/files-section'
 import { TextCard, type TextSeed } from './text/text-section'
 import { SignatureCard, type SignatureSeed } from './signature/signature-section'
 import { ActivityBody } from './activity/activity-section'
-import { countedLines, flattenItems } from '@/lib/quotes/math'
+import { countedLines, flattenItems, money2, parseDiscounts } from '@/lib/quotes/math'
 import type { TextContext, TokenValues } from '@/lib/quotes/text'
 import { toRows } from '@/lib/quotes/payments'
 import { scheduleAnchors } from '@/lib/quotes/payments'
@@ -85,8 +89,9 @@ function savedLabel(updatedAt: number, now: number): string {
  * Every section is live: Items (REG-415), the Payment Schedule (REG-418), Files (REG-419), Terms and Conditions / Additional
  * Notes (REG-420), Signature and Activity (REG-421).
  */
-export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; from?: string; /** (REG-490) the preview's Open links land on a section */ section?: string }) {
-  const { quote, lead, siblings, members, quoteApproval, items, priceBook, studio, files, me, payments, quoteFiles, textTemplates, paymentSplits, activity, now, brand, studioDetails } = data
+export function QuoteEditor({ data, from, section, apply }: { data: QuoteEditorData; from?: string; /** (REG-490) the preview's Open links land on a section */ section?: string; /** (REG-579) the template whose new version this quote just moved to — the "Apply defaults · Keep mine" question opens on arrival */ apply?: string }) {
+  const { quote, lead, siblings, members, quoteApproval, items, priceBook, priceBookSections, trades, versions, studio, files, me, payments, quoteFiles, textTemplates, paymentSplits, activity, now, brand, studioDetails, rules, canApprove, changes } = data
+  const paymentsLocked = rules.paymentLock && !(me?.role === 'Owner' || me?.role === 'Admin')   /* (REG-589) */
   const router = useRouter()
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
@@ -108,9 +113,15 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   const [exportTick, setExportTick] = useState(0)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  /* (REG-565) Version History and Revise: the drawer, the confirm, the version the header prints. */
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [reviseOpen, setReviseOpen] = useState(false)
+  const [version, setVersion] = useState(quote.version)
   const [contractPicker, setContractPicker] = useState(false)
   /* (REG-538) Change template on a Draft asks whether the template's defaults land too; the REG-497 regroup question waits behind it. */
-  const [applyTpl, setApplyTpl] = useState<{ id: string; name: string; regroup: { view: ItemsView; label: string } | null } | null>(null)
+  const [applyTpl, setApplyTpl] = useState<{ id: string; name: string; regroup: { view: ItemsView; label: string } | null } | null>(() => (apply && data.templateState.current && data.templateState.current.id === apply && data.quote.status === 'Draft' ? { id: data.templateState.current.id, name: data.templateState.current.name, regroup: null } : null))
+  /* (REG-579) The `apply` flag is one-shot: it leaves the address once read, so a reload never asks again. */
+  useEffect(() => { if (!apply) return; const u = new URL(window.location.href); if (!u.searchParams.has('apply')) return; u.searchParams.delete('apply'); router.replace(`${u.pathname}${u.search}`, { scroll: false }) }, [apply, router])
   const [seedNonce, setSeedNonce] = useState(0)   /* bumps when defaults land: the seeded cards remount on their new seeds */
   const [textVisible, setTextVisible] = useState({ terms: quote.termsVisible, notes: quote.notesVisible })   /* the two "Show in client view" switches, for the live pane */
   const tabletDown = useMediaQuery(TABLET_DOWN)
@@ -126,6 +137,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     customerId: quote.customerId ?? '',
     propertyType: quote.propertyType ?? lead.propertyType,
     siteAddress: quote.siteAddress ?? lead.propertyAddress ?? '',
+    client2Name: quote.client2Name ?? '', client2Nric: quote.client2Nric ?? '',   // (REG-588)
   }))
   const [sections, setSections] = useState<QuoteSectionState[]>(() => parseSections(quote.sections))
   const [updatedAt, setUpdatedAt] = useState((quote.updatedAt ?? quote.createdAt).getTime())
@@ -181,6 +193,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     if (patch.customerId !== undefined) out.customerId = patch.customerId
     if (patch.propertyType !== undefined) out.propertyType = patch.propertyType
     if (patch.siteAddress !== undefined) out.siteAddress = patch.siteAddress
+    if (patch.client2Name !== undefined) out.client2Name = patch.client2Name   // (REG-588)
+    if (patch.client2Nric !== undefined) out.client2Nric = patch.client2Nric
     queue(out)
   }
 
@@ -248,9 +262,21 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   /* ── header actions ── */
   const steps = quoteStatuses(quoteApproval)
   const nextStep: QuoteStatus | null = status === 'Draft' ? (steps[1] ?? null) : status === 'Approved' ? 'Sent to Client' : null
-  const send = () => {
+  /* (REG-587) What Send offers here: for approval while that is the next step; else the client's two ways — confirm on a link
+     first (Mavid's flow) or the agreement for signature; once Confirmed, only the signature is left. */
+  const sendKind: SendKind = nextStep === 'Sent for Approval' ? 'approval' : status === 'Draft' || status === 'Approved' || status === 'Sent to Client' ? 'client' : status === 'Confirmed' ? 'confirmed' : 'done'
+  const canSend = sendKind !== 'done'
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const send = (mode: SendMode) => {
+    if (mode === 'signature') { onMenu('contract'); return }
+    if (mode === 'confirmation') { void flushRef.current(); setConfirmOpen(true); return }
     if (!nextStep) return
     void run('send the quote', async () => { const r = await sendQuote(quote.id); setStatus(r.status); setUpdatedAt(r.updatedAt); setClock(Date.now()) }, `Quote marked ${nextStep}`, { guard: 'send' })
+  }
+  const sendForConfirmation = ({ phone, message }: { name: string; phone: string; message: string }) => {
+    setConfirmOpen(false)
+    window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')   // on the press — a popup blocker eats one opened after the round trip (REG-534)
+    void run('send the quote', async () => { const r = await sendQuoteForConfirmation(quote.id); setStatus(r.status); setUpdatedAt(r.updatedAt); setClock(Date.now()) }, 'Sent for confirmation — the quote is marked Sent to Client', { guard: 'send' })
   }
   const changeStatus = (s: QuoteStatus) => {
     setStatusOpen(false)
@@ -264,14 +290,29 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
     if (action === 'contract') { void flushRef.current(); setContractPicker(true); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
+    if (action === 'confirmLink') { void navigator.clipboard?.writeText(confirmLink(quote.id)).then(() => snackbar({ message: 'Confirmation link copied' }), () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }   /* (REG-587) */
     if (action === 'xray') { void flushRef.current(); router.push(`/quote-x-ray?lead=${lead.id}&quote=${quote.id}&from=${encodeURIComponent(`/quotes/${quote.id}`)}`); return }   /* (REG-529) Quote X-Ray on this quote */
     if (action === 'rename') { setRenameOpen(true); return }
     if (action === 'duplicate') { void flushRef.current(); void run('duplicate the quote', async () => { const id = await duplicateQuote(quote.id); router.push(withFrom(`/quotes/${id}`, from)) }, 'Quote duplicated — this is the copy'); return }
     if (action === 'delete') { setDeleteOpen(true); return }
     if (action === 'export') { if (!openOf('items')) toggle('items'); setExportTick((t) => t + 1); return }   /* the Items export (REG-478) */
-    comingSoon()   /* Version History · Comments */
+    if (action === 'history') { void flushRef.current(); setHistoryOpen(true); return }   /* (REG-565) */
+    if (action === 'revise') { void flushRef.current(); if (canRevise) setReviseOpen(true); else snackbar({ message: reviseHint }); return }
+    comingSoon()   /* Comments */
   }
-  const VIEW_WORD: Record<ItemsView, string> = { none: 'your own groups', category: 'Trade', room: 'Room', section: 'Section' }
+  /* (REG-565) Revise is for a quote the client has seen (or the studio approved): a Draft never sent is simply edited. */
+  const canRevise = status !== 'Draft' || !!quote.sentAt
+  const reviseHint = 'A draft that was never sent is edited, not revised — Revise once it has gone out.'
+  const doRevise = () => {
+    setReviseOpen(false)
+    void run('start the new version', async () => {
+      await flushRef.current()
+      const r = await reviseQuote(quote.id)
+      setVersion(r.version); setStatus('Draft'); stamp(r.updatedAt); setHistoryOpen(false)
+      router.refresh()
+    }, `Version ${version + 1} started — version ${version} is kept in Version History`)
+  }
+  const VIEW_WORD: Record<ItemsView, string> = { none: 'your own sections', category: 'Trade', room: 'Room', section: 'Section label' }   /* (REG-567) */
   const pickTemplate = (templateId: string) => {
     setPickerOpen(false)
     setPickedTpl(null)
@@ -332,9 +373,12 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     void run('update the template version', async () => {
       const r = await updateQuoteTemplateVersion(quote.id)
       setTemplateState((st) => (st.current ? { ...st, current: { ...st.current, pinned: r.version } } : st)); stamp(Date.now())
-    }, 'Quote moved to the latest template version').finally(() => setTemplateBusy(false))
+      /* (REG-579) The version moved; the new defaults land only when the quote says so. */
+      const cur = templateState.current
+      if (cur) setApplyTpl({ id: cur.id, name: cur.name, regroup: null })
+    }, `Quote moved to v${templateState.current?.latest ?? ''}`).finally(() => setTemplateBusy(false))
   }
-  const saveAsTemplate = (name: string, opts: { includeText: boolean }) => {
+  const saveAsTemplate = (name: string, opts: { includeText: boolean; includeSections: boolean }) => {
     setTemplateBusy(true)
     void (async () => {
       try {
@@ -374,9 +418,9 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
       </Button>
       <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" sheetTitle="Status">
         {steps.map((s) => (
-          <DropdownItem key={s} role="menuitemradio" checked={s === status} onSelect={() => changeStatus(s)}>
+          <DropdownItem key={s} role="menuitemradio" checked={s === status} disabled={s === 'Approved' && quoteApproval === 'required' && !canApprove} onSelect={() => changeStatus(s)}>
             <span className={styles.menuText}>{s}</span>
-            {s === status ? <span className={styles.menuCurrent}>current</span> : null}
+            {s === status ? <span className={styles.menuCurrent}>current</span> : s === 'Approved' && quoteApproval === 'required' && !canApprove ? <span className={styles.menuCurrent}>approvers only</span> : null}   {/* (REG-590) */}
           </DropdownItem>
         ))}
       </Dropdown>
@@ -386,8 +430,8 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
   const movable = sections.filter((s) => !isFixedSection(s.key))
   // The Items section's seed never changes for a mounted editor (its own state takes over from the first render).
   const [itemsSeed, setItemsSeed] = useState<ItemsSeed>(() => ({
-    quoteId: quote.id, number: quote.number, items, priceBook, studio, files, me,
-    pricing: { additionalDiscountMode: quote.additionalDiscountMode === 'amount' ? 'amount' : 'pct', additionalDiscountValue: quote.additionalDiscountValue, gstEnabled: quote.gstEnabled, issuingEntity: quote.issuingEntity },
+    quoteId: quote.id, number: quote.number, items, priceBook, priceBookSections, trades, brandColors: brand.colors, entities: studioDetails.entities.map((e, i) => ({ name: e.name, gstRegistered: i === 0 ? studio.gstRegistered : e.gstRegistered })), roundStep: rules.roundStep, studio, files, me,
+    pricing: { additionalDiscountMode: quote.additionalDiscountMode === 'amount' ? 'amount' : 'pct', additionalDiscountValue: quote.additionalDiscountValue, gstEnabled: quote.gstEnabled, issuingEntity: quote.issuingEntity, discounts: parseDiscounts(quote.discountsJson) },
     view: quote.itemsView, density: quote.itemsDensity, columnsJson: quote.itemsColumns, labelsJson: quote.itemsLabels,
   }))
   const [paymentsSeed, setPaymentsSeed] = useState<PaymentsSeed>(() => {
@@ -429,15 +473,16 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
     <PageReveal skeleton={<EditorSkeleton />}>
       <div className={styles.page} data-testid="quote-editor" data-strip={stripExpanded ? 'expanded' : 'collapsed'}>
         <EditorHeader
-          lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={quote.version} status={status} siblings={siblings}
+          lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={version} status={status} siblings={siblings}
           savedLabel={savedLabel(updatedAt, clock)}
-          canSend={!!nextStep} sendHint={`Quote is ${status}`} statusSlot={statusPill}
+          canSend={canSend} sendKind={sendKind} sendHint={`Quote is ${status}`} statusSlot={statusPill}
           onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
           onSend={send} onMenu={onMenu} onClose={close}
           clientViewOn={clientView} onClientView={() => setClientView((o) => !o)}
         />
         <EditorTabs items={tabs} active={active} onSelect={selectTab} className={styles.stickyTabs} />
-        {templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept ? (
+        {/* (REG-579) Only a Draft is offered the newer version — a sent quote keeps the version it was sent with; its card still says "v1 · v2 published". */}
+        {templateState.current && templateState.current.latest > templateState.current.pinned && !bannerKept && status === 'Draft' ? (
           <TemplateUpdateBanner current={templateState.current} busy={templateBusy} onUpdate={updateTemplate} onKeep={() => setBannerKept(true)} />
         ) : null}
         <div className={styles.body}>
@@ -454,7 +499,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
                                 onDrop={() => persistSections(sectionsRef.current)}
                                 render={s.key === 'payment' ? (onHandle) => (
                                   <PaymentsCard key={`pay-${seedNonce}`} seed={paymentsSeed} open={!s.collapsed} onToggle={() => toggle('payment')} onHandlePointerDown={onHandle}
-                                                totalMinor={amountMinor} today={new Date(now)} onSaved={stamp} onRows={setScheduleRows} />
+                                                totalMinor={amountMinor} today={new Date(now)} onSaved={stamp} onRows={setScheduleRows} locked={paymentsLocked} />
                                 ) : s.key === 'files' ? (onHandle) => (
                                   <FilesCard seed={filesSeed} open={!s.collapsed} onToggle={() => toggle('files')} onHandlePointerDown={onHandle} onSaved={stamp} onCount={setFileCount} />
                                 ) : s.key === 'terms' || s.key === 'notes' ? (onHandle) => (
@@ -490,7 +535,7 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
                 footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) pickTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (templateState.current?.id ?? null)}>{pickerSel && pickerSel === templateState.current?.id ? 'On this quote' : 'Use this template'}</Button></>}>
           <TemplatePicker data={templateState.picker} picked={pickerSel} onPick={setPickedTpl} currentId={templateState.current?.id ?? null} now={now} onUse={pickTemplate} />
         </Dialog>
-        <ConfirmDialog open={regroup !== null} title="Regroup the items the way the template prints?" tone="primary" confirmLabel={regroup ? `Group by ${VIEW_WORD[regroup.view]}` : 'Regroup'} cancelLabel="Keep my groups"
+        <ConfirmDialog open={regroup !== null} title="Regroup the items the way the template prints?" tone="primary" confirmLabel={regroup ? `Group by ${VIEW_WORD[regroup.view]}` : 'Regroup'} cancelLabel="Keep my sections"
                        message={regroup ? `${regroup.label}. Your lines stay as they are; only View by changes, and you can change it back.` : ''}
                        onCancel={() => setRegroup(null)} onConfirm={() => { if (regroup) doRegroup(regroup.view) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
@@ -500,11 +545,23 @@ export function QuoteEditor({ data, from, section }: { data: QuoteEditorData; fr
                        message="Its payment schedule, validity, GST and signature settings, Terms and Notes templates and working columns replace what this quote has. Your lines stay as they are."
                        onCancel={closeApply} onConfirm={doApplyDefaults} />
         <RenameQuoteDialog open={renameOpen} title={general.title} onClose={() => setRenameOpen(false)} onSave={(title) => changeGeneral({ title })} />
+        {/* (REG-565) Version History and the Revise confirm. */}
+        <VersionHistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} current={{ version, status, amountMinor, updatedAt }} versions={versions} members={members} changes={changes}
+                              canRevise={canRevise} reviseHint={reviseHint} onRevise={() => setReviseOpen(true)} onOpen={(v) => { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?version=${v}`, `/quotes/${quote.id}`)) }} />
+        <ConfirmDialog open={reviseOpen} title={`Start version ${version + 1}?`} tone="primary" confirmLabel={`Start version ${version + 1}`} cancelLabel="Not now"
+                       message={`Version ${version} is kept as it stands — ${status}, ${money2(amountMinor)} — and opens read-only from Version History. The quote becomes a Draft again under ${quote.number} with the same lines, ready for the changes.`}
+                       onCancel={() => setReviseOpen(false)} onConfirm={doRevise} />
         <DeleteQuotesDialog open={deleteOpen} count={1} onNo={() => setDeleteOpen(false)}
                             onYes={() => { setDeleteOpen(false); void run('delete the quote', async () => { await deleteQuotes([quote.id]); router.push(backHref) }, 'Quote deleted') }} />
         <ContractTemplatePicker open={contractPicker} onClose={() => setContractPicker(false)} load={fetchContractTemplateOptionsAction}
                                 onUse={(templateId) => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id, templateId }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }}
                                 onStarter={() => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }} />
+      {/* (REG-587) Send for confirmation: the contract's send dialog with the quote's words — name, number, the WhatsApp draft, the confirmation link. */}
+      <SendContractDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} link={confirmLink(quote.id)} defaults={{ name: lead.name, phone: lead.phone }}
+                          title="Send for confirmation" subtitle="Your client reads the quote in their browser and confirms it. The agreement and the signature come after."
+                          copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)"
+                          draft={(name) => confirmMessage({ clientFirst: firstName(name), studio: studio.name, number: quote.number, link: confirmLink(quote.id) })}
+                          onSend={sendForConfirmation} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>
     </PageReveal>

@@ -108,6 +108,7 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
       `bottomSheet` variant where the surface owns its shell); it comes off the bottom edge over the dock, under
       the scrim, ≤88dvh, and takes a heading naming what it acts on. Confirmation ALERTS stay centred cards and
       multi-step wizards stay full screen with their own top bar. Never anchor a new menu to a cell on a phone.
+- [ ] **A table of records is cards at ≤767 (REG-377 · REG-597)** — the listing's cards, the Quotes / Contracts tab's card, the Items table's line card; a tap opens the record (or its bottom sheet of fields), the kebab stays, the desktop grid is untouched.
 - [ ] **A section toolbar is ONE row at ≤767 (REG-354)** — the title and the glyphs. The search box folds into a
       glyph (`components/om/toolbar-search.tsx`) and the labelled primary becomes its icon; anything that cannot
       fit leaves the row the way the listing's view toggle did (REG-299), never wraps into a third line.

@@ -17,6 +17,11 @@ export function withFrom(href: string, from: string | undefined): string {
   return `${href}${href.includes('?') ? '&' : '?'}from=${encodeURIComponent(from)}`
 }
 
+/** (REG-579) `href` with `apply=<templateId>` riding along: the quote editor asks "Apply defaults · Keep mine" on arrival. */
+export function withApply(href: string, templateId: string): string {
+  return `${href}${href.includes('?') ? '&' : '?'}apply=${encodeURIComponent(templateId)}`
+}
+
 /** The section a `from` path belongs to — what the L2 crumb reads before " / Leads". */
 export function fromLabel(from: string | undefined): string | undefined {
   const p = from?.split('?')[0]

@@ -7,7 +7,7 @@ import { db } from '@/lib/db'
 import { quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quotes, settings } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
-import { STUDIO_KEY, fetchTemplateApproval } from '@/lib/settings/queries'
+import { STUDIO_KEY, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
 import { members } from '@/lib/db/schema'
 import { findSplit, presetOf } from '@/lib/quotes/payments'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
@@ -77,7 +77,7 @@ export async function createTemplate(input: { name?: string; source: TemplateSou
     defaults = parseDefaults(draft?.defaults ? JSON.stringify(draft.defaults) : row.defaultsJson)
     if (!input.name) name = `Copy of ${row.name}`
     sourceFile = row.sourceFile
-  } else { design = presetByKey('letter').design(); design.blocks = design.blocks.filter((b) => b.kind === 'items' || b.kind === 'totals'); design.brand = {}; design.page = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '' } }
+  } else { design = presetByKey('letter').design(); design.blocks = design.blocks.filter((b) => b.kind === 'items' || b.kind === 'totals'); design.brand = {}; design.page = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '', dateFormat: 'short' } }
   const id = randomUUID()
   await db.insert(quoteTemplates).values({
     id, name: await uniqueName(name), kind: 'design', isDefault: false, createdAt: now, status: 'draft', version: 0, paper: design.page.paper,
@@ -87,12 +87,18 @@ export async function createTemplate(input: { name?: string; source: TemplateSou
   return id
 }
 
-/** The editor's autosave: the working draft (design + defaults), the name and the paper. Never touches what is published. */
+/** The editor's autosave: the working draft (design + defaults), the name and the paper. Never touches what is published.
+    (REG-577) A draft that equals the published design and defaults is no draft and is stored as none: the autosave timer that
+    fires after Publish (it races the flush Publish does) used to leave "Unpublished changes" on a template nobody had edited. */
 export async function saveTemplateDraft(id: string, patch: { design: TemplateDesign; defaults: TemplateDefaults; name?: string; paper?: Paper }): Promise<{ savedAt: number }> {
-  await templateRow(id)
+  const row = await templateRow(id)
   const now = new Date()
+  const canon = (d: TemplateDesign) => JSON.stringify(parseDesign(JSON.stringify(d), fallbackDesign()))
+  const same = row.status !== 'draft'
+    && canon(patch.design) === canon(parseDesign(row.designJson, fallbackDesign()))
+    && JSON.stringify(parseDefaults(JSON.stringify(patch.defaults))) === JSON.stringify(parseDefaults(row.defaultsJson))
   await db.update(quoteTemplates).set({
-    draftJson: JSON.stringify({ design: patch.design, defaults: patch.defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME,
+    draftJson: same ? null : JSON.stringify({ design: patch.design, defaults: patch.defaults }), draftUpdatedAt: same ? null : now, updatedAt: now, updatedBy: ME,
     ...(patch.name?.trim() ? { name: patch.name.trim() } : {}), ...(patch.paper && isPaper(patch.paper) ? { paper: patch.paper } : {}),
   }).where(eq(quoteTemplates.id, id))
   revalidatePath('/company', 'layout')
@@ -119,7 +125,7 @@ export async function publishTemplate(id: string, opts: { note?: string; setDefa
   const now = new Date()
   // (REG-501) With approval required, only an Owner or Admin publishes; a Designer submits (submitTemplate).
   const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
-  if (approval === 'required' && !(me?.role === 'Owner' || me?.role === 'Admin')) throw new Error('approval required')
+  if (approval === 'required' && !(await isApprover(ME, me?.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
   let design: TemplateDesign, defaults: TemplateDefaults
   if (row.draftJson) {
     const j = JSON.parse(row.draftJson) as { design?: unknown; defaults?: unknown }
@@ -158,7 +164,7 @@ export async function rollbackTemplate(id: string, version: number): Promise<{ v
   if (row.deletedAt) throw new Error('deleted')
   // (REG-501) A rollback publishes: under approval it is an Owner's / Admin's move, exactly like Publish.
   const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
-  if (approval === 'required' && !(me?.role === 'Owner' || me?.role === 'Admin')) throw new Error('approval required')
+  if (approval === 'required' && !(await isApprover(ME, me?.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
   const [v] = await db.select().from(quoteTemplateVersions).where(and(eq(quoteTemplateVersions.templateId, id), eq(quoteTemplateVersions.version, version)))
   if (!v) throw new Error('version not found')
   const now = new Date()
@@ -232,8 +238,9 @@ export async function setQuoteTemplate(quoteId: string, templateId: string | nul
 
 /** The banner's one click: the quote moves to the template's latest version. */
 export async function updateQuoteTemplateVersion(quoteId: string): Promise<{ version: number }> {
-  const [q] = await db.select({ templateId: quotes.templateId }).from(quotes).where(eq(quotes.id, quoteId))
+  const [q] = await db.select({ templateId: quotes.templateId, status: quotes.status }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q?.templateId) throw new Error('no template')
+  if (q.status !== 'Draft') throw new Error('only a draft moves version')   // (REG-579) a sent quote keeps the version it was sent with — the publish dialog's promise
   const t = await templateRow(q.templateId)
   await db.update(quotes).set({ templateVersion: t.version, updatedAt: new Date() }).where(eq(quotes.id, quoteId))
   touchQuote(quoteId)
@@ -251,7 +258,7 @@ export async function saveQuoteClientView(quoteId: string, view: ClientView | nu
 }
 
 /** Quote editor › ⋯ › Save as template: a Draft template from the quote's own settings (its house style is the default's). */
-export async function saveQuoteAsTemplate(quoteId: string, name: string, opts: { includeText?: boolean } = {}): Promise<string> {
+export async function saveQuoteAsTemplate(quoteId: string, name: string, opts: { includeText?: boolean; includeSections?: boolean } = {}): Promise<string> {
   const [q] = await db.select({ templateId: quotes.templateId }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
   if (q.templateId) {
@@ -265,12 +272,12 @@ export async function saveQuoteAsTemplate(quoteId: string, name: string, opts: {
     const design = parseDesign(pinnedRow?.designJson ?? row.designJson, fallbackDesign())
     const defaults: TemplateDefaults = { ...parseDefaults(row.defaultsJson), gstEnabled: quote[0]?.gstEnabled ?? true, signatureRequired: quote[0]?.clientSignatureRequired ?? true, paymentPreset: pays.length ? presetOf(pays) : 'default' }
     await db.insert(quoteTemplates).values({ id, name: await uniqueName(name.trim() || 'Untitled template'), kind: 'design', isDefault: false, createdAt: now, status: 'draft', version: 0, paper: design.page.paper, draftJson: JSON.stringify({ design, defaults }), draftUpdatedAt: now, updatedAt: now, updatedBy: ME })
-    await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false)
+    await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false, opts.includeSections ?? false)
     touch(id)
     return id
   }
   const id = await createTemplate({ name, source: { kind: 'quote', quoteId } })
-  await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false)
+  await carryQuoteExtras(id, quoteId, name, opts.includeText ?? false, opts.includeSections ?? false)
   touch(id)
   return id
 }
@@ -280,8 +287,8 @@ export async function saveQuoteAsTemplate(quoteId: string, name: string, opts: {
  * (when the dialog's switch says so), a split no library template matches becomes a payment template, and the draft's
  * Defaults point at them — so a quote from the new template opens the way this one reads.
  */
-async function carryQuoteExtras(templateId: string, quoteId: string, name: string, includeText: boolean): Promise<void> {
-  const [q] = await db.select({ termsHtml: quotes.termsHtml, notesHtml: quotes.notesHtml }).from(quotes).where(eq(quotes.id, quoteId))
+async function carryQuoteExtras(templateId: string, quoteId: string, name: string, includeText: boolean, includeSections = false): Promise<void> {
+  const [q] = await db.select({ termsHtml: quotes.termsHtml, notesHtml: quotes.notesHtml, createdAt: quotes.createdAt, validUntil: quotes.validUntil }).from(quotes).where(eq(quotes.id, quoteId))
   const row = await templateRow(templateId)
   let draft: { design: TemplateDesign; defaults: TemplateDefaults }
   try { draft = JSON.parse(row.draftJson ?? '') as { design: TemplateDesign; defaults: TemplateDefaults } } catch { return }
@@ -307,6 +314,10 @@ async function carryQuoteExtras(templateId: string, quoteId: string, name: strin
     const key = presetOf(pays, splits)
     patch.paymentPreset = findSplit(key, splits) ? key : await createPaymentTemplate({ name: `${base} split`, source: { kind: 'quote', quoteId } })
   }
+  /* (REG-582) What the quote itself says — the dialog promised "this quote's … validity": Valid Until less its date, in days; and, when
+     asked, its top-level sections as the starter sections. */
+  if (q.validUntil) patch.validityDays = Math.min(365, Math.max(1, Math.round((q.validUntil.getTime() - q.createdAt.getTime()) / 86_400_000)))
+  if (includeSections) { const groups = await db.select({ name: quoteItems.name }).from(quoteItems).where(and(eq(quoteItems.quoteId, quoteId), eq(quoteItems.kind, 'group'), isNull(quoteItems.parentId))).orderBy(quoteItems.position); patch.starterGroups = groups.map((g) => g.name.trim()).filter(Boolean) }
   if (!Object.keys(patch).length) return
   draft.defaults = { ...parseDefaults(JSON.stringify(draft.defaults ?? {})), ...patch }
   await db.update(quoteTemplates).set({ draftJson: JSON.stringify(draft), updatedAt: now, updatedBy: ME }).where(eq(quoteTemplates.id, templateId))
@@ -324,7 +335,7 @@ export async function loadQuoteDocData(quoteId: string): Promise<DocData | null>
   return fetchQuoteDocData(quoteId)
 }
 
-/** Company › Profile: the brand kit and the company details every template prints. */
+/** Company › Templates › Brand kit (the kit) and Company › Profile (the company details): one `brand` record every template prints (REG-554). */
 export async function saveBrand(setting: BrandSetting): Promise<void> {
   const clean = parseBrandSetting(setting)
   const now = new Date()

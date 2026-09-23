@@ -50,7 +50,7 @@
 /* Expand (REG-434, owner 2026-09-15): the whole Items card laid over the editor, edge to edge like the editor over its origin page,
    on the canvas' ground with the section's 24 all round; the card fills the height and its body scrolls. The toolbar's Expand
    becomes Collapse. Under the menus (60), the bulk bar (80), the drawer (100) and dialogs (110). */
-.fullPage { position: fixed; inset: 0; z-index: 40; background: var(--om-color-surface-bg); padding: var(--om-spacing-6); display: flex; flex-direction: column; }
+.fullPage { position: fixed; inset: 0; z-index: 40; background: var(--om-color-surface-bg); padding: var(--om-spacing-6); display: flex; flex-direction: column; --items-head-top: 0px; }   /* the card's body is the scroller here: the column heads hold at its top (REG-570) */
 .fullPage > * { flex: 1; min-height: 0; }
 @media (max-width: 767px) { .fullPage { padding: var(--om-spacing-4); } }
 .seg { display: inline-flex; }
@@ -120,3 +120,22 @@
 .descDialogArea { width: 100%; }
 .descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */
 .find { display: inline-flex; width: 240px; }   /* Find (REG-477): the box the search glyph opens */
+
+/* ── Round 1 of the testers' asks (2026-09-23) ── */
+/* (REG-555) The Print as menu: two-line rows — the word, then what it does — in the row menu's 300 width. */
+.menuText { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.menuHelp { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: normal; }
+/* (REG-556) The Highlight menu's swatches: 16px squares in the kit's colours; None is an outlined empty one. */
+.swatch { display: inline-block; width: 16px; height: 16px; border-radius: var(--om-radius-0-5); border: var(--om-border-1) solid var(--om-color-on-surface-border); }
+.swatch[data-none] { background: linear-gradient(135deg, transparent 45%, var(--om-color-on-surface-border) 45%, var(--om-color-on-surface-border) 55%, transparent 55%); }
+/* (REG-557) The description dialog's editor sits in the form dialog's body; a hint line under it. */
+.descHint { margin: var(--om-spacing-2) 0 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (REG-559) Named discounts in the totals card: label box · % | S$ · value · remove, one 24px row each, then "Add a discount". */
+.discRow { display: flex; align-items: center; gap: var(--om-spacing-1); }
+.discLabel { flex: 1 1 120px; min-width: 0; padding: 0 var(--om-spacing-2); text-align: left; }
+.discValue { flex: 0 1 96px; min-width: 64px; }
+.discRemove { border: 0; background: none; padding: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--om-radius-1); color: var(--om-color-on-surface-secondary); cursor: pointer; flex-shrink: 0; }
+.discRemove:hover { background: var(--om-color-hover-08p); }
+.discAmount { flex: 0 0 auto; min-width: 88px; text-align: right; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.addDisc { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-primary-default); display: inline-flex; align-items: center; gap: var(--om-spacing-1); align-self: flex-start; }
+.addDisc:hover { color: var(--om-color-on-primary-variant); }

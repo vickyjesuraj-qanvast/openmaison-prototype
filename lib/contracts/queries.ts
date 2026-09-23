@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL never reaches the browser bundle
 import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractTemplates, contracts, leads, members, quotes, type Contract, type ContractTemplate, type Member } from '@/lib/db/schema'
+import { contractTemplates, contracts, leads, members, quotes, type Contract, type ContractTemplate, type Member, contractBundles, type ContractBundle } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { fetchBrand } from '@/lib/templates/queries'
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
@@ -155,4 +155,21 @@ export async function fetchContractOptions(): Promise<{ id: string; title: strin
   const rows = await db.select({ id: contracts.id, title: contracts.title, leadName: leads.name, updatedAt: contracts.updatedAt, createdAt: contracts.createdAt }).from(contracts).innerJoin(leads, eq(leads.id, contracts.leadId))
     .where(and(isNull(contracts.deletedAt), eq(contracts.source, 'composed'), isNotNull(contracts.body))).orderBy(desc(contracts.updatedAt))
   return rows.map((r) => ({ id: r.id, title: r.title, leadName: r.leadName, updatedAt: r.updatedAt ?? r.createdAt }))
+}
+
+/** (REG-591) The bundle's signing page: every document under the link, each resolved as its own page would be. */
+export type BundleSigningData = { bundle: ContractBundle; documents: { contract: Contract; values: TokenValues }[]; lead: ContractLead; studio: StudioDetails; brand: BrandKit; studioSignature: SigningData['studioSignature']; now: number }
+export async function fetchBundleSigning(bundleId: string): Promise<BundleSigningData | null> {
+  const [b] = await db.select().from(contractBundles).where(eq(contractBundles.id, bundleId))
+  if (!b) return null
+  const [[lead], docs, qs, brand, team] = await Promise.all([
+    db.select(LEAD_COLS).from(leads).where(eq(leads.id, b.leadId)),
+    db.select().from(contracts).where(and(eq(contracts.bundleId, bundleId), isNull(contracts.deletedAt))).orderBy(asc(contracts.createdAt)),
+    leadQuotes(b.leadId), fetchBrand(), db.select().from(members),
+  ])
+  if (!lead || !docs.length) return null
+  const now = Date.now()
+  const signer = team.find((m) => m.id === (b.createdBy ?? SESSION_MEMBER_ID)) ?? team.find((m) => m.id === SESSION_MEMBER_ID) ?? null
+  const studioSignature: SigningData['studioSignature'] = signer && (signer.signatureKind === 'draw' || signer.signatureKind === 'type') ? { kind: signer.signatureKind === 'draw' ? 'draw' : 'type', name: signer.signatureName ?? signer.name, data: signer.signatureData } : null
+  return { bundle: b, documents: docs.map((c) => ({ contract: c, values: tokenValuesFor(c, lead, brand.details, pickQuote(c, qs), now) })), lead, studio: brand.details, brand: brand.kit, studioSignature, now }
 }

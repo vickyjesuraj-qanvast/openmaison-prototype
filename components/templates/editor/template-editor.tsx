@@ -10,7 +10,8 @@ import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { useFlagPref } from '@/lib/prefs'
 import { BLOCK_LABEL, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
-import { EMPTY_DATA, type DocData } from '@/lib/templates/data'
+import { docTotals, EMPTY_DATA, type DocData } from '@/lib/templates/data'
+import { fieldValues } from '@/lib/templates/fields'
 import { presetByKey } from '@/lib/templates/presets'
 import { parseSourceFile, type SourceFile } from '@/lib/templates/recreate'
 import { ago } from '@/lib/templates/ago'
@@ -18,7 +19,7 @@ import type { TemplateEditorData } from '@/lib/templates/queries'
 import { discardTemplateDraft, duplicateTemplate, loadQuoteDocData, publishTemplate, requestTemplateChanges, restoreTemplate, rollbackTemplate, saveTemplateDraft, setTemplateSource, setQuoteTemplate, updateQuoteTemplateVersion, submitTemplate } from '@/app/company/templates-actions'
 import { ReviewBar, NoteDialog } from './review-bar'
 import { createQuote } from '@/app/leads/quotes-actions'
-import { withFrom } from '@/lib/nav'
+import { withFrom, withApply } from '@/lib/nav'
 import type { EditorOrigin } from '@/lib/templates/origin'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import type { Interactive, Selection } from '@/components/templates/render/canvas'
@@ -101,6 +102,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
   const [source, setSource] = useState<Source>(() => (origin?.quote ? { kind: 'quote', id: origin.quote.id, data: origin.quote.data } : { kind: 'sample' }))   // (REG-495) opened from a quote, the canvas shows that quote
   const emptyData = useMemo<DocData>(() => ({ ...EMPTY_DATA, studio }), [studio])
   const docData: DocData = source.kind === 'sample' ? sample : source.kind === 'empty' ? emptyData : source.data
+  const fieldPreview = useMemo(() => fieldValues(docData, docTotals(docData), undefined, design.page.dateFormat), [docData, design.page.dateFormat])   /* (REG-569) what a {field} prints as, under the inspector's boxes */
   const [zoomMode, setZoomMode] = useState<'fit' | number>('fit')
   const areaRef = useRef<HTMLDivElement>(null)
   const [areaW, setAreaW] = useState(0)
@@ -208,8 +210,9 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
       if (opts.then === 'origin' && origin?.quote) {
         /* Already on this template: move its pinned version only (its client switches stay); otherwise pin it here. */
         if (origin.quote.templateId === template.id) await updateQuoteTemplateVersion(origin.quote.id); else await setQuoteTemplate(origin.quote.id, template.id)
-        snackbar({ message: `${name} v${r.version} published — ${origin.quote.number} updated` })
-        router.push(origin.from ?? `/quotes/${origin.quote.id}`)
+        snackbar({ message: `${name} v${r.version} published — ${origin.quote.number} moved to v${r.version}` })
+        /* (REG-579) The version moved; the quote's settings are its own until it says so — it asks "Apply defaults · Keep mine" on arrival. */
+        router.push(withApply(origin.from ?? `/quotes/${origin.quote.id}`, template.id))
         return
       }
       if (opts.then === 'origin' && origin?.lead) {
@@ -288,13 +291,13 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
     <div className={styles.pane} data-testid="left-pane">
       <div className={styles.tabs} role="tablist" aria-label="Template" onKeyDown={onTabKey}>
         {LEFT_TABS.map((t) => (
-          <button key={t} ref={(el) => { tabRefs.current[t] = el }} type="button" role="tab" aria-selected={leftTab === t} tabIndex={leftTab === t ? 0 : -1} className={styles.tab} data-on={leftTab === t || undefined} onClick={() => setLeftTab(t)}>{t === 'structure' ? 'Structure' : t === 'brand' ? 'Brand' : 'Defaults'}</button>
+          <button key={t} ref={(el) => { tabRefs.current[t] = el }} type="button" role="tab" aria-selected={leftTab === t} tabIndex={leftTab === t ? 0 : -1} className={styles.tab} data-on={leftTab === t || undefined} onClick={() => setLeftTab(t)}>{t === 'structure' ? 'Page' : t === 'brand' ? 'Brand' : 'New quotes'}</button>
         ))}
       </div>
       <div className={styles.paneBody} role="tabpanel">
         {leftTab === 'structure' ? <StructurePane design={design} selection={selection} pageOfBlock={paginated.pageOfBlock} pages={paginated.pages} onSelect={selectAndInspect} onDesign={onDesign} onAddBlock={onAddBlock} /> : null}
         {leftTab === 'brand' ? <BrandPane design={design} brand={brand} onDesign={onDesign} /> : null}
-        {leftTab === 'defaults' ? <DefaultsPane defaults={defaults} textTemplates={textTemplates} paymentPresets={paymentPresets} onChange={onDefaults} /> : null}
+        {leftTab === 'defaults' ? <DefaultsPane defaults={defaults} textTemplates={textTemplates} paymentPresets={paymentPresets} onChange={onDefaults} published={meta.status !== 'draft'} unpublished={hasChanges} /> : null}
       </div>
     </div>
   )
@@ -308,7 +311,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
       ) : null}
       <div className={styles.paneBody}>
         {rightTab === 'reference' && sourceFile ? <ReferencePane file={sourceFile} underlay={underlay} onUnderlay={setUnderlay} opacity={underlayOpacity} onOpacity={setUnderlayOpacity} onDetach={() => { void detachReference() }} />
-          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} />}
+          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} values={fieldPreview} />}
       </div>
     </div>
   )
@@ -340,7 +343,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
         <div ref={areaRef} className={styles.area} data-testid="canvas-area">
           {compact && !preview && !readOnly ? (
             <div className={styles.paneToggles}>
-              <Button appearance="outlined" variant="secondary" iconStart={<Icon name="view_list" size={20} />} onPress={() => setLeftOpen(true)}>Structure</Button>
+              <Button appearance="outlined" variant="secondary" iconStart={<Icon name="view_list" size={20} />} onPress={() => setLeftOpen(true)}>Page</Button>
               <Button appearance="outlined" variant="secondary" iconStart={<Icon name="tune" size={20} />} onPress={() => setRightOpen(true)}>{selection ? 'Edit selection' : 'Edit'}</Button>
             </div>
           ) : null}
@@ -352,7 +355,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
         {!preview && !compact ? <aside className={styles.right}>{right}</aside> : null}
       </div>
       {compact ? <>
-        <Drawer open={leftOpen} onClose={() => setLeftOpen(false)} title="Template" label="Template panes" width={360}>{left}</Drawer>
+        <Drawer open={leftOpen} onClose={() => setLeftOpen(false)} title="This template" label="Template panes" width={360}>{left}</Drawer>
         <Drawer open={rightOpen} onClose={() => setRightOpen(false)} title={rightTab === 'reference' ? 'Reference' : 'Edit'} label="Edit the selection" width={360}>{right}</Drawer>
       </> : null}
       <PublishDialog open={publishOpen} onClose={() => setPublishOpen(false)} name={name} nextVersion={nextVersion} isDefault={meta.isDefault} usedBy={meta.usedBy} busy={busy} onPublish={(o) => { void publish(o) }}
@@ -362,8 +365,8 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
       <NoteDialog open={changesOpen} title="Request changes" label="What to change" help={`Goes back to ${meta.submitted?.by?.name ?? 'the designer'} at the top of their editor. The template stays as it is until they submit again.`} action="Send request" busy={busy} onClose={() => setChangesOpen(false)} onSubmit={(n) => { void requestChanges(n) }} />
       <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} versions={meta.versions} current={meta.version} now={now} busy={busy} canRollback={!gated && !deleted} onRollback={(v) => { setHistoryOpen(false); void rollback(v) }} />
       <RecreateDialog open={matchOpen} brand={brand} sample={sample} onClose={() => setMatchOpen(false)} onCreate={(k, _n, f) => { void applyMatch(k, f) }} applyLabel="Apply to this template" title="Upload your existing quote" />
-      <ConfirmDialog open={discardOpen} title={meta.status === 'draft' ? 'Delete this draft?' : 'Discard unpublished changes?'} confirmLabel={meta.status === 'draft' ? 'Delete' : 'Discard'}
-                     message={meta.status === 'draft' ? 'The template was never published; deleting it can’t be undone.' : `The template goes back to v${meta.version} as published. Your unpublished edits are lost.`}
+      <ConfirmDialog open={discardOpen} title={meta.status === 'draft' ? 'Delete this draft?' : `Discard the edits since v${meta.version}?`} confirmLabel={meta.status === 'draft' ? 'Delete' : 'Discard'}
+                     message={meta.status === 'draft' ? 'The template was never published; deleting it can’t be undone.' : `The template goes back to v${meta.version} as published. The edits since are lost.`}
                      onCancel={() => setDiscardOpen(false)} onConfirm={() => { void discard() }} />
       <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
       <MaisonFab onPress={() => setAiOpen((o) => !o)} />

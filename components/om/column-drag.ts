@@ -5,15 +5,18 @@ import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointer
 /**
  * Drag a column head to reorder it on the table itself (REG-462, owner 2026-09-16) — the same order Column settings edits.
  * Pointer-driven like the Payment Schedule rows (motion's Reorder): the head follows the pointer, the heads it passes slide
- * out of its way (a 160ms transform), and the order commits on release — the body's columns swap once then. A head is
- * draggable unless it is the selection column or the locked identity column; it moves only within its own block (pinned
- * among pinned, free among free); the resize handle, sort buttons and checkboxes keep their own pointer. Mouse / pen only —
- * a touch on a head still scrolls the table. `head(key)` spreads the handlers, `style(key)` the live transform.
+ * out of its way (a 160ms transform), and the order commits on release. A head is draggable unless it is the selection
+ * column or the locked identity column; it moves only within its own block (pinned among pinned, free among free); the
+ * resize handle, sort buttons and checkboxes keep their own pointer. Mouse / pen only — a touch on a head still scrolls the
+ * table. `head(key)` spreads the handlers, `style(key)` the live transform — on the heads, and on every body cell of a table
+ * that wants the whole column to travel (the Items grid, REG-572). The dragged head's offset rides `--col-dx`, set on the
+ * nearest `[data-drag-root]` (else the head row's parent) on every move, so following the pointer never re-renders a row;
+ * React only hears when the head passes a neighbour.
  */
 export type DragColumn = { key: string; pinned?: boolean; locked?: boolean }
 type Rect = { key: string; mid: number; width: number }
-type Session = { key: string; startX: number; pointerId: number; rects: Rect[]; active: boolean; to: number }
-type Live = { key: string; dx: number; from: number; to: number; width: number }
+type Session = { key: string; startX: number; pointerId: number; rects: Rect[]; active: boolean; to: number; root: HTMLElement }
+type Live = { key: string; from: number; to: number; width: number }
 
 /** `key` moved to the position that leaves `before` same-block heads ahead of it; other blocks keep their places. */
 function moveWithinBlock(order: readonly string[], key: string, blockKeys: readonly string[], before: number): string[] {
@@ -37,6 +40,7 @@ export function useColumnDrag(columns: readonly DragColumn[], onReorder: (keys: 
     if (!s || s.key !== key) return
     session.current = null
     try { e.currentTarget.releasePointerCapture(s.pointerId) } catch { /* already released */ }
+    s.root.style.removeProperty('--col-dx')
     if (commit && s.active && s.to !== order.indexOf(key)) {
       const block = blockOf(key)
       const without = order.filter((k) => k !== key)
@@ -55,7 +59,7 @@ export function useColumnDrag(columns: readonly DragColumn[], onReorder: (keys: 
       const row = e.currentTarget.parentElement
       if (!row) return
       const rects = order.map((k) => { const c = row.querySelector<HTMLElement>(`[data-col="${k}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { key: k, mid: (r.left + r.right) / 2, width: r.width } }).filter((r): r is Rect => !!r)
-      session.current = { key, startX: e.clientX, pointerId: e.pointerId, rects, active: false, to: order.indexOf(key) }
+      session.current = { key, startX: e.clientX, pointerId: e.pointerId, rects, active: false, to: order.indexOf(key), root: e.currentTarget.closest<HTMLElement>('[data-drag-root]') ?? row }
       e.currentTarget.setPointerCapture(e.pointerId)
     },
     onPointerMove: (e: ReactPointerEvent<HTMLElement>) => {
@@ -66,6 +70,7 @@ export function useColumnDrag(columns: readonly DragColumn[], onReorder: (keys: 
       e.preventDefault()
       const me = s.rects.find((r) => r.key === key)
       if (!me) return
+      s.root.style.setProperty('--col-dx', `${dx}px`)
       const centre = me.mid + dx
       const block = blockOf(key)
       const before = block.filter((k) => k !== key && (s.rects.find((r) => r.key === k)?.mid ?? Infinity) < centre).length
@@ -73,7 +78,7 @@ export function useColumnDrag(columns: readonly DragColumn[], onReorder: (keys: 
       const to = next.indexOf(key)
       s.to = to
       const from = order.indexOf(key)
-      setLive((l) => (l && l.dx === dx && l.to === to ? l : { key, dx, from, to, width: me.width }))
+      setLive((l) => (l && l.to === to ? l : { key, from, to, width: me.width }))
     },
     onPointerUp: (e: ReactPointerEvent<HTMLElement>) => finish(e, key, true),
     onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => finish(e, key, false),
@@ -82,7 +87,7 @@ export function useColumnDrag(columns: readonly DragColumn[], onReorder: (keys: 
   /** The live transform: the dragged head under the pointer, the heads it has passed slid aside by its width. */
   const style = (key: string): CSSProperties | undefined => {
     if (!live) return undefined
-    if (key === live.key) return { transform: `translateX(${live.dx}px)`, transition: 'none', zIndex: 6, cursor: 'grabbing' }
+    if (key === live.key) return { transform: 'translateX(var(--col-dx, 0px))', transition: 'none', zIndex: 6, cursor: 'grabbing' }
     const i = order.indexOf(key)
     if (i < 0) return undefined
     if (live.to > live.from && i > live.from && i <= live.to) return { transform: `translateX(${-live.width}px)`, transition: 'transform 160ms ease' }

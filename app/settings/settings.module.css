@@ -99,3 +99,17 @@
    rail beside the panel), and each option row is a whole ChoiceCard — 12 + 20 title + 4 + 16 help + 12 = 64,
    or 44 for a card with no help line — whose entire box is the radio's target, not just the 20px mark on its
    right. There is no Switch on this page: both settings are radio groups of ChoiceCards. */
+
+/* (REG-561) Settings › Quotes: the number pattern's fields in a 3-up grid with the two switches under, the live example, and the trades list. */
+.numGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); align-items: start; }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-height: 36px; cursor: pointer; }
+.example { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.exampleNo { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.settingActions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }
+.trades { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.trade { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 32px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-full); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.addTrade { display: flex; gap: var(--om-spacing-2); align-items: flex-start; max-width: 480px; }
+.addTrade > :first-child { flex: 1; min-width: 0; }
+@media (max-width: 767px) {
+  .numGrid { grid-template-columns: 1fr; }
+}

@@ -7,7 +7,10 @@
 .title { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 .templateChip { display: inline-flex; align-items: center; gap: 2px; height: 22px; padding: 0 6px 0 8px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-default); cursor: pointer; }
 .templateChip:hover { background: var(--om-color-hover-04p); }
-.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.templateChip { white-space: nowrap; flex-shrink: 0; max-width: 100%; min-width: 0; }   /* (REG-569) it broke into three lines at 768; capped at the row's width, its name ellipsizes — a long template name overflowed a 320 phone by 57px */
+.chipText { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 1024px) { .bar { flex-wrap: wrap; } .actions { flex: 1 1 100%; min-width: 0; } }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; min-width: 0; flex: 1 1 auto; }   /* min-width 0: beside the title, its automatic minimum was its widest chip — a long template name pushed a 320 phone 57px wide */
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 .internal { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
 .body { flex: 1; display: flex; align-items: flex-start; min-height: 0; }
@@ -44,7 +47,7 @@
 .drawerBody { display: flex; flex-direction: column; min-height: 100%; }
 .drawerBody .panelBody { padding: var(--om-spacing-4) var(--om-spacing-6); }
 .drawerBody .panelFoot { margin-top: auto; padding: var(--om-spacing-3) var(--om-spacing-6); }
-@media (max-width: 767px) { .bar { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .column { padding: var(--om-spacing-4); } .internalGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel { width: 100vw; } }
+@media (max-width: 767px) { .bar { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .actions { flex: 1 1 100%; min-width: 0; }   /* (REG-564) the action row takes its own line and wraps inside it — it overflowed a phone by 315px */ .column { padding: var(--om-spacing-4); } .internalGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel { width: 100vw; } }
 @media print {
   .page { background: #fff; min-height: 0; }
   .bar, .readiness, .internalCard, .panel { display: none !important; }

@@ -45,7 +45,7 @@ export const PASTE_FIELDS = ['name', 'description', 'qty', 'unit', 'cost', 'mark
 export type PasteField = (typeof PASTE_FIELDS)[number]
 export const PASTE_FIELD_LABEL: Record<PasteField, string> = {
   name: 'Item', description: 'Description', qty: 'Qty', unit: 'Unit', cost: 'Cost', markup: 'Markup', unitPrice: 'Unit Price',
-  discount: 'Discount (%)', gst: 'GST (%)', room: 'Room', category: 'Category', section: 'Section', skip: 'Skip this column',
+  discount: 'Discount (%)', gst: 'GST (%)', room: 'Room', category: 'Category', section: 'Section label', skip: 'Skip this column',
 }
 /** What a sheet's header row tends to call each field (Singapore renovation quotes: "Description of work", "Rate", "Amount"). */
 const ALIASES: Record<Exclude<PasteField, 'skip'>, string[]> = {
@@ -164,7 +164,7 @@ export function toLines(rows: string[][], map: PasteField[], header: boolean): P
 /* ── out: a selection or the whole table ── */
 
 export type SheetCell = string | number | null
-export const EXPORT_HEAD = ['#', 'Item', 'Description', 'Qty', 'Unit', 'Cost', 'Markup', 'Unit Price', 'Discount (%)', 'GST (%)', 'Room', 'Category', 'Section', 'Total'] as const
+export const EXPORT_HEAD = ['#', 'Item', 'Description', 'Qty', 'Unit', 'Cost', 'Markup', 'Unit Price', 'Discount (%)', 'GST (%)', 'Room', 'Category', 'Section label', 'Total'] as const
 /** The money columns in EXPORT_HEAD: they print with two decimals. */
 export const EXPORT_MONEY_COLS = [5, 6, 7, 13]
 const dollars = (minor: number) => Math.round(minor) / 100

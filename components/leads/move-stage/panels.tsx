@@ -270,7 +270,7 @@ export type SystemRow = { id: string; name: string; meta: string[]; amountMinor?
 /** Quote Sent (780:90472): quotes the studio has approved or sent out — "OM-10002 · S$58,000 · Approved on 26 Aug ’26". */
 export function approvedQuoteRows(docs: StageDocuments): SystemRow[] {
   return docs.quotes
-    .filter((q) => q.status === 'Approved' || q.status === 'Sent to Client')
+    .filter((q) => q.status === 'Approved' || q.status === 'Sent to Client' || q.status === 'Confirmed')   // (REG-587)
     .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor,
                    meta: [q.number, moneySGD(q.amountMinor), q.approvedAt ? `Approved on ${displayDate(new Date(q.approvedAt))}` : q.status] }))
 }

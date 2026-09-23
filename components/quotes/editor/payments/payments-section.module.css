@@ -124,3 +124,6 @@
   .tools button { position: relative; }
   .tools button::after { content: ''; position: absolute; inset: -4px; }
 }
+
+/* (REG-589) A locked schedule: the cells read as text — no hover box, no caret. */
+.cellBtn:disabled { cursor: default; }

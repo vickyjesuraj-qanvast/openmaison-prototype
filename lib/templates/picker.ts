@@ -38,10 +38,10 @@ export const pickerTemplates = (rows: QuoteTemplate[]): PickerTemplate[] =>
 /** The words a picker prints under a template: what a quote from it starts with. */
 export function startsWith(t: PickerTemplate, paymentLabel: (key: string | null) => string, texts: { id: string; kind: string; title: string }[] = []): { sections: string; payments: string; validity: string; grouping: string; text: string } {
   const items = t.design.blocks.find((b): b is ItemsBlock => b.kind === 'items')
-  const grouping = !items || items.groupBy === 'none' ? 'Your own groups' : `${{ category: 'By trade', room: 'By room', section: 'By section' }[items.groupBy]}${items.subGroupBy !== 'none' ? ` › ${items.subGroupBy}` : ''}`
+  const grouping = !items || items.groupBy === 'none' ? 'Your own sections' : `${{ category: 'By trade', room: 'By room', section: 'By section label' }[items.groupBy]}${items.subGroupBy !== 'none' ? ` › ${items.subGroupBy}` : ''}`
   return {
     sections: cleanGroups(t.defaults.starterGroups).length ? cleanGroups(t.defaults.starterGroups).join(' · ') : 'No starter sections',
-    payments: paymentLabel(t.defaults.paymentPreset), validity: `Valid ${t.defaults.validityDays} days${t.defaults.gstEnabled ? ' · GST' : ' · no GST'}${t.defaults.signatureRequired ? ' · client signs' : ''}`,
+    payments: paymentLabel(t.defaults.paymentPreset), validity: `Valid ${t.defaults.validityDays} days${t.defaults.gstEnabled ? ' · GST' : ' · no GST'}${t.defaults.signatureRequired ? ' · signs online' : ' · signs on paper'}`,   // (REG-578) the switch's own words
     grouping,
     // (REG-538) Which Terms and Notes templates a new quote opens with — 'None' when the quote writes its own.
     text: [t.defaults.termsTemplateId ? texts.find((x) => x.id === t.defaults.termsTemplateId)?.title ?? null : null, t.defaults.notesTemplateId ? texts.find((x) => x.id === t.defaults.notesTemplateId)?.title ?? null : null].filter((x): x is string => !!x).join(' · ') || 'None — written on the quote',

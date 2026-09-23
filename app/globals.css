@@ -306,3 +306,6 @@ textarea[class*='_textarea_']:focus-visible { outline: none; }
    the level-2 shadow, while they slide aside (the transform comes inline from components/om/column-drag.ts). */
 [role="columnheader"][data-draggable] { cursor: grab; user-select: none; }
 [role="columnheader"][data-dragging] { box-shadow: var(--om-elevation-level-2); }
+
+/* (REG-571) While a row of the Items grid is being dragged (row-drag.ts): the grab cursor everywhere and no text selection. */
+html.om-row-dragging, html.om-row-dragging * { cursor: grabbing !important; user-select: none !important; }

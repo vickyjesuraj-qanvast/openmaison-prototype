@@ -1,14 +1,17 @@
 'use server'
 
+import { isNric, maskNric } from '@/lib/format'
+
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractTemplates, contracts, leads, type Contract } from '@/lib/db/schema'
+import { contractTemplates, contracts, leads, type Contract, contractBundles } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { revalidateLead } from '@/lib/leads/queries'
 import { AGREEMENT_TITLE, agreementHtml } from '@/lib/contracts/agreement'
 import { isBlankDoc } from '@/lib/contracts/tokens'
+import { bundleSigningPath } from '@/lib/contracts/model'
 
 /* Contracts (REG-534): the editor's, the signing page's and the tab's new writes. Every action revalidates the lead's pages,
    the studio list and the editor's own routes. */
@@ -126,14 +129,17 @@ export async function setContractStatusDoc(contractId: string, status: 'Draft' |
 }
 
 /** The client signs online (the signing page): the typed name is the signature; Signed with the page's copy as the signed copy. */
-export async function signContractOnline(contractId: string, name: string): Promise<{ signedAt: number }> {
+export async function signContractOnline(contractId: string, name: string, nric?: string | null): Promise<{ signedAt: number }> {
   const c = await load(contractId)
   if (!c) throw new Error('contract not found')
   if (c.status === 'Signed') return { signedAt: (c.signedAt ?? new Date()).getTime() }
   const now = new Date()
   const who = clean(name, 80)
   if (!who) throw new Error('name')
-  await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, updatedAt: now }).where(eq(contracts.id, contractId))
+  // (REG-563, owner 2026-09-23: "masked only when customer enters it") The number the client types is never stored whole: the
+  // last four characters are kept ("•••••567A") and that is what prints under their signature.
+  const masked = nric && isNric(nric) ? maskNric(nric) : null
+  await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, signedNric: masked, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, updatedAt: now }).where(eq(contracts.id, contractId))
   touch(c.leadId, contractId)
   return { signedAt: now.getTime() }
 }
@@ -181,4 +187,40 @@ export async function emptyContractTrash(leadId: string | null): Promise<void> {
   if (!rows.length) return
   await db.delete(contracts).where(inArray(contracts.id, rows.map((r) => r.id)))
   for (const l of new Set(rows.map((r) => r.leadId))) touch(l)
+}
+
+/**
+ * (REG-591) Send together: the picked documents of one lead go out under one bundle and one link; each is marked Sent to Client with
+ * the recipient. The id comes from the caller so the link is known before the round trip (the WhatsApp window opens on the press).
+ */
+export async function sendBundle(bundleId: string, contractIds: string[], recipient: { name: string; phone: string }): Promise<{ bundleId: string; count: number }> {
+  if (!/^[0-9a-f-]{8,64}$/i.test(bundleId)) throw new Error('bad id')
+  const ids = [...new Set(contractIds)].slice(0, 20)
+  const rows = ids.length ? await db.select().from(contracts).where(and(inArray(contracts.id, ids), isNull(contracts.deletedAt))) : []
+  const live = rows.filter((c) => c.status !== 'Signed' && !(c.source === 'composed' && isBlankDoc(c.body)))
+  if (live.length < 2) throw new Error('pick two or more documents')
+  const leadId = live[0]!.leadId
+  if (live.some((c) => c.leadId !== leadId)) throw new Error('one lead')
+  const now = new Date()
+  const name = clean(recipient.name, 80), phone = digits(recipient.phone)
+  await db.insert(contractBundles).values({ id: bundleId, leadId, recipientName: name || null, recipientPhone: phone || null, createdAt: now, sentAt: now, createdBy: SESSION_MEMBER_ID })
+  await db.update(contracts).set({ bundleId, status: 'Sent to Client', sentAt: now, ...(name ? { recipientName: name } : {}), ...(phone ? { recipientPhone: phone } : {}), updatedAt: now }).where(inArray(contracts.id, live.map((c) => c.id)))
+  touch(leadId); for (const c of live) touch(leadId, c.id)
+  revalidatePath(bundleSigningPath(bundleId))
+  return { bundleId, count: live.length }
+}
+
+/** (REG-591) The client's one signature on the bundle's page signs every document in it. */
+export async function signBundleOnline(bundleId: string, name: string, nric?: string | null): Promise<{ signedAt: number; count: number }> {
+  const [b] = await db.select().from(contractBundles).where(eq(contractBundles.id, bundleId))
+  if (!b) throw new Error('bundle not found')
+  const who = clean(name, 80)
+  if (!who) throw new Error('name')
+  const masked = nric && isNric(nric) ? maskNric(nric) : null
+  const now = b.signedAt ?? new Date()
+  const rows = await db.select().from(contracts).where(and(eq(contracts.bundleId, bundleId), isNull(contracts.deletedAt)))
+  for (const c of rows.filter((x) => x.status !== 'Signed')) await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, signedNric: masked, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, updatedAt: now }).where(eq(contracts.id, c.id))
+  if (!b.signedAt) await db.update(contractBundles).set({ signedAt: now, signedBy: who, signedNric: masked }).where(eq(contractBundles.id, bundleId))
+  touch(b.leadId); for (const c of rows) touch(b.leadId, c.id)
+  return { signedAt: now.getTime(), count: rows.length }
 }

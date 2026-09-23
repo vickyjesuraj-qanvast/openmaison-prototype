@@ -5,7 +5,7 @@
 .name { transition: background-color var(--motion-hover); }
 .name:hover { background: var(--om-color-hover-04p); }
 .name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); background: var(--om-color-surface-default); }
-.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 1; min-width: 0; overflow: hidden; }
+.chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 0 0 auto; min-width: 0; }   /* the chips never shrink: the name gives way first (its 120 floor), then the bar wraps below 1320 */   /* (REG-569) the saved stamp sits after the chips and keeps its width; below 1320 the chips wrap under the name instead of clipping mid-word */
 .chips > * { flex-shrink: 0; }
 .origin { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-primary-variant); background: var(--om-color-primary-variant); border-radius: var(--om-radius-full); padding: 2px 10px 2px 8px; white-space: nowrap; }
 .saved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
@@ -28,6 +28,7 @@
 .zoomLabel:hover { background: var(--om-color-hover-04p); }
 .rule { width: 1px; height: 24px; background: var(--om-color-surface-variant); }
 .pages { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 1319px) { .bar { height: auto; min-height: 56px; padding-top: var(--om-spacing-1); padding-bottom: var(--om-spacing-1); } .titleBlock { flex-wrap: wrap; row-gap: 2px; } .name { flex-basis: 100%; max-width: none; } .chips { overflow: visible; flex-wrap: wrap; } }
 /* (REG-542) Compact below 1200 (the drawer layout): the stamp and the source words step aside, the name keeps 120. */
 @media (max-width: 1199px) { .name { flex-basis: 160px; max-width: none; } .saved { display: none; } .sourceCaption, .sourceLabel { display: none; } .sourceBtn { padding-left: var(--om-spacing-2); max-width: none; } }
 /* (REG-542) On a tablet the chips drop under the name instead of clipping mid-word; the bar grows only when they do. */

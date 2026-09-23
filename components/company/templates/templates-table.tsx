@@ -70,7 +70,7 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
   const status = (t: TemplateSummary) => {
     if (t.submitted) return { word: 'Awaiting approval', tone: 'await' as const, note: `${t.submitted.by?.name ?? 'a designer'} · ${ago(t.submitted.at, now)}${t.status === 'published' ? ` · v${t.version} still prints` : ''}` }
     if (t.status === 'draft') return { word: 'Draft', tone: 'draft' as const, note: null }
-    return { word: `Published v${t.version}`, tone: 'published' as const, note: t.hasDraft ? 'unpublished changes' : null }
+    return { word: `Published v${t.version}`, tone: 'published' as const, note: t.hasDraft ? `edited since v${t.version}` : null }   /* (REG-577) */
   }
 
   return (

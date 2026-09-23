@@ -57,3 +57,9 @@
 @media (max-width: 767px) {
   .top { padding: var(--om-spacing-4); }
 }
+
+/* (REG-570) A card whose top holds while its body scrolls (the Items section, `sticky`): sticky under the editor's header + tab strip,
+   above the rows it covers; while held it squares its corners and casts the held rule + shadow. Its measured height feeds
+   `--section-top-h` on the card, so the column heads under it know where to hold (a wrapping toolbar makes it taller than 69). */
+.top[data-sticky] { position: sticky; top: var(--editor-sticky, 124px); z-index: 11; background: var(--om-color-surface-default); border-radius: calc(var(--om-radius-2) - var(--om-border-1)) calc(var(--om-radius-2) - var(--om-border-1)) 0 0; }
+.top[data-sticky][data-stuck] { border-radius: 0; box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant), 0 4px 8px -4px rgba(0, 0, 0, .16); }

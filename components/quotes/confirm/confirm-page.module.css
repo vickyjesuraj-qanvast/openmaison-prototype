@@ -1,0 +1,4 @@
+/* (REG-587) The confirmation page: the signing page's shell (signing-page.module.css) plus the quote's fitted document. */
+.stage { display: block; }
+.total { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.total strong { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }

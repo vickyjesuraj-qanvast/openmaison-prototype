@@ -55,7 +55,16 @@ export async function duplicatePaymentTemplate(id: string): Promise<string> { re
 export async function deletePaymentTemplate(id: string): Promise<void> {
   if (id === DEFAULT_SPLIT_ID) throw new Error('default')
   await row(id)
-  await db.update(paymentTemplates).set({ deletedAt: new Date() }).where(eq(paymentTemplates.id, id)); touch(id)
+  await db.update(paymentTemplates).set({ deletedAt: new Date() }).where(eq(paymentTemplates.id, id))
+  /* (REG-581) Every quote template that started quotes on it falls back to the studio default in writing, not silently. */
+  const rows = await db.select({ id: quoteTemplates.id, defaultsJson: quoteTemplates.defaultsJson, draftJson: quoteTemplates.draftJson }).from(quoteTemplates)
+  for (const r of rows) {
+    const set: { defaultsJson?: string; draftJson?: string } = {}
+    try { if (r.defaultsJson) { const d = JSON.parse(r.defaultsJson) as { paymentPreset?: string | null }; if (d.paymentPreset === id) { d.paymentPreset = DEFAULT_SPLIT_ID; set.defaultsJson = JSON.stringify(d) } } } catch { /* ignore */ }
+    try { if (r.draftJson) { const j = JSON.parse(r.draftJson) as { defaults?: { paymentPreset?: string | null } }; if (j.defaults?.paymentPreset === id) { j.defaults.paymentPreset = DEFAULT_SPLIT_ID; set.draftJson = JSON.stringify(j) } } } catch { /* ignore */ }
+    if (Object.keys(set).length) await db.update(quoteTemplates).set(set).where(eq(quoteTemplates.id, r.id))
+  }
+  touch(id)
 }
 export async function restorePaymentTemplates(ids: string[]): Promise<void> {
   if (!ids.length) return

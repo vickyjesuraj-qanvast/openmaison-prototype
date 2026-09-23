@@ -29,7 +29,7 @@ export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs }: { stat
       <div className={styles.cardText}>
         <span className={styles.cardEyebrow}>Template</span>
         <span className={styles.cardName}>{cur ? cur.name : 'Studio default'}{cur ? <MetaChip>{cur.deleted ? `Deleted · v${cur.pinned} still prints` : `v${cur.pinned}${cur.latest > cur.pinned ? ` · v${cur.latest} published` : ''}`}</MetaChip> : null}{pick?.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
-        <span className={styles.cardMeta}>{words ? `${words.grouping} · ${words.payments} · ${words.validity}` : 'Prints through the studio’s default template. Pick one to start from its sections and defaults.'}</span>
+        <span className={styles.cardMeta}>{words ? `${words.grouping} · ${words.payments} · ${words.validity}` : 'Prints through the studio’s default template and started with its settings. Pick one to start from its sections.'}</span>   {/* (REG-580) */}
         {words && words.sections !== 'No starter sections' ? <span className={styles.cardMeta}>Starts with {words.sections}</span> : null}
         <span className={styles.actions}>
           <Button appearance="text" onPress={onChange} isDisabled={busy}>{cur ? 'Change' : 'Choose a template'}</Button>
@@ -56,16 +56,18 @@ export function TemplateUpdateBanner({ current, busy, onUpdate, onKeep }: { curr
 }
 
 /** ⋯ › Save as Template (REG-489): a Draft template from this quote's settings, opened in the editor on request. */
-export function SaveAsTemplateDialog({ open, defaultName, busy, onClose, onSave }: { open: boolean; defaultName: string; busy: boolean; onClose: () => void; onSave: (name: string, opts: { includeText: boolean }) => void }) {
+export function SaveAsTemplateDialog({ open, defaultName, busy, onClose, onSave }: { open: boolean; defaultName: string; busy: boolean; onClose: () => void; onSave: (name: string, opts: { includeText: boolean; includeSections: boolean }) => void }) {
   const [name, setName] = useState(defaultName)
   const [includeText, setIncludeText] = useState(true)   /* (REG-538) the quote's Terms and Notes ride along as text templates */
+  const [includeSections, setIncludeSections] = useState(true)   /* (REG-582) its top-level sections become the starter sections */
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setName(defaultName) }
   return (
     <Dialog open={open} onClose={onClose} title="Save as template" size="form" width={400}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSave(name, { includeText })} isDisabled={busy || !name.trim()}>{busy ? 'Saving…' : 'Save template'}</Button></>}>
-      <TextField label="Template name" required value={name} onChange={setName} autoFocus helper="Saved as a draft under Company › Templates › Quotes, with this quote’s payment split, validity, GST and signature settings as its defaults." onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !busy) { e.preventDefault(); onSave(name, { includeText }) } }} />
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSave(name, { includeText, includeSections })} isDisabled={busy || !name.trim()}>{busy ? 'Saving…' : 'Save template'}</Button></>}>
+      <TextField label="Template name" required value={name} onChange={setName} autoFocus helper="Saved as a draft under Company › Templates › Quotes, with this quote’s payment split, validity, GST and signature settings as its defaults." onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !busy) { e.preventDefault(); onSave(name, { includeText, includeSections }) } }} />
       <label className={styles.saveRow}>Also save its Terms and Notes as text templates <Switch size="sm" isSelected={includeText} onChange={setIncludeText} aria-label="Also save its Terms and Notes as text templates" /></label>
+      <label className={styles.saveRow}>Also use its sections as the starter sections <Switch size="sm" isSelected={includeSections} onChange={setIncludeSections} aria-label="Also use its sections as the starter sections" /></label>
     </Dialog>
   )
 }

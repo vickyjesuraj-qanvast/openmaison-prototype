@@ -18,7 +18,7 @@ const FIELDS: { key: SetField; label: string; kind: 'number' | 'money' | 'pct' |
   { key: 'gst', label: 'GST (%)', kind: 'pct' },
   { key: 'room', label: 'Room', kind: 'label' },
   { key: 'category', label: 'Category', kind: 'label' },
-  { key: 'section', label: 'Section', kind: 'label' },
+  { key: 'section', label: 'Section label', kind: 'label' },
 ]
 
 /**

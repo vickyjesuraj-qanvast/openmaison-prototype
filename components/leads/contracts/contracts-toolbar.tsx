@@ -21,7 +21,9 @@ export type ContractsToolbarProps = {
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
   /** Header kebab — not mocked; the Quotes kebab (910:36729) copied: Manage Templates · Contracts Settings · Deleted Contracts. */
-  onMenu: (action: 'templates' | 'settings' | 'deleted') => void
+  onMenu: (action: 'templates' | 'settings' | 'deleted' | 'bundle') => void
+  /** (REG-591) How many documents could go together — the item is inert below two. */
+  bundleCount?: number
 }
 
 /**
@@ -31,7 +33,7 @@ export type ContractsToolbarProps = {
  * Copied from components/leads/quotes/quotes-toolbar.tsx — same geometry, the contracts' copy.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu }: ContractsToolbarProps) {
+export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0 }: ContractsToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -89,6 +91,8 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
           </Tooltip>
           <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
+            {/* (REG-591) Send together: every unsigned document of the lead under one signing link. */}
+            <DropdownItem disabled={bundleCount < 2} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Contracts</DropdownItem>

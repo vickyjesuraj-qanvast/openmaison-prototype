@@ -127,11 +127,11 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                     </div>
                     <div className={styles.rail}>
                       <div className={styles.tile}>
-                        <button type="button" className={styles.action} onClick={() => start(null)} aria-label="Blank Quote — start from an empty table">
+                        <button type="button" className={styles.action} onClick={() => start(null)} aria-label="Blank Quote — the default template’s settings, an empty table">
                           <span className={styles.well} data-blank><Icon name="add" size={40} weight={300} /></span>
                           <span className={styles.caption}>
                             <span className={styles.nameRow}><span className={styles.name}>Blank Quote</span></span>
-                            <span className={styles.meta}>Start from an empty table</span>
+                            <span className={styles.meta}>The default template’s settings, an empty table</span>   {/* (REG-580) */}
                           </span>
                         </button>
                       </div>

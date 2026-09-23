@@ -4,7 +4,7 @@ import { displayDateLong } from '@/lib/format'
 import styles from './contract-paper.module.css'
 
 export type StudioSignature = { kind: 'draw' | 'type'; name: string; data: string | null } | null
-export type ClientSignature = { name: string; at: Date } | null
+export type ClientSignature = { name: string; at: Date; /** (REG-563) the masked NRIC the client typed when signing */ nric?: string | null } | null
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -23,7 +23,7 @@ export function renderSignFields(html: string, o: { studio: StudioSignature; cli
     }
     const c = o.client
     const mark = c ? `<span class="${styles.typed}">${esc(initial ? initials(c.name) : c.name)}</span>` : `<span class="${styles.blank}" data-live="${o.live ? '1' : ''}"></span>`
-    const caption = c ? `${esc(label)} · ${esc(c.name)} · ${esc(displayDateLong(c.at))}` : `${esc(label)}${o.live ? ' · sign below' : ''}`
+    const caption = c ? `${esc(label)} · ${esc(c.name)}${c.nric ? ` · NRIC ${esc(c.nric)}` : ''} · ${esc(displayDateLong(c.at))}` : `${esc(label)}${o.live ? ' · sign below' : ''}`   /* (REG-563) the masked NRIC the client typed */
     return `<span class="${styles.box} ${styles.client} ${initial ? styles.initial : ''}" data-sign="${key}" data-signed="${c ? '1' : ''}"><span class="${styles.mark}">${mark}</span><span class="${styles.caption}">${caption}</span></span>`
   })
 }

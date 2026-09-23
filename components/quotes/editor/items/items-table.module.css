@@ -6,12 +6,22 @@
  * Cells p16 with 1px surface-variant right rules; the ITEM cell carries the 4px divider. The name is 14/600 text in every
  * state (1271:40867 boxes only the description, at 24); the number cells take the DS 36px box while their row is active.
  */
-.wrap { display: flex; flex-direction: column; min-width: 0; }
-.scroller { position: relative; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
-.table { display: flex; flex-direction: column; min-width: max-content; --sel-w: 100px; --num-w: 76px; }
-.table[data-nonum] { --num-w: 0px; }
+.wrap { display: flex; flex-direction: column; min-width: 0; position: relative; --sel-w: 100px; --num-w: 76px; }
+.wrap[data-nonum] { --num-w: 0px; }
+/* (REG-570, owner 2026-09-23: "the item header can be sticky until it reaches the end of the container") The column heads live in a
+   bar of their own ABOVE the sideways scroller — CSS sticky only holds to the nearest scrolling ancestor, and a head inside the
+   scroller could never reach the page — under the section's own sticky top (section-card.module.css); the bar scrolls sideways in
+   step with the body (items-table.tsx syncs the two), so the frozen ITEM / TOTAL heads keep their places. Both let go when the card's
+   end scrolls past (sticky's own rule). In the full-page Expand the card's body is the scroller and the bar holds at its top. */
+.sentinel { height: 0; }
+.headBar { position: sticky; top: var(--items-head-top, calc(var(--editor-sticky, 124px) + var(--section-top-h, 69px))); z-index: 10; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; background: var(--om-color-surface-default); }
+.headBar::-webkit-scrollbar { display: none; }
+.headBar[data-stuck] { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant), 0 4px 8px -4px rgba(0, 0, 0, .16); }
+.scroller { position: relative; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }   /* the native bar is hidden: the sticky bar under the viewport is the scrollbar now (REG-570) */
+.scroller::-webkit-scrollbar { display: none; }
+.table { display: flex; flex-direction: column; min-width: max-content; }
 .head, .row, .bucket, .addRow { display: flex; align-items: stretch; }
-.head { height: 52px; }
+.head { height: 52px; min-width: max-content; }
 .row { min-height: 72px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); position: relative; }
 /* A group row is a BAND (owner 2026-09-16, REG-440: "item and group looks confusing without a color difference for the row"): every cell
    from the checkbox to TOTAL wears the bar's own blue family, its sums bold, so the block reads as a tinted header over plain,
@@ -24,9 +34,21 @@
 .row[data-group] { background: var(--om-color-tertiary-blue-variant2); }
 .row[data-child] { background: var(--group-child-tint); }
 .row[data-selected] { background: var(--om-color-primary-variant); }
-.row[data-dragover='before'] { box-shadow: inset 0 2px 0 var(--om-color-primary-default); }
-.row[data-dragover='after'] { box-shadow: inset 0 -2px 0 var(--om-color-primary-default); }
-.row[data-dragging] { opacity: .5; }
+/* (REG-571) The pointer drag (row-drag.ts): the lifted block rides `--row-dy` on the wrap, elevated over the rows it crosses; the
+   rows it passes slide by its height (160 ms, an inline transform); on release the block settles into its gap. The lifted row's
+   ITEM cell indents to the depth of the slot under the pointer — flush for the top, 32 inside a section, 56 inside a sub-section —
+   so the eye knows where the line will land before it is let go. Hover chrome rests while a drag runs. */
+.row[data-dragging] { transform: translateY(var(--row-dy, 0px)); z-index: 9; box-shadow: var(--om-elevation-level-3); transition: none; }
+.wrap[data-row-drag] .row:not([data-dragging]) { transition: transform 160ms ease; }
+.wrap[data-row-settle] .row[data-dragging] { transition: transform 160ms ease; }
+.row[data-dragging][data-drop-depth='0'] .colItem { padding-left: var(--om-spacing-4); }
+.row[data-dragging][data-drop-depth='1'] .colItem { padding-left: var(--om-spacing-8); }
+.row[data-dragging][data-drop-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
+.wrap[data-row-drag] .kebab, .wrap[data-row-drag] .edgeAdd, .wrap[data-row-drag] .edgeLine { opacity: 0 !important; pointer-events: none !important; }
+.wrap[data-row-drag] .row:hover .cell { background-image: none; }
+/* (REG-573) A row that just arrived — added, pasted, duplicated, moved, dropped — pulses once so the eye finds it. */
+.row[data-fresh]::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
 
 .cell {
   flex: 0 0 auto; display: flex; align-items: center; gap: var(--om-spacing-1);
@@ -71,7 +93,7 @@
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
-.scroller[data-more] .colTotal { box-shadow: -6px 0 8px -4px rgba(0, 0, 0, .16); }
+.wrap[data-more] .colTotal { box-shadow: -6px 0 8px -4px rgba(0, 0, 0, .16); }
 
 /* Selection cell: drag_indicator · add · checkbox, 20px glyphs 4 apart (1260:31254). */
 .handle, .plus, .foldAll {
@@ -83,6 +105,13 @@
 .handle { cursor: grab; touch-action: none; }
 .handle:active { cursor: grabbing; }
 .plus:hover, .handle:hover, .foldAll:hover { background: var(--om-color-hover-08p); }
+/* (REG-576) Bigger targets under a mouse too: the 20px marks keep their drawing and take an invisible box — handle and + 28×44 (they
+   sit 4 apart, so the boxes meet with 4 to spare, the REG-365 rule), the eye and the fold 28×32 (they must not reach the name box
+   beside them), the edge + 30 — the touch rules further down grow them more. */
+.handle, .plus, .eye, .fold { position: relative; }
+.handle::after, .plus::after { content: ''; position: absolute; inset: -12px -4px; }
+.eye::after, .fold::after { content: ''; position: absolute; inset: -6px -4px; }
+.edgeAdd::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; }
 .check { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; }
 
 /* ITEM cell: thumb 48 (r2, surface-bg, 1px surface-variant; placeholder = 2px dashed #ccc + add_photo_alternate 20) + name 14/600 + description 12/400. */
@@ -205,9 +234,15 @@
 /* The hovered row's kebab is the listing's hover control (606:75167 / REG-163, owner 2026-09-16: "contextual menu when hovered is not
    correct as per our DS … like the leads listing"): the om primary IconButton on a white level-1 pill, 24 in from the visible
    edge on the row's centre line — it floats over the TOTAL cell as the listing's Edit + kebab float over whatever sits under the edge. */
-.kebab { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
-.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
-.row:hover .kebab, .kebab[data-open], .kebab:focus-within { opacity: 1; pointer-events: auto; }
+/* (REG-575, owner 2026-09-23) The menu's mark rests faint on EVERY row — a bare ⋮ at 45 % — and the hovered row (or an open menu, or
+   the keyboard) draws the full pill; an owner who never sweeps the mouse still sees that every row has a menu. REG-446 already keeps
+   the amount clear of it, so nothing moves. */
+.kebab { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); opacity: .45; transition: opacity var(--motion-hover); }
+.float { display: inline-flex; border-radius: var(--om-radius-1); background: none; box-shadow: none; transition: background-color var(--motion-hover), box-shadow var(--motion-hover); }
+.kebab .float button { border-color: transparent; }
+.row:hover .kebab, .kebab[data-open], .kebab:focus-within { opacity: 1; }
+.row:hover .float, .kebab[data-open] .float, .kebab:focus-within .float { background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+.row:hover .kebab .float button, .kebab[data-open] .float button, .kebab:focus-within .float button { border-color: var(--om-color-primary-default); }
 .colTotal .total { padding-right: 0; }
 
 /* View header rows (reference "Design Time · Uncategorized"): surface-bg, name 14/600, sums, fold chevron. */
@@ -226,7 +261,7 @@
 .addNum { width: calc(var(--sel-w) + var(--num-w)); flex-shrink: 0; padding-left: calc(var(--sel-w) + var(--om-spacing-4)); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .link + .link { margin-left: var(--om-spacing-1); }
 .addField { position: relative; width: 327px; flex-shrink: 0; }
-.table[data-nonum] .addInner { padding-left: var(--sel-w); }
+.wrap[data-nonum] .addInner { padding-left: var(--sel-w); }
 .link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
 .link:hover { color: var(--om-color-on-primary-variant); }
 
@@ -245,7 +280,7 @@
 .row[data-child] .colSel, .row[data-child] .colNum, .row[data-child] .colItem { background: var(--group-child-tint); }
 .row[data-selected] .colSel, .row[data-selected] .colNum, .row[data-selected] .colItem { background: var(--om-color-primary-variant); }
 .bucket .colSel, .bucket .colNum, .bucket .colItem { background: var(--om-color-surface-bg); }
-.scroller[data-scrolled] .colItem { box-shadow: var(--om-shadow-frozen-column); }
+.wrap[data-scrolled] .colItem { box-shadow: var(--om-shadow-frozen-column); }
 .row[data-active] .colItem { overflow: visible; }
 /* Row hover (owner 2026-09-15: "item table hover state is missing"): the 4 % wash every table's row takes (tasks / quotes
    rows fill #f2f2f2) — painted as an overlay on each cell, so the frozen cells' own fills, a child's tint and a selection all
@@ -259,13 +294,15 @@
 }
 /* ── Touch (REG-273 / REG-307 / REG-312): every mark keeps its drawing and takes a 44px box through an invisible overlay
    (−12 on a 20 glyph, −10 on a 24); the row kebab is always shown; the in-place inputs and selects stand 44 tall so the
-   cell's padding is no longer dead. The drag handle steps aside — HTML5 drag never starts from a finger (Move Item ›
-   Up / Down in the row menu reorders) — and the row's "+" with it: its 44px box collided with the checkbox's, and the row
-   menu's Add Item › Below is the same action. Without them the selection cell is the checkbox alone (56). */
+   cell's padding is no longer dead. The drag handle stays — the drag is pointer-driven since REG-571, so a finger lifts a
+   row too (it used to step aside: HTML5 drag never starts from a finger) — and takes a 32×44 box; the row's "+" gives way
+   (its 44px box collided with the checkbox's, and the row menu's Add Item › Below is the same action), so the selection
+   cell is handle · checkbox (80). */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .kebab { opacity: 1; pointer-events: auto; }
-  .handle, .plus { display: none; }
-  .table { --sel-w: 56px; }
+  .plus { display: none; }
+  .handle::after { inset: -12px -6px; }
+  .wrap { --sel-w: 80px; }
   .eye, .fold, .foldAll, .expand, .pick, .link, .kebab button { position: relative; }
   .fold::after, .foldAll::after { content: ''; position: absolute; inset: -12px; }
   .eye::after { content: ''; position: absolute; inset: -12px -10px; }   /* 40 wide: its box must not reach into the name box beside it (REG-365) */
@@ -283,7 +320,7 @@
      Quotes-tab card of REG-377: thumb · name · status · qty × unit price · total · kebab). */
   .colSel, .colNum, .colItem, .colTotal { position: static; }
   .colTotal { box-shadow: none !important; }
-  .scroller[data-scrolled] .colItem { box-shadow: none; }
+  .wrap[data-scrolled] .colItem { box-shadow: none; }
 }
 
 /* ── The Excel benchmark, phases 2 · 3 (REG-476 / REG-477) ── */
@@ -326,3 +363,43 @@
   .edgeAdd:hover + .edgeLine { opacity: 1; }
 }
 @media (hover: none), (max-width: 767px) { .edgeAdd, .edgeLine { display: none; } }   /* no hover, or a phone-width window: the leading + is the way */
+/* (REG-568, owner 2026-09-23: "there is button conflict") An active row hides its edge add: the Expand button hangs under the description
+   box's right end (50–74 in the 72 row) and the + rides the row's bottom edge (61–83) at the pointer's x, so at the box's end the two sat on
+   top of each other. While a box in the row has the caret the leading + and the row menu remain; the edge add is back the moment the row rests. */
+.row[data-active] .edgeAdd, .row[data-active] .edgeLine { display: none; }
+
+/* ── Round 1 of the testers' asks (2026-09-23) ── */
+/* (REG-558) A sub-section and its lines step in once more: the bar stays, the inset doubles. */
+.row[data-depth='2'] .colItem { padding-left: calc(var(--om-spacing-8) + var(--om-spacing-6)); }
+.row[data-depth='2'][data-group] { background: color-mix(in srgb, var(--om-color-tertiary-blue-variant2) 75%, var(--om-color-surface-default)); }
+/* (REG-556) Highlight: a 4px bar in the kit colour on the row's left edge for every kind; an ink colours the name, a fill tints the whole row. */
+.row[data-highlight]::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--hl); z-index: 2; }
+.row[data-highlight='text'] .input[data-name], .row[data-highlight='text'] .descText, .row[data-highlight='text'] .desc { color: var(--hl); }
+.row[data-highlight='fill']:not([data-selected]) { background: color-mix(in srgb, var(--hl) 28%, var(--om-color-surface-default)); }
+.row[data-highlight='fill']:not([data-selected]) .colTotal { background: color-mix(in srgb, var(--hl) 28%, var(--om-color-surface-default)); }
+/* (REG-555) Print as: the word stands where the amount would, the figure under it in the caption size. */
+.totalWord { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
+.totalUnder { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+/* (REG-557) A formatted description keeps its bullets in the resting text; the button wraps like the clamp. */
+.descBtn[data-rich] { white-space: pre-line; text-align: left; }
+
+/* ── (REG-570) The sideways scrollbar under the viewport ── A 24px bar that sticks to the bottom of the window (or the Expand's
+   scroller) while the table runs on below it — the sheet-app pattern — so panning the number columns never means reaching the
+   table's foot: a pager at each end, a track whose thumb is the visible share and follows the body; drag the thumb, press the
+   track, or press a pager. It rests at the table's foot once the end is on screen and is not drawn while the table fits. */
+.hbar { display: none; position: sticky; bottom: 0; z-index: 10; align-items: center; gap: var(--om-spacing-1); height: 24px; padding: 0 var(--om-spacing-2); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hbar[data-on] { display: flex; }
+.pager { width: 20px; height: 20px; flex-shrink: 0; border: 0; background: none; padding: 0; color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.pager:hover { background: var(--om-color-hover-08p); }
+.pager::after { content: ''; position: absolute; inset: -4px; }
+.track { flex: 1; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); position: relative; cursor: pointer; touch-action: none; }
+.thumb { position: absolute; top: 0; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); cursor: grab; transition: background-color var(--motion-hover); }
+.thumb:hover, .thumb[data-dragging] { background: var(--om-color-on-surface-secondary); }
+.thumb[data-dragging] { cursor: grabbing; }
+@media (hover: none) { .pager { display: none; } }
+
+/* (REG-597) The phone's card list + the Add Item row under it: the field takes its line, the two links the next — nothing runs past the screen. */
+.cardsWrap { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.cardsWrap .addRow { display: flex; height: auto; padding: var(--om-spacing-2) 0; }
+.cardsWrap .addInner { position: static; display: flex; flex-wrap: wrap; width: 100%; max-width: 100%; padding-right: 0; gap: var(--om-spacing-3) var(--om-spacing-4); }
+.cardsWrap .addField { width: 100%; flex: 1 1 100%; }

@@ -1,9 +1,9 @@
 /**
  * The studio's brand kit (REG-487): settings key `brand` — logo, stamp, badges, the named colours, the type roles and the
- * company details every template prints. Company › Profile edits it; a template carries overrides (`design.brand`) with
+ * company details every template prints. Company › Templates › Brand kit edits the kit and Company › Profile the details (REG-554); a template carries overrides (`design.brand`) with
  * "Reset to brand". Client-safe; the row is read by lib/templates/queries.ts and seeded by scripts/repair-demo-data.ts R31.
  */
-import { COLOR_KEYS, DEFAULT_BRAND, FONT_ROLES, type BrandKit, type ColorKey, type FontRole, type FontSpec, type StudioDetails } from './model'
+import { COLOR_KEYS, DEFAULT_BRAND, EMPTY_ENTITY, FONT_ROLES, type BrandKit, type ColorKey, type FontRole, type FontSpec, type IssuingEntity, type StudioDetails } from './model'
 import { DEMO_STUDIO } from './data'
 
 export const BRAND_KEY = 'brand'
@@ -32,6 +32,12 @@ export function parseBrandSetting(v: unknown): BrandSetting {
     }
   }
   const d = r.details ?? {}
+  const name = str(d.name, DEMO_STUDIO.name)
+  // (REG-562) The entities: the studio itself always first, its name following the company name; the rest as saved.
+  const ent = (v: unknown, fallbackName: string): IssuingEntity => { const e = (v ?? {}) as Partial<Record<keyof IssuingEntity, unknown>>; return { name: str(e.name, fallbackName) || fallbackName, bankName: str(e.bankName, ''), accountName: str(e.accountName, ''), accountNo: str(e.accountNo, ''), payNow: str(e.payNow, ''), payNowQr: strOrNull(e.payNowQr, null), gstRegistered: e.gstRegistered !== false } }
+  const rawEntities = Array.isArray(d.entities) ? (d.entities as unknown[]) : []
+  const entities = rawEntities.length ? rawEntities.slice(0, 6).map((e, i) => ent(e, i === 0 ? name : 'Entity')) : [EMPTY_ENTITY(name)]
+  entities[0] = { ...entities[0]!, name }
   return {
     kit: {
       logo: strOrNull(k.logo, DEFAULT_BRAND.logo), logoDark: strOrNull(k.logoDark, DEFAULT_BRAND.logoDark), stamp: strOrNull(k.stamp, DEFAULT_BRAND.stamp),
@@ -39,8 +45,9 @@ export function parseBrandSetting(v: unknown): BrandSetting {
       colors, fonts,
     },
     details: {
-      name: str(d.name, DEMO_STUDIO.name), address: str(d.address, DEMO_STUDIO.address), phone: str(d.phone, DEMO_STUDIO.phone), fax: str(d.fax, DEMO_STUDIO.fax),
+      name, address: str(d.address, DEMO_STUDIO.address), phone: str(d.phone, DEMO_STUDIO.phone), fax: str(d.fax, DEMO_STUDIO.fax),
       email: str(d.email, DEMO_STUDIO.email), website: str(d.website, DEMO_STUDIO.website), uen: str(d.uen, DEMO_STUDIO.uen), gstReg: str(d.gstReg, DEMO_STUDIO.gstReg), licence: str(d.licence, DEMO_STUDIO.licence),
+      tagline: str(d.tagline, ''), social: str(d.social, ''), entities,
     },
   }
 }

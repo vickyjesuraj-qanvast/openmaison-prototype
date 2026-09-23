@@ -2,6 +2,8 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -17,9 +19,10 @@ const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular'
 
 /**
  * Brand (REG-487; 6b corrected): the studio's kit as this template uses it. Every value shows the kit's, and a change here
- * is an override on this template only, marked and one click from "Reset to brand". The kit itself is Company › Profile.
+ * is an override on this template only, marked and one click from "Reset to brand". The kit itself is Company › Templates › Brand kit (REG-554).
  */
 export function BrandPane({ design, brand, onDesign }: Props) {
+  const pathname = usePathname()
   const o = design.brand
   const merged = mergeBrand(brand, o)
   /* Empty `colors` / `fonts` containers are dropped, so a reset really equals the published design. */
@@ -36,7 +39,7 @@ export function BrandPane({ design, brand, onDesign }: Props) {
       <div className={styles.body}>
         <div className={styles.intro}>
           <span className={styles.introText}>Values come from the brand kit. Change one here and only this template differs.</span>
-          <Link href="/company/profile" className={styles.link}>Edit the brand kit <Icon name="arrow_outward" size={16} weight={300} /></Link>
+          <Link href={withFrom('/company/templates/brand', pathname)} className={styles.link}>Edit the brand kit <Icon name="arrow_outward" size={16} weight={300} /></Link>   {/* (REG-554) Templates › Brand kit, with this editor as the way back */}
         </div>
         <section className={styles.section}>
           <h3 className={styles.title}>Logo</h3>
@@ -73,7 +76,7 @@ export function BrandPane({ design, brand, onDesign }: Props) {
           </div>
         </section>
         <section className={styles.section}>
-          <h3 className={styles.title}>Type</h3>
+          <h3 className={styles.title}>Fonts</h3>
           <div className={styles.roles}>
             {FONT_ROLES.map((role) => {
               const f = merged.fonts[role]
@@ -95,7 +98,7 @@ export function BrandPane({ design, brand, onDesign }: Props) {
         </section>
         <section className={styles.section}>
           <h3 className={styles.title}>Badges and stamp</h3>
-          <span className={styles.introText}>{merged.badges.length ? `${merged.badges.length} badge${merged.badges.length === 1 ? '' : 's'} from the kit` : 'No badges in the kit'} · {merged.stamp ? 'custom stamp' : 'generated stamp'}. Manage them in Company › Profile.</span>
+          <span className={styles.introText}>{merged.badges.length ? `${merged.badges.length} badge${merged.badges.length === 1 ? '' : 's'} from the kit` : 'No badges in the kit'} · {merged.stamp ? 'custom stamp' : 'generated stamp'}. Manage them in Templates › Brand kit.</span>
         </section>
       </div>
       <div className={styles.foot}>

@@ -26,3 +26,11 @@ export function savedLabel(updatedAt: number, now: number): string {
 
 /** "25 August 2026" — how a contract prints a date (not the listing's "25 Aug ’26"). */
 export const longDate = (d: Date) => d.toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' })
+
+/** (REG-591) Several documents under one signing link — the bundle's page. */
+export const bundleSigningPath = (bundleId: string) => `/sign/bundle/${bundleId}`
+export const bundleSigningLink = (bundleId: string) => (typeof window === 'undefined' ? bundleSigningPath(bundleId) : `${window.location.origin}${bundleSigningPath(bundleId)}`)
+/** The WhatsApp draft Send together opens with (invented copy on the single link's model). */
+export function bundleMessage(o: { clientFirst: string; studio: string; titles: string[]; link: string }): string {
+  return `Hi ${o.clientFirst}, here are ${o.titles.length} documents from ${o.studio} for your review and signature — ${o.titles.join(', ')}: ${o.link}\n\nOpen the link, read each one, and sign once at the bottom; your signature covers all of them. You’ll get a one-time code on this number to confirm it’s you.`
+}

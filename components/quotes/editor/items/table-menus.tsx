@@ -5,13 +5,14 @@ import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import type { QuoteItem } from '@/lib/db/schema'
-import { ITEM_KINDS, ITEM_KIND_ICON, ITEM_KIND_LABEL, UNITS, VISIBILITIES, VISIBILITY_LABEL, type ItemKind, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
+import { HIGHLIGHTS, HIGHLIGHT_LABEL, isHighlight, isPrintAs, ITEM_KINDS, ITEM_KIND_ICON, ITEM_KIND_LABEL, PRINT_AS, PRINT_AS_HELP, PRINT_AS_LABEL, printAsWord, UNITS, VISIBILITIES, VISIBILITY_LABEL, type Highlight, type ItemKind, type PrintAs, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
+import { ancestorIds } from '@/lib/quotes/math'
 import styles from './items-section.module.css'
 
 type Anchor = RefObject<HTMLElement | null>
 
 /**
- * A menu that drills down in place (the thumbnail menu's Use Icon, the row menu's Add / Move / Choose New Group) unmounts
+ * A menu that drills down in place (the thumbnail menu's Use Icon, the row menu's Add / Move / Move to section) unmounts
  * the row that had focus, which used to strand keyboard focus on <body> (REG-417). Focus moves onto the new level's first
  * row whenever the level changes — the first open is left to the menu's own policy (components/om/surface.ts).
  */
@@ -102,22 +103,34 @@ export function ThumbMenu({ open, anchor, icon, onClose, onUpload, onIcon, onLog
 
 /**
  * The hovered row's kebab (reference screenshot, owner 2026-09-11; Create Document(s) dropped — REG-410):
- * Save to Your Library · Duplicate · Copy Name · Group n Item(s) · ─ · Show Full Content · ─ · Add Item › · Move Item › ·
- * Choose New Group › · ─ · Remove. Submenus drill down in place with a "‹" row back.
+ * Save to Your Library · Duplicate · Copy Name · Section with n item(s) · ─ · Show Full Content · Mark as Optional · Print as › ·
+ * Highlight › · Skip the number · ─ · Add Item › · Move Item › · Move to section › · ─ · Remove. A section's row trades the line-only
+ * rows for Save section to My Items · Label the sub-total… · Ungroup. Submenus drill down in place with a "‹" row back.
+ * (Round 1 of the testers' asks: Print as REG-555 · Highlight REG-556 · Skip the number / Ungroup / sub-sections REG-558 ·
+ * Save section REG-566 · "Section" for the mock's "Group" REG-567.)
  */
-export function RowMenu({ open, anchor, item, groups, selectedCount, onClose, onAction, onChooseGroup }: {
-  open: boolean; anchor: Anchor; item: QuoteItem; groups: QuoteItem[]; selectedCount: number
+export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight }: {
+  open: boolean; anchor: Anchor; item: QuoteItem; groups: QuoteItem[]; all: QuoteItem[]; selectedCount: number
+  /** The brand kit's colours by key — the Highlight swatches follow the kit (REG-556). */
+  brandColors: Record<string, string>
   onClose: () => void; onAction: (a: RowMenuAction) => void; onChooseGroup: (groupId: string | null) => void
+  onPrintAs: (v: PrintAs | null) => void; onHighlight: (v: Highlight | null) => void
 }) {
-  const [sub, setSub] = useState<'add' | 'move' | 'group' | null>(null)
+  const [sub, setSub] = useState<'add' | 'move' | 'group' | 'printAs' | 'highlight' | null>(null)
   const level = useLevelFocus(sub)
   const close = () => { setSub(null); onClose() }
   const act = (a: RowMenuAction) => { close(); onAction(a) }
   const isItem = item.kind === 'item'
   const n = Math.max(1, selectedCount)
+  const hasSubs = !isItem && all.some((x) => x.parentId === item.id && x.kind === 'group')
+  /* Where the row may move: a line into any section (a sub-section shown under its parent); a section without sub-sections into a top section. */
+  const targets = groups.filter((g) => g.id !== item.id && (isItem || (!g.parentId && !hasSubs && g.parentId !== item.id))).filter((g) => isItem || !ancestorIds(all, g.id).includes(item.id))
+  const canMove = isItem || !hasSubs
   const back = (label: string) => <DropdownItem onSelect={() => setSub(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{label}</DropdownItem>
+  const printAs = isPrintAs(item.printAs) ? item.printAs : null
+  const highlight = isHighlight(item.highlight) ? item.highlight : null
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={240} align="right" sheetTitle={item.name}>
+    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? 300 : 240} align="right" sheetTitle={item.name}>
       <div ref={level}>
         {sub === 'add' ? (
           <>
@@ -133,28 +146,61 @@ export function RowMenu({ open, anchor, item, groups, selectedCount, onClose, on
           </>
         ) : sub === 'group' ? (
           <>
-            {back('Choose New Group')}
-            {groups.filter((g) => g.id !== item.id).map((g) => (
+            {back('Move to section')}
+            {targets.map((g) => (
               <DropdownItem key={g.id} role="menuitemradio" checked={g.id === item.parentId} onSelect={() => { close(); onChooseGroup(g.id) }}>
-                <span className={styles.menuIcon}><Icon name="folder" size={20} /></span>{g.name}
+                <span className={styles.menuIcon} data-sub={g.parentId ? '' : undefined}><Icon name="folder" size={20} weight={g.parentId ? 300 : 400} /></span>{g.name}
               </DropdownItem>
             ))}
-            {item.parentId ? <><DropdownDivider /><DropdownItem onSelect={() => { close(); onChooseGroup(null) }}>No group</DropdownItem></> : null}
-            {groups.filter((g) => g.id !== item.id).length === 0 && !item.parentId ? <div className={styles.popEmpty}>No groups yet</div> : null}
+            {item.parentId ? <><DropdownDivider /><DropdownItem onSelect={() => { close(); onChooseGroup(null) }}>No section</DropdownItem></> : null}
+            {targets.length === 0 && !item.parentId ? <div className={styles.popEmpty}>No sections yet</div> : null}
+          </>
+        ) : sub === 'printAs' ? (
+          <>
+            {back('Print as')}
+            <div className={styles.menuHead}>What the client reads in place of the amount</div>
+            <DropdownItem role="menuitemradio" checked={!printAs} onSelect={() => { close(); onPrintAs(null) }}>
+              <span className={styles.menuIcon} data-on={!printAs || undefined}><Icon name={!printAs ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>
+              <span className={styles.menuText}><span>The price</span><span className={styles.menuHelp}>The amount prints and counts</span></span>
+            </DropdownItem>
+            {PRINT_AS.map((v) => (
+              <DropdownItem key={v} role="menuitemradio" checked={printAs === v} onSelect={() => { close(); onPrintAs(v) }}>
+                <span className={styles.menuIcon} data-on={printAs === v || undefined}><Icon name={printAs === v ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>
+                <span className={styles.menuText}><span>{v === 'custom' && printAs === 'custom' && item.printAsText ? `Custom word — ${item.printAsText}` : PRINT_AS_LABEL[v]}</span><span className={styles.menuHelp}>{PRINT_AS_HELP[v]}</span></span>
+              </DropdownItem>
+            ))}
+          </>
+        ) : sub === 'highlight' ? (
+          <>
+            {back('Highlight')}
+            <DropdownItem role="menuitemradio" checked={!highlight} onSelect={() => { close(); onHighlight(null) }}>
+              <span className={styles.menuIcon}><span className={styles.swatch} data-none="" /></span>None
+            </DropdownItem>
+            {HIGHLIGHTS.map((k) => (
+              <DropdownItem key={k} role="menuitemradio" checked={highlight === k} onSelect={() => { close(); onHighlight(k) }}>
+                <span className={styles.menuIcon}><span className={styles.swatch} style={{ background: brandColors[k] }} /></span>{HIGHLIGHT_LABEL[k]}
+              </DropdownItem>
+            ))}
           </>
         ) : (
           <>
-            {isItem ? <DropdownItem onSelect={() => act('library')}>Save to Your Library</DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('library')}>Save to Your Library</DropdownItem> : <DropdownItem onSelect={() => act('saveSection')}>Save section to My Items</DropdownItem>}
             <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
             <DropdownItem onSelect={() => act('copyName')}>Copy Name</DropdownItem>
-            {isItem ? <DropdownItem onSelect={() => act('group')}>Group {n} Item{n === 1 ? '' : 's'}</DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('group')}>Section with {n} item{n === 1 ? '' : 's'}</DropdownItem> : null}
             <DropdownDivider />
             <DropdownItem onSelect={() => act('showFull')}>Show Full Content</DropdownItem>
             {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}   {/* (REG-492) prints in its own section, out of the totals */}
+            {isItem ? <DropdownItem submenu onSelect={() => setSub('printAs')}>Print as{printAs ? `: ${printAsWord(item)}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            <DropdownItem submenu onSelect={() => setSub('highlight')}>Highlight{highlight ? `: ${HIGHLIGHT_LABEL[highlight]}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
+            {isItem ? <DropdownItem onSelect={() => act('noNumber')}>{item.noNumber ? 'Number this line' : 'Skip the number'}</DropdownItem> : null}
+            {!isItem ? <DropdownItem onSelect={() => act('subtotalLabel')}>{item.printAsText ? `Sub-total label: ${item.printAsText}` : 'Label the sub-total…'}</DropdownItem> : null}
+            {!isItem ? <DropdownItem onSelect={() => act('oneLine')}>{item.printOneLine ? 'Print every line' : 'Print as one line'}</DropdownItem> : null}   {/* (REG-585) the client sees the section's name and its total; the lines stay the studio's */}
             <DropdownDivider />
             <DropdownItem submenu onSelect={() => setSub('add')}>Add Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
             <DropdownItem submenu onSelect={() => setSub('move')}>Move Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
-            {isItem ? <DropdownItem submenu onSelect={() => setSub('group')}>Choose New Group<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            {canMove ? <DropdownItem submenu onSelect={() => setSub('group')}>Move to section<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
+            {!isItem ? <DropdownItem onSelect={() => act('ungroup')}>Ungroup — keep the lines</DropdownItem> : null}
             <DropdownDivider />
             <DropdownItem tone="danger" onSelect={() => act('remove')}>Remove</DropdownItem>
           </>
