@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { displayCustomValue, type CustomFieldDef, type CustomValues } from '@/lib/leads/custom-fields-model'
 import { Button } from '@/components/ds'
 import { Sheet } from '@/components/om/sheet'
 import { setFlagPref, useFlagPref } from '@/lib/prefs'
@@ -62,11 +63,17 @@ const BLOCKS: { icon: string; label: string; section: string | null }[] = [
   { icon: 'info', label: 'Lead info', section: 'Lead info' },
   { icon: 'home', label: 'Property info', section: 'Property info' },
   { icon: 'sticky_note_2', label: 'Other info', section: 'Other info' },
+  { icon: 'list_alt', label: 'Custom fields', section: 'Custom fields' },   /* (REG-612) shown only when the studio has fields */
 ]
 const slug = (title: string) => title.toLowerCase().replace(/\s+/g, '-')
 const sectionId = (title: string) => `info-section-${slug(title)}`
 
 export type InfoColumnProps = {
+  /** (REG-612, parity Q-25) The studio's active custom fields and this lead's values — the Custom fields section. */
+  customFields?: CustomFieldDef[]
+  customValues?: CustomValues
+  /** (REG-609, parity Q-22) The portal link's invite stamp — the "Portal" row. */
+  portal?: { invitedAt: Date | null } | null
   lead: LeadRow
   /** The studio's members — resolves the Owner row ("You" = the member with `isYou`). Falls back to `lead.assignees`. */
   team?: Member[]
@@ -81,8 +88,19 @@ export type InfoColumnProps = {
 const DASH = '--'
 
 export function InfoColumn({
-  lead, team, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections,
+  lead, team, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
 }: InfoColumnProps) {
+  /* (REG-612) The Custom fields section — after Other info, on the desktop column and the phone's sheet alike. */
+  const customSection = customFields.length ? (
+    <>
+      <div className={styles.rule} />
+      <Section title="Custom fields">
+        <KVList>
+          {customFields.map((f) => <Row key={f.id} k={f.label} text={displayCustomValue(f, customValues[f.id])} />)}
+        </KVList>
+      </Section>
+    </>
+  ) : null
   const assignees = lead.assignees
   // Owner: the mock (858:24806) shows "You" even before anyone is assigned — the signed-in member (isYou) owns the studio's leads.
   const youKnown = (team ?? []).some((m) => m.isYou) || assignees.some((m) => m.isYou)
@@ -115,7 +133,7 @@ export function InfoColumn({
         </Tooltip>
         <div className={styles.divider} />
         <div className={styles.glyphs}>
-          {BLOCKS.map((b) => (
+          {BLOCKS.filter((b) => b.section !== 'Custom fields' || customFields.length > 0).map((b) => (
             <Tooltip key={b.label} label={b.label} side="right">
               <button type="button" className={styles.glyph} aria-label={b.label} onClick={() => reveal(b.section)}>
                 <Icon name={b.icon} size={24} weight={300} />
@@ -232,6 +250,11 @@ export function InfoColumn({
           <Row k="Source" text={lead.source} />
           <Row k="Budget (S$)" text={money(lead.budgetMinor)} />
           <Row k="Created" text={displayDate(lead.createdAt)} />
+          {/* (REG-607, parity Q-35) 1.0's client IC and customer reference, printed on the quotes. */}
+          <Row k="NRIC / FIN" text={lead.icNumber ?? DASH} />
+          <Row k="Customer ID" text={lead.customerId ?? DASH} />
+          {/* (REG-609, parity Q-22) Invite to Portal leaves a record — the link's stamp reads back here. */}
+          <Row k="Portal" text={portal?.invitedAt ? `Invited ${displayDate(portal.invitedAt)}` : DASH} />
         </KVList>
       </Section>
 
@@ -240,6 +263,7 @@ export function InfoColumn({
       <Section title="Property info">
         <KVList gap={16}>
           <Row k="Type" text={lead.propertyType} />
+          <Row k="District" text={lead.area ?? DASH} />   {/* (REG-607, parity Q-12) */}
           <Row k="Condition" text={lead.condition ?? DASH} />
           <Row k="Style" text={lead.style ?? DASH} />
           <Row k="Area size (sq ft)" text={lead.areaSqft != null ? groupDigits(String(lead.areaSqft)) : DASH} />
@@ -260,6 +284,7 @@ export function InfoColumn({
           <Row k="Remarks" text={lead.notes ?? DASH} />
         </KVList>
       </Section>
+      {customSection}
       </>) : null}
 
       {/* (REG-366, user 2026-09-06) The phone's way into the lead's details: a named secondary button under the
@@ -308,6 +333,7 @@ export function InfoColumn({
             <Section title="Property info">
               <KVList gap={16}>
                 <Row k="Type" text={lead.propertyType} />
+          <Row k="District" text={lead.area ?? DASH} />   {/* (REG-607, parity Q-12) */}
                 <Row k="Condition" text={lead.condition ?? DASH} />
                 <Row k="Style" text={lead.style ?? DASH} />
                 <Row k="Area size (sq ft)" text={lead.areaSqft != null ? groupDigits(String(lead.areaSqft)) : DASH} />
@@ -321,6 +347,7 @@ export function InfoColumn({
                 <Row k="Remarks" text={lead.notes ?? DASH} />
               </KVList>
             </Section>
+            {customSection}
           </Sheet>
         </>
       ) : null}

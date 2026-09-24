@@ -42,3 +42,6 @@
 @media (max-width: 767px) {
   .legend { flex-wrap: wrap; height: auto; min-height: 16px; }
 }
+
+/* (REG-609) "Client asked on …" under the legend. */
+.asked { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

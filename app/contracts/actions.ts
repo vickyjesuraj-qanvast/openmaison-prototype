@@ -12,6 +12,8 @@ import { revalidateLead } from '@/lib/leads/queries'
 import { AGREEMENT_TITLE, agreementHtml } from '@/lib/contracts/agreement'
 import { isBlankDoc } from '@/lib/contracts/tokens'
 import { bundleSigningPath } from '@/lib/contracts/model'
+import { notify } from '@/lib/notifications/emit'
+import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 
 /* Contracts (REG-534): the editor's, the signing page's and the tab's new writes. Every action revalidates the lead's pages,
    the studio list and the editor's own routes. */
@@ -140,6 +142,7 @@ export async function signContractOnline(contractId: string, name: string, nric?
   // last four characters are kept ("•••••567A") and that is what prints under their signature.
   const masked = nric && isNric(nric) ? maskNric(nric) : null
   await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, signedNric: masked, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, updatedAt: now }).where(eq(contracts.id, contractId))
+  await notify('quote_signed', [...await leadMemberIds(c.leadId), ...await studioRunnerIds()], { title: `${who} signed ${c.title}`, body: 'The signed copy is on the lead', href: `/leads/${c.leadId}/contracts`, leadId: c.leadId, actorId: null })   /* (REG-604) */
   touch(c.leadId, contractId)
   return { signedAt: now.getTime() }
 }
@@ -221,6 +224,7 @@ export async function signBundleOnline(bundleId: string, name: string, nric?: st
   const rows = await db.select().from(contracts).where(and(eq(contracts.bundleId, bundleId), isNull(contracts.deletedAt)))
   for (const c of rows.filter((x) => x.status !== 'Signed')) await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, signedNric: masked, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, updatedAt: now }).where(eq(contracts.id, c.id))
   if (!b.signedAt) await db.update(contractBundles).set({ signedAt: now, signedBy: who, signedNric: masked }).where(eq(contractBundles.id, bundleId))
+  await notify('quote_signed', [...await leadMemberIds(b.leadId), ...await studioRunnerIds()], { title: `${who} signed ${rows.length} documents`, body: 'The signed copies are on the lead', href: `/leads/${b.leadId}/contracts`, leadId: b.leadId, actorId: null })   /* (REG-604) */
   touch(b.leadId); for (const c of rows) touch(b.leadId, c.id)
   return { signedAt: now.getTime(), count: rows.length }
 }

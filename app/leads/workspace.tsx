@@ -16,10 +16,15 @@ import { Icon } from '@/components/om/icon'
 import { Button } from '@/components/ds'
 import { LeadsToolbar } from '@/components/leads/toolbar'
 import { LeadsTable, DEFAULT_COLUMNS, type ColumnConfig } from '@/components/leads/table'
+import { assignableIds, assignHint, runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import { LeadCards } from '@/components/leads/lead-cards'
 import { MOBILE, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/leads/dropdown'
 import { AssignPopover } from '@/components/leads/assign-popover'
+import { BulkBar } from '@/components/leads/bulk-bar'
+import { suggestMember, type MemberStats } from '@/lib/leads/suggest'
+import type { CustomFieldDef } from '@/lib/leads/custom-fields-model'
+import { withFrom } from '@/lib/nav'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { resetColumnPrefs, saveColumnPrefs, useColumnPrefs } from '@/lib/column-prefs'
 import { reorderColumns } from '@/components/om/column-drag'
@@ -47,10 +52,10 @@ import { displayDate, money, phoneDisplay, phoneLocal } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 import { type Stage } from '@/lib/leads/enums'
 import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
-import type { StageMovement } from '@/lib/settings/types'
+import { liveReasonNames, type LeadReasons, type StageMovement } from '@/lib/settings/types'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
-import { addTask, approveImportRows, assignMembers, completeTask, createLead, deleteForever, deleteLeads, emptyTrash, importLeads, markLeadSeen, mergeImportRow, moveStage, quickMoveStage, rejectImportRows, restoreLeads, setTaskDue, undoStageMove, updateLead, updateStageDetails } from './actions'
+import { addLeadMembers, addTask, approveImportRows, assignMembers, completeTask, countLiveSigningLinks, createLead, deleteForever, deleteLeads, emptyTrash, importLeads, markLeadSeen, mergeImportRow, moveStage, quickMoveStage, rejectImportRows, restoreLeads, setTaskDue, undoStageMove, updateLead, updateStageDetails } from './actions'
 import type { LeadRow, ReviewRow } from '@/lib/leads/queries'
 import type { Lead, LeadFile, Member } from '@/lib/db/schema'
 import styles from './leads.module.css'
@@ -71,10 +76,20 @@ const clampPos = (el: HTMLElement, w: number, h: number) => {
 }
 const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom, 400, usableViewportHeight()), left: clampAxis(r.left, 240, window.innerWidth) } }   // menu hangs from the cell's bottom-left corner (780:86452)
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
+/** (REG-610) The Assign popover opened from the bulk bar — one anchored state, this id instead of a lead's. */
+const BULK = '__bulk__'
 const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > usableViewportHeight() }
 
-function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement }: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
+function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement, sources, liveSources, viewer, leadReasons, customFields, memberStats }: { /** (REG-612) the studio's active custom fields · what the suggestion scores members on */ customFields: CustomFieldDef[]; memberStats: MemberStats; rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; /** (REG-599) every source to filter by · the live ones the form offers */ sources: string[]; liveSources: string[]; /** (REG-601) who is looking, for the assignment rules */ viewer: Viewer; /** (REG-607) the studio's Lost and On Hold reasons for the two dialogs */ leadReasons: LeadReasons }) {
+  const assignable = assignableIds(viewer, team)   /* (REG-601) */
+  const assignHintText = assignHint(viewer)
+  /* (REG-607) The studio's reasons for the two dialogs, "Others" last; only Owners and Admins delete (parity Q-41). */
+  const holdOptions = liveReasonNames(leadReasons.hold)
+  const lostOptions = liveReasonNames(leadReasons.lost)
+  const canDelete = runsStudio(viewer.role)
+  const openInsights = () => router.push(withFrom('/leads/insights', '/leads'))   /* (REG-611) */
+  const [liveLinks, setLiveLinks] = useState(0)   // (REG-607, parity Q-04) contracts whose signing link is live, counted when Delete opens
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
   const router = useRouter()
@@ -114,9 +129,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const [lost, setLost] = useState<string | null>(null)
   const [confirmMove, setConfirmMove] = useState<{ leadId: string; stage: Stage } | null>(null)   // linear: moving back needs no details, just a nod
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
-  const [holdReason, setHoldReason] = useState('Property delay')
-  const [lostReason, setLostReason] = useState('Property too far')
+  const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
+  const [lostReason, setLostReason] = useState('')
   const [deleting, setDeleting] = useState<string[] | null>(null)
+  /* (REG-607, parity Q-04) Delete opens with the count of contracts whose signing link is still live with the client. */
+  const openDelete = (ids: string[]) => { setDeleteReason('Spam'); setLiveLinks(0); setDeleting(ids); void countLiveSigningLinks(ids).then(setLiveLinks).catch(() => setLiveLinks(0)) }
   const [deletedOpen, setDeletedOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
@@ -162,8 +179,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const intent = stageIntent(lead, stage, stageMovement)
     switch (intent.kind) {
       case 'none': setPendingDrop(null); return
-      case 'hold': setHoldReason('Property delay'); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
-      case 'lost': setLostReason('Property too far'); setLost(lead.id); return
+      case 'hold': setHoldReason(holdOptions[0] ?? ''); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
+      case 'lost': setLostReason(lostOptions[0] ?? ''); setLost(lead.id); return
       case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
       case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage }); return
       case 'wizard': setWizard({ leadId: lead.id, target: intent.stage }); return
@@ -203,6 +220,24 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       phones: [r.phone],
     }))
   }, [scoped, filters, query, nowTick])
+  /* (REG-610, parity Q-31) Row selection on the listing's table — the Deleted sheet's pattern; the bulk bar offers Assign (adds
+     members) and Delete. A selection survives a filter change only for the rows still shown. */
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const liveSelected = useMemo(() => new Set([...selected].filter((id) => filtered.some((r) => r.id === id))), [selected, filtered])
+  const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const toggleSelectAll = () => setSelected((prev) => (filtered.length > 0 && filtered.every((r) => prev.has(r.id)) ? new Set() : new Set(filtered.map((r) => r.id))))
+  /* (REG-610, parity L-16) 1.0's "C" opens New Lead from anywhere on the listing — not while typing, not over an open surface. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'c' && e.key !== 'C') || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      const t = e.target as HTMLElement | null
+      if (t?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (document.querySelector('[role="dialog"], [role="menu"], [role="listbox"]')) return
+      e.preventDefault(); setLeadForm({ mode: 'create' })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   // Selection follows the pipeline: ids hidden by scope / filters / search drop out (render-phase adjust).
   const stageCounts = useMemo(() => {
     const c: Record<string, number> & { all: number } = { all: effectiveRows.length }
@@ -246,6 +281,18 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   const applyAssign = async (memberIds: string[]) => {
     if (!assign) return
+    if (assign.id === BULK) {   /* (REG-610) the bulk bar's Assign: add the ticked members to every selected lead */
+      const ids = [...liveSelected]
+      setAssign(null)
+      try {
+        const { assigned } = await addLeadMembers(ids, memberIds)
+        const names = team.filter((m) => memberIds.includes(m.id)).map((m) => m.name).join(', ')
+        snackbar({ message: assigned === 0 ? 'Already on every selected lead' : `${assigned} lead${assigned === 1 ? '' : 's'} assigned to ${names}` })
+        setSelected(new Set())
+        router.refresh()
+      } catch { fail('assign the leads') }
+      return
+    }
     const leadId = assign.id
     setOptimisticAssignees((o) => ({ ...o, [leadId]: memberIds }))
     setAssign(null)
@@ -279,9 +326,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }}>Create New Lead</DropdownItem>
       <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
       <DropdownDivider />
-      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Email</DropdownItem>
-      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Link to Zapier</DropdownItem>
-      <DropdownItem onSelect={() => { setAddOpen(false); comingSoon() }}>Connect to Ads</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#email') }}>Link to Email</DropdownItem>   {/* (REG-602) the website's intake address */}
+      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#webhooks') }}>Link to Zapier</DropdownItem>   {/* (REG-612) the webhook card */}
+      <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#meta') }}>Connect to Ads</DropdownItem>   {/* (REG-602) Meta Lead Ads */}
     </Dropdown>
   )
   const kebabMenu = (
@@ -311,9 +358,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   </Tooltip>
                   {addMenu}
                 </div>
-                <Tooltip label="Insights">
-                  <IconButton icon="bar_chart_4_bars" label="Insights" onClick={comingSoon} />
-                </Tooltip>
+                {canDelete ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' */
+                  <Tooltip label="Insights">
+                    <IconButton icon="bar_chart_4_bars" label="Insights" onClick={openInsights} />
+                  </Tooltip>
+                ) : null}
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
                     <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
@@ -330,10 +379,12 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                   </Button>
                   {addMenu}
                 </div>
-                <Button variant="secondary" appearance="outlined"
-                        iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
-                  Insights
-                </Button>
+                {canDelete ? (   /* (REG-611, parity Q-24 · Q-41) Insights is Owners' and Admins' */
+                  <Button variant="secondary" appearance="outlined"
+                          iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={openInsights}>
+                    Insights
+                  </Button>
+                ) : null}
                 <div style={{ position: 'relative' }}>
                   <Tooltip label="More options" disabled={kebabOpen}>
                     <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
@@ -380,6 +431,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               />
             ) : view === 'kanban' ? (
               <KanbanBoard
+                canDelete={canDelete}
                 rows={filtered}
                 query={query}
                 now={nowTick}
@@ -387,7 +439,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onClearSearch={clearAll}
                 stageScope={stageScope}
                 filtering={activeFilterCount(filters) > 0 || (stageScope !== null && filtered.length === 0)}
-                onKebabDelete={(lead) => { setDeleteReason('Spam'); setDeleting([lead.id]) }}
+                onKebabDelete={(lead) => { openDelete([lead.id]) }}
                 onKebabReturn={(lead) => { void openReturn(lead) }}
                 onAssign={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
                 pendingDrop={pendingDrop}
@@ -406,6 +458,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
               />
             ) : (
               <LeadsTable
+                canDelete={canDelete}
                 rows={filtered}
                 columns={columns}
                 onReorder={(keys) => saveColumnPrefs('leads', reorderColumns(columns, keys))}
@@ -417,10 +470,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 onTaskClick={openTasks}
                 now={nowTick}
                 onAssignClick={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
+                selectable selected={liveSelected} onToggleSelect={toggleSelect} onToggleSelectAll={toggleSelectAll}   /* (REG-610, parity Q-31) */
                 query={query}
                 filterSort={filters.sort}
                 onEditRow={(row) => setLeadForm({ mode: 'edit', lead: row })}
-                onDeleteRow={(row) => { setDeleteReason('Spam'); setDeleting([row.id]) }}
+                onDeleteRow={(row) => { openDelete([row.id]) }}
                 onReturnRow={(row) => { void openReturn(row) }}
                 onCopyPhone={async (row) => {
                   // (REG-287) `phoneDisplay` is the app's one copy/export format — the literal "+65 ${row.phone}"
@@ -462,8 +516,16 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           if (row) requestStageChange(row, stage)
         }}
       />
-      <ExportDialog open={exportOpen} rows={rows} now={nowTick} onClose={() => setExportOpen(false)}
-                    onDone={(name, format) => snackbar({ message: `Exported ${rows.length} leads as ${format} · ${name}` })} />
+      {/* (REG-610, parity L-32) The statement's fields: all leads or what the list shows, the period, the columns, the format. */}
+      <ExportDialog open={exportOpen} rows={rows} all={rows} shown={filtered} listingColumns={columns.filter((c) => c.visible).map((c) => c.key)} now={nowTick} onClose={() => setExportOpen(false)}
+                    onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? rows.length} lead${(count ?? rows.length) === 1 ? '' : 's'} as ${format} · ${name}` })} />
+      {view === 'table' && !mobile ? (
+        <BulkBar count={liveSelected.size} onClear={() => setSelected(new Set())}
+                 actions={[
+                   ...(assignHintText ? [] : [{ label: 'Assign', onClick: (e: React.MouseEvent<HTMLButtonElement>) => setAssign({ id: BULK, ...anchorRect(e.currentTarget) }) }]),
+                   ...(canDelete ? [{ label: 'Delete', tone: 'danger' as const, onClick: () => openDelete([...liveSelected]) }] : []),
+                 ]} />
+      ) : null}
       <ConfirmDialog
         open={!!confirmMove}
         tone="primary"
@@ -484,6 +546,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         if (!lead) return null
         return (
           <MoveStageWizard
+            assignable={assignHintText ? [] : assignable}
             lead={lead}
             team={team}
             targetStage={wizard.target}
@@ -535,17 +598,20 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onClose={() => { setOnHold(null); setPendingDrop(null) }}
         reason={holdReason} setReason={setHoldReason}
         openedAt={holdOpenedAt}
+        options={holdOptions}
         onSave={(otherReason, followUpAt, duration) => {
           const lead = rows.find((r) => r.id === onHold)
           setOnHold(null)
           if (!lead) { setPendingDrop(null); return }
+          const from = lead.stage
           void run('move the lead', async () => {
-            await moveStage({
-              leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
+            const { logId } = await moveStage({
+              leadId: lead.id, fromStage: from, toStage: 'On Hold',
               payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration, followUpAt },
               tasks: [],
             })
-            snackbar({ message: 'Moved to On Hold' })
+            /* (REG-607, parity Q-33) Undo lives as long as the snackbar, as a quick move's does. */
+            snackbar({ message: 'Moved to On Hold', actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoStageMove({ leadId: lead.id, logId, toStage: from })) } })
           })
         }}
       />
@@ -553,13 +619,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         open={!!lost}
         onClose={() => { setLost(null); setPendingDrop(null) }}
         reason={lostReason} setReason={setLostReason}
-        onSave={(otherReason) => {
+        options={lostOptions} reasons={leadReasons.lost} contactCount={rows.find((r) => r.id === lost)?.contactCount ?? 0} today={new Date(initialNow)}
+        onSave={(d) => {
           const lead = rows.find((r) => r.id === lost)
           setLost(null)
           if (!lead) { setPendingDrop(null); return }
+          const from = lead.stage
           void run('move the lead', async () => {
-            await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: otherReason ? `Others: ${otherReason}` : lostReason }, tasks: [] })
-            snackbar({ message: 'Moved to Lost' })
+            const { logId } = await moveStage({ leadId: lead.id, fromStage: from, toStage: 'Lost', payload: { reason: d.otherReason ? `Others: ${d.otherReason}` : lostReason, ...(d.competitor ? { competitor: d.competitor } : {}), ...(d.restartAt ? { restartAt: d.restartAt } : {}) }, tasks: [] })
+            snackbar({ message: 'Moved to Lost', actionLabel: 'Undo', onAction: () => { void run('undo the move', () => undoStageMove({ leadId: lead.id, logId, toStage: from })) } })
           })
         }}
       />
@@ -568,6 +636,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         team={team}
         value={assignValue}
         anchor={assign?.el}
+        assignable={assignHintText ? [] : assignable} hint={assignHintText}
+        suggestion={(() => { const r = assign && assign.id !== BULK ? rows.find((x) => x.id === assign.id) : null; return r && r.assignees.length === 0 ? suggestMember({ propertyType: r.propertyType, budgetMinor: r.budgetMinor, style: r.style, area: r.area }, team, memberStats) : null })()}   /* (REG-612) */
         onClose={() => setAssign(null)}
         onApply={applyAssign}
         requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
@@ -598,17 +668,22 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onOpenTask={(task) => { if (task.leadId) router.push(`${detailHref(task.leadId, 'tasks')}?open=${task.id}`) }}   // the task panel on Lead Details › Tasks, as the Overview's popover (REG-173)
       />
       <LeadFormModal
+        sources={liveSources}
+        assignable={assignHintText ? [viewer.id] : assignable}
+        selfAssign={assignHintText ? { id: viewer.id } : null}   /* (REG-609, parity C-07) a Designer's new lead is theirs */
+        onOpenExisting={(id) => { setLeadForm(null); router.push(`/leads/${id}`) }}   /* (REG-609, parity Q-18) */
+        customFields={customFields}   /* (REG-612, parity Q-25) */
         team={team}
         now={nowTick}
         form={leadForm}
         onClose={() => setLeadForm(null)}
-        onSubmit={async (mode, data, leadId) => {
+        onSubmit={async (mode, data, leadId, extras) => {
           try {
             if (mode === 'create') {
-              await createLead(data)
+              await createLead({ ...data, files: extras?.files ?? [], customValues: extras?.customValues })   /* (REG-609 · REG-612) the attached documents, the custom fields */
               snackbar({ message: 'Successfully Created' })
             } else if (leadId) {
-              await updateLead(leadId, data)
+              await updateLead(leadId, { ...data, customValues: extras?.customValues })
               snackbar({ message: 'Successfully Updated' })
             }
             setLeadForm(null)
@@ -621,6 +696,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       />
       <DeleteLeadDialog
         leads={deleting ? rows.filter((r) => deleting.includes(r.id)) : null}
+        liveLinks={liveLinks}
         onClose={() => setDeleting(null)}
         reason={deleteReason}
         setReason={setDeleteReason}
@@ -632,6 +708,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           deletingRef.current = true
           try {
             await deleteLeads(ids, deleteReason)
+            setSelected((prev) => { const n = new Set(prev); for (const id of ids) n.delete(id); return n })   /* (REG-610) */
           } catch {
             snackbar({ message: 'Couldn’t delete — please try again' })
             return
@@ -653,7 +730,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           })
         }}
       />
-      <FiltersModal open={filtersOpen} value={filters} team={team} now={nowTick} onClose={() => setFiltersOpen(false)} onApply={setFilters} />
+      <FiltersModal open={filtersOpen} value={filters} team={team} now={nowTick} sources={sources} onClose={() => setFiltersOpen(false)} onApply={setFilters} />
       <ReviewSheet
         open={reviewOpen}
         rows={review}
@@ -721,6 +798,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   )
 }
 
-export function LeadsWorkspace(props: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement }) {
+export function LeadsWorkspace(props: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; sources: string[]; liveSources: string[]; viewer: Viewer; leadReasons: LeadReasons; customFields: CustomFieldDef[]; memberStats: MemberStats }) {
   return <Workspace {...props} />
 }

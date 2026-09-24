@@ -1,5 +1,5 @@
 import type { LeadRow } from '@/lib/leads/queries'
-import { displayDate, inputDate, money } from '@/lib/format'
+import { displayDate, displayDateTimeDot, inputDate, money } from '@/lib/format'
 
 /**
  * "Export all as…" (784:113420 pattern): the listing's leads as a real file the browser downloads.
@@ -9,26 +9,51 @@ import { displayDate, inputDate, money } from '@/lib/format'
 export type ExportFormat = 'CSV' | 'XLS' | 'XLSX' | 'PDF'
 export const EXPORT_FORMATS: ExportFormat[] = ['CSV', 'XLS', 'XLSX', 'PDF']
 
-const COLUMNS: { label: string; value: (r: LeadRow) => string }[] = [
-  { label: 'Lead name', value: (r) => r.name },
-  { label: 'Phone', value: (r) => `+65 ${r.phone}` },
-  { label: 'Email', value: (r) => r.email ?? '' },
-  { label: 'Stage', value: (r) => r.stage },
-  { label: 'Source', value: (r) => r.source },
-  { label: 'Budget (S$)', value: (r) => money(r.budgetMinor) },
-  { label: 'Property type', value: (r) => r.propertyType ?? '' },
-  { label: 'Property address', value: (r) => r.propertyAddress ?? '' },
-  { label: 'Members', value: (r) => r.assignees.map((m) => m.name).join(', ') },   /* REG-290: header follows the column */
-  { label: 'Created', value: (r) => inputDate(r.createdAt) },
+/* (REG-610, parity L-32) The full column set — 1.0's 23 in 2.0's words, on the listing's row. `key` names each column so the export
+   dialog can send the listing's visible columns (LISTING_EXPORT) or everything. The mock's ten stay first and in order. */
+export type ExportColumn = { key: string; label: string; value: (r: LeadRow) => string }
+const nextDue = (r: LeadRow) => r.tasks.find((t) => !t.done && t.dueAt) ?? null
+export const EXPORT_COLUMNS: ExportColumn[] = [
+  { key: 'name', label: 'Lead name', value: (r) => r.name },
+  { key: 'phone', label: 'Phone', value: (r) => `+65 ${r.phone}` },
+  { key: 'email', label: 'Email', value: (r) => r.email ?? '' },
+  { key: 'stage', label: 'Stage', value: (r) => r.stage },
+  { key: 'source', label: 'Source', value: (r) => r.source },
+  { key: 'budget', label: 'Budget (S$)', value: (r) => money(r.budgetMinor) },
+  { key: 'propertyType', label: 'Property type', value: (r) => r.propertyType ?? '' },
+  { key: 'address', label: 'Property address', value: (r) => r.propertyAddress ?? '' },
+  { key: 'members', label: 'Members', value: (r) => r.assignees.map((m) => m.name).join(', ') },   /* REG-290: header follows the column */
+  { key: 'created', label: 'Created', value: (r) => inputDate(r.createdAt) },
+  { key: 'district', label: 'District', value: (r) => r.area ?? '' },
+  { key: 'leadAddress', label: 'Lead address', value: (r) => r.leadAddress ?? '' },
+  { key: 'condition', label: 'Condition', value: (r) => r.condition ?? '' },
+  { key: 'style', label: 'Style', value: (r) => r.style ?? '' },
+  { key: 'areaSqft', label: 'Area size (sq ft)', value: (r) => (r.areaSqft ? String(r.areaSqft) : '') },
+  { key: 'keyCollection', label: 'Key collection', value: (r) => r.keyCollection ?? '' },
+  { key: 'startDate', label: 'Estimated start date', value: (r) => (r.estimatedStartDate ? inputDate(r.estimatedStartDate) : '') },
+  { key: 'openTasks', label: 'Open tasks', value: (r) => String(r.tasks.filter((t) => !t.done).length) },
+  { key: 'nextFollowUp', label: 'Next follow-up', value: (r) => { const t = nextDue(r); return t?.dueAt ? `${displayDateTimeDot(t.dueAt)} · ${t.title}` : '' } },
+  { key: 'lastContact', label: 'Last contact', value: (r) => (r.lastContact ? [displayDateTimeDot(r.lastContact.at), r.lastContact.channel, r.lastContact.outcome].filter(Boolean).join(' · ') : '') },
+  { key: 'onHold', label: 'On hold till', value: (r) => (r.onHoldFollowUp ? displayDate(new Date(r.onHoldFollowUp)) : '') },
+  { key: 'leadReturn', label: 'Lead return', value: (r) => (r.returnStatus ? `Return ${r.returnStatus}` : '') },
+  { key: 'nric', label: 'NRIC / FIN', value: (r) => r.icNumber ?? '' },
+  { key: 'customerId', label: 'Customer ID', value: (r) => r.customerId ?? '' },
+  { key: 'remarks', label: 'Remarks', value: (r) => r.notes ?? '' },
 ]
+/** The listing's column keys → the export columns that carry them (the Name column carries the phone; Tasks is the open count). */
+export const LISTING_EXPORT: Record<string, string[]> = {   // keyed by the listing's own column keys (components/leads/table.tsx DEFAULT_COLUMNS)
+  name: ['name', 'phone'], stage: ['stage'], tasks: ['openTasks'], assignees: ['members'], source: ['source'], budget: ['budget'], propertyType: ['propertyType'], created: ['created'], address: ['address'], lastContact: ['lastContact'], district: ['district'], nextFollowUp: ['nextFollowUp'],
+}
+export const columnsFor = (keys?: string[] | null): ExportColumn[] => (keys && keys.length ? keys.map((k) => EXPORT_COLUMNS.find((c) => c.key === k)).filter((c): c is ExportColumn => !!c) : EXPORT_COLUMNS)
 
 export function exportFileName(format: ExportFormat, now: Date): string {
   const d = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   return `openmaison-leads-${d}.${format.toLowerCase()}`
 }
 
-export function buildExport(rows: LeadRow[], format: ExportFormat): Blob {
-  return buildTable('OpenMaison — Leads', COLUMNS.map((c) => c.label), rows.map((r) => COLUMNS.map((c) => c.value(r))), format)
+export function buildExport(rows: LeadRow[], format: ExportFormat, keys?: string[] | null): Blob {
+  const cols = columnsFor(keys)
+  return buildTable('OpenMaison — Leads', cols.map((c) => c.label), rows.map((r) => cols.map((c) => c.value(r))), format)
 }
 
 /** Any head + body as CSV / XLS / XLSX / PDF — shared by the leads and tasks exports (Export Tasks 902:29293). */
@@ -41,8 +66,8 @@ export function buildTable(title: string, head: string[], body: string[][], form
   }
 }
 
-export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date): string {
-  return downloadBlob(buildExport(rows, format), exportFileName(format, now))
+export function downloadLeads(rows: LeadRow[], format: ExportFormat, now: Date, keys?: string[] | null): string {
+  return downloadBlob(buildExport(rows, format, keys), exportFileName(format, now))
 }
 
 /** Export Tasks (902:29293): the lead's tasks as a table. */

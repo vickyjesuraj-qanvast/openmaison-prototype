@@ -16,14 +16,26 @@ import { Tooltip } from '@/components/om/tooltip'
 
 type Pick = 'existing' | 'new'
 /** Rows of the merge / detail table, in mock order. */
-const FIELDS: { label: string; key: string; leadKey: 'name' | 'phone' | 'email' | 'budgetMinor' | 'source' | 'propertyType' | 'propertyAddress'; radio: boolean }[] = [
+/* (REG-609, parity I-04) Every mapped field, not the mock's seven: 1.0's merge fills whatever the original lacks. `radio` = the
+   field takes a radio when BOTH sides carry a value (the owner's call); a field only the new side has fills in by itself, and
+   Remarks are appended rather than swapped. mergeImportRow (app/leads/actions.ts) applies the same rule. */
+type MergeKey = 'name' | 'phone' | 'email' | 'budgetMinor' | 'source' | 'propertyType' | 'propertyAddress' | 'area' | 'leadAddress' | 'condition' | 'style' | 'areaSqft' | 'keyCollection' | 'estimatedStartDate' | 'notes'
+const FIELDS: { label: string; key: string; leadKey: MergeKey; radio: boolean }[] = [
   { label: 'Lead name', key: 'Lead Name', leadKey: 'name', radio: true },
   { label: 'Phone', key: 'Lead Phone Number', leadKey: 'phone', radio: true },
   { label: 'Email', key: 'Lead Email', leadKey: 'email', radio: true },
   { label: 'Budget (S$)', key: 'Estimated Budget (S$)', leadKey: 'budgetMinor', radio: true },
-  { label: 'Source', key: 'Lead Source', leadKey: 'source', radio: false },
-  { label: 'Property type', key: 'Property Type', leadKey: 'propertyType', radio: false },
-  { label: 'Address', key: 'Property Address', leadKey: 'propertyAddress', radio: false },
+  { label: 'Source', key: 'Lead Source', leadKey: 'source', radio: true },
+  { label: 'Property type', key: 'Property Type', leadKey: 'propertyType', radio: true },
+  { label: 'Address', key: 'Property Address', leadKey: 'propertyAddress', radio: true },
+  { label: 'District', key: 'District', leadKey: 'area', radio: true },
+  { label: 'Lead address', key: 'Lead Address', leadKey: 'leadAddress', radio: true },
+  { label: 'Condition', key: 'Condition', leadKey: 'condition', radio: true },
+  { label: 'Style', key: 'Style', leadKey: 'style', radio: true },
+  { label: 'Area size', key: 'Area Size', leadKey: 'areaSqft', radio: true },
+  { label: 'Key collection', key: 'Key Collection', leadKey: 'keyCollection', radio: true },
+  { label: 'Start date', key: 'Estimated Start Date', leadKey: 'estimatedStartDate', radio: true },
+  { label: 'Remarks', key: 'Remarks', leadKey: 'notes', radio: false },
 ]
 const fmtBudget = (v: string) => { const d = v.replace(/\D/g, ''); return d ? Number(d).toLocaleString('en-SG') : '' }
 
@@ -99,8 +111,11 @@ export function ReviewSheet({
   const existingValue = (r: ReviewRow, f: (typeof FIELDS)[number]) => {
     const l = r.existing
     if (!l) return ''
-    if (f.leadKey === 'budgetMinor') return Math.round(l.budgetMinor / 100).toLocaleString('en-SG')
-    return (l[f.leadKey] as string | null) ?? ''
+    if (f.leadKey === 'budgetMinor') return l.budgetMinor ? Math.round(l.budgetMinor / 100).toLocaleString('en-SG') : ''
+    const v: unknown = l[f.leadKey]
+    if (v instanceof Date) return displayDate(v)
+    if (typeof v === 'number') return v ? String(v) : ''
+    return (v as string | null) ?? ''
   }
   const newValue = (r: ReviewRow, f: (typeof FIELDS)[number]) => {
     const v = r.data[f.key] ?? ''
@@ -216,10 +231,10 @@ export function ReviewSheet({
                           const nw = newValue(selected, f)
                           const matched = matchedLabel(selected) === f.label
                           const pick: Pick = nw ? pickOf(f.label) : 'existing'
-                          // Merged result mirrors mergeImportRow (app/leads/actions.ts): only the radio fields are sent
-                          // as picks, so Source / Property type / Address always keep the existing value. `ex || nw`
-                          // promised the imported one whenever the lead had none — an address the merge never writes.
-                          const merged = f.radio ? (pick === 'new' ? nw : ex) : ex
+                          // (REG-609) Merged result mirrors mergeImportRow (app/leads/actions.ts): a pick wins, else the existing
+                          // value, else the new one fills the gap; Remarks are appended. A radio appears only where both sides have a value.
+                          const both = !!ex && !!nw
+                          const merged = f.radio ? (pick === 'new' ? nw : ex || nw) : (ex && nw && nw !== ex ? `${ex} · ${nw}` : ex || nw)
                           const showAlt = f.label === 'Phone' && ex && nw && ex !== nw
                           return (
                             <div key={f.label} className={styles.tr} role="row" data-matched={matched || undefined}>
@@ -228,7 +243,7 @@ export function ReviewSheet({
                               </div>
                               <div className={`${styles.td} ${styles.cCol}`}>
                                 <span className={styles.stackLabel}>Existing{selected.existing ? ` · ${displayDate(selected.existing.createdAt)}` : ''}</span>
-                                {f.radio ? (
+                                {f.radio && both ? (
                                   <Tooltip label={`Keep existing ${f.label}`}>
                                     <button type="button" className={styles.radioBtn} data-on={pick === 'existing' || undefined} aria-label={`Keep existing ${f.label}`} onClick={() => setPick(f.label, 'existing')}>
                                       <Icon name={pick === 'existing' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />
@@ -243,7 +258,7 @@ export function ReviewSheet({
                                   <span className={`${styles.cValue} ${styles.matchedNote}`}>identical - matched on this</span>
                                 ) : (
                                   <>
-                                    {f.radio && nw ? (
+                                    {f.radio && both ? (
                                       <Tooltip label={`Use new ${f.label}`}>
                                         <button type="button" className={styles.radioBtn} data-on={pick === 'new' || undefined} aria-label={`Use new ${f.label}`} onClick={() => setPick(f.label, 'new')}>
                                           <Icon name={pick === 'new' ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} />

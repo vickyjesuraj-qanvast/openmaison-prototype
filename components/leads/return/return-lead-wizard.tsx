@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, Link, TextArea } from '@/components/ds'
+import { Button, Checkbox, Link, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { Tooltip } from '@/components/om/tooltip'
@@ -17,6 +17,7 @@ import { duration, ease, modalPanel, overlayFade } from '@/lib/motion'
 import { MSG, type FieldErrors } from '@/lib/forms'
 import { displayDate, parseInputDateTime } from '@/lib/format'
 import type { ReturnInput } from '@/app/leads/return-actions'
+import { REASON_LABELS, REFUSED_SUB_REASONS, RETURN_RULES, RETURN_RULES_TEXT, WRONG_FIELDS, asks, reasonByLabel, returnWindow } from '@/lib/leads/return-model'
 import { uploadFile } from '@/app/leads/files-actions'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './return-lead-wizard.module.css'
@@ -29,8 +30,8 @@ import styles from './return-lead-wizard.module.css'
  * "Attach Files" opens the tasks' AttachFilesModal.
  */
 
-/** User decision 2026-08-30 (REG-192): the reasons list comes later — only the mocked reason is offered. */
-const REASONS = ['Lead not contactable'] as const
+/* (REG-609, parity D-39) The reasons are 1.0's seven, with the fields each one asks for — lib/leads/return-model.ts. The mock's one
+   reason (REG-192, "Lead not contactable") keeps its form; the other six take theirs on the same components. */
 /** "1" · "2" · "3" · "4" · "+5" — value 5 means "+5". */
 const ATTEMPTS: { value: number; label: string }[] = [
   { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '+5' },
@@ -45,7 +46,7 @@ const TERMS = 'Qanvast reserves the right of final decision on the return of lea
 const COMMENTS_MAX = 500
 
 type Step = 'reason' | 'terms'
-type Field = 'reason' | 'outreach' | 'attempts'
+type Field = 'reason' | 'outreach' | 'attempts' | 'subReasons' | 'wrongField' | 'comments'
 const STEP_INDEX: Record<Step, number> = { reason: 0, terms: 1 }
 /** Step change: the body slides ±16px in the direction of travel (REG-25; the Move stage wizard's timings — modal in, 0.15 standard out). */
 const stepSlide = {
@@ -58,10 +59,12 @@ const stepSlide = {
 const kindIcon = (f: LeadFile) => (f.kind === 'pdf' || f.mime === 'application/pdf' ? 'picture_as_pdf' : 'image')
 
 export function ReturnLeadWizard({
-  open, lead, files, now, onClose, onConfirm,
+  open, lead, files, now, onClose, onConfirm, returnsCount = 0,
 }: {
   open: boolean
   lead: { id: string; name: string; createdAt: Date }
+  /** (REG-609, parity Q-44) Returns already filed on the lead — Qanvast's two-return cap reads it. */
+  returnsCount?: number
   /** The lead's file library — what "Attach Files" lists. */
   files: LeadFile[]
   /** Host clock (the loader's `now`) for the picker's "today" — components/leads/lead-form.tsx precedent. */
@@ -79,6 +82,11 @@ export function ReturnLeadWizard({
   const [outreach, setOutreach] = useState('')
   const [attempts, setAttempts] = useState<number | null>(null)
   const [comments, setComments] = useState('')
+  /* (REG-609) the seven reasons' own fields */
+  const [subReasons, setSubReasons] = useState<string[]>([])
+  const [search, setSearch] = useState('')
+  const [project, setProject] = useState('')
+  const [wrongField, setWrongField] = useState('')
   const [tiles, setTiles] = useState<LeadFile[]>([])
   const [attachOpen, setAttachOpen] = useState(false)
   const [menu, setMenu] = useState<string | null>(null)
@@ -104,18 +112,26 @@ export function ReturnLeadWizard({
     setWasOpen(open)
     if (open) {
       setStep('reason'); setReason(''); setOutreach(''); setAttempts(null); setComments(''); setTiles([])
+      setSubReasons([]); setSearch(''); setProject(''); setWrongField('')
       setAttachOpen(false); setMenu(null); setPressed(false); setBusy(false)
     }
   }
 
-  // Validation (lib/forms MSG): every field but the comments is mandatory; messages show after the first press and clear live.
+  // Validation (lib/forms MSG): what the chosen reason asks for is mandatory (comments only for "Others"); messages show after
+  // the first press and clear live.
+  const r = reasonByLabel(reason)
   const errors: FieldErrors<Field> = {
     reason: reason ? undefined : MSG.choose,
-    outreach: !outreach ? MSG.required : parseInputDateTime(outreach) ? undefined : MSG.dateTime,
-    attempts: attempts == null ? MSG.choose : undefined,
+    outreach: !asks(r, 'outreach') ? undefined : !outreach ? MSG.required : parseInputDateTime(outreach) ? undefined : MSG.dateTime,
+    attempts: asks(r, 'attempts') && attempts == null ? MSG.choose : undefined,
+    subReasons: asks(r, 'subReasons') && subReasons.length === 0 ? MSG.choose : undefined,
+    wrongField: asks(r, 'wrongField') && !wrongField ? MSG.choose : undefined,
+    comments: r?.commentsRequired && !comments.trim() ? MSG.required : undefined,
   }
   const shown: FieldErrors<Field> = pressed ? errors : {}
-  const valid = !errors.reason && !errors.outreach && !errors.attempts
+  const valid = !Object.values(errors).some(Boolean)
+  /* (REG-609, parity Q-44) Where the lead stands against Qanvast's rules — shown, never enforced. */
+  const win = returnWindow(lead.createdAt, returnsCount, now)
 
   const goTo = (s: Step) => { setDir(STEP_INDEX[s] > STEP_INDEX[step] ? 1 : -1); setStep(s) }
   const next = () => {
@@ -123,13 +139,13 @@ export function ReturnLeadWizard({
     if (valid) goTo('terms')
   }
   const confirm = async () => {
-    if (busy || attempts == null) return
+    if (busy) return
     setBusy(true)
     try {
       // A tile the attach modal "uploaded" (REG-149, `local-*` id) has no lead_files row yet: it joins the lead's library here
       // (files-actions uploadFile — the plan's upload path) so return_attachments only ever links real files. Cancel leaves no orphan.
       const fileIds = await Promise.all(tiles.map((f) => (f.id.startsWith('local-') ? uploadFile(lead.id, null, f.name) : f.id)))
-      await onConfirm({ reason, firstOutreach: outreach, attempts, comments, fileIds })
+      await onConfirm({ reason, subReasons, detail: asks(r, 'search') ? search : asks(r, 'project') ? project : asks(r, 'wrongField') ? wrongField : '', firstOutreach: asks(r, 'outreach') ? outreach : '', attempts: asks(r, 'attempts') ? attempts : null, comments, fileIds })
       onClose()
     } catch {
       // `returnLead` refused (lib/leads/stage-policy.ts canReturnLead) or failed — the listing's "Couldn’t … — please try again"
@@ -199,15 +215,46 @@ export function ReturnLeadWizard({
                 <motion.div key="reason" ref={scrollRef} className={styles.body} custom={dir} variants={stepSlide} initial="initial" animate="animate" exit="exit">
                   <div className={styles.columns}>
                     <div className={styles.form}>
-                      {/* Text Field 48 select "Select a reason" (expand_more) */}
-                      <TextField label="Select a reason" required mode="select" options={REASONS} value={reason} onChange={setReason} error={shown.reason} />
+                      {/* (REG-609, parity Q-44) Qanvast's return rules, display only: this lead's standing and its returns so far. */}
+                      <div className={styles.rules} data-testid="return-window" data-state={win.state}>
+                        <Icon name="info" size={20} className={styles.rulesIcon} />
+                        <span>{win.text}{win.state === 'capped' ? '' : ` · ${win.used} of ${RETURN_RULES.maxReturns} returns used`}</span>
+                        <Tooltip label={RETURN_RULES_TEXT}><Link variant="primary">Rules</Link></Tooltip>   {/* (REG-614) the DS Link, not a hand-rolled one */}
+                      </div>
+                      {/* Text Field 48 select "Select a reason" (expand_more) — 1.0's seven reasons (REG-609) */}
+                      <TextField label="Select a reason" required mode="select" options={REASON_LABELS} value={reason} onChange={(v) => { setReason(v); setSubReasons([]); setWrongField('') }} error={shown.reason} />
                       {reason ? (
                         <>
+                          {r?.help ? <span className={styles.reasonHelp}>{r.help}</span> : null}
+                          {/* (REG-609) "Lead refused to meet up" › the specific reasons — the quick filters' rows on the DS Checkbox */}
+                          {asks(r, 'subReasons') ? (
+                            <div className={styles.group} role="group" aria-label="Select specific reason(s)">
+                              <span className={styles.groupLabel}>Select specific reason(s)*</span>
+                              <div className={styles.subList}>
+                                {REFUSED_SUB_REASONS.map((sr) => {
+                                  const on = subReasons.includes(sr)
+                                  const toggle = () => setSubReasons((l) => (on ? l.filter((x) => x !== sr) : [...l, sr]))
+                                  return (
+                                    <div key={sr} className={styles.subRow} role="button" tabIndex={0} data-testid="sub-reason" onClick={toggle}
+                                         onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle() } }}>
+                                      <span>{sr}</span>
+                                      <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}><Checkbox isSelected={on} onChange={toggle} aria-label={sr} /></span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              {shown.subReasons ? <span className={styles.error} role="alert">{shown.subReasons}</span> : null}
+                            </div>
+                          ) : null}
+                          {asks(r, 'search') ? <TextField label="Search for duplicate lead" placeholder="Search by name or phone..." value={search} onChange={setSearch} trailingIcon={null} /> : null}
+                          {asks(r, 'project') ? <TextField label="Existing project reference" placeholder="Enter project name or ID..." value={project} onChange={setProject} trailingIcon={null} /> : null}
+                          {asks(r, 'wrongField') ? <TextField label="What’s incorrect?" required mode="select" options={WRONG_FIELDS} value={wrongField} onChange={setWrongField} error={shown.wrongField} /> : null}
+
                           {/* Text Field 48 "Date and time of first outreach" (trailing event → date-time picker) */}
-                          <DateTimeField label="Date and time of first outreach" required value={outreach} today={today} onChange={setOutreach} error={shown.outreach} />
+                          {asks(r, 'outreach') ? <DateTimeField label="Date and time of first outreach" required value={outreach} today={today} onChange={setOutreach} error={shown.outreach} /> : null}
 
                           {/* [V g10] "Number of attempts made" · row H g10 of five Buttons 86×48 */}
-                          <div className={styles.group} role="group" aria-label="Number of attempts made">
+                          {asks(r, 'attempts') ? <div className={styles.group} role="group" aria-label="Number of attempts made">
                             <span className={styles.groupLabel}>Number of attempts made*</span>
                             <div className={styles.attemptsWrap}>
                               <div className={styles.attempts}>
@@ -220,7 +267,7 @@ export function ReturnLeadWizard({
                               </div>
                               {shown.attempts ? <span className={styles.error} role="alert">{shown.attempts}</span> : null}
                             </div>
-                          </div>
+                          </div> : null}
 
                           {/* [V g10] "Attach images/screenshots of all your attempts" · tiles · "Attach Files" primary outlined, full width */}
                           <div className={styles.group}>
@@ -271,9 +318,10 @@ export function ReturnLeadWizard({
                           {/* [V g4] Text Area 96 "Comments (optional)" placeholder "Any notes goes here..." · "0/500" counter */}
                           <div className={styles.comments}>
                             {/* "notes" → "remarks" (REG-267): the field vocabulary everywhere outside the Notes tab. */}
-                            <TextArea label="Comments (optional)" placeholder="Any remarks goes here..." value={comments}
+                            <TextArea label={r?.commentsRequired ? 'Comments (required)' : 'Comments (optional)'} placeholder={r?.commentsRequired ? 'Provide additional details...' : 'Any remarks goes here...'} value={comments}
                                       onChange={setComments} maxLength={COMMENTS_MAX} className={styles.textArea} />
                             <span className={styles.counter} aria-live="polite">{comments.length}/{COMMENTS_MAX}</span>
+                            {shown.comments ? <span className={styles.error} role="alert">{shown.comments}</span> : null}
                           </div>
                         </>
                       ) : null}

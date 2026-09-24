@@ -20,6 +20,7 @@ import { formatQuoteNumber, initialsOf, isDefaultNumbering } from '@/lib/setting
 import { settings } from '@/lib/db/schema'
 import { COLUMN_KEYS, DEFAULT_COLUMNS, DEFAULT_DENSITY, type ColumnKey, type ColumnSettings } from '@/lib/quotes/items-model'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
+import { notify } from '@/lib/notifications/emit'
 import { isQuoteStatus, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
 import { fetchLeadContracts } from '@/lib/leads/contracts'
@@ -59,7 +60,7 @@ async function nextNumber(creator?: { name: string } | null, at = new Date(), pr
  * and stamping that template's "used n ago". A template id that is not the studio's is refused.
  */
 export async function createQuote(leadId: string, templateId: string | null = null): Promise<string> {
-  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, leadId))
+  const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate, icNumber: leads.icNumber, customerId: leads.customerId }).from(leads).where(eq(leads.id, leadId))
   if (!lead) throw new Error('lead not found')
   // (REG-489) The template's Defaults tab decides what the quote starts with; the quote pins the template's current version.
   let template: { id: string; version: number; defaults: TemplateDefaults; view: 'none' | 'category' | 'room' | 'section' } | null = null
@@ -91,7 +92,7 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   const [today] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(sql`${quotes.createdAt} >= ${Math.floor(dayStart.getTime() / 1000)}`)
   await db.insert(quotes).values({
     id, leadId, number: await nextNumber(me ?? null, now, lead.propertyType), title: lead.name, amountMinor: 0, visibility: 'Private', status: 'Draft', createdAt: now, updatedAt: now,
-    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, templateId, templateVersion: template?.version ?? null,
+    preparedBy: me?.id ?? null, createdBy: me?.id ?? null, propertyType: lead.propertyType, siteAddress: lead.propertyAddress ?? null, nric: lead.icNumber ?? null, customerId: lead.customerId ?? null /* (REG-607) the lead's IC and reference start every quote */, templateId, templateVersion: template?.version ?? null,
     validUntil: defaults ? new Date(now.getTime() + defaults.validityDays * 86_400_000) : validUntil(now), projectRef: projectRef(lead.propertyType, now, (today?.n ?? 0) + 1), itemsDensity: DEFAULT_DENSITY,
     gstEnabled: defaults?.gstEnabled ?? true, clientSignatureRequired: defaults?.signatureRequired ?? true, termsHtml, notesHtml,
     itemsColumns: columnsJson(defaults?.columns ?? null),   // (REG-538) the template's working columns
@@ -256,12 +257,14 @@ export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<
       const id = randomUUID(); const now = new Date()
       await db.transaction(async (tx) => {
         await tx.insert(leadTasks).values({
-          id, leadId: q.leadId, quoteId, title: `Follow up on quote ${q.number}`, kind: 'General',
+          id, leadId: q.leadId, quoteId, title: `Follow up on quote ${q.number}`, kind: 'Follow-up',   /* (REG-608) a follow-up is a task of its own kind */
           description: `${q.title} is due on ${displayDate(dueAt)} — chase the client for a decision before then.`,
           dueAt, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: null,
         })
         await tx.insert(taskAssignees).values({ taskId: id, memberId: q.preparedBy ?? ME })
       })
+      const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, q.leadId))
+      await notify('task_assigned', [q.preparedBy ?? ME], { title: `New task: Follow up on quote ${q.number}`, body: l ? `On ${l.name}` : null, href: `/leads/${q.leadId}/tasks?open=${id}`, leadId: q.leadId, quoteId })   /* (REG-608) */
     }
   } else if (task) {
     await db.delete(leadTasks).where(eq(leadTasks.id, task.id))

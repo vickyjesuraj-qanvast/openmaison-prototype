@@ -239,3 +239,12 @@
   .kebab::after { content: ''; position: absolute; inset: -10px; }
   .tipsLink.tipsLink { min-block-size: 44px; display: inline-flex; align-items: center; }
 }
+
+/* (REG-609, parity Q-44 · D-39) The rules line above the reason, the reason's help, and the sub-reason rows. */
+.rules { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.rules[data-state='open'] { color: var(--om-color-on-surface-default); }
+.rulesIcon { flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+.reasonHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.subList { display: flex; flex-direction: column; }
+.subRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 40px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; border-radius: var(--om-radius-1); }
+.subRow:hover { background: var(--om-color-hover-04p); }

@@ -11,6 +11,7 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDate, money, phoneLocal } from '@/lib/format'
 import type { QanvastLeadRow } from '@/lib/leads/qanvast'
+import { RETURN_RULES_TEXT } from '@/lib/leads/return-model'
 import styles from './qanvast-leads.module.css'
 
 /* Column order + head copy (931:49232, spec 02) — the head style uppercases them, as the Leads listing head. Every head carries unfold_more 16 (inert). */
@@ -22,10 +23,12 @@ export const QANVAST_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'budget', label: 'Budget (S$)', track: 'minmax(138px, 138fr)' },
   { key: 'type', label: 'Property type', track: 'minmax(158px, 158fr)' },
   { key: 'created', label: 'Created', track: 'minmax(115px, 115fr)' },
+  { key: 'window', label: 'Return window', track: 'minmax(176px, 176fr)' },   /* (REG-609, parity Q-44) Qanvast's rules, display only */
+  { key: 'qanvastId', label: 'Qanvast ID', track: 'minmax(120px, 120fr)', hidden: true },   /* (REG-609, parity T-10) 1.0's qanvast_lead_id, off until switched on */
   { key: 'status', label: 'Status', track: '369px' },
 ]
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
-const SORTABLE: Record<string, boolean> = { type: false, status: false }
+const SORTABLE: Record<string, boolean> = { type: false, status: false, window: false, qanvastId: false }
 const COL_CLASS: Record<string, string | undefined> = { name: styles.colName, credits: styles.colCredits, budget: styles.colBudget, type: styles.colType, created: styles.colCreated, status: styles.colStatus }
 
 /**
@@ -40,16 +43,17 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
   const colWidths = useColumnWidths('qanvast-leads')
   const tracks = gridTemplateFor(columns, colWidths)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow)
+  const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   return (
     /* data-scrolled drives the frozen Name column's shadow ≤1024 (REG-269) — the listing's own handler
        (components/leads/table.tsx .scroller); inert at desktop, where the card never scrolls. */
-    <div className={styles.card} role="table" aria-label="Qanvast leads" data-testid="qanvast-leads" data-cols="qanvast-leads" style={{ '--tracks': tracks } as React.CSSProperties}
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Qanvast leads" data-testid="qanvast-leads" data-cols="qanvast-leads" style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (
@@ -90,6 +94,11 @@ export function QanvastTable({ rows, onView, onCopyPhone, columns, onReorder }: 
           <div className={`${styles.cell} ${styles.colBudget} ${L.pinned('budget') ? styles.pin : ''}`} role="cell" data-col="budget" data-pin-edge={L.edge('budget') || undefined} style={L.style('budget')}>{money(row.budgetMinor)}</div>
           <div className={`${styles.cell} ${styles.colType} ${L.pinned('type') ? styles.pin : ''}`} role="cell" data-col="type" data-pin-edge={L.edge('type') || undefined} style={L.style('type')}><span className={styles.oneLine}>{row.propertyType}</span></div>
           <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(row.createdAt)}</div>
+          {/* (REG-609, parity Q-44) Where the lead stands against Qanvast's return rules — shown, never enforced; the tooltip carries the rules. */}
+          <div className={`${styles.cell} ${L.pinned('window') ? styles.pin : ''}`} role="cell" data-col="window" data-pin-edge={L.edge('window') || undefined} style={L.style('window')}>
+            <Tooltip label={RETURN_RULES_TEXT}><span className={styles.window} data-state={row.window.state} tabIndex={0}>{row.window.short}</span></Tooltip>
+          </div>
+          <div className={`${styles.cell} ${L.pinned('qanvastId') ? styles.pin : ''}`} role="cell" data-col="qanvastId" data-pin-edge={L.edge('qanvastId') || undefined} style={L.style('qanvastId')}><span className={styles.oneLine}>{row.qanvastLeadId ?? '—'}</span></div>
           {/* Status: stage / return states as the 20px "Tag Outlined" MetaChip (title case, as the Lead Details header and the
               LEAD RETURNED card render the same returnTags — UI-01); Yellow / Green / Red per lib/leads/return-tags.ts, H g8. */}
           <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>

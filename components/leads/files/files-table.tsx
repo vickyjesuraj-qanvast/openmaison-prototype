@@ -87,11 +87,12 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
   const colWidths = useColumnWidths('lead-files')
   const tracks = gridTemplateFor(columns, colWidths, '40px')
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow, { leading: 40 })
+  const L0 = useColumnLayout(columns, headRow, { leading: 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
   return (
-    <div ref={frame} className={styles.card} role="table" aria-label="Files" data-cols="lead-files" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Files" data-cols="lead-files" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
@@ -100,7 +101,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           <Checkbox isSelected={allSelected} isIndeterminate={someSelected} isDisabled={rows.length === 0} onChange={toggleAll} aria-label="Select all files" />
         </div>
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (

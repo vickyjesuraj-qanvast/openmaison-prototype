@@ -1,11 +1,12 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadAssignees, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quoteVersions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadEvents, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quoteVersions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
 import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
-import { parseInputDateTime } from '@/lib/format'
+import { displayDate, displayDateTimeDot, parseInputDateTime } from '@/lib/format'
+import type { LeadEventDetail } from '@/lib/leads/events'
 
 /* Lead Details › Activity (931-47975) — the feed is derived from every table that carries a timestamp for the lead.
    There is no event log: each row is what the record's own dates say happened (created / updated / completed / answered), so the
@@ -35,7 +36,7 @@ const ME = SESSION_MEMBER_ID
 export async function fetchLeadActivity(leadId: string): Promise<LeadActivityData> {
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId))
   if (!lead) return { events: [], now: Date.now() }
-  const [team, logs, tasks, qs, cs, files, notes, qns, rets, assigned, cmps] = await Promise.all([
+  const [team, logs, tasks, qs, cs, files, notes, qns, rets, assigned, cmps, events] = await Promise.all([
     db.select().from(members),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, leadId)).orderBy(asc(stageLogs.createdAt)),
     db.select().from(leadTasks).where(eq(leadTasks.leadId, leadId)),
@@ -47,6 +48,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(leadReturns).where(eq(leadReturns.leadId, leadId)),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, leadId)),
     db.select().from(quoteComparisons).where(eq(quoteComparisons.leadId, leadId)),   // (REG-529) Quote X-Ray
+    db.select().from(leadEvents).where(eq(leadEvents.leadId, leadId)),   // (REG-613) the event log — what leaves no row
   ])
   const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id), quoteIds = qs.map((x) => x.id)
   const [tComments, fComments, qLines, qPays, qFiles, qVersions] = await Promise.all([
@@ -79,9 +81,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   for (const log of logs) {
     if (isReturnLog(log)) continue
     // fromStage === toStage is updateStageDetails recording a stage the lead reached before any log existed — a correction, not a move.
+    /* (REG-607) The parking reason and its detail read back from the log — 1.0's activity names the close reason. */
+    const park = (log.payload && typeof log.payload === 'object' ? log.payload : {}) as { reason?: string; competitor?: string; restartAt?: string }
+    const why = park.reason ? ` (${park.reason})` : ''
+    const extra = park.competitor ? ` — competitor: ${park.competitor}` : park.restartAt ? ` — restart expected ${displayDate(new Date(park.restartAt))}` : ''
     const text = log.fromStage === log.toStage ? (log.toStage === 'Contacted' ? 'You updated the contact log.' : `You updated the ${log.toStage} details.`)
-      : log.toStage === 'On Hold' ? 'You put the lead on hold.'
-      : log.toStage === 'Lost' ? 'You marked the lead as lost.'
+      : log.toStage === 'On Hold' ? `You put the lead on hold${why}.`
+      : log.toStage === 'Lost' ? `You marked the lead as lost${why}${extra}.`
       : `You moved the lead from ${log.fromStage} to ${log.toStage}.`
     push({ id: `stage-${log.id}`, at: log.createdAt, icon: 'swap_horiz', text, link: overview, actor: 'You' })
     // Add Log rewrites the stage's row in place (updateStageDetails), so later contact / meeting logs live only inside the payload:
@@ -96,6 +102,26 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
   for (const c of cmps) push({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: { label: 'See comparison', href: `/quote-x-ray/${c.id}` }, actor: who(c.createdBy) })
   for (const r of rets) push({ id: `ret-${r.id}`, at: r.returnedAt, icon: 'undo', text: `${who(r.returnedById)} returned the lead to Qanvast${r.reason ? ` (${r.reason})` : ''}.`, link: { label: 'See Overview', href: base }, actor: who(r.returnedById) })
+  /* (REG-613, parity Q-20) The event log — 1.0's activity rows for what leaves no record: removals, edits, deletions, an undone
+     return, every portal invite and questionnaire ask (REG-609's link stamps keep only the latest of each). */
+  for (const e of events) {
+    const d = (e.detail && typeof e.detail === 'object' ? e.detail : {}) as LeadEventDetail
+    const actor = who(e.actorId)
+    const text = e.kind === 'member_removed' ? `${actor} removed ${d.memberId === ME ? 'yourself' : (d.name ?? 'a member')} from this lead.`
+      : e.kind === 'field_edited' ? `${actor} edited the lead — ${(d.fields ?? []).map((f) => `${f.label}: ${f.from} → ${f.to}`).join('; ')}.`
+      : e.kind === 'task_deleted' ? `${actor} deleted the task ${q(d.title ?? '')}.`
+      : e.kind === 'note_deleted' ? (d.kind === 'contact' ? `${actor} deleted the contact log${d.when ? ` of ${displayDateTimeDot(new Date(d.when))}` : ''}.` : `${actor} deleted the note${d.title ? ` ${q(d.title)}` : ''}.`)
+      : e.kind === 'file_trashed' ? `${actor} moved ${q(d.name ?? '')} to the trash.`
+      : e.kind === 'file_deleted' ? `${actor} deleted ${q(d.name ?? '')} forever.`
+      : e.kind === 'return_undone' ? `${actor} undid the return to Qanvast.`
+      : e.kind === 'invite_sent' ? `${actor} invited ${lead.name} to the portal.`
+      : e.kind === 'questionnaire_asked' ? `${actor} asked ${lead.name} to answer the questionnaire.`
+      : null
+    if (!text) continue
+    const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : 'help'
+    const link = e.kind === 'questionnaire_asked' ? { label: 'See Questionnaire', href: `${base}/questionnaire` } : e.kind === 'task_deleted' ? { label: 'See Tasks', href: `${base}/tasks` } : e.kind === 'file_trashed' ? { label: 'See Files', href: `${base}/files` } : overview
+    push({ id: `ev-${e.id}`, at: e.at, icon, text, link, actor })
+  }
 
   // Tasks (the mock's "ballot" rows) — created by whoever the record names, then updated / completed when its dates say so.
   // The record keeps no history of what changed (updatedAt is bumped by every edit, assignment and tag change), so the update row

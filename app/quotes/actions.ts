@@ -4,12 +4,15 @@ import { randomUUID } from 'node:crypto'
 import { asc, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { members, quoteItems, quotePayments, quoteVersions, quotes } from '@/lib/db/schema'
+import { members, quoteItems, quotePayments, quoteVersions, quotes, leads } from '@/lib/db/schema'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'
 import { revalidateLead } from '@/lib/leads/queries'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import { parseSections, serializeSections, type QuoteSectionState } from '@/lib/quotes/sections'
 import { fetchQuoteApproval } from '@/lib/settings/queries'
+import { notify } from '@/lib/notifications/emit'
+import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
+import { approverIds } from '@/lib/notifications/approvers'
 
 /* Quote editor (1271:40301). Autosave writes land here; the editor keeps its own state, so nothing here refreshes the
    route — the lead's pages are revalidated because the Quotes tab, the Overview card and Activity print these fields. */
@@ -88,6 +91,7 @@ export async function sendQuote(quoteId: string): Promise<{ status: QuoteStatus;
   const set: Partial<typeof quotes.$inferInsert> = { status: next, updatedAt: now }
   if (!q.sentAt) set.sentAt = now
   await db.update(quotes).set(set).where(eq(quotes.id, quoteId))
+  if (next === 'Sent for Approval') { const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, q.leadId)); await notify('quote_approval', await approverIds(), { title: `Quote ${q.number} needs your approval`, body: l ? `For ${l.name}` : null, href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId }) }   /* (REG-604) */
   touch(q.leadId, quoteId)
   return { status: next, sentAt: (set.sentAt ?? q.sentAt ?? null)?.getTime() ?? null, updatedAt: now.getTime() }
 }
@@ -141,6 +145,7 @@ export async function confirmQuoteOnline(quoteId: string, name: string): Promise
   if (!who) throw new Error('name')
   const now = new Date()
   await db.update(quotes).set({ status: 'Confirmed', confirmedAt: now, confirmedBy: who, sentAt: q.sentAt ?? now, updatedAt: now }).where(eq(quotes.id, quoteId))
+  await notify('quote_confirmed', [...await leadMemberIds(q.leadId), ...await studioRunnerIds(), ...(q.createdBy ? [q.createdBy] : [])], { title: `${who} confirmed quote ${q.number}`, body: 'Next: add the T&Cs and send for signature', href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: null })   /* (REG-604) */
   touch(q.leadId, quoteId); revalidatePath(`/confirm/${quoteId}`)
   return { confirmedAt: now.getTime(), by: who }
 }

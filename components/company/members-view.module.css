@@ -1,0 +1,29 @@
+/* Company › Members (REG-601): Profile's card shell, one row per member. */
+.layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); max-width: 1040px; }
+.card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.cardTitle { margin: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.cardHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 80ch; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 40px minmax(200px, 1fr) 200px 240px 90px; align-items: center; gap: var(--om-spacing-4); min-height: 72px; padding: var(--om-spacing-3) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row:first-child { border-top: 0; }
+.who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.name { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.email { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.field { min-width: 0; }
+.team { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 1024px) { .row { grid-template-columns: 40px minmax(160px, 1fr) 170px 200px 80px; } }
+@media (max-width: 767px) {
+  .card { padding: var(--om-spacing-4); }
+  .row { grid-template-columns: 40px minmax(0, 1fr); grid-auto-rows: auto; row-gap: var(--om-spacing-3); }
+  .field { grid-column: 2; }
+  .count { grid-column: 2; text-align: left; }
+}
+
+/* (REG-612) The preferences line under a member's fields. */
+/* (REG-614) One line, every row the same height: the switch · the summary (ellipsized) · Preferences at the end. */
+.prefRow { grid-column: 2 / -1; display: flex; align-items: center; gap: var(--om-spacing-4); min-height: 32px; }
+.switchLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; flex-shrink: 0; }
+.prefSummary { flex: 1; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 767px) { .prefRow { flex-wrap: wrap; } .prefSummary { flex-basis: 100%; white-space: normal; } }

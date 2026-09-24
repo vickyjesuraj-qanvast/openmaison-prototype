@@ -7,6 +7,7 @@ import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
 import { displayDate, inputDate, parseInputDate, startOfDay } from '@/lib/format'
 import { DEFAULT_HOLD_DURATION, HOLD_DURATIONS, holdDurationLabel, holdFollowUpAt } from '@/lib/leads/enums'
+import { DEFAULT_HOLD_REASONS, DEFAULT_LOST_REASONS, LOST_COMPETITOR, LOST_POSTPONED, type LeadReason } from '@/lib/settings/types'
 import { ChoiceChips, DateField, Divider, Dropzone, TextField } from './fields'
 import styles from './wizard.module.css'
 
@@ -119,7 +120,7 @@ export function SuggestedTasksDialog({
  * (REG-286), measured from `openedAt` — the instant the dialog opened.
  */
 export function OnHoldDialog({
-  open, onClose, onSave, reason, setReason, openedAt,
+  open, onClose, onSave, reason, setReason, openedAt, options = DEFAULT_HOLD_REASONS.map((r) => r.name),
 }: {
   open: boolean; onClose: () => void
   /** `followUpAt` is the ISO date the dialog shows; `duration` the preset it matches or "Until …" — store both (REG-286 / REG-453). */
@@ -127,6 +128,8 @@ export function OnHoldDialog({
   reason: string; setReason: (v: string) => void
   /** When the dialog was opened (ms). The presets and the pre-fill are measured from it. */
   openedAt: number
+  /** (REG-607) The studio's live On Hold reasons (Settings › Leads › Reasons), "Others" last. */
+  options?: readonly string[]
 }) {
   // "Other reason" and the date live here — the parent only knows `reason`.
   const [other, setOther] = useState('')
@@ -161,7 +164,7 @@ export function OnHoldDialog({
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
                      <Button onPress={save}>Save &amp; Move</Button></>}>
       <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
-                 options={['Property delay', 'Budget on hold', 'Travelling', 'Others']}
+                 options={options}
                  error={showErrors ? errors.reason : undefined} />
       {reason === 'Others' ? (
         <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
@@ -173,33 +176,74 @@ export function OnHoldDialog({
   )
 }
 
+/** What the Lost dialog hands back beside the reason (REG-607): the "Others" text, the competitor, the expected restart. */
+export type LostDetail = { otherReason?: string; competitor?: string; restartAt?: string }
+
+/**
+ * Move stage › Lost (REG-607, parity Q-07 · Q-38). The reasons are the studio's list (Settings › Leads › Reasons — 1.0's seven and
+ * 2.0's own, "Others" last). Two of them ask for a detail: the competitor's name, and the expected restart date with the nudge
+ * toward On Hold when it is under six months away. A reason that expects logged contacts says how many there are — a hint, not a
+ * block (the owner's call, 2026-09-24): Save never waits on it.
+ */
 export function LostDialog({
-  open, onClose, onSave, reason, setReason,
+  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today,
 }: {
-  open: boolean; onClose: () => void; onSave: (otherReason?: string) => void
+  open: boolean; onClose: () => void; onSave: (detail: LostDetail) => void
   reason: string; setReason: (v: string) => void
+  /** The live reason names the select offers. */
+  options?: readonly string[]
+  /** The studio's Lost reasons with their contact gates, for the hint. */
+  reasons?: LeadReason[]
+  /** The lead's logged contacts — the stage window's and the Notes tab's. */
+  contactCount?: number
+  /** The host's clock, for the restart date picker (never Date.now() in render). */
+  today: Date
 }) {
   const [other, setOther] = useState('')
+  const [competitor, setCompetitor] = useState('')
+  const [restart, setRestart] = useState('')   // d/m/yyyy, the DateField's canonical string
   const [showErrors, setShowErrors] = useState(false)
+  const restartDate = restart ? parseInputDate(restart) : null
   const errors = {
     reason: !reason ? MSG.required : undefined,
     other: reason === 'Others' && !other.trim() ? MSG.required : undefined,
+    restart: restart && !restartDate ? MSG.date : undefined,
   }
   const invalid = Object.values(errors).some(Boolean)
-  const reset = () => { setOther(''); setShowErrors(false) }   // the dialog stays mounted between leads — never carry text or errors over
+  const gate = reasons.find((r) => r.name === reason)?.minContacts ?? 0
+  const contactHint = gate > 0
+    ? contactCount >= gate ? `${contactCount} ${contactCount === 1 ? 'contact' : 'contacts'} logged` : `${contactCount} of ${gate} contacts logged — this reason usually follows ${gate}`
+    : undefined
+  const soon = restartDate ? (startOfDay(restartDate) - startOfDay(today)) / 86_400_000 < 182 : false   // 1.0's nudge: under six months, hold instead
+  const reset = () => { setOther(''); setCompetitor(''); setRestart(''); setShowErrors(false) }   // the dialog stays mounted between leads — never carry text or errors over
   const close = () => { reset(); onClose() }
-  const save = () => { if (invalid) { setShowErrors(true); return } const v = reason === 'Others' ? other.trim() : undefined; reset(); onSave(v) }
+  const save = () => {
+    if (invalid) { setShowErrors(true); return }
+    const detail: LostDetail = {
+      otherReason: reason === 'Others' ? other.trim() : undefined,
+      competitor: reason === LOST_COMPETITOR && competitor.trim() ? competitor.trim() : undefined,
+      restartAt: reason === LOST_POSTPONED && restartDate ? restartDate.toISOString() : undefined,
+    }
+    reset(); onSave(detail)
+  }
   return (
     <Dialog open={open} onClose={close} title="Move stage" width={400}
             subtitle={<span className={styles.subtitle}>Moving to Lost</span>}
             footer={<><Button variant="secondary" appearance="outlined" onPress={close}>Cancel</Button>
                      <Button onPress={save}>Save &amp; Move</Button></>}>
       <TextField label="Reason" required value={reason} onChange={setReason} mode="select"
-                 options={['Property too far', 'Went with another firm', 'Budget mismatch', 'Unresponsive', 'Others']}
-                 error={showErrors ? errors.reason : undefined} />
+                 options={options}
+                 error={showErrors ? errors.reason : undefined} helper={contactHint} />
       {reason === 'Others' ? (
         <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
       ) : null}
+      {reason === LOST_COMPETITOR ? (
+        <TextField label="Competitor (optional)" value={competitor} onChange={setCompetitor} maxLength={80} trailingIcon={null} />
+      ) : null}
+      {reason === LOST_POSTPONED ? (<>
+        <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />
+        {soon ? <span className={styles.helper}>Under 6 months away — consider On Hold instead.</span> : null}
+      </>) : null}
     </Dialog>
   )
 }

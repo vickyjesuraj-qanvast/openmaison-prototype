@@ -313,3 +313,8 @@
 }
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+
+/* (REG-609) The Return window cell: one line; a closed window or a reached cap reads quieter. */
+.window { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 100%; }
+.window[data-state='expired'], .window[data-state='capped'] { color: var(--om-color-on-surface-secondary); }
+.kebabWrap { position: relative; display: inline-flex; }

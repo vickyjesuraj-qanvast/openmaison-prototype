@@ -9,14 +9,15 @@ export type CompanyGroup = { title: string; items: CompanySection[] }
 export const COMPANY_GROUPS: CompanyGroup[] = [
   { title: 'Studio', items: [
     { key: 'profile', icon: 'store', label: 'Profile', help: 'Company details', href: '/company/profile' },   /* (REG-554) the kit moved to Templates › Brand kit */
-    { key: 'members', icon: 'group', label: 'Members', help: 'People, roles and access' },
+    { key: 'members', icon: 'group', label: 'Members', help: 'People, roles and who reports to whom', href: '/company/members' },   /* (REG-601) live */
+    { key: 'questionnaire', icon: 'quiz', label: 'Questionnaire', help: 'The questions every lead starts with', href: '/company/questionnaire' },   /* (REG-612) live */
     { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
     { key: 'price-book', icon: 'menu_book', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-594) */
   ] },
   { title: 'Operations', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },
     { key: 'reports', icon: 'analytics', label: 'Reports', help: 'Sales, pipeline and team' },
-    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, calendars and accounting' },
+    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, calendars and accounting', href: '/company/integrations' },   /* (REG-602) live */
   ] },
 ]
 

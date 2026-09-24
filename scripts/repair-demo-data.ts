@@ -905,7 +905,180 @@ async function main() {
     console.log(`  ${v.rowsAffected} vendor named · ${added} tile entries added · ${section} saved section added`)
   }
 
+  /* ── R39 · the demo's manager and their team (REG-601) ──────────────────────────────────────────────
+     James is the Manager; Sarah and Michelle report to him — the hierarchy Dyel asked for, so Company › Members and the
+     assignment rules have something to show. Idempotent. */
+  console.log('\nR39 members: the manager and their team')
+  {
+    const a = await client.execute(`UPDATE members SET role = 'Manager' WHERE id = 'james' AND role = 'Designer'`)
+    const b = await client.execute(`UPDATE members SET manager_id = 'james' WHERE id IN ('sarah', 'michelle') AND role = 'Designer' AND manager_id IS NULL`)
+    console.log(`  ${a.rowsAffected} manager named · ${b.rowsAffected} designers placed in his team`)
+  }
+
+  /* ── R40 · the bell's demo rows (REG-604) ──────────────────────────────────────────────────────────
+     Three stored notifications for the signed-in owner, on real records: the two newest leads arriving, and a quote a
+     client confirmed if one exists. Idempotent by id; the follow-ups due are derived at read time and need no rows. */
+  console.log('\nR40 notifications')
+  {
+    const me = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE is_you = 1 LIMIT 1`))[0]?.id ?? 'dane'
+    const newest = rows<{ id: string; name: string; source: string; created_at: number }>(await client.execute(`SELECT id, name, source, created_at FROM leads WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 2`))
+    let added = 0
+    for (const [i, l] of newest.entries()) {
+      const r = await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'new_lead', ?, ?, ?, ?, NULL, 'in_app,email,whatsapp', NULL, ?, ?)`, args: [`n-new-${l.id}`, me, `New lead: ${l.name}`, l.source, `/leads/${l.id}`, l.id, Number(l.created_at) + 60, i === 0 ? null : Number(l.created_at) + 3600] })
+      added += r.rowsAffected
+    }
+    const confirmed = rows<{ id: string; number: string; lead_id: string; confirmed_by: string | null; confirmed_at: number }>(await client.execute(`SELECT id, number, lead_id, confirmed_by, confirmed_at FROM quotes WHERE confirmed_at IS NOT NULL AND deleted_at IS NULL ORDER BY confirmed_at DESC LIMIT 1`))[0]
+    if (confirmed) { const r = await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'quote_confirmed', ?, 'Next: add the T&Cs and send for signature', ?, ?, ?, 'in_app,email,whatsapp', NULL, ?, NULL)`, args: [`n-conf-${confirmed.id}`, me, `${confirmed.confirmed_by ?? 'The client'} confirmed quote ${confirmed.number}`, `/quotes/${confirmed.id}`, confirmed.lead_id, confirmed.id, Number(confirmed.confirmed_at)] }); added += r.rowsAffected }
+    console.log(`  ${added} notification rows added`)
+  }
+
+  /* ── R41 · the parity round's vocabulary on the demo data (REG-607) ─────────────────────────────────
+     Key collection takes 1.0's five values ("Not yet collected" → "Later"); the On Hold reason list is the union of both products'
+     ("Budget on hold" → "Budget review"). The leads keep every other value. Idempotent. */
+  console.log('\nR41 parity vocabulary')
+  {
+    const a = await client.execute(`UPDATE leads SET key_collection = CASE
+      WHEN key_collection = 'Not yet collected' THEN 'Later'
+      WHEN key_collection LIKE 'Within the next 3 months%' THEN 'in 3 months'
+      WHEN key_collection LIKE 'Within the next 6 months%' THEN 'in 6 months'
+      WHEN key_collection LIKE 'Within the next 9 months%' THEN 'in 9 months'
+      ELSE key_collection END WHERE key_collection IS NOT NULL AND key_collection NOT IN ('Collected', 'in 3 months', 'in 6 months', 'in 9 months', 'Later')`)
+    const b = await client.execute(`UPDATE stage_logs SET payload = json_set(payload, '$.reason', 'Budget review') WHERE to_stage = 'On Hold' AND json_extract(payload, '$.reason') = 'Budget on hold'`)
+    console.log(`  ${a.rowsAffected} key collection values renamed · ${b.rowsAffected} hold reasons renamed`)
+  }
+
+  /* ── R42 · follow-ups are tasks of their own kind (REG-608) ──────────────────────────────────────────
+     The reminders the Contacted log and a quote's due date raise read "Follow-up" now; the seeded ones catch up. Idempotent. */
+  console.log('\nR42 follow-up task kind')
+  {
+    const a = await client.execute(`UPDATE lead_tasks SET kind = 'Follow-up' WHERE kind IN ('General', 'Call') AND (quote_id IS NOT NULL OR title LIKE 'Follow up %' OR title LIKE 'Meet the client on %')`)
+    console.log(`  ${a.rowsAffected} tasks re-kinded as Follow-up`)
+    /* A follow-up belongs to the lead's members (the reminder, the quote's task and Set a follow-up all assign them) — a seeded one with nobody on it takes them. */
+    const b = await client.execute(`INSERT INTO task_assignees (task_id, member_id) SELECT t.id, x.member_id FROM lead_tasks t JOIN lead_assignees x ON x.lead_id = t.lead_id WHERE t.kind = 'Follow-up' AND NOT EXISTS (SELECT 1 FROM task_assignees a WHERE a.task_id = t.id)`)
+    console.log(`  ${b.rowsAffected} follow-up assignments added`)
+  }
+
+  /* ── R43 · the portal's records and Qanvast's ids (REG-609) ──────────────────────────────────────────
+     A client-answered questionnaire means the client was asked: the homeowner profile and the lead's portal link exist, with
+     last_asked_at a day before the earliest client answer (a seeded "asked" state with its record, REG-343). Qanvast-sourced
+     leads carry Qanvast's own reference. Idempotent. */
+  console.log('\nR43 portal records + Qanvast ids')
+  {
+    const asked = await client.execute(`SELECT l.id, l.name, l.phone, l.email, MIN(q.answered_at) AS first FROM leads l JOIN questions q ON q.lead_id = l.id AND q.answered_by = 'client' AND q.answered_at IS NOT NULL WHERE l.deleted_at IS NULL GROUP BY l.id`)
+    let links = 0
+    for (const r of asked.rows) {
+      const leadId = String(r.id), phone = String(r.phone)
+      const askedAt = Number(r.first) - 86_400
+      await client.execute({ sql: `INSERT INTO homeowner_profiles (id, phone, name, email, created_at, updated_at) SELECT ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM homeowner_profiles WHERE phone = ?)`, args: [`hp-${leadId.slice(0, 8)}`, phone, String(r.name), r.email == null ? null : String(r.email), askedAt, askedAt, phone] })
+      const res = await client.execute({ sql: `INSERT INTO homeowner_lead_links (id, homeowner_id, lead_id, portal_token, chat_history_visible, invited_at, last_asked_at, created_at) SELECT ?, (SELECT id FROM homeowner_profiles WHERE phone = ?), ?, ?, 1, NULL, ?, ? WHERE NOT EXISTS (SELECT 1 FROM homeowner_lead_links WHERE lead_id = ?)`, args: [`hl-${leadId.slice(0, 8)}`, phone, leadId, `tok-${leadId.slice(0, 8)}`, askedAt, askedAt, leadId] })
+      links += res.rowsAffected
+      await client.execute({ sql: `UPDATE homeowner_lead_links SET last_asked_at = ? WHERE lead_id = ? AND last_asked_at IS NULL`, args: [askedAt, leadId] })
+    }
+    console.log(`  ${links} portal links written for ${asked.rows.length} asked leads`)
+    const q = await client.execute(`UPDATE leads SET qanvast_lead_id = printf('%06d', 100000 + (abs(random()) % 900000)) WHERE source = 'Qanvast' AND qanvast_lead_id IS NULL`)
+    console.log(`  ${q.rowsAffected} Qanvast ids assigned`)
+  }
+
+  /* ── R44 · the question bank, the designers' preferences (REG-612) ───────────────────────────────────
+     Company › Questionnaire starts from the questions the demo's leads already ask (Olivia's eleven), each with 1.0's type; the
+     demo designers carry a specialty and preferences so the Assign popover's suggestion has something to say. Idempotent. */
+  console.log('\nR44 question bank + preferences')
+  {
+    const bankRows = await client.execute(`SELECT count(*) AS n FROM studio_scope_questions`)
+    if (Number(bankRows.rows[0]?.n ?? 0) === 0) {
+      const qs = await client.execute(`SELECT text, type, options, MIN(sort_order) AS o FROM questions GROUP BY text ORDER BY o`)
+      let i = 0
+      for (const q of qs.rows) {
+        const type = String(q.type), opts = (() => { try { const v = JSON.parse(String(q.options ?? '[]')); return Array.isArray(v) ? v.map(String) : [] } catch { return [] } })()
+        const bankType = type === 'single' ? (opts.length === 2 && opts[0] === 'Yes' && opts[1] === 'No' ? 'yes_no' : 'single_select') : type === 'multi' ? 'multi_select' : type
+        await client.execute({ sql: `INSERT INTO studio_scope_questions (id, question, question_type, options, is_required, is_enabled, sort_order, created_at) VALUES (?, ?, ?, ?, 0, 1, ?, ?)`, args: [`ssq-${String(i).padStart(2, '0')}`, String(q.text), bankType, bankType === 'yes_no' ? null : opts.length ? JSON.stringify(opts) : null, i, Math.floor(Date.now() / 1000)] })
+        i++
+      }
+      console.log(`  ${i} bank questions seeded from the leads' questionnaires`)
+    } else console.log('  bank already seeded')
+    const prefs: Record<string, { specialty: string; prefs: unknown }> = {
+      sarah: { specialty: 'HDB & BTO homes, compact layouts', prefs: { propertyType: { values: ['HDB 3-Room', 'HDB 4-Room', 'HDB 5-Room', 'BTO 4-Room', 'BTO 5-Room'], priority: 'must' }, area: { values: ['East', 'North East'], priority: 'nice' } } },
+      michelle: { specialty: 'Condo & executive condo, mid-range residential', prefs: { propertyType: { values: ['Condo 2-bedder', 'Condo 3-bedder', 'Executive Condo'], priority: 'must' }, style: { values: ['Scandinavian', 'Japandi', 'Minimalist'], priority: 'nice' } } },
+      germaine: { specialty: 'Landed & penthouse, luxury finishes', prefs: { propertyType: { values: ['Landed — Terrace', 'Landed — Semi-D', 'Landed — Bungalow', 'Penthouse'], priority: 'must' }, budget: { values: ['150+'], priority: 'nice' } } },
+      alex: { specialty: 'Commercial fit-outs and retail spaces', prefs: {} },   // no home keywords: the suggestion's specialty leg stays with the home designers
+    }
+    let n = 0
+    for (const [id, p] of Object.entries(prefs)) {
+      const r = await client.execute({ sql: `UPDATE members SET specialty = COALESCE(specialty, ?), lead_preferences = COALESCE(lead_preferences, ?) WHERE id = ? AND (specialty IS NULL OR lead_preferences IS NULL)`, args: [p.specialty, Object.keys(p.prefs as object).length ? JSON.stringify(p.prefs) : null, id] })
+      n += r.rowsAffected
+    }
+    await client.execute(`UPDATE members SET specialty = 'Commercial fit-outs and retail spaces' WHERE id = 'alex' AND specialty = 'Residential interiors'`)   // the first seeding's wording, corrected
+    console.log(`  ${n} members given a specialty / preferences`)
+  }
+
+  /* ── R45 · the event log's backfill and the demo states 1.0 shows (REG-613, Q-20 · Q-45) ─────────────────
+     Every invite / ask stamp gets its event row (the Activity feed reads events, not stamps, since REG-613). The curated set gains
+     the states 1.0's demo studio shows and 2.0 lacked: a Hangout lead, a Lost lead per reason beyond the returns (Budget mismatch ·
+     Project postponed, with their contact trail), and a webhook arrival waiting in Review with its endpoint. Idempotent. */
+  console.log('\nR45 event backfill + demo states')
+  {
+    const links = await client.execute(`SELECT id, lead_id, invited_at, last_asked_at FROM homeowner_lead_links`)
+    let ev = 0
+    for (const l of links.rows) {
+      for (const [col, kind] of [['invited_at', 'invite_sent'], ['last_asked_at', 'questionnaire_asked']] as const) {
+        const at = l[col]; if (at == null) continue
+        const r = await client.execute({ sql: `INSERT INTO lead_events (id, lead_id, kind, actor_id, at, detail) SELECT ?, ?, ?, 'dane', ?, '{}' WHERE NOT EXISTS (SELECT 1 FROM lead_events WHERE lead_id = ? AND kind = ? AND at = ?)`, args: [`ev-${kind}-${String(l.id).slice(0, 8)}`, String(l.lead_id), kind, Number(at), String(l.lead_id), kind, Number(at)] })
+        ev += r.rowsAffected
+      }
+    }
+    console.log(`  ${ev} event rows backfilled from the portal stamps`)
+    const now = Math.floor(Date.now() / 1000), DAY = 86_400
+    const when = (sec: number) => { const d = new Date(sec * 1000); const h = d.getHours() % 12 || 12; return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}, ${h}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() < 12 ? 'AM' : 'PM'}` }
+    const leadRow = async (r: { id: string; name: string; phone: string; email: string | null; source: string; propertyType: string; address: string; budgetMinor: number; stage: string; createdAt: number; seenAt: number | null; area: string | null; style: string | null; condition: string | null; member: string; assignedAt: number }) => {
+      const exists = await client.execute({ sql: `SELECT 1 FROM leads WHERE id = ?`, args: [r.id] })
+      if (exists.rows.length) return false
+      await client.execute({ sql: `INSERT INTO leads (id, name, phone, email, source, property_type, property_address, budget_minor, stage, key_collection, condition, style, area, created_at, updated_at, seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Collected', ?, ?, ?, ?, ?, ?)`, args: [r.id, r.name, r.phone, r.email, r.source, r.propertyType, r.address, r.budgetMinor, r.stage, r.condition, r.style, r.area, r.createdAt, r.createdAt, r.seenAt] })
+      await client.execute({ sql: `INSERT INTO lead_assignees (id, lead_id, member_id, assigned_at) VALUES (?, ?, ?, ?)`, args: [`${r.id}-a`, r.id, r.member, r.assignedAt] })
+      return true
+    }
+    const contactedPayload = (member: string, at: number, channel: string, outcome: string) => JSON.stringify({ assignees: [member], logs: [{ channel, when: when(at), outcome, nextStepWhen: '', nextStepMode: '', files: ['Q-101'], notes: '' }], meetings: [{ where: '', when: '', files: [], notes: '' }] })
+    let made = 0
+    /* A Hangout lead, unseen in New — 1.0's source the demo lacked. */
+    if (await leadRow({ id: 'plead-hangout', name: 'Nur Aisyah', phone: '91238801', email: 'nur.aisyah@example.com', source: 'Hangout', propertyType: 'HDB 5-Room', address: 'Blk 220 Tampines St 24', budgetMinor: 5_800_000, stage: 'New', createdAt: now - 3 * DAY, seenAt: null, area: 'East', style: 'Modern', condition: 'Resale', member: 'dane', assignedAt: now - 3 * DAY + 1800 })) made++
+    /* Lost for a budget mismatch, after one contact. */
+    const k0 = now - 40 * DAY
+    if (await leadRow({ id: 'plead-lost-budget', name: 'Kenji Sato', phone: '91238803', email: null, source: 'Instagram', propertyType: 'Condo 2-bedder', address: 'Sims Urban Oasis, Aljunied', budgetMinor: 4_200_000, stage: 'Lost', createdAt: k0, seenAt: k0 + 3600, area: 'Central', style: 'Minimalist', condition: 'New', member: 'sarah', assignedAt: k0 + 7200 })) {
+      await client.execute({ sql: `INSERT INTO stage_logs (id, lead_id, from_stage, to_stage, payload, created_at) VALUES (?, ?, 'New', 'Contacted', ?, ?)`, args: ['plead-lost-budget-l1', 'plead-lost-budget', contactedPayload('sarah', k0 + DAY, 'Call', 'Connected'), k0 + DAY] })
+      await client.execute({ sql: `INSERT INTO stage_logs (id, lead_id, from_stage, to_stage, payload, created_at) VALUES (?, ?, 'Contacted', 'Lost', ?, ?)`, args: ['plead-lost-budget-l2', 'plead-lost-budget', JSON.stringify({ reason: 'Budget mismatch' }), k0 + 12 * DAY] })
+      made++
+    }
+    /* Lost because the project is postponed — met, then parked with the restart the dialog records (REG-607). */
+    const r0 = now - 55 * DAY
+    if (await leadRow({ id: 'plead-lost-postponed', name: 'Rachel Lim', phone: '91238804', email: 'rachel.lim@example.com', source: 'Referral', propertyType: 'Landed — Terrace', address: 'Jalan Kembangan', budgetMinor: 18_500_000, stage: 'Lost', createdAt: r0, seenAt: r0 + 1800, area: 'East', style: 'Contemporary', condition: 'Resale', member: 'michelle', assignedAt: r0 + 3600 })) {
+      await client.execute({ sql: `INSERT INTO stage_logs (id, lead_id, from_stage, to_stage, payload, created_at) VALUES (?, ?, 'New', 'Contacted', ?, ?)`, args: ['plead-lost-postponed-l1', 'plead-lost-postponed', contactedPayload('michelle', r0 + DAY, 'WhatsApp', 'Meeting scheduled'), r0 + DAY] })
+      await client.execute({ sql: `INSERT INTO stage_logs (id, lead_id, from_stage, to_stage, payload, created_at) VALUES (?, ?, 'Contacted', 'Met', ?, ?)`, args: ['plead-lost-postponed-l2', 'plead-lost-postponed', JSON.stringify({ assignees: ['michelle'], logs: [{ channel: 'WhatsApp', when: when(r0 + DAY), outcome: 'Meeting scheduled', nextStepWhen: '', nextStepMode: '', files: ['Q-101'], notes: '' }], meetings: [{ where: 'In person', when: when(r0 + 6 * DAY), files: [], notes: '' }] }), r0 + 6 * DAY] })
+      await client.execute({ sql: `INSERT INTO stage_logs (id, lead_id, from_stage, to_stage, payload, created_at) VALUES (?, ?, 'Met', 'Lost', ?, ?)`, args: ['plead-lost-postponed-l3', 'plead-lost-postponed', JSON.stringify({ reason: 'Project postponed', restartAt: new Date((now + 240 * DAY) * 1000).toISOString() }), r0 + 20 * DAY] })
+      made++
+    }
+    console.log(`  ${made} demo leads added`)
+    /* A webhook endpoint with one arrival waiting in Review — the Integrations card and the review queue agree. */
+    const cap = await client.execute(`SELECT value FROM settings WHERE key = 'lead_capture'`)
+    let capture: Record<string, unknown> = {}
+    try { capture = cap.rows[0]?.value ? JSON.parse(String(cap.rows[0].value)) : {} } catch { capture = {} }
+    if (!Array.isArray(capture.webhooks) || (capture.webhooks as unknown[]).length === 0) {
+      const at = (now - 2 * DAY) * 1000
+      capture.webhooks = [{ id: 'wh-google-ads', platform: 'google_ads', label: 'Google Ads', notes: 'Lead form on the Search campaign', token: 'c4f1b2e9a7d3c8f0e2b6a9d1c5f7e3a8b0d2c4e6f8a1b3c5d7e9f0a2b4c6d8e0', key: null, received: 1, created: 1, duplicates: 0, lastAt: at, active: true, createdAt: (now - 20 * DAY) * 1000 }]
+      capture.webhookLog = [{ at, webhookId: 'wh-google-ads', outcome: 'created', name: 'Hafiz Rahman' }]
+      await client.execute({ sql: `INSERT INTO settings (key, value, updated_at) VALUES ('lead_capture', ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`, args: [JSON.stringify(capture), now] })
+      console.log('  webhook endpoint seeded')
+    }
+    const imp = await client.execute(`SELECT 1 FROM imports WHERE id = 'imp-webhook-1'`)
+    if (!imp.rows.length) {
+      await client.execute({ sql: `INSERT INTO imports (id, file_name, total_rows, imported_rows, skipped_rows, created_at) VALUES ('imp-webhook-1', 'Webhook · Google Ads', 1, 1, 0, ?)`, args: [now - 2 * DAY] })
+      await client.execute({ sql: `INSERT INTO import_rows (id, import_id, data, status) VALUES ('improw-webhook-1', 'imp-webhook-1', ?, 'pending')`, args: [JSON.stringify({ 'Lead Name': 'Hafiz Rahman', 'Lead Phone Number': '91238802', 'Lead Email': 'hafiz.r@example.com', 'Lead Source': 'Google Ads', 'Property Type': 'BTO 4-Room', 'Property Address': 'Tengah Garden Vines', 'Estimated Budget (S$)': '52,000', 'Remarks': 'From the Google lead form — wants a quote before the keys.' })] })
+      console.log('  webhook arrival waiting in Review seeded')
+    }
+  }
+
   const checks: [string, string][] = [
+    ['notification pointing at a missing lead (REG-604)', `SELECT n.title FROM notifications n WHERE n.lead_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.id = n.lead_id)`],
+    ['designer reporting to someone who is not a Manager (REG-601)', `SELECT d.name FROM members d JOIN members m ON m.id = d.manager_id WHERE m.role <> 'Manager'`],
+    ['member with an unknown role (REG-601)', `SELECT name FROM members WHERE role NOT IN ('Owner', 'Admin', 'Manager', 'Designer')`],
     ['price book section unreadable (REG-594)', `SELECT name FROM price_book_sections WHERE NOT json_valid(lines_json) OR json_type(lines_json, '$.lines') IS NOT 'array'`],
     ['price book item with an empty name (REG-594)', `SELECT id FROM price_book_items WHERE trim(name) = ''`],
     ['brand kit details disagree with the studio record (REG-554)', `SELECT 'brand' FROM settings b JOIN settings s ON s.key = 'studio' WHERE b.key = 'brand' AND (json_extract(b.value, '$.details.name') IS NOT json_extract(s.value, '$.name') OR json_extract(b.value, '$.details.phone') IS NOT json_extract(s.value, '$.phone'))`],
@@ -960,6 +1133,17 @@ async function main() {
     ['section nested deeper than one level (REG-558)', `SELECT q.number || ' · ' || c.name FROM quote_items c JOIN quote_items p ON p.id = c.parent_id JOIN quote_items g ON g.id = p.parent_id JOIN quotes q ON q.id = c.quote_id WHERE c.kind = 'group' OR g.parent_id IS NOT NULL`],
     ['kept version whose quote is at or below it (REG-565)', `SELECT q.number FROM quote_versions v JOIN quotes q ON q.id = v.quote_id WHERE v.version >= q.version`],
     ['Letter footer address still under the signature (REG-569)', `SELECT name FROM quote_templates WHERE design_json LIKE '%"kind":"footer"%' AND design_json LIKE '%"y":16,"w":174,"text":"{studio_name}%'`],
+    ['lead with a key collection outside the vocabulary (REG-607)', `SELECT name FROM leads WHERE key_collection IS NOT NULL AND key_collection NOT IN ('Collected', 'in 3 months', 'in 6 months', 'in 9 months', 'Later')`],
+    ['parity demo lead missing (REG-613)', `SELECT id FROM (SELECT 'plead-hangout' AS id UNION SELECT 'plead-lost-budget' UNION SELECT 'plead-lost-postponed') WHERE id NOT IN (SELECT id FROM leads)`],
+    ['event with an unknown kind (REG-613)', `SELECT id FROM lead_events WHERE kind NOT IN ('member_removed','field_edited','task_deleted','note_deleted','file_trashed','file_deleted','return_undone','invite_sent','questionnaire_asked')`],
+    ['bank question with an unknown type (REG-612)', `SELECT question FROM studio_scope_questions WHERE question_type NOT IN ('text','yes_no','number','single_select','multi_select','date')`],
+    ['member preferences that are not JSON (REG-612)', `SELECT name FROM members WHERE lead_preferences IS NOT NULL AND json_valid(lead_preferences) = 0`],
+    ['custom field value on an inactive or missing field (REG-612)', `SELECT v.id FROM lead_custom_field_values v LEFT JOIN lead_custom_fields f ON f.id = v.field_id WHERE f.id IS NULL`],
+    ['client-answered questionnaire on a lead never asked (REG-609)', `SELECT l.name FROM leads l WHERE l.deleted_at IS NULL AND EXISTS (SELECT 1 FROM questions q WHERE q.lead_id = l.id AND q.answered_by = 'client') AND NOT EXISTS (SELECT 1 FROM homeowner_lead_links h WHERE h.lead_id = l.id AND h.last_asked_at IS NOT NULL)`],
+    ['Qanvast lead without its Qanvast id (REG-609)', `SELECT name FROM leads WHERE source = 'Qanvast' AND deleted_at IS NULL AND qanvast_lead_id IS NULL`],
+    ['task with an unknown kind (REG-608)', `SELECT title FROM lead_tasks WHERE kind NOT IN ('General', 'Call', 'Follow-up')`],
+    ['follow-up task on a lead with members but nobody on it (REG-608)', `SELECT t.title FROM lead_tasks t WHERE t.kind = 'Follow-up' AND EXISTS (SELECT 1 FROM lead_assignees x WHERE x.lead_id = t.lead_id) AND NOT EXISTS (SELECT 1 FROM task_assignees a WHERE a.task_id = t.id)`],
+    ['lead with a district outside the vocabulary (REG-607)', `SELECT name FROM leads WHERE area IS NOT NULL AND area NOT IN ('North', 'North East', 'East', 'West', 'Central')`],
     ['keyboard-mash task left behind', `SELECT title FROM lead_tasks WHERE lower(title) IN ('test','tse6y"') OR title LIKE 'hgdk%' OR title LIKE 'adfad%' OR title LIKE 'sdajk%'`],
   ]
   let failed = 0

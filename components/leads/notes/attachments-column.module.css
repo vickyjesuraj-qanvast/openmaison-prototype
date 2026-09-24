@@ -81,3 +81,9 @@
   .column { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-content: start; gap: var(--om-spacing-2); }
   .title { grid-column: 1 / -1; }
 }
+
+/* (REG-600) The upload time under the name: the tile grows by one 16px line (150×174 instead of the mock's 150×158). */
+.tile { height: 174px; }
+.caption { height: 58px; align-items: flex-start; }
+.tileText { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.tileTime { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

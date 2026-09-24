@@ -5,6 +5,7 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import type { LeadFile } from '@/lib/db/schema'
+import { displayDateTimeDot } from '@/lib/format'
 import styles from './attachments-column.module.css'
 
 export type AttachmentsColumnProps = {
@@ -48,7 +49,10 @@ export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumn
               )}
               <span className={styles.caption}>
                 <Icon name={kindIcon(f)} size={20} className={styles.kindIcon} />
-                <span className={styles.tileName}>{f.name}</span>
+                <span className={styles.tileText}>
+                  <span className={styles.tileName}>{f.name}</span>
+                  <span className={styles.tileTime}>{displayDateTimeDot(f.createdAt)}</span>   {/* (REG-600) when it was uploaded, at a glance */}
+                </span>
               </span>
             </button>
             <span className={styles.tileMenuWrap}>

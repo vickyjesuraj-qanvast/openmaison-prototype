@@ -140,11 +140,12 @@ export function TasksTable({
      each column at its dragged width instead where the user changed it — the card scrolls sideways past that, never squeezes. */
   const floor = 56 + columns.reduce((sum, c) => sum + (colWidths[c.key] ?? Number(c.track)), 0)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow, { leading: 56, flex: true })
+  const L0 = useColumnLayout(columns, headRow, { leading: 56, flex: true })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
   return (
-    <div className={styles.card} role="table" aria-label="Tasks" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
     <div ref={frame} className={styles.scroller} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
     <div className={styles.table}>
@@ -154,7 +155,7 @@ export function TasksTable({
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && tasks.some((t) => selected.has(t.id))} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
         </div>
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] ? (
               /* Sort is inert in this prototype — the head answers coming soon. */
               <button type="button" className={styles.hSort} onClick={comingSoon}>

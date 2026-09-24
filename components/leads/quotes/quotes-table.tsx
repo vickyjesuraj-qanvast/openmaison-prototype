@@ -95,8 +95,9 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   const colWidths = useColumnWidths('lead-quotes')
   const tracks = gridTemplateFor(columns, colWidths, '40px')
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow, { leading: 40 })
+  const L0 = useColumnLayout(columns, headRow, { leading: 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   const allSelected = quotes.length > 0 && quotes.every((q) => selected.has(q.id))
@@ -110,14 +111,14 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
   return (
     <div ref={frame} className={styles.frame} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-    <div className={styles.card} role="table" aria-label="Quotes" data-cols="lead-quotes" style={{ '--tracks': tracks } as React.CSSProperties}>
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Quotes" data-cols="lead-quotes" style={{ '--tracks': tracks } as React.CSSProperties}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div ref={headRow} className={styles.head} role="row">
         <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && quotes.some((q) => selected.has(q.id))} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
         </div>
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (

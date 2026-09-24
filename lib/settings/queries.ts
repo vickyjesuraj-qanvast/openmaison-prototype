@@ -1,6 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { DEFAULT_LEAD_SOURCES, parseLeadSources, type LeadSourceEntry, DEFAULT_LEAD_VISIBILITY, parseLeadVisibility, type LeadVisibility, DEFAULT_LEAD_CAPTURE, parseLeadCapture, type LeadCapture, DEFAULT_LEAD_REASONS, parseLeadReasons, type LeadReasons } from '@/lib/settings/types'
 import { quoteItems, settings } from '@/lib/db/schema'
 import { DEFAULT_NUMBERING, DEFAULT_QUOTE_APPROVAL, DEFAULT_QUOTE_RULES, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, DEFAULT_TEMPLATE_APPROVAL, parseNumbering, parseQuoteApproval, parseQuoteRules, parseStageMovement, parseStudio, parseTemplateApproval, parseTrades, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type Studio, type TemplateApproval } from './types'
 
@@ -74,4 +75,36 @@ export async function isApprover(memberId: string | null | undefined, role: stri
   if (!memberId) return false
   const rules = await fetchQuoteRules()
   return rules.backupApproverId !== null && rules.backupApproverId === memberId
+}
+
+export const LEAD_SOURCES_KEY = 'lead_sources'
+/** (REG-599) The studio's lead sources; `managed` false = the defaults, nothing saved yet. */
+export async function fetchLeadSources(): Promise<{ sources: LeadSourceEntry[]; managed: boolean }> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, LEAD_SOURCES_KEY)).limit(1)
+  if (!row) return { sources: DEFAULT_LEAD_SOURCES, managed: false }
+  try { return { sources: parseLeadSources(JSON.parse(row.value)), managed: true } } catch { return { sources: DEFAULT_LEAD_SOURCES, managed: false } }
+}
+
+export const LEAD_VISIBILITY_KEY = 'lead_visibility'
+/** (REG-601) Who sees which leads. */
+export async function fetchLeadVisibility(): Promise<LeadVisibility> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, LEAD_VISIBILITY_KEY)).limit(1)
+  if (!row) return DEFAULT_LEAD_VISIBILITY
+  try { return parseLeadVisibility(JSON.parse(row.value)) } catch { return DEFAULT_LEAD_VISIBILITY }
+}
+
+export const LEAD_CAPTURE_KEY = 'lead_capture'
+/** (REG-602) The website's intake address and the Meta connection. */
+export async function fetchLeadCapture(): Promise<LeadCapture> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, LEAD_CAPTURE_KEY)).limit(1)
+  if (!row) return DEFAULT_LEAD_CAPTURE
+  try { return parseLeadCapture(JSON.parse(row.value)) } catch { return DEFAULT_LEAD_CAPTURE }
+}
+
+export const LEAD_REASONS_KEY = 'lead_reasons'
+/** (REG-607) The Lost and On Hold reasons the dialogs offer; `managed` false = the defaults, nothing saved yet. */
+export async function fetchLeadReasons(): Promise<{ reasons: LeadReasons; managed: boolean }> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, LEAD_REASONS_KEY)).limit(1)
+  if (!row) return { reasons: DEFAULT_LEAD_REASONS, managed: false }
+  try { return { reasons: parseLeadReasons(JSON.parse(row.value)), managed: true } } catch { return { reasons: DEFAULT_LEAD_REASONS, managed: false } }
 }

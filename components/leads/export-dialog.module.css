@@ -1,0 +1,7 @@
+/* (REG-610) The leads export "like a bank statement": a radio group, the period, the columns, the format, a summary line. */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-1); width: 100%; }
+.label { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.row { display: flex; align-items: center; min-height: 36px; }
+.dates { display: flex; gap: var(--om-spacing-4); width: 100%; }
+.dates > * { flex: 1; min-width: 0; }
+.helper { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

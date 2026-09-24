@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
 import { Button } from '@/components/ds'
 import { useMaisonAi } from '@/lib/maison-ai'
-import { Dropdown } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { ExportDialog } from '@/components/leads/export-dialog'
+import { buildTable, downloadBlob, exportFileName, type ExportFormat } from '@/lib/leads/export'
 import menuStyles from '@/components/leads/menus.module.css'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { Icon } from '@/components/om/icon'
@@ -18,7 +20,7 @@ import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { PageHeader } from '@/components/shell/page-header'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { QanvastSkeleton } from '@/components/shell/skeleton'
-import { displayDate, money, phoneDisplay } from '@/lib/format'
+import { displayDate, displayDateTimeTight, money, phoneDisplay } from '@/lib/format'
 import { INACTIVE_STAGES, STAGES } from '@/lib/leads/enums'
 import type { QanvastLeadsData } from '@/lib/leads/qanvast'
 import { RETURN_FILTERS } from '@/lib/leads/return-tags'
@@ -53,6 +55,8 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
   const { rows, counts } = data
   const router = useRouter()
   const comingSoon = useComingSoon()
+  const [kebabOpen, setKebabOpen] = useState(false)   /* (REG-609) the header kebab: Export all as… */
+  const [exportOpen, setExportOpen] = useState(false)
   const snackbar = useSnackbar()
   const mobile = useMediaQuery(MOBILE)   // (REG-361) the listing's mobile header set
   /* Column settings (REG-454): order · visibility · up to three pinned, kept per browser; the phone cards ignore them. */
@@ -111,6 +115,18 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
     <div className={styles.groupTitle} data-tone={tone}><span className={styles.dot} data-tone={tone} />{label}</div>
   )
 
+  /* (REG-609, parity T-10) Export what the table shows — the house dialog, the listing's "Export all as…" wording, the Qanvast columns. */
+  const exportQanvast = (format: ExportFormat): string => {
+    const head = ['Name', 'Phone', 'Stage', 'Source', 'Credits', 'Budget (S$)', 'Property type', 'Created', 'Qanvast ID', 'Return window', 'Return status', 'Returned on', 'Return reason', 'Qanvast reply']
+    const body = visible.map((r) => [r.name, phoneDisplay(r.phone), r.stage, r.source, String(r.credits), money(r.budgetMinor), r.propertyType, displayDate(r.createdAt), r.qanvastLeadId ?? '', r.window.short, r.tags.map((t) => t.label).join(' · '), r.ret ? displayDateTimeTight(r.ret.returnedAt) : '', r.ret?.reason ?? '', r.ret?.replyReason ?? ''])
+    return downloadBlob(buildTable('OpenMaison — Qanvast leads', head, body, format), exportFileName(format, new Date()).replace('openmaison-leads', 'openmaison-qanvast-leads'))
+  }
+  const kebabMenu = (
+    <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle="Qanvast Ops">
+      <DropdownItem onSelect={() => { setKebabOpen(false); setExportOpen(true) }}>Export all as…</DropdownItem>
+    </Dropdown>
+  )
+
   return (
     <PageReveal skeleton={<QanvastSkeleton />}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
@@ -129,9 +145,12 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
               <Tooltip label="Insights">
                 <IconButton icon="bar_chart_4_bars" label="Insights" onClick={comingSoon} />
               </Tooltip>
-              <Tooltip label="More options">
-                <IconButton icon="more_vert" label="More options" onClick={comingSoon} />
-              </Tooltip>
+              <span className={styles.kebabWrap}>
+                <Tooltip label="More options">
+                  <IconButton icon="more_vert" label="More options" onClick={() => setKebabOpen((o) => !o)} />
+                </Tooltip>
+                {kebabMenu}
+              </span>
             </>
           ) : (
             /* (REG-361) Add Lead first, then Insights — the listing's own order (REG-305). */
@@ -142,9 +161,12 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
               <Button variant="secondary" appearance="outlined" iconStart={<Icon name="bar_chart_4_bars" size={20} />} onPress={comingSoon}>
                 Insights
               </Button>
-              <Tooltip label="More options">
-                <IconButton icon="more_vert" label="More options" onClick={comingSoon} />
-              </Tooltip>
+              <span className={styles.kebabWrap}>
+                <Tooltip label="More options">
+                  <IconButton icon="more_vert" label="More options" onClick={() => setKebabOpen((o) => !o)} />
+                </Tooltip>
+                {kebabMenu}
+              </span>
             </>
           )}
         />
@@ -211,6 +233,8 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
         </div>
       </div>
 
+      <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} title="Export Qanvast leads" download={exportQanvast}
+                    onDone={(name, format) => snackbar({ message: `Exported ${visible.length} leads as ${format} · ${name}` })} />   {/* (REG-609) */}
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
 
     </PageReveal>

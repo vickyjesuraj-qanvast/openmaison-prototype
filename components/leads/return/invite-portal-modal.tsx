@@ -10,7 +10,7 @@ import { useCopy } from '@/components/om/use-copy'
 import { Dialog } from '@/components/leads/move-stage/dialogs'
 import { PORTAL_LINK } from '@/components/leads/questionnaire/ask-client-dialog'
 import { MSG } from '@/lib/forms'
-import { digitsOnly, isSgPhone, phoneTyped } from '@/lib/format'
+import { digitsOnly, isSgPhone, phoneTyped, displayDateTimeDot } from '@/lib/format'
 import styles from './invite-portal-modal.module.css'
 
 /**
@@ -25,7 +25,7 @@ import styles from './invite-portal-modal.module.css'
  */
 export function InvitePortalModal({ open, lead, onClose, onSend }: {
   open: boolean
-  lead: { name: string; phone: string }
+  lead: { name: string; phone: string; /** (REG-609) the last invite, when there was one */ invitedAt?: Date | null }
   onClose: () => void
   onSend: (phone: string, showHistory: boolean) => void
 }) {
@@ -62,6 +62,8 @@ export function InvitePortalModal({ open, lead, onClose, onSend }: {
     >
       <div className={styles.body} data-testid="invite-portal">
         <p className={styles.helper}>Invite a homeowner to track their project.</p>
+        {/* (REG-609, parity Q-22) An invite is recorded; a second Send resends the link (1.0's rule). */}
+        {lead.invitedAt ? <p className={styles.helper} data-testid="last-invited">Last invited {displayDateTimeDot(lead.invitedAt)} — Send again resends the link.</p> : null}
         <TextField label="Homeowner name" value={name} onChange={setName} />
         <TextField
           label="Phone number" required value={phoneTyped(phone)} onChange={(v) => setPhone(v.slice(0, 8))}   /* (REG-456) shown "9123 4567", held as digits; no maxLength — the space is the 9th character */

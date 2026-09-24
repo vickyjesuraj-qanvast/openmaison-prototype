@@ -30,17 +30,18 @@ export function XrayTable({ rows, otherStudio, columns, onReorder }: { rows: Xra
   const colWidths = useColumnWidths('xray-items')
   const tracks = gridTemplateFor(columns, colWidths)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow)
+  const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
   const diffOf = (r: XrayRow) => (r.yoursMinor !== null && r.theirsMinor !== null && r.status === 'matched' ? r.theirsMinor - r.yoursMinor : null)
   return (
-    <div ref={frame} className={styles.card} role="table" aria-label="Item by item" data-cols="xray-items" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Item by item" data-cols="xray-items" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             <span className={styles.hLabel}>{c.key === 'theirs' ? otherStudio : c.label}</span>
             <ColumnResizer table="xray-items" column={c.key} label={c.label} min={c.key === 'item' ? 160 : 72} />
           </div>

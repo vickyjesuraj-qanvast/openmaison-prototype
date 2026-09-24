@@ -1,0 +1,10 @@
+/* The house number tile (REG-614) — the Quote X-Ray's tile rules (components/xray/xray-result.module.css), shared. */
+.tile { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); min-width: 0; }
+.tile[data-tone='primary'] { background: var(--om-color-primary-variant); }
+.tile[data-tone='primary'] .value { color: var(--om-color-primary-default); }
+.label { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.value { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.value[data-grade='good'] { color: var(--om-color-tertiary-green-default); }
+.value[data-grade='warn'] { color: var(--om-color-tertiary-yellow-default); }
+.value[data-grade='bad'] { color: var(--om-color-tertiary-red-default); }
+.help { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

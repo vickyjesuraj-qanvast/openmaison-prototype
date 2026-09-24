@@ -134,3 +134,15 @@
 @media (max-width: 767px) {
   .heading, .section, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }
+
+/* (REG-609) Round 3: the document fill's link row, the attached files' tiles, the duplicate dialog's line. */
+.fillRow { display: flex; justify-content: flex-end; width: 100%; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: var(--om-spacing-3); margin-top: var(--om-spacing-3); }
+.dupText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+
+/* (REG-612) Custom fields in Additional info: a titled block; a multi select takes the house chips (components/om/chips, REG-614). */
+.customTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin-bottom: var(--om-spacing-3); display: block; }
+.customList { display: flex; flex-direction: column; gap: var(--om-spacing-6); width: 100%; }
+.customChips { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.customLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.chipError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }

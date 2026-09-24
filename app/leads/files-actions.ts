@@ -1,6 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { logLeadEvent } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
@@ -106,7 +107,9 @@ export async function duplicateFiles(fileIds: string[]): Promise<string[]> {
 /** Move to Trash Folder (931:39204) — soft; folders take their (untrashed) contents along under one timestamp. */
 export async function trashFiles(fileIds: string[]): Promise<void> {
   const { leadId, ids } = await withDescendants(fileIds, (f) => !f.deletedAt); if (!leadId) return
+  const picked = await db.select({ name: leadFiles.name, kind: leadFiles.kind }).from(leadFiles).where(inArray(leadFiles.id, fileIds))
   await db.update(leadFiles).set({ deletedAt: new Date() }).where(inArray(leadFiles.id, ids))
+  for (const f of picked) await logLeadEvent(db, leadId, 'file_trashed', { name: f.name, kind: f.kind })   /* (REG-613) */
   touch(leadId, ...ids)
 }
 
@@ -126,7 +129,9 @@ export async function restoreFiles(fileIds: string[]): Promise<void> {
 /** Deleted Files › Delete Forever — hard delete of the folder and everything inside it (comments and task attachments cascade). */
 export async function deleteFilesForever(fileIds: string[]): Promise<void> {
   const { leadId, ids } = await withDescendants(fileIds, () => true); if (!leadId) return
+  const picked = await db.select({ name: leadFiles.name, kind: leadFiles.kind }).from(leadFiles).where(inArray(leadFiles.id, fileIds))
   await db.delete(leadFiles).where(inArray(leadFiles.id, ids))
+  for (const f of picked) await logLeadEvent(db, leadId, 'file_deleted', { name: f.name, kind: f.kind })   /* (REG-613) */
   touch(leadId, ...ids)
 }
 

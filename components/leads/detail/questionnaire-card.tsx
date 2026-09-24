@@ -4,6 +4,7 @@
 // `QuestionnaireSummary` (lib/leads/detail.ts), not `LeadQuestionnaire` — the @deprecated row type of the dead
 // `lead_questionnaires` table it used to borrow. Type-only import, as every other client reader of that module.
 import type { QuestionnaireSummary } from '@/lib/leads/detail'
+import { displayDate } from '@/lib/format'
 import { Card, CardEmpty } from './card'
 import styles from './questionnaire-card.module.css'
 
@@ -43,6 +44,8 @@ export function QuestionnaireCard({ q, onAsk, onOpenTab }: {
               <span>{`Client answered: ${q.clientAnswered}`}</span>
               <span>{`Studio answered: ${q.studioAnswered}`}</span>
             </div>
+            {/* (REG-609, parity Q-22) The ask is a record now — the portal link's stamp. */}
+            {q.askedAt ? <span className={styles.asked} data-testid="asked-on">Client asked on {displayDate(q.askedAt)}</span> : null}
           </div>
         </div>
       ) : (

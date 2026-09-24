@@ -142,35 +142,14 @@
 }
 .plain { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* B1 selection — overlay checkbox inside the pinned cell; zero layout shift
-   at rest so the resting table stays pixel-identical to the mock. */
-.selBox {
-  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
-  z-index: 3; opacity: 0;
-  transition: opacity var(--motion-toggle);
-}
-.row:hover .selBox,
-.row[data-selected='true'] .selBox,
-.table[data-selecting='true'] .selBox { opacity: 1; }
-.headSelBox {
-  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
-  z-index: 5; opacity: 0;
-  transition: opacity var(--motion-toggle);
-}
-.headRow:hover .headSelBox,
-.table[data-selecting='true'] .headSelBox { opacity: 1; }
+/* B1 selection — the checkbox inside the pinned cell, always there when the table offers selection (REG-614, owner
+   2026-09-24: it used to reveal on hover, while the Tasks · Quotes · Files tables' selection column never hides). The box
+   sits 16 in, as those tables' p16 column does, and the cell's content starts at 52 (their 56px column, less the rule).
+   A table that is not selectable keeps the mock's resting cell exactly. */
+.selBox { position: absolute; left: var(--om-spacing-4); top: 50%; transform: translateY(-50%); z-index: 3; }
+.headSelBox { position: absolute; left: var(--om-spacing-4); top: 50%; transform: translateY(-50%); z-index: 5; }
 .row[data-selected='true'] .cell { background: var(--om-color-primary-variant); }
-
-/* Make room for the overlay checkbox: the pinned cell's content slides right
-   on hover / in selection mode (150ms, per-row — no table-wide reflow). */
-/* Only when the table is selectable (listing is not — REG-89). */
-.nameCell { transition: padding-left var(--motion-toggle); }
-.table[data-selectable] .row:hover .nameCell,
-.table[data-selectable] .row[data-selected='true'] .nameCell,
-.table[data-selectable][data-selecting='true'] .nameCell { padding-left: 40px; }
-.hCell:first-of-type { transition: padding-left var(--motion-toggle); }
-.table[data-selectable] .headRow:hover .hCell:first-of-type,
-.table[data-selectable][data-selecting='true'] .hCell:first-of-type { padding-left: 40px; }
+.table[data-selectable] .nameCell, .table[data-selectable] .hCell:first-of-type { padding-left: 52px; }
 
 /* Row hover actions — Edit + kebab pinned to the visible right edge (779:24696). */
 .rowActions {
@@ -234,13 +213,6 @@
   .scroller[data-scrolled] .headRow > .hCell:first-child:not(.pin),
   .scroller[data-scrolled] .row > .cell:first-child:not(.pin) { box-shadow: var(--om-shadow-frozen-column); }   /* REG-286 */
 }
-/* Touch has no hover, so a table that offers selection (never the listing — REG-89) shows its checkboxes and
-   keeps their 40px from the start, instead of waiting for a hover that never comes (REG-269). */
-@media (max-width: 767px) {
-  .table[data-selectable] .selBox, .table[data-selectable] .headSelBox { opacity: 1; }
-  .table[data-selectable] .nameCell, .table[data-selectable] .hCell:first-of-type { padding-left: 40px; }
-}
-
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Nothing in a row may depend on hover: a finger never produces one, so the two hover-revealed pieces are
    simply always there where the pointer cannot hover (the row keeps its resting look otherwise). This is the
@@ -297,3 +269,8 @@
 }
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
+
+/* (REG-600) A two-line cell: the date on the first line, the channel and outcome under it in the secondary type. */
+.twoLine { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.muted { color: var(--om-color-on-surface-secondary); }

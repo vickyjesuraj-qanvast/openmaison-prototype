@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -18,7 +18,8 @@ export function BulkBar({
   inset = false,
 }: {
   count: number
-  actions: { label: string; onClick: () => void; tone?: 'danger' }[]
+  /** (REG-610) The press carries its event: the listing's Assign anchors a popover to the button. */
+  actions: { label: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; tone?: 'danger' }[]
   onClear: () => void
   /** Render inside a modal panel (absolute, bottom 24) instead of fixed to the viewport. */
   inset?: boolean

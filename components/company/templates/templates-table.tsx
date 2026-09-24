@@ -63,8 +63,9 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
   const colWidths = useColumnWidths('quote-templates')
   const tracks = gridTemplateFor(columns, colWidths)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow)
+  const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
 
   const status = (t: TemplateSummary) => {
@@ -74,12 +75,12 @@ export function TemplatesTable({ rows, brand, sample, now, onOpen, onRowMenu, co
   }
 
   return (
-    <div ref={frame} className={styles.card} role="table" aria-label="Quote templates" data-cols="quote-templates" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Quote templates" data-cols="quote-templates" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (

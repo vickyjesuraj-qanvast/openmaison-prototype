@@ -20,7 +20,9 @@ import styles from './assignee-field.module.css'
  * Multi-select, because `lead_assignees` is many-to-many and every other assignment surface is: a single-select would
  * silently drop the second assignee of any lead opened and saved here.
  */
-export function AssigneeField({ team, value, onChange, error, inputRef }: {
+export function AssigneeField({ team, value, onChange, error, inputRef, locked }: {
+  /** (REG-609, parity C-07) A Designer's new lead is theirs: the field shows them and the note, and takes no pick. */
+  locked?: string
   team: Member[]
   /** Member ids, in pick order. */
   value: string[]
@@ -39,6 +41,15 @@ export function AssigneeField({ team, value, onChange, error, inputRef }: {
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) setQuery('')
+  }
+
+  if (locked) {
+    const names = team.filter((m) => value.includes(m.id)).map((m) => m.name).join(', ')
+    return (
+      <div className={styles.wrap} data-field="assignees" data-locked="">
+        <TextField label="Assign member" value={names} onChange={() => {}} disabled trailingIcon={null} helper={locked} />
+      </div>
+    )
   }
 
   const q = query.trim().toLowerCase()

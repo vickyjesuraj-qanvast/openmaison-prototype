@@ -8,6 +8,10 @@ import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { parseInputDateTime } from '@/lib/format'
 import { revalidateLead } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
+import { REASON_LABELS, REFUSED_SUB_REASONS, WRONG_FIELDS } from '@/lib/leads/return-model'
+import { notify } from '@/lib/notifications/emit'
+import { logLeadEvent } from '@/lib/leads/events'
+import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 
 /* Qanvast lead return (931:48236) + Invite to Portal (931:48844). Every action revalidates the lead's pages and the listings. */
 
@@ -17,9 +21,13 @@ const touch = (leadId: string) => revalidateLead(leadId)
 
 export type ReturnInput = {
   reason: string
-  /** d/m/yyyy, h:mm AM input string from the picker (REG-119) */
+  /** (REG-609, parity D-39) The reason's own fields: the ticked sub-reasons ("Lead refused to meet up") and the detail line
+   *  (the duplicate searched for · the existing project reference · what is incorrect). */
+  subReasons?: string[]
+  detail?: string
+  /** d/m/yyyy, h:mm AM input string from the picker (REG-119) — the two contact reasons ask for it, the rest leave it empty */
   firstOutreach: string
-  attempts: number
+  attempts: number | null
   comments: string
   fileIds: string[]
 }
@@ -35,6 +43,10 @@ export async function returnLead(leadId: string, input: ReturnInput): Promise<{ 
   // processing / already approved → refuse, so a stale menu can never stack a second return, Lost→Lost log and duplicate task.
   const [latest] = await db.select({ status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, leadId)).orderBy(desc(leadReturns.returnedAt)).limit(1)
   if (!canReturnLead({ source: lead.source, returnStatus: latest?.status })) throw new Error('This lead cannot be returned')
+  if (!REASON_LABELS.includes(input.reason)) throw new Error('unknown reason')   // (REG-285) the vocabulary, not a client string
+  const subReasons = (input.subReasons ?? []).filter((r) => (REFUSED_SUB_REASONS as readonly string[]).includes(r))
+  const detail = (input.detail ?? '').trim().slice(0, 200)
+  if (input.reason === 'Wrong contact info' && detail && !(WRONG_FIELDS as readonly string[]).includes(detail)) throw new Error('unknown field')
   const now = new Date()
   const returnId = randomUUID(); const logId = randomUUID(); const taskId = randomUUID()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0)
@@ -48,11 +60,14 @@ export async function returnLead(leadId: string, input: ReturnInput): Promise<{ 
     await tx.update(leads).set({ stage: 'Lost', updatedAt: now }).where(eq(leads.id, leadId))
     await tx.insert(leadReturns).values({
       id: returnId, leadId, status: 'processing', returnedById: ME, returnedAt: now, reason: input.reason, createdAt: now,
-      firstOutreachAt: parseInputDateTime(input.firstOutreach), attempts: input.attempts, comments: input.comments.trim() || null,
+      firstOutreachAt: input.firstOutreach ? parseInputDateTime(input.firstOutreach) : null, attempts: input.attempts, comments: input.comments.trim() || null,
+      subReasons: subReasons.length ? JSON.stringify(subReasons) : null, detail: detail || null,   /* (REG-609) */
       stageBefore: lead.stage, stageLogId: logId, taskId,
     })
     if (input.fileIds.length) await tx.insert(returnAttachments).values(input.fileIds.map((fileId) => ({ returnId, fileId, createdAt: now })))
   })
+  /* (REG-608) The return parks the lead as Lost — a stage change like any other. */
+  await notify('stage_changed', [...(await studioRunnerIds()), ...(await leadMemberIds(leadId))], { title: `${lead.name}: ${lead.stage} → Lost`, body: 'Lost · Lead returned to Qanvast', href: `/leads/${leadId}`, leadId })
   touch(leadId)
   return { returnId }
 }
@@ -69,6 +84,7 @@ export async function undoReturn(returnId: string): Promise<void> {
     if (ret.taskId) await tx.delete(leadTasks).where(eq(leadTasks.id, ret.taskId))
     await tx.delete(leadReturns).where(eq(leadReturns.id, returnId))
   })
+  await logLeadEvent(db, ret.leadId, 'return_undone', { reason: ret.reason })   /* (REG-613) the undone return leaves no row */
   touch(ret.leadId)
 }
 

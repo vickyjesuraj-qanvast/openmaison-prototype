@@ -1,7 +1,7 @@
 /* LEAD STAGES card body (858:24890): V g0 p0/12/12/12 — five 36px rows, no gap.
    Parked variants (858:24646 Lost / 858:24709 On Hold): V g4 → rows group · 1px rule · parked row. */
 .body {
-  display: flex; flex-direction: column; gap: 0;
+  display: flex; flex-direction: column; gap: var(--om-spacing-1);   /* (REG-614) the follow-up lines always follow a rule now, as the parked row does */
   padding: 0 var(--om-spacing-3) var(--om-spacing-3);
   min-width: 0;
 }
@@ -36,8 +36,10 @@
 .label { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-1); }
 .nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
 .name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* On Hold only: "till 27 Oct ’26" 12/Medium/16 secondary, 8 after the name. */
-.till { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+/* On Hold: "till 27 Oct ’26" 12/Medium/16 secondary, 8 after the name. (REG-607) Lost carries the reason and its detail here too —
+   a long caption ellipsizes; the stage name never gives way to it (the row read "L… Went with another firm · Competitor: …"). */
+.till { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.nameGroup:has(.till) .name { flex: 0 0 auto; }
 
 /* Meta (H g4): current → "current" primary · "·" · "2 days"; done → "2 days" Regular; future → "--" Medium.
    The Lost / On Hold variants type the future "--" in Regular. */
@@ -84,3 +86,9 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .why { display: block; flex: 1 0 100%; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 }
+
+/* (REG-614) The follow-up lines under the stages take the stage row itself: "overdue" reads red where "current" reads primary;
+   the Response time line is plain for a member who cannot open Insights. */
+.overdue { color: var(--om-color-tertiary-red-default); }
+.row[data-static] { cursor: default; }
+.row[data-static]:hover { background: none; }

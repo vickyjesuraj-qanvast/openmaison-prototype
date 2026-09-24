@@ -2,6 +2,8 @@ import 'server-only'
 import { countPendingTemplates } from '@/lib/templates/queries'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
+import { unreadCount } from '@/lib/notifications/queries'
 import { isOverdue } from '@/lib/format'
 import { leadFiles, leadTasks, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks, type LeadFile, type LeadTask, type Member, type Tag, type TaskComment, type TaskTemplate, leads } from '@/lib/db/schema'
 
@@ -78,7 +80,10 @@ export async function fetchLeadTasks(leadId: string): Promise<LeadTasksData> {
 
 /** The rail's Tasks page (REG-466): every lead's tasks and the studio's own, with the live leads for the Lead picker and filter. */
 export async function fetchStudioTasks(): Promise<StudioTasksData> {
-  return loadTasks('studio')
+  const [data, visible] = await Promise.all([loadTasks('studio'), fetchViewer().then(visibleLeadIds)])
+  if (!visible) return data
+  /* (REG-601) A Manager's or a Designer's page keeps the studio's own tasks and the tasks of the leads they see. */
+  return { ...data, tasks: data.tasks.filter((t) => !t.leadId || visible.has(t.leadId)), leads: data.leads.filter((l) => visible.has(l.id)) }
 }
 
 /** The rail badge (REG-466): open tasks whose due date has passed, studio-wide. */
@@ -90,6 +95,6 @@ export async function countOverdueTasks(): Promise<number> {
 
 /** What the rail draws on its items (REG-466): the Tasks item's overdue count, keyed by href; nothing when there is nothing to say. */
 export async function railBadges(): Promise<Record<string, number>> {
-  const [overdue, pending] = await Promise.all([countOverdueTasks(), countPendingTemplates()])   // (REG-501) Company: templates awaiting approval
-  return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending > 0 ? { '/company': pending } : {}) }
+  const [overdue, pending, unread] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell
+  return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending > 0 ? { '/company': pending } : {}), ...(unread > 0 ? { notifications: unread } : {}) }
 }

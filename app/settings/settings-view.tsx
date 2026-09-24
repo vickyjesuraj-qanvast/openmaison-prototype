@@ -13,7 +13,16 @@ import { Switch } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { formatQuoteNumber, initialsOf, isDefaultNumbering, QUOTE_APPROVAL_OPTIONS, ROUND_STEP_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type TemplateApproval } from '@/lib/settings/types'
-import { setNumbering, setQuoteApproval, setQuoteRules, setStageMovement, setTemplateApproval, setTrades } from './actions'
+import { CustomFieldsCard } from './custom-fields-card'
+import type { CustomFieldDef } from '@/lib/leads/custom-fields-model'
+import { setLeadReasons, setLeadSources, setLeadVisibility, setNumbering, setQuoteApproval, setQuoteRules, setStageMovement, setTemplateApproval, setTrades } from './actions'
+import { LEAD_VISIBILITY_OPTIONS, intakeAddress, type LeadCapture, type LeadSourceEntry, type LeadVisibility, type LeadReason, type LeadReasons } from '@/lib/settings/types'
+import { simulateArrival } from '@/app/leads/capture-actions'
+import { NotificationsSettings } from './notifications-settings'
+import type { MessageTemplate, NotificationRules } from '@/lib/notifications/model'
+import { useCopy } from '@/components/om/use-copy'
+import { useRouter } from 'next/navigation'
+import { displayDateTimeDot } from '@/lib/format'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './settings.module.css'
 
@@ -22,12 +31,25 @@ const MODULES = [
   { key: 'leads', icon: 'people_alt', label: 'Leads' },
   { key: 'stages', icon: 'flag', label: 'Stages' },
   { key: 'quotes', icon: 'request_quote', label: 'Quotes' },
+  { key: 'notifications', icon: 'notifications', label: 'Notifications' },   /* (REG-604) */
   { key: 'projects', icon: 'business_center', label: 'Projects' },
   { key: 'finance', icon: 'account_balance_wallet', label: 'Finance' },
 ]
-type Live = 'leads' | 'quotes'
+type Live = 'leads' | 'quotes' | 'notifications'
 
-export function SettingsView({ stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, meName, section = 'leads', rules, team }: {
+export function SettingsView({ stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, meName, section = 'leads', rules, team, leadSources, sourcesManaged, sourceCounts, leadVisibility, leadCapture, studioName, arrivals, notificationRules, messageTemplates, leadReasons, reasonsManaged, reasonCounts, canManage, customFields }: {
+  /** (REG-607) Settings › Leads › Reasons: the two lists, whether they were ever saved, how many leads each reason has carried; and whether this member may change the Leads cards (Owners and Admins, parity Q-41). */
+  leadReasons: LeadReasons; reasonsManaged: boolean; reasonCounts: { lost: Record<string, number>; hold: Record<string, number> }; canManage: boolean
+  /** (REG-612, parity Q-25) The studio's custom lead fields, every one (inactive included) for the card. */
+  customFields: CustomFieldDef[]
+  /** (REG-599) Settings › Leads › Lead sources: the list, whether it was ever saved, and how many live leads each source has. */
+  leadSources: LeadSourceEntry[]; sourcesManaged: boolean; sourceCounts: Record<string, number>
+  /** (REG-601) Who sees which leads. */
+  leadVisibility: LeadVisibility
+  /** (REG-602) Lead capture: the intake address, the Meta connection and what arrived through them. */
+  leadCapture: LeadCapture; studioName: string; arrivals: { fileName: string; at: number; rows: number }[]
+  /** (REG-604) Settings › Notifications. */
+  notificationRules: NotificationRules; messageTemplates: MessageTemplate[]
   stageMovement: StageMovement; quoteApproval: QuoteApproval; templateApproval: TemplateApproval
   /** (REG-561) Settings › Quotes: the number pattern and the trades list (`tradesManaged` false = the list is what the quotes use, not yet saved). */
   numbering: Numbering; trades: string[]; tradesManaged: boolean; meName: string
@@ -111,6 +133,68 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
     finally { setNumBusy(false) }
   }
 
+  /* (REG-602) Lead capture: the address to copy, the arrivals, the demo's simulated lead. */
+  const router = useRouter()
+  const address = intakeAddress(studioName, leadCapture.emailSlug)
+  const { copied, copy } = useCopy(address, { done: 'Intake address copied' })
+  const [simulating, setSimulating] = useState(false)
+  const simulate = async () => {
+    if (simulating) return
+    setSimulating(true)
+    try {
+      const r = await simulateArrival('email')
+      snackbar({ message: r.flagged ? `${r.name} wrote in — a lead with that number exists, so it waits in Review imported leads` : `${r.name} wrote in from the website — a new lead`, actionLabel: 'Open leads', onAction: () => router.push('/leads') })
+      router.refresh()
+    } catch { snackbar({ message: 'Couldn’t simulate the lead — please try again' }) } finally { setSimulating(false) }
+  }
+  /* (REG-601) Who sees leads: two choice cards, optimistic like Stage movement. */
+  const [vis, setVis] = useState<LeadVisibility>(leadVisibility)
+  const chooseVis = async (next: LeadVisibility) => {
+    if (next === vis) return
+    const prev = vis
+    setVis(next)
+    try { await setLeadVisibility(next); snackbar({ message: next === 'assigned' ? 'Managers and designers now see only the leads assigned to them' : 'Everyone sees every lead again' }) }
+    catch { setVis(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
+  }
+  /* (REG-599) Lead sources: add · retire · restore · remove — the whole list written at once, as the trades are. */
+  const [sources, setSources] = useState<LeadSourceEntry[]>(leadSources)
+  const [newSource, setNewSource] = useState('')
+  const writeSources = async (next: LeadSourceEntry[], done: string) => {
+    const prev = sources
+    setSources(next)
+    try { const clean = await setLeadSources(next); setSources(clean); snackbar({ message: done }) }
+    catch { setSources(prev); snackbar({ message: 'Couldn’t save the lead sources — please try again' }) }
+  }
+  const addSource = () => {
+    const name = newSource.trim().slice(0, 40)
+    if (!name) return
+    if (sources.some((s) => s.name.toLowerCase() === name.toLowerCase())) { snackbar({ message: `${name} is already a source` }); return }
+    setNewSource('')
+    void writeSources([...sources.filter((s) => s.name !== 'Others'), { name, retired: false }, ...sources.filter((s) => s.name === 'Others')], `${name} added to the lead sources`)   // Others stays last
+  }
+  /* (REG-607) Reasons: the Lost and On Hold lists — add · retire · restore · remove, a contact gate on a Lost reason — written at once, as the sources are. */
+  const [reasons, setReasons] = useState<LeadReasons>(leadReasons)
+  const [newReason, setNewReason] = useState<{ lost: string; hold: string }>({ lost: '', hold: '' })
+  const [newGate, setNewGate] = useState('')
+  const writeReasons = async (next: LeadReasons, done: string) => {
+    const prev = reasons
+    setReasons(next)
+    try { const clean = await setLeadReasons(next); setReasons(clean); snackbar({ message: done }) }
+    catch { setReasons(prev); snackbar({ message: 'Couldn’t save the reasons — please try again' }) }
+  }
+  const addReason = (kind: 'lost' | 'hold') => {
+    const name = newReason[kind].trim().slice(0, 40)
+    if (!name) return
+    const list = reasons[kind]
+    if (list.some((r) => r.name.toLowerCase() === name.toLowerCase())) { snackbar({ message: `${name} is already a reason` }); return }
+    const gate = kind === 'lost' ? Number(newGate) : 0
+    const entry: LeadReason = gate > 0 ? { name, retired: false, minContacts: gate } : { name, retired: false }
+    setNewReason((x) => ({ ...x, [kind]: '' })); setNewGate('')
+    void writeReasons({ ...reasons, [kind]: [...list.filter((r) => r.name !== 'Others'), entry, ...list.filter((r) => r.name === 'Others')] }, `${name} added to the ${kind === 'lost' ? 'Lost' : 'On Hold'} reasons`)   // Others stays last
+  }
+  /* (REG-607, parity Q-41) Only Owners and Admins change the Leads cards; anyone else reads them. */
+  const LOCKED = 'Only Owners and Admins change the lead settings'
+  const guard = (fn: () => void) => () => { if (!canManage) { snackbar({ message: LOCKED }); return } fn() }
   /* (REG-561) Trades: a managed list — add one, remove one — written at once. */
   const [list, setList] = useState<string[]>(trades)
   const [managed, setManaged] = useState(tradesManaged)
@@ -136,7 +220,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
         <div className={styles.content}>
           <nav className={styles.nav} aria-label="Settings sections">
             {MODULES.map((m) => {
-              const live = m.key === 'leads' || m.key === 'quotes'
+              const live = m.key === 'leads' || m.key === 'quotes' || m.key === 'notifications'
               return (
                 <button key={m.key} type="button" className={styles.tab} data-active={m.key === active || undefined}
                         aria-current={m.key === active ? 'page' : undefined}
@@ -147,11 +231,13 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               )
             })}
           </nav>
-          {active === 'leads' ? (
+          {active === 'notifications' ? (
+            <NotificationsSettings rules={notificationRules} templates={messageTemplates} />
+          ) : active === 'leads' ? (
             <section className={styles.panel} aria-labelledby="settings-leads-title">
               <div className={styles.sectionHead}>
                 <h2 id="settings-leads-title" className={styles.sectionTitle}>Leads</h2>
-                <p className={styles.sectionHelp}>Applies to every lead in Demo Studio — the table, the kanban board and imports.</p>
+                <p className={styles.sectionHelp}>Applies to every lead in Demo Studio — the table, the kanban board and imports.{canManage ? '' : ' Only Owners and Admins change these.'}</p>
               </div>
               <div className={styles.setting}>
                 <div className={styles.settingHead}>
@@ -160,7 +246,109 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                 </div>
                 <div className={styles.choices} role="radiogroup" aria-label="Stage movement">
                   {STAGE_MOVEMENT_OPTIONS.map((o) => (
-                    <ChoiceCard key={o.key} title={o.title} help={o.help} selected={mode === o.key} onSelect={() => { void choose(o.key) }} />
+                    <ChoiceCard key={o.key} title={o.title} help={o.help} selected={mode === o.key} onSelect={guard(() => { void choose(o.key) })} />
+                  ))}
+                </div>
+              </div>
+              {/* (REG-599) Lead sources — Flipstone's "add TikTok etc.": the list the lead form, the import mapping, the filters and the Source column read. */}
+              <div className={styles.setting} data-testid="lead-sources">
+                <div className={styles.settingHead}>
+                  <span className={styles.settingTitle}>Lead sources</span>
+                  <span className={styles.settingHelp}>Where a lead can come from — the Lead source field, the import mapping and the Source filter offer these. Retire a source to keep its leads and stop offering it; a source with no leads can be removed. {sourcesManaged ? '' : 'Not set yet — these are the defaults.'}</span>
+                </div>
+                <ul className={styles.trades} aria-label="Lead sources">
+                  {sources.map((s) => {
+                    const n = sourceCounts[s.name] ?? 0
+                    return (
+                      <li key={s.name} className={styles.trade} data-retired={s.retired || undefined} data-testid="lead-source">
+                        <span>{s.name}</span>
+                        <span className={styles.sourceCount} aria-label={`${n} ${n === 1 ? 'lead' : 'leads'}`}>{n}</span>
+                        {!canManage ? null : s.retired ? (
+                          <Tooltip label={`Restore ${s.name}`}><IconButton icon="undo" label={`Restore ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.map((x) => (x.name === s.name ? { ...x, retired: false } : x)), `${s.name} restored`) }} /></Tooltip>
+                        ) : n > 0 ? (
+                          <Tooltip label={`Retire ${s.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Retire ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.map((x) => (x.name === s.name ? { ...x, retired: true } : x)), `${s.name} retired — its leads keep it`) }} /></Tooltip>
+                        ) : (
+                          <Tooltip label={`Remove ${s.name}`}><IconButton icon="close" label={`Remove ${s.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeSources(sources.filter((x) => x.name !== s.name), `${s.name} removed`) }} /></Tooltip>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+                {canManage ? <div className={styles.addTrade}>
+                  <TextField label="Add a source" value={newSource} onChange={setNewSource} maxLength={40} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSource() } }} />
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={addSource} isDisabled={!newSource.trim()}>Add</Button>
+                </div> : null}
+              </div>
+              {/* (REG-607, parity Q-05 · Q-07 · Q-38) Reasons — 1.0 lets a studio shape its close reasons and gate one behind logged contacts; the On Hold and Lost dialogs read these two lists. */}
+              <CustomFieldsCard fields={customFields} canManage={canManage} />   {/* (REG-612) */}
+              <div className={styles.setting} data-testid="lead-reasons">
+                <div className={styles.settingHead}>
+                  <span className={styles.settingTitle}>Reasons</span>
+                  <span className={styles.settingHelp}>What the Lost and On Hold dialogs offer. Retire a reason to keep the leads that carry it and stop offering it; a reason no lead carries can be removed. A Lost reason can expect logged contacts — the dialog then says how many there are. {reasonsManaged ? '' : 'Not set yet — these are the defaults.'}</span>
+                </div>
+                {(['lost', 'hold'] as const).map((kind) => {
+                  const list = reasons[kind]
+                  const counts = reasonCounts[kind]
+                  const label = kind === 'lost' ? 'Lost' : 'On Hold'
+                  return (
+                    <div key={kind} className={styles.reasonGroup} data-testid={`reasons-${kind}`}>
+                      <span className={styles.reasonLabel}>{label}</span>
+                      <ul className={styles.trades} aria-label={`${label} reasons`}>
+                        {list.map((r) => {
+                          const n = counts[r.name] ?? 0
+                          return (
+                            <li key={r.name} className={styles.trade} data-retired={r.retired || undefined} data-testid="lead-reason">
+                              <span>{r.name}{r.minContacts ? <span className={styles.reasonGate}> · after {r.minContacts} contacts</span> : null}</span>
+                              <span className={styles.sourceCount} aria-label={`${n} ${n === 1 ? 'lead' : 'leads'}`}>{n}</span>
+                              {!canManage ? null : r.retired ? (
+                                <Tooltip label={`Restore ${r.name}`}><IconButton icon="undo" label={`Restore ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.map((x) => (x.name === r.name ? { ...x, retired: false } : x)) }, `${r.name} restored`) }} /></Tooltip>
+                              ) : n > 0 ? (
+                                <Tooltip label={`Retire ${r.name} — its ${n} ${n === 1 ? 'lead keeps' : 'leads keep'} it`}><IconButton icon="visibility_off" label={`Retire ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.map((x) => (x.name === r.name ? { ...x, retired: true } : x)) }, `${r.name} retired — its leads keep it`) }} /></Tooltip>
+                              ) : (
+                                <Tooltip label={`Remove ${r.name}`}><IconButton icon="close" label={`Remove ${r.name}`} size={24} variant="bare" iconSize={16} onClick={() => { void writeReasons({ ...reasons, [kind]: list.filter((x) => x.name !== r.name) }, `${r.name} removed`) }} /></Tooltip>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                      {canManage ? (
+                        <div className={styles.addTrade} data-testid={`add-reason-${kind}`}>
+                          <TextField label={`Add a ${label.toLowerCase()} reason`} value={newReason[kind]} onChange={(v) => setNewReason((x) => ({ ...x, [kind]: v }))} maxLength={40} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addReason(kind) } }} />
+                          {kind === 'lost' ? <TextField label="Needs logged contacts" value={newGate} onChange={(v) => setNewGate(v.slice(0, 2))} numeric="digits" maxLength={2} trailingIcon={null} className={styles.gateField} /> : null}
+                          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="add" size={20} />} onPress={() => addReason(kind)} isDisabled={!newReason[kind].trim()}>Add</Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+              {/* (REG-602) Lead capture — Dyel's "website leads appear in the dashboard", Cove's Meta Ads: the intake address the website form emails, the Meta connection under Company › Integrations, and what arrived. */}
+              <div className={styles.setting} data-testid="lead-capture" id="lead-capture">
+                <div className={styles.settingHead}>
+                  <span className={styles.settingTitle}>Lead capture</span>
+                  <span className={styles.settingHelp}>Point your website form at this address and every enquiry becomes a lead here — source Website, unread until someone opens it. A known phone number goes to Review imported leads instead of a second lead. Meta Lead Ads connect under Company › Integrations.</span>
+                </div>
+                <div className={styles.captureRow}>
+                  <code className={styles.captureAddress} data-testid="intake-address">{address}</code>
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="content_copy" size={20} />} onPress={() => { void copy() }}>{copied ? 'Copied' : 'Copy'}</Button>
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} onPress={() => router.push('/company/integrations')}>Integrations</Button>
+                </div>
+                <div className={styles.captureMeta}>
+                  <span>{arrivals.length === 0 ? 'Nothing has arrived through the website or Meta yet.' : `${arrivals.length} ${arrivals.length === 1 ? 'arrival' : 'arrivals'} so far — last ${displayDateTimeDot(new Date(Math.max(...arrivals.map((a) => a.at))))}`}</span>
+                  <span>Meta Lead Ads: {leadCapture.meta.connected ? `connected to ${leadCapture.meta.page || 'your page'}` : 'not connected'}</span>
+                  {/* The demo's stand-in for an email arriving: an invented enquiry, marked as such. */}
+                  <Button appearance="text" iconStart={<Icon name="mail" size={18} />} onPress={() => { void simulate() }} isDisabled={simulating}>{simulating ? 'Arriving…' : 'Simulate an enquiry arriving (demo)'}</Button>
+                </div>
+              </div>
+              {/* (REG-601) Who sees leads — Dyel's hierarchy: the owner assigns, a manager assigns within their team, a designer keeps their own. Roles and teams live under Company › Members. */}
+              <div className={styles.setting} data-testid="lead-visibility">
+                <div className={styles.settingHead}>
+                  <span className={styles.settingTitle}>Who sees leads</span>
+                  <span className={styles.settingHelp}>Owners and Admins always see every lead and assign anyone. Roles and who reports to whom are set under Company › Members.</span>
+                </div>
+                <div className={styles.choices} role="radiogroup" aria-label="Who sees leads">
+                  {LEAD_VISIBILITY_OPTIONS.map((o) => (
+                    <ChoiceCard key={o.key} title={o.title} help={o.help} selected={vis === o.key} onSelect={guard(() => { void chooseVis(o.key) })} />
                   ))}
                 </div>
               </div>

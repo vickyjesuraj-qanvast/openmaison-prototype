@@ -1,5 +1,6 @@
 'use client'
 
+import { openNotifications } from '@/components/shell/notifications-panel'
 import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -92,7 +93,7 @@ export function MobileChrome() {
           <button type="button" className={styles.barIcon} aria-label="Chat" onClick={comingSoon}>
             <Icon name="chat" size={24} weight={300} />
           </button>
-          <button type="button" className={styles.barIcon} aria-label="Notifications" onClick={comingSoon}>
+          <button type="button" className={styles.barIcon} aria-label="Notifications" onClick={openNotifications}>   {/* (REG-604) */}
             <Icon name="notifications" size={24} weight={300} />
           </button>
           <button type="button" className={styles.avatarBtn} aria-label="Dane Bruce Lee" onClick={comingSoon}>

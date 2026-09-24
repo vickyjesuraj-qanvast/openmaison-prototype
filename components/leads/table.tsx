@@ -11,14 +11,14 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
-import { displayDate, isOverdue, money, phoneLocal } from '@/lib/format'
+import { displayDate, isOverdue, money, phoneLocal, displayDateTimeDot } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './table.module.css'
 
 export type ColumnKey =
-  | 'name' | 'stage' | 'tasks' | 'assignees' | 'source' | 'budget' | 'propertyType' | 'created' | 'address'
+  | 'name' | 'stage' | 'tasks' | 'assignees' | 'source' | 'budget' | 'propertyType' | 'created' | 'address' | 'lastContact' | 'district' | 'nextFollowUp'
 
 export type ColumnConfig = { key: ColumnKey; label: string; visible: boolean; pinned: boolean }
 
@@ -32,17 +32,20 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'propertyType', label: 'Property Type', visible: true, pinned: false },
   { key: 'created', label: 'Created', visible: true, pinned: false },
   { key: 'address', label: 'Address', visible: false, pinned: false },
+  { key: 'lastContact', label: 'Last contact', visible: false, pinned: false },   /* (REG-600) off until switched on — the mock's table keeps its columns */
+  { key: 'district', label: 'District', visible: false, pinned: false },   /* (REG-607) 1.0's Area / District, off until switched on */
+  { key: 'nextFollowUp', label: 'Next follow-up', visible: false, pinned: false },   /* (REG-608) the earliest dated open task, off until switched on */
 ]
 
 const WIDTHS: Record<ColumnKey, number> = {
   name: 240, stage: 146, tasks: 321, assignees: 160,
-  source: 132, budget: 138, propertyType: 158, created: 115, address: 240,
+  source: 132, budget: 138, propertyType: 158, created: 115, address: 240, lastContact: 200, district: 120, nextFollowUp: 200,
 }
 /* (REG-468, sort audit 2026-09-16: "Remove the 17") A glyph only where ordering answers a question: names, stage, budget, dates.
    Members (several per cell), Source and Property Type (categories the filter serves) lost theirs. */
 const SORTABLE: Record<ColumnKey, boolean> = {
   name: true, stage: true, tasks: false, assignees: false,
-  source: false, budget: true, propertyType: false, created: true, address: false,
+  source: false, budget: true, propertyType: false, created: true, address: false, lastContact: true, district: false, nextFollowUp: true,
 }
 
 type Sort = { key: ColumnKey; dir: 'asc' | 'desc' } | null
@@ -51,6 +54,9 @@ const EMPTY_SELECTION = new Set<string>()
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata — unless the
     user dragged the column (REG-427), which fixes it at that width. */
 const colStyle = (key: ColumnKey, dragged: number | undefined) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
+
+/** (REG-608) The earliest dated open task — the listing's tasks are already ordered by due date, nulls last. */
+const nextDue = (row: LeadRow) => row.tasks.find((t) => t.dueAt) ?? null
 
 function sortValue(row: LeadRow, key: ColumnKey): string | number {
   switch (key) {
@@ -61,6 +67,8 @@ function sortValue(row: LeadRow, key: ColumnKey): string | number {
     case 'budget': return row.budgetMinor
     case 'propertyType': return row.propertyType
     case 'created': return row.createdAt.getTime()
+    case 'lastContact': return row.lastContact?.at.getTime() ?? 0
+    case 'nextFollowUp': return nextDue(row)?.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER   /* (REG-608) undated last */
     default: return ''
   }
 }
@@ -87,6 +95,7 @@ export function LeadsTable({
   now,
   query = '',
   filterSort = 'newest',
+  canDelete = true,
 }: {
   /** Row whose stage menu is open — its stage cell shows the 2px primary outline (780:86452). */
   openStageId?: string | null
@@ -110,6 +119,8 @@ export function LeadsTable({
   onDeleteRow: (row: LeadRow) => void
   onReturnRow: (row: LeadRow) => void
   onCopyPhone: (row: LeadRow) => void
+  /** (REG-607, parity Q-41) Only Owners and Admins delete: the row menu drops the item for everyone else. */
+  canDelete?: boolean
   /** Clock captured by the caller in an event handler / on mount (purity rule). */
   now: number
   /** Live search text — the matched substring is emphasised in every cell it can land in (C2, REG-275). */
@@ -148,7 +159,8 @@ export function LeadsTable({
   const cellProps = (col: ColumnConfig, base: string | undefined) => ({
     role: 'cell',
     className: col.pinned ? `${base} ${styles.pin}` : base,
-    style: col.pinned ? { ...colStyle(col.key, dragged[col.key]), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key, dragged[col.key]),
+    /* (REG-614) The drag's transform rides every cell, head and body, so the whole column travels — the Items grid's rule (REG-572). */
+    style: { ...(col.pinned ? { ...colStyle(col.key, dragged[col.key]), left: `calc(${pinOffset[col.key] ?? 0}px * var(--col-scale, 1))` } : colStyle(col.key, dragged[col.key])), ...D.style(col.key) },
     'data-pin-edge': col.pinned && col.key === pinEdge ? true : undefined,
   })
   /* Fluid columns grow pro rata, so sticky offsets scale by (rendered width ÷ floor). DOM write only.
@@ -320,6 +332,32 @@ export function LeadsTable({
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(displayDate(row.createdAt))}</span></div>
       case 'address':
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ? hit(row.propertyAddress) : '—'}</span></div>
+      case 'district':   /* (REG-607) */
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.area ? hit(row.area) : '—'}</span></div>
+      case 'nextFollowUp': {   /* (REG-608) when, then the task; overdue reads red */
+        const t = nextDue(row)
+        return (
+          <div key={col.key} {...cellProps(col, styles.cell)}>
+            {t?.dueAt ? (
+              <span className={styles.twoLine}>
+                <span className={styles.plain} style={isOverdue(t.dueAt, now) ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(displayDateTimeDot(t.dueAt))}</span>
+                <span className={styles.sub}>{hit(t.title)}</span>
+              </span>
+            ) : <span className={styles.plain}>—</span>}
+          </div>
+        )
+      }
+      case 'lastContact':   /* (REG-600) the latest contact log: when, then how and what came of it */
+        return (
+          <div key={col.key} {...cellProps(col, styles.cell)}>
+            {row.lastContact ? (
+              <span className={styles.twoLine}>
+                <span className={styles.plain}>{hit(displayDateTimeDot(row.lastContact.at))}</span>
+                <span className={styles.sub}>{[row.lastContact.channel, row.lastContact.outcome].filter(Boolean).join(' · ') || '—'}</span>
+              </span>
+            ) : <span className={styles.muted}>No contact yet</span>}
+          </div>
+        )
     }
   }
 
@@ -328,7 +366,7 @@ export function LeadsTable({
   return (
     <div className={styles.card}>
       <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-        <div ref={tableEl} className={styles.table} role="table" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
+        <div ref={tableEl} className={styles.table} role="table" data-drag-root="" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
              style={{ minWidth: minWidth + band }}>
           <div className={styles.headRow} role="row">
             {visible.map((col, i) => (
@@ -385,13 +423,13 @@ export function LeadsTable({
                                       // measured off this trigger and the height of THIS menu (1 or 2 items), never counted
                                       // from the row index. The answer used to be written out in five places and two of the
                                       // copies had drifted — Tasks and Files were still counting rows.
-                                      setMenuSide(menuSideFor(e.currentTarget, canReturnLead(row) ? 2 : 1))
+                                      setMenuSide(menuSideFor(e.currentTarget, (canDelete ? 1 : 0) + (canReturnLead(row) ? 1 : 0)))
                                       setMenuRow((m) => (m === row.id ? null : row.id))
                                     }} />
                       </Tooltip>
                     </span>
                     <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right" side={menuSide} sheetTitle={row.name}>
-                      <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem>
+                      {canDelete ? <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem> : null}
                       {canReturnLead(row) ? (
                         /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
                         <DropdownItem onSelect={() => { setMenuRow(null); onReturnRow(row) }}>Return Lead</DropdownItem>

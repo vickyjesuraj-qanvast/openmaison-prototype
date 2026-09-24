@@ -1,0 +1,47 @@
+/* Company › Integrations (REG-602): Profile's card shell, one card per connection. */
+.layout { display: flex; flex-direction: column; gap: var(--om-spacing-5); max-width: 880px; }
+.card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); scroll-margin-top: 96px; }
+.cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.cardTitle { margin: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.cardHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 80ch; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.address { display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.page { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.forms { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.form { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 40px; padding: 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); cursor: pointer; }
+.formName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.map { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.mapRow { display: grid; grid-template-columns: 1fr 16px 1fr; align-items: center; gap: var(--om-spacing-3); min-height: 32px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); max-width: 520px; }
+.mapRow > :last-child { color: var(--om-color-on-surface-secondary); }
+.soon { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.soon li { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 48px; padding: var(--om-spacing-2) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.soon li:first-child { border-top: 0; }
+.soon strong { color: var(--om-color-on-surface-default); font-weight: 600; }
+@media (max-width: 767px) { .card { padding: var(--om-spacing-4); } .mapRow { grid-template-columns: 1fr 16px 1fr; } }
+
+/* (REG-612) The Webhooks and Email lead sources cards. */
+.steps { margin: 0; padding-left: var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.newHook { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hookForm { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); align-items: start; }
+.created { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); }
+.createdTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.hooks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.hook { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.hookHead { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.hookLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.log { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.logList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.logRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 28px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); align-items: center; }
+.tagBtn { display: inline-flex; border: 0; background: none; padding: 0; cursor: pointer; }   /* (REG-614) a DS Tag with its remove, as the lead form's picked members (assignee-field) */
+.statRow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-3); }   /* (REG-614) four StatTiles */
+.addDomain { display: flex; gap: var(--om-spacing-2); align-items: flex-start; max-width: 420px; margin-top: var(--om-spacing-2); }
+.addDomain > :first-child { flex: 1; min-width: 0; }
+.stats { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.emptyMail { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 200px; }
+.emptyTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+@media (max-width: 767px) { .hookForm { grid-template-columns: 1fr; } .statRow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

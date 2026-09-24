@@ -1,9 +1,9 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
-import { titleCaseName } from '@/lib/format'
+import { parseInputDate, parseInputDateTime, titleCaseName } from '@/lib/format'
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs } from '@/lib/db/schema'
+import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs, leadNotes } from '@/lib/db/schema'
 import type { ImportBatch, ImportRow, Lead, LeadTask, Member, StageLog } from '@/lib/db/schema'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { DETAIL_TABS, detailHref } from '@/lib/leads/stage-policy'
@@ -20,7 +20,12 @@ export type LeadRow = Lead & {
   resumeStage: Stage | null
   /** Qanvast lead return (931:48236): the latest return's status, so the listing menus gate "Return Lead" like the overview does. */
   returnStatus: 'processing' | 'rejected' | 'approved' | null
+  /** (REG-600) The latest contact — a Notes-tab contact log or a Contacted-stage log entry — for the listing's column and the Overview. */
+  lastContact: LastContact | null
+  /** (REG-607) How many contacts are logged — the Contacted stage's entries and the Notes tab's logs — for the Lost dialog's "n of 3 contacts logged" hint. */
+  contactCount: number
 }
+export type LastContact = { at: Date; channel: string | null; outcome: string | null }
 
 /**
  * REVALIDATION (REG-286) — the one eviction for a lead, used by every server action that writes about it.
@@ -63,6 +68,18 @@ type RowParts = {
   team: Member[]
   logs: StageLog[]
   rets: { leadId: string; status: string }[]
+  /** (REG-600) The Notes tab's contact logs — when, how, what came of it. */
+  contacts: { leadId: string; contactedAt: Date | null; createdAt: Date; channel: string | null; outcome: string | null }[]
+}
+
+/** (REG-600) The latest contact of a lead: the Notes tab's logs and the Contacted stage's entries (their typed "when", else the move's time). */
+function lastContactOf(leadId: string, contacts: RowParts['contacts'], logs: StageLog[], stageData: Partial<WizardData>): LastContact | null {
+  let best: LastContact | null = null
+  const consider = (at: Date | null, channel: string | null, outcome: string | null) => { if (at && !Number.isNaN(at.getTime()) && (!best || at > best.at)) best = { at, channel, outcome } }
+  for (const c of contacts) if (c.leadId === leadId) consider(c.contactedAt ?? c.createdAt, c.channel, c.outcome)
+  const movedAt = logs.filter((g) => g.toStage === 'Contacted').at(-1)?.createdAt ?? null
+  for (const l of stageData.logs ?? []) consider(parseInputDateTime(l.when) ?? parseInputDate(l.when) ?? movedAt, l.channel, l.outcome || null)
+  return best
 }
 
 /**
@@ -70,7 +87,7 @@ type RowParts = {
  * lead can never render differently in the table than on its own page — the second assembler this replaced would
  * have drifted the first time one of them learnt a new field.
  */
-function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets }: RowParts): LeadRow[] {
+function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts }: RowParts): LeadRow[] {
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
   const logsByLead = new Map<string, typeof logs>()
@@ -90,32 +107,38 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets }: RowPart
     const last = logsByLead.get(l.id)?.filter((g) => g.toStage === l.stage).at(-1)
     return last && isActive(last.fromStage) ? last.fromStage : null
   }
-  return rows.map((l) => ({
-    ...l,
-    name: titleCaseName(l.name),   // (REG-329) every surface reads the name as "Farah Ahmad", whatever case it was saved in
-    tasks: tasks.filter((t) => t.leadId === l.id && !t.done),
-    assignees: links
-      .filter((a) => a.leadId === l.id)
-      .map((a) => byMember.get(a.memberId))
-      .filter((m): m is Member => !!m),
-    onHoldFollowUp: l.stage === 'On Hold' ? (holdFollowUps.get(l.id) ?? null) : null,
-    stageData: mergeStageData(logsByLead.get(l.id) ?? []),
-    resumeStage: resumeStageOf(l),
-    returnStatus: latestReturn.get(l.id) ?? null,
-  }))
+  return rows.map((l) => {
+    const stageData = mergeStageData(logsByLead.get(l.id) ?? [])
+    return {
+      ...l,
+      name: titleCaseName(l.name),   // (REG-329) every surface reads the name as "Farah Ahmad", whatever case it was saved in
+      tasks: tasks.filter((t) => t.leadId === l.id && !t.done),
+      assignees: links
+        .filter((a) => a.leadId === l.id)
+        .map((a) => byMember.get(a.memberId))
+        .filter((m): m is Member => !!m),
+      onHoldFollowUp: l.stage === 'On Hold' ? (holdFollowUps.get(l.id) ?? null) : null,
+      stageData,
+      resumeStage: resumeStageOf(l),
+      returnStatus: latestReturn.get(l.id) ?? null,
+      lastContact: lastContactOf(l.id, contacts, logsByLead.get(l.id) ?? [], stageData),
+      contactCount: contacts.filter((c) => c.leadId === l.id).length + (stageData.logs?.length ?? 0),   // (REG-607)
+    }
+  })
 }
 
 /** Full listing payload — 18 rows; joins resolved in memory. */
 export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
-  const [allLeads, tasks, links, team, logs, rets] = await Promise.all([
+  const [allLeads, tasks, links, team, logs, rets, contacts] = await Promise.all([
     db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
     db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees),
     db.select().from(members),
     db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
+    db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(eq(leadNotes.kind, 'contact')),   // (REG-600)
   ])
-  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets }), team, now: Date.now() }
+  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets, contacts }), team, now: Date.now() }
 }
 
 /**
@@ -127,15 +150,16 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
  * `logs` rides along because the caller needs the lead's stage logs too, and this already loaded them.
  */
 export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; team: Member[]; logs: StageLog[]; now: number }> {
-  const [rows, tasks, links, team, logs, rets] = await Promise.all([
+  const [rows, tasks, links, team, logs, rets, contacts] = await Promise.all([
     db.select().from(leads).where(and(eq(leads.id, id), isNull(leads.deletedAt))).limit(1),   // a trashed lead has no detail page, exactly as the listing path excluded it
     db.select().from(leadTasks).where(eq(leadTasks.leadId, id)).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, id)),
     db.select().from(members),
     db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, id)).orderBy(asc(leadReturns.returnedAt)),
+    db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(and(eq(leadNotes.leadId, id), eq(leadNotes.kind, 'contact'))),
   ])
-  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets })[0] ?? null, team, logs, now: Date.now() }
+  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets, contacts })[0] ?? null, team, logs, now: Date.now() }
 }
 
 /** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. */

@@ -1,5 +1,7 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+
 import { useState } from 'react'
 import { Button } from '@/components/ds'
 import { Tooltip } from '@/components/om/tooltip'
@@ -12,6 +14,8 @@ import { QuestionCard } from './question-card'
 import { SummaryCard } from './summary-card'
 import { QuestionnaireEmpty } from './questionnaire-empty'
 import { AskClientDialog } from './ask-client-dialog'
+import { askClient } from '@/app/leads/portal-actions'
+import { addStudioQuestions } from '@/app/leads/questions-actions'
 import styles from './lead-questionnaire.module.css'
 
 /**
@@ -26,8 +30,9 @@ import styles from './lead-questionnaire.module.css'
  * "Send via WhatsApp" (REG-288) → "Notification sent to <lead>" (REG-188).
  */
 export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
-  const { questions, leadName, now } = data
+  const { questions, leadName, now, askedAt, leadId, bankCount } = data
   const snackbar = useSnackbar()
+  const router = useRouter()
   const { fail } = useRun()
 
   /* ── state ── */
@@ -44,9 +49,18 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
     catch { fail('save the answer') }
     finally { setSaving(false) }
   }
-  const send = () => { setAskOpen(false); snackbar({ message: `Notification sent to ${leadName}` }) }
+  /* (REG-609, parity Q-22) The ask is recorded on the portal link, then the notice — "Client asked on …" joins the summary. */
+  const send = () => {
+    setAskOpen(false)
+    void (async () => {
+      try { await askClient(leadId); snackbar({ message: `Notification sent to ${leadName}` }); router.refresh() }
+      catch { snackbar({ message: 'Couldn’t record the ask — please try again' }) }
+    })()
+  }
 
   const noQuestions = questions.length === 0
+  /* (REG-612, parity Q-21) The bank's enabled questions this lead lacks, added on a press. */
+  const addBank = () => { void (async () => { try { const n = await addStudioQuestions(leadId); snackbar({ message: `${n} question${n === 1 ? '' : 's'} added` }); router.refresh() } catch { snackbar({ message: 'Couldn’t add the questions — please try again' }) } })() }
   const askButton = (
     <span className={styles.anchor}>
       {/* Frame 201: State=Disabled while there are no questions; the tooltip explains the lock (REG-75). */}
@@ -58,11 +72,12 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
     <div className={styles.tab} data-testid="lead-questionnaire">
       <div className={styles.bar}>
         <h2 className={styles.title}>All Questions</h2>
+        {!noQuestions && bankCount > 0 ? <Button appearance="text" onPress={addBank}>{`Add the studio’s ${bankCount} new question${bankCount === 1 ? '' : 's'}`}</Button> : null}   {/* (REG-612) */}
         {noQuestions ? <Tooltip label="No questions yet">{askButton}</Tooltip> : askButton}
       </div>
 
       {noQuestions ? (
-        <QuestionnaireEmpty />
+        <QuestionnaireEmpty bankCount={bankCount} onAddBank={addBank} />
       ) : (
         <div className={styles.layout}>
           <div className={styles.questions}>
@@ -81,7 +96,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
           </div>
           {summary ? (
             <div className={styles.summary}>
-              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} />
+              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} askedAt={askedAt} />
             </div>
           ) : null}
         </div>

@@ -1,0 +1,20 @@
+/* The house choice chips (REG-614): the Filters modal's chip (filters-modal.module.css) and the Move stage window's ChoiceChips
+   (move-stage/fields.module.css), shared by every other chip group — 32 tall, subheading-s, the on-surface-border stroke. */
+.chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
+.chip {
+  display: inline-flex; align-items: center; height: 32px;
+  padding: 0 var(--om-spacing-3);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border);
+  border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default);
+  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
+}
+.chip:hover { background: var(--om-color-hover-04p); }   /* outlined-control hover (interaction-states.md) */
+.chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
+/* Read-only (836:23276's disabled state, as the Move stage window's chips): nothing reacts. */
+.chip:disabled { cursor: default; color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+.chip[data-selected]:disabled { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+/* (REG-273 / REG-307) A finger's 44px floor. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .chip { height: auto; min-height: 44px; } }

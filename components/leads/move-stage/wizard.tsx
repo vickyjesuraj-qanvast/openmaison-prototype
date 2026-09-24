@@ -12,6 +12,8 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { modalPanel, overlayFade, duration, ease, spring } from '@/lib/motion'
 import { STAGES, type Stage, reminderTaskTitle } from '@/lib/leads/enums'
+import type { MoveTask } from '@/app/leads/actions'
+import { parseInputDateTime } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { detailHref } from '@/lib/leads/stage-policy'
 import { fetchStageDocuments, type StageDocuments } from '@/app/leads/quotes-actions'
@@ -38,15 +40,18 @@ type RailState = 'done' | 'active' | 'todo' | 'locked'
  * window for Won (it creates the project), with the same rail.
  */
 export function MoveStageWizard({
-  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate, onCreateQuote, onCreateContract,
+  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate, onCreateQuote, onCreateContract, assignable = null,
 }: {
   lead: LeadRow
   team: Member[]
+  /** (REG-601) The members this viewer may assign in the New step — null = everyone. */
+  assignable?: string[] | null
   targetStage: Stage
   mode?: StageMovement
   onClose: () => void
   /** `quoteNumber` (REG-340): the signed system quote's "OM-nnnnn" on a Won move, for the "Project created" snackbar; null for an upload. */
-  onSave: (payload: { toStage: Stage; data: WizardData; tasks: string[]; quoteNumber: string | null }) => void
+  /** (REG-608) `tasks`: plain titles are General and undated; the Contacted reminder rides as a dated Follow-up for the lead's members. */
+  onSave: (payload: { toStage: Stage; data: WizardData; tasks: MoveTask[]; quoteNumber: string | null }) => void
   /** Saving edits to a stage the lead has already completed — no move. */
   onUpdate: (payload: { stage: Stage; data: WizardData }) => void
   /** (REG-340) The From System empty states' "Create Quote ›" / "Create Contract ›". Default: the lead's tab with `?new=1`;
@@ -119,6 +124,7 @@ export function MoveStageWizard({
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [pickedTasks, setPickedTasks] = useState<Set<string>>(() => new Set())   // (REG-553) suggestions start unticked — the tick is the reader's choice, as the Notes tab's dialog already does
   const [autoAddedTask, setAutoAddedTask] = useState('')
+  const [autoAddedDue, setAutoAddedDue] = useState<string | null>(null)   // (REG-608) the schedule's own moment, ISO — the reminder's due date
 
   // (REG-269) Mobile: the stage rail is a horizontal strip across the top of the sheet, so the open stage has to be
   // scrolled into view. Move the strip's OWN scrollLeft — scrollIntoView would scroll the sheet's ancestors too and
@@ -182,6 +188,7 @@ export function MoveStageWizard({
     const target = autoFillFor
     if (target === null) return
     // Clock read lives in the event handler (render stays pure).
+    setAutoAddedDue(parseInputDateTime('24/8/2026, 7:00 PM')?.toISOString() ?? null)   // (REG-608)
     setAutoAddedTask(reminderTaskTitle('24/8/2026, 7:00 PM', 'WhatsApp'))   // (REG-319) the auto-filled schedule's own reminder; Save recomputes it from the logs anyway
     if (active === 'Met') {
       // Scripted: the site photo fills the meeting log whose Auto Fill was pressed.
@@ -226,12 +233,14 @@ export function MoveStageWizard({
       // (REG-319) The reminder the helper promises: from the last log that scheduled something — none scheduled, no auto-added task.
       const last = [...data.logs].reverse().find((l) => l.nextStepWhen)
       setAutoAddedTask(last ? reminderTaskTitle(last.nextStepWhen, last.nextStepMode) : '')
+      setAutoAddedDue(last ? parseInputDateTime(last.nextStepWhen)?.toISOString() ?? null : null)   // (REG-608)
       setSuggestOpen(true)
       return
     }
     onSave({ toStage: active, data, tasks: [], quoteNumber: signedQuoteNumber() })
   }
-  const finishWithTasks = (tasks: string[]) => { setSuggestOpen(false); onSave({ toStage: active, data, tasks, quoteNumber: null }) }
+  /* (REG-608) The auto-added reminder is a dated Follow-up for the lead's members (1.0's follow-up task); the suggestions stay plain. */
+  const finishWithTasks = (titles: string[]) => { setSuggestOpen(false); onSave({ toStage: active, data, tasks: titles.map((t): MoveTask => (autoAddedTask && t === autoAddedTask ? { title: t, kind: 'Follow-up', dueAt: autoAddedDue, assignLeadMembers: true } : t)), quoteNumber: null }) }
   /** The number of the system quote a Won move selected — an uploaded quote has none the window could know. */
   const signedQuoteNumber = () =>
     active === 'Won' && data.wonQuoteTab === 'system'
@@ -262,7 +271,7 @@ export function MoveStageWizard({
   )
   const panel = () => {
     switch (active) {
-      case 'New': return <NewPanel team={team} data={data} update={update} editable={newOpen} error={errors.assignees} />
+      case 'New': return <NewPanel team={team} data={data} update={update} editable={newOpen} error={errors.assignees} assignable={assignable} />
       case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} onCreateQuote={createQuote} />

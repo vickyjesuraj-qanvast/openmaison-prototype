@@ -9,7 +9,7 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { PROPERTY_TYPE_GROUPS, SOURCES } from '@/lib/leads/enums'
-import { EMPTY_FILTERS, activeGroups, parseDMY, type DatePreset, type LeadFilters } from '@/lib/leads/filters'
+import { EMPTY_FILTERS, QUICK_FILTERS, activeGroups, parseDMY, type DatePreset, type LeadFilters, type QuickFilter } from '@/lib/leads/filters'
 import { DateField } from '@/components/om/date-field'
 import type { Member } from '@/lib/db/schema'
 import styles from './filters-modal.module.css'
@@ -19,20 +19,23 @@ import { useSheetLayout } from '@/components/om/sheet'
 import { MSG } from '@/lib/forms'
 import { Tooltip } from '@/components/om/tooltip'
 
-type Tab = 'sort' | 'propertyTypes' | 'sources' | 'assignees' | 'date'
+type Tab = 'sort' | 'quick' | 'propertyTypes' | 'sources' | 'assignees' | 'date'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'sort', label: 'Sort' },
+  { key: 'quick', label: 'Quick filters' },   /* (REG-608) 1.0's smart views */
   { key: 'propertyTypes', label: 'Property type' },
   { key: 'sources', label: 'Source' },
   { key: 'assignees', label: 'Members' },   /* REG-290 */
   { key: 'date', label: 'Date' },
 ]
 const PRESETS: { key: DatePreset; label: string }[] = [
-  { key: 'today', label: 'Today' }, { key: '7d', label: 'Last 7 days' }, { key: '30d', label: 'Last 30 days' }, { key: 'custom', label: 'Custom' },
+  { key: 'today', label: 'Today' }, { key: '7d', label: 'Last 7 days' }, { key: '30d', label: 'Last 30 days' }, { key: 'month', label: 'This month' }, { key: 'custom', label: 'Custom' },   /* (REG-610, parity L-27) */
 ]
 
 export function FiltersModal({
-  open, value, team, onClose, onApply, now,}: {
+  open, value, team, onClose, onApply, now, sources = SOURCES,}: {
+  /** (REG-599) The sources to offer: the studio's live list plus any retired source still on a lead (the caller computes it). */
+  sources?: readonly string[]
   open: boolean
   value: LeadFilters
   team: Member[]
@@ -66,6 +69,7 @@ export function FiltersModal({
   const dots = activeGroups(draft)
   const toggle = (key: 'propertyTypes' | 'sources' | 'assignees', v: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
+  const toggleQuick = (k: QuickFilter) => setDraft((d) => ({ ...d, quick: d.quick.includes(k) ? d.quick.filter((x) => x !== k) : [...d.quick, k] }))   /* (REG-608) */
   const matches = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase())
   const custom = draft.datePreset === 'custom'
   const today = useMemo(() => new Date(now), [now])
@@ -121,6 +125,21 @@ export function FiltersModal({
                       <div className={styles.sortRow}><Radio value="oldest">Oldest at the top</Radio></div>
                     </RadioGroup>
                   </>
+                ) : tab === 'quick' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Quick filters</span>
+                    <div className={styles.list}>
+                      {QUICK_FILTERS.map((f) => (
+                        <div key={f.key} className={styles.row} role="button" tabIndex={0} onClick={() => toggleQuick(f.key)}
+                             onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleQuick(f.key) } }} data-testid={`quick-${f.key}`}>
+                          <span>{f.label}<span className={styles.rowHelp}> · {f.help}</span></span>
+                          <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                            <Checkbox isSelected={draft.quick.includes(f.key)} onChange={() => toggleQuick(f.key)} aria-label={f.label} />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : tab === 'propertyTypes' ? (
                   <>
                     {searchBox}
@@ -152,7 +171,7 @@ export function FiltersModal({
                     {searchBox}
                     <span className={styles.sectionTitle}>Sources</span>
                     <div className={styles.list}>
-                      {SOURCES.filter(matches).map((s) => (
+                      {sources.filter(matches).map((s) => (
                         <div key={s} className={styles.row} role="button" tabIndex={0} onClick={() => toggle('sources', s)}
                              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle('sources', s) } }}>
                           <span>{s}</span>
@@ -161,7 +180,7 @@ export function FiltersModal({
                           </span>
                         </div>
                       ))}
-                      {!SOURCES.some(matches) ? <span className={styles.noMatch}>No sources match “{q}”.</span> : null}
+                      {!sources.some(matches) ? <span className={styles.noMatch}>No sources match “{q}”.</span> : null}
                     </div>
                   </>
                 ) : tab === 'assignees' ? (

@@ -1,10 +1,13 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { logLeadEvent } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadTasks, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
+import { leadTasks, leads, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
+import { notify } from '@/lib/notifications/emit'
+import { leadMemberIds } from '@/lib/notifications/queries'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { TASK_KINDS } from '@/lib/leads/enums'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
@@ -20,8 +23,16 @@ const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once i
 const kindOf = (kind: string | undefined): string =>
   typeof kind === 'string' && (TASK_KINDS as readonly string[]).includes(kind) ? kind : 'General'
 
-export async function createTask(leadId: string | null, title: string, opts?: { description?: string | null; kind?: string; dueAt?: Date | null; assignees?: string[]; tagIds?: string[] }): Promise<string> {
+/* (REG-608, parity Q-23) "A task is assigned to you": one row per member put on a task, never the actor. */
+async function notifyAssigned(taskId: string, leadId: string | null, title: string, memberIds: string[]): Promise<void> {
+  if (!memberIds.length) return
+  const [l] = leadId ? await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)) : [null]
+  await notify('task_assigned', memberIds, { title: `New task: ${title}`, body: l ? `On ${l.name}` : 'A studio task', href: leadId ? `/leads/${leadId}/tasks?open=${taskId}` : `/tasks?open=${taskId}`, leadId })
+}
+
+export async function createTask(leadId: string | null, title: string, opts?: { description?: string | null; kind?: string; dueAt?: Date | null; assignees?: string[]; tagIds?: string[]; /** (REG-608) the lead's members join the task — the Contacted reminder's rule */ assignLeadMembers?: boolean }): Promise<string> {
   const id = randomUUID(); const now = new Date()
+  const assignees = [...new Set([...(opts?.assignees ?? []), ...(opts?.assignLeadMembers && leadId ? await leadMemberIds(leadId) : [])])]
   // A task lands UNSEEN (seenAt null): that is what makes it the first row whatever the sort, and what draws the
   // mock's RW-New treatment on it — the primary band + bold title of 902:26362 frame 191. It stops being new the
   // moment someone opens it. Stamping it seen on creation put a brand-new task at the BOTTOM of a due-date sort
@@ -29,9 +40,10 @@ export async function createTask(leadId: string | null, title: string, opts?: { 
   // (REG-286) One transaction: a task without the assignees and tags it was created with is a different task.
   await db.transaction(async (tx) => {
     await tx.insert(leadTasks).values({ id, leadId, title, kind: kindOf(opts?.kind), dueAt: opts?.dueAt ?? null, done: false, createdAt: now, creatorId: ME, description: opts?.description ?? null, seenAt: null, updatedAt: now })
-    if (opts?.assignees?.length) await tx.insert(taskAssignees).values(opts.assignees.map((memberId) => ({ taskId: id, memberId })))
+    if (assignees.length) await tx.insert(taskAssignees).values(assignees.map((memberId) => ({ taskId: id, memberId })))
     if (opts?.tagIds?.length) await tx.insert(taskTags).values(opts.tagIds.map((tagId) => ({ taskId: id, tagId })))
   })
+  await notifyAssigned(id, leadId, title, assignees)   /* (REG-608) */
   touch(leadId); return id
 }
 
@@ -61,8 +73,9 @@ export async function markTaskSeen(taskId: string): Promise<void> {
 }
 
 export async function setTaskAssignees(taskId: string, memberIds: string[]): Promise<void> {
-  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, taskId))
+  const [t] = await db.select({ leadId: leadTasks.leadId, title: leadTasks.title }).from(leadTasks).where(eq(leadTasks.id, taskId))
   if (!t) return
+  const before = (await db.select({ memberId: taskAssignees.memberId }).from(taskAssignees).where(eq(taskAssignees.taskId, taskId))).map((r) => r.memberId)
   // (REG-286) Delete-then-reinsert is a replacement, not two edits: unwrapped, a failure between them leaves the
   // task with NO assignees — the rows the user meant to keep are already gone.
   await db.transaction(async (tx) => {
@@ -70,6 +83,7 @@ export async function setTaskAssignees(taskId: string, memberIds: string[]): Pro
     if (memberIds.length) await tx.insert(taskAssignees).values(memberIds.map((memberId) => ({ taskId, memberId })))
     await tx.update(leadTasks).set({ updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
   })
+  await notifyAssigned(taskId, t.leadId, t.title, memberIds.filter((m) => !before.includes(m)))   /* (REG-608) only the members just added */
   touch(t.leadId)
 }
 
@@ -105,8 +119,9 @@ export async function duplicateTasks(taskIds: string[]): Promise<void> {
 
 export async function deleteTasks(taskIds: string[]): Promise<void> {
   if (!taskIds.length) return
-  const rows = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(inArray(leadTasks.id, taskIds))
+  const rows = await db.select({ leadId: leadTasks.leadId, title: leadTasks.title }).from(leadTasks).where(inArray(leadTasks.id, taskIds))
   await db.delete(leadTasks).where(inArray(leadTasks.id, taskIds))
+  for (const r of rows) if (r.leadId) await logLeadEvent(db, r.leadId, 'task_deleted', { title: r.title })   /* (REG-613) */
   touch(rows[0]?.leadId ?? null)   /* (REG-466) a studio task has no lead — the rail page still refreshes */
 }
 
@@ -192,6 +207,7 @@ export async function applyTemplate(leadId: string | null, templateId: string): 
   if (!tpl || tpl.deletedAt) throw new Error('template not found')
   const rows = await db.select().from(templateTasks).where(eq(templateTasks.templateId, templateId)).orderBy(templateTasks.sortOrder)
   const now = new Date()
+  const applied: { taskId: string; title: string; memberIds: string[] }[] = []   // (REG-608) notified after the write
   // (REG-286) All the template's tasks or none: a half-applied template is a checklist with steps missing, and the
   // count the snackbar reports ("n tasks added") is then a lie.
   await db.transaction(async (tx) => {
@@ -199,10 +215,11 @@ export async function applyTemplate(leadId: string | null, templateId: string): 
       const taskId = randomUUID()
       await tx.insert(leadTasks).values({ id: taskId, leadId, title: r.title, kind: r.kind, dueAt: r.dueDays === null ? null : new Date(now.getTime() + r.dueDays * 86_400_000), done: false, createdAt: now, creatorId: ME, description: tpl.keepDescription ? r.description : null, seenAt: null, updatedAt: now, templateId })
       const memberIds = tpl.keepMembers ? parseIds(r.memberIds) : []
-      if (memberIds.length) await tx.insert(taskAssignees).values(memberIds.map((memberId) => ({ taskId, memberId })))
+      if (memberIds.length) { await tx.insert(taskAssignees).values(memberIds.map((memberId) => ({ taskId, memberId }))); applied.push({ taskId, title: r.title, memberIds }) }
       const tagIds = parseIds(r.tagIds)
       if (tagIds.length) await tx.insert(taskTags).values(tagIds.map((tagId) => ({ taskId, tagId })))
     }
   })
+  for (const a of applied) await notifyAssigned(a.taskId, leadId, a.title, a.memberIds)   /* (REG-608) */
   touch(leadId); revalidatePath('/company/templates/tasks'); return rows.length
 }

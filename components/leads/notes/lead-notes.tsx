@@ -13,7 +13,7 @@ import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
-import { displayDateTimeDot, formatInputDateTime } from '@/lib/format'
+import { displayDateTimeDot, formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
 import type { LeadNotesData } from '@/lib/leads/notes'
 import { filterByQuery } from '@/lib/search'
@@ -107,7 +107,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const [deleting, setDeleting] = useState<{ id: string; kind: NoteKind } | null>(null)
   const [attachFor, setAttachFor] = useState<string | null>(null)
   const [autoFillFor, setAutoFillFor] = useState<string | null>(null)
-  const [tasksFor, setTasksFor] = useState<{ id: string; autoAdded: string; picked: Set<string> } | null>(null)
+  const [tasksFor, setTasksFor] = useState<{ id: string; autoAdded: string; /** (REG-608) the schedule's moment, the reminder's due date */ when: string; picked: Set<string> } | null>(null)
 
   const byId = new Map(notes.map((n) => [n.id, n]))
   const fileById = new Map(files.map((f) => [f.id, f]))
@@ -236,7 +236,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
      here too. Cancel there adds nothing; the log is already saved. */
   const offerReminder = (id: string, d: NoteDraft) => {
     if (d.kind !== 'contact' || !d.nextStepWhen) return
-    setTasksFor({ id, autoAdded: reminderTaskTitle(d.nextStepWhen, d.nextStepMode), picked: new Set() })
+    setTasksFor({ id, autoAdded: reminderTaskTitle(d.nextStepWhen, d.nextStepMode), when: d.nextStepWhen, picked: new Set() })
   }
   const save = async (id: string) => {
     if (inflight.current.has(id)) return
@@ -297,12 +297,17 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const at = new Date()   // the clock is read in the handler, never in render
     const next = new Date(at); next.setDate(next.getDate() + AUTO_FILL_DAYS); next.setHours(AUTO_FILL_HOUR, 0, 0, 0)
     change(id, { channel: 'WhatsApp', when: formatInputDateTime(at), outcome: 'Connected', nextStepWhen: formatInputDateTime(next), nextStepMode: 'In person', body: AUTO_FILL_BODY })
-    setTasksFor({ id, autoAdded: reminderTaskTitle(formatInputDateTime(next), 'In person'), picked: new Set() })   // (REG-319) the same reminder title everywhere
+    setTasksFor({ id, autoAdded: reminderTaskTitle(formatInputDateTime(next), 'In person'), when: formatInputDateTime(next), picked: new Set() })   // (REG-319) the same reminder title everywhere
   }
   const addTasks = () => {
     const t = tasksFor; setTasksFor(null); if (!t) return
-    const titles = [t.autoAdded, ...SUGGESTIONS.filter((s) => t.picked.has(s))].filter(Boolean)
-    void run('add the tasks', async () => { for (const title of titles) await createTask(leadId, title) }, titles.length === 1 ? '1 task added' : `${titles.length} tasks added`)
+    const picked = SUGGESTIONS.filter((s) => t.picked.has(s))
+    const n = picked.length + (t.autoAdded ? 1 : 0)
+    /* (REG-608) The reminder is a dated Follow-up for the lead's members — 1.0's follow-up task; the suggestions stay plain. */
+    void run('add the tasks', async () => {
+      if (t.autoAdded) await createTask(leadId, t.autoAdded, { kind: 'Follow-up', dueAt: parseInputDateTime(t.when), assignLeadMembers: true })
+      for (const title of picked) await createTask(leadId, title)
+    }, n === 1 ? '1 task added' : `${n} tasks added`)
   }
 
   /* ── the selected item ── */

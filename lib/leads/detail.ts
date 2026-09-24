@@ -2,14 +2,25 @@ import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: 
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/lib/db'
-import { leadFiles, questions, quotes, type LeadFile, type Member, type Quote } from '@/lib/db/schema'
+import { leadAssignees, leadFiles, leadNotes, leadReturns, questions, quotes, type LeadFile, type Member, type Quote } from '@/lib/db/schema'
+import { factsFrom } from '@/lib/leads/insights'
+import { responseTime, type ResponseTime } from '@/lib/leads/tat'
+import { fetchCustomFields, fetchCustomValues } from '@/lib/company/custom-fields'
+import type { CustomFieldDef, CustomValues } from '@/lib/leads/custom-fields-model'
+import { fetchMemberStats } from '@/lib/company/members'
+import type { MemberStats } from '@/lib/leads/suggest'
+import { fetchPortalLink, type PortalLink } from '@/lib/leads/portal'
 import { summarise } from '@/lib/leads/question-model'
 import { fetchReturnDetail, type ReturnDetail } from '@/lib/leads/returns'
 import { STAGES } from '@/lib/leads/enums'
 import { fetchLeadRow, type LeadRow } from '@/lib/leads/queries'
 import { isWizardPayload } from '@/lib/leads/stage-data'
-import { fetchQuoteApproval, fetchStageMovement } from '@/lib/settings/queries'
-import type { QuoteApproval, StageMovement } from '@/lib/settings/types'
+import { fetchQuoteApproval, fetchStageMovement, fetchLeadSources, fetchLeadReasons } from '@/lib/settings/queries'
+import type { LeadReasons, QuoteApproval, StageMovement } from '@/lib/settings/types'
+import { liveSourceNames } from '@/lib/settings/types'
+import { displayDate } from '@/lib/format'
+import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
+import type { Viewer } from '@/lib/leads/assign-policy'
 
 /* Lead Details › Overview (858-24770) — everything the page reads, derived on the server so the client never touches Date.now(). */
 
@@ -34,7 +45,8 @@ export type StageStep = {
   /** (REG-548) A current stage whose completing record exists — the card ticks it, as the Move stage rail already does. */
   logged?: boolean
 }
-export type ParkedStep = { stage: 'On Hold' | 'Lost'; days: number; till: string | null }
+/** (REG-607) `reason` and `detail` come from the parking log's payload — the reason chosen, then "Competitor: X" or "Restart expected 3 Mar ’27". */
+export type ParkedStep = { stage: 'On Hold' | 'Lost'; days: number; till: string | null; reason: string | null; detail: string | null }
 export type ActivityItem = { at: Date; text: string }
 /**
  * QUESTIONNAIRE card counts (858:25077), derived from the `questions` rows (REG-286).
@@ -51,6 +63,8 @@ export type QuestionnaireSummary = {
   studioAnswered: number
   /** The newest question's creation date — what the card prints as "Last updated". */
   updatedAt: Date
+  /** (REG-609, parity Q-22) When the client was last asked to answer — the portal link's stamp; null until Ask the client › Send. */
+  askedAt: Date | null
 }
 
 export type LeadDetail = {
@@ -68,6 +82,23 @@ export type LeadDetail = {
   files: LeadFile[]
   questionnaire: QuestionnaireSummary | null
   ret: ReturnDetail | null   // the latest return with its attachments + people (Qanvast lead return, REG-192)
+  /** (REG-609, parity Q-44) How many times the lead was returned — Qanvast's two-return cap reads it. */
+  returnsCount: number
+  /** (REG-609, parity Q-22) The portal link's stamps: "Invited on" · "Asked on"; null before either. */
+  portal: PortalLink | null
+  /** (REG-611, parity R-03) The lead's three turnaround legs — created → assigned → first contact → Won — for the LEAD STAGES card's line. */
+  responseTime: ResponseTime
+  /** (REG-612, parity Q-25) The studio's active custom fields and this lead's values. */
+  customFields: CustomFieldDef[]
+  customValues: CustomValues
+  /** (REG-612, parity Q-27) What the Assign popover's suggestion scores members on. */
+  memberStats: MemberStats
+  /** (REG-599) The live lead sources for the edit form, this lead's own retired one kept first. */
+  sources: string[]
+  /** (REG-601) Who is looking: the assignment rules and the scope. */
+  viewer: Viewer
+  /** (REG-607) The studio's Lost and On Hold reasons (Settings › Leads › Reasons) for the two dialogs. */
+  leadReasons: LeadReasons
 }
 
 const DAY = 86_400_000
@@ -77,7 +108,7 @@ const daysBetween = (from: number, to: number) => Math.max(0, Math.floor((to - f
 async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
   // (REG-286) `fetchLeadRow` replaces `fetchLeadRows()` + `rows.find(...)`: the same builder, six selects bounded by
   // this lead instead of six unfiltered ones, and it hands back the stage logs this function used to query again.
-  const [{ row: lead, team, logs, now }, stageMovement, quoteApproval, quoteRows, files, qRows, retRows] = await Promise.all([
+  const [{ row: lead, team, logs, now }, stageMovement, quoteApproval, quoteRows, files, qRows, retRows, sourceList, viewer, reasonList, portal, retIds, assignRows, contactNotes, customFields, customValues, memberStats] = await Promise.all([
     fetchLeadRow(id),
     fetchStageMovement(),
     fetchQuoteApproval(),
@@ -85,8 +116,18 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     db.select().from(leadFiles).where(and(eq(leadFiles.leadId, id), isNull(leadFiles.deletedAt))).orderBy(asc(leadFiles.createdAt)),   // trashed files leave the card (Files tab)
     db.select({ answeredBy: questions.answeredBy, createdAt: questions.createdAt }).from(questions).where(eq(questions.leadId, id)),   // the card's counts derive from the Questionnaire tab's rows (REG-187)
     fetchReturnDetail(id),
+    fetchLeadSources(),
+    fetchViewer(),
+    fetchLeadReasons(),   /* (REG-607) */
+    fetchPortalLink(id),   /* (REG-609) */
+    db.select({ id: leadReturns.id }).from(leadReturns).where(eq(leadReturns.leadId, id)),   /* (REG-609) the return count for Qanvast's cap */
+    db.select({ memberId: leadAssignees.memberId, assignedAt: leadAssignees.assignedAt }).from(leadAssignees).where(eq(leadAssignees.leadId, id)),   /* (REG-611) */
+    db.select({ contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, authorId: leadNotes.authorId }).from(leadNotes).where(and(eq(leadNotes.leadId, id), eq(leadNotes.kind, 'contact'))),   /* (REG-611) */
+    fetchCustomFields(true), fetchCustomValues(id), fetchMemberStats(),   /* (REG-612) */
   ])
   if (!lead) return null
+  if (!(await canOpenLead(viewer, id))) return null   /* (REG-601) not this member's lead: the page answers not found */
+  const sources = liveSourceNames(sourceList.sources, lead.source)
 
   /* ── Lead stages (858:24890 / 858:24646 / 858:24709) ──
      A stage is entered at the first log that moves the lead into it (New at creation). Leads seeded straight into
@@ -110,8 +151,13 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     if (parkedLog) return { stage, state: 'done', days: start !== undefined && parkedAt !== null ? daysBetween(start, parkedAt) : null }
     return { stage, state: 'current', days: start !== undefined ? daysBetween(start, now) : null, logged: stageLogged(stage, lead) }
   })
+  const parkedPayload = (parkedLog?.payload && typeof parkedLog.payload === 'object' ? parkedLog.payload : {}) as { reason?: string; competitor?: string; restartAt?: string }
   const parked: ParkedStep | null = parkedLog && (lead.stage === 'On Hold' || lead.stage === 'Lost')
-    ? { stage: lead.stage, days: daysBetween(parkedLog.createdAt.getTime(), now), till: lead.onHoldFollowUp }
+    ? {
+        stage: lead.stage, days: daysBetween(parkedLog.createdAt.getTime(), now), till: lead.onHoldFollowUp,
+        reason: parkedPayload.reason ?? null,   // (REG-607)
+        detail: parkedPayload.competitor ? `Competitor: ${parkedPayload.competitor}` : parkedPayload.restartAt ? `Restart expected ${displayDate(new Date(parkedPayload.restartAt))}` : null,
+      }
     : null
 
   /* ── Recent activity (858:24970) — newest first, four rows. Phrases follow the mock where it has one
@@ -133,13 +179,20 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
   activity.sort((a, b) => b.at.getTime() - a.at.getTime())
 
   return {
+    sources,
+    viewer,
+    leadReasons: reasonList.reasons,
     lead, team, now, stageMovement, quoteApproval,
     daysInPipeline: daysBetween(lead.createdAt.getTime(), now),
     timeline, parked,
     activity: activity.slice(0, 4),
     quote, files,
-    questionnaire: (() => { const sum = summarise(qRows); return sum ? { leadId: id, ...sum, updatedAt: qRows.reduce((m, q) => (q.createdAt > m ? q.createdAt : m), qRows[0]!.createdAt) } satisfies QuestionnaireSummary : null })(),
+    questionnaire: (() => { const sum = summarise(qRows); return sum ? { leadId: id, ...sum, updatedAt: qRows.reduce((m, q) => (q.createdAt > m ? q.createdAt : m), qRows[0]!.createdAt), askedAt: portal?.askedAt ?? null } satisfies QuestionnaireSummary : null })(),
     ret,
+    returnsCount: retIds.length,
+    portal,
+    responseTime: responseTime(factsFrom(lead, assignRows, logs, contactNotes), now),   /* (REG-611) */
+    customFields, customValues, memberStats,   /* (REG-612) */
   }
 }
 

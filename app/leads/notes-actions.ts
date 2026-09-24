@@ -1,6 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { logLeadEvent } from '@/lib/leads/events'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadNotes, noteAttachments } from '@/lib/db/schema'
@@ -61,7 +62,9 @@ export async function updateNote(noteId: string, draft: NoteDraft): Promise<void
 /** List item kebab › Delete (931:45488). */
 export async function deleteNote(noteId: string): Promise<void> {
   const leadId = await leadOf(noteId); if (!leadId) return
+  const [n] = await db.select({ kind: leadNotes.kind, title: leadNotes.title, contactedAt: leadNotes.contactedAt }).from(leadNotes).where(eq(leadNotes.id, noteId)).limit(1)
   await db.delete(leadNotes).where(eq(leadNotes.id, noteId))
+  if (n) await logLeadEvent(db, leadId, 'note_deleted', { kind: n.kind, title: n.title || undefined, when: n.contactedAt ? n.contactedAt.toISOString() : null })   /* (REG-613) */
   touch(leadId)
 }
 

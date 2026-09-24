@@ -33,7 +33,7 @@ export type PropertyType = string
 /** Canonical team — "Filter - all assignees" after the designer's dedupe. */
 export const TEAM = [
   { id: 'dane',     name: 'Dane',     role: 'Owner',    color: '#5B7FD7', isYou: true },
-  { id: 'james',    name: 'James',    role: 'Designer', color: 'photo' },
+  { id: 'james',    name: 'James',    role: 'Manager',  color: 'photo' },   /* (REG-601) the demo's manager: Sarah and Michelle report to him (repair R39) */
   { id: 'sarah',    name: 'Sarah',    role: 'Designer', color: '#3E9B63' },
   { id: 'michelle', name: 'Michelle', role: 'Designer', color: '#E8A33D' },
   { id: 'germaine', name: 'Germaine', role: 'Designer', color: '#B07B2E' },
@@ -43,12 +43,14 @@ export const TEAM = [
 /** Contact channels — Move Stage "Contacted via" chips (781:58292). */
 /** Task kinds (lib/db/schema.ts lead_tasks.kind, "General | Call (mock vocab)") — named here so a server
     action can validate against the vocabulary instead of trusting a client string (REG-285). */
-export const TASK_KINDS = ['General', 'Call'] as const
+export const TASK_KINDS = ['General', 'Call', 'Follow-up'] as const   // (REG-608, parity Q-03) a follow-up is a task of its own kind — 1.0's LeadFollowUp
 export type TaskKind = (typeof TASK_KINDS)[number]
 
-export const CONTACT_CHANNELS = ['WhatsApp', 'Email', 'SMS', 'Call', 'Others'] as const
-/** Contact-log outcomes and the next step each one asks for (Move stage window 780:9xxxx · Notes 931:45231 "Connected → Schedule a meeting", 931:45383 "Callback requested"). */
-export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled', 'No response'] as const
+/** (REG-607, parity Q-17) "In person" is a channel in its own right — 1.0 logs a face-to-face contact beside a call; it used to be a next-step mode only. */
+export const CONTACT_CHANNELS = ['WhatsApp', 'Email', 'SMS', 'Call', 'In person', 'Others'] as const
+/** Contact-log outcomes and the next step each one asks for (Move stage window 780:9xxxx · Notes 931:45231 "Connected → Schedule a meeting", 931:45383 "Callback requested").
+    (REG-607, parity Q-17) "Not interested" is 1.0's outcome for a client who answered and declined — the Lost reason "Not a fit" reads it. */
+export const OUTCOMES = ['Connected', 'Callback requested', 'Meeting scheduled', 'No response', 'Not interested'] as const
 /** (REG-319, mock 781:58313) The optional schedule block under a contact log — one heading for every outcome, the helper
  *  saying what filling it does. Replaces the outcome-keyed "Next step: …" headings (NEXT_STEP_BY_OUTCOME). */
 export const SCHEDULE = {
@@ -58,8 +60,19 @@ export const SCHEDULE = {
 /** The reminder task the helper promises, from the schedule's own fields (invented copy, REG-319). */
 export const reminderTaskTitle = (when: string, mode: string): string =>
   mode === 'In person' ? `Meet the client on ${when}` : mode ? `Follow up with the client via ${mode} on ${when}` : `Follow up with the client on ${when}`
-/** "Preferred mode" options — the channels plus "In person" (Notes 931:45231). */
-export const CONTACT_MODES = [...CONTACT_CHANNELS, 'In person'] as const
+/** "Preferred mode" options — the channels (Notes 931:45231); "In person" is one of them since REG-607. */
+export const CONTACT_MODES = CONTACT_CHANNELS
+
+/** (REG-607, parity Q-12) The lead's district — 1.0's "Area / District", Singapore's five regions as a select. */
+export const DISTRICTS = ['North', 'North East', 'East', 'West', 'Central'] as const
+
+/* (REG-607, parity Q-11) The lead form's three option lists. The mocks show one value each (Contemporary · Collected · New, the
+   `*_SEEN` lists below); the rest came from the testers (REG-549) and, since the parity round, from 1.0's Singapore lists:
+   key collection takes 1.0's five, style adds Vintage · Transitional · No preference, condition stays the mock's three
+   (1.0's "Existing" maps to "Renovated" on migration). */
+export const STYLE_OPTIONS = ['Contemporary', 'Modern', 'Minimalist', 'Scandinavian', 'Japandi', 'Industrial', 'Mid-century', 'Classic', 'Luxury', 'Eclectic', 'Peranakan', 'Vintage', 'Transitional', 'No preference', 'Others'] as const
+export const KEY_COLLECTION_OPTIONS = ['Collected', 'in 3 months', 'in 6 months', 'in 9 months', 'Later'] as const
+export const CONDITION_OPTIONS = ['New', 'Resale', 'Renovated'] as const
 
 /**
  * On Hold: how long the lead is parked, and the follow-up date each duration promises.
@@ -95,3 +108,8 @@ export function holdDurationLabel(followUpAt: Date, from: number): string {
 export const STYLES_SEEN = ['Contemporary'] as const
 export const CONDITIONS_SEEN = ['New'] as const
 export const KEY_COLLECTION_SEEN = ['Collected'] as const
+
+/** (REG-601) Member roles — Company › Members. Owners and Admins run the studio; a Manager runs a team of Designers. */
+export const ROLES = ['Owner', 'Admin', 'Manager', 'Designer'] as const
+export type Role = (typeof ROLES)[number]
+export const isRole = (s: string | null | undefined): s is Role => !!s && (ROLES as readonly string[]).includes(s)

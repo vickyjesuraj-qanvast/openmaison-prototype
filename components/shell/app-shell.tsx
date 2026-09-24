@@ -3,6 +3,7 @@ import { AppRail } from '@/components/shell/app-rail'
 import { MobileChrome } from '@/components/shell/mobile-nav'
 import { SnackbarProvider } from '@/components/om/snackbar'
 import { MaisonAi } from '@/components/shell/maison-ai'
+import { NotificationsPanel } from '@/components/shell/notifications-panel'
 import styles from './app-shell.module.css'
 
 /**
@@ -33,6 +34,8 @@ export function AppShell({ children, railBadges }: { children: ReactNode; railBa
         </div>
         {/* (REG-507) Maison AI's FAB and sheet, once, for every page in the shell. */}
         <MaisonAi />
+        {/* (REG-604) The bell's feed, once, opened by the rail's and the phone bar's bell. */}
+        <NotificationsPanel />
       </div>
     </SnackbarProvider>
   )

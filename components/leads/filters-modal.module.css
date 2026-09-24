@@ -156,3 +156,6 @@
 @media (max-width: 767px) {
   .heading, .content, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }
+
+/* (REG-608) Quick filters: the row's one-line meaning after its name. */
+.rowHelp { color: var(--om-color-on-surface-secondary); }

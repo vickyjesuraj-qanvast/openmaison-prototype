@@ -11,6 +11,8 @@ import { PortalMenu } from '@/components/leads/move-stage/fields'
 import menuStyles from '@/components/leads/menus.module.css'
 import { modalPanel, overlayFade, duration, ease } from '@/lib/motion'
 import { parseCsv } from '@/lib/csv'
+import { parseXlsx } from '@/lib/xlsx'
+import { parseLeadSheet } from '@/lib/leads/homematch'
 import { IMPORT_FIELDS, IGNORE, PREVIEW_COLUMNS, autoMap, toRecord, type ImportField, type Mapping } from '@/lib/leads/import-fields'
 import { MSG } from '@/lib/forms'
 import styles from './import-wizard.module.css'
@@ -138,12 +140,19 @@ export function ImportWizard({
 
   const acceptFile = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase()
-    if (ext !== 'csv') {
-      snackbar({ message: 'XLS/XLSX import — coming in the next build. Please upload a CSV.' })
-      return
-    }
-    const text = await file.text()
-    const grid = parseCsv(text)
+    /* (REG-603) CSV, XLSX and a lead-sheet PDF (Homematch's export): each becomes the same grid the mapping step reads. */
+    let grid: string[][] = []
+    try {
+      if (ext === 'csv') grid = parseCsv(await file.text())
+      else if (ext === 'xlsx') grid = await parseXlsx(await file.arrayBuffer())
+      else if (ext === 'xls') { snackbar({ message: 'Save the sheet as XLSX or CSV first — the old .xls format is not read' }); return }
+      else if (ext === 'pdf') {
+        const { pdfLines } = await import('@/lib/pdf-text')
+        const sheet = parseLeadSheet(await pdfLines(await file.arrayBuffer()))
+        if (!sheet.rows.length) { snackbar({ message: 'Couldn’t find leads in this PDF — a Homematch lead sheet, or export it as CSV or XLSX' }); return }
+        grid = [sheet.headers, ...sheet.rows]
+      } else { snackbar({ message: 'Upload a CSV, an XLSX or a lead-sheet PDF' }); return }
+    } catch { snackbar({ message: 'Couldn’t read that file — please try another export' }); return }
     if (grid.length < 2) {
       snackbar({ message: 'That file has no lead rows to import' })
       return
@@ -275,7 +284,7 @@ export function ImportWizard({
                       </div>
                       <div className={styles.uploadCol}>
                         <span className={styles.uploadTitle}>Upload local file</span>
-                        <input ref={fileRef} type="file" accept=".csv" className={styles.hiddenInput}
+                        <input ref={fileRef} type="file" accept=".csv,.xlsx,.pdf" className={styles.hiddenInput}
                                onChange={(e) => { const f = e.target.files?.[0]; if (f) void acceptFile(f); e.target.value = '' }} />
                         {parsed ? (
                           <div className={styles.dropSuccess}>
@@ -300,7 +309,7 @@ export function ImportWizard({
                                onDragLeave={() => setOver(false)}
                                onDrop={(e) => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files?.[0]; if (f) void acceptFile(f) }}>
                             <span className={styles.dropMain}>Drop your file or <u>browse</u></span>
-                            <span className={styles.dropSub}>Supports: CSV, XLS, XLSX</span>
+                            <span className={styles.dropSub}>Supports: CSV, XLSX, PDF (a Homematch lead sheet)</span>   {/* (REG-603) */}
                           </div>
                         )}
                       </div>

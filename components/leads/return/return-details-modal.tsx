@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { parseSubReasons } from '@/lib/leads/return-model'
 import { AnimatePresence, motion } from 'motion/react'
 import { Link } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
@@ -70,6 +71,9 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
   const returnRows: [string, string | null][] = [
     ['Returned on', displayDateTimeTight(ret.returnedAt)],
     ['Reason', ret.reason],
+    /* (REG-609, parity D-39) The seven reasons' own fields. */
+    ['Specific reasons', parseSubReasons(ret.subReasons).join(' · ') || null],
+    ['Details', ret.detail ?? null],
     ['Date and time of first outreach', ret.firstOutreachAt ? displayDateTimeTight(ret.firstOutreachAt) : null],
     ['Number of attempts made', ret.attempts == null ? null : ret.attempts >= 5 ? '+5' : String(ret.attempts)],
   ]

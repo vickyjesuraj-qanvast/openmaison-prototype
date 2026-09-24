@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { index, integer, real, sqliteTable, text, unique, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /**
  * ⚠ PROVISIONAL — identity/tenancy plumbing only.
@@ -89,15 +89,21 @@ export const membershipsRelations = relations(memberships, ({ one }) => ({
 export const members = sqliteTable('members', {
   id: text('id').primaryKey(),               // 'dane', 'james', ...
   name: text('name').notNull(),
-  role: text('role').notNull(),              // Owner | Designer
+  role: text('role').notNull(),              // Owner | Admin | Manager | Designer (REG-601)
   color: text('color').notNull(),            // avatar tint hex, or 'photo'
   isYou: integer('is_you', { mode: 'boolean' }).notNull().default(false),
+  managerId: text('manager_id'),             // (REG-601) the Manager this Designer reports to — the manager's team
   email: text('email'),                      // (REG-560) the member's work email — `{prepared_by_email}` on quotes; seeded on the studio's domain by repair R36
   // Quote editor › Signature (1240:34176, REG-421; owner 2026-09-11: "signature saved per member"): how the member signs —
   // `draw` keeps an SVG path in `signatureData` (viewBox 752×140), `type` prints `signatureName` in the signature face.
   signatureKind: text('signature_kind'),     // draw | type | null = not set up
   signatureName: text('signature_name'),
   signatureData: text('signature_data'),
+  // (REG-612, parity Q-27) 1.0's studio_members.accepting_leads · lead_preferences · specialty — Open to new leads, the four
+  // weighted preference dimensions (JSON, lib/company/preferences.ts) and the free-text specialty the suggestion scores.
+  acceptingLeads: integer('accepting_leads', { mode: 'boolean' }).notNull().default(true),
+  leadPreferences: text('lead_preferences'),
+  specialty: text('specialty'),
 })
 
 export const leads = sqliteTable(
@@ -119,6 +125,12 @@ export const leads = sqliteTable(
     areaSqft: integer('area_sqft'),
     estimatedStartDate: integer('estimated_start_date', { mode: 'timestamp' }),
     notes: text('notes'),
+    /** (REG-607, parity Q-12) 1.0's "Area / District" — one of DISTRICTS (lib/leads/enums.ts); the column keeps 1.0's name. */
+    area: text('area'),
+    /** (REG-607, parity Q-35) 1.0's IC / NRIC and the studio's own customer reference, kept on the lead and copied onto every new quote. */
+    icNumber: text('ic_number'),
+    customerId: text('customer_id'),
+    qanvastLeadId: text('qanvast_lead_id'),   // (REG-609, parity T-10) Qanvast's own reference for a Qanvast-sourced lead — 1.0's column, shown on Qanvast Ops
     // Deleted Leads folder: soft delete with reason, purged after 30 days.
     deletedAt: integer('deleted_at', { mode: 'timestamp' }),
     /** Null until someone opens / clicks the lead — drives the 'new, unseen' band on every new lead (user 2026-08-29). */
@@ -578,6 +590,27 @@ export const contracts = sqliteTable(
 )
 
 /** (REG-591) Several documents sent together for signature: one link, one signature that covers them all, each document keeping its own signed copy. */
+/**
+ * (REG-604) A notification: one row per member per event — "New lead", "assigned to you", "quote sent for approval", "confirmed",
+ * "signed". `channels` records which channels the rules sent it on when it was raised (in-app · email · WhatsApp), so the feed
+ * can say "also by WhatsApp"; the sending itself is the platform's. Follow-ups that are due are derived, never stored.
+ */
+export const notifications = sqliteTable('notifications', {
+  id: text('id').primaryKey(),
+  memberId: text('member_id').notNull().references(() => members.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(),                       // new_lead | assigned | quote_approval | quote_confirmed | quote_signed | task_due
+  title: text('title').notNull(),
+  body: text('body'),
+  href: text('href'),
+  leadId: text('lead_id'),
+  quoteId: text('quote_id'),
+  channels: text('channels').notNull().default('in_app'),   // comma-joined
+  actorId: text('actor_id'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  readAt: integer('read_at', { mode: 'timestamp' }),
+}, (t) => [index('notifications_member_idx').on(t.memberId, t.createdAt)])
+export type Notification = typeof notifications.$inferSelect
+
 export const contractBundles = sqliteTable('contract_bundles', {
   id: text('id').primaryKey(),
   leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
@@ -734,6 +767,10 @@ export const leadReturns = sqliteTable(
     stageBefore: text('stage_before'),           // Undo restores it
     stageLogId: text('stage_log_id'),            // the Lost move written on return — removed on Undo
     taskId: text('task_id'),                     // "Respond to Qanvast team" — removed on Undo
+    // (REG-609, parity D-39) The seven reasons' extra fields: the ticked sub-reasons (JSON string[]) and the reason's own detail
+    // (the duplicate searched for · the existing project reference · what is incorrect) — 1.0 folded these into `notes`.
+    subReasons: text('sub_reasons'),
+    detail: text('detail'),
   },
   (t) => [index('lead_returns_lead_idx').on(t.leadId)],
 )
@@ -848,3 +885,92 @@ export type TaskComment = typeof taskComments.$inferSelect
 export type TaskTemplate = typeof taskTemplates.$inferSelect
 export type TemplateTask = typeof templateTasks.$inferSelect
 export type QuoteComparison = typeof quoteComparisons.$inferSelect
+
+/* ── (REG-609, parity Q-22) The homeowner portal's lead-stage records — 1.0's `homeowner_profiles` + `homeowner_project_links`
+   (here `homeowner_lead_links`: a link is to a lead until Projects exist). One profile per phone, one link per lead with its
+   portal token; the invite and the questionnaire ask are stamped on the link ("Invited on" · "Asked on", the Activity lines). */
+export const homeownerProfiles = sqliteTable(
+  'homeowner_profiles',
+  {
+    id: text('id').primaryKey(),
+    phone: text('phone').notNull(),              // the bare 8 digits, as leads.phone
+    name: text('name').notNull(),
+    email: text('email'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  },
+  (t) => [uniqueIndex('homeowner_profiles_phone').on(t.phone)],
+)
+export type HomeownerProfile = typeof homeownerProfiles.$inferSelect
+
+export const homeownerLeadLinks = sqliteTable(
+  'homeowner_lead_links',
+  {
+    id: text('id').primaryKey(),
+    homeownerId: text('homeowner_id').notNull().references(() => homeownerProfiles.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
+    portalToken: text('portal_token').notNull(),
+    chatHistoryVisible: integer('chat_history_visible', { mode: 'boolean' }).notNull().default(true),
+    invitedAt: integer('invited_at', { mode: 'timestamp' }),        // Invite to Portal › Send
+    lastAskedAt: integer('last_asked_at', { mode: 'timestamp' }),   // Ask the client › Send
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [uniqueIndex('homeowner_lead_links_lead').on(t.leadId)],
+)
+export type HomeownerLeadLink = typeof homeownerLeadLinks.$inferSelect
+
+/* ── (REG-612, parity Q-21) The studio's question bank — 1.0's `studio_scope_questions`: the questions every lead's questionnaire
+   starts from (a new lead takes the enabled ones; an older lead adds them from its empty tab). Types are 1.0's six. */
+export const studioScopeQuestions = sqliteTable('studio_scope_questions', {
+  id: text('id').primaryKey(),
+  question: text('question').notNull(),
+  questionType: text('question_type').notNull(),   // text | yes_no | number | single_select | multi_select | date
+  options: text('options'),                        // JSON string[] for the selects
+  isRequired: integer('is_required', { mode: 'boolean' }).notNull().default(false),
+  isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+export type StudioScopeQuestion = typeof studioScopeQuestions.$inferSelect
+
+/* ── (REG-612, parity Q-25) Custom lead fields — 1.0's `lead_custom_fields` + `lead_custom_field_values`: the studio's own
+   fields on every lead (Settings › Leads › Custom fields; the form's Additional info; the Overview's Custom fields section). */
+export const leadCustomFields = sqliteTable('lead_custom_fields', {
+  id: text('id').primaryKey(),
+  label: text('label').notNull(),
+  fieldType: text('field_type').notNull().default('text'),   // text | number | date | dropdown | multi_select
+  options: text('options'),                                   // JSON string[] for dropdown / multi_select
+  isRequired: integer('is_required', { mode: 'boolean' }).notNull().default(false),
+  orderIndex: integer('order_index').notNull().default(0),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+export type LeadCustomField = typeof leadCustomFields.$inferSelect
+export const leadCustomFieldValues = sqliteTable(
+  'lead_custom_field_values',
+  {
+    id: text('id').primaryKey(),
+    leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
+    fieldId: text('field_id').notNull().references(() => leadCustomFields.id, { onDelete: 'cascade' }),
+    value: text('value'),   // JSON: a string, or string[] for multi_select
+  },
+  (t) => [uniqueIndex('lead_custom_field_values_unique').on(t.leadId, t.fieldId), index('lead_custom_field_values_lead_idx').on(t.leadId)],
+)
+export type LeadCustomFieldValue = typeof leadCustomFieldValues.$inferSelect
+
+/* ── (REG-613, parity Q-20) The lead event log — 1.0's `lead_activity_log`, kept only for what leaves no row of its own: a member
+   removed, a field edited, a task / note / file deleted, a return undone, a portal invite, a questionnaire ask. The Activity feed
+   unions these with everything it still derives from the records. */
+export const leadEvents = sqliteTable(
+  'lead_events',
+  {
+    id: text('id').primaryKey(),
+    leadId: text('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),                  // member_removed | field_edited | task_deleted | note_deleted | file_trashed | file_deleted | return_undone | invite_sent | questionnaire_asked
+    actorId: text('actor_id'),                     // members.id, null = the system
+    at: integer('at', { mode: 'timestamp' }).notNull(),
+    detail: text('detail', { mode: 'json' }),      // what the sentence needs: names, titles, the fields that changed
+  },
+  (t) => [index('lead_events_lead_idx').on(t.leadId)],
+)
+export type LeadEvent = typeof leadEvents.$inferSelect

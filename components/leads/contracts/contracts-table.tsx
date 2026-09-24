@@ -74,18 +74,19 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
   const colWidths = useColumnWidths('lead-contracts')
   const tracks = gridTemplateFor(columns, colWidths)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow)
+  const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   return (
-    <div ref={frame} className={styles.card} role="table" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 48 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
-          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
             ) : (

@@ -124,3 +124,135 @@ export function roundToStep(costMinor: number, markupMinor: number, step: RoundS
   const rounded = Math.round((costMinor + markupMinor) / s) * s
   return Math.max(-costMinor, rounded - costMinor)
 }
+
+/* ── (REG-599) Lead sources the studio edits — Settings › Leads › Lead sources ─────────────────────────
+   The enum in lib/leads/enums.ts is the seed; the studio adds (TikTok), reorders and retires. A retired source keeps
+   the leads it already has and leaves the pickers. */
+export type LeadSourceEntry = { name: string; retired: boolean }
+export const DEFAULT_LEAD_SOURCE_NAMES = ['Qanvast', 'Instagram', 'Referral', 'Walk-in', 'Facebook', 'Organic', 'Hangout', 'Website', 'Email', 'Google Ads', 'Meta Ads', 'TikTok', 'Homereno', 'Houzz', 'Renopedia', 'Others'] as const   // (REG-607) + the three portals 1.0's email ingestion reads (parity proposal J-4)
+export const DEFAULT_LEAD_SOURCES: LeadSourceEntry[] = DEFAULT_LEAD_SOURCE_NAMES.map((name) => ({ name, retired: false }))
+export function parseLeadSources(v: unknown): LeadSourceEntry[] {
+  if (!Array.isArray(v)) return DEFAULT_LEAD_SOURCES
+  const seen = new Set<string>()
+  const out: LeadSourceEntry[] = []
+  for (const x of v) {
+    const name = typeof x === 'string' ? x.trim() : x && typeof x === 'object' && typeof (x as { name?: unknown }).name === 'string' ? (x as { name: string }).name.trim() : ''
+    if (!name || seen.has(name.toLowerCase())) continue
+    seen.add(name.toLowerCase())
+    out.push({ name: name.slice(0, 40), retired: !!(x && typeof x === 'object' && (x as { retired?: unknown }).retired) })
+    if (out.length >= 40) break
+  }
+  return out.length ? out : DEFAULT_LEAD_SOURCES
+}
+/** The names a picker offers: every live source, plus `keep` (a lead's own retired source, so editing it never loses it). */
+export function liveSourceNames(list: LeadSourceEntry[], keep?: string | null): string[] {
+  const live = list.filter((s) => !s.retired).map((s) => s.name)
+  return keep && !live.includes(keep) ? [keep, ...live] : live
+}
+
+/* ── (REG-601) Who sees which leads — Settings › Leads › Who sees leads ───────────────────────────── */
+export type LeadVisibility = 'everyone' | 'assigned'
+export const DEFAULT_LEAD_VISIBILITY: LeadVisibility = 'everyone'
+export const LEAD_VISIBILITY_OPTIONS: { key: LeadVisibility; title: string; help: string }[] = [
+  { key: 'everyone', title: 'Everyone sees every lead', help: 'The whole studio works from one list. Owners and Admins assign anyone; a Manager assigns within their team; a Designer keeps the leads assigned to them.' },
+  { key: 'assigned', title: 'Only the leads assigned to them', help: 'Managers see their own leads and their team’s; Designers see their own. Owners and Admins still see everything.' },
+]
+export const parseLeadVisibility = (v: unknown): LeadVisibility => (v === 'assigned' ? 'assigned' : 'everyone')
+
+/* ── (REG-602) Lead capture — the website's email intake and Meta Lead Ads ────────────────────────── */
+export type MetaForm = { id: string; name: string; on: boolean }
+/* (REG-612, parity Q-36 · I-07 · I-10) The Integrations stand-ins for 1.0's webhook endpoints and Gmail ingestion — recorded on
+   the capture setting; every arrival is still a one-row import that lands in the listing (a known phone waits in Review). */
+export type WebhookPlatform = 'generic' | 'google_ads' | 'meta'
+export const WEBHOOK_PLATFORMS: { key: WebhookPlatform; label: string; help: string; defaultLabel: string }[] = [
+  { key: 'generic', label: 'Generic webhook', help: 'A generic URL any system can POST leads to.', defaultLabel: 'Webhook' },
+  { key: 'google_ads', label: 'Google Ads (Lead Form)', help: 'We generate a URL + key to paste into your Google Ads Lead Form.', defaultLabel: 'Google Ads' },
+  { key: 'meta', label: 'Meta Ads (via Zapier / Make)', help: 'We generate a URL — connect Meta to it via a Zapier / Make bridge.', defaultLabel: 'Meta Ads' },
+]
+export type Webhook = { id: string; platform: WebhookPlatform; label: string; notes: string; token: string; key: string | null; received: number; created: number; duplicates: number; lastAt: number | null; active: boolean; createdAt: number }
+export type WebhookLogEntry = { at: number; webhookId: string; outcome: 'created' | 'duplicate'; name: string }
+export const EMAIL_PLATFORMS = ['@homereno.sg', '@homerenoguru.sg', '@houzz.com.sg', '@renopedia.sg', '@qanvast.com'] as const
+/** The source an ingested email lands with — the platform behind the sender domain (the round-1 sources Homereno · Houzz · Renopedia). */
+export const platformSource = (domain: string): string => (/homereno/i.test(domain) ? 'Homereno' : /houzz/i.test(domain) ? 'Houzz' : /renopedia/i.test(domain) ? 'Renopedia' : /qanvast/i.test(domain) ? 'Qanvast' : 'Email')
+export type EmailSource = { connected: boolean; address: string; platforms: string[]; custom: string[]; lastSyncAt: number | null; stats: { found: number; created: number; duplicates: number; failed: number } }
+export const DEFAULT_EMAIL_SOURCE: EmailSource = { connected: false, address: '', platforms: [...EMAIL_PLATFORMS], custom: [], lastSyncAt: null, stats: { found: 0, created: 0, duplicates: 0, failed: 0 } }
+export const webhookUrl = (token: string) => `https://in.openmaison.sg/api/webhooks/leads/${token}`
+
+export type LeadCapture = {
+  /** The intake address the website form emails; derived from the studio name until the studio sets its own slug. */
+  emailSlug: string
+  meta: { connected: boolean; page: string; forms: MetaForm[] }
+  webhooks: Webhook[]
+  webhookLog: WebhookLogEntry[]
+  email: EmailSource
+}
+export const DEFAULT_META_FORMS: MetaForm[] = [{ id: 'renovation-enquiry', name: 'Renovation enquiry', on: true }, { id: 'free-consultation', name: 'Free consultation', on: true }, { id: 'showroom-visit', name: 'Showroom visit', on: false }]
+export const DEFAULT_LEAD_CAPTURE: LeadCapture = { emailSlug: '', meta: { connected: false, page: '', forms: DEFAULT_META_FORMS }, webhooks: [], webhookLog: [], email: DEFAULT_EMAIL_SOURCE }
+export function parseLeadCapture(v: unknown): LeadCapture {
+  const r = (v ?? {}) as Partial<{ emailSlug: unknown; meta: Partial<{ connected: unknown; page: unknown; forms: unknown }> }>
+  const forms = Array.isArray(r.meta?.forms) ? r.meta!.forms.filter((f): f is MetaForm => !!f && typeof f === 'object' && typeof (f as MetaForm).id === 'string' && typeof (f as MetaForm).name === 'string').map((f) => ({ id: f.id, name: f.name.slice(0, 60), on: !!f.on })) : DEFAULT_META_FORMS
+  const raw = (v ?? {}) as Partial<{ webhooks: unknown; webhookLog: unknown; email: Partial<EmailSource> & { stats?: Partial<EmailSource['stats']> } }>
+  const str = (x: unknown, max: number, d = '') => (typeof x === 'string' ? x.slice(0, max) : d)
+  const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0)
+  const webhooks: Webhook[] = Array.isArray(raw.webhooks) ? raw.webhooks.filter((w): w is Webhook => !!w && typeof w === 'object' && typeof (w as Webhook).id === 'string' && typeof (w as Webhook).token === 'string').map((w) => ({
+    id: w.id, platform: WEBHOOK_PLATFORMS.some((p) => p.key === w.platform) ? w.platform : 'generic', label: str(w.label, 80, 'Webhook'), notes: str(w.notes, 200), token: w.token, key: typeof w.key === 'string' ? w.key : null,
+    received: num(w.received), created: num(w.created), duplicates: num(w.duplicates), lastAt: typeof w.lastAt === 'number' ? w.lastAt : null, active: w.active !== false, createdAt: num(w.createdAt),
+  })) : []
+  const webhookLog: WebhookLogEntry[] = Array.isArray(raw.webhookLog) ? raw.webhookLog.filter((e): e is WebhookLogEntry => !!e && typeof e === 'object' && typeof (e as WebhookLogEntry).at === 'number').map((e): WebhookLogEntry => ({ at: e.at, webhookId: str(e.webhookId, 60), outcome: e.outcome === 'duplicate' ? 'duplicate' : 'created', name: str(e.name, 80) })).slice(0, 50) : []
+  const e = raw.email ?? {}
+  const email: EmailSource = {
+    connected: !!e.connected, address: str(e.address, 120),
+    platforms: Array.isArray(e.platforms) ? e.platforms.filter((x): x is string => typeof x === 'string' && (EMAIL_PLATFORMS as readonly string[]).includes(x)) : [...EMAIL_PLATFORMS],
+    custom: Array.isArray(e.custom) ? e.custom.filter((x): x is string => typeof x === 'string').map((x) => x.trim().toLowerCase().replace(/^@?/, '@').slice(0, 60)).filter((x) => x.length > 1).slice(0, 10) : [],
+    lastSyncAt: typeof e.lastSyncAt === 'number' ? e.lastSyncAt : null,
+    stats: { found: num(e.stats?.found), created: num(e.stats?.created), duplicates: num(e.stats?.duplicates), failed: num(e.stats?.failed) },
+  }
+  return { emailSlug: typeof r.emailSlug === 'string' ? r.emailSlug.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40) : '', meta: { connected: !!r.meta?.connected, page: typeof r.meta?.page === 'string' ? r.meta.page.slice(0, 80) : '', forms: forms.length ? forms : DEFAULT_META_FORMS }, webhooks, webhookLog, email }
+}
+/** The address the website form sends to — the studio's slug on OpenMaison's intake domain. */
+export const intakeAddress = (studioName: string, slug: string) => `leads+${slug || studioName.toLowerCase().replace(/pte\.? ltd\.?/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}@in.openmaison.sg`
+
+/* ── (REG-607, parity Q-05 · Q-07 · Q-38) The reasons a lead is parked or lost — Settings › Leads › Reasons ────────
+   1.0 lets a studio rename and add its close reasons and gate one behind logged contacts; the two lists live in one
+   settings row and the On Hold / Lost dialogs read them. A retired reason keeps the leads that carry it and leaves the
+   pickers, as a lead source does. `minContacts` (Lost only) is a hint, not a block: the dialog says how many contacts
+   are logged against how many the reason asks for. */
+export type LeadReason = { name: string; retired: boolean; /** Lost reasons: the logged contacts the reason expects, 0 = none */ minContacts?: number }
+export type LeadReasons = { lost: LeadReason[]; hold: LeadReason[] }
+/** The two Lost reasons that ask for a detail: the competitor's name, the expected restart. Renaming them in Settings drops the detail. */
+export const LOST_COMPETITOR = 'Went with another firm'
+export const LOST_POSTPONED = 'Project postponed'
+export const LOST_UNRESPONSIVE = 'Unresponsive'
+export const DEFAULT_LOST_REASONS: LeadReason[] = [
+  { name: LOST_COMPETITOR, retired: false }, { name: 'Budget mismatch', retired: false }, { name: LOST_POSTPONED, retired: false },
+  { name: LOST_UNRESPONSIVE, retired: false, minContacts: 3 }, { name: 'Not a fit', retired: false }, { name: 'Cancelled by client', retired: false },
+  { name: 'Property too far', retired: false }, { name: 'Others', retired: false },
+]
+export const DEFAULT_HOLD_REASONS: LeadReason[] = ['Client not ready', 'Budget review', 'Scope change', 'Property delay', 'Travelling', 'Others'].map((name) => ({ name, retired: false }))
+export const DEFAULT_LEAD_REASONS: LeadReasons = { lost: DEFAULT_LOST_REASONS, hold: DEFAULT_HOLD_REASONS }
+function parseReasonList(v: unknown, fallback: LeadReason[], withGate: boolean): LeadReason[] {
+  if (!Array.isArray(v)) return fallback
+  const seen = new Set<string>()
+  const out: LeadReason[] = []
+  for (const x of v) {
+    const o = x && typeof x === 'object' ? (x as { name?: unknown; retired?: unknown; minContacts?: unknown }) : null
+    const name = typeof x === 'string' ? x.trim() : typeof o?.name === 'string' ? o.name.trim() : ''
+    if (!name || seen.has(name.toLowerCase())) continue
+    seen.add(name.toLowerCase())
+    const entry: LeadReason = { name: name.slice(0, 40), retired: !!o?.retired }
+    if (withGate && typeof o?.minContacts === 'number' && Number.isFinite(o.minContacts) && o.minContacts > 0) entry.minContacts = Math.min(20, Math.floor(o.minContacts))
+    out.push(entry)
+    if (out.length >= 30) break
+  }
+  return out.length ? out : fallback
+}
+export function parseLeadReasons(v: unknown): LeadReasons {
+  const r = (v ?? {}) as Partial<Record<keyof LeadReasons, unknown>>
+  return { lost: parseReasonList(r.lost, DEFAULT_LOST_REASONS, true), hold: parseReasonList(r.hold, DEFAULT_HOLD_REASONS, false) }
+}
+/** The names a dialog offers: every live reason, "Others" last; `keep` (a lead's own retired reason) stays first so an edit never loses it. */
+export function liveReasonNames(list: LeadReason[], keep?: string | null): string[] {
+  const live = list.filter((r) => !r.retired).map((r) => r.name)
+  const ordered = [...live.filter((n) => n !== 'Others'), ...live.filter((n) => n === 'Others')]
+  return keep && !ordered.includes(keep) ? [keep, ...ordered] : ordered
+}

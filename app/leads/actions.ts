@@ -1,12 +1,18 @@
 'use server'
 
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { fetchLeadSources } from '@/lib/settings/queries'
+import { fetchViewer } from '@/lib/leads/visibility'
+import { diffFields, logLeadEvent } from '@/lib/leads/events'
+import { notify } from '@/lib/notifications/emit'
+import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
+import { assignHint, assignableIds, runsStudio } from '@/lib/leads/assign-policy'
+import { and, eq, inArray, isNotNull, isNull, sql, gte, asc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'node:crypto'
 import { db, type Db } from '@/lib/db'
-import { leadAssignees, leads } from '@/lib/db/schema'
+import { leadAssignees, leadCustomFieldValues, leadCustomFields, leadFiles, leads, members, questions, studioScopeQuestions } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
-import { ALL_STAGES } from '@/lib/leads/enums'
+import { ALL_STAGES, DISTRICTS, TASK_KINDS } from '@/lib/leads/enums'
 // (REG-287) The app's one phone rule and one strict d/m/yyyy parser — the CSV import used to carry private copies
 // of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
 import { digitsOnly, parseInputDate, phoneDigits, titleCaseName } from '@/lib/format'
@@ -43,22 +49,73 @@ async function writeAssignees(tx: Tx, leadId: string, memberIds: string[]): Prom
 }
 
 export async function assignMembers(leadId: string, memberIds: string[]): Promise<void> {
+  /* (REG-601) The role's reach, checked here as well as in the popover: a Designer reassigns nobody; a Manager changes only their team and themselves. */
+  const [viewer, team, current] = await Promise.all([fetchViewer(), db.select().from(members), db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId))])
+  if (assignHint(viewer)) throw new Error('not allowed to assign')
+  const allowed = new Set(assignableIds(viewer, team))
+  const before = new Set(current.map((c) => c.memberId)), after = new Set(memberIds)
+  const changed = [...new Set([...before, ...after])].filter((id) => before.has(id) !== after.has(id))
+  if (changed.some((id) => !allowed.has(id))) throw new Error('outside your team')
   await db.transaction((tx) => writeAssignees(tx, leadId, memberIds))   // atomic: no window with the rows deleted
+  /* (REG-613, parity Q-20) A removal leaves no row — the event log keeps it for Activity. */
+  for (const id of [...before].filter((x) => !after.has(x))) await logLeadEvent(db, leadId, 'member_removed', { memberId: id, name: team.find((m) => m.id === id)?.name ?? id })
+  /* (REG-604) The members just added hear it. */
+  const added = memberIds.filter((id) => !before.has(id))
+  if (added.length) { const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)); const who = team.find((m) => m.id === viewer.id)?.name ?? 'A member'; await notify('assigned', added, { title: `${titleCaseName(l?.name ?? 'A lead')} is now yours`, body: `Assigned by ${who}`, href: `/leads/${leadId}`, leadId }) }
   revalidateLead(leadId)
 }
+
+/**
+ * (REG-610, parity Q-31 · I-14 · I-16) The listing's bulk Assign: ADDS the chosen members to every selected lead (the owner's call —
+ * never a replace, so nobody loses a lead they hold). The role's reach applies as in `assignMembers`; the members added hear it
+ * once (2.0 notifies where 1.0's bulk path stayed silent, E-44). Returns how many leads gained someone.
+ */
+export async function addLeadMembers(leadIds: string[], memberIds: string[]): Promise<{ assigned: number }> {
+  const ids = [...new Set(leadIds)].filter(Boolean).slice(0, 2000)   // 1.0's cap
+  const adds = [...new Set(memberIds)].filter(Boolean)
+  if (!ids.length || !adds.length) return { assigned: 0 }
+  const [viewer, team] = await Promise.all([fetchViewer(), db.select().from(members)])
+  if (assignHint(viewer)) throw new Error('not allowed to assign')
+  const allowed = new Set(assignableIds(viewer, team))
+  if (adds.some((id) => !allowed.has(id))) throw new Error('outside your team')
+  const live = await db.select({ id: leads.id, name: leads.name }).from(leads).where(and(inArray(leads.id, ids), isNull(leads.deletedAt)))
+  const have = await db.select({ leadId: leadAssignees.leadId, memberId: leadAssignees.memberId }).from(leadAssignees).where(inArray(leadAssignees.leadId, live.map((l) => l.id)))
+  const now = new Date()
+  const fresh: { id: string; leadId: string; memberId: string; assignedAt: Date }[] = []
+  for (const l of live) for (const m of adds) if (!have.some((h) => h.leadId === l.id && h.memberId === m)) fresh.push({ id: randomUUID(), leadId: l.id, memberId: m, assignedAt: now })
+  if (fresh.length) await db.insert(leadAssignees).values(fresh)
+  const touched = [...new Set(fresh.map((f) => f.leadId))]
+  const who = team.find((m) => m.id === viewer.id)?.name ?? 'A member'
+  for (const m of adds) {
+    const mine = fresh.filter((f) => f.memberId === m)
+    if (!mine.length) continue
+    const one = mine.length === 1 ? live.find((l) => l.id === mine[0]!.leadId) : null
+    await notify('assigned', [m], one
+      ? { title: `${titleCaseName(one.name)} is now yours`, body: `Assigned by ${who}`, href: `/leads/${one.id}`, leadId: one.id }
+      : { title: `${mine.length} leads are now yours`, body: `Assigned from the listing by ${who}`, href: '/leads' })
+  }
+  for (const id of touched) revalidateLead(id)
+  revalidateLeadListings()
+  return { assigned: touched.length }
+}
+
+/** (REG-608) A task the Move stage window raises with the move: a plain title (General, undated) or the Contacted reminder — a dated Follow-up for the lead's members. */
+export type MoveTask = string | { title: string; kind?: string; dueAt?: string | null; assignLeadMembers?: boolean }
 
 export async function moveStage(input: {
   leadId: string
   fromStage: string
   toStage: string
   payload: unknown
-  tasks: string[]
+  tasks: MoveTask[]
   followUpAt?: string | null
-}): Promise<void> {
+}): Promise<{ logId: string }> {
   assertStage(input.fromStage, input.toStage)   // (REG-286)
   const { leads, stageLogs, leadTasks } = await import('@/lib/db/schema')
   const { randomUUID: uuid } = await import('node:crypto')
   const now = new Date()
+  const logId = uuid()   // (REG-607, parity Q-33) handed back so the On Hold / Lost snackbars can Undo the move, as a quick move's can
+  const assigned: { id: string; title: string; memberIds: string[] }[] = []   // (REG-608) the reminder's members, notified after the write
   // (REG-286) One transaction: the lead's new stage, the log that records the move and the suggested tasks are one
   // fact. Unwrapped, a failure after the update left a lead sitting in a stage its journey has no log for — which is
   // what `resumeStage`, the stage timeline and Activity all read.
@@ -67,23 +124,82 @@ export async function moveStage(input: {
       .set({ stage: input.toStage, updatedAt: now })
       .where(eq(leads.id, input.leadId))
     await tx.insert(stageLogs).values({
-      id: uuid(), leadId: input.leadId,
+      id: logId, leadId: input.leadId,
       fromStage: input.fromStage, toStage: input.toStage,
       payload: input.payload as object, createdAt: now,
     })
     // Suggested tasks are raised by the signed-in member, like every task createTask() writes. Unstamped they read
     // "System created the task" in Activity, left the drawer's Creator row blank and hid under Filters › Creators › Dane.
-    for (const title of input.tasks) {
+    // (REG-608) The Contacted reminder arrives as a dated Follow-up for the lead's members — 1.0's follow-up task.
+    for (const x of input.tasks) {
+      const t = typeof x === 'string' ? { title: x } : x
+      const kind = t.kind && (TASK_KINDS as readonly string[]).includes(t.kind) ? t.kind : 'General'
+      const due = t.dueAt ? new Date(t.dueAt) : null
+      const id = uuid()
       await tx.insert(leadTasks).values({
-        id: uuid(), leadId: input.leadId, title, kind: 'General',
-        dueAt: null, done: false, createdAt: now, creatorId: ME, updatedAt: now,
+        id, leadId: input.leadId, title: t.title, kind,
+        dueAt: due && !Number.isNaN(due.getTime()) ? due : null, done: false, createdAt: now, creatorId: ME, updatedAt: now,
       })
+      if (t.assignLeadMembers) {
+        const { taskAssignees } = await import('@/lib/db/schema')
+        const memberIds = (await tx.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, input.leadId))).map((r) => r.memberId)
+        if (memberIds.length) { await tx.insert(taskAssignees).values(memberIds.map((memberId) => ({ taskId: id, memberId }))); assigned.push({ id, title: t.title, memberIds }) }
+      }
     }
   })
+  /* (REG-608, parity Q-23) The lead's stage changed — Owners, Admins and the lead's members hear it (never the actor); the reminder's members hear their new task. */
+  await notifyStageChange(input.leadId, input.fromStage, input.toStage, input.payload)
+  for (const a of assigned) await notify('task_assigned', a.memberIds, { title: `New task: ${a.title}`, body: `On ${await leadName(input.leadId)}`, href: `/leads/${input.leadId}/tasks?open=${a.id}`, leadId: input.leadId })
   revalidateLead(input.leadId)
+  return { logId }
+}
+
+const leadName = async (leadId: string): Promise<string> => { const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)); return l ? titleCaseName(l.name) : 'A lead' }
+
+/** (REG-608) The stage-changed event: "{lead}: {from} → {to}", the parking reason as the body. */
+async function notifyStageChange(leadId: string, from: string, to: string, payload: unknown): Promise<void> {
+  const p = (payload && typeof payload === 'object' ? payload : {}) as { reason?: string }
+  const body = to === 'On Hold' || to === 'Lost' ? `${to === 'On Hold' ? 'On hold' : 'Lost'}${p.reason ? ` · ${p.reason}` : ''}` : null
+  await notify('stage_changed', [...(await studioRunnerIds()), ...(await leadMemberIds(leadId))], { title: `${await leadName(leadId)}: ${from} → ${to}`, body, href: `/leads/${leadId}`, leadId })
+}
+
+/** (REG-608, parity Q-03) Set a follow-up from the Overview: one dated Follow-up task on the lead, assigned to its members (you, when it has none). */
+export async function setFollowUp(leadId: string, input: { title: string; dueAt: string }): Promise<string> {
+  const { leadTasks, taskAssignees } = await import('@/lib/db/schema')
+  const due = new Date(input.dueAt)
+  if (Number.isNaN(due.getTime())) throw new Error('bad date')
+  const title = input.title.trim().slice(0, 120) || `Follow up with ${await leadName(leadId)}`
+  const members = await leadMemberIds(leadId)
+  const assignees = members.length ? members : [ME]
+  const id = randomUUID(); const now = new Date()
+  await db.transaction(async (tx) => {
+    await tx.insert(leadTasks).values({ id, leadId, title, kind: 'Follow-up', dueAt: due, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: now })
+    await tx.insert(taskAssignees).values(assignees.map((memberId) => ({ taskId: id, memberId })))
+  })
+  await notify('task_assigned', assignees, { title: `New task: ${title}`, body: `On ${await leadName(leadId)}`, href: `/leads/${leadId}/tasks?open=${id}`, leadId })
+  revalidateLead(leadId); revalidatePath('/tasks')
+  return id
+}
+
+/** (REG-607, parity Q-41) Only Owners and Admins delete leads — 1.0's default for `leads.delete`; the menus hide the item, the server refuses it. */
+async function assertCanDelete(): Promise<void> {
+  const viewer = await fetchViewer()
+  if (!runsStudio(viewer.role)) throw new Error('Only Owners and Admins can delete leads')
+}
+
+/** (REG-607, parity Q-04) What Delete warns about, as 1.0's archive did: contracts of these leads whose signing link is still live with the client. */
+export async function countLiveSigningLinks(leadIds: string[]): Promise<number> {
+  if (leadIds.length === 0) return 0
+  const { contracts, contractBundles } = await import('@/lib/db/schema')
+  const [cs, bs] = await Promise.all([
+    db.select({ n: sql<number>`count(*)` }).from(contracts).where(and(inArray(contracts.leadId, leadIds), eq(contracts.status, 'Sent to Client'), isNull(contracts.deletedAt))),
+    db.select({ n: sql<number>`count(*)` }).from(contractBundles).where(and(inArray(contractBundles.leadId, leadIds), isNotNull(contractBundles.sentAt), isNull(contractBundles.signedAt))),
+  ])
+  return Number(cs[0]?.n ?? 0) + Number(bs[0]?.n ?? 0)
 }
 
 export async function deleteLead(leadId: string, reason: string): Promise<void> {
+  await assertCanDelete()   // (REG-607)
   const { leads } = await import('@/lib/db/schema')
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1)
   if (!lead) return
@@ -109,8 +225,16 @@ type LeadFormInput = {
   areaSize: string
   areaUnit: string
   notes: string
+  /** (REG-607) 1.0's Area / District (one of DISTRICTS), the client's IC / NRIC and the studio's customer reference. */
+  district: string
+  nric: string
+  customerId: string
   /** Member ids from the form's Assign member field (REG-231). Replaces the lead's assignees wholesale. */
   assignees: string[]
+  /** (REG-609, parity C-08) Files attached on the Create New Lead form — their names; each becomes the simulated upload's lead_files row. */
+  files?: string[]
+  /** (REG-612, parity Q-25) The studio's custom fields, by field id — a string, or a string[] for a multi select. */
+  customValues?: Record<string, string | string[]>
 }
 
 function leadColumns(input: LeadFormInput) {
@@ -135,26 +259,87 @@ function leadColumns(input: LeadFormInput) {
       return input.areaUnit === 'sq m' ? Math.round(n * 10.7639) : n
     })(),
     notes: input.notes.trim() || null,
+    area: (DISTRICTS as readonly string[]).includes(input.district) ? input.district : null,   // (REG-607) the vocabulary, or nothing
+    icNumber: input.nric.replace(/\s+/g, '').toUpperCase() || null,   // (REG-607) kept the way the signing page checks it (isNric)
+    customerId: input.customerId.trim() || null,
   }
+}
+
+/**
+ * (REG-609, parity Q-18 · C-13) The duplicate pre-check behind Create New Lead: a live lead with the same phone (the bare
+ * eight digits — 1.0's raw-or-E.164 exact match) else the same email, case-insensitive. Deleted leads are in the trash for
+ * thirty days and never match (1.0 counted archived rows with a note; 2.0 has no archive). The form turns a hit into
+ * "A lead with this phone already exists" — Open existing lead · Create anyway. No studio switch (the owner's call).
+ */
+export async function findDuplicateLead(input: { phone: string; email: string; excludeId?: string | null }): Promise<{ id: string; name: string; phone: string; email: string | null; stage: string; matchedOn: 'phone' | 'email' } | null> {
+  const phone = phoneDigits(input.phone)
+  const email = input.email.trim().toLowerCase()
+  if (!phone && !email) return null
+  const live = (await db.select({ id: leads.id, name: leads.name, phone: leads.phone, email: leads.email, stage: leads.stage }).from(leads).where(isNull(leads.deletedAt)))
+    .filter((l) => l.id !== input.excludeId)
+  const byPhone = phone.length >= 6 ? live.find((l) => l.phone === phone) : undefined
+  if (byPhone) return { ...byPhone, matchedOn: 'phone' }
+  const byEmail = email ? live.find((l) => (l.email ?? '').trim().toLowerCase() === email) : undefined
+  return byEmail ? { ...byEmail, matchedOn: 'email' } : null
+}
+
+/* (REG-612, parity Q-25) The lead's custom values, written whole: only active fields, only shapes the field takes; an empty value clears the row. */
+async function writeCustomValues(tx: Tx, leadId: string, values: Record<string, string | string[]> | undefined): Promise<void> {
+  if (!values) return
+  const defs = await tx.select({ id: leadCustomFields.id, fieldType: leadCustomFields.fieldType }).from(leadCustomFields).where(eq(leadCustomFields.isActive, true))
+  await tx.delete(leadCustomFieldValues).where(eq(leadCustomFieldValues.leadId, leadId))
+  const rows = defs.flatMap((d) => {
+    const v = values[d.id]
+    if (v === undefined) return []
+    if (d.fieldType === 'multi_select') { const list = Array.isArray(v) ? v.map(String).filter(Boolean) : []; return list.length ? [{ id: randomUUID(), leadId, fieldId: d.id, value: JSON.stringify(list.slice(0, 20)) }] : [] }
+    const str = Array.isArray(v) ? v[0] ?? '' : String(v)
+    return str.trim() ? [{ id: randomUUID(), leadId, fieldId: d.id, value: JSON.stringify(str.trim().slice(0, 300)) }] : []
+  })
+  if (rows.length) await tx.insert(leadCustomFieldValues).values(rows)
 }
 
 export async function createLead(input: LeadFormInput): Promise<string> {
   const now = new Date()
   const id = randomUUID()
+  /* (REG-609, parity C-07) A Designer's new lead is their own — the server twin of the form's locked Assign member field. */
+  const [me] = await db.select({ role: members.role }).from(members).where(eq(members.id, ME)).limit(1)
+  const assignees = me?.role === 'Designer' ? [ME] : input.assignees
+  const files = (input.files ?? []).map((n) => n.trim()).filter(Boolean).slice(0, 20)
   // One transaction: a lead is never visible without the owners it was created with, so a retry cannot leave two.
   await db.transaction(async (tx) => {
     await tx.insert(leads).values({ id, ...leadColumns(input), stage: 'New', createdAt: now, updatedAt: now })   // every new lead carries the band until someone clicks it (user 2026-08-29)
-    await writeAssignees(tx, id, input.assignees)
+    await writeAssignees(tx, id, assignees)
+    await writeCustomValues(tx, id, input.customValues)   /* (REG-612) */
+    /* (REG-612, parity Q-21) A new lead starts with the studio's enabled questions — 1.0 shows the bank on every lead. */
+    const bank = await tx.select().from(studioScopeQuestions).where(eq(studioScopeQuestions.isEnabled, true)).orderBy(asc(studioScopeQuestions.sortOrder))
+    if (bank.length) {
+      const { isBankType, leadOptions, parseBankOptions, toLeadType } = await import('@/lib/company/question-bank')
+      await tx.insert(questions).values(bank.map((q, i) => { const t = isBankType(q.questionType) ? q.questionType : 'text'; const opts = leadOptions(t, parseBankOptions(q.options)); return { id: randomUUID(), leadId: id, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: i, createdAt: now } }))
+    }
+    /* (REG-609, parity C-08) Documents attached at creation land in the Files tab — the row files-actions' uploadFile writes, in the same act. */
+    if (files.length) await tx.insert(leadFiles).values(files.map((name) => {
+      const pdf = /\.pdf$/i.test(name)
+      return { id: randomUUID(), leadId: id, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: now, parentId: null, ownerId: ME, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: now }
+    }))
   })
+  /* (REG-604) Owners and Admins hear of every new lead; the members it was created with hear it is theirs. */
+  await notify('new_lead', await studioRunnerIds(), { title: `New lead: ${titleCaseName(input.name)}`, body: `${input.source} · ${input.propertyType}`, href: `/leads/${id}`, leadId: id })
+  if (assignees.length) await notify('assigned', assignees, { title: `${titleCaseName(input.name)} is now yours`, body: 'Assigned when the lead was created', href: `/leads/${id}`, leadId: id })
   revalidateLead(id)
   return id
 }
 
 export async function updateLead(leadId: string, input: LeadFormInput): Promise<void> {
+  const [before] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1)
+  const cols = leadColumns(input)
   await db.transaction(async (tx) => {
-    await tx.update(leads).set({ ...leadColumns(input), updatedAt: new Date() }).where(eq(leads.id, leadId))
+    await tx.update(leads).set({ ...cols, updatedAt: new Date() }).where(eq(leads.id, leadId))
     await writeAssignees(tx, leadId, input.assignees)
+    await writeCustomValues(tx, leadId, input.customValues)   /* (REG-612) */
   })
+  /* (REG-613, parity Q-20) An edit leaves no row of its own — the changed fields go to the event log, in the form's words. */
+  const changes = before ? diffFields(before as unknown as Record<string, unknown>, cols as unknown as Record<string, unknown>) : []
+  if (changes.length) await logLeadEvent(db, leadId, 'field_edited', { fields: changes })
   revalidateLead(leadId)
 }
 
@@ -195,6 +380,7 @@ export async function setTaskDue(taskId: string, due: Date): Promise<void> {
 
 /** Bulk soft delete — one statement; SQLite evaluates SET against the pre-update row. */
 export async function deleteLeads(leadIds: string[], reason: string): Promise<void> {
+  await assertCanDelete()   // (REG-607)
   if (leadIds.length === 0) return
   await db.update(leads)
     .set({ deletedAt: new Date(), deleteReason: reason, stageBeforeDelete: sql`stage` })
@@ -216,6 +402,7 @@ export async function restoreLeads(leadIds: string[]): Promise<number> {
  *  Resolves the target set SERVER-SIDE to leads still in the trash, so a stale
  *  client snapshot (Undo/Restore raced, another tab) can never purge a live lead. */
 export async function deleteForever(leadIds: string[]): Promise<void> {
+  await assertCanDelete()   // (REG-607)
   if (leadIds.length === 0) return
   const { leadTasks, leadAssignees: la, stageLogs } = await import('@/lib/db/schema')
   await db.transaction(async (tx) => {
@@ -232,6 +419,7 @@ export async function deleteForever(leadIds: string[]): Promise<void> {
 }
 
 export async function emptyTrash(): Promise<void> {
+  await assertCanDelete()   // (REG-607)
   const gone = await db.select({ id: leads.id }).from(leads).where(isNotNull(leads.deletedAt))
   await deleteForever(gone.map((g) => g.id))
 }
@@ -317,7 +505,7 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
 
 /** Imported row → lead columns; enum values outside the mock vocab fall back to 'Others' / 'New'. */
 async function leadFromImport(data: Record<string, string>) {
-  const { SOURCES, PROPERTY_TYPES, ALL_STAGES } = await import('@/lib/leads/enums')
+  const { PROPERTY_TYPES, ALL_STAGES, KEY_COLLECTION_OPTIONS } = await import('@/lib/leads/enums')
   const pick = (v: string | undefined, list: readonly string[], fallback: string) => {
     const hit = list.find((x) => x.toLowerCase() === (v ?? '').trim().toLowerCase())
     return hit ?? fallback
@@ -327,7 +515,7 @@ async function leadFromImport(data: Record<string, string>) {
     name: titleCaseName(data['Lead Name'] ?? ''),   // (REG-329) imported in any case, saved as "Farah Ahmad"
     phone: phoneDigits(data['Lead Phone Number'] ?? ''),
     email: (data['Lead Email'] ?? '').trim() || null,
-    source: pick(data['Lead Source'], SOURCES, 'Others'),
+    source: pick(data['Lead Source'], (await fetchLeadSources()).sources.map((s) => s.name), 'Others'),   // (REG-599) the studio's list, retired names included so an old export still maps
     stage: pick(data['Lead Stage'], ALL_STAGES, 'New'),   // the full vocabulary: STAGES is active-only, so an imported 'On Hold' / 'Lost' row landed silently in New
     propertyType: pick(data['Property Type'], PROPERTY_TYPES, 'Others'),
     propertyAddress: (data['Property Address'] ?? '').trim() || null,
@@ -337,10 +525,12 @@ async function leadFromImport(data: Record<string, string>) {
     // a real Date, so a CSV could put a date on a lead that no field in the UI would ever have taken.
     estimatedStartDate: parseInputDate(data['Estimated Start Date']),
     style: (data['Style'] ?? '').trim() || null,
-    keyCollection: (data['Key Collection'] ?? '').trim() || null,
+    // (REG-607) The key-collection vocabulary is 1.0's five since the parity round; an old sheet's "Not yet collected" reads as "Later".
+    keyCollection: (() => { const raw = (data['Key Collection'] ?? '').trim(); if (!raw) return null; if (/^not yet/i.test(raw)) return 'Later'; return KEY_COLLECTION_OPTIONS.find((k) => k.toLowerCase() === raw.toLowerCase()) ?? raw })(),
     condition: (data['Condition'] ?? '').trim() || null,
     areaSqft: Number(digitsOnly(data['Area Size'] ?? '')) || null,
     notes: (data['Remarks'] ?? '').trim() || null,   // the import vocabulary's Remarks (REG-266); the DB column stays `notes`
+    area: pick(data['District'], DISTRICTS, '') || null,   // (REG-607) 1.0's Area / District
     createdAt: now, updatedAt: now,
   }
 }
@@ -350,6 +540,7 @@ async function leadFromImport(data: Record<string, string>) {
  *  import (or by an earlier row in this batch) turns the row into a duplicate instead of a twin. */
 export async function approveImportRows(rowIds: string[]): Promise<{ approved: number; flagged: number }> {
   if (rowIds.length === 0) return { approved: 0, flagged: 0 }
+  const arrivals: { id: string; name: string; source: string }[] = []   /* (REG-604) */
   const { importRows } = await import('@/lib/db/schema')
   let approved = 0, flagged = 0
   await db.transaction(async (tx) => {
@@ -377,12 +568,15 @@ export async function approveImportRows(rowIds: string[]): Promise<{ approved: n
       }
       const id = randomUUID()
       await tx.insert(leads).values({ id, ...cols })
+      arrivals.push({ id, name: cols.name, source: cols.source })
       if (cols.phone) byPhone.set(cols.phone, id)
       if (cols.email) byEmail.set(cols.email.toLowerCase(), id)
       await tx.update(importRows).set({ status: 'approved' }).where(eq(importRows.id, r.id))
       approved++
     }
   })
+  /* (REG-604) Every lead that just arrived through an import or the capture reaches the Owners and Admins. */
+  if (arrivals.length) { const runners = await studioRunnerIds(); for (const a of arrivals.slice(0, 20)) await notify('new_lead', runners, { title: `New lead: ${titleCaseName(a.name)}`, body: a.source, href: `/leads/${a.id}`, leadId: a.id, actorId: null }) }
   revalidateLeadListings()   // (REG-286)
   return { approved, flagged }
 }
@@ -409,13 +603,25 @@ export async function mergeImportRow(rowId: string, picks: Record<string, 'exist
   const map: Record<string, keyof typeof incoming> = {
     'Lead name': 'name', Phone: 'phone', Email: 'email', 'Budget (S$)': 'budgetMinor',
     Source: 'source', 'Property type': 'propertyType', Address: 'propertyAddress',
+    /* (REG-609, parity I-04) the rest of the mapped fields — the review sheet's merge table lists them all */
+    District: 'area', 'Lead address': 'leadAddress', Condition: 'condition', Style: 'style', 'Area size': 'areaSqft',
+    'Key collection': 'keyCollection', 'Start date': 'estimatedStartDate', Remarks: 'notes',
   }
+  const empty = (v: unknown) => v === '' || v === null || v === undefined || v === 0
   for (const [label, choice] of Object.entries(picks)) {
     const key = map[label]
-    if (!key || choice !== 'new') continue
+    if (!key || choice !== 'new' || key === 'notes') continue   // Remarks are appended below, never swapped
     const v = incoming[key]
     // An empty incoming value never overwrites a real one.
-    if (v === '' || v === null || v === undefined || (key === 'budgetMinor' && v === 0)) continue
+    if (empty(v)) continue
+    patch[key] = v
+  }
+  /* (REG-609, parity I-04) 1.0's merge fills every field the original lacks from the duplicate; the radios only settle the
+     ones both sides carry. The sheet's Merged result column shows the same rule (existing, else new). */
+  for (const key of Object.values(map)) {
+    if (key === 'notes' || key in patch) continue
+    const v = incoming[key]
+    if (empty(v) || !empty((existing as Record<string, unknown>)[key])) continue
     patch[key] = v
   }
   // The mock promises the other phone is "kept as alt": keep it (and any import notes) in Notes.
@@ -449,6 +655,7 @@ export async function quickMoveStage(input: { leadId: string; fromStage: string;
       payload: { quick: true }, createdAt: now,
     })
   })
+  await notifyStageChange(input.leadId, input.fromStage, input.toStage, null)   /* (REG-608) */
   revalidateLead(input.leadId)
   return { logId }
 }
@@ -456,10 +663,13 @@ export async function quickMoveStage(input: { leadId: string; fromStage: string;
 /** Snackbar Undo for a quick move: the lead returns to where it was and the move leaves no trace in its journey. */
 export async function undoStageMove(input: { leadId: string; logId: string; toStage: string }): Promise<void> {
   assertStage(input.toStage)   // (REG-286)
-  const { leads, stageLogs } = await import('@/lib/db/schema')
+  const { leads, stageLogs, notifications } = await import('@/lib/db/schema')
   await db.transaction(async (tx) => {   // (REG-286) both halves of the undo, or neither
+    const [log] = await tx.select({ createdAt: stageLogs.createdAt }).from(stageLogs).where(eq(stageLogs.id, input.logId)).limit(1)
     await tx.update(leads).set({ stage: input.toStage, updatedAt: new Date() }).where(eq(leads.id, input.leadId))
     await tx.delete(stageLogs).where(eq(stageLogs.id, input.logId))
+    /* (REG-608) The move's "stage changed" rows go with its log — an undone move never happened, so nobody should read that it did. */
+    if (log) await tx.delete(notifications).where(and(eq(notifications.kind, 'stage_changed'), eq(notifications.leadId, input.leadId), gte(notifications.createdAt, log.createdAt)))
   })
   revalidateLead(input.leadId)
 }

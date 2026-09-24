@@ -8,9 +8,11 @@ import type { LeadRow } from '@/lib/leads/queries'
 
 /** "Delete this lead?" — copy verbatim from frame 779:24663; bulk variant (B1) pluralises. */
 export function DeleteLeadDialog({
-  leads, onClose, onDelete, reason, setReason,
+  leads, onClose, onDelete, reason, setReason, liveLinks = 0,
 }: {
   leads: LeadRow[] | null
+  /** (REG-607, parity Q-04) Contracts of these leads whose signing link is still live with the client — 1.0's archive warned about them. */
+  liveLinks?: number
   onClose: () => void
   onDelete: () => void
   reason: string
@@ -34,6 +36,11 @@ export function DeleteLeadDialog({
             </>}>
       <TextField label="Reason" mode="select" value={reason} onChange={setReason}
                  options={['Spam', 'Duplicate', 'Not a real lead', 'Others']} />
+      {liveLinks > 0 ? (
+        <span className={styles.helper} role="alert" data-testid="live-links">
+          {liveLinks === 1 ? 'A signing link is still live with the client — deleting voids it.' : `${liveLinks} signing links are still live with clients — deleting voids them.`}
+        </span>
+      ) : null}
       {lead ? (
         <span className={styles.helper}>
           “{lead.name}” will be permanently deleted in 30 days. Until then, collaborators can view it in the deleted folder.

@@ -218,16 +218,17 @@ function LibraryTable<T extends LibraryItem>({ rows, now, tableKey, columns, ext
   const colWidths = useColumnWidths(tableKey)
   const tracks = gridTemplateFor(columns, colWidths)
   const headRow = useRef<HTMLDivElement>(null)
-  const L = useColumnLayout(columns, headRow)
+  const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)
+  const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
   const sortable = (key: string) => key === 'updated' || extra.find((c) => c.key === key)?.sortable === true
   return (
-    <div ref={frame} className={table.card} role="table" aria-label={ariaLabel} data-cols={tableKey} data-overflow={overflowing || undefined} data-testid="library-table"
+    <div ref={frame} className={table.card} role="table" data-drag-root="" aria-label={ariaLabel} data-cols={tableKey} data-overflow={overflowing || undefined} data-testid="library-table"
          style={{ '--tracks': tracks } as React.CSSProperties} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={table.head} role="row">
         {columns.map((c) => (
-          <div key={c.key} className={`${table.hCell} ${c.key === 'name' ? table.colName : ''} ${c.pinned ? table.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={{ ...L.style(c.key), ...D.style(c.key) }} {...D.head(c.key)}>
+          <div key={c.key} className={`${table.hCell} ${c.key === 'name' ? table.colName : ''} ${c.pinned ? table.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {sortable(c.key) ? <button type="button" className={table.hSort} onClick={comingSoon}><span className={table.hLabel}>{c.label}</span><Icon name="unfold_more" size={16} /></button> : <span className={table.hLabel}>{c.label}</span>}
             <ColumnResizer table={tableKey} column={c.key} label={c.label} min={c.key === 'name' ? 160 : 72} />
           </div>

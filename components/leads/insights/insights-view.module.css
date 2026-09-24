@@ -1,0 +1,97 @@
+/* (REG-611) Leads › Insights — 1.0's Performance view on 2.0's pieces: the house chips for the range, three StatTiles (REG-614: the
+   shared components/om pieces), the awaiting chips, the By team member table on the listing's table model (the Qanvast card's rules, copied below). */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); }
+.caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); margin-bottom: var(--om-spacing-4); }
+.tileDelta { margin-top: var(--om-spacing-1); }
+.awaiting { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.sectionHead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-3); }
+.sectionTitle { display: block; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.sectionHelp { display: block; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin-top: 2px; }
+.empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.foot { margin: var(--om-spacing-4) 0 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.gate { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-10) var(--om-spacing-6); text-align: center; color: var(--om-color-on-surface-secondary); }
+.gateTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.gateBody { font: var(--om-type-body-m); }
+.memberCell { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.memberText { display: flex; flex-direction: column; min-width: 0; }
+.memberName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.memberRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.stat { display: flex; flex-direction: column; min-width: 0; }
+.statValue { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.statValue[data-grade='good'] { color: var(--om-color-tertiary-green-default); }
+.statValue[data-grade='warn'] { color: var(--om-color-tertiary-yellow-default); }
+.statValue[data-grade='bad'] { color: var(--om-color-tertiary-red-default); }
+.statHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .tiles { grid-template-columns: 1fr; }
+  .bar { align-items: flex-start; flex-direction: column; }
+}
+@media (min-width: 768px) and (max-width: 1024px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ── the By team member table — the Qanvast Ops card's rules (qanvast-leads.module.css), so every table reads as the listing ── */
+.card {
+  display: grid;
+  /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock's 1152-wide content.
+     The five data columns share whatever the container adds, in the mock's own proportions, instead of the slack falling into
+     Status — which holds two 20px tags and needs none (at 1440 with the rail collapsed that used to leave ~390px of white down
+     the right of every row). Status keeps its mocked 369; the ratios are the ghost loader's (components/shell/skeleton.tsx
+     QanvastSkeleton), so the columns don't jump at the PageReveal hand-off. At 1152 every track resolves to its exact mocked
+     px; narrower, each holds its px floor and the card scrolls sideways (the listing's rule, components/leads/table.module.css
+     .scroller) rather than pushing the row's "View Lead" out of reach. */
+  grid-template-columns: var(--tracks,
+    minmax(238px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
+    minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* Name's floor less the card's 2px of border (REG-430); --tracks: the user's dragged widths (REG-427) */
+  width: 100%;
+  /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
+     sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
+     vertically (the row actions sit inside their row; the customise popover is position: fixed). */
+  overflow-x: auto; overflow-y: hidden;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
+  border-radius: var(--om-radius-2);
+}
+
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+
+.hCell { position: relative; }
+
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }
+
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit;
+  transition: color var(--motion-hover);
+}
+
+.hSort:hover { color: var(--om-color-on-surface-default); }
+
+.row {
+  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180); auto-rows 100%: cells fit the 64 (REG-431) */
+  height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
+  transition: background-color var(--motion-hover);
+}
+
+.row:hover { background: var(--om-color-primary-variant); }
+
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
+  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }
+
+.head .pin { z-index: 3; }
+
+.row:hover .pin { background: var(--om-color-primary-variant); }

@@ -22,10 +22,12 @@ import fieldStyles from './fields.module.css'
 
 /** New = who the lead is assigned to. Read-only inside the stage move (user 2026-08-29): assignment happens from the listing. */
 export function NewPanel({
-  team, data, update, editable = false, error,
+  team, data, update, editable = false, error, assignable = null,
 }: { team: Member[]; data: WizardData; update?: (patch: Partial<WizardData>) => void
   /** (REG-334) True while the lead is still in New: the checkboxes assign; otherwise they only show. */
   editable?: boolean
+  /** (REG-601) The members this viewer may assign — null = everyone; a row outside it only shows. */
+  assignable?: string[] | null
   /** validateStage's `assignees` message after a Save with nobody ticked. */
   error?: string }) {
   return (
@@ -40,7 +42,7 @@ export function NewPanel({
               <span className={styles.memberName}>{m.name}</span>
               <span className={styles.memberRole}>{m.isYou ? `${m.role} (you)` : m.role}</span>
             </span>
-            <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled={!editable} aria-label={`Assigned: ${m.name}`}
+            <Checkbox isSelected={data.assignees.includes(m.id)} isDisabled={!editable || (assignable !== null && !assignable.includes(m.id))} aria-label={`Assigned: ${m.name}`}
                       onChange={(on) => update?.({ assignees: on ? [...data.assignees, m.id] : data.assignees.filter((id) => id !== m.id) })} />
           </div>
         ))}

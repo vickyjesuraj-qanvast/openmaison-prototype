@@ -41,9 +41,11 @@ const FOOT_SLOTS = 7     // the mock's 288px card: (256 − 24 button − 8 gap)
 const avatarSlotsFor = (width: number) => (width <= 0 ? FOOT_SLOTS : Math.max(1, Math.floor((width - AVATAR - AVATAR_GAP) / (AVATAR + AVATAR_GAP))))
 
 function KanbanCard({
-  lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked,
+  lead, now, query, unseen = false, onKebabDelete, onKebabReturn, onAssign, onDragToStage, boardRef, onNameClick, onTaskClick, pendingDrop, canDrop, onDropBlocked, canDelete = true,
 }: {
   lead: LeadRow
+  /** (REG-607, parity Q-41) Only Owners and Admins delete: the card menu drops the item for everyone else. */
+  canDelete?: boolean
   now: number
   query: string
   /** A new lead nobody has seen yet (REG-131): the table row's 4px primary band on the card's left edge (parity sweep, REG-194). */
@@ -266,14 +268,14 @@ function KanbanCard({
                         // (REG-286) The ONE shared rule (components/leads/menu-side.ts), as every row kebab now uses:
                         // flip above the trigger only when the scrolling column body would clip this 1- or 2-item menu
                         // below AND there is room for it above. Was a local copy with a worst-case 100px constant.
-                        setMenuSide(menuSideFor(e.currentTarget, canReturnLead(lead) ? 2 : 1))
+                        setMenuSide(menuSideFor(e.currentTarget, (canDelete ? 1 : 0) + (canReturnLead(lead) ? 1 : 0)))
                         setMenuOpen((o) => !o)
                       }}>
                 <Icon name="more_vert" size={20} weight={300} />
               </button>
             </Tooltip>
             <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide} sheetTitle={lead.name}>
-              <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem>
+              {canDelete ? <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
               {canReturnLead(lead) ? (
                 /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */
                 <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>Return Lead</DropdownItem>
@@ -330,9 +332,11 @@ function KanbanCard({
 }
 
 export function KanbanBoard({
-  rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked,
+  rows, query, now, unseenIds, stageScope = null, filtering = false, onClearSearch, onKebabDelete, onKebabReturn, onAssign, onDragToStage, onNameClick, onTaskClick, pendingDrop = null, canDrop, onDropBlocked, canDelete = true,
 }: {
   rows: LeadRow[]
+  /** (REG-607) */
+  canDelete?: boolean
   query: string
   now: number
   /** Leads nobody has opened or clicked yet — their cards carry the primary band (REG-131, REG-194). */
@@ -406,7 +410,7 @@ export function KanbanBoard({
                         <KanbanCard key={lead.id} lead={lead} now={now} query={query} boardRef={boardRef} unseen={unseenIds?.has(lead.id)}
                                     onKebabDelete={onKebabDelete} onKebabReturn={onKebabReturn} onAssign={onAssign}
                                     onDragToStage={onDragToStage} onNameClick={onNameClick} onTaskClick={onTaskClick} pendingDrop={pendingDrop}
-                                    canDrop={canDrop} onDropBlocked={onDropBlocked} />
+                                    canDrop={canDrop} onDropBlocked={onDropBlocked} canDelete={canDelete} />
                       ))}
                     </AnimatePresence>
                     {leads.length === 0 ? (

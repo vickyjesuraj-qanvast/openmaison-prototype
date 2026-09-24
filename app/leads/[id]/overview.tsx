@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { fromLabel } from '@/lib/nav'
+import { fromLabel, withFrom } from '@/lib/nav'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -26,27 +26,34 @@ import { StageDropdown } from '@/components/leads/stage-dropdown'
 import { CREATE_EVENTS } from '@/components/leads/tasks/use-create-intent'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
 import { AiBrief } from '@/components/leads/detail/ai-brief'
+import { assignHint, assignableIds } from '@/lib/leads/assign-policy'
 import { ActivityCard } from '@/components/leads/detail/activity-card'
 import { FilesCard } from '@/components/leads/detail/files-card'
 import { InfoColumn } from '@/components/leads/detail/info-column'
 import { LeadStagesCard } from '@/components/leads/detail/stages-card'
+import { FollowUpDialog } from '@/components/leads/detail/follow-up-dialog'
 import { MyWorkCard } from '@/components/leads/detail/my-work-card'
 import { QuestionnaireCard } from '@/components/leads/detail/questionnaire-card'
 import { QuickLinks } from '@/components/leads/detail/quick-links'
 import { QuoteCard } from '@/components/leads/detail/quote-card'
 import { LeadReturnedCard } from '@/components/leads/detail/returned-card'
 import { InvitePortalModal } from '@/components/leads/return/invite-portal-modal'
+import { askClient, invitePortal } from '@/app/leads/portal-actions'
+import { responseLine } from '@/lib/leads/tat'
+import { suggestMember } from '@/lib/leads/suggest'
 import { ReturnDetailsModal } from '@/components/leads/return/return-details-modal'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
-import { assignMembers, addTask, completeTask, deleteLead, moveStage, quickMoveStage, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
+import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, moveStage, quickMoveStage, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
 import { returnLead, undoReturn, type ReturnInput } from '@/app/leads/return-actions'
 import type { LeadFile } from '@/lib/db/schema'
 import type { LeadDetail } from '@/lib/leads/detail'
 import { returnTags } from '@/lib/leads/return-tags'
 import { type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
-import { moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
+import { displayDateTimeDot, isOverdue, moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
 import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
+import { runsStudio } from '@/lib/leads/assign-policy'
+import { liveReasonNames } from '@/lib/settings/types'
 import styles from './overview.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
@@ -73,7 +80,12 @@ const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); r
  * `origin` (931:49680's `?from=qanvast`, any in-app path since REG-465): the L2 crumb reads "{section} / Leads" and Back goes there.
  */
 export function LeadOverview({ detail, tab, body, wide = false, origin }: { detail: LeadDetail; tab: DetailTabSlug; body?: ReactNode; wide?: boolean; origin?: string }) {
-  const { lead, team, now, stageMovement, quoteApproval, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret } = detail
+  const { lead, team, now, stageMovement, quoteApproval, timeline, parked, daysInPipeline, activity, quote, files, questionnaire, ret, leadReasons, portal, returnsCount, responseTime, customFields, customValues, memberStats } = detail
+  /* (REG-607) The studio's reasons for the two dialogs, "Others" last; only Owners and Admins delete (parity Q-41). */
+  const holdOptions = liveReasonNames(leadReasons.hold)
+  const lostOptions = liveReasonNames(leadReasons.lost)
+  const canDelete = runsStudio(detail.viewer.role)
+  const [liveLinks, setLiveLinks] = useState(0)   // (REG-607, parity Q-04) contracts whose signing link is live, counted when Delete opens
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -88,8 +100,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const [lost, setLost] = useState(false)
   const [confirmMove, setConfirmMove] = useState<Stage | null>(null)
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
-  const [holdReason, setHoldReason] = useState('Property delay')
-  const [lostReason, setLostReason] = useState('Property too far')
+  const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
+  const [lostReason, setLostReason] = useState('')
 
   /* A flexible-mode quick move used to be awaited RAW here: `void quickMove(stage)` with nothing around it, so a
      server action that threw became an unhandled rejection — no snackbar, no change, nothing on screen. The listing's
@@ -111,8 +123,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     const intent = stageIntent(lead, stage, stageMovement)
     switch (intent.kind) {
       case 'none': return
-      case 'hold': setHoldReason('Property delay'); setHoldOpenedAt(Date.now()); setOnHold(true); return
-      case 'lost': setLostReason('Property too far'); setLost(true); return
+      case 'hold': setHoldReason(holdOptions[0] ?? ''); setHoldOpenedAt(Date.now()); setOnHold(true); return
+      case 'lost': setLostReason(lostOptions[0] ?? ''); setLost(true); return
       case 'blocked': snackbar({ message: intent.message }); return
       case 'confirm-resume': setConfirmMove(intent.stage); return
       case 'wizard': setWizard(intent.stage); return
@@ -136,6 +148,10 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   const [tasksFor, setTasksFor] = useState<({ el: HTMLElement } & TasksPos) | null>(null)
   const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
   const [deleting, setDeleting] = useState(false)
+  /* (REG-608, parity Q-03) The next follow-up = the earliest dated open task; "Set a follow-up" raises one. */
+  const [followUpOpen, setFollowUpOpen] = useState(false)
+  const nextTask = lead.tasks.filter((t) => t.dueAt).sort((a, b) => a.dueAt!.getTime() - b.dueAt!.getTime())[0] ?? null
+  const nextFollowUp = nextTask ? { id: nextTask.id, title: nextTask.title, dueAt: nextTask.dueAt!, overdue: isOverdue(nextTask.dueAt, now) } : null
   const [deleteReason, setDeleteReason] = useState('Spam')
   const [askOpen, setAskOpen] = useState(false)   // QUESTIONNAIRE card › Ask Client → the Ask the client dialog (931:46853)
   /* Qanvast lead return (931:48236, spec design-source/context/lead-return/): kebab › Return Lead → wizard; LEAD RETURNED › View Details → details; kebab › Invite to Portal (931:48844). */
@@ -263,9 +279,11 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                   <DropdownItem onSelect={() => { setKebabOpen(false); setReturnOpen(true) }}>Return Lead</DropdownItem>
                 ) : null}
                 <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy Link</DropdownItem>
-                <DropdownItem onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setDeleting(true) }}>
-                  <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
-                </DropdownItem>
+                {canDelete ? (
+                  <DropdownItem onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setLiveLinks(0); setDeleting(true); void countLiveSigningLinks([lead.id]).then(setLiveLinks).catch(() => setLiveLinks(0)) }}>
+                    <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
+                  </DropdownItem>
+                ) : null}
               </Dropdown>
             </span>
           }
@@ -276,6 +294,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           {/* "Add" beside a row opens the form ON that row, not at the top of fifteen fields (user 2026-08-31). */}
           {wide ? null : (
           <InfoColumn
+            portal={portal}   /* (REG-609) */
+            customFields={customFields} customValues={customValues}   /* (REG-612) */
             lead={lead}
             team={team}
             onEdit={() => setLeadForm({ mode: 'edit', lead })}
@@ -319,6 +339,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                     ) : null}
                     <div data-card="lead-stages">
                     <LeadStagesCard
+                      lastContact={lead.lastContact} onOpenContact={() => router.push(href('notes'))}
+                      nextFollowUp={nextFollowUp} onOpenFollowUp={() => { if (nextFollowUp) router.push(href('tasks', `open=${nextFollowUp.id}`)) }} onSetFollowUp={() => setFollowUpOpen(true)}
+                      responseTime={responseLine(responseTime)} onOpenInsights={canDelete ? () => router.push(withFrom('/leads/insights', `/leads/${lead.id}`)) : undefined}   /* (REG-611) */
                       timeline={timeline} parked={parked} daysInPipeline={daysInPipeline}
                       blocked={(stage) => blockedReason(lead, stage as Stage, stageMovement)}
                       onOpenStage={openStageStep}
@@ -387,6 +410,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       />
       {wizard ? (
         <MoveStageWizard
+          assignable={assignHint(detail.viewer) ? [] : assignableIds(detail.viewer, team)}
           lead={lead}
           team={team}
           targetStage={wizard}
@@ -420,15 +444,18 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onClose={() => setOnHold(false)}
         reason={holdReason} setReason={setHoldReason}
         openedAt={holdOpenedAt}
+        options={holdOptions}
         onSave={(otherReason, followUpAt, duration) => {
           setOnHold(false)
+          const from = lead.stage
           void run(async () => {
-            await moveStage({
-              leadId: lead.id, fromStage: lead.stage, toStage: 'On Hold',
+            const { logId } = await moveStage({
+              leadId: lead.id, fromStage: from, toStage: 'On Hold',
               payload: { reason: otherReason ? `Others: ${otherReason}` : holdReason, duration, followUpAt },
               tasks: [],
             })
-            snackbar({ message: 'Moved to On Hold' })
+            /* (REG-607, parity Q-33) Undo lives as long as the snackbar, as a quick move's does — the lead returns to where it was and the log goes. */
+            snackbar({ message: 'Moved to On Hold', actionLabel: 'Undo', onAction: () => { void run(async () => { await undoStageMove({ leadId: lead.id, logId, toStage: from }); refresh() }, 'Couldn’t undo the move — please try again') } })
             refresh()
           }, 'Couldn’t move the lead — please try again')
         }}
@@ -437,11 +464,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         open={lost}
         onClose={() => setLost(false)}
         reason={lostReason} setReason={setLostReason}
-        onSave={(otherReason) => {
+        options={lostOptions} reasons={leadReasons.lost} contactCount={lead.contactCount} today={new Date(now)}
+        onSave={(d) => {
           setLost(false)
+          const from = lead.stage
           void run(async () => {
-            await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage: 'Lost', payload: { reason: otherReason ? `Others: ${otherReason}` : lostReason }, tasks: [] })
-            snackbar({ message: 'Moved to Lost' })
+            const { logId } = await moveStage({ leadId: lead.id, fromStage: from, toStage: 'Lost', payload: { reason: d.otherReason ? `Others: ${d.otherReason}` : lostReason, ...(d.competitor ? { competitor: d.competitor } : {}), ...(d.restartAt ? { restartAt: d.restartAt } : {}) }, tasks: [] })
+            snackbar({ message: 'Moved to Lost', actionLabel: 'Undo', onAction: () => { void run(async () => { await undoStageMove({ leadId: lead.id, logId, toStage: from }); refresh() }, 'Couldn’t undo the move — please try again') } })
             refresh()
           }, 'Couldn’t move the lead — please try again')
         }}
@@ -451,6 +480,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         team={team}
         value={lead.assignees.map((m) => m.id)}
         anchor={assign?.el}
+        assignable={assignHint(detail.viewer) ? [] : assignableIds(detail.viewer, team)} hint={assignHint(detail.viewer)}
+        suggestion={lead.assignees.length ? null : suggestMember({ propertyType: lead.propertyType, budgetMinor: lead.budgetMinor, style: lead.style, area: lead.area }, team, memberStats)}   /* (REG-612) */
         onClose={() => setAssign(null)}
         onApply={(memberIds) => { setAssign(null); void run(async () => { await assignMembers(lead.id, memberIds); snackbar({ message: 'Members updated' }); refresh() }, 'Couldn’t update the members — please try again') }}
         requireOne={lead.stage !== 'New'}
@@ -479,15 +510,19 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       <LeadFormModal
         team={team}
         now={now}
+        sources={detail.sources}
+        assignable={assignHint(detail.viewer) ? [detail.viewer.id] : assignableIds(detail.viewer, team)}
+        customFields={customFields} customValues={customValues}   /* (REG-612) */
         form={leadForm}
         onClose={() => setLeadForm(null)}
-        onSubmit={async (_mode, data, leadId) => {
-          try { await updateLead(leadId ?? lead.id, data); setLeadForm(null); snackbar({ message: 'Successfully Updated' }); refresh(); return true }
+        onSubmit={async (_mode, data, leadId, extras) => {
+          try { await updateLead(leadId ?? lead.id, { ...data, customValues: extras?.customValues }); setLeadForm(null); snackbar({ message: 'Successfully Updated' }); refresh(); return true }
           catch { snackbar({ message: 'Couldn’t save the lead — please try again' }); return false }
         }}
       />
       <DeleteLeadDialog
         leads={deleting ? [lead] : null}
+        liveLinks={liveLinks}
         onClose={() => setDeleting(false)}
         reason={deleteReason}
         setReason={setDeleteReason}
@@ -501,14 +536,30 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           }, 'Couldn’t delete the lead — please try again')
         }}
       />
+      <FollowUpDialog
+        open={followUpOpen} leadName={lead.name} today={new Date(now)}
+        onClose={() => setFollowUpOpen(false)}
+        onSave={({ title, dueAt }) => {
+          setFollowUpOpen(false)
+          void run(async () => {
+            await setFollowUp(lead.id, { title, dueAt: dueAt.toISOString() })
+            snackbar({ message: `Follow-up set for ${displayDateTimeDot(dueAt)}` })
+            refresh()
+          }, 'Couldn’t set the follow-up — please try again')
+        }}
+      />
       <AskClientDialog
         open={askOpen} leadName={lead.name}
         onClose={() => setAskOpen(false)}
-        onSend={() => { setAskOpen(false); snackbar({ message: `Notification sent to ${lead.name}` }) }}
+        onSend={() => {   /* (REG-609, parity Q-22) recorded on the portal link — "Client asked on …" */
+          setAskOpen(false)
+          void run(async () => { await askClient(lead.id); snackbar({ message: `Notification sent to ${lead.name}` }); refresh() }, 'Couldn’t record the ask — please try again')
+        }}
       />
       <ReturnLeadWizard
         open={returnOpen}
         lead={{ id: lead.id, name: lead.name, createdAt: lead.createdAt }}
+        returnsCount={returnsCount}   /* (REG-609, parity Q-44) */
         files={files.filter((f) => f.kind !== 'folder')}
         now={now}
         onClose={() => setReturnOpen(false)}
@@ -530,13 +581,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       ) : null}
       <InvitePortalModal
         open={inviteOpen}
-        lead={{ name: lead.name, phone: lead.phone }}
+        lead={{ name: lead.name, phone: lead.phone, invitedAt: portal?.invitedAt ?? null }}
         onClose={() => setInviteOpen(false)}
-        onSend={(phone: string) => {
+        onSend={(phone: string, showHistory: boolean) => {
           // Send via WhatsApp (931:48844): the ready-to-send message with the mock's portal link — invented behaviour, REG-192.
           setInviteOpen(false)
           window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(`Hi ${lead.name}, track your project on OpenMaison: http://openmaison.ai/my/portalexample/login`)}`, '_blank')
-          snackbar({ message: 'WhatsApp opened with the invite' })
+          /* (REG-609, parity Q-22) The invite is recorded on the portal link — the info column's "Portal" row and Activity read it. */
+          void run(async () => { await invitePortal(lead.id, { showHistory }); snackbar({ message: 'WhatsApp opened with the invite' }); refresh() }, 'Couldn’t record the invite — please try again')
         }}
       />
     </PageReveal>

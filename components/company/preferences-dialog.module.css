@@ -1,0 +1,8 @@
+/* (REG-612) The Lead preferences dialog: 1.0's editor on the DS — a help paragraph, the specialty, four dimension blocks with a priority and the house chips (components/om/chips, REG-614). */
+.help { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.dim { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.dimHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.dimTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.priority { width: 180px; flex-shrink: 0; }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.count { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

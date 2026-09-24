@@ -40,3 +40,22 @@ export async function deleteQuestion(questionId: string): Promise<void> {
   await db.delete(questions).where(eq(questions.id, questionId))
   touch(leadId)
 }
+
+/** (REG-612, parity Q-21) "Add the studio's questions" — the enabled bank questions the lead does not carry yet, appended in the bank's order. */
+export async function addStudioQuestions(leadId: string): Promise<number> {
+  const { missingBankQuestions } = await import('@/lib/company/scope-questions')
+  const { toLeadType, leadOptions, parseBankOptions } = await import('@/lib/company/question-bank')
+  const { isBankType } = await import('@/lib/company/question-bank')
+  const missing = await missingBankQuestions(leadId)
+  if (!missing.length) return 0
+  const [m] = await db.select({ max: sql<number | null>`max(${questions.sortOrder})` }).from(questions).where(eq(questions.leadId, leadId))
+  let order = (m?.max ?? -1) + 1
+  const now = new Date()
+  await db.insert(questions).values(missing.map((q) => {
+    const t = isBankType(q.questionType) ? q.questionType : 'text'
+    const opts = leadOptions(t, parseBankOptions(q.options))
+    return { id: randomUUID(), leadId, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: order++, createdAt: now }
+  }))
+  touch(leadId)
+  return missing.length
+}

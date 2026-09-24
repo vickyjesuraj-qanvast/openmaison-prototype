@@ -113,3 +113,69 @@
 @media (max-width: 767px) {
   .numGrid { grid-template-columns: 1fr; }
 }
+
+/* (REG-599) Lead sources: the trades' chips with a count; a retired source reads muted. */
+.sourceCount { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+.trade[data-retired] { color: var(--om-color-on-surface-secondary); border-style: dashed; }
+.trade[data-retired] > span:first-child { text-decoration: line-through; }
+
+/* (REG-602) Lead capture: the address as a code chip beside Copy, the arrivals line under it. */
+.captureRow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); }
+.captureAddress { display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.captureMeta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* (REG-604) Settings › Notifications: the events × channels table, the follow-up rule, the messages. */
+.eventTable { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.eventHead, .eventRow { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) repeat(3, 88px); align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); }
+.eventHead { min-height: 40px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.eventRow { min-height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.eventName { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.eventName > span { display: flex; flex-direction: column; gap: 1px; }
+.eventHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.eventWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.eventCol { display: flex; justify-content: center; }
+.switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.messages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--om-spacing-3); }
+.message { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.message[data-off] { opacity: .6; }
+.messageHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
+.messageTitle { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.messageSubject { font: var(--om-type-subtitle-s, 600 13px/18px inherit); color: var(--om-color-on-surface-default); }
+.messageBody { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: pre-wrap; }
+.messageEdit { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.messageBox textarea { min-height: 140px; }
+.fields { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1); }
+.fieldChip { border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-full); background: none; padding: 2px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--om-color-on-surface-default); cursor: pointer; }
+.fieldChip:hover { background: var(--om-color-hover-04p, var(--om-color-surface-variant)); }
+.preview { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
+.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .eventHead { display: none; }
+  .eventRow { grid-template-columns: 1fr; gap: var(--om-spacing-2); }
+  .eventCol { justify-content: flex-start; gap: var(--om-spacing-2); }
+  .eventCol::before { content: attr(data-label); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+}
+
+/* (REG-607) Reasons: two chip lists under one card, a gate suffix on a Lost reason, the gate field beside the add row. */
+.reasonGroup { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.reasonLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.reasonGate { color: var(--om-color-on-surface-secondary); }
+.gateField { flex: 0 0 200px; }
+
+/* (REG-612) Settings › Leads › Custom fields rows and the field dialog's option list. */
+/* (REG-614) The list is the Notifications module's event table above, with its own tracks: field · Required · Active · actions. */
+.fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(200px, 1fr) 96px 96px 120px; }
+.fieldTable .eventRow:not([data-active]) .fieldLabel { color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(0, 1fr) 56px 56px; }
+  .fieldActionsHead { display: none; }
+  .fieldTable .fieldActions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+.fieldText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
+.fieldLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.fieldMeta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.fieldActions { display: inline-flex; gap: var(--om-spacing-1); justify-content: flex-end; }
+.fieldError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
+.optionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.optionRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
+.optionRow > :first-child { flex: 1; min-width: 0; }

@@ -11,6 +11,7 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { requestSearchFocus } from './search-focus'
 import { ToolsPopover } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
+import { openNotifications } from '@/components/shell/notifications-panel'
 import styles from './app-rail.module.css'
 
 /**
@@ -78,6 +79,7 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
           <Icon name={it.icon} size={24} weight={300} fill={active} />
         )}
         {(it.href && badges?.[it.href]) || (it.panel && badges?.[it.panel]) ? <span className={styles.badge} aria-hidden>{badges?.[it.href ?? it.panel ?? '']}</span> : null}
+        {it.label === 'Notifications' && badges?.notifications ? <span className={styles.badge} aria-hidden>{badges.notifications}</span> : null}   {/* (REG-604) */}
         <span className={styles.label}>{it.label}</span>
       </>
     )
@@ -109,7 +111,7 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
             {inner}
           </Link>
         ) : (
-          <button type="button" className={className} aria-label={it.label} onClick={comingSoon}>
+          <button type="button" className={className} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
             {inner}
           </button>
         )}

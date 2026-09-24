@@ -25,3 +25,6 @@
 @media (max-width: 1024px) {
   .legend { flex-wrap: wrap; height: auto; min-height: 16px; row-gap: var(--om-spacing-2); }
 }
+
+/* (REG-609) "Client asked on …" under the legend — the portal ask, recorded. */
+.asked { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

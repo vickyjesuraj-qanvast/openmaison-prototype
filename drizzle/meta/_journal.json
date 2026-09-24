@@ -218,6 +218,48 @@
       "when": 1790187807747,
       "tag": "0030_price_book_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1790231059290,
+      "tag": "0031_members_manager",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1790231992164,
+      "tag": "0032_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1790241736567,
+      "tag": "0033_lead_parity_r1",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1790245721187,
+      "tag": "0034_lead_parity_r3",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1790249274309,
+      "tag": "0035_lead_parity_r6",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1790250934502,
+      "tag": "0036_lead_parity_r7",
+      "breakpoints": true
     }
   ]
 }
