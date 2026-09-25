@@ -1,0 +1,415 @@
+[
+  {
+    "step": "5.01",
+    "chapter": 5,
+    "scene": "Meet your new lead",
+    "module": "Lead details",
+    "try": "Open Sophia's lead",
+    "how": "1. On Leads, click Sophia Wong's name\n2. Read the header\n3. Press the back arrow, look at her row, then open her again",
+    "expect": "Her \"Overview\" opens with chips 9765 4321 · S$ 60K · HDB 4-ROOM · REFERRAL and \"Stage: New\"; her row's band is gone.",
+    "in10": "Different from 1.0: a full page with tabs, not a drawer",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-01",
+      "LEADS:L-08",
+      "LEADS:D-04",
+      "LEADS:L-38"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.02",
+    "chapter": 5,
+    "scene": "Meet your new lead",
+    "module": "Lead details",
+    "try": "Check her details on the left",
+    "how": "1. On her Overview, read the left column\n2. Look at \"Lead info\", \"Property info\" and \"Other info\"",
+    "expect": "Lead info: Stage New, Source Referral, Budget (S$) 60,000; Property info: HDB 4-Room, District East, Resale, in 3 months, her address.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-17",
+      "LEADS:D-19",
+      "LEADS:D-20",
+      "LEADS:D-21",
+      "LEADS:D-09",
+      "LEADS:DEF-11"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.03",
+    "chapter": 5,
+    "scene": "Meet your new lead",
+    "module": "Lead details",
+    "try": "Try to move her before anyone owns her",
+    "how": "1. Click \"Stage: New\" and point at \"Contacted\"\n2. Close the menu\n3. Point at, then press, \"Convert to Project\"",
+    "expect": "Contacted is greyed with \"Assign a member first\"; Convert to Project wears a lock and answers \"Assign a member first\".",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-03",
+      "LEADS:R-04",
+      "LEADS:DEF-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.04",
+    "chapter": 5,
+    "scene": "Give her an owner",
+    "module": "Lead details",
+    "try": "Assign the member the studio suggests",
+    "how": "1. In the left column, under \"Collaborators\", click \"Assign Member\"\n2. Read the \"Suggested · …\" box\n3. Press \"Assign to Sarah\", then \"Assign\"",
+    "expect": "\"Suggested · Sarah\" explains why (HDB 4-Room, East area); \"Members updated\" and Sarah shows under Collaborators.",
+    "in10": "Different from 1.0: a line in Assign, scored the same way",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-28",
+      "LEADS:D-25",
+      "LEADS:C-14",
+      "LEADS:D-24",
+      "LEADS:N-01",
+      "LEADS:G-04",
+      "LEADS:G-05",
+      "SET:LM-14"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.05",
+    "chapter": 5,
+    "scene": "Give her an owner",
+    "module": "Lead details",
+    "try": "Set a reminder to follow up tomorrow",
+    "how": "1. In the \"LEAD STAGES\" card click \"Next follow-up\" (None set)\n2. In \"Set a follow-up\", pick tomorrow at 10:00 AM for \"When\"\n3. Keep the \"Task\" name, press \"Save\"",
+    "expect": "\"Follow-up set for …\" appears; Next follow-up now reads \"Follow up with Sophia Wong\" with tomorrow's date.",
+    "in10": "Different from 1.0: the follow-up is a task, not a lead date",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-17",
+      "LEADS:DEF-02",
+      "LEADS:D-28",
+      "LEADS:MM-17",
+      "LEADS:L-09",
+      "LEADS:S-15",
+      "LEADS:T-03",
+      "LEADS:N-04",
+      "LEADS:S-16"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.06",
+    "chapter": 5,
+    "scene": "Give her an owner",
+    "module": "Lead details",
+    "try": "Add her NRIC and correct her key collection",
+    "how": "1. Open ⋮ (\"More options\"), then \"Edit\"\n2. \"NRIC / FIN\": S8812345D · \"Key collection\": Collected\n3. Press \"Save\"",
+    "expect": "\"Successfully Updated\"; Lead info shows NRIC / FIN S8812345D and Property info shows Key collection Collected.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-22",
+      "LEADS:MM-35",
+      "LEADS:MM-14",
+      "LEADS:D-12"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.07",
+    "chapter": 5,
+    "scene": "Log the first call",
+    "module": "Lead details",
+    "try": "Check the call log asks for what it needs",
+    "how": "1. Click \"Stage: New\", then \"Contacted\"\n2. In the \"Move stage\" window press \"Save\" without filling anything",
+    "expect": "\"Moving to Contacted\"; red messages under the empty fields and \"Unable to move. Please fill in the required fields.\"; channels include \"In person\".",
+    "in10": "Different from 1.0: a screenshot is needed to log contact",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-03",
+      "LEADS:D-13",
+      "LEADS:S-01",
+      "LEADS:DEF-16",
+      "LEADS:MM-16"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.08",
+    "chapter": 5,
+    "scene": "Log the first call",
+    "module": "Lead details",
+    "try": "Log the call and pick the suggested tasks",
+    "how": "1. \"Contacted via\" Call · \"Date & Time\" today, now · \"Outcome\" Callback requested\n2. Under \"Schedule a call/meeting (optional)\": two days from now, 11:00 AM · \"Preferred mode\" Call\n3. Under \"Attach screenshots of your call attempts\" press \"Attach\", then \"Save\"\n4. In \"Suggested tasks\" tick the suggestion, press \"Save\"",
+    "expect": "\"Auto added\" shows \"Follow up with the client via Call on …\"; then \"Moved to Contacted\" and the button reads \"Stage: Contacted\".",
+    "in10": "Different from 1.0: a scheduled call becomes a task automatically",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-16",
+      "LEADS:MM-16",
+      "LEADS:S-09",
+      "LEADS:S-15",
+      "LEADS:D-14",
+      "LEADS:N-02"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.09",
+    "chapter": 5,
+    "scene": "Log the first call",
+    "module": "Lead details",
+    "try": "Find the call in Notes & Logs",
+    "how": "1. Open the \"Notes & Logs\" tab\n2. Click the Call contact log in the list",
+    "expect": "The log shows Call · Callback requested; its header reads \"Added during stage movement — view only\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-09",
+      "LEADS:D-54"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.10",
+    "chapter": 5,
+    "scene": "Notes and tasks",
+    "module": "Lead details",
+    "try": "Write a quick note that saves itself",
+    "how": "1. In \"Notes & Logs\" click \"New\", then \"Note\"\n2. Title: Site visit prep; write a line about her kitchen\n3. Click another item in the list",
+    "expect": "The note stays in the list under its title — there is no Save button to press.",
+    "in10": "Different from 1.0: many dated notes, not one field",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-54"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.11",
+    "chapter": 5,
+    "scene": "Notes and tasks",
+    "module": "Lead details",
+    "try": "Log a WhatsApp chat with Auto Fill",
+    "how": "1. Click \"New\", then \"Contact Log\"\n2. Press \"Auto Fill\", then \"Upload\"\n3. In \"Add tasks\" press \"Save\"\n4. Press \"Save\" under the log (if \"Add tasks\" opens again, press \"Cancel\")",
+    "expect": "The log fills with WhatsApp · Connected and a meeting in three days; \"1 task added\", then \"Contact log saved\".",
+    "in10": "Different from 1.0: a sample fill stands in for AI reading",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-10",
+      "LEADS:D-54",
+      "LEADS:DEF-16"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.12",
+    "chapter": 5,
+    "scene": "Notes and tasks",
+    "module": "Lead details",
+    "try": "Tick off the follow-up you just did",
+    "how": "1. Open the \"Tasks\" tab\n2. Find \"Follow up with Sophia Wong\"\n3. Click its round check (\"Mark as completed\")",
+    "expect": "The list holds your follow-ups with due dates and the suggestion; the ticked one now shows a filled check.",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:T-03",
+      "LEADS:D-54",
+      "LEADS:DEF-17"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.13",
+    "chapter": 5,
+    "scene": "Notes and tasks",
+    "module": "Lead details",
+    "try": "Add a task and give it a due date",
+    "how": "1. Click \"Add Task\", then \"Create New Task\"\n2. Type Send Sophia the HDB renovation checklist, press Enter\n3. In its \"Due date\" cell click the calendar (\"Set due date\") and pick Friday",
+    "expect": "The new task sits in the list with Friday as its due date.",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-54"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.14",
+    "chapter": 5,
+    "scene": "Her files",
+    "module": "Lead details",
+    "try": "Find her floor plan and make a folder",
+    "how": "1. Open the \"Files\" tab\n2. Check sophia-floor-plan.pdf is there\n3. Click the \"New Folder\" icon, name it Site photos, press \"Save\"",
+    "expect": "The floor plan attached when she was created is listed; \"Folder created\" and a Site photos folder appears.",
+    "in10": "Different from 1.0: folders, trash and comments",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-21",
+      "LEADS:D-33",
+      "LEADS:C-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.15",
+    "chapter": 5,
+    "scene": "Her files",
+    "module": "Lead details",
+    "try": "Upload a photo into the folder",
+    "how": "1. Click the Site photos folder to open it\n2. Click \"New File\", then \"From Local Files\"\n3. Pick sophia-living-room.jpg",
+    "expect": "\"Uploading 1 file\", then \"File uploaded\"; a tile named sophia-living-room.jpg appears (the prototype shows a sample preview).",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-33",
+      "LEADS:DEF-21"
+    ],
+    "files": [
+      "uat-files/sophia-living-room.jpg"
+    ]
+  },
+  {
+    "step": "5.16",
+    "chapter": 5,
+    "scene": "Her files",
+    "module": "Lead details",
+    "try": "Leave your team a comment on the photo",
+    "how": "1. Double-click the photo to open it\n2. Click the \"Comments\" icon (top right)\n3. Type Check the window measurements, press Enter\n4. Press the back arrow (\"Back to Files\")",
+    "expect": "Your comment appears under your name; the panel notes \"Clients can’t see these comments\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-21",
+      "LEADS:D-54"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.17",
+    "chapter": 5,
+    "scene": "What does she need?",
+    "module": "Lead details",
+    "try": "Answer one of the studio's questions",
+    "how": "1. Open the \"Questionnaire\" tab\n2. On the first question press \"Answer\"\n3. Type a short answer, press \"Save\"",
+    "expect": "Her lead already holds the studio's questions (Company › Questionnaire, chapter 3's included); \"Answer saved\" and your answer shows after \"A:\".",
+    "in10": "Different from 1.0: the studio answers here; clients use the portal",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-22",
+      "LEADS:D-35",
+      "LEADS:MM-25",
+      "LEADS:T-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.18",
+    "chapter": 5,
+    "scene": "What does she need?",
+    "module": "Lead details",
+    "try": "Ask Sophia to answer the rest herself",
+    "how": "1. Press \"Ask Client\"\n2. In \"Ask the client\", press \"Copy\" beside the portal link\n3. Press \"Send via WhatsApp\"",
+    "expect": "\"Notification sent to Sophia Wong\" (no WhatsApp tab opens here); the summary now reads \"Client asked on\" with today's date.",
+    "in10": "Different from 1.0: the ask is recorded; no 5-minute limit",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-36",
+      "LEADS:N-06",
+      "LEADS:DEF-22",
+      "LEADS:MM-24"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.19",
+    "chapter": 5,
+    "scene": "The showroom visit",
+    "module": "Lead details",
+    "try": "Record the showroom meeting",
+    "how": "1. Click \"Stage: Contacted\", then \"Met\"\n2. \"Where\": Showroom · \"Date & Time\": today, now\n3. Press \"Save\"",
+    "expect": "\"Moved to Met\"; the header button reads \"Stage: Met\".",
+    "in10": "Different from 1.0: a meeting log with where and when",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-01",
+      "LEADS:S-03",
+      "LEADS:D-27"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.20",
+    "chapter": 5,
+    "scene": "The showroom visit",
+    "module": "Lead details",
+    "try": "Look back at the call — stages never move back",
+    "how": "1. In the \"LEAD STAGES\" card, click the \"Contacted\" row\n2. Read the window, then press \"Cancel\"",
+    "expect": "\"Contacted details\" opens read-only, with \"Edit\" on the log and \"Add Log\" at the top; there is no Save button.",
+    "in10": "Different from 1.0: done stages open read-only; nothing moves back",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-04",
+      "LEADS:DEF-01",
+      "LEADS:D-27",
+      "LEADS:MM-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.21",
+    "chapter": 5,
+    "scene": "The showroom visit",
+    "module": "Lead details",
+    "try": "Read her journey at a glance",
+    "how": "1. On \"Overview\", read the \"LEAD STAGES\" card\n2. Read the three lines under the stages",
+    "expect": "New, Contacted ticked, Met current; Next follow-up shows your earliest dated task; Response time reads like \"Assigned in … · First contact in …\".",
+    "in10": "Different from 1.0: one line instead of a Response time card",
+    "as": "Dane",
+    "covers": [
+      "LEADS:R-03",
+      "LEADS:D-10",
+      "LEADS:R-02",
+      "LEADS:DEF-25",
+      "LEADS:L-09"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.22",
+    "chapter": 5,
+    "scene": "The day's record",
+    "module": "Lead details",
+    "try": "Read everything that happened to her lead",
+    "how": "1. Open the \"Activity\" tab\n2. Scroll through today",
+    "expect": "Among the lines: \"You assigned Sarah to this lead.\", \"You edited the lead — …\" and \"You asked Sophia Wong to answer the questionnaire.\"",
+    "in10": "Different from 1.0: built from records, plus logged edits and asks",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-20",
+      "LEADS:D-37",
+      "LEADS:MM-18",
+      "LEADS:S-22"
+    ],
+    "files": []
+  },
+  {
+    "step": "5.23",
+    "chapter": 5,
+    "scene": "The day's record",
+    "module": "Leads",
+    "try": "See Sophia's progress from the list",
+    "how": "1. Go back to \"Leads\"\n2. Find Sophia Wong's row",
+    "expect": "Stage Met, Sarah under Members, a task in Tasks, and the District, Next follow-up and Last contact columns filled in.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:L-07",
+      "LEADS:L-06",
+      "LEADS:L-09"
+    ],
+    "files": []
+  }
+]

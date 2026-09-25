@@ -1,0 +1,210 @@
+[
+ {
+  "step": "11.01",
+  "chapter": 11,
+  "scene": "Monday morning: what needs doing",
+  "module": "Tasks",
+  "try": "See every task in the studio in one list",
+  "how": "1. Click \"Tasks\" in the side navigation",
+  "expect": "\"Tasks\" lists every lead's tasks and the studio's own, with a \"Lead\" column; the side navigation's Tasks item counts the overdue ones.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:T-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.02",
+  "chapter": 11,
+  "scene": "Monday morning: what needs doing",
+  "module": "Tasks",
+  "try": "Add a studio chore that belongs to no lead",
+  "how": "1. Click \"Add Task\" › \"Create New Task\"\n2. Type Order new sample boards for the showroom, leave the Lead cell on \"Studio\", press Enter, then Esc\n3. Click the \"All Tasks\" chip › \"Studio Tasks\"",
+  "expect": "\"Task added\"; Studio Tasks lists it with the studio's other chores (e.g. \"Update the showroom price list for Q4\"), each reading \"Studio\" as its Lead.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:T-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.03",
+  "chapter": 11,
+  "scene": "Monday morning: what needs doing",
+  "module": "Tasks",
+  "try": "Show only Sophia Wong's tasks",
+  "how": "1. Switch the chip back to \"All Tasks\"\n2. Click the \"Filters\" icon, open \"Lead\" and tick Sophia Wong\n3. Click \"Done\"",
+  "expect": "Only Sophia Wong's tasks from the earlier chapters remain; the Filters icon shows 1.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:T-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.04",
+  "chapter": 11,
+  "scene": "What happened this week",
+  "module": "Notifications",
+  "try": "Catch up on the week in the bell",
+  "how": "1. Click \"Notifications\" (the bell) in the side navigation\n2. Read the list",
+  "expect": "Newest first: the week's notices, e.g. Sarah's proposed item and her quote for approval; follow-ups such as \"… has had no contact yet\" read \"Due\".",
+  "in10": "Different from 1.0: follow-ups due are listed, not scheduled",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-24",
+   "LEADS:MM-26",
+   "LEADS:N-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.05",
+  "chapter": 11,
+  "scene": "What happened this week",
+  "module": "Notifications",
+  "try": "Open a notice and land on its record",
+  "how": "1. In the bell, click a row that has a dot\n2. Note where you land\n3. Open the bell again",
+  "expect": "The notice's record opens (a lead, a quote or My Items); back in the bell, that row has lost its dot.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.06",
+  "chapter": 11,
+  "scene": "What happened this week",
+  "module": "Notifications",
+  "try": "Clear the unread notices in one go",
+  "how": "1. In the bell, click \"Mark all as read\" (the ✓ at the top)\n2. Read the message at the bottom",
+  "expect": "Every dot goes; the message says \"All caught up\" or that the follow-ups due stay until done; the \"Due\" rows remain.",
+  "in10": "Different from 1.0: a follow-up stays until the work is done",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-02",
+   "LEADS:DEF-17"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.07",
+  "chapter": 11,
+  "scene": "What happened this week",
+  "module": "Notifications",
+  "try": "Jump from the bell to the notification rules and back",
+  "how": "1. In the bell, click \"Notification settings\"\n2. Read \"Follow-ups\"\n3. Click the back arrow, top left",
+  "expect": "Settings opens on \"Notifications\": untouched leads raised after \"30 minutes\", no follow-ups once Won, Lost or On Hold; Back returns you.",
+  "in10": "Different from 1.0: set per event, with a follow-up delay",
+  "as": "Dane",
+  "covers": [
+   "LEADS:N-11",
+   "LEADS:N-08",
+   "SET:LM-16"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.08",
+  "chapter": 11,
+  "scene": "How the team is doing",
+  "module": "Insights",
+  "try": "See how fast the team answers and wins leads",
+  "how": "1. Open Leads and click \"Insights\"\n2. Read the three tiles and \"By team member\"\n3. Click \"All time\"",
+  "expect": "Tiles \"Creation → Assignment\", \"Assignment → First outreach\", \"First outreach → Won\" show medians; \"All time\" updates the \"… leads in range\" count.",
+  "in10": "Different from 1.0: its own page; Won instead of Signed",
+  "as": "Dane",
+  "covers": [
+   "LEADS:R-01",
+   "LEADS:R-02",
+   "LEADS:DEF-25",
+   "SET:LM-18",
+   "SET:ST-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.09",
+  "chapter": 11,
+  "scene": "How the team is doing",
+  "module": "Lead details",
+  "try": "See how quickly Sophia Wong was handled",
+  "how": "1. Open Sophia Wong\n2. In the \"Lead stages\" card read \"Response time\"\n3. Click it",
+  "expect": "It reads like \"Assigned in … · First contact in … · Won in …\"; clicking it opens Insights.",
+  "in10": "Different from 1.0: one line instead of a separate card",
+  "as": "Dane",
+  "covers": [
+   "LEADS:R-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.10",
+  "chapter": 11,
+  "scene": "How the team is doing",
+  "module": "Lead details",
+  "try": "Read Sophia Wong's whole story on one timeline",
+  "how": "1. On Sophia Wong click the \"Activity\" tab\n2. Scroll the list\n3. Type contract in the search box",
+  "expect": "\"All Activities\", newest first: created, assigned, contacted, quoted, contract, Won — each line dated; the search leaves only the contract lines.",
+  "in10": "Different from 1.0: built from the records, and searchable",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-20",
+   "LEADS:MM-18",
+   "LEADS:S-22"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.11",
+  "chapter": 11,
+  "scene": "The paperwork across the studio",
+  "module": "Quotes",
+  "try": "Find Sophia's quote among all the studio's quotes",
+  "how": "1. Click \"Tools\" › \"Quotes\"\n2. Type Sophia in the search box",
+  "expect": "\"Quotes\" lists every lead's quotes with a \"Client\" column; Sophia Wong's quote shows its number, status and total.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.12",
+  "chapter": 11,
+  "scene": "The paperwork across the studio",
+  "module": "Contracts",
+  "try": "Find Sophia's signed contract among all contracts",
+  "how": "1. Click \"Tools\" › \"Contracts\"\n2. Type Sophia in the search box",
+  "expect": "\"Contracts\" lists the studio's contracts with a \"Lead\" column; Sophia Wong's contract reads \"Signed\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CN-02",
+   "CTR:CR-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "11.13",
+  "chapter": 11,
+  "scene": "The paperwork across the studio",
+  "module": "Quote X-Ray",
+  "try": "Find last week's rival-quote comparison again",
+  "how": "1. Click \"Tools\" › \"Quote X-Ray\"\n2. Look at \"Recent comparisons\"\n3. Click the Sophia Wong row",
+  "expect": "A row \"Sophia Wong · vs …\" (the rival from chapter 7) with its date; it opens the saved comparison.",
+  "in10": "Different from 1.0: every comparison kept, not just the last five",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XH-01",
+   "XRAY:XE-01"
+  ],
+  "files": []
+ }
+]

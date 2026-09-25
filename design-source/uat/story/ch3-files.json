@@ -1,0 +1,12 @@
+[
+ {
+  "name": "fluted-panel.jpg",
+  "purpose": "The photo for the tester's own price-book item, Fluted feature wall panel (step 3.05).",
+  "content": "Any JPG under 1 MB, about 800×600: a photo of a fluted timber wall panel (vertical oak-coloured slats). A plain oak-brown 800×600 image also works — the item dialog takes any PNG / JPG / WEBP / GIF up to 10 MB."
+ },
+ {
+  "name": "supplier-price-list.csv",
+  "purpose": "A supplier's price list imported into My Items (steps 3.12–3.13): two new items, one match on an existing item (name + vendor), one repeated row, one new trade.",
+  "content": "Item,Kind,Description,Unit,Cost,Markup,Category,Vendor\n\"Shower screen, tempered glass\",Purchase,\"10 mm clear tempered glass, fixed panel with hinged door\",set,650.00,250.00,Glass & Mirror,Glass Studio SG\n\"Vinyl flooring, supply and install\",Purchase,5 mm SPC vinyl planks with underlay,sqft,5.80,1.50,Flooring,Floor Xpert\nFeature wall wallpaper,Purchase,\"Textured vinyl wallpaper, supply and hang\",sqft,3.20,1.30,Painting,Wallpaper Hub\n\"Shower screen, tempered glass\",Purchase,\"10 mm clear tempered glass, fixed panel with hinged door\",set,640.00,260.00,Glass & Mirror,Glass Studio SG\n"
+ }
+]

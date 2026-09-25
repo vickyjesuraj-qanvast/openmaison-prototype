@@ -1,0 +1,263 @@
+[
+ {
+  "step": "7.01",
+  "chapter": 7,
+  "scene": "Sophia shows you another studio’s quote",
+  "module": "Quote X-Ray",
+  "try": "Open Quote X-Ray on Sophia’s quote",
+  "how": "1. Open Sophia Wong › \"Quotes\" tab\n2. Hover the quote’s row and click \"More actions\" (⋮)\n3. Choose \"Compare with another quote\"",
+  "expect": "Quote X-Ray opens for Sophia Wong: the lead is fixed and \"… · Tampines 4-room renovation\" is already chosen, \"Confirmed · 9 lines\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XE-03",
+   "XRAY:XE-02",
+   "XRAY:XS-04",
+   "XRAY:XS-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.02",
+  "chapter": 7,
+  "scene": "Sophia shows you another studio’s quote",
+  "module": "Quote X-Ray",
+  "try": "Add the rival studio’s quote",
+  "how": "1. Drop uat-files/rival-quote-urban-nest.xlsx on \"The other studio’s quote\" (or click it to browse)\n2. Type \"Urban Nest Interiors\" in \"Their studio’s name (optional)\"",
+  "expect": "Under the file it says \"10 lines read · S$13,470.00\" at once; the hint clears and \"Compare\" can be clicked.",
+  "in10": "Different from 1.0: spreadsheets are read as you pick them",
+  "as": "Dane",
+  "covers": [
+   "XRAY:DEF-02",
+   "XRAY:XR-02",
+   "XRAY:XR-05",
+   "XRAY:XS-07",
+   "XRAY:XS-08"
+  ],
+  "files": [
+   "uat-files/rival-quote-urban-nest.xlsx"
+  ]
+ },
+ {
+  "step": "7.03",
+  "chapter": 7,
+  "scene": "Sophia shows you another studio’s quote",
+  "module": "Quote X-Ray",
+  "try": "Run the comparison",
+  "how": "1. Click \"Compare\"\n2. Watch the progress card until the result opens",
+  "expect": "\"Comparing the two quotes…\" ticks through four steps, then \"Sophia Wong · vs Urban Nest Interiors\" opens with the date and items compared.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XS-09",
+   "XRAY:DEF-01",
+   "XRAY:XC-01",
+   "XRAY:XC-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.04",
+  "chapter": 7,
+  "scene": "Read the result",
+  "module": "Quote X-Ray",
+  "try": "Read the real price difference",
+  "how": "1. Read the sentence under the caption\n2. Read the three figures\n3. Read the note under them\n4. Hover the quote’s name in the caption — it links to your quote",
+  "expect": "About S$ 17.7K yours, S$ 13.5K theirs, \"Real difference\" S$ 3.8K \"ours more, like-for-like\"; the note says both sides are before discounts and GST.",
+  "in10": "Different from 1.0: both sides compared on line totals, before GST",
+  "as": "Dane",
+  "covers": [
+   "XRAY:DEF-03",
+   "XRAY:DEF-05",
+   "XRAY:MM-01",
+   "XRAY:MM-02",
+   "XRAY:XM-01",
+   "XRAY:XM-02",
+   "XRAY:XM-08",
+   "XRAY:XC-03",
+   "XRAY:XC-04",
+   "XRAY:XC-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.05",
+  "chapter": 7,
+  "scene": "Read the result",
+  "module": "Quote X-Ray",
+  "try": "Check the item-by-item table",
+  "how": "1. Scroll to \"Item by item\"\n2. Find \"Lighting points\", \"Hacking of kitchen floor and wall tiles\" and \"Haulage and disposal of debris\"",
+  "expect": "Lighting shows both quantities (18 vs 16 points); hacking is \"Matched\" despite different words; haulage reads \"No price given\".",
+  "in10": "Different from 1.0: rates are compared and both quantities shown",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XM-10",
+   "XRAY:XM-04",
+   "XRAY:XM-09",
+   "XRAY:XM-11",
+   "XRAY:XC-05",
+   "XRAY:DEF-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.06",
+  "chapter": 7,
+  "scene": "Put the matching right",
+  "module": "Quote X-Ray",
+  "try": "Tell X-Ray two lines are not the same item",
+  "how": "1. Hover the \"Quartz countertop\" row and click \"More actions\" (⋮)\n2. Choose \"Not the same item\"",
+  "expect": "\"Marked as not the same item\" (with Undo); the row splits into \"Only in yours\" and \"Only in theirs\" and the figures change.",
+  "in10": "Different from 1.0: you can correct a match on the result",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XM-07",
+   "XRAY:DEF-10",
+   "XRAY:XM-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.07",
+  "chapter": 7,
+  "scene": "Put the matching right",
+  "module": "Quote X-Ray",
+  "try": "Pair the two countertops again by hand",
+  "how": "1. On the \"Quartz countertop\" row open \"More actions\" (⋮) › \"Same item as…\"\n2. Pick \"Laminate countertop\" in the list\n3. Click \"Pair\"",
+  "expect": "The row is matched again with the status \"Paired by you\"; the foot of the page reads \"Corrected by Dane on …\".",
+  "in10": "Different from 1.0: you can correct a match on the result",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XM-07",
+   "XRAY:XC-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.08",
+  "chapter": 7,
+  "scene": "Tell Sophia",
+  "module": "Quote X-Ray",
+  "try": "See what to tell Sophia",
+  "how": "1. Read the three points under \"Say this\"\n2. On the wardrobe point, click \"Say it as a question\"\n3. Read \"Key points you can use\"",
+  "expect": "Points: wardrobe priced well below ours, a laminate worktop question, missing waterproofing. Key points: Nippon Paint \"Your advantage\", KDK \"Impact: high\", Dulux checked.",
+  "in10": "Different from 1.0: brand notes are curated, not searched online",
+  "as": "Dane",
+  "covers": [
+   "XRAY:DEF-06",
+   "XRAY:DEF-07",
+   "XRAY:XP-01",
+   "XRAY:XP-02",
+   "XRAY:XP-03",
+   "XRAY:XP-06",
+   "XRAY:XP-07",
+   "XRAY:XP-09",
+   "XRAY:MM-03",
+   "XRAY:XK-03",
+   "XRAY:XK-04",
+   "XRAY:XK-05",
+   "XRAY:XK-06",
+   "XRAY:MM-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.09",
+  "chapter": 7,
+  "scene": "Tell Sophia",
+  "module": "Quote X-Ray",
+  "try": "Send Sophia the summary on WhatsApp (without really sending)",
+  "how": "1. Click \"Send to client\"\n2. Check the message never names Urban Nest Interiors, and change a word\n3. Click \"Open WhatsApp\" — a WhatsApp tab opens: close it, do not send\n4. Click \"Send to client\" again",
+  "expect": "The wardrobe point goes as your question; the header shows \"Sent …\"; the dialog reopens on your edited text, with \"Reset to draft\".",
+  "in10": "Different from 1.0: what you sent is kept and shown",
+  "as": "Dane",
+  "covers": [
+   "XRAY:DEF-08",
+   "XRAY:MM-04",
+   "XRAY:MM-06",
+   "XRAY:XP-11",
+   "XRAY:XW-01",
+   "XRAY:XW-02",
+   "XRAY:XW-03",
+   "XRAY:XW-04",
+   "XRAY:XW-05",
+   "XRAY:XH-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.10",
+  "chapter": 7,
+  "scene": "Compare two files without a lead",
+  "module": "Quote X-Ray",
+  "try": "Compare two files with no lead attached",
+  "how": "1. Click \"Tools\" › \"Quote X-Ray\", then \"Upload two quotes\"\n2. Drop uat-files/kitchen-moodboard.jpg on \"The other studio’s quote\" and read the message\n3. Drop uat-files/sophia-items-to-paste.xlsx on \"Your quote\" and uat-files/cove-interior-quotation.pdf on \"The other studio’s quote\"\n4. Click \"Compare\"",
+  "expect": "The photo is refused (\"We couldn’t read this one…\"); the PDF reads \"20 lines read from Cove Interior’s quote\"; the result opens.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XS-02",
+   "XRAY:XS-10",
+   "XRAY:XR-01",
+   "XRAY:XR-03",
+   "XRAY:XE-01",
+   "XRAY:DEF-02"
+  ],
+  "files": [
+   "uat-files/kitchen-moodboard.jpg",
+   "uat-files/sophia-items-to-paste.xlsx",
+   "uat-files/cove-interior-quotation.pdf"
+  ]
+ },
+ {
+  "step": "7.11",
+  "chapter": 7,
+  "scene": "Compare two files without a lead",
+  "module": "Quote X-Ray",
+  "try": "Delete that practice comparison",
+  "how": "1. On its result click \"More options\" (⋮) › \"Delete\"\n2. Click \"Delete\" in \"Delete this comparison?\"",
+  "expect": "It warns this can’t be undone; you land back on Quote X-Ray and it is gone from \"Recent comparisons\".",
+  "in10": "Different from 1.0: only its maker, an Owner or an Admin deletes",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XH-03",
+   "XRAY:XE-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.12",
+  "chapter": 7,
+  "scene": "Other leads’ readings",
+  "module": "Quote X-Ray",
+  "try": "Rerun a reading whose quote has changed since",
+  "how": "1. On Quote X-Ray, find Sophia’s reading under \"Recent comparisons\" (it says \"Sent …\")\n2. Open \"Olivia Martinez · vs Flo Design\"\n3. Click \"Run again\" in the banner",
+  "expect": "A banner says the quote has changed since this comparison; \"Run again\" opens a fresh reading: \"Run again — the earlier comparison is kept\".",
+  "in10": "Different from 1.0: it tells you when your quote changed",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XC-08",
+   "XRAY:DEF-09",
+   "XRAY:DEF-10",
+   "XRAY:XH-01",
+   "XRAY:XH-02",
+   "XRAY:XH-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "7.13",
+  "chapter": 7,
+  "scene": "Other leads’ readings",
+  "module": "Lead details",
+  "try": "Mark a lost lead with the competitor from X-Ray",
+  "how": "1. Open Vivien Lee from the Leads list\n2. Click \"Stage: Quote Sent\" › \"Lost\"\n3. Keep the reason \"Went with another firm\" and read \"Competitor (optional)\"\n4. Click \"Save & Move\"",
+  "expect": "Competitor already reads \"Flo Design\", noted \"From the Quote X-Ray of …\"; after saving, \"Moved to Lost\" and Vivien Lee shows Lost.",
+  "in10": "Different from 1.0: the competitor comes from the lead’s X-Ray",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XZ-01"
+  ],
+  "files": []
+ }
+]

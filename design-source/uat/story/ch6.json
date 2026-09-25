@@ -1,0 +1,720 @@
+[
+ {
+  "step": "6.01",
+  "chapter": 6,
+  "scene": "Start Sophia’s quote",
+  "module": "Quotes",
+  "try": "Start Sophia’s quote from your default template",
+  "how": "1. Open Sophia Wong and click the \"Quotes\" tab\n2. Click \"Create Quote\"\n3. In \"Start a quote for Sophia Wong\", click the tile marked \"Default\" (if it is not there, click \"View all\")",
+  "expect": "The quote editor opens as a Draft, \"Version 1\", titled Sophia Wong; the Template card in General Info shows your template marked \"Default\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QF-01",
+   "QED:QN-01",
+   "QED:QG-04",
+   "QTPL:TQ-01",
+   "QTPL:TQ-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.02",
+  "chapter": 6,
+  "scene": "Start Sophia’s quote",
+  "module": "Quotes",
+  "try": "Check what the quote filled in for you",
+  "how": "1. Look at \"General Info\"\n2. Read \"Client\", \"Property Type\", \"Prepared by\" and \"Quote Valid Until\"\n3. Scroll down to \"Items\"",
+  "expect": "Client Sophia Wong, Property Type HDB 4-Room, Prepared by Dane and a valid-until date are filled; Items shows any starter sections your template has.",
+  "in10": "Different from 1.0: settings belong to each quote, not the lead",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-01",
+   "QED:MM-01",
+   "QED:QF-02",
+   "QED:QF-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.03",
+  "chapter": 6,
+  "scene": "Start Sophia’s quote",
+  "module": "Quotes",
+  "try": "Give the quote a clear name",
+  "how": "1. Click \"More options\" (⋮, top right of the editor)\n2. Choose \"Rename Quote\"\n3. Type \"Tampines 4-room renovation\" in \"Quote title\"\n4. Click \"Rename\"",
+  "expect": "The header title changes to Tampines 4-room renovation and the header says \"Saved just now\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-04",
+   "QED:QF-03",
+   "QED:QF-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.04",
+  "chapter": 6,
+  "scene": "Start Sophia’s quote",
+  "module": "Quotes",
+  "try": "Try to send the quote while it is still empty",
+  "how": "1. Click \"Send\" (top right)\n2. Choose \"Send for confirmation\"\n3. Click \"Show me\" on the message",
+  "expect": "Nothing is sent: the message reads \"Before you send: No items to price\", and \"Show me\" takes you to Items.",
+  "in10": "Different from 1.0: Send checks the quote before it goes",
+  "as": "Dane",
+  "covers": [
+   "QED:QY-03",
+   "QED:QN-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.05",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Add your fluted feature wall panel from My Items",
+  "how": "1. Make sure the button above the table reads \"View by: None\" (if not, click it and pick \"None\")\n2. Click in the \"Add Item\" box under the table and type \"Fluted\"\n3. Under \"My Items\", click \"Fluted feature wall panel\"",
+  "expect": "A \"Fluted feature wall panel\" line appears with the unit and price you saved in chapter 3; the tab reads \"Items (1)\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QP-12",
+   "QED:QG-01",
+   "QED:QL-20",
+   "QED:QL-12",
+   "PB:QU-01",
+   "PB:QU-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.06",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Pick an item from the Price book window",
+  "how": "1. Click \"Price book\" (the link to the right of the \"Add Item\" box)\n2. Under \"My Items\", tick \"Design consultation and 3D drawings\"\n3. Click \"Add 1 item\"",
+  "expect": "The \"Price book\" window closes and \"Design consultation and 3D drawings\" is added at the end of the table; the tab reads \"Items (2)\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QP-12",
+   "QED:QP-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.07",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Paste a block of lines copied from Excel",
+  "how": "1. Open uat-files/sophia-items-to-paste.xlsx in Excel, Numbers or Google Sheets\n2. Select all 9 rows (header included) and copy them\n3. Click in the \"Add Item\" box and paste (⌘V, or Ctrl+V on Windows)\n4. In \"Paste from a spreadsheet\", check each column’s pick, then click \"Add 8 items\"",
+  "expect": "The window reads \"9 rows · 8 columns…\" with \"First row is a header\" ticked; eight lines land with their qty, unit, cost and category.",
+  "in10": "Different from 1.0: paste anywhere, choosing what each column becomes",
+  "as": "Dane",
+  "covers": [
+   "QED:QL-11",
+   "QED:QM-03",
+   "QED:QL-05"
+  ],
+  "files": [
+   "uat-files/sophia-items-to-paste.xlsx"
+  ]
+ },
+ {
+  "step": "6.08",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Edit quantities with the keyboard, as in Excel",
+  "how": "1. Click the \"Qty\" of \"Waterproofing to bathroom floors\", press ⌘A (Ctrl+A), type 3 and press Enter\n2. Press Tab once, then click an empty part of the page\n3. Press ⌘Z (Ctrl+Z on Windows)",
+  "expect": "Enter jumps down to the next line’s Qty and Tab moves one box right; ⌘Z puts Waterproofing back to 2 and its total follows.",
+  "in10": "Different from 1.0: one grid with Excel keys everywhere",
+  "as": "Dane",
+  "covers": [
+   "QED:QL-11",
+   "QED:QL-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.09",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Drag a line to a new place",
+  "how": "1. Hover \"Painting, whole unit\"\n2. Grab its handle at the left of the row (\"Drag to reorder\")\n3. Drag it above \"Lighting points\" and let go",
+  "expect": "Painting now sits above Lighting points and the line numbers follow the new order.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QS-07",
+   "QED:QL-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.10",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Group the kitchen lines into a section",
+  "how": "1. Tick the boxes of \"Hacking of kitchen floor and wall tiles\", \"Homogeneous floor tiles, supply and lay\", \"Kitchen top and bottom cabinets\" and \"Quartz countertop\"\n2. Click \"New section\" above the table\n3. Type \"Kitchen\" over \"New section\" and press Enter",
+  "expect": "A \"Kitchen\" section now holds the four lines and shows their total; the other lines stay outside it.",
+  "in10": "Different from 1.0: sections belong to this quote, not the lead",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-06",
+   "QED:QS-01",
+   "QED:QS-02",
+   "QED:QM-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.11",
+  "chapter": 6,
+  "scene": "Add the work",
+  "module": "Quotes",
+  "try": "Add a sub-section inside Kitchen",
+  "how": "1. Inside Kitchen, tick \"Kitchen top and bottom cabinets\" and \"Quartz countertop\"\n2. In the bar at the bottom of the screen, click \"Section\"\n3. Type \"Cabinetry\" and press Enter",
+  "expect": "A \"Cabinetry\" sub-section sits inside Kitchen with the two lines, numbered one level down.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QS-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.12",
+  "chapter": 6,
+  "scene": "Decide how each line prints",
+  "module": "Quotes",
+  "try": "Give the design work free of charge",
+  "how": "1. Hover \"Design consultation and 3D drawings\" and click its \"More options\" (⋮)\n2. Choose \"Print as\"\n3. Choose \"FOC\" (note \"By client\" is in the list too)",
+  "expect": "An \"FOC\" tag appears beside the line, the message says it prints as FOC and is not counted, and the Subtotal drops.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-07",
+   "QED:QL-13",
+   "QED:QL-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.13",
+  "chapter": 6,
+  "scene": "Decide how each line prints",
+  "module": "Quotes",
+  "try": "Highlight the countertop line",
+  "how": "1. Open \"More options\" (⋮) on \"Quartz countertop\"\n2. Choose \"Highlight\"\n3. Choose \"Accent text\"",
+  "expect": "The line’s words turn your brand’s accent colour and the message says \"Highlighted — Accent text\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QL-18"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.14",
+  "chapter": 6,
+  "scene": "Decide how each line prints",
+  "module": "Quotes",
+  "try": "Offer the fluted wall as an optional extra",
+  "how": "1. Open \"More options\" (⋮) on \"Fluted feature wall panel\"\n2. Choose \"Mark as Optional\"",
+  "expect": "The message says it prints in its own section, out of the totals; the Subtotal no longer includes the panel.",
+  "in10": "Different from 1.0: optional lines never count in the totals",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-08",
+   "QED:QL-16"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.15",
+  "chapter": 6,
+  "scene": "Decide how each line prints",
+  "module": "Quotes",
+  "try": "See the warning when a line sells below cost",
+  "how": "1. Make sure the \"Cost\" column shows (turn it on in \"Column settings\" if not)\n2. Click the \"Unit Price\" of \"Lighting points\", press ⌘A (Ctrl+A), type 40 and press Enter\n3. Hover the red \"Below cost\" tag\n4. Click \"Undo\" (the curved arrow above the table)",
+  "expect": "A red \"Below cost\" tag appears; its tip says how far under cost it sells. Undo puts 65 back and the tag goes.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QM-13",
+   "QED:QM-02",
+   "QED:QL-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.16",
+  "chapter": 6,
+  "scene": "Decide how each line prints",
+  "module": "Quotes",
+  "try": "Show who supplies a line and its product link",
+  "how": "1. Click \"Column settings\" (the sliders icon above the table), switch on \"Vendor/Sub\" and \"Website Link\", click \"Done\"\n2. On \"Kitchen top and bottom cabinets\", click \"Add vendor\", choose \"Add vendor\", type \"Wood Craft Carpentry\", click \"Save\"\n3. In the same line’s \"Add link\" box type \"woodcraft.sg\" and press Enter",
+  "expect": "Both columns appear; the cabinets line shows vendor Wood Craft Carpentry and the link woodcraft.sg. Neither ever prints for the client.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QL-07",
+   "QED:QL-08",
+   "QED:QL-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.17",
+  "chapter": 6,
+  "scene": "Get the money right",
+  "module": "Quotes",
+  "try": "Add a named discount",
+  "how": "1. In the totals card under the table, click \"Add a discount\"\n2. Type \"Opening promotion\" in \"Discount name\"\n3. Click the \"%\" button next to it, choose \"S$\", then type 500\n4. Click anywhere outside the box",
+  "expect": "A row \"Opening promotion −S$500.00\" appears above GST and the Total drops by the discount and its GST.",
+  "in10": "Different from 1.0: several named discounts per quote, not one per lead",
+  "as": "Dane",
+  "covers": [
+   "QED:QM-07",
+   "QED:DEF-09",
+   "QED:QM-04",
+   "QED:QM-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.18",
+  "chapter": 6,
+  "scene": "Get the money right",
+  "module": "Quotes",
+  "try": "Check your margin by category, then look at rounding",
+  "how": "1. In \"By category\" (left of the totals), click \"Margin\"\n2. Read each category’s margin and \"Margin · owners only\" in the totals\n3. Click \"Round Prices\" next to Total, look at the list, then click \"Cancel\"",
+  "expect": "As owner you see a margin % per category; \"Round selling prices\" lists the lines it would change and Cancel leaves them as they are.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QM-15",
+   "QED:QM-14",
+   "QED:QM-12",
+   "QED:QM-16"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.19",
+  "chapter": 6,
+  "scene": "Schedule, terms, files and signature",
+  "module": "Quotes",
+  "try": "Try another payment split, then undo it",
+  "how": "1. Click the \"Payment Schedule\" tab\n2. Click the split button (it shows the current split, e.g. \"Default: 10/30/30/30\")\n3. Choose \"20/40/40\"\n4. Click \"Undo\" on the message",
+  "expect": "The rows change to 20/40/40 with amounts worked out from the quote total; Undo brings the original split back.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QY-01",
+   "QED:QY-02",
+   "QED:QY-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.20",
+  "chapter": 6,
+  "scene": "Schedule, terms, files and signature",
+  "module": "Quotes",
+  "try": "Add your standard Terms and Conditions",
+  "how": "1. Click the \"Terms and Conditions\" tab\n2. Click \"My Templates\"\n3. Click \"Add\" beside \"Terms and Conditions for HDB Works\"",
+  "expect": "The terms fill the box, the message says \"“Terms and Conditions for HDB Works” added\", and \"Show in client view\" is on.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TB-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.21",
+  "chapter": 6,
+  "scene": "Schedule, terms, files and signature",
+  "module": "Quotes",
+  "try": "Let Maison AI draft the Additional Notes",
+  "how": "1. Click the \"Additional Notes\" tab\n2. Click \"Write with AI\"\n3. Read the notes it wrote",
+  "expect": "After a short \"Writing…\", notes about this quote appear and the message says \"Maison AI wrote your additional notes\", with Undo.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "6.22",
+  "chapter": 6,
+  "scene": "Schedule, terms, files and signature",
+  "module": "Quotes",
+  "try": "Share a mood-board file with the quote",
+  "how": "1. Click the \"Files (0)\" tab\n2. Drag uat-files/kitchen-moodboard.jpg from your computer onto \"Drop your file or browse\"\n3. Hover \"Show in client view\" and read its tip",
+  "expect": "A tile for the file appears, the tab reads \"Files (1)\", and the tip says the files show on the client’s confirmation page.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [],
+  "files": [
+   "uat-files/kitchen-moodboard.jpg"
+  ]
+ },
+ {
+  "step": "6.23",
+  "chapter": 6,
+  "scene": "Schedule, terms, files and signature",
+  "module": "Quotes",
+  "try": "Sign the quote with a drawn signature",
+  "how": "1. Click the \"Signature\" tab\n2. Click \"Edit\" beside your name\n3. Under \"Show signature as\" pick \"Draw\" and draw in the box\n4. Click \"Save\"",
+  "expect": "The message says \"Signature saved\" and your drawing shows in the box, beside the client’s side.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TB-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.24",
+  "chapter": 6,
+  "scene": "See it as Sophia will",
+  "module": "Quotes",
+  "try": "Watch the client’s view while you edit",
+  "how": "1. Click the eye icon (\"Client view\") in the header\n2. Scroll through the pages in the pane\n3. Read the note at the foot of the pane",
+  "expect": "A \"Client view\" pane shows the quote as Sophia will get it; the note says \"Redraws as you build. Cost and markup never print.\"",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TQ-07",
+   "QED:QF-05",
+   "QED:QM-16"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.25",
+  "chapter": 6,
+  "scene": "See it as Sophia will",
+  "module": "Quotes",
+  "try": "Preview the quote and choose what Sophia sees",
+  "how": "1. Click \"Preview\" in the header\n2. Click \"What your client sees\" and make sure \"Optional works\" is on\n3. Switch on \"Internal copy\", read the grey card, then switch it off\n4. Click the back arrow (\"Back to the editor\")",
+  "expect": "The pages match the client view; \"Internal copy\" adds a watermark plus \"Internal — never printed for the client\" with Cost, Selling and Margin.",
+  "in10": "Different from 1.0: you choose, per quote, what the client sees",
+  "as": "Dane",
+  "covers": [
+   "QED:QD-05",
+   "QED:QM-16",
+   "QED:QN-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.26",
+  "chapter": 6,
+  "scene": "Before it goes out",
+  "module": "Quotes",
+  "try": "Save this quote’s setup as a new template",
+  "how": "1. Click \"More options\" (⋮) › \"Save as Template\"\n2. Keep the name \"Tampines 4-room renovation template\"\n3. Click \"Save template\"",
+  "expect": "The message says it was saved as a draft template, with \"Open\"; it waits in Company › Templates › Quotes as a draft.",
+  "in10": "Different from 1.0: keeps settings and sections, never the lines",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TQ-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.27",
+  "chapter": 6,
+  "scene": "Before it goes out",
+  "module": "Quotes",
+  "try": "Leave a note on a line for your team",
+  "how": "1. Open \"More options\" (⋮) on \"Full-height wardrobe\" › \"Comment\"\n2. Type \"Check hinge brand with supplier\" in \"Chat with your team here\"\n3. Click \"Submit\", then close the panel\n4. Click the \"Comments\" icon in the header",
+  "expect": "Your comment shows as \"You\" with \"Clients can’t see these comments\"; the line shows a comment count; the header’s Comments lists the thread.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-13",
+   "QED:QL-22",
+   "QED:QL-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.28",
+  "chapter": 6,
+  "scene": "Send it to Sophia",
+  "module": "Quotes",
+  "try": "Send the quote to Sophia for confirmation",
+  "how": "1. Click \"Send\" › \"Send for confirmation\"\n2. Check \"Client name\" and the phone 9765 4321\n3. Click \"Send via WhatsApp\" — a WhatsApp tab opens: close it, do not send",
+  "expect": "No approval step for you: the status turns \"Sent to Client\" and a banner says Sophia has version 1, with \"Revise — new version\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QA-03",
+   "QED:MM-05",
+   "QED:DEF-04",
+   "QED:QD-01",
+   "QED:QD-06",
+   "QED:DEF-16",
+   "QED:MM-04",
+   "QED:QF-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.29",
+  "chapter": 6,
+  "scene": "Send it to Sophia",
+  "module": "Quotes",
+  "try": "Open the confirmation link the way Sophia will",
+  "how": "1. In the editor click \"More options\" (⋮) › \"Copy confirmation link\"\n2. Open a new browser tab, paste the link and press Enter\n3. Look through the page — do not confirm yet\n4. Keep this tab open for later",
+  "expect": "Your studio and \"Private link\" on top, the quote, and \"Confirm this quote\" with the total, the fluted panel under \"Optional works\" and your file.",
+  "in10": "Different from 1.0: the client confirms on a link, no code",
+  "as": "Sophia (client)",
+  "covers": [
+   "QED:QD-03",
+   "QED:QC-04",
+   "QED:DEF-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.30",
+  "chapter": 6,
+  "scene": "Send it to Sophia",
+  "module": "Quotes",
+  "try": "Set a due date and get a follow-up task",
+  "how": "1. Back in the editor, click \"Close\" (✕) to return to Sophia’s \"Quotes\" tab\n2. In the \"Due\" column click the calendar icon (\"Set due date\")\n3. Pick the date three days from today\n4. Click \"View\" on the message",
+  "expect": "The message says \"Due date set — follow-up task added\"; the Tasks tab lists \"Follow up on quote …\" due that day, assigned to Dane.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QT-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.31",
+  "chapter": 6,
+  "scene": "Send it to Sophia",
+  "module": "Quotes",
+  "try": "See how a quote past its valid-until date is flagged",
+  "how": "1. Go back to the \"Quotes\" tab and click \"View\" on the quote\n2. In General Info set \"Quote Valid Until\" to yesterday; read the banner\n3. Close the editor and look at the quote’s row in the \"Quotes\" tab\n4. Open the quote again and set \"Quote Valid Until\" to a date next month",
+  "expect": "The banner adds \"Its validity ended on …\" and the row reads \"Expired …\" — nothing is blocked; the new date clears both.",
+  "in10": "Different from 1.0: a passed validity date is now flagged",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-08",
+   "QED:MM-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.32",
+  "chapter": 6,
+  "scene": "Sophia asks for two more lights",
+  "module": "Quotes",
+  "try": "Start version 2 of the quote",
+  "how": "1. In the banner, click \"Revise — new version\"\n2. Click \"Start version 2\"\n3. Reload Sophia’s link in the other tab",
+  "expect": "The chips read \"Version 2\" and \"Draft\" (\"version 1 is kept in Version History\"); Sophia’s link now says \"Not ready yet\".",
+  "in10": "Different from 1.0: versions belong to the quote, made by Revise",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-05",
+   "QED:MM-07",
+   "QED:QA-06",
+   "QED:QV-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.33",
+  "chapter": 6,
+  "scene": "Sophia asks for two more lights",
+  "module": "Quotes",
+  "try": "Add two lighting points, then look back at version 1",
+  "how": "1. Click the \"Qty\" of \"Lighting points\", press ⌘A (Ctrl+A), type 18 and press Enter\n2. Click \"More options\" (⋮) › \"Version History\"\n3. Click \"Open\" on \"Version 1\"\n4. Click the back arrow to return to the editor",
+  "expect": "The drawer lists \"Version 2 current\" and \"Version 1\" kept by Dane; Open shows it as \"Version 1 of 2 — read-only\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QV-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.34",
+  "chapter": 6,
+  "scene": "Sophia asks for two more lights",
+  "module": "Quotes",
+  "try": "Bring version 1 back, then make the change again",
+  "how": "1. Open \"Version History\" and click \"Bring back\" on \"Version 1\"\n2. Click \"Bring back version 1\"\n3. Check \"Lighting points\" shows 16 again\n4. Set its \"Qty\" to 18 again (⌘A, type 18, Enter)",
+  "expect": "The page reloads with \"Version 1 is back — the draft holds its lines again\"; the quote is still Version 2, Draft.",
+  "in10": "Different from 1.0: bringing a version back now works",
+  "as": "Dane",
+  "covers": [
+   "QED:QV-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.35",
+  "chapter": 6,
+  "scene": "Sophia asks for two more lights",
+  "module": "Quotes",
+  "try": "Show Sophia what changed since version 1",
+  "how": "1. Click \"Preview\"\n2. Click \"What your client sees\"\n3. Make sure \"Show changes from version 1\" is on",
+  "expect": "The switch reads \"0 added · 0 removed · 1 changed\" and the Lighting points line is marked as changed on the page.",
+  "in10": "Different from 1.0: the revision prints its own changes",
+  "as": "Dane",
+  "covers": [
+   "QED:QV-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.36",
+  "chapter": 6,
+  "scene": "Sophia confirms",
+  "module": "Quotes",
+  "try": "Send version 2 to Sophia",
+  "how": "1. Back in the editor, click \"Send\" › \"Send for confirmation\"\n2. Click \"Send via WhatsApp\" — close the WhatsApp tab, do not send",
+  "expect": "The status is \"Sent to Client\" again, now for version 2.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QD-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.37",
+  "chapter": 6,
+  "scene": "Sophia confirms",
+  "module": "Quotes",
+  "try": "Confirm the quote as Sophia, adding the fluted wall",
+  "how": "1. Reload Sophia’s link in the other tab\n2. Under \"Optional works\", tick \"Fluted feature wall panel\"\n3. Keep \"Sophia Wong\" in \"Your full name\"\n4. Click \"Confirm quote\"",
+  "expect": "A \"With your picks\" total appears; after confirming, the card reads \"Confirmed\" by Sophia Wong and notes she asked for the fluted panel too.",
+  "in10": "Different from 1.0: the client’s optional picks are kept",
+  "as": "Sophia (client)",
+  "covers": [
+   "QED:QC-05",
+   "QED:MM-12",
+   "QED:DEF-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.38",
+  "chapter": 6,
+  "scene": "Sophia confirms",
+  "module": "Quotes",
+  "try": "See Sophia’s confirmation in the studio",
+  "how": "1. Go back to the editor tab and reload it\n2. Read the status, the banner and the fluted panel’s line\n3. Open the \"Activity\" tab",
+  "expect": "Status \"Confirmed\"; the panel shows \"Client wants it\"; Activity lists \"Quote approved by Dane\" and Sophia’s confirmation; Send now reads \"Send for signature\".",
+  "in10": "Different from 1.0: Confirmed comes before the signature",
+  "as": "Dane",
+  "covers": [
+   "QED:QA-01",
+   "QED:DEF-03",
+   "QED:MM-03",
+   "QED:QA-04",
+   "QED:QT-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.39",
+  "chapter": 6,
+  "scene": "Move the lead along",
+  "module": "Lead details",
+  "try": "Move Sophia to Quote Sent yourself",
+  "how": "1. Open Sophia Wong’s \"Overview\"\n2. Click \"Stage: Met\" › \"Quote Sent\"\n3. Under \"Attach approved quote\" › \"From System\", pick \"Tampines 4-room renovation\"\n4. Click \"Save\"",
+  "expect": "The quote’s row shows its number, amount and \"Approved on …\"; after Save you see \"Moved to Quote Sent\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:S-03",
+   "QED:DEF-02",
+   "QED:QA-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.40",
+  "chapter": 6,
+  "scene": "Move the lead along",
+  "module": "Quotes",
+  "try": "Find the quote among all the studio’s quotes",
+  "how": "1. Click \"Tools\" in the side navigation › \"Quotes\"\n2. Type \"Tampines\" in the search box\n3. Read the row",
+  "expect": "The row shows Tampines 4-room renovation with its number · Shared, Client \"Sophia Wong\", status \"Confirmed\" and your due date.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.41",
+  "chapter": 6,
+  "scene": "An old quote from 1.0",
+  "module": "Quotes",
+  "try": "Upload Gerald Tan’s old spreadsheet quote",
+  "how": "1. On Tools › Quotes click \"Create Quote\" and pick \"Gerald Tan\" in \"Client\"\n2. Click \"Upload a quote\" and choose uat-files/kitchen-moodboard.jpg\n3. Click \"Choose another file\" and choose uat-files/gerald-tan-old-quote.xlsx\n4. Click \"Create the quote\"",
+  "expect": "The photo is refused (\"We couldn’t read…\"); the sheet shows \"6 lines read … · S$14,880.00\"; the new quote opens with a section per trade.",
+  "in10": "Different from 1.0: spreadsheets are read for real, no AI scan",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-14",
+   "QED:QG-05",
+   "QTPL:TQ-03"
+  ],
+  "files": [
+   "uat-files/kitchen-moodboard.jpg",
+   "uat-files/gerald-tan-old-quote.xlsx"
+  ]
+ },
+ {
+  "step": "6.42",
+  "chapter": 6,
+  "scene": "An old quote from 1.0",
+  "module": "Quotes",
+  "try": "Delete the uploaded quote, then restore it",
+  "how": "1. In Gerald’s quote click \"More options\" (⋮) › \"Delete\", then \"Yes\"\n2. On Tools › Quotes click \"More options\" (⋮, top right) › \"Deleted Quotes\"\n3. Click \"Restore\" on Gerald Tan’s quote",
+  "expect": "Delete says \"Quote deleted — find it under Deleted Quotes\"; Restore says \"Quote restored\" and it is back in the list.",
+  "in10": "Different from 1.0: deleted quotes wait in Deleted Quotes",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-06",
+   "QED:MM-13",
+   "QED:QR-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "6.43",
+  "chapter": 6,
+  "scene": "An old quote from 1.0",
+  "module": "Quotes",
+  "try": "Delete Gerald’s uploaded quote for good",
+  "how": "1. On Gerald Tan’s row click \"More actions\" (⋮) › \"Delete\", then \"Yes\"\n2. Open \"Deleted Quotes\" again\n3. Click \"Delete Forever\", then \"Delete Forever\" in \"Delete forever?\"",
+  "expect": "The confirm warns it cannot be undone; then \"Quote deleted forever\" and the row leaves Deleted Quotes.",
+  "in10": "Different from 1.0: deleted quotes wait in Deleted Quotes",
+  "as": "Dane",
+  "covers": [
+   "QED:QN-06",
+   "QED:MM-13"
+  ],
+  "files": []
+ }
+]

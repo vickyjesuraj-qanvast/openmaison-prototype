@@ -1,0 +1,472 @@
+[
+ {
+  "step": "8.01",
+  "chapter": 8,
+  "scene": "Raise Sophia’s contract",
+  "module": "Contracts",
+  "try": "Start Sophia’s contract from her confirmed quote",
+  "how": "1. Open Sophia Wong › \"Quotes\" and open her quote\n2. Click \"Send for signature\" (or the ⋮ \"More options\" menu › \"Create contract from this quote\")",
+  "expect": "\"Choose a contract template\" opens with \"Interior Design Service Agreement\" marked \"Default\" and already picked, beside the \"Agreements\" and \"Variations\" folders",
+  "in10": "Different from 1.0: started only from the lead drawer",
+  "as": "Dane",
+  "covers": [
+   "CTR:CR-01",
+   "CTR:CD-02",
+   "CTR:CT-01",
+   "CTR:CT-02",
+   "CTR:CT-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.02",
+  "chapter": 8,
+  "scene": "Raise Sophia’s contract",
+  "module": "Contracts",
+  "try": "Use the studio’s service agreement template",
+  "how": "1. Keep \"Interior Design Service Agreement\" (marked \"Default\") picked\n2. Click \"Use template\"",
+  "expect": "The contract opens as a Draft with a \"From template\" chip; the top row shows Sophia Wong · 9765 4321 and her quote’s number and total",
+  "in10": "Different from 1.0: 1.0 kept no contract record",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-01",
+   "CTR:MM-01",
+   "CTR:CR-04",
+   "CTR:CR-05",
+   "CTR:DEF-04",
+   "CTR:CT-10",
+   "CTR:DEF-08",
+   "CTR:MM-07",
+   "CTR:CQ-01",
+   "CTR:CQ-02",
+   "CTR:CQ-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.03",
+  "chapter": 8,
+  "scene": "Raise Sophia’s contract",
+  "module": "Contracts",
+  "try": "Add the quote’s validity date with Smart Text",
+  "how": "1. Click at the end of clause 2’s paragraph (\"2. Contract sum\")\n2. Click \"Smart Text\" › \"Studio\" and find \"GST reg. no.\", then click \"‹ Studio\" to go back\n3. Click \"Quote\" and then \"Quote valid until\"",
+  "expect": "Each record shows what it prints for Sophia (or \"Empty\"); Studio lists \"GST reg. no.\"; a \"Quote valid until\" chip appears where you clicked",
+  "in10": "Different from 1.0: more records, each showing its value",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-07",
+   "CTR:CM-01",
+   "CTR:CM-03",
+   "CTR:CM-06",
+   "CTR:CM-07",
+   "CTR:CM-08",
+   "CTR:CM-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.04",
+  "chapter": 8,
+  "scene": "Raise Sophia’s contract",
+  "module": "Contracts",
+  "try": "Jump to a clause from the Outline",
+  "how": "1. Look at the \"Outline\" list left of the page (if hidden, click the list icon \"Show outline\")\n2. Click \"8. Defects liability\"",
+  "expect": "The Outline lists every heading of the agreement; clicking one scrolls the page straight to that clause",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CD-01",
+   "CTR:CD-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.05",
+  "chapter": 8,
+  "scene": "Get it ready to send",
+  "module": "Contracts",
+  "try": "Make Sophia read to the end and tick before signing",
+  "how": "1. Click \"eSignatures\" in the toolbar\n2. Under \"Before the client signs\", switch on \"Read to the end\" and \"Tick to accept\"\n3. In \"The words they tick\", type: I have read and agree to the service agreement.\n4. Close the panel",
+  "expect": "The panel lists four fillable fields (Studio / Client signature and initial); both switches stay on and your words are kept",
+  "in10": "Different from 1.0: only library documents had these checks",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-03",
+   "CTR:CT-14",
+   "CTR:MM-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.06",
+  "chapter": 8,
+  "scene": "Get it ready to send",
+  "module": "Contracts",
+  "try": "Ask for a follow-up and a thank-you reminder",
+  "how": "1. Click the bell icon in the contract’s header (tooltip \"Automation\")\n2. Switch on \"Remind me to follow up\"\n3. Switch on \"Remind me to thank the client\"",
+  "expect": "Both switches stay on, each explaining the task it adds, and the bell icon stays highlighted",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:MM-11",
+   "CTR:CA-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.07",
+  "chapter": 8,
+  "scene": "Get it ready to send",
+  "module": "Contracts",
+  "try": "Send the contract and copy Sophia’s signing link",
+  "how": "1. Click \"Send\"\n2. Check \"Client name\" and \"Client phone (for the code)\"\n3. Click \"Copy link\" (not WhatsApp), then close the window with ✕",
+  "expect": "Sophia Wong and 9765 4321 are filled in; after \"Copy link\" the status reads \"Sent to Client\" and a banner says \"not opened yet\"",
+  "in10": "Different from 1.0: sent on WhatsApp or a copied link, not SMS",
+  "as": "Dane",
+  "covers": [
+   "CTR:CS-01",
+   "CTR:CS-03",
+   "CTR:CS-04",
+   "CTR:CS-07",
+   "CTR:CD-09",
+   "CTR:MM-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.08",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Open the signing link as Sophia would",
+  "how": "1. Open a new browser tab\n2. Paste the copied link into the address bar and press Enter",
+  "expect": "Studio name and \"Secure signing\" on top; the agreement carries Sophia’s name and quote total; the card says \"Hi Sophia\", phone masked except 4321",
+  "in10": "Different from 1.0: she reads first, then gets the code",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:DEF-02",
+   "CTR:MM-02",
+   "CTR:CP-01",
+   "CTR:CP-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.09",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Check the quote this agreement signs",
+  "how": "1. In the card, click \"It signs quotation … — view the quote\"\n2. Look it over, then close that tab",
+  "expect": "Sophia’s quote opens in its own tab as the client sees it, with \"Back to the agreement\"; nothing on it can be changed",
+  "in10": "Different from 1.0: the quote opens beside, not as a step",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:CP-08",
+   "CTR:CT-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.10",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Read to the end and accept the terms",
+  "how": "1. Note that \"Send code\" is greyed out\n2. Scroll to the very end of the agreement\n3. Tick \"I have read and agree to the service agreement.\"",
+  "expect": "The card changes to \"You’ve read to the end\"; after the tick \"Send code\" can be pressed",
+  "in10": "Same as 1.0",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:CP-05",
+   "CTR:CP-06",
+   "CTR:CL-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.11",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Change the contract while Sophia is signing",
+  "how": "1. Click \"Send code\", type any six digits (e.g. 123456 — stands in for the SMS code), click \"Verify\"\n2. Switch to the studio tab, type a word into clause 1 and wait for \"Saved just now\"\n3. Back in Sophia’s tab, click \"Sign agreement\"",
+  "expect": "A message says the agreement was updated while she was reading; the page goes back to the start with the new text",
+  "in10": "Same as 1.0",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:DEF-06",
+   "CTR:MM-04",
+   "CTR:CP-15",
+   "CTR:CL-06",
+   "CTR:CP-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.12",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Sign by drawing, with an NRIC",
+  "how": "1. Scroll to the end, tick, click \"Send code\", type 123456, click \"Verify\"\n2. Choose \"Draw\" and sign on the pad with the mouse\n3. Type S1234567A in \"NRIC / FIN (optional)\"\n4. Click \"Sign agreement\"",
+  "expect": "Under the NRIC it reads \"Kept as •••••567A\"; the sentence above names the agreement and her quote; the card then shows \"Signed\"",
+  "in10": "Different from 1.0: type or draw; NRIC optional, kept masked",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:DEF-10",
+   "CTR:MM-10",
+   "CTR:CP-09",
+   "CTR:CP-10",
+   "CTR:CP-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.13",
+  "chapter": 8,
+  "scene": "Sophia signs online",
+  "module": "Contracts",
+  "try": "Look at the proof of signing",
+  "how": "1. Scroll below the agreement to \"Signing record\"\n2. Click \"Download a copy\" in the card, then cancel the print",
+  "expect": "The record lists Sophia Wong, \"Drawn by hand\", •••••567A, the masked phone, device, times and a fingerprint; the print shows letterhead and signatures",
+  "in10": "Different from 1.0: on the page, not a PDF certificate",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:DEF-11",
+   "CTR:CA-01",
+   "CTR:CA-02",
+   "CTR:CL-08",
+   "CTR:CP-11",
+   "CTR:CD-07",
+   "CTR:CD-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.14",
+  "chapter": 8,
+  "scene": "Back at the studio",
+  "module": "Contracts",
+  "try": "See the signed contract locked in the studio",
+  "how": "1. Go back to the studio tab and refresh the page\n2. Try to type in the agreement or change the title\n3. Click \"Signing record\" in the banner",
+  "expect": "Status \"Signed\" with a signed-date chip; the banner says Sophia signed online and it stays signed; nothing edits; the record matches hers",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-05",
+   "CTR:MM-03",
+   "CTR:MM-05",
+   "CTR:CD-10",
+   "CTR:CM-10",
+   "CTR:CL-05",
+   "CTR:CA-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.15",
+  "chapter": 8,
+  "scene": "Back at the studio",
+  "module": "Quotes",
+  "try": "Check her quote is now signed",
+  "how": "1. Close the contract with ✕ — you land back on her quote\n2. Look at the status and the chips beside the title\n3. Click the \"Contract · Signed\" chip",
+  "expect": "The quote reads \"Signed\"; a \"Contract · Signed\" chip sits by the title and opens the contract",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CQ-04",
+   "CTR:CQ-05",
+   "CTR:CR-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.16",
+  "chapter": 8,
+  "scene": "Back at the studio",
+  "module": "Lead details",
+  "try": "Check the two reminders became tasks",
+  "how": "1. Open Sophia Wong › \"Tasks\"",
+  "expect": "\"Follow up on “Interior Design Service Agreement” — not signed yet\" is completed; \"Thank Sophia Wong for signing “Interior Design Service Agreement”\" is due today",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CA-07",
+   "CTR:MM-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.17",
+  "chapter": 8,
+  "scene": "Back at the studio",
+  "module": "Notifications",
+  "try": "See the studio was told she signed",
+  "how": "1. Click \"Notifications\" (the bell) in the side navigation",
+  "expect": "The newest notice reads \"Sophia Wong signed Interior Design Service Agreement\" and opens her Contracts tab",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CN-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.18",
+  "chapter": 8,
+  "scene": "Back at the studio",
+  "module": "Contracts",
+  "try": "Read the contract’s row and try to un-sign it",
+  "how": "1. Open Sophia Wong › \"Contracts\"\n2. Look at the \"Signed Copy\" and \"Sent\" columns\n3. Click the status \"Signed\" and try \"Draft\"",
+  "expect": "Signed Copy names the signed-online file; Sent shows \"Viewed\" with a date; \"Draft\" and \"Sent to Client\" say \"signed by the client\" and do nothing",
+  "in10": "Different from 1.0: Viewed is a date, not a status",
+  "as": "Dane",
+  "covers": [
+   "CTR:CP-14",
+   "CTR:CN-01",
+   "CTR:CA-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.19",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Record Gerald Tan’s contract signed on paper",
+  "how": "1. Open Gerald Tan › \"Contracts\" › \"New Contract\" › \"Import from File\"\n2. Type \"Signed paper contract\" in \"Contract title\" and upload the PDF\n3. Switch on \"This copy is already signed\"\n4. Click \"Import\"",
+  "expect": "\"Signed contract imported\"; it opens with \"Signed …\" and \"Uploaded PDF\" chips and a banner \"Marked signed on …\"",
+  "in10": "Different from 1.0: the upload becomes a contract, not a lead flag",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-12",
+   "CTR:CA-03",
+   "CTR:CD-12"
+  ],
+  "files": [
+   "uat-files/gerald-tan-signed-contract.pdf"
+  ]
+ },
+ {
+  "step": "8.20",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Take back a signing recorded by mistake",
+  "how": "1. Click the status \"Signed\" › \"Draft\"\n2. Read the question, then click \"Move back\"",
+  "expect": "\"Move back to Draft?\" says the signed date and copies are cleared; then the status reads \"Draft\" and the Signed chip is gone",
+  "in10": "Different from 1.0: 1.0 never reopened a signed contract",
+  "as": "Dane",
+  "covers": [
+   "CTR:CA-04",
+   "CTR:MM-05",
+   "CTR:MM-12",
+   "CTR:CN-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.21",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Mark it signed again with today’s date",
+  "how": "1. Click the status \"Draft\" › \"Signed\"\n2. Keep today in \"Signed on\" (attaching a copy is optional)\n3. Click \"Mark as signed\"",
+  "expect": "\"Contract marked Signed\"; the banner says it was marked signed today and an Owner or an Admin can move it back",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CA-03",
+   "CTR:DEF-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.22",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Try sending a variation order with nowhere to sign",
+  "how": "1. Close with ✕, then \"New Contract\" › \"From Template\" › \"Variations\" › \"Variation Order\" › \"Use template\"\n2. Click \"Send\"\n3. Click \"Show me\" on the message (or \"eSignatures\"), then \"Insert\" beside \"Client signature\"\n4. Close the contract with ✕",
+  "expect": "Send refuses: \"Before you send: There’s no Client signature field — insert one from eSignatures\"; after Insert a Client signature box ends the document",
+  "in10": "Different from 1.0: 1.0 only checked for an empty page",
+  "as": "Dane",
+  "covers": [
+   "CTR:CD-09",
+   "CTR:CS-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.23",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Send Gerald two documents under one link",
+  "how": "1. \"New Contract\" › \"From the studio agreement\", then close it with ✕\n2. Click ⋮ \"More options\" › \"Send together for signature\"\n3. Click \"Copy link\"\n4. Click \"Send via WhatsApp\" — a WhatsApp tab opens; close it, do not send",
+  "expect": "Both documents are ticked and numbered in reading order; afterwards both rows read \"Sent to Client\" and \"2 documents sent under one link\" shows",
+  "in10": "Different from 1.0: contracts go together; the quote signs through them",
+  "as": "Dane",
+  "covers": [
+   "CTR:CL-04",
+   "CTR:CL-10",
+   "CTR:MM-09",
+   "CTR:CS-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.24",
+  "chapter": 8,
+  "scene": "Gerald Tan: paper and a pair of documents",
+  "module": "Contracts",
+  "try": "Sign both documents once, as Gerald",
+  "how": "1. Paste the copied link into a new tab\n2. Read each document; where asked, scroll to the end and tick, then \"Continue\" / \"Continue to sign\"\n3. Type 123456, click \"Verify\"\n4. Click \"Sign 2 documents\"",
+  "expect": "One document per screen (\"Document 1 of 2\", progress bar); the final sentence names both; the card ends \"All 2 documents signed by Gerald Tan\"",
+  "in10": "Same as 1.0",
+  "as": "Gerald Tan (client)",
+  "covers": [
+   "CTR:CP-03",
+   "CTR:CP-07",
+   "CTR:CL-09",
+   "CTR:DEF-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.25",
+  "chapter": 8,
+  "scene": "Keeping track",
+  "module": "Contracts",
+  "try": "Find Gerald’s contracts studio-wide and delete one",
+  "how": "1. Side navigation \"Tools\" › \"Contracts\"\n2. Type Gerald in the search box\n3. On \"Signed paper contract\": ⋮ \"More actions\" › \"Copy Link\", then ⋮ › \"Delete\" › \"Yes\"",
+  "expect": "Only Gerald Tan’s contracts show, with a \"Lead\" column; \"Contract deleted\" appears and the row disappears",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CN-02",
+   "CTR:CR-09",
+   "CTR:CN-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "8.26",
+  "chapter": 8,
+  "scene": "Keeping track",
+  "module": "Contracts",
+  "try": "Check the deleted contract’s link is dead, then restore it",
+  "how": "1. Paste the copied link into a new tab\n2. Back in Tools › Contracts, click ⋮ \"More options\" › \"Deleted Contracts\"\n3. Click \"Restore\" on \"Signed paper contract\"",
+  "expect": "The link reads \"This link is no longer active\"; the list shows Lead Gerald Tan, Deleted by Dane; Restore puts it back",
+  "in10": "Different from 1.0: deleted contracts can be restored",
+  "as": "Dane",
+  "covers": [
+   "CTR:CP-13",
+   "CTR:MM-06",
+   "CTR:CN-03",
+   "CTR:CR-09"
+  ],
+  "files": []
+ }
+]

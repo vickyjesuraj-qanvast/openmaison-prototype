@@ -1373,7 +1373,20 @@ async function main() {
     console.log(`  ${made} folders made · ${filed} entries filed`)
   }
 
+  /* ── R60 · an Admin on the team (REG-668, user-directed 2026-09-25 for the UAT) ─────────────────────────────────────────
+     The demo had every role but Admin, so Demo Studio › View as (REG-667) could not show what an Admin may do. Hui Min runs the
+     studio's office: an Admin with a work email on the studio's domain, reporting to nobody, not open to new leads (so the Assign
+     popover's suggestion — REG-612 — reads as before). Written once by its fixed id; a studio's own edits to her stand. */
+  console.log('\nR60 an Admin member')
+  {
+    const domain = (DEFAULT_BRAND_SETTING.details.email.split('@')[1] ?? 'demostudio.sg').toLowerCase()
+    const r = await client.execute({ sql: `INSERT OR IGNORE INTO members (id, name, role, color, is_you, manager_id, email, accepting_leads, is_active) VALUES ('huimin', 'Hui Min', 'Admin', '#8E5BD7', 0, NULL, ?, 0, 1)`, args: [`huimin@${domain}`] })
+    console.log(r.rowsAffected ? '  Hui Min added as Admin' : '  already there')
+  }
+
   const checks: [string, string][] = [
+    ['no Admin on the demo team (REG-668)', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM members WHERE role = 'Admin' AND is_active = 1)`],
+    ['not exactly one signed-in member (REG-667)', `SELECT 'members' WHERE (SELECT count(*) FROM members WHERE is_you = 1) <> 1`],
     ['demo folder with nothing filed in it (REG-664)', `SELECT f.library || ' · ' || f.name FROM library_folders f WHERE f.deleted_at IS NULL AND f.id LIKE 'lf-%' AND NOT EXISTS (SELECT 1 FROM library_folders c WHERE c.parent_id = f.id AND c.deleted_at IS NULL)
       AND NOT EXISTS (SELECT 1 FROM quote_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM contract_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
       AND NOT EXISTS (SELECT 1 FROM task_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)

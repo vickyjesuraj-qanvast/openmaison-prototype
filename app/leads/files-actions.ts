@@ -6,14 +6,14 @@ import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { fileComments, leadFiles, type LeadFile } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { descendantIds } from '@/lib/leads/file-model'
 import { folderNameProblem } from '@/lib/folders'
 import { revalidateLead } from '@/lib/leads/queries'
 
 /* Lead Details › Files (931-39056). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 /**
  * (REG-286) One shared eviction for every detail tab — this helper named Files and Tasks by hand but never Notes,
  * the return details modal or Activity, all of which show the lead's files. `fileIds` additionally clears the

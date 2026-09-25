@@ -1,6 +1,9 @@
 /* Tools popover (design reference §Tools, REG-422): the anchored-menu chrome at 318 wide = 3 × 92 + 2 × 8 + 2 × 12 + 2 → p12; "TOOLS"
    eyebrow 24 tall (p4/8, caption-s uppercase secondary) with 8 under it; tiles 92×96 three across, 8 apart — the Create strip's tile. */
-.popover { width: 318px; padding: var(--om-spacing-3); max-height: none; overflow: visible; }
+.popover.popover { width: 318px; padding: var(--om-spacing-3); max-height: none; overflow: visible; }
+/* (REG-670) Doubled on purpose, as the Items table's Add Item menu does: this box also wears leads/menus.module.css `.menu` (200 wide, a
+   scrolling max-height) at the same weight, and after a client-side navigation the browser can load that sheet second — the panel
+   then opened 200 wide with its rows cut ("reports to …"). Twice the class outranks it whatever the order. */
 .eyebrow { display: block; height: 24px; margin-bottom: var(--om-spacing-2); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .grid { display: grid; grid-template-columns: repeat(3, 92px); gap: var(--om-spacing-2); }
 .tile {

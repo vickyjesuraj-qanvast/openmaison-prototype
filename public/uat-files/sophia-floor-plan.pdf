@@ -1,0 +1,54 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Length 642 >>
+stream
+BT /F2 12 Tf 56 780 Td (Sophia Wong \227 4-room HDB, Blk 201 Tampines Street 21 \227 floor plan \(sample\)) Tj ET
+2 w 80 300 440 420 re S
+0.5 w 300 300 m 300 560 l S
+0.5 w 80 560 m 520 560 l S
+0.5 w 400 560 m 400 720 l S
+0.5 w 300 450 m 520 450 l S
+BT /F1 10 Tf 150 640 Td (Living & Dining) Tj ET
+BT /F1 10 Tf 420 640 Td (Master Bedroom) Tj ET
+BT /F1 10 Tf 320 500 Td (Bedroom 2) Tj ET
+BT /F1 10 Tf 320 380 Td (Bedroom 3) Tj ET
+BT /F1 10 Tf 140 420 Td (Kitchen) Tj ET
+BT /F1 10 Tf 140 340 Td (Yard) Tj ET
+BT /F1 10 Tf 430 590 Td (Bath) Tj ET
+BT /F1 9 Tf 56 260 Td (Not to scale. Sample file for the OpenMaison 2.0 user acceptance test.) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+6 0 obj
+<< /Title (Sophia Wong floor plan \(sample\)) /Producer (OpenMaison UAT) >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 5 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000112 00000 n 
+0000000214 00000 n 
+0000000907 00000 n 
+0000001043 00000 n 
+0000001100 00000 n 
+0000001191 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R /Info 6 0 R >>
+startxref
+1240
+%%EOF

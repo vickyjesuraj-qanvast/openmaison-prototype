@@ -1,6 +1,9 @@
 /* Company panel (REG-484): the Tools popover's chrome (tools-popover.module.css) at 304 wide, p12; a "COMPANY" eyebrow,
    then two groups of rows — 20 glyph · label 14/500 over help 12 · "Soon" for the sections that are not built. */
-.popover { width: 304px; padding: var(--om-spacing-3); max-height: none; overflow: visible; }
+.popover.popover { width: 304px; padding: var(--om-spacing-3); max-height: none; overflow: visible; }
+/* (REG-670) Doubled on purpose, as the Items table's Add Item menu does: this box also wears leads/menus.module.css `.menu` (200 wide, a
+   scrolling max-height) at the same weight, and after a client-side navigation the browser can load that sheet second — the panel
+   then opened 200 wide with its rows cut ("reports to …"). Twice the class outranks it whatever the order. */
 .title { display: block; height: 24px; margin-bottom: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .group { display: flex; flex-direction: column; }

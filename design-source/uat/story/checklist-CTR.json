@@ -1,0 +1,1106 @@
+[
+ {
+  "key": "CTR",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "What a contract is — no record, four stand-ins",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "What the client signs — the quote plus documents",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "The signing library with read and accept checks",
+  "now": "Built in parity round 3",
+  "why": "PDF library held (Q-26); written documents are contract templates"
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "Contract templates with tokens and a default",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "Statuses: pending, viewed, signed, expired, cancelled",
+  "now": "Built in parity round 3",
+  "why": "Expired and cancelled stay the platform’s (Q-28); viewed is a date"
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "The text is fixed and fingerprinted when sent",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Merge fields (11 tokens)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "Which quote the contract belongs to",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "The issuing entity on the contract",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "Who signs, and how — drawn signature, phone code",
+  "now": "Built in parity round 3",
+  "why": "The one-time code stays simulated — the platform’s (Q-28)"
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-11",
+  "area": "Definitions",
+  "feature": "The signing evidence and certificate",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-12",
+  "area": "Definitions",
+  "feature": "A paper contract uploaded on the lead",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "DEF-13",
+  "area": "Definitions",
+  "feature": "The studio’s own signature on documents",
+  "now": "Built in parity round 1",
+  "why": "Its own Settings card held; set in a quote’s Signature section (Q-30)"
+ },
+ {
+  "key": "CTR",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "What a contract is",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "What the client signs",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "Statuses",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "The text at signing",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "What can change after signing",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "The signing link’s life",
+  "now": "Built in parity round 1",
+  "why": "Token, expiry and cancel stay the platform’s (Q-28)"
+ },
+ {
+  "key": "CTR",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "The contract’s quote",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "The issuer",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "Several documents in one signing",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-10",
+  "area": "Mismatches",
+  "feature": "The signature — drawn or typed",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-11",
+  "area": "Mismatches",
+  "feature": "Reminders",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "MM-12",
+  "area": "Mismatches",
+  "feature": "Roles — who may do what with contracts",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-01",
+  "area": "The record and its ways in",
+  "feature": "Ways to start a contract",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-02",
+  "area": "The record and its ways in",
+  "feature": "The contract dialog’s states",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-03",
+  "area": "The record and its ways in",
+  "feature": "A contract only with an approved quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-04",
+  "area": "The record and its ways in",
+  "feature": "A record per contract",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-05",
+  "area": "The record and its ways in",
+  "feature": "Drafts kept while writing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-06",
+  "area": "The record and its ways in",
+  "feature": "Close and reopen",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-07",
+  "area": "The record and its ways in",
+  "feature": "Duplicate a contract",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-08",
+  "area": "The record and its ways in",
+  "feature": "Archive",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-09",
+  "area": "The record and its ways in",
+  "feature": "Delete",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CR-10",
+  "area": "The record and its ways in",
+  "feature": "What happens when the lead goes",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-01",
+  "area": "The document",
+  "feature": "One rich-text body",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-02",
+  "area": "The document",
+  "feature": "Start from a template or blank",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-03",
+  "area": "The document",
+  "feature": "Save as a new template",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-04",
+  "area": "The document",
+  "feature": "The live preview matches the client’s page",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-05",
+  "area": "The document",
+  "feature": "Formatting survives on every surface",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-06",
+  "area": "The document",
+  "feature": "Cleaning pasted HTML safely",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-07",
+  "area": "The document",
+  "feature": "Download as PDF",
+  "now": "Platform",
+  "why": "Stored PDFs are the platform’s; 2.0 prints the page"
+ },
+ {
+  "key": "CTR",
+  "id": "CD-08",
+  "area": "The document",
+  "feature": "The PDF page layout",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-09",
+  "area": "The document",
+  "feature": "Checks before sending",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-10",
+  "area": "The document",
+  "feature": "Read-only once signed",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-11",
+  "area": "The document",
+  "feature": "Outline of headings",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CD-12",
+  "area": "The document",
+  "feature": "An uploaded contract file",
+  "now": "Platform",
+  "why": "File contents are the platform’s; 2.0 keeps the name"
+ },
+ {
+  "key": "CTR",
+  "id": "CM-01",
+  "area": "Smart text",
+  "feature": "The merge fields",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-02",
+  "area": "Smart text",
+  "feature": "Client name",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-03",
+  "area": "Smart text",
+  "feature": "Quote total",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-04",
+  "area": "Smart text",
+  "feature": "Project address",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-05",
+  "area": "Smart text",
+  "feature": "Dates",
+  "now": "Built",
+  "why": "No start date — key collection is a period (Q-11)"
+ },
+ {
+  "key": "CTR",
+  "id": "CM-06",
+  "area": "Smart text",
+  "feature": "The entity’s fields incl. GST number",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-07",
+  "area": "Smart text",
+  "feature": "Variables list showing each value",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-08",
+  "area": "Smart text",
+  "feature": "Unknown and empty fields",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-09",
+  "area": "Smart text",
+  "feature": "Money format",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CM-10",
+  "area": "Smart text",
+  "feature": "Values fixed when sent",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-01",
+  "area": "Templates",
+  "feature": "Where contract templates live",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-02",
+  "area": "Templates",
+  "feature": "The template picker",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-03",
+  "area": "Templates",
+  "feature": "No templates yet",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-04",
+  "area": "Templates",
+  "feature": "The default template",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-05",
+  "area": "Templates",
+  "feature": "Per-entity template copies",
+  "now": "Not built — by design",
+  "why": "The contract’s issuing entity picks the letterhead instead (Q-29)"
+ },
+ {
+  "key": "CTR",
+  "id": "CT-06",
+  "area": "Templates",
+  "feature": "The seeded contract template",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-07",
+  "area": "Templates",
+  "feature": "The template editor",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-08",
+  "area": "Templates",
+  "feature": "Delete a template",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-09",
+  "area": "Templates",
+  "feature": "Who edits templates",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-10",
+  "area": "Templates",
+  "feature": "Which template a contract came from",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-11",
+  "area": "Templates",
+  "feature": "Updated by",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-12",
+  "area": "Templates",
+  "feature": "Signing flow order setting",
+  "now": "Dead",
+  "why": "Seeded in 1.0, never read"
+ },
+ {
+  "key": "CTR",
+  "id": "CT-13",
+  "area": "Templates",
+  "feature": "T&Cs at signing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CT-14",
+  "area": "Templates",
+  "feature": "Read and accept checks on a document",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-01",
+  "area": "The quote and the issuing entity",
+  "feature": "Which quote the contract reads",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-02",
+  "area": "The quote and the issuing entity",
+  "feature": "Choosing the quote",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-03",
+  "area": "The quote and the issuing entity",
+  "feature": "The quote shown on the contract",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-04",
+  "area": "The quote and the issuing entity",
+  "feature": "The contract shown on the quote",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-05",
+  "area": "The quote and the issuing entity",
+  "feature": "Signing the contract signs the quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-06",
+  "area": "The quote and the issuing entity",
+  "feature": "One signed base quote per lead",
+  "now": "Built",
+  "why": "Not proposed: each contract names its own quote"
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-07",
+  "area": "The quote and the issuing entity",
+  "feature": "The signed quote shows the client’s signed name",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-08",
+  "area": "The quote and the issuing entity",
+  "feature": "Picking the entity when sending",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CQ-09",
+  "area": "The quote and the issuing entity",
+  "feature": "The entity printed on the document",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CS-01",
+  "area": "Sending",
+  "feature": "The send form",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CS-02",
+  "area": "Sending",
+  "feature": "E-mail a composed contract as a PDF",
+  "now": "Not built — by design",
+  "why": "2.0 sends a signing link on WhatsApp; e-mail is the platform’s (Q-27)"
+ },
+ {
+  "key": "CTR",
+  "id": "CS-03",
+  "area": "Sending",
+  "feature": "The link: copy, resend, regenerate, cancel",
+  "now": "Built in parity round 1",
+  "why": "Regenerate and cancel stay the platform’s (Q-28)"
+ },
+ {
+  "key": "CTR",
+  "id": "CS-04",
+  "area": "Sending",
+  "feature": "Checks before sending",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CS-05",
+  "area": "Sending",
+  "feature": "The studio told when it is sent",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CS-06",
+  "area": "Sending",
+  "feature": "Who sent it",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CS-07",
+  "area": "Sending",
+  "feature": "The client’s phone number",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-01",
+  "area": "The signing page",
+  "feature": "The signing steps",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-02",
+  "area": "The signing page",
+  "feature": "The one-time code",
+  "now": "Platform",
+  "why": "Real SMS codes are the platform’s; the prototype simulates (Q-28)"
+ },
+ {
+  "key": "CTR",
+  "id": "CP-03",
+  "area": "The signing page",
+  "feature": "One document per screen with progress",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-04",
+  "area": "The signing page",
+  "feature": "A PDF drawn inline",
+  "now": "Platform",
+  "why": "File contents are the platform’s; a file card stands in"
+ },
+ {
+  "key": "CTR",
+  "id": "CP-05",
+  "area": "The signing page",
+  "feature": "Read to the end before going on",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-06",
+  "area": "The signing page",
+  "feature": "Tick to accept",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-07",
+  "area": "The signing page",
+  "feature": "The agreement sentence",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-08",
+  "area": "The signing page",
+  "feature": "The quote on the signing page",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-09",
+  "area": "The signing page",
+  "feature": "A drawn signature",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-10",
+  "area": "The signing page",
+  "feature": "An ID number (NRIC / FIN)",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-11",
+  "area": "The signing page",
+  "feature": "Done — keep a copy",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-12",
+  "area": "The signing page",
+  "feature": "The issuer shown on the page",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-13",
+  "area": "The signing page",
+  "feature": "A dead link",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-14",
+  "area": "The signing page",
+  "feature": "Viewed",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-15",
+  "area": "The signing page",
+  "feature": "Changed while the client reads",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CP-16",
+  "area": "The signing page",
+  "feature": "A signed link turning expired",
+  "now": "Dead",
+  "why": "A 1.0 defect; not ported"
+ },
+ {
+  "key": "CTR",
+  "id": "CP-17",
+  "area": "The signing page",
+  "feature": "CaseTrust step",
+  "now": "Later",
+  "why": "A later module’s step"
+ },
+ {
+  "key": "CTR",
+  "id": "CL-01",
+  "area": "The library and bundles",
+  "feature": "The signing library",
+  "now": "Built in parity round 3",
+  "why": "PDF library held (Q-26); written documents are contract templates"
+ },
+ {
+  "key": "CTR",
+  "id": "CL-02",
+  "area": "The library and bundles",
+  "feature": "Upload a PDF to the library",
+  "now": "Platform",
+  "why": "Held: 2.0 keeps no file bytes (Q-26)"
+ },
+ {
+  "key": "CTR",
+  "id": "CL-03",
+  "area": "The library and bundles",
+  "feature": "Write a document",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-04",
+  "area": "The library and bundles",
+  "feature": "Pick documents into one signing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-05",
+  "area": "The library and bundles",
+  "feature": "The snapshot kept per signing",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-06",
+  "area": "The library and bundles",
+  "feature": "The fingerprints",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-07",
+  "area": "The library and bundles",
+  "feature": "Viewed and accepted per document",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-08",
+  "area": "The library and bundles",
+  "feature": "The signed packet with a certificate page",
+  "now": "Built in parity round 3",
+  "why": "The stored packet stays the platform’s; the print carries the record"
+ },
+ {
+  "key": "CTR",
+  "id": "CL-09",
+  "area": "The library and bundles",
+  "feature": "One signature over the set",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CL-10",
+  "area": "The library and bundles",
+  "feature": "Bundles across screens",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-01",
+  "area": "Signed, and after",
+  "feature": "The signing certificate",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-02",
+  "area": "Signed, and after",
+  "feature": "The signed copy",
+  "now": "Platform",
+  "why": "Stored PDFs are the platform’s; the print carries the kept text"
+ },
+ {
+  "key": "CTR",
+  "id": "CA-03",
+  "area": "Signed, and after",
+  "feature": "Paper contracts",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-04",
+  "area": "Signed, and after",
+  "feature": "Un-signing",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-05",
+  "area": "Signed, and after",
+  "feature": "Signing times",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-06",
+  "area": "Signed, and after",
+  "feature": "The Won gate",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-07",
+  "area": "Signed, and after",
+  "feature": "Reminders and notices",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CA-08",
+  "area": "Signed, and after",
+  "feature": "The project’s contract",
+  "now": "Later",
+  "why": "Projects module"
+ },
+ {
+  "key": "CTR",
+  "id": "CA-09",
+  "area": "Signed, and after",
+  "feature": "The contract value and its freeze",
+  "now": "Later",
+  "why": "Finance module"
+ },
+ {
+  "key": "CTR",
+  "id": "CA-10",
+  "area": "Signed, and after",
+  "feature": "Variation orders",
+  "now": "Later",
+  "why": "Finance module"
+ },
+ {
+  "key": "CTR",
+  "id": "CA-11",
+  "area": "Signed, and after",
+  "feature": "Signing in the homeowner portal",
+  "now": "Later",
+  "why": "The portal module"
+ },
+ {
+  "key": "CTR",
+  "id": "CN-01",
+  "area": "Lists, roles and follow-through",
+  "feature": "A list of contracts",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-02",
+  "area": "Lists, roles and follow-through",
+  "feature": "A studio-wide contracts list",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-03",
+  "area": "Lists, roles and follow-through",
+  "feature": "Deleted contracts",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-04",
+  "area": "Lists, roles and follow-through",
+  "feature": "Permissions",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-05",
+  "area": "Lists, roles and follow-through",
+  "feature": "Lead visibility on contract pages",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-06",
+  "area": "Lists, roles and follow-through",
+  "feature": "Activity",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-07",
+  "area": "Lists, roles and follow-through",
+  "feature": "Notifications on send and signing",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "CTR",
+  "id": "CN-08",
+  "area": "Lists, roles and follow-through",
+  "feature": "The client’s page access",
+  "now": "Platform",
+  "why": "Tokens and expiry are the platform’s (Q-28)"
+ },
+ {
+  "key": "CTR",
+  "id": "CZ-01",
+  "area": "Touchpoints",
+  "feature": "The project’s contract and setup check",
+  "now": "Later",
+  "why": "Projects module"
+ },
+ {
+  "key": "CTR",
+  "id": "CZ-02",
+  "area": "Touchpoints",
+  "feature": "Contract value, freeze, variation orders",
+  "now": "Later",
+  "why": "Finance module"
+ },
+ {
+  "key": "CTR",
+  "id": "CZ-03",
+  "area": "Touchpoints",
+  "feature": "Portal signing and documents tab",
+  "now": "Later",
+  "why": "The portal module"
+ },
+ {
+  "key": "CTR",
+  "id": "CZ-04",
+  "area": "Touchpoints",
+  "feature": "My Signature and its auto-apply",
+  "now": "Built",
+  "why": "Kept in a quote’s Signature section (Accounts Setup ST-08); auto-apply not ported"
+ },
+ {
+  "key": "CTR",
+  "id": "CZ-05",
+  "area": "Touchpoints",
+  "feature": "Quote X-Ray (nothing on contracts)",
+  "now": "Excluded",
+  "why": "X-Ray has no contract side; its own audit"
+ }
+]

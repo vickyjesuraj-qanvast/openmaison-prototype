@@ -1,0 +1,424 @@
+[
+ {
+  "step": "4.01",
+  "chapter": 4,
+  "scene": "A new enquiry by hand",
+  "module": "Leads",
+  "try": "Open a new lead form with one key",
+  "how": "1. Click \"Leads\" in the side navigation\n2. Click an empty part of the page (not a search box)\n3. Press the C key",
+  "expect": "The \"Create New Lead\" form opens with the cursor already in \"Lead name\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-16"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.02",
+  "chapter": 4,
+  "scene": "A new enquiry by hand",
+  "module": "Leads",
+  "try": "Let the document reader fill a lead for you",
+  "how": "1. In the open form, click \"Fill from a document\"\n2. Press \"Upload\" (no file needed — this is a demo)\n3. Look at the fields, then press \"Cancel\" at the bottom",
+  "expect": "Empty fields fill with a sample enquiry (Nurul Hassan, Condo 3-bedder, East) and a PDF is attached; Cancel closes without saving anything.",
+  "in10": "Different from 1.0: fixed sample values stand in for AI reading",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-29",
+   "LEADS:C-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.03",
+  "chapter": 4,
+  "scene": "A new enquiry by hand",
+  "module": "Leads",
+  "try": "Get warned about a lead you already have",
+  "how": "1. Click \"Add Lead\", then \"Create New Lead\"\n2. \"Lead name\": Test Duplicate · \"Lead phone number\": 9123 8803\n3. Press \"Create\"\n4. In the warning, press \"Open existing lead\"",
+  "expect": "\"A lead with this phone already exists\" names Kenji Sato · 9123 8803 · Lost; the button opens his lead and nothing new is created.",
+  "in10": "Different from 1.0: \"Create anyway\" creates it, not held for review",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-18",
+   "LEADS:C-13",
+   "LEADS:MM-08",
+   "LEADS:I-01",
+   "LEADS:G-03",
+   "SET:LM-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.04",
+  "chapter": 4,
+  "scene": "Sophia Wong gets in touch",
+  "module": "Leads",
+  "try": "Start Sophia's lead and test the budget limit",
+  "how": "1. Back on \"Leads\", click \"Add Lead\", then \"Create New Lead\"\n2. \"Lead name\" Sophia Wong · \"Lead phone number\" 9765 4321 · \"Lead source\" Referral · \"Property type\" HDB 4-Room · \"Property address\" Blk 201 Tampines Street 21 · \"District\" East — leave \"Assign member\" empty\n3. Open \"Additional info\": \"Lead email\" sophia.wong@example.com · \"Estimated budget (S$)\" 500\n4. Press \"Create\"",
+  "expect": "The form stays open and the budget box says \"Enter a budget between S$1,000 and S$5,000,000\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-13",
+   "LEADS:MM-20",
+   "LEADS:C-09",
+   "LEADS:C-02",
+   "LEADS:C-03",
+   "LEADS:C-04",
+   "LEADS:DEF-12",
+   "LEADS:DEF-14",
+   "LEADS:MM-21",
+   "LEADS:MM-22",
+   "LEADS:MM-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.05",
+  "chapter": 4,
+  "scene": "Sophia Wong gets in touch",
+  "module": "Leads",
+  "try": "Save Sophia's lead with her floor plan attached",
+  "how": "1. Change \"Estimated budget (S$)\" to 60,000\n2. \"Condition\" Resale · \"Key collection\" in 3 months (fill any custom field your studio still has)\n3. Under \"Attach files (optional)\" press \"Attach\" and pick sophia-floor-plan.pdf\n4. Press \"Create\"",
+  "expect": "\"Successfully Created\"; Sophia Wong tops the list in New, with a coloured band on the left and \"Assign\" under Members.",
+  "in10": "Different from 1.0: one name field; only name and phone required",
+  "as": "Dane",
+  "covers": [
+   "LEADS:C-08",
+   "LEADS:MM-33",
+   "LEADS:C-05",
+   "LEADS:DEF-11",
+   "LEADS:C-10",
+   "LEADS:C-12",
+   "LEADS:S-06",
+   "LEADS:L-38",
+   "LEADS:C-01",
+   "LEADS:DEF-15",
+   "LEADS:C-06"
+  ],
+  "files": [
+   "uat-files/sophia-floor-plan.pdf"
+  ]
+ },
+ {
+  "step": "4.06",
+  "chapter": 4,
+  "scene": "Leads from files",
+  "module": "Leads",
+  "try": "Upload a spreadsheet of new leads",
+  "how": "1. Click \"Add Lead\", then \"Import from File\"\n2. Drop new-leads.xlsx on \"Drop your file or browse\"\n3. Press \"Next\"\n4. Read the column list, then press \"Next\" again",
+  "expect": "\"Success!\" says \"Detected 5 line(s)\"; all 11 columns are tagged \"Auto-matched\"; the preview table lists the five rows.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-06"
+  ],
+  "files": [
+   "uat-files/new-leads.xlsx"
+  ]
+ },
+ {
+  "step": "4.07",
+  "chapter": 4,
+  "scene": "Leads from files",
+  "module": "Leads",
+  "try": "Send the clean leads straight to your list",
+  "how": "1. Press \"Import\"\n2. In \"Lead routing\" choose \"Add to my lead listing\", press \"Import\"\n3. Read the result, press \"Done\"",
+  "expect": "\"4 of 5 records imported successfully\" · \"3 leads added to your listing · 1 possible duplicate sent to review\"; three new leads appear.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-06",
+   "LEADS:I-01",
+   "LEADS:N-03"
+  ],
+  "files": [
+   "uat-files/new-leads.xlsx"
+  ]
+ },
+ {
+  "step": "4.08",
+  "chapter": 4,
+  "scene": "Leads from files",
+  "module": "Leads",
+  "try": "See the import on record, with the row it skipped",
+  "how": "1. On Leads, click ⋮ (\"More options\"), then \"Lead Import History\"\n2. Find new-leads.xlsx\n3. Click \"Download Skipped Records\"",
+  "expect": "The row reads 5 total, 4 imported and \"1 error detected across 1 skipped lead\"; the download lists the nameless row with \"Missing Lead Name\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-18"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.09",
+  "chapter": 4,
+  "scene": "Leads from files",
+  "module": "Leads",
+  "try": "Import a PDF lead sheet to check first",
+  "how": "1. Back on Leads, click \"Add Lead\", then \"Import from File\"\n2. Drop homematch-lead-sheet.pdf, press \"Next\" twice\n3. Press \"Import\", choose \"Review and approve manually\", press \"Import\"\n4. Press \"Done\"",
+  "expect": "\"Detected 2 line(s)\"; the result reads \"2 of 2 records imported successfully\" and \"2 leads waiting in Review imported leads\"; the list itself is unchanged.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-06"
+  ],
+  "files": [
+   "uat-files/homematch-lead-sheet.pdf"
+  ]
+ },
+ {
+  "step": "4.10",
+  "chapter": 4,
+  "scene": "Review what came in",
+  "module": "Leads",
+  "try": "Open the review queue",
+  "how": "1. On Leads, click the \"Review imported leads\" bar at the bottom\n2. Find Gerald Tan and your two PDF leads\n3. Switch on \"Show only duplicates\", then off again",
+  "expect": "Gerald Tan is tagged DUPLICATE with \"Matches: Gerald Tan\"; Vanessa Ho and Samuel Yeo are PENDING; the switch narrows the queue to duplicates.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-02",
+   "LEADS:L-11",
+   "LEADS:D-07",
+   "LEADS:L-19"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.11",
+  "chapter": 4,
+  "scene": "Review what came in",
+  "module": "Leads",
+  "try": "Merge the repeat enquiry into Gerald's lead",
+  "how": "1. On Gerald Tan's card press \"View & Merge\"\n2. In the \"Budget (S$)\" row, click the round button beside 120,000 (the \"New\" column)\n3. Read the \"Merged result\" column\n4. Press \"Merge into Existing\"",
+  "expect": "Phone says \"identical - matched on this\"; Email and District fill in by themselves; \"Merged into the existing lead\"; Gerald's budget becomes 120,000.",
+  "in10": "Different from 1.0: side by side; you pick each clashing value",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-04",
+   "LEADS:I-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.12",
+  "chapter": 4,
+  "scene": "Review what came in",
+  "module": "Leads",
+  "try": "Approve the two PDF leads",
+  "how": "1. In the queue, click the \"Others (2)\" chip\n2. On Vanessa Ho's card press \"Approve\"\n3. On Samuel Yeo's card press \"Approve\"\n4. Close the queue",
+  "expect": "Each press says \"Lead approved and added to your leads\"; both leads now show in the list in New.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-02",
+   "LEADS:I-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.13",
+  "chapter": 4,
+  "scene": "Leads that arrive by themselves",
+  "module": "Company",
+  "try": "Receive a lead from an ad form (Webhooks)",
+  "how": "1. On Leads, click \"Add Lead\", then \"Link to Zapier\"\n2. In the \"Webhooks\" card, find the \"Google Ads\" row\n3. Press \"Simulate a POST (demo)\"",
+  "expect": "A message says someone \"arrived via Google Ads\" (new, or a known number sent to review); the counters rise and \"Recent activity\" gains a row.",
+  "in10": "Different from 1.0: a demo POST stands in for real traffic",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-07",
+   "LEADS:I-08",
+   "LEADS:G-14",
+   "LEADS:MM-09",
+   "SET:LM-09",
+   "SET:MM-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.14",
+  "chapter": 4,
+  "scene": "Leads that arrive by themselves",
+  "module": "Company",
+  "try": "Pick up leads from portal emails",
+  "how": "1. Scroll to the \"Email lead sources\" card\n2. Press \"Connect Gmail\"\n3. Press \"Sync now\"",
+  "expect": "\"Gmail connected — the platforms below are monitored\"; the card turns ACTIVE; Sync now names who \"enquired via @…\" and EMAILS FOUND reads 1.",
+  "in10": "Different from 1.0: a stand-in inbox; each sync plays one enquiry",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-10",
+   "LEADS:I-11",
+   "LEADS:I-12",
+   "LEADS:G-07",
+   "LEADS:DEF-10",
+   "LEADS:MM-38",
+   "LEADS:I-13",
+   "SET:LM-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.15",
+  "chapter": 4,
+  "scene": "Leads that arrive by themselves",
+  "module": "Leads",
+  "try": "Check the lead that came from Qanvast",
+  "how": "1. On Leads, open Hakim Salleh\n2. Look at the source chip, then open ⋮ (\"More options\")\n3. Click \"Qanvast Ops\" in the side navigation and find Hakim Salleh",
+  "expect": "His QANVAST chip is green and the menu offers \"Return Lead\"; Qanvast Ops lists him with Return window \"Opens in 7 days\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-09",
+   "LEADS:T-10",
+   "LEADS:I-13",
+   "LEADS:D-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.16",
+  "chapter": 4,
+  "scene": "Find your way around the list",
+  "module": "Leads",
+  "try": "Find Sophia by part of her phone number",
+  "how": "1. On Leads, click the search box (\"Search name, phone, email…\")\n2. Type 9765\n3. Replace it with zzzz\n4. Press \"Clear All\"",
+  "expect": "9765 leaves only Sophia Wong, digits highlighted; zzzz shows \"No results found\"; \"Clear All\" brings every lead back.",
+  "in10": "Different from 1.0: matches anything shown; phone at any length",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-20",
+   "LEADS:MM-36",
+   "LEADS:L-30"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.17",
+  "chapter": 4,
+  "scene": "Find your way around the list",
+  "module": "Leads",
+  "try": "Show only leads nobody owns yet",
+  "how": "1. Click the Filters icon (\"Filters\")\n2. Open \"Quick filters\" and tick \"Unassigned\"\n3. Press \"Done\"",
+  "expect": "Only leads with \"Assign\" under Members remain — Sophia Wong and the new imports among them; the Filters icon shows 1.",
+  "in10": "Different from 1.0: no Hot filter; Unseen added",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-21",
+   "LEADS:L-22",
+   "LEADS:L-28",
+   "LEADS:L-29"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.18",
+  "chapter": 4,
+  "scene": "Find your way around the list",
+  "module": "Leads",
+  "try": "Give two new leads to Alex in one go",
+  "how": "1. With the filter still on, tick Aaron Goh and Priscilla Low (not Sophia)\n2. In the bar at the bottom press \"Assign\"\n3. Tick \"Alex\", then press \"Assign\"",
+  "expect": "The bar counts 2; \"2 leads assigned to Alex\" appears and both leave the Unassigned list; Sophia stays unassigned.",
+  "in10": "Different from 1.0: adds members; never replaces or unassigns",
+  "as": "Dane",
+  "covers": [
+   "LEADS:I-14",
+   "LEADS:I-15",
+   "LEADS:I-16",
+   "LEADS:MM-19",
+   "LEADS:N-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.19",
+  "chapter": 4,
+  "scene": "Find your way around the list",
+  "module": "Leads",
+  "try": "Narrow the list to leads created this month",
+  "how": "1. Click \"Filters\", then \"Date\"\n2. Choose \"This month\"\n3. Press \"Done\"",
+  "expect": "Only unassigned leads created since the 1st of this month remain, today's included; the Filters icon shows 2.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-27"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.20",
+  "chapter": 4,
+  "scene": "Share and shape the list",
+  "module": "Leads",
+  "try": "Export exactly what the list shows",
+  "how": "1. Click ⋮ (\"More options\"), then \"Export all as…\"\n2. Choose \"What the list shows\"; \"Columns\": As the list shows; \"Choose file format\": XLSX\n3. Press \"Export\"\n4. Then \"Filters\" › \"Clear All\" › \"Done\"",
+  "expect": "The summary line counts those leads and columns; an XLSX downloads with \"Exported … as XLSX\"; Clear All brings every lead back.",
+  "in10": "Different from 1.0: all or shown leads; four formats",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-32",
+   "LEADS:MM-10",
+   "LEADS:L-34"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.21",
+  "chapter": 4,
+  "scene": "Share and shape the list",
+  "module": "Leads",
+  "try": "Look at one stage, one source and one member",
+  "how": "1. Click \"All Leads (…)\" and pick \"Contacted\"\n2. \"Filters\": in \"Source\" tick Qanvast, in \"Members\" tick Dane, in \"Sort\" pick \"Oldest at the top\"; \"Done\"\n3. Read the list\n4. \"Filters\" › \"Clear All\" › \"Done\"; then the pill › \"All Leads\"",
+  "expect": "The pill reads \"Contacted (2)\" with a dot: Jasmine Lee above Gavin See; clearing both brings every lead back.",
+  "in10": "Different from 1.0: stages on the pill; filters combine freely",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-01",
+   "LEADS:L-23",
+   "LEADS:L-24",
+   "LEADS:L-25",
+   "LEADS:L-26",
+   "LEADS:L-28"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.22",
+  "chapter": 4,
+  "scene": "Share and shape the list",
+  "module": "Leads",
+  "try": "Add the District and follow-up columns",
+  "how": "1. Click the \"Column settings\" icon (right of Filters)\n2. Switch on \"District\", \"Next follow-up\" and \"Last contact\"\n3. Press \"Done\"",
+  "expect": "Three columns appear; on Sophia's row DISTRICT reads East and LAST CONTACT reads \"No contact yet\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-07",
+   "LEADS:L-31"
+  ],
+  "files": []
+ },
+ {
+  "step": "4.23",
+  "chapter": 4,
+  "scene": "Share and shape the list",
+  "module": "Leads",
+  "try": "See the board and the owner-first rule",
+  "how": "1. Switch to the board (\"Kanban view\", top right of the list)\n2. Drag Sophia Wong's card from New to Contacted\n3. Switch back to \"Table view\"",
+  "expect": "Seven stage columns sit under ACTIVE and INACTIVE; Sophia's card springs back with \"Assign a member first\".",
+  "in10": "Different from 1.0: seven stage columns, not four buckets",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-03",
+   "LEADS:MM-37",
+   "LEADS:L-02",
+   "LEADS:S-03",
+   "LEADS:DEF-01"
+  ],
+  "files": []
+ }
+]

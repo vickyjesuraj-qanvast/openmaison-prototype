@@ -5,7 +5,7 @@ import { logLeadEvent } from '@/lib/leads/events'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadNotes, noteAttachments } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { parseInputDateTime } from '@/lib/format'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES } from '@/lib/leads/enums'
 import type { NoteDraft } from '@/lib/leads/note-model'
@@ -13,7 +13,7 @@ import { revalidateLead } from '@/lib/leads/queries'
 
 /* Lead Details › Notes (931-44865). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
 
-const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every contact log. */
 const touch = (leadId: string) => revalidateLead(leadId)
 const leadOf = async (noteId: string) => (await db.select({ leadId: leadNotes.leadId }).from(leadNotes).where(eq(leadNotes.id, noteId)))[0]?.leadId ?? null

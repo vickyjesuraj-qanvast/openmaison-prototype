@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
 import { libraryFolders, quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { isBlankHtml, isTextKind, type TextKind } from '@/lib/quotes/text'
 import { stampQuote } from '@/lib/quotes/stamp'
 import { textTemplateUsage } from '@/lib/company/text-templates'
@@ -51,7 +51,7 @@ export async function createTextTemplate(kind: TextKind, title: string, body: st
   const id = randomUUID(); const now = new Date()
   /* (REG-664) Made inside a folder of My Templates, it is filed there — when that folder is still one of T&Cs & Notes'. */
   const [folder] = folderId ? await db.select({ id: libraryFolders.id }).from(libraryFolders).where(and(eq(libraryFolders.id, folderId), eq(libraryFolders.library, 'texts'), isNull(libraryFolders.deletedAt))) : []
-  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: SESSION_MEMBER_ID, folderId: folder?.id ?? null })
+  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: sessionMemberSql, folderId: folder?.id ?? null })
   const [row] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
   touch(id)
   return row!

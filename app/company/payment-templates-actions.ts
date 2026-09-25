@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
 import { paymentTemplates, quotePayments, quotes, quoteTemplates } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { DEFAULT_SPLIT_ID, PRESET_SPLITS, parseSplitRows, type SplitRow } from '@/lib/quotes/payments'
 
 /* Company › Templates › Payments (REG-538): the splits as a library — create · save · rename · duplicate · soft delete · restore · forever. */
@@ -35,7 +35,7 @@ export async function createPaymentTemplate(input: CreatePaymentTemplateInput): 
     rows = pays.map((p) => ({ name: p.name, description: p.description, pct: p.pct }))
     if (!clean(input.name)) { const [q] = await db.select({ title: quotes.title }).from(quotes).where(eq(quotes.id, input.source.quoteId)); name = `${q?.title ?? 'Quote'} split` }
   }
-  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: SESSION_MEMBER_ID, createdAt: now, updatedAt: now })
+  await db.insert(paymentTemplates).values({ id, name, rowsJson: JSON.stringify(cleanRows(rows)), isPreset: false, createdBy: sessionMemberSql, createdAt: now, updatedAt: now })
   touch(id)
   return id
 }

@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import { contracts, leadTasks, leads, members, notifications, quoteComparisons, quoteFiles, quoteItemComments, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, quotePayments, taskAssignees, type QuoteItem, type QuotePayment } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { canDeleteQuote } from '@/lib/quotes/policy'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
@@ -32,7 +32,7 @@ import { createQuoteItem, createQuoteItems, type BulkLine } from '@/app/quotes/i
 
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity, which prints every quote milestone. */
 const touch = (leadId: string) => revalidateLead(leadId)
-const ME = SESSION_MEMBER_ID
+const ME = sessionMemberSql   // (REG-667) the signed-in member, resolved inside each write
 
 /**
  * Next quote number: "OM-" + (highest existing + 1); the seed starts at OM-10001 (910:36324). (REG-561) A studio with its own
@@ -279,16 +279,17 @@ export async function setQuoteDue(quoteId: string, dueAt: Date | null): Promise<
       await db.update(leadTasks).set({ dueAt, updatedAt: new Date() }).where(eq(leadTasks.id, task.id))
     } else {
       const id = randomUUID(); const now = new Date()
+      const owner = q.preparedBy ?? await sessionMemberId()
       await db.transaction(async (tx) => {
         await tx.insert(leadTasks).values({
           id, leadId: q.leadId, quoteId, title: `Follow up on quote ${q.number}`, kind: 'Follow-up',   /* (REG-608) a follow-up is a task of its own kind */
           description: `${q.title} is due on ${displayDate(dueAt)} — chase the client for a decision before then.`,
           dueAt, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: null,
         })
-        await tx.insert(taskAssignees).values({ taskId: id, memberId: q.preparedBy ?? ME })
+        await tx.insert(taskAssignees).values({ taskId: id, memberId: owner })
       })
       const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, q.leadId))
-      await notify('task_assigned', [q.preparedBy ?? ME], { title: `New task: Follow up on quote ${q.number}`, body: l ? `On ${l.name}` : null, href: `/leads/${q.leadId}/tasks?open=${id}`, leadId: q.leadId, quoteId })   /* (REG-608) */
+      await notify('task_assigned', [owner], { title: `New task: Follow up on quote ${q.number}`, body: l ? `On ${l.name}` : null, href: `/leads/${q.leadId}/tasks?open=${id}`, leadId: q.leadId, quoteId })   /* (REG-608) */
     }
   } else if (task) {
     await db.delete(leadTasks).where(eq(leadTasks.id, task.id))

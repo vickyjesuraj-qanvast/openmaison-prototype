@@ -139,4 +139,5 @@
 .sheetItem:hover { background: var(--om-color-hover-04p); }
 .sheetIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .sheetLabel { flex: 1; min-width: 0; }
+.sheetMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* (REG-667) View as · the member being viewed */
 .sheetRule { height: 1px; border: 0; margin: 0; background: var(--om-color-surface-variant); }

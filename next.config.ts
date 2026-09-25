@@ -11,7 +11,12 @@ const nextConfig: NextConfig = {
    * which is why that one alone was not enough); the paid and legacy hosts are here too. Dev only: `next build`
    * / `next start` ignore this entirely, so a production demo is unaffected.
    */
-  allowedDevOrigins: ['*.ngrok-free.dev', '*.ngrok-free.app', '*.ngrok.dev', '*.ngrok.app', '*.ngrok.io'],
+  allowedDevOrigins: [
+    '*.ngrok-free.dev', '*.ngrok-free.app', '*.ngrok.dev', '*.ngrok.app', '*.ngrok.io',
+    /* (REG-669) The UAT's phone chapter opens the "Network" address `npm run dev` prints (a phone on the same Wi-Fi) — the
+       private ranges a home or office network hands out, and a Mac's own `.local` name. */
+    '192.168.*.*', '10.*.*.*', '172.*.*.*', '*.local',
+  ],
 
   /**
    * Every lead route is `force-dynamic`, and the client router treats dynamic entries as stale the moment they land —

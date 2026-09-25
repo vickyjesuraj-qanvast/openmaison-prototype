@@ -12,6 +12,9 @@ import { requestSearchFocus } from './search-focus'
 import { ToolsPopover } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { openNotifications } from '@/components/shell/notifications-panel'
+import { ViewAsPopover } from './view-as-popover'
+import { Avatar } from '@/components/om/avatar'
+import type { SessionMember } from '@/lib/db/session'
 import styles from './app-rail.module.css'
 
 /**
@@ -35,8 +38,9 @@ const BOTTOM_ITEMS = [
   { icon: 'notifications', label: 'Notifications' },
   { icon: 'settings', label: 'Settings', href: '/settings' },
 ]
-/** `badges`: a count drawn on an item's glyph — today the Tasks item's overdue tasks (REG-466), keyed by href. */
-export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
+/** `badges`: a count drawn on an item's glyph — today the Tasks item's overdue tasks (REG-466), keyed by href.
+ *  `team`: the studio's members for Demo Studio › View as (REG-667). */
+export function AppRail({ badges, team = [] }: { badges?: Record<string, number>; team?: SessionMember[] } = {}) {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
@@ -52,6 +56,10 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
   const toolsRef = useRef<HTMLButtonElement>(null)
   const [companyOpen, setCompanyOpen] = useState(false)   // Company › the sections panel beside the rail (REG-484)
   const companyRef = useRef<HTMLButtonElement>(null)
+  const [viewAsOpen, setViewAsOpen] = useState(false)   // (REG-667) Demo Studio › View as, beside the rail
+  const studioRef = useRef<HTMLButtonElement>(null)
+  const viewer = team.find((m) => m.isYou) ?? null
+  const viewingOther = !!viewer && viewer.id !== 'dane'   // Dane is who the studio is in the base state; anyone else is "Viewing as"
   const [scrolled, setScrolled] = useState(false)   // (REG-329) the rail body has scrolled under the logo → the head takes a shadow
 
   const onEnter = () => setRailHover(true)
@@ -173,19 +181,26 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
           {navItem({ icon: 'diamond', label: 'Upgrade' }, styles.upgrade)}
           {BOTTOM_ITEMS.map((it) => navItem(it))}
         </div>
-        <div className={styles.avatarRow}>
-          <Tooltip label="Demo Studio" side="right" disabled={expanded}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.avatar} src="/figma-assets/avatar-studio.svg" alt="Demo Studio" />
-          </Tooltip>
-          <span className={styles.studio}>
-            <span className={styles.studioName}>Demo Studio</span>
-            <span className={styles.studioOwner}>Dane Bruce Lee</span>
-          </span>
-        </div>
+        {/* (REG-667) The Demo Studio block opens View as — the member the prototype is being seen as. Anyone but Dane
+            puts their avatar on the studio's corner and "Viewing as …" on the second line, so nobody forgets. */}
+        <Tooltip label={viewingOther ? `Demo Studio · Viewing as ${viewer.name}` : 'Demo Studio'} side="right" disabled={expanded || viewAsOpen}>
+          <button ref={studioRef} type="button" className={styles.avatarRow} aria-haspopup="menu" aria-expanded={viewAsOpen}
+                  aria-label={viewingOther ? `Demo Studio, viewing as ${viewer.name}. View as` : 'Demo Studio. View as'} onClick={() => setViewAsOpen((o) => !o)}>
+            <span className={styles.avatarWrap}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className={styles.avatar} src="/figma-assets/avatar-studio.svg" alt="" />
+              {viewingOther ? <span className={styles.viewerMark}><Avatar name={viewer.name} color={viewer.color} size={20} tooltip={false} /></span> : null}
+            </span>
+            <span className={styles.studio}>
+              <span className={styles.studioName}>Demo Studio</span>
+              <span className={styles.studioOwner} data-viewing={viewingOther || undefined}>{viewingOther ? `Viewing as ${viewer.name}` : 'Dane Bruce Lee'}</span>
+            </span>
+          </button>
+        </Tooltip>
         </div>
       </nav>
       <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
+      <ViewAsPopover open={viewAsOpen} anchor={studioRef} onClose={() => setViewAsOpen(false)} team={team} />
       <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} />
     </div>
   )

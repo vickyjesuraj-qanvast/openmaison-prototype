@@ -2,7 +2,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { db } from '@/lib/db'
 import { notifications } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberId } from '@/lib/db/session'
 import { channelsOf, fetchNotificationRules } from '@/lib/notifications/queries'
 import type { EventKey } from '@/lib/notifications/model'
 
@@ -15,7 +15,7 @@ export async function notify(kind: EventKey, memberIds: string[], o: { title: st
   const rules = await fetchNotificationRules()
   const channels = channelsOf(rules, kind)
   if (!channels.includes('in_app')) return 0
-  const actor = o.actorId === undefined ? SESSION_MEMBER_ID : o.actorId
+  const actor = o.actorId === undefined ? await sessionMemberId() : o.actorId
   const targets = [...new Set(memberIds)].filter((id) => id && id !== actor)
   if (!targets.length) return 0
   const now = new Date()

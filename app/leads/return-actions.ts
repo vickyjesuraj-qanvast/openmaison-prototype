@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, leadReturns, leadTasks, leads, returnAttachments, stageLogs, type LeadFile } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { parseInputDateTime } from '@/lib/format'
 import { revalidateLead } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
@@ -15,7 +15,7 @@ import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 
 /* Qanvast lead return (931:48236) + Invite to Portal (931:48844). Every action revalidates the lead's pages and the listings. */
 
-const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 /** (REG-286) One shared eviction for every detail tab — a return writes a task and a stage log the Tasks and Activity tabs show. */
 const touch = (leadId: string) => revalidateLead(leadId)
 

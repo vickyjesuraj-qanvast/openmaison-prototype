@@ -1,0 +1,538 @@
+[
+ {
+  "key": "PB",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "Price book under Accounts with four tabs",
+  "now": "Built",
+  "why": "Company › Price book: My Items and My Sections"
+ },
+ {
+  "key": "PB",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "What an item carries (SKU, tiers, tags, image…)",
+  "now": "Built in parity round 3",
+  "why": "Link, photo and formatted description; no SKU, tags, notes or tiers"
+ },
+ {
+  "key": "PB",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "Prices as sell, cost and markup %",
+  "now": "Built in parity round 1",
+  "why": "Cost + markup in S$, cents kept"
+ },
+ {
+  "key": "PB",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "Category from the studio's quote categories",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "Several vendors per item",
+  "now": "Built",
+  "why": "One vendor per item; two vendors make two items"
+ },
+ {
+  "key": "PB",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "Non-owners' items wait for approval",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Price history",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "Saved groups of lines (packages)",
+  "now": "Built",
+  "why": "My Sections"
+ },
+ {
+  "key": "PB",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "A quote line copied from the book",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "Drift against market rates",
+  "now": "Platform",
+  "why": "Market rates are the platform's (Q-16)"
+ },
+ {
+  "key": "PB",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "Who may change the book",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "An item's category",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "Money boxes that take decimals",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "Rounding a price",
+  "now": "Built in parity round 1",
+  "why": "Rates per area or length stay as typed"
+ },
+ {
+  "key": "PB",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "Imports: CSV, and PDFs or images read by AI",
+  "now": "Built in parity round 4",
+  "why": "CSV, XLSX or pasted rows; XLS, PDF and image reading not built"
+ },
+ {
+  "key": "PB",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "Saving a quote line to the book",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-01",
+  "area": "The page and the list",
+  "feature": "Price Book tabs: Items, Pending, Drift, Imports",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-02",
+  "area": "The page and the list",
+  "feature": "Loading every item",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-03",
+  "area": "The page and the list",
+  "feature": "Stats line with counts",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-04",
+  "area": "The page and the list",
+  "feature": "Search and filters",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-05",
+  "area": "The page and the list",
+  "feature": "Items grouped by category",
+  "now": "Built in parity round 4",
+  "why": "A Category filter and folders instead of collapsible groups"
+ },
+ {
+  "key": "PB",
+  "id": "PL-06",
+  "area": "The page and the list",
+  "feature": "Sort by column",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-07",
+  "area": "The page and the list",
+  "feature": "Select many: archive, restore, change category",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-08",
+  "area": "The page and the list",
+  "feature": "Drag to reorder and re-file",
+  "now": "Not built — by design",
+  "why": "The book sorts; a category is set, not dropped (Q-15)"
+ },
+ {
+  "key": "PB",
+  "id": "PL-09",
+  "area": "The page and the list",
+  "feature": "Archive, restore, delete permanently",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "PL-10",
+  "area": "The page and the list",
+  "feature": "The price book on a phone",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IT-01",
+  "area": "An item",
+  "feature": "Name, SKU and description",
+  "now": "Built in parity round 3",
+  "why": "Formatted description; no SKU (Q-08)"
+ },
+ {
+  "key": "PB",
+  "id": "IT-02",
+  "area": "An item",
+  "feature": "Category and sub-category",
+  "now": "Built in parity round 1",
+  "why": "Category is a studio trade; no sub-categories"
+ },
+ {
+  "key": "PB",
+  "id": "IT-03",
+  "area": "An item",
+  "feature": "Sell, cost and markup",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IT-04",
+  "area": "An item",
+  "feature": "Unit, cost type, waste %",
+  "now": "Built",
+  "why": "Unit and kind; no waste % (Finance)"
+ },
+ {
+  "key": "PB",
+  "id": "IT-05",
+  "area": "An item",
+  "feature": "Several vendors",
+  "now": "Built",
+  "why": "One vendor per item"
+ },
+ {
+  "key": "PB",
+  "id": "IT-06",
+  "area": "An item",
+  "feature": "Volume price tiers",
+  "now": "Not built — by design",
+  "why": "Price a quantity break on the line or as its own item (Q-06)"
+ },
+ {
+  "key": "PB",
+  "id": "IT-07",
+  "area": "An item",
+  "feature": "Spec link, tags, notes, image",
+  "now": "Built in parity round 3",
+  "why": "Link and photo; tags and notes not ported"
+ },
+ {
+  "key": "PB",
+  "id": "IT-08",
+  "area": "An item",
+  "feature": "Who may save an item",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "AH-01",
+  "area": "Approval and history",
+  "feature": "Owners and admins trusted; others' items wait",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "AH-02",
+  "area": "Approval and history",
+  "feature": "How a pending item may be used",
+  "now": "Built in parity round 2",
+  "why": "Only its proposer uses it until approved"
+ },
+ {
+  "key": "PB",
+  "id": "AH-03",
+  "area": "Approval and history",
+  "feature": "Pending tab: approve or reject",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "AH-04",
+  "area": "Approval and history",
+  "feature": "Approving by editing",
+  "now": "Built in parity round 2",
+  "why": "Approval is a deliberate press, never an edit"
+ },
+ {
+  "key": "PB",
+  "id": "AH-05",
+  "area": "Approval and history",
+  "feature": "Tasks and notices about approvals",
+  "now": "Built in parity round 2",
+  "why": "In the bell, with the note"
+ },
+ {
+  "key": "PB",
+  "id": "AH-06",
+  "area": "Approval and history",
+  "feature": "Price book approvers setting",
+  "now": "Dead",
+  "why": "Only its first name was read; Owners and Admins approve"
+ },
+ {
+  "key": "PB",
+  "id": "AH-07",
+  "area": "Approval and history",
+  "feature": "Item history",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-01",
+  "area": "Imports and exports",
+  "feature": "Import sources: CSV, PDF, image, Excel",
+  "now": "Built in parity round 4",
+  "why": "CSV, XLSX or pasted rows; XLS, PDFs and images not read"
+ },
+ {
+  "key": "PB",
+  "id": "IE-02",
+  "area": "Imports and exports",
+  "feature": "Mapping columns to fields",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-03",
+  "area": "Imports and exports",
+  "feature": "Reading numbers in a sheet",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-04",
+  "area": "Imports and exports",
+  "feature": "Duplicates and updates on import",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-05",
+  "area": "Imports and exports",
+  "feature": "How the import writes rows",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-06",
+  "area": "Imports and exports",
+  "feature": "Export to CSV",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "IE-07",
+  "area": "Imports and exports",
+  "feature": "Vendor default markup",
+  "now": "Built in parity round 4",
+  "why": "Bulk Set markup re-prices items; no vendor directory"
+ },
+ {
+  "key": "PB",
+  "id": "IE-08",
+  "area": "Imports and exports",
+  "feature": "Quote Categories importer",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-01",
+  "area": "The book inside a quote",
+  "feature": "Typeahead and Browse in a quote",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-02",
+  "area": "The book inside a quote",
+  "feature": "What picking an item copies",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-03",
+  "area": "The book inside a quote",
+  "feature": "Picking an item marks it edited",
+  "now": "Built in parity round 1",
+  "why": "A 2.0 slip, fixed: a pick no longer marks it edited"
+ },
+ {
+  "key": "PB",
+  "id": "QU-04",
+  "area": "The book inside a quote",
+  "feature": "Also save a line to the price book",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-05",
+  "area": "The book inside a quote",
+  "feature": "Rounding a price on its way into a quote",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-06",
+  "area": "The book inside a quote",
+  "feature": "GST on lines taken from the book",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-07",
+  "area": "The book inside a quote",
+  "feature": "Packages into a quote",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "QU-08",
+  "area": "The book inside a quote",
+  "feature": "Auto-match, AI suggestions, smart search",
+  "now": "Platform",
+  "why": "The platform's (Q-16)"
+ },
+ {
+  "key": "PB",
+  "id": "AR-01",
+  "area": "Around the book",
+  "feature": "Server checks on price-book actions",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "AR-02",
+  "area": "Around the book",
+  "feature": "Who can open the price book",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "PB",
+  "id": "AR-03",
+  "area": "Around the book",
+  "feature": "Price-book notifications",
+  "now": "Built in parity round 2",
+  "why": "Proposals in the bell; drift alerts are the platform's"
+ },
+ {
+  "key": "PB",
+  "id": "AR-04",
+  "area": "Around the book",
+  "feature": "Market rates, drift, seeding, crowd prices",
+  "now": "Platform",
+  "why": "The platform's (Q-16)"
+ },
+ {
+  "key": "PB",
+  "id": "AR-05",
+  "area": "Around the book",
+  "feature": "AI around the book",
+  "now": "Platform",
+  "why": "The platform's (Q-16)"
+ },
+ {
+  "key": "PB",
+  "id": "AR-06",
+  "area": "Around the book",
+  "feature": "The book's rows in Who may do what",
+  "now": "Built in parity round 2",
+  "why": "2.0's Settings table now lists the book's actions"
+ },
+ {
+  "key": "PB",
+  "id": "PZ-01",
+  "area": "Touchpoints",
+  "feature": "Purchase orders, waste, Finance vendors",
+  "now": "Later",
+  "why": "Finance module"
+ },
+ {
+  "key": "PB",
+  "id": "PZ-02",
+  "area": "Touchpoints",
+  "feature": "Quote rules and Starter Quote",
+  "now": "Later",
+  "why": "Held (templates Q-07)"
+ },
+ {
+  "key": "PB",
+  "id": "PZ-03",
+  "area": "Touchpoints",
+  "feature": "Price snapshots on quote lines",
+  "now": "Dead",
+  "why": "Written, never read (quote editor QP-15)"
+ },
+ {
+  "key": "PB",
+  "id": "PZ-04",
+  "area": "Touchpoints",
+  "feature": "The UI sweep's backlog",
+  "now": "Excluded",
+  "why": "Fixed in the UI consistency sweep (REG-659)"
+ }
+]

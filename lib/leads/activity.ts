@@ -31,7 +31,6 @@ export type LeadActivityData = { events: ActivityEvent[]; now: number }
  * stamp: `who()` prints "You" for this id and the member's name for anyone else, so the read side and the five
  * action modules that write `creatorId` / `authorId` / `returnedById` have to agree on who "you" is.
  */
-const ME = SESSION_MEMBER_ID
 
 export async function fetchLeadActivity(leadId: string): Promise<LeadActivityData> {
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId))
@@ -61,6 +60,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     quoteIds.length ? db.select().from(quoteItemComments).where(inArray(quoteItemComments.quoteId, quoteIds)) : Promise.resolve([]),   // (REG-627) line comments
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
+  const ME = team.find((m) => m.isYou)?.id ?? SESSION_MEMBER_ID   // (REG-667) "You" is whoever is signed in — View as moves it
   const who = (id: string | null | undefined): string => (!id ? 'System' : id === ME ? 'You' : byMember.get(id)?.name ?? 'System')
   const base = `/leads/${leadId}`
   const ev: ActivityEvent[] = []

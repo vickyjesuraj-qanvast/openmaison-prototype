@@ -1,0 +1,1322 @@
+[
+ {
+  "key": "QTPL",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "What 'template' means: a design, a starter quote, a package",
+  "now": "Built",
+  "why": "One quote template; priced lines live in My Sections (Q-01)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "Two template editors and three print engines",
+  "now": "Built",
+  "why": "One editor and one renderer for every surface"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "A quote's design edited per lead (Layout tab)",
+  "now": "Not built — by design",
+  "why": "Designs live on the template; edit it from the quote (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "Knobs: the fine settings on each block",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "Theme presets and house styles",
+  "now": "Built",
+  "why": "Four ready-made designs start a template; no preset overlay (Q-03)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "One default template",
+  "now": "Built",
+  "why": "One default per studio; published templates only"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Quote templates per legal entity",
+  "now": "Not built — by design",
+  "why": "The quote's issuing entity picks bank, QR, GST and letterhead (Q-04)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "Template lifecycle (a save is live at once)",
+  "now": "2.0 only",
+  "why": "Draft, publish, versions, roll back and pinned quotes are new"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "Who may edit templates",
+  "now": "Built",
+  "why": "Owners and Admins publish; Designers submit for approval (Q-05)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "Deleting a template",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-11",
+  "area": "Definitions",
+  "feature": "Tokens in a template's text",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-12",
+  "area": "Definitions",
+  "feature": "Per-quote design overrides within a lock map",
+  "now": "Not built — by design",
+  "why": "A quote keeps client-view switches, not design edits (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-13",
+  "area": "Definitions",
+  "feature": "Sample data drawn in the editor",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-14",
+  "area": "Definitions",
+  "feature": "Starter content with priced items",
+  "now": "Not built — by design",
+  "why": "Templates start empty sections; priced lines come from My Sections (Q-06)"
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-15",
+  "area": "Definitions",
+  "feature": "Sections / trades with a printed description",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "DEF-16",
+  "area": "Definitions",
+  "feature": "Quote Sharing settings (link expiry, switches)",
+  "now": "Dead",
+  "why": "Saved but never read in 1.0; nothing to port (Q-09)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "Where a quote's design is stored (per lead)",
+  "now": "Not built — by design",
+  "why": "The design lives on a template version pinned per quote (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "Editing one quote's look",
+  "now": "Built",
+  "why": "Edit the template from the quote, or change template (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "Presets as overlays plus one custom slot",
+  "now": "Built",
+  "why": "Whole ready-made designs; save a look as a template (Q-03)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "Templates per legal entity",
+  "now": "Not built — by design",
+  "why": "Never applied in 1.0; the entity sets bank and letterhead (Q-04)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "Everyone may edit templates",
+  "now": "Built",
+  "why": "Owners and Admins publish; Designers submit (Q-05)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "Templates carry priced starter lines",
+  "now": "Not built — by design",
+  "why": "Starter sections only; priced lines via My Sections (Q-06)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "Save as template, full or clean",
+  "now": "Not built — by design",
+  "why": "Save as template carries design and defaults, never lines (Q-06)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "Seven item-numbering modes (A1, A2…)",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "Optional lines counted in totals, or their own column",
+  "now": "Built in parity round 1",
+  "why": "Optional price column built; optional lines stay out of the totals"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-10",
+  "area": "Mismatches",
+  "feature": "Totals shapes and a Round Off row",
+  "now": "Built",
+  "why": "Every totals shape is a setting; no Round off line (Q-12)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-11",
+  "area": "Mismatches",
+  "feature": "Printing prices GST-inclusive",
+  "now": "Later",
+  "why": "Held — ask the studios first (Q-13)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-12",
+  "area": "Mismatches",
+  "feature": "Header and footer repetition",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-13",
+  "area": "Mismatches",
+  "feature": "Fonts, incl. Outfit and uploaded fonts",
+  "now": "Later",
+  "why": "Outfit and uploaded fonts held until the port shows the need (Q-14)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-14",
+  "area": "Mismatches",
+  "feature": "Platform accreditation catalogue",
+  "now": "Built",
+  "why": "The studio's own badges in the brand kit (Q-15)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-15",
+  "area": "Mismatches",
+  "feature": "Payment milestones: fixed amounts, ordinals, footnote",
+  "now": "Built in parity round 2",
+  "why": "Ordinals and footnote built; fixed-amount rows held for Finance"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-16",
+  "area": "Mismatches",
+  "feature": "Signature stamped on the PDF, fallback signature footer",
+  "now": "Not built — by design",
+  "why": "No automatic signature block; Client signs online is per quote (Q-17)"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-17",
+  "area": "Mismatches",
+  "feature": "Unknown tokens print empty in documents",
+  "now": "Built",
+  "why": "An unknown field prints as typed, so typos show"
+ },
+ {
+  "key": "QTPL",
+  "id": "MM-18",
+  "area": "Mismatches",
+  "feature": "Watermark: text, opacity, rotation, logo",
+  "now": "Built in parity round 2",
+  "why": "A word with a strength; no angle or logo watermark (Q-18)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-01",
+  "area": "Library and lifecycle",
+  "feature": "Document Templates page with six kinds",
+  "now": "Built",
+  "why": "Invoice, PO and VO templates wait for Finance"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-02",
+  "area": "Library and lifecycle",
+  "feature": "Template list with name and default badge",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-03",
+  "area": "Library and lifecycle",
+  "feature": "Add a template",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-04",
+  "area": "Library and lifecycle",
+  "feature": "Save, discard and unsaved changes",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-05",
+  "area": "Library and lifecycle",
+  "feature": "Set as default",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-06",
+  "area": "Library and lifecycle",
+  "feature": "Rename and duplicate",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-07",
+  "area": "Library and lifecycle",
+  "feature": "Delete a template",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-08",
+  "area": "Library and lifecycle",
+  "feature": "Last used order",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-09",
+  "area": "Library and lifecycle",
+  "feature": "Versions, history, roll back",
+  "now": "2.0 only",
+  "why": "1.0 had none; 2.0 keeps every published version"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-10",
+  "area": "Library and lifecycle",
+  "feature": "Approval before publishing",
+  "now": "2.0 only",
+  "why": "1.0 had none; Designers submit, Owners and Admins approve"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-11",
+  "area": "Library and lifecycle",
+  "feature": "Editing templates per entity",
+  "now": "Not built — by design",
+  "why": "Never applied to a quote in 1.0 (Q-04)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-12",
+  "area": "Library and lifecycle",
+  "feature": "Old settings fallback when no template exists",
+  "now": "Platform",
+  "why": "Handled once by the data port"
+ },
+ {
+  "key": "QTPL",
+  "id": "TL-13",
+  "area": "Library and lifecycle",
+  "feature": "Seeded starter templates",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-01",
+  "area": "Editor frame",
+  "feature": "The editor's tabs",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-02",
+  "area": "Editor frame",
+  "feature": "Live preview with sample data",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-03",
+  "area": "Editor frame",
+  "feature": "Undo, and delete with Undo",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-04",
+  "area": "Editor frame",
+  "feature": "Search for a setting by name",
+  "now": "Not built — by design",
+  "why": "One block at a time keeps the editor simple"
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-05",
+  "area": "Editor frame",
+  "feature": "Marks on changed settings and reset",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-06",
+  "area": "Editor frame",
+  "feature": "Grouped settings shown only when relevant",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-07",
+  "area": "Editor frame",
+  "feature": "Lock map of what a quote may override",
+  "now": "Not built — by design",
+  "why": "No per-quote design edits, so no lock map (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-08",
+  "area": "Editor frame",
+  "feature": "Assets: badges and signatures",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TE-09",
+  "area": "Editor frame",
+  "feature": "Quote Template Sandbox page",
+  "now": "Dead",
+  "why": "A developer page no studio reached"
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-01",
+  "area": "Page, header, footer, cover",
+  "feature": "Paper size and margins",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-02",
+  "area": "Page, header, footer, cover",
+  "feature": "Page background colour or image",
+  "now": "Not built — by design",
+  "why": "Owner chose no page background (Q-18)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-03",
+  "area": "Page, header, footer, cover",
+  "feature": "Watermark",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-04",
+  "area": "Page, header, footer, cover",
+  "feature": "Header layouts",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-05",
+  "area": "Page, header, footer, cover",
+  "feature": "Where the customer's details sit",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-06",
+  "area": "Page, header, footer, cover",
+  "feature": "Where the registration line sits",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-07",
+  "area": "Page, header, footer, cover",
+  "feature": "Logo size and style",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-08",
+  "area": "Page, header, footer, cover",
+  "feature": "Divider colour, weight and style",
+  "now": "Built",
+  "why": "Dashed and dotted lines not built (owner: don't build)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-09",
+  "area": "Page, header, footer, cover",
+  "feature": "Subtitle band (VERSION 3, DRAFT)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-10",
+  "area": "Page, header, footer, cover",
+  "feature": "Editable field labels",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-11",
+  "area": "Page, header, footer, cover",
+  "feature": "Header and footer text slots",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-12",
+  "area": "Page, header, footer, cover",
+  "feature": "Header and footer heights",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-13",
+  "area": "Page, header, footer, cover",
+  "feature": "Header repeats: first page, every page, never",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-14",
+  "area": "Page, header, footer, cover",
+  "feature": "Page numbers",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-15",
+  "area": "Page, header, footer, cover",
+  "feature": "Cover page",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-16",
+  "area": "Page, header, footer, cover",
+  "feature": "Social links with icons",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-17",
+  "area": "Page, header, footer, cover",
+  "feature": "Footer styles",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-18",
+  "area": "Page, header, footer, cover",
+  "feature": "Table of contents",
+  "now": "Dead",
+  "why": "No control in 1.0; not ported"
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-19",
+  "area": "Page, header, footer, cover",
+  "feature": "Document title (QUOTATION)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TP-20",
+  "area": "Page, header, footer, cover",
+  "feature": "Date formats",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-01",
+  "area": "Items table",
+  "feature": "Table columns: on / off, words, widths",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-02",
+  "area": "Items table",
+  "feature": "Column heading row style",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-03",
+  "area": "Items table",
+  "feature": "Section heading styles",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-04",
+  "area": "Items table",
+  "feature": "Sub-section style",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-05",
+  "area": "Items table",
+  "feature": "Item numbering modes, incl. A1, A2",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-06",
+  "area": "Items table",
+  "feature": "Where sub-totals print",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-07",
+  "area": "Items table",
+  "feature": "A description under each section",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-08",
+  "area": "Items table",
+  "feature": "Formatted descriptions",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-09",
+  "area": "Items table",
+  "feature": "Row highlight colour",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-10",
+  "area": "Items table",
+  "feature": "A word instead of an amount (TBC, FOC)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-11",
+  "area": "Items table",
+  "feature": "Optional lines",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-12",
+  "area": "Items table",
+  "feature": "Currency symbol and its own column",
+  "now": "Built",
+  "why": "S$, $ or figures only; no separate currency column (Q-22)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-13",
+  "area": "Items table",
+  "feature": "Hide Qty when the unit already carries it",
+  "now": "Not built — by design",
+  "why": "Not proposed; the merged Qty · Unit column covers it"
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-14",
+  "area": "Items table",
+  "feature": "Striped rows, grid lines, row spacing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-15",
+  "area": "Items table",
+  "feature": "Continuation marker",
+  "now": "Dead",
+  "why": "No control in 1.0; not ported"
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-16",
+  "area": "Items table",
+  "feature": "Item photos",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-17",
+  "area": "Items table",
+  "feature": "Lump sum, page totals, fill the page",
+  "now": "2.0 only",
+  "why": "New print options in 2.0"
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-18",
+  "area": "Items table",
+  "feature": "Variation order lanes",
+  "now": "Later",
+  "why": "Belongs to Finance"
+ },
+ {
+  "key": "QTPL",
+  "id": "TI-19",
+  "area": "Items table",
+  "feature": "Blocks between table sections",
+  "now": "Not built — by design",
+  "why": "Section notes cover it (Q-23)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-01",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Totals shapes and GST label",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-02",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Round Off row",
+  "now": "Not built — by design",
+  "why": "Never wired in 1.0; 2.0 rounds each price (Q-12)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-03",
+  "area": "Totals, payments, bank, signature",
+  "feature": "GST-inclusive printing",
+  "now": "Later",
+  "why": "Held — ask the studios first (Q-13)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-04",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Payment milestones: layout, ordinals, footnote",
+  "now": "Built in parity round 2",
+  "why": "Fixed-amount rows held for Finance"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-05",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Payment terms as free text",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-06",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Bank details: labels, SWIFT, extra rows",
+  "now": "Built in parity round 2",
+  "why": "No extra rows (Q-24)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-07",
+  "area": "Totals, payments, bank, signature",
+  "feature": "PayNow QR",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-08",
+  "area": "Totals, payments, bank, signature",
+  "feature": "GST registration line",
+  "now": "Built",
+  "why": "Singapore wording only; other regions are the platform's"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-09",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Signature block",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-10",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Intro, remarks and closing text",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-11",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Subject line",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-12",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Terms & Conditions section",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-13",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Picture, spacer, divider, page break",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-14",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Keep together on one page",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-15",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Accreditation strip",
+  "now": "Built",
+  "why": "The studio's own badges; no catalogue or caption (Q-15)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-16",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Old section presets",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TB-17",
+  "area": "Totals, payments, bank, signature",
+  "feature": "Callouts and two-column text",
+  "now": "Built",
+  "why": "A tinted or outlined text box; no callout kinds"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-01",
+  "area": "Theme and brand",
+  "feature": "Theme presets applied to a template",
+  "now": "Built",
+  "why": "Four ready-made designs start a new template (Q-03)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-02",
+  "area": "Theme and brand",
+  "feature": "Save as my preset",
+  "now": "Not built — by design",
+  "why": "Duplicate a template or Save as template instead (Q-03)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-03",
+  "area": "Theme and brand",
+  "feature": "Fonts, sizes and line spacing",
+  "now": "Built",
+  "why": "Outfit held (Q-14)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-04",
+  "area": "Theme and brand",
+  "feature": "Named colours",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-05",
+  "area": "Theme and brand",
+  "feature": "Bold, italic, uppercase, underline",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-06",
+  "area": "Theme and brand",
+  "feature": "Spacing: gaps, padding, indent",
+  "now": "Built",
+  "why": "Space before / after, density, margins; no numeric padding or indent"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-07",
+  "area": "Theme and brand",
+  "feature": "Studio branding and Prepared by",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-08",
+  "area": "Theme and brand",
+  "feature": "Legal entity logo, UEN, address, bank",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-09",
+  "area": "Theme and brand",
+  "feature": "A template's own colours and fonts",
+  "now": "2.0 only",
+  "why": "New: a template can differ from the brand kit"
+ },
+ {
+  "key": "QTPL",
+  "id": "TT-10",
+  "area": "Theme and brand",
+  "feature": "Uploading fonts",
+  "now": "Later",
+  "why": "Held with the fonts question (Q-14)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TF-01",
+  "area": "Fields",
+  "feature": "Token set in template texts",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TF-02",
+  "area": "Fields",
+  "feature": "Social media tokens",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TF-03",
+  "area": "Fields",
+  "feature": "{logo} token",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TF-04",
+  "area": "Fields",
+  "feature": "{section_letter} in sub-totals",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TF-05",
+  "area": "Fields",
+  "feature": "{{tokens}} in T&C and contract texts",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-01",
+  "area": "A quote and its template",
+  "feature": "Default template on a new quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-02",
+  "area": "A quote and its template",
+  "feature": "Apply another template to a quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-03",
+  "area": "A quote and its template",
+  "feature": "Quote entry screen",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-04",
+  "area": "A quote and its template",
+  "feature": "Save a quote as a template",
+  "now": "Built",
+  "why": "Carries design and defaults, never priced lines (Q-06)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-05",
+  "area": "A quote and its template",
+  "feature": "Per-quote layout edits",
+  "now": "Not built — by design",
+  "why": "Edit the template from the quote instead (Q-02)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-06",
+  "area": "A quote and its template",
+  "feature": "Published changes reach new quotes",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TQ-07",
+  "area": "A quote and its template",
+  "feature": "Client view beside the quote",
+  "now": "2.0 only",
+  "why": "New live client view pane"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-01",
+  "area": "Renderer and what the client sees",
+  "feature": "One renderer for screen and PDF",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-02",
+  "area": "Renderer and what the client sees",
+  "feature": "Stored PDF and change fingerprint",
+  "now": "Platform",
+  "why": "Print from Preview; file storage is the platform's"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-03",
+  "area": "Renderer and what the client sees",
+  "feature": "Pagination rules",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-04",
+  "area": "Renderer and what the client sees",
+  "feature": "Cost and markup never print",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-05",
+  "area": "Renderer and what the client sees",
+  "feature": "Share settings",
+  "now": "Dead",
+  "why": "Saved but never read in 1.0 (Q-09)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-06",
+  "area": "Renderer and what the client sees",
+  "feature": "Readiness before sending",
+  "now": "2.0 only",
+  "why": "New readiness check"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-07",
+  "area": "Renderer and what the client sees",
+  "feature": "A revision's changes printed",
+  "now": "2.0 only",
+  "why": "New in 2.0"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-08",
+  "area": "Renderer and what the client sees",
+  "feature": "Amounts per line, section or total",
+  "now": "2.0 only",
+  "why": "New client-view choice"
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-09",
+  "area": "Renderer and what the client sees",
+  "feature": "Draft marking on the PDF",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TR-10",
+  "area": "Renderer and what the client sees",
+  "feature": "\"Powered by OpenMaison\" line",
+  "now": "2.0 only",
+  "why": "New; the client view can turn it off"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-01",
+  "area": "Content templates, rules, text",
+  "feature": "Packages: bundles of lines",
+  "now": "Built in parity round 3",
+  "why": "Now My Sections, with property type and tags"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-02",
+  "area": "Content templates, rules, text",
+  "feature": "Platform packages",
+  "now": "Platform",
+  "why": "Qanvast-authored content; not proposed"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-03",
+  "area": "Content templates, rules, text",
+  "feature": "Quote Templates with priced items",
+  "now": "Not built — by design",
+  "why": "Starter sections and My Sections instead (Q-06)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-04",
+  "area": "Content templates, rules, text",
+  "feature": "Generation rules by project type",
+  "now": "Later",
+  "why": "Held — starter sections and My Sections cover it (Q-07)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-05",
+  "area": "Content templates, rules, text",
+  "feature": "Rich-text templates (T&C, contract…)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-06",
+  "area": "Content templates, rules, text",
+  "feature": "Quote categories with descriptions",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-07",
+  "area": "Content templates, rules, text",
+  "feature": "Old quote templates and AI tier packages",
+  "now": "Dead",
+  "why": "No screen reached them in 1.0"
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-08",
+  "area": "Content templates, rules, text",
+  "feature": "Default payment schedule",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TC-09",
+  "area": "Content templates, rules, text",
+  "feature": "Task templates",
+  "now": "2.0 only",
+  "why": "New: checklists added to a lead in one go"
+ },
+ {
+  "key": "QTPL",
+  "id": "TG-01",
+  "area": "Roles",
+  "feature": "Who may edit, set default and delete",
+  "now": "Built",
+  "why": "Owners and Admins; Designers submit for approval (Q-05)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TG-02",
+  "area": "Roles",
+  "feature": "Who may change packages",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QTPL",
+  "id": "TG-03",
+  "area": "Roles",
+  "feature": "Quote rules, owner only",
+  "now": "Later",
+  "why": "Held with generation rules (Q-07)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-01",
+  "area": "Touchpoints",
+  "feature": "Invoice, PO and VO document templates",
+  "now": "Later",
+  "why": "Finance module, not built yet"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-02",
+  "area": "Touchpoints",
+  "feature": "Timeline, project and milestone templates",
+  "now": "Later",
+  "why": "Projects module, not built yet"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-03",
+  "area": "Touchpoints",
+  "feature": "Signing documents library, T&Cs at signing",
+  "now": "Excluded",
+  "why": "Audited with Contracts (CTR)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-04",
+  "area": "Touchpoints",
+  "feature": "Share link, one-time code, expiry, view count",
+  "now": "Excluded",
+  "why": "Audited with the quote editor (QED)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-05",
+  "area": "Touchpoints",
+  "feature": "Notification templates",
+  "now": "Excluded",
+  "why": "Built in the Leads rounds (notifications)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-06",
+  "area": "Touchpoints",
+  "feature": "Cover and floor-plan templates",
+  "now": "Later",
+  "why": "Tools, not built yet"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-07",
+  "area": "Touchpoints",
+  "feature": "Price Book and Quote Approval Rules tabs",
+  "now": "Excluded",
+  "why": "Audited with the quote editor and the price book (QED, PB)"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-08",
+  "area": "Touchpoints",
+  "feature": "Quote numbering settings",
+  "now": "Excluded",
+  "why": "Audited with the quote editor (QED); built in Settings"
+ },
+ {
+  "key": "QTPL",
+  "id": "TX-09",
+  "area": "Touchpoints",
+  "feature": "Client accepts or declines optional add-ons",
+  "now": "Excluded",
+  "why": "Audited with the quote editor (QED)"
+ }
+]

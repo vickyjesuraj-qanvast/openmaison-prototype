@@ -1,0 +1,632 @@
+[
+ {
+  "step": "2.01",
+  "chapter": 2,
+  "scene": "Your company on paper",
+  "module": "Company",
+  "try": "Open your company's profile",
+  "how": "1. Click \"Company\" in the side navigation\n2. Click \"Profile\"",
+  "expect": "\"Company details\" shows Demo Studio Pte Ltd, its UEN and address; the right side shows \"Default template · Default Quote PDF\".",
+  "in10": "Different from 1.0: company records live under Company, not Accounts",
+  "as": "Dane",
+  "covers": [
+   "SET:DEF-01",
+   "SET:MM-01",
+   "QTPL:TT-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.02",
+  "chapter": 2,
+  "scene": "Your company on paper",
+  "module": "Company",
+  "try": "Add a tagline and your Instagram handle",
+  "how": "1. In \"Tagline\" type Homes that feel like you\n2. Under \"Social links\", in \"Instagram\" type @demostudio.sg\n3. Click \"Save changes\"",
+  "expect": "A message says \"Company details saved\"; \"Save changes\" and \"Discard\" grey out until you change something again.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TP-16",
+   "QTPL:TF-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.03",
+  "chapter": 2,
+  "scene": "Your company on paper",
+  "module": "Company",
+  "try": "Put the studio's bank account and PayNow on file",
+  "how": "1. Scroll to \"Issuing entities & bank details\"\n2. For Demo Studio Pte Ltd fill \"Bank\" DBS Bank, \"Account number\" 072-123456-7, \"SWIFT / BIC\" DBSSSGSG, \"PayNow (UEN or mobile)\" 201234567M\n3. Click the \"PayNow QR\" box and pick paynow-qr.png\n4. Click \"Save changes\"",
+  "expect": "\"PayNow QR added\", then \"Company details saved\"; a QR code now sits in the box beside the bank fields.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-11",
+   "QTPL:TB-06"
+  ],
+  "files": [
+   "uat-files/paynow-qr.png"
+  ]
+ },
+ {
+  "step": "2.04",
+  "chapter": 2,
+  "scene": "Your company on paper",
+  "module": "Company",
+  "try": "Add a second company you issue quotes under",
+  "how": "1. Click \"Add an entity\"\n2. \"Entity name\": Demo Studio Carpentry Pte Ltd\n3. Switch off \"GST-registered\"; under \"Letterhead\" fill \"UEN / Co. Reg. No.\" 202512345K\n4. Click \"Save changes\"",
+  "expect": "\"Company details saved\". The new company has its own bank, PayNow and letterhead fields, and a bin to remove it, since nothing uses it yet.",
+  "in10": "Different from 1.0: an entity in use is retired, never deleted",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-11",
+   "SET:ST-12",
+   "SET:DEF-04",
+   "QTPL:TT-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.05",
+  "chapter": 2,
+  "scene": "Your company on paper",
+  "module": "Company",
+  "try": "Look at the brand kit every template starts from",
+  "how": "1. At the bottom of Profile, click \"Brand kit\"\n2. Read the page without changing anything",
+  "expect": "\"Templates\" opens on its \"Brand kit\" tab: \"Logo and marks\", \"Colours\" and \"Fonts\", with the default template's first page on the right.",
+  "in10": "Different from 1.0: one kit every template starts from",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TT-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.06",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "See who works in the studio and their roles",
+  "how": "1. Click \"Company\" in the side navigation\n2. Click \"Members\"",
+  "expect": "\"People and roles\": Dane (you) is the Owner; James is a Manager with \"Team: Michelle, Sarah\"; every row has a role and a lead count.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-01",
+   "SET:ST-03",
+   "SET:ST-09",
+   "SET:DEF-03",
+   "LEADS:G-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.07",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Add a new designer to the team",
+  "how": "1. Click \"Add member\"\n2. \"Name\": Kavya Menon · \"Role\": Designer · \"Phone\": 9123 4567 · \"Email\": kavya@demostudio.sg\n3. Click \"Add member\"",
+  "expect": "\"Kavya Menon added as a Designer\"; she appears among the designers with \"0 leads\".",
+  "in10": "Different from 1.0: 1.0 only emailed a request to OpenMaison",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-02",
+   "SET:MM-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.08",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Put Kavya in James's team",
+  "how": "1. In Kavya's row open \"Reports to\"\n2. Pick James",
+  "expect": "\"Kavya Menon now reports to James\"; James's row now reads \"Team: Kavya Menon, Michelle, Sarah\".",
+  "in10": "Different from 1.0: every studio can have managers",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-09",
+   "SET:LM-17",
+   "LEADS:P-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.09",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Tell the studio which leads Kavya should get",
+  "how": "1. In Kavya's row click \"Preferences\"\n2. \"Specialty\": Condo kitchens\n3. Beside \"Property type\" set \"Priority\" to \"Must match\", then pick the \"Condo 3-bedder\" chip\n4. Click \"Save preferences\"",
+  "expect": "\"Lead preferences saved\"; her row reads \"Condo kitchens · Condo 3-bedder (must)\".",
+  "in10": "Different from 1.0: four categories; Scope is left out",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-05",
+   "SET:LM-14",
+   "LEADS:G-04",
+   "LEADS:DEF-28"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.10",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Stop new leads going to Kavya for now",
+  "how": "1. In Kavya's row switch off \"Open to new leads\"",
+  "expect": "\"Kavya Menon is closed to new leads\"; a yellow \"Closed to new leads\" tag appears on her row.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-05",
+   "LEADS:G-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.11",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Try to change your own role",
+  "how": "1. On your own row (Dane), point at the \"Role\" box",
+  "expect": "The box is greyed out and a tip says \"Nobody changes their own role\".",
+  "in10": "Different from 1.0: the rule is enforced, not just hidden",
+  "as": "Dane",
+  "covers": [
+   "SET:RW-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.12",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Deactivate Kavya, then change your mind",
+  "how": "1. In Kavya's row click \"Deactivate\"\n2. Read the box, then click \"Deactivate\"\n3. Click \"Undo\" in the message at the bottom",
+  "expect": "The box says she leaves every picker and \"Nothing open is on their name.\" After Undo: \"Kavya Menon is back\", still in James's team.",
+  "in10": "Different from 1.0: open work is named first, and Undo",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-07",
+   "SET:MM-04",
+   "SET:DEF-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.13",
+  "chapter": 2,
+  "scene": "Your team",
+  "module": "Company",
+  "try": "Deactivate Kavya, then bring her back",
+  "how": "1. Click \"Deactivate\" on her row, then \"Deactivate\" in the box\n2. Find her under \"Deactivated\"\n3. Click \"Reactivate\"",
+  "expect": "\"Deactivated\" lists her as \"Designer · deactivated\" today; Reactivate says \"Kavya Menon reactivated — back in every picker\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-07",
+   "SET:MM-04",
+   "SET:DEF-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.14",
+  "chapter": 2,
+  "scene": "The studio's rules at a glance",
+  "module": "Settings",
+  "try": "Open the studio's settings",
+  "how": "1. Click \"Settings\" in the side navigation\n2. Read the tabs\n3. Click \"Projects\"",
+  "expect": "Settings opens on \"Studio\", beside \"Lead management\", \"Quotes & pricing\" and \"Notifications\"; \"Projects\" (still to come) answers \"Coming soon in OpenMaison 2.0\".",
+  "in10": "Different from 1.0: four tabs instead of one long Accounts page",
+  "as": "Dane",
+  "covers": [
+   "SET:DEF-01",
+   "SET:MM-01",
+   "SET:SP-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.15",
+  "chapter": 2,
+  "scene": "The studio's rules at a glance",
+  "module": "Settings",
+  "try": "Check the team and your companies at a glance",
+  "how": "1. On \"Studio\", read \"Team\"\n2. Read \"Issuing entities\"",
+  "expect": "Team groups people by role (Kavya · reports to James). Entities: Demo Studio Pte Ltd \"Registered\" with DBS Bank; the carpentry company \"Not registered\".",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-01",
+   "SET:ST-11",
+   "SET:ST-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.16",
+  "chapter": 2,
+  "scene": "The studio's rules at a glance",
+  "module": "Settings",
+  "try": "See what each role is allowed to do",
+  "how": "1. On \"Studio\", scroll to \"Who may do what\"",
+  "expect": "A table of actions against Owner, Admin, Manager and Designer: ticks, dashes or words like \"Submits for approval\". Nothing here can be edited.",
+  "in10": "Different from 1.0: fixed roles stated plainly; no permissions editor",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-14",
+   "SET:DEF-02",
+   "SET:MM-02",
+   "LEADS:P-02",
+   "LEADS:P-05",
+   "PB:AR-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.17",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Try both ways leads can move, then keep Linear",
+  "how": "1. Click the \"Lead management\" tab\n2. Under \"Stage movement\" click \"Flexible\"\n3. Click \"Linear\"",
+  "expect": "\"Stage movement set to Flexible\", then \"Stage movement set to Linear\"; Linear ends up selected.",
+  "in10": "Different from 1.0: Linear / Flexible replace Classic / Journey",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-01",
+   "LEADS:G-01",
+   "LEADS:G-18"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.18",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Add Xiaohongshu as a place leads come from",
+  "how": "1. Under \"Lead sources\", type Xiaohongshu in \"Add a source\"\n2. Click \"Add\"",
+  "expect": "\"Xiaohongshu added to the lead sources\"; it appears just before \"Others\" with a count of 0.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-07",
+   "LEADS:G-12",
+   "LEADS:DEF-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.19",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Move Xiaohongshu to the top of the list",
+  "how": "1. Click the name \"Xiaohongshu\"\n2. In the \"Lead source\" box set \"Place in the list\" to 1\n3. Click \"Save\"",
+  "expect": "\"Lead sources saved\"; Xiaohongshu is now first in the list.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:RL-02",
+   "SET:LM-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.20",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Rename Walk-in and see its lead follow",
+  "how": "1. Click \"Walk-in\" and change \"Name\" to Showroom walk-in\n2. Click \"Save\"\n3. Open Leads and find Mei Ling Tan's \"Source\"",
+  "expect": "\"Walk-in is now Showroom walk-in — its leads follow\"; Mei Ling Tan's source reads Showroom walk-in.",
+  "in10": "Different from 1.0: a rename carries the leads with it",
+  "as": "Dane",
+  "covers": [
+   "SET:RL-01",
+   "SET:MM-06",
+   "SET:LM-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.21",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Add a Lost reason that expects two logged contacts",
+  "how": "1. Back in Settings, open \"Lead management\" and find \"Reasons\"\n2. In \"Add a Lost reason\" type Chose a contractor; in \"Needs logged contacts\" type 2\n3. Click \"Add\"",
+  "expect": "\"Chose a contractor added to the Lost reasons\"; it shows as \"Chose a contractor · after 2 contacts\", just before \"Others\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-04",
+   "LEADS:G-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.22",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Add your own field to every lead",
+  "how": "1. Under \"Custom fields\" click \"Add field\"\n2. \"Label\": Preferred contact time · \"Type\": Dropdown\n3. Options: Morning, Afternoon, Evening (\"Add option\" for each new one)\n4. Click \"Add\"",
+  "expect": "\"Preferred contact time added\"; the table shows it with a \"Dropdown\" tag, its three options, Required off and Active on.",
+  "in10": "Different from 1.0: saving never erases the leads' answers",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-08",
+   "LEADS:G-11",
+   "LEADS:DEF-26",
+   "LEADS:MM-34"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.23",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Limit designers to their own leads, then open it back up",
+  "how": "1. Under \"Who sees leads\" click \"Only the leads assigned to them\"\n2. Click the \"Studio\" tab and read the \"See leads\" row\n3. Back on \"Lead management\", click \"Everyone sees every lead\"",
+  "expect": "\"See leads\" reads \"Their team’s\" for Managers and \"Their own\" for Designers; the last click says \"Everyone sees every lead again\".",
+  "in10": "Different from 1.0: one switch, enforced for every role",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-04",
+   "LEADS:DEF-19",
+   "LEADS:L-17",
+   "LEADS:P-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.24",
+  "chapter": 2,
+  "scene": "How leads are handled",
+  "module": "Settings",
+  "try": "Find the address your website form sends leads to",
+  "how": "1. Under \"Lead capture\" click \"Copy\" beside the address\n2. Read the table below it",
+  "expect": "\"Intake address copied\" (leads+demo-studio@in.openmaison.sg). Rows: Website form, Meta Lead Ads, Webhook · Google Ads (\"Active\"), Email lead sources.",
+  "in10": "Different from 1.0: every way in listed in one place",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-19",
+   "SET:MM-09",
+   "SET:RL-05",
+   "SET:LM-09",
+   "SET:LM-15"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.25",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Try your own quote number pattern without saving it",
+  "how": "1. Click the \"Quotes & pricing\" tab\n2. Under \"Quote numbers\" change \"Prefix\" to DS and \"Digits\" to 4; switch on \"Year and month\"\n3. Read \"Next quote:\"\n4. Click \"Discard\"",
+  "expect": "\"Next quote:\" changes as you type to DS-(this year and month)-0001; after Discard it reads OM-10010 again.",
+  "in10": "Different from 1.0: your own pattern, not a fixed QT-###",
+  "as": "Dane",
+  "covers": [
+   "SET:QP-11",
+   "QED:QN-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.26",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Give Carpentry a standard note for quotes",
+  "how": "1. Under \"Trades\" click \"Carpentry\"\n2. In \"Note\" type All carpentry in E0-grade board with laminate finish unless stated.\n3. Click \"Save\"",
+  "expect": "\"Note saved for Carpentry\"; a small note mark appears on the Carpentry chip.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:DEF-05",
+   "SET:QP-01",
+   "QTPL:DEF-15",
+   "QTPL:TI-07",
+   "QTPL:TC-06",
+   "QED:QS-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.27",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Check the GST rate refuses a wrong number",
+  "how": "1. Under \"GST\" check \"Registered for GST\" is on\n2. Change \"GST rate (%)\" to 35\n3. Change it back to 9",
+  "expect": "At 35 the box says \"Between 0 and 30\" and \"Save rate\" stays grey; back at 9 the warning goes.",
+  "in10": "Different from 1.0: the studio sets its GST once",
+  "as": "Dane",
+  "covers": [
+   "SET:QP-13",
+   "SET:MM-08",
+   "QED:QM-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.28",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Round selling prices to S$5, then switch it off",
+  "how": "1. Under \"Selling prices\", in \"Round selling prices to\" pick \"The nearest S$5\"\n2. Pick \"Not rounded\" again",
+  "expect": "\"Selling prices round to the nearest S$5\", then \"Selling prices are not rounded\".",
+  "in10": "Different from 1.0: a studio rule instead of per quote",
+  "as": "Dane",
+  "covers": [
+   "SET:QP-14",
+   "QED:QM-12"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.29",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Lock payment schedules to Owners and Admins, then unlock",
+  "how": "1. Under \"Payment schedule\" switch on \"Only Owners and Admins can change it\"\n2. On the \"Studio\" tab read \"Change a quote’s payment schedule\"\n3. Back on \"Quotes & pricing\", switch it off",
+  "expect": "Locked, Manager and Designer show \"—\" on that row; unlocking says \"Every member can change the payment schedule\".",
+  "in10": "Different from 1.0: the lock is now actually enforced",
+  "as": "Dane",
+  "covers": [
+   "QED:QY-05",
+   "SET:QP-18",
+   "SET:ST-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.30",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Make James the backup approver, then remove him",
+  "how": "1. Under \"Backup approver\" pick James\n2. On the \"Studio\" tab read the line under \"Who may do what\"\n3. Back on \"Quotes & pricing\", pick \"None\"",
+  "expect": "\"James can approve as the backup\"; Studio says \"James is the backup approver…\"; picking None says \"No backup approver\".",
+  "in10": "Different from 1.0: one backup instead of an approver list",
+  "as": "Dane",
+  "covers": [
+   "SET:RW-04",
+   "SET:QP-09",
+   "SET:DEF-07",
+   "QED:QA-08",
+   "QED:DEF-04",
+   "LEADS:G-13"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.31",
+  "chapter": 2,
+  "scene": "How quotes are priced",
+  "module": "Settings",
+  "try": "Choose whose name a quote's \"prepared by\" prints",
+  "how": "1. Under \"Prepared by\", in \"Prepared by prints\" pick \"Every member on the lead\"\n2. Pick \"The member who prepared the quote\" again",
+  "expect": "\"Prepared by prints every member on the lead\", then \"Prepared by prints the member who prepared the quote\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TT-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.32",
+  "chapter": 2,
+  "scene": "Who hears about what",
+  "module": "Notifications",
+  "try": "Switch off a notice and see email and WhatsApp follow",
+  "how": "1. Click the \"Notifications\" tab\n2. On \"A new lead arrives\" switch off \"In app\"\n3. Point at its greyed \"WhatsApp\" switch\n4. Switch \"In app\" back on",
+  "expect": "Email and WhatsApp go grey and off; the tip says \"Goes out with the in-app notice — switch In app on first\"; both return after.",
+  "in10": "Different from 1.0: set per event, not per category",
+  "as": "Dane",
+  "covers": [
+   "SET:LM-16",
+   "LEADS:N-11",
+   "LEADS:DEF-24",
+   "LEADS:MM-26"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.33",
+  "chapter": 2,
+  "scene": "Who hears about what",
+  "module": "Notifications",
+  "try": "Preview a WhatsApp message with a field filled in",
+  "how": "1. Under \"Messages\", on \"A new lead arrives · WhatsApp\" click \"Edit\"\n2. Click at the end of \"Message\", then \"Insert a field\" › \"The lead’s source\"\n3. Read \"Preview\"\n4. Click \"Cancel\"",
+  "expect": "The preview fills the new field with a sample source (\"Website\"); Cancel leaves the message as it was.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:N-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.34",
+  "chapter": 2,
+  "scene": "Leave the studio as you found it",
+  "module": "Settings",
+  "try": "Put the lead sources back as they were",
+  "how": "1. On \"Lead management\" click ✕ on Xiaohongshu, then \"Undo\" in the message\n2. Click ✕ on Xiaohongshu again\n3. Click \"Showroom walk-in\", change \"Name\" back to Walk-in, click \"Save\"",
+  "expect": "Undo says \"Lead sources put back\"; at the end the note under \"Lead sources\" says \"These are the defaults.\"",
+  "in10": "Different from 1.0: removing answers with Undo, not a confirm",
+  "as": "Dane",
+  "covers": [
+   "SET:RL-03",
+   "SET:RL-01",
+   "SET:DEF-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.35",
+  "chapter": 2,
+  "scene": "Leave the studio as you found it",
+  "module": "Settings",
+  "try": "Remove the test reason and the test field",
+  "how": "1. Under \"Reasons\" click ✕ on \"Chose a contractor\"\n2. Under \"Custom fields\" click the bin on \"Preferred contact time\"\n3. Click \"Delete\" in \"Delete this field?\"",
+  "expect": "\"Chose a contractor removed\", \"Preferred contact time deleted\"; Reasons says \"These are the defaults.\" and Custom fields \"No custom fields yet.\"",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:RL-03",
+   "SET:LM-04",
+   "SET:LM-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.36",
+  "chapter": 2,
+  "scene": "Leave the studio as you found it",
+  "module": "Settings",
+  "try": "Take the Carpentry note off again",
+  "how": "1. On \"Quotes & pricing\" click \"Carpentry\"\n2. Clear \"Note\"\n3. Click \"Save\"",
+  "expect": "\"Note removed from Carpentry\"; the small note mark leaves the Carpentry chip.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:QP-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "2.37",
+  "chapter": 2,
+  "scene": "Leave the studio as you found it",
+  "module": "Company",
+  "try": "Leave Kavya out and remove the test company",
+  "how": "1. Company › \"Members\": click \"Deactivate\" on Kavya, then \"Deactivate\" in the box\n2. Company › \"Profile\": click the bin on Demo Studio Carpentry Pte Ltd\n3. Click \"Save changes\"\n4. Open Settings › \"Studio\"",
+  "expect": "Studio lists one entity, Demo Studio Pte Ltd; the Team card's \"Deactivated\" line names Kavya Menon, out of every picker.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "SET:ST-12",
+   "SET:ST-07"
+  ],
+  "files": []
+ }
+]

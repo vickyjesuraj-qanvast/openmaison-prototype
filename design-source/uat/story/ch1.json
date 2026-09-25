@@ -1,0 +1,142 @@
+[
+ {
+  "step": "1.01",
+  "chapter": 1,
+  "scene": "Start fresh and look around",
+  "module": "Shell",
+  "try": "Start from the studio's day-one data",
+  "how": "1. Open http://localhost:3000\n2. Click the ✦ \"Maison AI\" button, bottom right\n3. Click \"Reset prototype to base\"\n4. Click \"Reset\"",
+  "expect": "A \"Reset the prototype?\" box warns that anything tried is lost; after \"Reset\" the Leads page reloads.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "1.02",
+  "chapter": 1,
+  "scene": "Start fresh and look around",
+  "module": "Shell",
+  "try": "Find your way around the side navigation",
+  "how": "1. Point at the logo, top left, and click \"Expand navigation\"\n2. Read the items from top to bottom\n3. Click \"Collapse navigation\"",
+  "expect": "Search (\"/\"), Dashboard, Tasks, Projects, Leads, Marketplace, Company, Qanvast Ops; then Upgrade, Tools, Chat, Notifications, Settings; Demo Studio at the bottom.",
+  "in10": "Different from 1.0: Settings in the side navigation, not the profile menu",
+  "as": "Dane",
+  "covers": [
+   "SET:SP-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.03",
+  "chapter": 1,
+  "scene": "Your leads at a glance",
+  "module": "Leads",
+  "try": "See the studio's leads at a glance",
+  "how": "1. Click \"Leads\" in the side navigation\n2. Look at the chip above the table, the rows and the bottom of the screen",
+  "expect": "The chip reads \"All Leads (27)\"; unopened new leads (Marcus Chen, Nur Aisyah) have a coloured left edge; a \"Review imported leads\" bar waits below.",
+  "in10": "Different from 1.0: unopened new leads are marked",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-01",
+   "LEADS:L-07",
+   "LEADS:L-38"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.04",
+  "chapter": 1,
+  "scene": "Your leads at a glance",
+  "module": "Leads",
+  "try": "Find a lead fast with the / key",
+  "how": "1. On Leads, press the / key\n2. Type Kenji\n3. Clear the search box",
+  "expect": "The search box takes the cursor; only Kenji Sato stays in the list; clearing the box brings everyone back.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-20"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.05",
+  "chapter": 1,
+  "scene": "Your leads at a glance",
+  "module": "Leads",
+  "try": "Try editing the lead stages",
+  "how": "1. Click the \"All Leads (27)\" chip\n2. Read the stage list\n3. Click \"Manage Stages\"",
+  "expect": "Each stage is listed with its count under Active and Inactive; \"Manage Stages\" answers \"Coming soon in OpenMaison 2.0\".",
+  "in10": "Different from 1.0: stages are fixed; 1.0 edited its funnel",
+  "as": "Dane",
+  "covers": [
+   "LEADS:G-08",
+   "LEADS:L-24",
+   "SET:LM-05",
+   "SET:DEF-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.06",
+  "chapter": 1,
+  "scene": "Where everything else lives",
+  "module": "Shell",
+  "try": "See the tools the studio can use",
+  "how": "1. Click \"Tools\" in the side navigation\n2. Read the tiles\n3. Click \"AI Visualizer\"",
+  "expect": "Nine tiles, starting with Quotes, Quote X-Ray and Contracts; \"AI Visualizer\" answers \"Coming soon in OpenMaison 2.0\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XE-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.07",
+  "chapter": 1,
+  "scene": "Where everything else lives",
+  "module": "Company",
+  "try": "See where the studio's records are kept",
+  "how": "1. Click \"Company\" in the side navigation\n2. Read the two groups\n3. Press Esc",
+  "expect": "\"Studio\": Profile, Members, Questionnaire, Templates (\"1 awaiting\"), Price book (\"1 proposed\"). \"Operations\": Finance and Reports marked \"Soon\", Integrations.",
+  "in10": "Different from 1.0: records under Company, rules under Settings",
+  "as": "Dane",
+  "covers": [
+   "SET:DEF-01",
+   "SET:MM-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.08",
+  "chapter": 1,
+  "scene": "Where everything else lives",
+  "module": "Notifications",
+  "try": "Check what is waiting for you in the bell",
+  "how": "1. Click \"Notifications\" (the bell) in the side navigation\n2. Read the list\n3. Close it without clicking a row",
+  "expect": "A \"Notifications\" panel lists notices newest first, e.g. \"New lead: Nur Aisyah\"; unread ones have a dot; \"Notification settings\" sits at the foot.",
+  "in10": "Different from 1.0: follow-ups due appear in the same list",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-24",
+   "LEADS:N-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "1.09",
+  "chapter": 1,
+  "scene": "Where everything else lives",
+  "module": "Shell",
+  "try": "Ask Maison AI for help on the Leads page",
+  "how": "1. On Leads, click the ✦ \"Maison AI\" button\n2. Read the suggestions\n3. Click \"Which leads need follow-up today?\"",
+  "expect": "Suggestions about your leads sit above \"Reset prototype to base\"; picking one answers \"Coming soon in OpenMaison 2.0\".",
+  "in10": "Different from 1.0: scripted suggestions only, in the prototype",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-15"
+  ],
+  "files": []
+ }
+]

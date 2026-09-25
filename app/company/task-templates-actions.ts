@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
 import { leadTasks, taskTemplates, templateTasks } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { applyTemplate } from '@/app/leads/tasks-actions'
 
@@ -43,7 +43,7 @@ export async function createTaskTemplate(input: CreateTaskTemplateInput): Promis
     steps = rows.map((r) => ({ title: r.title, description: r.description, kind: r.kind, dueDays: r.dueAt ? Math.max(0, Math.round((r.dueAt.getTime() - now.getTime()) / 86_400_000)) : null }))
   }
   await db.transaction(async (tx) => {
-    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: SESSION_MEMBER_ID, updatedAt: now })
+    await tx.insert(taskTemplates).values({ id, name, keepMembers, keepDescription, createdAt: now, createdBy: sessionMemberSql, updatedAt: now })
     await tx.insert(templateTasks).values(steps.map((s, i) => cleanStep(s, i, id)))
   })
   touch(id)

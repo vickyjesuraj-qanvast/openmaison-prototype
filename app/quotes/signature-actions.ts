@@ -3,7 +3,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { members, quotes } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { stampQuote } from '@/lib/quotes/stamp'
 
@@ -23,7 +22,7 @@ export async function saveMemberSignature(input: SignatureInput): Promise<{ kind
     if (!/^(M[\d.\s]+(L[\d.\s]+)*\s*)+$/.test(raw.trim())) throw new Error('bad signature path')
     data = raw.trim()
   }
-  await db.update(members).set({ signatureKind: kind, signatureName: name, signatureData: data }).where(eq(members.id, SESSION_MEMBER_ID))
+  await db.update(members).set({ signatureKind: kind, signatureName: name, signatureData: data }).where(eq(members.isYou, true))   // (REG-667) the signed-in member's own signature
   revalidateEveryLead()
   return { kind, name, data }
 }

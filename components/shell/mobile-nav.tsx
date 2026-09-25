@@ -8,6 +8,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { ToolsPopover } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
+import { ViewAsPopover } from './view-as-popover'
+import type { SessionMember } from '@/lib/db/session'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -46,13 +48,15 @@ const MORE_BOTTOM = [{ icon: 'settings', label: 'Settings', href: '/settings' }]
  * Nothing here renders ≥768 (CSS) so tablet and desktop are untouched. The sheet keeps the dialog contract
  * (REG-286: focus in, Tab cycles, focus back on close), the scroll lock (REG-287) and the Esc layer.
  */
-export function MobileChrome() {
+export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
   const [open, setOpen] = useState(false)
   const layer = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
   const comingSoon = useComingSoon()
   const [toolsOpen, setToolsOpen] = useState(false)   // (REG-422) Tools › the tile sheet
   const [companyOpen, setCompanyOpen] = useState(false)   // (REG-646, settings parity Q-11) More › Company — the rail's panel as a bottom sheet
+  const [viewAsOpen, setViewAsOpen] = useState(false)   // (REG-667) More › View as — Demo Studio's menu as a bottom sheet
+  const viewer = team.find((m) => m.isYou) ?? null
   const pathname = usePathname()
   /* (REG-287) The sheet only exists ≤767 — leaving mobile closes it (render-phase adjust on the house hook). */
   const mobile = useMediaQuery(MOBILE)
@@ -130,6 +134,7 @@ export function MobileChrome() {
         })}
         <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
         <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} />
+        <ViewAsPopover open={viewAsOpen} anchor={null} onClose={() => setViewAsOpen(false)} team={team} />
         <button type="button" className={styles.dockItem} data-active={open || undefined}
                 aria-label="More" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} /></span>
@@ -162,6 +167,15 @@ export function MobileChrome() {
                 <div className={styles.sheetGroup}>{MORE_TOP.map(moreItem)}</div>
                 <hr className={styles.sheetRule} />
                 <div className={styles.sheetGroup}>{MORE_BOTTOM.map(moreItem)}</div>
+                {/* (REG-667) Demo Studio › View as — the rail's block has no phone form, so its menu lives here. */}
+                <hr className={styles.sheetRule} />
+                <div className={styles.sheetGroup}>
+                  <button type="button" className={styles.sheetItem} aria-haspopup="menu" onClick={() => { close(); setViewAsOpen(true) }}>
+                    <span className={styles.sheetIcon}><Icon name="swap_horiz" size={20} /></span>
+                    <span className={styles.sheetLabel}>View as</span>
+                    {viewer ? <span className={styles.sheetMeta}>{viewer.name}</span> : null}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

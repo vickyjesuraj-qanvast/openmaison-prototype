@@ -1,0 +1,272 @@
+[
+ {
+  "step": "10.01",
+  "chapter": 10,
+  "scene": "Set the team rule",
+  "module": "Settings",
+  "try": "Let each person see only the leads they work on",
+  "how": "1. Side navigation \"Settings\" › \"Lead management\"\n2. Under \"Who sees leads\", pick \"Only the leads assigned to them\"\n3. Open the \"Studio\" tab and find \"Who may do what\"",
+  "expect": "The choice stays picked; in \"Who may do what\", \"See leads\" reads \"Their team’s\" for Manager and \"Their own\" for Designer",
+  "in10": "Different from 1.0: a studio rule, checked everywhere",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-19",
+   "LEADS:L-17",
+   "SET:DEF-02",
+   "SET:MM-02",
+   "SET:ST-04",
+   "SET:ST-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.02",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Shell",
+  "try": "Switch to Sarah, a designer on James’s team",
+  "how": "1. Click the \"Demo Studio\" block at the bottom of the side navigation\n2. In the \"View as\" menu, click \"Sarah\"",
+  "expect": "The menu is tagged \"Demo only\" and lists the team with roles (\"Designer · reports to James\"); the block then reads \"Viewing as Sarah\"",
+  "in10": "New in 2.0",
+  "as": "Sarah",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "10.03",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Leads",
+  "try": "Check Sarah sees only her own leads",
+  "how": "1. Open \"Leads\"\n2. Read the list and the count on the \"All Leads\" pill",
+  "expect": "Only her leads, e.g. Farah Ahmad, Grace Lim, Harpreet Kaur, Kenji Sato (and Sophia Wong if hers); no Gerald Tan or Serena Koh",
+  "in10": "Different from 1.0: 1.0 hid other leads only on screen",
+  "as": "Sarah",
+  "covers": [
+   "LEADS:L-17",
+   "LEADS:P-03",
+   "LEADS:P-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.04",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Leads",
+  "try": "Try to hand one of her leads to someone else",
+  "how": "1. On Harpreet Kaur’s row, click the person-plus icon (\"Assign members\") in \"Members\"\n2. Try to tick another member",
+  "expect": "\"Assign Member\" opens but nothing can be ticked; it says \"Designers keep the leads assigned to them. Ask your manager to reassign.\"",
+  "in10": "Different from 1.0: designers could reassign in 1.0",
+  "as": "Sarah",
+  "covers": [
+   "LEADS:MM-07",
+   "LEADS:P-05",
+   "LEADS:DEF-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.05",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Price book",
+  "try": "Propose a new item for the price book",
+  "how": "1. Side navigation \"Company\" › \"Price book\" › \"New\" › \"Propose an item\"\n2. \"Item name\": Rattan wardrobe door · \"Unit\": Pieces · \"Cost (S$)\": 180 · \"Markup (S$)\": 70 · \"Category\": Carpentry\n3. Click \"Propose\"",
+  "expect": "\"Rattan wardrobe door proposed — it’s on your quotes now; an Owner or an Admin approves it for the studio\"; the item wears a \"Proposed\" chip",
+  "in10": "Different from 1.0: 1.0’s pending items were live for everyone",
+  "as": "Sarah",
+  "covers": [
+   "PB:DEF-06",
+   "PB:MM-01",
+   "PB:AH-01",
+   "PB:AH-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.06",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Templates",
+  "try": "Design a quote template and submit it for approval",
+  "how": "1. \"Company\" › \"Templates\" › \"Quotes\" › \"New\" › \"Use a ready-made design\"\n2. Pick \"Scope\", type Sarah Scope in \"Template name\", click \"Create template\"\n3. Click \"Submit for approval\", write a note in \"What changed\", click \"Submit\"",
+  "expect": "\"Submitted for approval\"; a bar says Sarah submitted it and \"Awaiting an Owner or Admin\", and the design is locked",
+  "in10": "Different from 1.0: any role could change templates",
+  "as": "Sarah",
+  "covers": [
+   "QTPL:DEF-09",
+   "QTPL:MM-05",
+   "QTPL:TL-10",
+   "QTPL:TG-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.07",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Quotes",
+  "try": "Revise Harpreet Kaur’s quote and send it for approval",
+  "how": "1. Open Harpreet Kaur › \"Quotes\" and open her quote\n2. Click ⋮ \"More options\" › \"Revise — new version\", then \"Start version …\"\n3. Click \"Send\"",
+  "expect": "The status becomes \"Sent for Approval\"; a bar says Sarah sent it for approval, \"Waiting for an Owner, an Admin or the backup approver\"",
+  "in10": "Same as 1.0",
+  "as": "Sarah",
+  "covers": [
+   "QED:DEF-03",
+   "QED:DEF-04",
+   "QED:QA-06",
+   "QED:QA-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.08",
+  "chapter": 10,
+  "scene": "A day as Sarah, designer",
+  "module": "Settings",
+  "try": "Open Settings as a designer",
+  "how": "1. Side navigation \"Settings\" › \"Lead management\"\n2. Try to change a choice or a switch",
+  "expect": "Every value shows but nothing changes; a lock line under the title reads \"Only Owners and Admins change these.\"",
+  "in10": "Different from 1.0: 1.0 let almost anyone change settings",
+  "as": "Sarah",
+  "covers": [
+   "SET:DEF-10",
+   "SET:MM-07",
+   "SET:RW-01",
+   "SET:RW-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.09",
+  "chapter": 10,
+  "scene": "James, the manager",
+  "module": "Leads",
+  "try": "Switch to James and see his team’s leads",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"James\"\n2. Open \"Leads\"",
+  "expect": "His own and his designers’ leads — e.g. Arjun Mehta, Harpreet Kaur (Sarah’s), Aisha Rahman (Michelle’s) — but not Serena Koh or Jonathan Teo",
+  "in10": "Different from 1.0: managers were a one-studio add-on",
+  "as": "James",
+  "covers": [
+   "LEADS:P-04",
+   "SET:ST-09",
+   "SET:LM-17"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.10",
+  "chapter": 10,
+  "scene": "James, the manager",
+  "module": "Leads",
+  "try": "Reassign a lead within James’s team only",
+  "how": "1. On Grace Lim’s row, click the person-plus icon (\"Assign members\")\n2. See who can be ticked, then close without saving",
+  "expect": "Only James, Sarah and Michelle can be ticked; every other member is greyed out",
+  "in10": "Same as 1.0",
+  "as": "James",
+  "covers": [
+   "LEADS:P-05",
+   "LEADS:DEF-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.11",
+  "chapter": 10,
+  "scene": "Back to Dane: answer the team",
+  "module": "Notifications",
+  "try": "Return to Dane and see what is waiting",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Dane\"\n2. Click \"Notifications\" (the bell)\n3. Close it and click \"Company\" in the side navigation",
+  "expect": "The bell has \"Quote OM-10006 needs your approval\" and \"Sarah proposed “Rattan wardrobe door” for My Items\"; Company shows awaiting and proposed counts",
+  "in10": "Different from 1.0: bell notices instead of approval tasks",
+  "as": "Dane",
+  "covers": [
+   "QED:QA-09",
+   "QED:QT-03",
+   "PB:AH-05",
+   "PB:AR-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.12",
+  "chapter": 10,
+  "scene": "Back to Dane: answer the team",
+  "module": "Quotes",
+  "try": "Approve Sarah’s quote",
+  "how": "1. In the bell, click \"Quote OM-10006 needs your approval\"\n2. Click \"Approve\" in the bar under the tabs",
+  "expect": "The bar named Sarah as the sender; after Approve, \"Quote approved — Sarah can send it to the client\" and the status reads \"Approved\"",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QED:DEF-04",
+   "QED:QA-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.13",
+  "chapter": 10,
+  "scene": "Back to Dane: answer the team",
+  "module": "Price book",
+  "try": "Send Sarah’s price-book item back with a note",
+  "how": "1. \"Company\" › \"Price book\", click the \"Proposed\" filter\n2. Open \"Rattan wardrobe door\"\n3. Click \"Send back…\", write what should change, click \"Send back\"",
+  "expect": "The item showed \"Sarah proposed this item …\" with \"Send back…\" and \"Approve\"; once sent back it leaves My Items",
+  "in10": "Different from 1.0: the note reaches the bell, not e-mail",
+  "as": "Dane",
+  "covers": [
+   "PB:AH-03",
+   "PB:AR-01",
+   "PB:AR-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.14",
+  "chapter": 10,
+  "scene": "Back to Dane: answer the team",
+  "module": "Templates",
+  "try": "Approve and publish Sarah’s template",
+  "how": "1. \"Company\" › \"Templates\" › \"Quotes\", open \"Sarah Scope\" (marked \"Awaiting approval\")\n2. Click \"Approve and publish\" in the bar\n3. Click \"Approve and publish\" in the window",
+  "expect": "\"Sarah Scope approved and published\"; its card no longer says \"Awaiting approval\"",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-10",
+   "QTPL:DEF-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.15",
+  "chapter": 10,
+  "scene": "An Admin’s view",
+  "module": "Settings",
+  "try": "Switch to Hui Min, the Admin, and reopen every lead",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Hui Min\"\n2. Open \"Leads\" and look for Gerald Tan\n3. \"Settings\" › \"Lead management\" › \"Who sees leads\" › \"Everyone sees every lead\"",
+  "expect": "Hui Min sees every lead, and Settings has no lock line; the rule goes back to everyone",
+  "in10": "Same as 1.0",
+  "as": "Hui Min",
+  "covers": [
+   "LEADS:P-01",
+   "SET:DEF-02",
+   "SET:MM-02",
+   "SET:RW-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "10.16",
+  "chapter": 10,
+  "scene": "An Admin’s view",
+  "module": "Shell",
+  "try": "Go back to being Dane",
+  "how": "1. \"Demo Studio\" block › \"View as\" › \"Dane\"",
+  "expect": "The block reads \"Dane Bruce Lee\" again and the Leads list shows every lead",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ }
+]

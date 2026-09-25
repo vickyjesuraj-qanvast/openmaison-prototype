@@ -1,0 +1,5 @@
+/* Demo Studio › View as (REG-667): the Company panel's chrome (company-popover.module.css) — the title row carries the
+   "Demo only" pill, a one-line help under it, then the members as the panel's rows (36 avatar · name over role). */
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); padding-right: var(--om-spacing-2); }
+.titleRow > :first-child { margin-bottom: 0; }
+.help { margin: 0 0 var(--om-spacing-2); padding: 0 var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

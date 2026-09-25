@@ -1,0 +1,7 @@
+[
+ {
+  "name": "paynow-qr.png",
+  "purpose": "Stands in for the PayNow QR a bank gives the studio (step 2.03). Any picture works — the prototype shows its own sample QR once one is picked.",
+  "content": "A square PNG, about 300 × 300 px, of a black-and-white QR code that encodes the text: PayNow UEN 201234567M Demo Studio Pte Ltd"
+ }
+]

@@ -4,6 +4,7 @@ import { MobileChrome } from '@/components/shell/mobile-nav'
 import { SnackbarProvider } from '@/components/om/snackbar'
 import { MaisonAi } from '@/components/shell/maison-ai'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
+import { fetchSessionTeam } from '@/lib/db/session'
 import styles from './app-shell.module.css'
 
 /**
@@ -12,7 +13,8 @@ import styles from './app-shell.module.css'
  * ghost is on screen. Each route group's layout renders this once.
  * ≤767 (REG-298, mock 1082:23305) the rail hides and MobileChrome's top bar, bottom dock and More drawer take over.
  */
-export function AppShell({ children, railBadges }: { children: ReactNode; railBadges?: Record<string, number> }) {
+export async function AppShell({ children, railBadges }: { children: ReactNode; railBadges?: Record<string, number> }) {
+  const team = await fetchSessionTeam()   // (REG-667) Demo Studio › View as — the rail's block and the phone's More sheet
   return (
     <SnackbarProvider>
       <div className={styles.page}>
@@ -21,9 +23,9 @@ export function AppShell({ children, railBadges }: { children: ReactNode; railBa
             and the page header that repeat ahead of the content on every route. Off screen until it is focused
             (the .visually-hidden technique from globals.css) and out of flow in both states — nothing is drawn. */}
         <a className={styles.skip} href="#om-main">Skip to content</a>
-        <MobileChrome />
+        <MobileChrome team={team} />
         <div className={styles.main}>
-          <AppRail badges={railBadges} />
+          <AppRail badges={railBadges} team={team} />
           {/* (REG-286) The `main` landmark every route's content lives in — and the skip link's target, hence
               tabIndex -1 (Safari will not move focus to a plain fragment target). A transparent flex
               pass-through: it takes exactly the box the route's own root already had as a child of .main

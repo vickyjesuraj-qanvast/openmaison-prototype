@@ -5,7 +5,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quotes, settings } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { STUDIO_KEY, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
@@ -23,7 +23,7 @@ import type { DocData } from '@/lib/templates/data'
 /* Company › Templates › Quote templates (REG-485 / REG-489): the template lifecycle — Draft → Published vN → Default —
    and the quote-side touchpoints (which template a quote prints through, at which version, with which client view). */
 
-const ME = SESSION_MEMBER_ID
+const ME = sessionMemberSql   // (REG-667) the signed-in member, resolved inside each write
 const touch = (templateId?: string) => {
   revalidatePath('/company', 'layout')
   if (templateId) revalidatePath(`/templates/${templateId}`)

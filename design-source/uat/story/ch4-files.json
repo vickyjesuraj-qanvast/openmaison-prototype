@@ -1,0 +1,17 @@
+[
+  {
+    "name": "new-leads.xlsx",
+    "purpose": "4.06–4.08 and 4.11: the spreadsheet import — 3 clean leads (one from Qanvast), 1 repeat of the seeded Gerald Tan (same phone) to exercise Review › merge, 1 row with no name that the import skips.",
+    "content": "Excel workbook (.xlsx, e.g. openpyxl), ONE worksheet, every cell stored as plain TEXT (no number/date formats, no formulas), no blank row above the headers. Row 1 headers A–K: Lead Name | Lead Phone Number | Lead Email | Lead Source | Property Type | Property Address | District | Estimated Budget (S$) | Key Collection | Condition | Remarks. Row 2: Aaron Goh | 91335520 | aaron.goh@example.com | Instagram | HDB 5-Room | Blk 812 Woodlands Street 81 | North | 72000 | in 6 months | Resale | Wants an open kitchen and more storage. Row 3: Priscilla Low | 82661047 | priscilla.low@example.com | Facebook | Condo 3-bedder | The Florence Residences, Hougang | North East | 110000 | Collected | New | Prefers weekend calls. Row 4: Hakim Salleh | 93802215 | hakim.salleh@example.com | Qanvast | BTO 4-Room | Tengah Plantation Loop | West | 55000 | in 3 months | New | Qanvast enquiry, BTO keys in December. Row 5: Gerald Tan | 98873012 | gerald.tan@example.com | Referral | Executive Condo | North Gaia, Yishun | North | 120000 | (empty) | (empty) | Asked again through a friend. Row 6: (Lead Name EMPTY) | 90012233 | (empty) | Website | (empty) | (empty) | (empty) | (empty) | (empty) | (empty) | Enquiry form left the name blank. Notes: phones as 8 digits without spaces; budgets as plain digits; 'Executive Condo', 'Condo 3-bedder', 'HDB 5-Room', 'BTO 4-Room' spelled exactly; the phones must not match any other lead (they are checked against the demo data)."
+  },
+  {
+    "name": "homematch-lead-sheet.pdf",
+    "purpose": "4.09: a portal's PDF lead sheet (two leads) read by the import's PDF reader (labelled 'Label: value' lines).",
+    "content": "A4, one page, real selectable text (not an image) in a standard font (e.g. Helvetica 11 pt), left-aligned, each line on its own baseline, a blank line between blocks. NO header, footer or page number (a stray line after the last block would be read into Samuel Yeo's remarks). No other colons anywhere. Exactly these lines: 'Homematch' / 'Lead sheet exported 25 September 2026' / (blank) / 'Name: Vanessa Ho' / 'Phone: 9451 7730' / 'Email: vanessa.ho@example.com' / 'Property type: HDB 3-Room' / 'Address: Blk 45 Lorong 5 Toa Payoh' / 'District: Central' / 'Budget (S$): 38,000' / 'Key collection: Collected' / 'Remarks: Kitchen and two bathrooms only' / (blank) / 'Name: Samuel Yeo' / 'Phone: 8732 9014' / 'Email: samuel.yeo@example.com' / 'Property type: Condo 2-bedder' / 'Address: Treasure at Tampines' / 'District: East' / 'Budget (S$): 68,000' / 'Key collection: in 6 months' / 'Remarks: New launch, wants a warm modern look'. (No 'Source' line on purpose: both leads land as source Others, which gives them their own 'Others (2)' chip in the review queue.)"
+  },
+  {
+    "name": "sophia-floor-plan.pdf",
+    "purpose": "4.05: attached to Sophia Wong's lead when she is created; 5.14 finds it in her Files tab.",
+    "content": "Any one-page PDF, e.g. a simple rectangle floor sketch with the text 'Sophia Wong — 4-room HDB, Blk 201 Tampines Street 21 — floor plan (sample)'. Under 2 MB. The file name matters, the content does not (the prototype stores the name only)."
+  }
+]

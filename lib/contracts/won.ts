@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts, leads, quotes } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { phoneDigits } from '@/lib/format'
 import { signQuoteThrough } from '@/lib/quotes/sign'
 import { signedSnapshot } from './queries'
@@ -29,7 +29,7 @@ export async function recordWonUpload(leadId: string, payload: unknown, at: Date
   const id = randomUUID()
   await db.insert(contracts).values({
     id, leadId, title: file.replace(/\.pdf$/i, ''), status: 'Signed', createdAt: at, updatedAt: at, sentAt: at, signedAt: at, signedCopy: file, fileName: file, source: 'uploaded',
-    recipientName: lead.name, recipientPhone: phoneDigits(lead.phone).slice(-8), contractDate: at, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null, createdBy: SESSION_MEMBER_ID,
+    recipientName: lead.name, recipientPhone: phoneDigits(lead.phone).slice(-8), contractDate: at, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null, createdBy: sessionMemberSql,
     markedBy: await actingMember(),   // (REG-634) a paper signature the studio recorded
   })
   const [c] = await db.select().from(contracts).where(eq(contracts.id, id))

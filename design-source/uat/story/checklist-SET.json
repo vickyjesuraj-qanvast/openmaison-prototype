@@ -1,0 +1,738 @@
+[
+ {
+  "key": "SET",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "Where a studio's settings live",
+  "now": "Built in parity round 1",
+  "why": "Settings takes four modules on Company's frame; records stay under Company"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "What a role is and what it allows",
+  "now": "Built in parity round 1",
+  "why": "A read-only Who may do what table; custom roles and editor held"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "A team member's record",
+  "now": "Built in parity round 2",
+  "why": "Members can be added, deactivated and reactivated"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "A legal (issuing) entity",
+  "now": "Built in parity round 3",
+  "why": "Entities keep an id; one in use is retired, not removed"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "A trade (quote category)",
+  "now": "Built in parity round 3",
+  "why": "Trades rename and reorder; sub-categories not ported (Q-18)"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "The lead stages (the funnel)",
+  "now": "Later",
+  "why": "Held (leads Q-02): seven fixed stages; Manage Stages is coming soon"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Quote approval and who approves",
+  "now": "Built",
+  "why": "Approval plus a backup approver; money thresholds declined (quote editor Q-24)"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "What a new quote starts with",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "How a setting saves",
+  "now": "Built in parity round 3",
+  "why": "Every remove answers with Undo; unsaved edits warn before leaving"
+ },
+ {
+  "key": "SET",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "Who may change a setting",
+  "now": "Built in parity round 2",
+  "why": "Owners and Admins change the studio; others get one read-only look"
+ },
+ {
+  "key": "SET",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "The settings page's shape",
+  "now": "Built in parity round 1",
+  "why": "Four Settings modules; records under Company"
+ },
+ {
+  "key": "SET",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "Roles and what they may do",
+  "now": "Built in parity round 1",
+  "why": "Read-only statement of the four fixed roles; no editor"
+ },
+ {
+  "key": "SET",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "Adding a member",
+  "now": "Built in parity round 2",
+  "why": "Add member directly instead of a request to OpenMaison staff"
+ },
+ {
+  "key": "SET",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "Removing a member",
+  "now": "Built in parity round 2",
+  "why": "Deactivate with Undo; Reactivate brings them back"
+ },
+ {
+  "key": "SET",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "An entity's identity",
+  "now": "Built in parity round 3",
+  "why": "Known by id, so a rename follows everywhere"
+ },
+ {
+  "key": "SET",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "Renaming a list item",
+  "now": "Built in parity round 3",
+  "why": "A rename carries its leads, logs, quote lines and items"
+ },
+ {
+  "key": "SET",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "Who may change the studio's settings",
+  "now": "Built in parity round 2",
+  "why": "Owners and Admins, on the page and behind it"
+ },
+ {
+  "key": "SET",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "The studio's GST",
+  "now": "Built in parity round 1",
+  "why": "Quotes & pricing › GST holds the registration and the rate"
+ },
+ {
+  "key": "SET",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "Lead capture's ways in",
+  "now": "Built in parity round 3",
+  "why": "Website form, Meta, webhooks and email listed together"
+ },
+ {
+  "key": "SET",
+  "id": "SP-01",
+  "area": "The page and its ways in",
+  "feature": "Reaching the settings",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "SP-02",
+  "area": "The page and its ways in",
+  "feature": "The settings page's layout and deep links",
+  "now": "Built in parity round 1",
+  "why": "Module tabs, the open module in the link, Back honoured"
+ },
+ {
+  "key": "SET",
+  "id": "SP-03",
+  "area": "The page and its ways in",
+  "feature": "What each visit loads",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "SP-04",
+  "area": "The page and its ways in",
+  "feature": "Saving changes",
+  "now": "Built in parity round 3",
+  "why": "Unsaved number pattern warns; every remove has Undo"
+ },
+ {
+  "key": "SET",
+  "id": "SP-05",
+  "area": "The page and its ways in",
+  "feature": "Settings and Company on a phone",
+  "now": "Built in parity round 2",
+  "why": "More › Company opens the Company panel; module tabs scroll"
+ },
+ {
+  "key": "SET",
+  "id": "ST-01",
+  "area": "Studio",
+  "feature": "Team members list",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-02",
+  "area": "Studio",
+  "feature": "Invite a member",
+  "now": "Built in parity round 2",
+  "why": "Add member with name, phone, email and role"
+ },
+ {
+  "key": "SET",
+  "id": "ST-03",
+  "area": "Studio",
+  "feature": "A member's free title and several tags",
+  "now": "Built",
+  "why": "One role per member; the role is the title"
+ },
+ {
+  "key": "SET",
+  "id": "ST-04",
+  "area": "Studio",
+  "feature": "Page access and data visibility notes",
+  "now": "Built",
+  "why": "Who sees leads, stated in Who may do what"
+ },
+ {
+  "key": "SET",
+  "id": "ST-05",
+  "area": "Studio",
+  "feature": "Open to new leads and lead preferences",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-06",
+  "area": "Studio",
+  "feature": "Per-member permission and workflow overrides",
+  "now": "Dead",
+  "why": "Saved in 1.0 but almost never read"
+ },
+ {
+  "key": "SET",
+  "id": "ST-07",
+  "area": "Studio",
+  "feature": "Remove a member",
+  "now": "Built in parity round 2",
+  "why": "Deactivate names open work, offers Undo; Reactivate later"
+ },
+ {
+  "key": "SET",
+  "id": "ST-08",
+  "area": "Studio",
+  "feature": "Each member's own signature",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-09",
+  "area": "Studio",
+  "feature": "Managers",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-10",
+  "area": "Studio",
+  "feature": "Seats",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-11",
+  "area": "Studio",
+  "feature": "Legal entities: list and edit",
+  "now": "Built in parity round 3",
+  "why": "Entities keep an id; bank, SWIFT, PayNow, letterhead, GST switch"
+ },
+ {
+  "key": "SET",
+  "id": "ST-12",
+  "area": "Studio",
+  "feature": "Default entity; deactivating one",
+  "now": "Built in parity round 3",
+  "why": "The studio is always first; an entity in use is retired"
+ },
+ {
+  "key": "SET",
+  "id": "ST-13",
+  "area": "Studio",
+  "feature": "Where entities are used",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "ST-14",
+  "area": "Studio",
+  "feature": "Roles & Permissions editor",
+  "now": "Built in parity round 1",
+  "why": "Read-only table built; editor and custom roles held (leads Q-40)"
+ },
+ {
+  "key": "SET",
+  "id": "ST-15",
+  "area": "Studio",
+  "feature": "Studio Health usage tiles",
+  "now": "Platform",
+  "why": "Platform telemetry; Leads › Insights holds response times (Q-16)"
+ },
+ {
+  "key": "SET",
+  "id": "ST-16",
+  "area": "Studio",
+  "feature": "Studio items on the personal Settings page",
+  "now": "Platform",
+  "why": "Region is the platform's; the Ads and ID Buddy switches did nothing"
+ },
+ {
+  "key": "SET",
+  "id": "LM-01",
+  "area": "Lead management",
+  "feature": "Lead Experience: Classic or Journey",
+  "now": "Excluded",
+  "why": "Owner's rule: no Journey mode; Linear or Flexible instead"
+ },
+ {
+  "key": "SET",
+  "id": "LM-02",
+  "area": "Lead management",
+  "feature": "Detect duplicate leads switch",
+  "now": "Built",
+  "why": "Always checked, with a dialog; no switch (leads Q-18)"
+ },
+ {
+  "key": "SET",
+  "id": "LM-03",
+  "area": "Lead management",
+  "feature": "Journey steps editor",
+  "now": "Excluded",
+  "why": "Owner's rule: no Journey mode"
+ },
+ {
+  "key": "SET",
+  "id": "LM-04",
+  "area": "Lead management",
+  "feature": "Lost and On Hold reasons",
+  "now": "Built in parity round 3",
+  "why": "Rename, reorder, contact gate editable, Undo on remove"
+ },
+ {
+  "key": "SET",
+  "id": "LM-05",
+  "area": "Lead management",
+  "feature": "Lead Funnel editor",
+  "now": "Later",
+  "why": "Held (leads Q-02); the stages stay fixed"
+ },
+ {
+  "key": "SET",
+  "id": "LM-06",
+  "area": "Lead management",
+  "feature": "Lead Categories",
+  "now": "Dead",
+  "why": "Saved in 1.0, read nowhere (Q-17)"
+ },
+ {
+  "key": "SET",
+  "id": "LM-07",
+  "area": "Lead management",
+  "feature": "Lead Sources list",
+  "now": "Built in parity round 3",
+  "why": "Rename (leads follow), reorder, retire, Undo on remove"
+ },
+ {
+  "key": "SET",
+  "id": "LM-08",
+  "area": "Lead management",
+  "feature": "Custom lead fields",
+  "now": "Built in parity round 3",
+  "why": "Inactive fields keep their values; Required stated on the card"
+ },
+ {
+  "key": "SET",
+  "id": "LM-09",
+  "area": "Lead management",
+  "feature": "Lead webhooks",
+  "now": "Built",
+  "why": "A stand-in under Company › Integrations; receiving is the platform's"
+ },
+ {
+  "key": "SET",
+  "id": "LM-10",
+  "area": "Lead management",
+  "feature": "Workflow switches for leads",
+  "now": "Not built — by design",
+  "why": "Declined (leads Q-26); the Won step keeps its own rules"
+ },
+ {
+  "key": "SET",
+  "id": "LM-11",
+  "area": "Lead management",
+  "feature": "AI assignment logic prompt",
+  "now": "Dead",
+  "why": "Saved in 1.0, read nowhere (Q-17)"
+ },
+ {
+  "key": "SET",
+  "id": "LM-12",
+  "area": "Lead management",
+  "feature": "Legacy pipeline stages",
+  "now": "Dead",
+  "why": "Read nowhere in 1.0 (Q-17)"
+ },
+ {
+  "key": "SET",
+  "id": "LM-13",
+  "area": "Lead management",
+  "feature": "Project types",
+  "now": "Later",
+  "why": "Comes with the Projects module"
+ },
+ {
+  "key": "SET",
+  "id": "LM-14",
+  "area": "Lead management",
+  "feature": "Lead assignment suggestion",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "LM-15",
+  "area": "Lead management",
+  "feature": "Email lead sources (Gmail)",
+  "now": "Built",
+  "why": "A stand-in under Company › Integrations"
+ },
+ {
+  "key": "SET",
+  "id": "LM-16",
+  "area": "Lead management",
+  "feature": "Lead notifications",
+  "now": "Built in parity round 3",
+  "why": "Per event; Email and WhatsApp go out with In app"
+ },
+ {
+  "key": "SET",
+  "id": "LM-17",
+  "area": "Lead management",
+  "feature": "Manager hierarchy flag",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "LM-18",
+  "area": "Lead management",
+  "feature": "Fixed lead rules (response-time grades)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "LM-19",
+  "area": "Lead management",
+  "feature": "Lead capture card",
+  "now": "2.0 only",
+  "why": "Round 3 lists every way in and keeps the intake address"
+ },
+ {
+  "key": "SET",
+  "id": "LM-20",
+  "area": "Lead management",
+  "feature": "The studio's question bank",
+  "now": "2.0 only",
+  "why": "Round 3: Required reaches each lead's questions"
+ },
+ {
+  "key": "SET",
+  "id": "QP-01",
+  "area": "Quotes & pricing",
+  "feature": "Quote categories (trades)",
+  "now": "Built in parity round 3",
+  "why": "Rename, reorder and a note per trade; no sub-categories (Q-18)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-02",
+  "area": "Quotes & pricing",
+  "feature": "Import price book from CSV",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-03",
+  "area": "Quotes & pricing",
+  "feature": "Document templates",
+  "now": "Later",
+  "why": "Quote, contract, task, T&C and payment libraries built; invoice, PO, VO with Finance"
+ },
+ {
+  "key": "SET",
+  "id": "QP-04",
+  "area": "Quotes & pricing",
+  "feature": "Default T&C and default contract",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-05",
+  "area": "Quotes & pricing",
+  "feature": "Signing documents library",
+  "now": "Built",
+  "why": "Contract templates carry the gates; a PDF library is held (contracts Q-26)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-06",
+  "area": "Quotes & pricing",
+  "feature": "Packages (saved bundles of lines)",
+  "now": "Built",
+  "why": "As My Sections"
+ },
+ {
+  "key": "SET",
+  "id": "QP-07",
+  "area": "Quotes & pricing",
+  "feature": "Quote rules (Starter Quote)",
+  "now": "Later",
+  "why": "Held (templates Q-07)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-08",
+  "area": "Quotes & pricing",
+  "feature": "Price book tab",
+  "now": "Built",
+  "why": "Finished by the price book parity audit (REG-649…655)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-09",
+  "area": "Quotes & pricing",
+  "feature": "Quote approval rules",
+  "now": "Built in parity round 2",
+  "why": "Backup approver checked behind the page; thresholds declined (quote editor Q-24)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-10",
+  "area": "Quotes & pricing",
+  "feature": "Quote sharing settings",
+  "now": "Not built — by design",
+  "why": "Saved and never read in 1.0 (templates Q-09)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-11",
+  "area": "Quotes & pricing",
+  "feature": "Quote numbering",
+  "now": "Built in parity round 1",
+  "why": "Own pattern built earlier; the example now shows the real next number"
+ },
+ {
+  "key": "SET",
+  "id": "QP-12",
+  "area": "Quotes & pricing",
+  "feature": "Quote validity",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-13",
+  "area": "Quotes & pricing",
+  "feature": "GST registration and rate",
+  "now": "Built in parity round 1",
+  "why": "The studio's registration and rate under Quotes & pricing"
+ },
+ {
+  "key": "SET",
+  "id": "QP-14",
+  "area": "Quotes & pricing",
+  "feature": "Rounding selling prices",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-15",
+  "area": "Quotes & pricing",
+  "feature": "Payment schedule defaults",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-16",
+  "area": "Quotes & pricing",
+  "feature": "Terms and notes defaults",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "QP-17",
+  "area": "Quotes & pricing",
+  "feature": "Markup, discount limits, margin floor",
+  "now": "Not built — by design",
+  "why": "Declined (quote editor Q-24)"
+ },
+ {
+  "key": "SET",
+  "id": "QP-18",
+  "area": "Quotes & pricing",
+  "feature": "Quote switches kept elsewhere",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "SET",
+  "id": "RW-01",
+  "area": "Who may change the studio",
+  "feature": "Who the settings let in",
+  "now": "Built in parity round 2",
+  "why": "Owners and Admins change Notifications, Integrations, Profile, brand kit, template defaults"
+ },
+ {
+  "key": "SET",
+  "id": "RW-02",
+  "area": "Who may change the studio",
+  "feature": "Who may change members' roles",
+  "now": "Built in parity round 2",
+  "why": "Only an Owner makes an Owner; nobody changes their own role"
+ },
+ {
+  "key": "SET",
+  "id": "RW-03",
+  "area": "Who may change the studio",
+  "feature": "The read-only look for other members",
+  "now": "Built in parity round 1",
+  "why": "Controls disabled, one line saying who may change them"
+ },
+ {
+  "key": "SET",
+  "id": "RW-04",
+  "area": "Who may change the studio",
+  "feature": "The backup approver's check",
+  "now": "Built in parity round 2",
+  "why": "Must be an active member who is neither Owner nor Admin"
+ },
+ {
+  "key": "SET",
+  "id": "RL-01",
+  "area": "Lists and records",
+  "feature": "Renaming a list entry",
+  "now": "Built in parity round 3",
+  "why": "Sources, reasons and trades rename; their records follow"
+ },
+ {
+  "key": "SET",
+  "id": "RL-02",
+  "area": "Lists and records",
+  "feature": "Reordering a list",
+  "now": "Built in parity round 3",
+  "why": "By \"Place in the list\" in the entry's box, not by drag"
+ },
+ {
+  "key": "SET",
+  "id": "RL-03",
+  "area": "Lists and records",
+  "feature": "Removing a list entry",
+  "now": "Built in parity round 3",
+  "why": "Every remove answers with Undo"
+ },
+ {
+  "key": "SET",
+  "id": "RL-04",
+  "area": "Lists and records",
+  "feature": "An entity's identity",
+  "now": "Built in parity round 3",
+  "why": "Known by id; in use means retired, not removed"
+ },
+ {
+  "key": "SET",
+  "id": "RL-05",
+  "area": "Lists and records",
+  "feature": "The intake address",
+  "now": "2.0 only",
+  "why": "Round 3 keeps the address once set"
+ },
+ {
+  "key": "SET",
+  "id": "AZ-01",
+  "area": "Touchpoints",
+  "feature": "Price book gate, categories, tiers, approval, history",
+  "now": "Built",
+  "why": "Price book parity (REG-649…655); volume tiers declined"
+ },
+ {
+  "key": "SET",
+  "id": "AZ-02",
+  "area": "Touchpoints",
+  "feature": "Invoice, PO and VO templates; numbering; Accounting role",
+  "now": "Later",
+  "why": "Come with the Finance module"
+ },
+ {
+  "key": "SET",
+  "id": "AZ-03",
+  "area": "Touchpoints",
+  "feature": "Project types and timeline templates",
+  "now": "Later",
+  "why": "Come with the Projects module"
+ },
+ {
+  "key": "SET",
+  "id": "AZ-04",
+  "area": "Touchpoints",
+  "feature": "Branding & Comms, homeowner portal, AI & Copilot groups",
+  "now": "Later",
+  "why": "Their own modules, audited later"
+ },
+ {
+  "key": "SET",
+  "id": "AZ-05",
+  "area": "Touchpoints",
+  "feature": "The UI sweep's backlog",
+  "now": "Built",
+  "why": "Handled by the UI consistency sweep (REG-656…660)"
+ }
+]

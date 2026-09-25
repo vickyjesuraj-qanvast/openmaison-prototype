@@ -1,0 +1,646 @@
+[
+ {
+  "step": "3.01",
+  "chapter": 3,
+  "scene": "Open the price book",
+  "module": "Price book",
+  "try": "Open the studio's price book",
+  "how": "1. Click \"Company\" in the side navigation\n2. Click \"Price book\"",
+  "expect": "\"Price book\" opens on \"My Items\": the \"Wet works\" and \"Kitchen\" folders, item cards with unit prices, a \"1 proposed\" chip and \"Kind: All\".",
+  "in10": "Different from 1.0: under Company, not Accounts",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-01",
+   "PB:PL-01",
+   "PB:PL-02",
+   "PB:PL-03",
+   "PB:AR-02",
+   "QED:QP-01",
+   "QED:DEF-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.02",
+  "chapter": 3,
+  "scene": "Open the price book",
+  "module": "Price book",
+  "try": "See one product from two suppliers",
+  "how": "1. Click the \"Wet works\" folder\n2. Look at the two \"Homogeneous tiles 600×600, supply and lay\" cards\n3. Click \"My Items\" in the path at the top to go back",
+  "expect": "The same tile shows twice — \"by Hafary\" and \"by Soon Bee Huat\", each S$11.00 / sqft: one item per supplier.",
+  "in10": "Different from 1.0: one vendor per item, not several",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-05",
+   "PB:IT-05",
+   "QED:QP-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.03",
+  "chapter": 3,
+  "scene": "Add the fluted panel",
+  "module": "Price book",
+  "try": "Add a new item with a price in cents",
+  "how": "1. Click \"New\" › \"New item\"\n2. \"Item name\": Fluted feature wall panel · \"Description\": Oak veneer fluted panel, 20 mm slats, supply and install\n3. \"Kind\": Purchase · \"Unit\": sqft\n4. \"Cost (S$)\": 28.50 · \"Markup (S$)\": 11.50",
+  "expect": "Under Markup it reads \"Unit price S$40.00\" — the cents are kept exactly as typed.",
+  "in10": "Different from 1.0: markup in S$, not a percentage",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-02",
+   "PB:DEF-03",
+   "PB:MM-03",
+   "PB:IT-01",
+   "PB:IT-03",
+   "PB:IT-04",
+   "QED:QP-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.04",
+  "chapter": 3,
+  "scene": "Add the fluted panel",
+  "module": "Price book",
+  "try": "Give it a trade, a supplier and a product link",
+  "how": "1. \"Category\": pick Carpentry (the list is the studio's trades)\n2. \"Vendor\": Timber Craft\n3. \"Website link\": www.example.com/fluted-panel\n4. Click \"Add to My Items\"",
+  "expect": "A message says \"Fluted feature wall panel added to My Items\"; its card reads \"by Timber Craft · S$40.00 / sqft · Carpentry\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-04",
+   "PB:MM-02",
+   "PB:IT-02",
+   "PB:IT-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.05",
+  "chapter": 3,
+  "scene": "Add the fluted panel",
+  "module": "Price book",
+  "try": "Add a photo of the panel",
+  "how": "1. Click the \"Fluted feature wall panel\" card\n2. In \"Edit item\", click the \"Photo\" box and pick fluted-panel.jpg\n3. Click \"Save\"",
+  "expect": "A message says \"Item saved\" and the card now shows your photo instead of the cart icon.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "PB:IT-07",
+   "PB:DEF-02"
+  ],
+  "files": [
+   "uat-files/fluted-panel.jpg"
+  ]
+ },
+ {
+  "step": "3.06",
+  "chapter": 3,
+  "scene": "Add the fluted panel",
+  "module": "Price book",
+  "try": "Change its cost and read the item's history",
+  "how": "1. Open the fluted panel again\n2. \"Cost (S$)\": 30.50, then click \"Save\"\n3. Open it once more and scroll down to \"History\"",
+  "expect": "History lists \"Added by Dane\" and two \"Changed by Dane\" entries — \"Photo added\" and \"Cost S$28.50 → S$30.50\". Unit price is now S$42.00.",
+  "in10": "Different from 1.0: every change kept, before → after",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-07",
+   "PB:AH-07",
+   "QED:QP-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.07",
+  "chapter": 3,
+  "scene": "Find, sort and change many",
+  "module": "Price book",
+  "try": "Sort the list by price",
+  "how": "1. Click \"List view\" (the list icon, top right)\n2. Click the \"Unit price\" column heading\n3. Click it again",
+  "expect": "Items sort cheapest first with an up arrow, then dearest first with a down arrow.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "PB:PL-06",
+   "QED:QP-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.08",
+  "chapter": 3,
+  "scene": "Find, sort and change many",
+  "module": "Price book",
+  "try": "Show only one trade's items",
+  "how": "1. Click \"Filters\" (the funnel icon)\n2. \"Category\": Tiling, then click \"Done\"\n3. When checked, open \"Filters\" again and click \"Clear All\"",
+  "expect": "Only the two Homogeneous tiles items show, each marked with its folder \"Wet works\"; \"Clear All\" brings every item back.",
+  "in10": "Different from 1.0: a category filter, not grouped lists",
+  "as": "Dane",
+  "covers": [
+   "PB:PL-04",
+   "PB:PL-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.09",
+  "chapter": 3,
+  "scene": "Find, sort and change many",
+  "module": "Price book",
+  "try": "Look at an item a designer proposed",
+  "how": "1. Click the \"1 proposed\" chip at the top\n2. Click \"Skirting, PVC 80 mm\"\n3. Read the bar at the top, then click \"Cancel\"\n4. Click \"1 proposed\" again to see every item",
+  "expect": "The bar says Sarah proposed it and only their quotes use it until approved; \"Send back…\" and \"Approve\" wait for chapter 10.",
+  "in10": "Different from 1.0: not used studio-wide until approved",
+  "as": "Dane",
+  "covers": [
+   "PB:DEF-06",
+   "PB:AH-01",
+   "PB:AH-02",
+   "QED:QP-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.10",
+  "chapter": 3,
+  "scene": "Find, sort and change many",
+  "module": "Price book",
+  "try": "Re-price two items at once, then undo",
+  "how": "1. Tick \"Vinyl flooring, supply and install\" and \"Electrical point, new\"\n2. In the bar at the bottom, click \"Set markup\"\n3. \"Markup (% of cost)\": 30, then click \"Apply to 2 items\"\n4. On the message \"2 items changed\", click \"Undo\" straight away",
+  "expect": "Unit prices change to S$7.15 and S$71.50, then Undo puts them back to S$7.00 and S$70.00.",
+  "in10": "Different from 1.0: a markup % re-prices the items",
+  "as": "Dane",
+  "covers": [
+   "PB:PL-07",
+   "PB:IE-07"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.11",
+  "chapter": 3,
+  "scene": "Import and export",
+  "module": "Price book",
+  "try": "Export My Items to a spreadsheet",
+  "how": "1. Click the ⋮ menu (\"More options\", top right)\n2. Click \"Export My Items…\"\n3. Keep \"All items\" and \"Choose file format\": CSV\n4. Click \"Export\"",
+  "expect": "my-items.csv downloads and a message says how many items were exported as CSV; the file has an Item column with every name.",
+  "in10": "Different from 1.0: live items only, with their names",
+  "as": "Dane",
+  "covers": [
+   "PB:IE-06",
+   "QED:QP-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.12",
+  "chapter": 3,
+  "scene": "Import and export",
+  "module": "Price book",
+  "try": "Import a supplier's price list",
+  "how": "1. Click \"New\" › \"Import from a spreadsheet…\"\n2. Drop supplier-price-list.csv on the box (or click \"browse\")\n3. In \"Import into My Items\", read the \"In My Items\" column and the notes below",
+  "expect": "Rows read New · Updates its price · New · Repeats — skipped; notes name the match, the repeat and new trade \"Glass & Mirror\".",
+  "in10": "Different from 1.0: matches existing items; no PDF reading",
+  "as": "Dane",
+  "covers": [
+   "PB:IE-01",
+   "PB:IE-02",
+   "PB:IE-04",
+   "PB:MM-05",
+   "QED:QP-10"
+  ],
+  "files": [
+   "uat-files/supplier-price-list.csv"
+  ]
+ },
+ {
+  "step": "3.13",
+  "chapter": 3,
+  "scene": "Import and export",
+  "module": "Price book",
+  "try": "Finish the import",
+  "how": "1. Keep \"Rows that match\" on \"Update the price\"\n2. Click \"Import 3 rows\"",
+  "expect": "A message says \"2 items added · 1 updated · 1 skipped\"; the shower screen and wallpaper join My Items and Vinyl flooring becomes S$7.30.",
+  "in10": "Different from 1.0: repeats skipped, matches updated, no duplicates",
+  "as": "Dane",
+  "covers": [
+   "PB:IE-03",
+   "PB:IE-05",
+   "PB:DEF-04"
+  ],
+  "files": [
+   "uat-files/supplier-price-list.csv"
+  ]
+ },
+ {
+  "step": "3.14",
+  "chapter": 3,
+  "scene": "Delete safely, save a section",
+  "module": "Price book",
+  "try": "Delete an item that quotes already use",
+  "how": "1. Point at \"Electrical point, new\" and open its ⋮ menu › \"Delete\"\n2. Read the warning, then click \"Delete\" (don't press Undo)",
+  "expect": "The warning says the quotes already carrying it keep the line and it can be restored from Deleted Items; the item leaves the list.",
+  "in10": "Different from 1.0: deleted items can be restored",
+  "as": "Dane",
+  "covers": [
+   "PB:PL-09",
+   "QED:QP-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.15",
+  "chapter": 3,
+  "scene": "Delete safely, save a section",
+  "module": "Price book",
+  "try": "Bring the deleted item back",
+  "how": "1. Click the ⋮ menu (\"More options\", top right) › \"Deleted Items · 1\"\n2. Point at \"Delete Forever\" on Electrical point, new\n3. Click \"Restore\"",
+  "expect": "\"Delete Forever\" is greyed out — it is on quotes, restore it instead — and \"Restore\" puts the item back in My Items.",
+  "in10": "Different from 1.0: items on quotes can't be deleted forever",
+  "as": "Dane",
+  "covers": [
+   "PB:PL-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.16",
+  "chapter": 3,
+  "scene": "Delete safely, save a section",
+  "module": "Price book",
+  "try": "Save a whole section for future quotes",
+  "how": "1. Click the \"My Sections\" tab, then \"New\" › \"New section\"\n2. \"Section name\": Feature wall package · \"Property type\": HDB 4-Room · \"Tags\": Feature wall, Living room\n3. Click \"Add an item\" twice: Fluted feature wall panel, 60, sqft, 42.00 · LED strip light, 1, set, 280.00 (Item · Qty · Unit · Unit price)\n4. Click \"Save\"",
+  "expect": "A message says \"Feature wall package added to My Sections\"; its card reads \"2 items · S$2,800.00 · HDB 4-Room\".",
+  "in10": "Different from 1.0: Packages are now My Sections",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TC-01",
+   "PB:DEF-08",
+   "PB:QU-07",
+   "QED:QG-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.17",
+  "chapter": 3,
+  "scene": "The template libraries",
+  "module": "Templates",
+  "try": "Open the studio's templates",
+  "how": "1. Click \"Company\" › \"Templates\"",
+  "expect": "It opens on \"Quotes\": \"Default Quote PDF\" with a \"Default\" chip, the \"HDB\" and \"Show flats\" folders, and a \"1 awaiting approval\" chip.",
+  "in10": "Different from 1.0: Company › Templates, with drafts and versions",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-01",
+   "QTPL:TL-02",
+   "QTPL:TL-13",
+   "QTPL:DEF-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.18",
+  "chapter": 3,
+  "scene": "The template libraries",
+  "module": "Templates",
+  "try": "Make a 40/60 payment split",
+  "how": "1. Click the \"Payments\" tab › \"New\" › \"Blank split\"\n2. Click the name \"Untitled split\" and type 40/60\n3. Change the first \"Share (%)\" to 40 and read the line beside \"Total\"\n4. Change the second to 60, then click \"Done\"",
+  "expect": "At 90% it warns \"10% short — the last payment will not close the quote\"; at 100% it reads \"Adds up to the quote\".",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TC-08",
+   "QED:QY-01"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.19",
+  "chapter": 3,
+  "scene": "The template libraries",
+  "module": "Templates",
+  "try": "Write a reusable site-protection note",
+  "how": "1. Click the \"T&Cs & Notes\" tab › \"New\" › \"Additional Notes\"\n2. Rename \"Untitled template\" to Site protection\n3. In the text, type: Floors and lifts are protected before works start by — then \"Insert Token\" › \"Studio Name\"\n4. Click \"Done\"",
+  "expect": "The text ends with [Studio Name], filled in on each quote; the gallery shows \"Site protection\" with a \"Notes\" chip.",
+  "in10": "Different from 1.0: [bracket] tokens, one library for both",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TC-05",
+   "QTPL:TF-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.20",
+  "chapter": 3,
+  "scene": "The template libraries",
+  "module": "Templates",
+  "try": "Save a site-visit checklist as a task template",
+  "how": "1. Click the \"Tasks\" tab › \"New\" › \"Blank template\"; name it Site visit checklist\n2. Change \"First step\" to Measure the site; \"Due in (days)\": 1\n3. Click \"Add a step\": Photograph the existing condition; \"Due in (days)\": 1\n4. Click \"Done\"",
+  "expect": "Its card reads \"2 steps · keeps members · descriptions\" with a \"Due dates\" chip, ready for any lead's Tasks tab.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TC-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.21",
+  "chapter": 3,
+  "scene": "Contract templates",
+  "module": "Templates",
+  "try": "Start a contract template from the studio agreement",
+  "how": "1. Click the \"Contracts\" tab › \"New\" › \"From the studio agreement\"\n2. Click the title and rename it Renovation Agreement (HDB)\n3. Click \"eSignatures\" and look under \"Before the client signs\"\n4. Close the panel and click \"Done\"",
+  "expect": "\"Read to the end\" and \"Tick to accept\" are already on for a new template; the gallery now lists \"Renovation Agreement (HDB)\".",
+  "in10": "Different from 1.0: read-and-accept set on the template",
+  "as": "Dane",
+  "covers": [
+   "CTR:DEF-04",
+   "CTR:CT-01",
+   "CTR:CT-03",
+   "CTR:CT-07",
+   "CTR:CT-14"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.22",
+  "chapter": 3,
+  "scene": "Contract templates",
+  "module": "Templates",
+  "try": "Make the studio agreement the default contract",
+  "how": "1. On the \"Contracts\" tab, open the \"Agreements\" folder\n2. On \"Interior Design Service Agreement\", open the ⋮ menu › \"Set as default\"",
+  "expect": "A message says it is the default contract template and its card carries a \"Default\" chip.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CT-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.23",
+  "chapter": 3,
+  "scene": "Build a quote template",
+  "module": "Templates",
+  "try": "Start a quote template from a ready-made design",
+  "how": "1. Click the \"Quotes\" tab › \"New\" › \"Use a ready-made design\"\n2. Click the \"Presentation\" card (\"Preview\" shows its pages; \"Back\" returns)\n3. \"Template name\": Studio Presentation, then click \"Create template\"\n4. Click \"Got it\" on the tip bar",
+  "expect": "The template editor opens on \"Studio Presentation\" with a \"Draft\" chip and a cover in the studio's accent colour.",
+  "in10": "Different from 1.0: whole designs, not preset overlays",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-03",
+   "QTPL:DEF-01",
+   "QTPL:DEF-05",
+   "QTPL:TT-01",
+   "QTPL:MM-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.24",
+  "chapter": 3,
+  "scene": "Build a quote template",
+  "module": "Templates",
+  "try": "Add a thank-you line to the page",
+  "how": "1. On the \"Page\" tab (left), click \"Title & intro\"\n2. Click \"Add to the page\" (bottom left) › \"Text\"\n3. On the right, replace the words in \"Text\" with: Thank you for choosing Demo Studio,",
+  "expect": "A \"Text\" row appears under \"Title & intro\" and your sentence prints under \"Scope of works\" on the page.",
+  "in10": "Different from 1.0: added to the template, not per lead",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TE-01",
+   "QTPL:TE-06",
+   "QTPL:TB-10",
+   "QTPL:DEF-04"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.25",
+  "chapter": 3,
+  "scene": "Build a quote template",
+  "module": "Templates",
+  "try": "Put the client's name into your line",
+  "how": "1. Beside the \"Text\" box, click \"Insert a field\" (the { } button)\n2. Pick \"Client name\"",
+  "expect": "The box ends with {client_name}; under it: \"Prints as: Thank you for choosing Demo Studio, Mr & Mrs Tan\" — the sample client.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TF-01",
+   "QTPL:DEF-11"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.26",
+  "chapter": 3,
+  "scene": "Build a quote template",
+  "module": "Templates",
+  "try": "Remove the line by mistake, then undo",
+  "how": "1. At the top right, click \"Remove from the page\" (the bin)\n2. On the message \"Text removed\", click \"Undo\"",
+  "expect": "The Text block disappears from the page and the list, then comes back in the same place.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TE-03"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.27",
+  "chapter": 3,
+  "scene": "Build a quote template",
+  "module": "Templates",
+  "try": "See the template drawn with a real quote",
+  "how": "1. At the top, click \"Preview with: Sample quote\"\n2. Pick any \"OM-…\" quote\n3. When checked, switch back to \"Sample quote\"",
+  "expect": "The pages redraw with that quote's client, lines and totals, then with the sample quote again.",
+  "in10": "Different from 1.0: your own quotes, not a fixed sample",
+  "as": "Dane",
+  "covers": [
+   "QTPL:DEF-13",
+   "QTPL:TE-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.28",
+  "chapter": 3,
+  "scene": "Make it yours and publish",
+  "module": "Templates",
+  "try": "Give this template its own colour",
+  "how": "1. Click the \"Brand\" tab (left)\n2. Under \"Colours\", click the \"Accent\" swatch and pick a dark green",
+  "expect": "The cover and the room bands turn green; the Accent row ends \"· this template\" with a reset button. The brand kit is untouched.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TT-09",
+   "QTPL:TT-04",
+   "QTPL:TE-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.29",
+  "chapter": 3,
+  "scene": "Make it yours and publish",
+  "module": "Templates",
+  "try": "Number the items A1, A2 in each room",
+  "how": "1. Click the \"Page\" tab, then \"Items table\" in the list\n2. On the right, \"Item numbers\": A1 · A2 · B1",
+  "expect": "Item numbers on the page read A1, A2… in the first room and B1, B2… in the next.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TI-05",
+   "QTPL:MM-08"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.30",
+  "chapter": 3,
+  "scene": "Make it yours and publish",
+  "module": "Templates",
+  "try": "Choose what a new quote starts with",
+  "how": "1. Click the \"New quotes\" tab\n2. \"Payment schedule\": 40/60 · \"Additional Notes\": Site protection",
+  "expect": "Your split and note are offered from the libraries; the tab warns \"Not published yet — quotes can use this template once you press Publish.\"",
+  "in10": "Different from 1.0: sections and defaults, never priced lines",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TC-08",
+   "QTPL:TC-05",
+   "QTPL:DEF-14",
+   "QTPL:MM-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.31",
+  "chapter": 3,
+  "scene": "Make it yours and publish",
+  "module": "Templates",
+  "try": "Publish the template and make it the default",
+  "how": "1. Click \"Publish\" (top right)\n2. \"What changed\": First version · turn on \"Make it the studio’s default\"\n3. Click \"Publish\"",
+  "expect": "A message says \"Studio Presentation published\"; the top shows \"Published v1\" and \"Default\", and the button now reads \"Published\".",
+  "in10": "Different from 1.0: drafts publish as numbered versions",
+  "as": "Dane",
+  "covers": [
+   "QTPL:DEF-08",
+   "QTPL:TL-05",
+   "QTPL:TQ-06",
+   "QTPL:DEF-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.32",
+  "chapter": 3,
+  "scene": "Make it yours and publish",
+  "module": "Templates",
+  "try": "See the template's version history",
+  "how": "1. Click \"History\" (the clock icon at the top)",
+  "expect": "The History panel lists v1 marked \"Current\", your note \"First version\" and your name.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-09"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.33",
+  "chapter": 3,
+  "scene": "The studio's default",
+  "module": "Templates",
+  "try": "Check the default moved in the gallery",
+  "how": "1. Close the History panel\n2. Click the back arrow (\"Back to Quote templates\")",
+  "expect": "\"Studio Presentation\" now carries the \"Default\" chip and \"Published v1\"; \"Default Quote PDF\" no longer does.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-05",
+   "QTPL:TL-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.34",
+  "chapter": 3,
+  "scene": "The studio's default",
+  "module": "Templates",
+  "try": "See the default in the brand kit preview",
+  "how": "1. Click the \"Brand kit\" tab",
+  "expect": "The preview on the right is labelled \"Default template · Studio Presentation\" and shows its first page.",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "3.35",
+  "chapter": 3,
+  "scene": "The studio's default",
+  "module": "Templates",
+  "try": "Look at the deleted templates",
+  "how": "1. Click the \"Quotes\" tab\n2. Click the ⋮ menu (\"More options\", top right) › \"Deleted Templates · 2\"\n3. Close the panel",
+  "expect": "\"Copy of Default Quote PDF\" and \"Test\" wait there with \"Restore\" and \"Delete Forever\" — nothing is lost at once.",
+  "in10": "Different from 1.0: deleted templates can be restored",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-07",
+   "QTPL:DEF-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.36",
+  "chapter": 3,
+  "scene": "The studio's default",
+  "module": "Templates",
+  "try": "Put the studio's default back",
+  "how": "1. On \"Default Quote PDF\", open the ⋮ menu › \"Set as default\"",
+  "expect": "A message says \"Default Quote PDF is the default template\" and the Default chip moves back — chapter 6's quotes start from it.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "QTPL:TL-05",
+   "QTPL:DEF-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.37",
+  "chapter": 3,
+  "scene": "The question bank",
+  "module": "Company",
+  "try": "Add a question every new lead starts with",
+  "how": "1. Click \"Company\" › \"Questionnaire\", then \"Add question\"\n2. \"Question\": Will anyone work from home? · \"Type\": Single select\n3. \"Option 1\": Yes, every day · \"Add option\": Some days · \"Add option\": No\n4. Click \"Add\"",
+  "expect": "A message says \"Question added\"; it joins the bottom of the \"Question bank\" with a \"Single select\" chip and \"Active\" on.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-22",
+   "LEADS:MM-25",
+   "LEADS:T-08",
+   "SET:LM-20"
+  ],
+  "files": []
+ },
+ {
+  "step": "3.38",
+  "chapter": 3,
+  "scene": "The question bank",
+  "module": "Company",
+  "try": "Move your question higher in the list",
+  "how": "1. On your new question, click \"Move up\" (the up arrow) twice",
+  "expect": "A message says \"Order saved\" each time and the question sits two places higher; Sophia's questionnaire (chapter 4) follows this order.",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "LEADS:DEF-22"
+  ],
+  "files": []
+ }
+]

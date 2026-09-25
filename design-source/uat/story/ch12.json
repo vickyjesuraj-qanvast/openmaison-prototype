@@ -1,0 +1,202 @@
+[
+ {
+  "step": "12.01",
+  "chapter": 12,
+  "scene": "Pick up your phone",
+  "module": "Phone",
+  "try": "Open OpenMaison on your phone",
+  "how": "1. On the laptop, find the \"Network\" address in the window running npm run dev (like http://192.168.1.20:3000)\n2. On a phone on the same Wi-Fi, type that address into the browser",
+  "expect": "Leads opens as cards, with a top bar (search, chat, bell, avatar) and a bottom bar: Dashboard, Leads, Tools, Projects, More",
+  "in10": "Different from 1.0: a stage pill replaces bucket tabs and swiping",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-36"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.02",
+  "chapter": 12,
+  "scene": "Pick up your phone",
+  "module": "Phone",
+  "try": "Read a lead at a glance",
+  "how": "1. Scroll to Sophia Wong’s card",
+  "expect": "Her card shows its age, phone, budget, source, her first task (or \"Add Task\"), members’ avatars and the stage button \"Won\"",
+  "in10": "Different from 1.0: fewer badges; the first task shows instead",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-06",
+   "LEADS:L-36"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.03",
+  "chapter": 12,
+  "scene": "Pick up your phone",
+  "module": "Phone",
+  "try": "Find a lead by name on the phone",
+  "how": "1. Tap the magnifier in the top bar\n2. Type Sophia",
+  "expect": "A search box opens above the list and only Sophia Wong’s card remains, the match highlighted",
+  "in10": "Different from 1.0: one search box, in the top bar",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-20",
+   "LEADS:L-36"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.04",
+  "chapter": 12,
+  "scene": "Pick up your phone",
+  "module": "Phone",
+  "try": "Reach the rest of the app from More",
+  "how": "1. Tap \"More\" in the bottom bar\n2. Tap \"Company\"",
+  "expect": "\"More\" slides up with Tasks, Marketplace, Company, Qanvast Ops, Settings and \"View as\" (Dane); Company opens as a sheet, Profile to Integrations",
+  "in10": "Different from 1.0: 1.0’s phone menu had no studio setup",
+  "as": "Dane",
+  "covers": [
+   "SET:SP-05"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.05",
+  "chapter": 12,
+  "scene": "Work a lead on the go",
+  "module": "Phone",
+  "try": "Open Sophia’s lead and move between tabs",
+  "how": "1. Close the sheet and tap Sophia Wong’s card\n2. Swipe the tab row sideways and tap \"Notes & Logs\"",
+  "expect": "Her name has a line of its own; the tabs scroll sideways; Notes & Logs fills the screen as a list",
+  "in10": "Different from 1.0: the lead opens as a page, not a drawer",
+  "as": "Dane",
+  "covers": [],
+  "files": []
+ },
+ {
+  "step": "12.06",
+  "chapter": 12,
+  "scene": "Work a lead on the go",
+  "module": "Phone",
+  "try": "Start a stage move from a lead card",
+  "how": "1. Back on Leads, on a Contacted lead’s card (e.g. Cheryl Lim) tap the stage button \"Contacted\"\n2. In the \"Move stage\" sheet tap \"Met\"\n3. Look at the window, then tap \"Cancel\"",
+  "expect": "Both rise from the bottom; the Move stage window fills the screen with \"Cancel\" and \"Save\" pinned at the foot; nothing moves",
+  "in10": "Different from 1.0: one stage window, not status drop-downs",
+  "as": "Dane",
+  "covers": [
+   "LEADS:D-27"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.07",
+  "chapter": 12,
+  "scene": "Work a lead on the go",
+  "module": "Phone",
+  "try": "Narrow the list with a quick filter",
+  "how": "1. Tap the filter icon beside the \"All Leads\" pill\n2. In \"Quick filters\", tick \"Unassigned\"\n3. Tap \"Clear All\", then \"Done\"",
+  "expect": "\"Filters\" rises from the bottom; the tick narrows the list behind at once; after \"Clear All\" every lead is back",
+  "in10": "Different from 1.0: three quick filters instead of five",
+  "as": "Dane",
+  "covers": [
+   "LEADS:L-22"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.08",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "Check a quote’s lines on the phone",
+  "how": "1. Open Sophia Wong › \"Quotes\" and tap her quote\n2. Scroll to \"Items\" and tap a line\n3. Look, then tap \"Done\" without changing anything",
+  "expect": "Each line is a card (name, quantity × unit price, total); a line opens as a sheet with its \"Line total\" and every field",
+  "in10": "Different from 1.0: lines edit in a sheet, not a side panel",
+  "as": "Dane",
+  "covers": [
+   "QED:QL-01",
+   "QED:QL-25"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.09",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "Open Tools › Contracts on the phone",
+  "how": "1. Tap \"Tools\" in the bottom bar\n2. Tap \"Contracts\"",
+  "expect": "Tools rises as a sheet of tiles; contracts show as cards — title and ⋮ on top, status and date below",
+  "in10": "Different from 1.0: 1.0’s phone menu had no Tools",
+  "as": "Dane",
+  "covers": [
+   "XRAY:XE-01",
+   "CTR:CN-02"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.10",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "Raise a second agreement for Sophia and get its link",
+  "how": "1. Open Sophia Wong › \"Contracts\", tap \"+\" (\"New Contract\") › \"From the studio agreement\"\n2. Tap the status \"Draft\" › \"Sent to Client\"\n3. Tap \"Send\"; press and hold the link at the bottom of the window, choose Copy, then close it",
+  "expect": "Menus rise as bottom sheets; the status reads \"Sent to Client\"; the copied link starts with the phone’s Network address",
+  "in10": "New in 2.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CR-01",
+   "CTR:MM-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.11",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "Read the agreement on the phone as Sophia",
+  "how": "1. Paste the link into a new browser tab\n2. Scroll to the end — the bar at the foot guides you\n3. Tap \"Go to the box\" and tick \"I have read and agree to this document.\"",
+  "expect": "The card sits above the agreement; the foot bar reads \"Read to the end of the agreement\", then \"Ready when you are\" with \"Send code\"",
+  "in10": "Same as 1.0",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:CP-05",
+   "CTR:CP-06"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.12",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "Sign with your finger",
+  "how": "1. Tap \"Send code\", type 123456, tap \"Verify\"\n2. Tap \"Draw\" and sign with your finger\n3. Tap \"Sign agreement\"",
+  "expect": "The pad follows your finger; the card turns \"Signed\"; the signing record says \"Drawn by hand\" and names your phone’s browser",
+  "in10": "Same as 1.0",
+  "as": "Sophia Wong (client)",
+  "covers": [
+   "CTR:CP-09",
+   "CTR:DEF-10"
+  ],
+  "files": []
+ },
+ {
+  "step": "12.13",
+  "chapter": 12,
+  "scene": "Quotes and contracts in your pocket",
+  "module": "Phone",
+  "try": "See the signature arrive in the bell",
+  "how": "1. Go back to the app’s tab\n2. Tap the bell in the top bar",
+  "expect": "\"Notifications\" fills the screen; the newest notice reads \"Sophia Wong signed Interior Design Service Agreement 2\"",
+  "in10": "Same as 1.0",
+  "as": "Dane",
+  "covers": [
+   "CTR:CN-07"
+  ],
+  "files": []
+ }
+]

@@ -151,6 +151,12 @@
 }
 @media (prefers-reduced-motion: reduce) { .gemTurn { animation: none; } }
 .avatarRow { padding: var(--om-spacing-5) 0 var(--om-spacing-2); display: flex; align-items: center; gap: var(--om-spacing-2); white-space: nowrap; overflow: hidden; }
+/* (REG-667) The block is View as's button: the drawn row is unchanged — a bare button, full width, text left. */
+button.avatarRow { width: 100%; margin: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: var(--om-radius-1); }
+button.avatarRow:focus-visible { outline: none; }
+button.avatarRow:focus-visible .avatar { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.avatarWrap { position: relative; flex-shrink: 0; display: block; }
+.viewerMark { position: absolute; right: -6px; bottom: -6px; display: block; border-radius: var(--om-radius-1); box-shadow: 0 0 0 2px var(--om-color-surface-default); }
 .avatar {
   width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--om-radius-2);
   border: var(--om-border-1) solid var(--om-color-surface-variant);
@@ -160,6 +166,7 @@
 .panel[data-expanded] .studio { opacity: 1; }
 .studioName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .studioOwner { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.studioOwner[data-viewing] { color: var(--om-color-primary-default); }   /* (REG-667) Viewing as … */
 
 .item:focus-visible, .avatar:focus-visible, .logoTile:focus-visible, .pinBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 

@@ -8,7 +8,7 @@ import { db } from '@/lib/db'
 import { leadTasks, leads, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds } from '@/lib/notifications/queries'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { TASK_KINDS } from '@/lib/leads/enums'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 
@@ -17,7 +17,7 @@ import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 /** (REG-286) One shared eviction for every detail tab — the hand-listed paths here never named Activity. */
 /* (REG-466) A studio task has no lead; either way the rail's Tasks page and its badge are refreshed. */
 const touch = (leadId: string | null) => { if (leadId) revalidateLead(leadId); revalidatePath('/tasks'); revalidatePath('/', 'layout') }
-const ME = SESSION_MEMBER_ID   // (REG-286) the signed-in member, defined once in lib/db/session.ts
+const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 
 /** (REG-286) `kind` lands in a column the table, the drawer and the filters all read back — the guard REG-285 put on updateTask. */
 const kindOf = (kind: string | undefined): string =>

@@ -1,0 +1,17 @@
+[
+ {
+  "name": "sophia-items-to-paste.xlsx",
+  "purpose": "Chapter 6 (6.07): a block of quote lines the tester copies in Excel / Numbers / Google Sheets and pastes into Sophia’s Items table. Chapter 7 (7.10) reuses it as “Your quote” in Upload two quotes.",
+  "content": "One sheet, 9 rows × 8 columns, starting at A1, header row first, numbers as plain numbers (no S$, no formulas). Tab-separated:\nItem\tDescription\tQty\tUnit\tCost\tUnit Price\tCategory\tRoom\nHacking of kitchen floor and wall tiles\tHack and cart away existing tiles\t1\tLot\t1400\t1800\tHacking\tKitchen\nWaterproofing to bathroom floors\t3-coat membrane with upturn\t2\tLot\t260\t350\tMasonry\tBathrooms\nHomogeneous floor tiles, supply and lay\t600 × 600 mm, kitchen and yard\t140\tsqft\t8\t11\tMasonry\tKitchen\nKitchen top and bottom cabinets\tLaminate finish, soft-closing hinges\t22\tft run\t190\t250\tCarpentry\tKitchen\nQuartz countertop\tWith sink and hob cut-outs\t11\tft run\t120\t170\tCarpentry\tKitchen\nFull-height wardrobe\tSwing doors, master bedroom\t10\tft run\t240\t330\tCarpentry\tMaster Bedroom\nLighting points\tNew points with wiring\t16\tpoint\t45\t65\tElectrical\tWhole unit\nPainting, whole unit\tNippon Vinilex, two coats\t1\tLot\t1300\t1800\tPainting\tWhole unit\n\n(Unit Price minus Cost becomes the markup. The 8 lines total S$17,550.00 at Unit Price. Keep the column names exactly — the paste window reads them to pick each column’s field.)"
+ },
+ {
+  "name": "kitchen-moodboard.jpg",
+  "purpose": "Chapter 6 (6.22) the file attached to Sophia’s quote; 6.41 and chapter 7 (7.10) use it as a file the readers must refuse (a photo that is not a quote).",
+  "content": "Any real JPG photo of a kitchen or a mood board, about 1200×800, under 2 MB. Its content is never read; do NOT put “flo”, “dyel”, “cove”, “stanley”, “sharon” or “sales contract” in the file name."
+ },
+ {
+  "name": "gerald-tan-old-quote.xlsx",
+  "purpose": "Chapter 6 (6.41): an old 1.0-era quote as a spreadsheet, uploaded with “Upload a quote” for the seeded lead Gerald Tan.",
+  "content": "One sheet, 7 rows × 6 columns from A1, header first, plain numbers. Tab-separated:\nTrade\tItem\tQty\tUnit\tRate\tAmount\nCarpentry\tKitchen cabinets, top and bottom\t24\tft run\t260\t6240\nCarpentry\tFull-height wardrobe, master bedroom\t12\tft run\t320\t3840\nElectrical\tLighting points\t20\tpoint\t60\t1200\nElectrical\tPower points\t12\tpoint\t70\t840\nPainting\tPainting, whole unit\t1\tLot\t2200\t2200\nPlumbing\tKitchen sink and washer points\t2\tpoint\t280\t560\n\n(The reader groups lines by Trade into sections, takes Rate as each line’s cost and ignores the Amount column. Expected read: 6 lines · S$14,880.00.)"
+ }
+]

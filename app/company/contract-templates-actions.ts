@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractTemplates, contracts } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { SESSION_MEMBER_ID, sessionMemberSql } from '@/lib/db/session'
 import { AGREEMENT_TITLE, agreementHtml } from '@/lib/contracts/agreement'
 import { createContractDoc } from '@/app/contracts/actions'
 import { CONTRACT_HTML_MAX, sanitizeContractHtml } from '@/lib/contracts/sanitize'
@@ -45,7 +45,7 @@ export async function createContractTemplate(input: CreateContractTemplateInput)
     title = clean(input.title) || c.title; body = c.body
   }
   /* (REG-633, contracts parity Q-15) a new template asks the client to read to the end and tick to accept — 1.0's library default */
-  await db.insert(contractTemplates).values({ id, title, body, createdBy: SESSION_MEMBER_ID, updatedBy: SESSION_MEMBER_ID, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true })
+  await db.insert(contractTemplates).values({ id, title, body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: true, requiresAccept: true })
   touch(id)
   return id
 }
@@ -68,7 +68,7 @@ export async function duplicateContractTemplate(templateId: string): Promise<str
   if (!t) throw new Error('template not found')
   const now = new Date()
   const id = randomUUID()
-  await db.insert(contractTemplates).values({ id, title: `${t.title} (copy)`, body: t.body, createdBy: SESSION_MEMBER_ID, updatedBy: SESSION_MEMBER_ID, createdAt: now, updatedAt: now, requiresScroll: t.requiresScroll, requiresAccept: t.requiresAccept, acceptLabel: t.acceptLabel })
+  await db.insert(contractTemplates).values({ id, title: `${t.title} (copy)`, body: t.body, createdBy: sessionMemberSql, updatedBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: t.requiresScroll, requiresAccept: t.requiresAccept, acceptLabel: t.acceptLabel })
   touch(id)
   return id
 }

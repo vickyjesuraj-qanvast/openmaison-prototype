@@ -1,0 +1,2162 @@
+[
+  {
+    "key": "LEADS",
+    "id": "DEF-01",
+    "area": "Definitions",
+    "feature": "Where a lead stands: bucket, status and sub-status",
+    "now": "Not built — by design",
+    "why": "Owner kept seven fixed stages; no sub-statuses or editable funnel (Q-01, Q-02)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-02",
+    "area": "Definitions",
+    "feature": "Follow-Up as a status with its own sub-statuses",
+    "now": "Built in parity round 2",
+    "why": "Follow-ups are tasks, with a Next follow-up line (Q-03)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-03",
+    "area": "Definitions",
+    "feature": "Archive a lead instead of deleting it",
+    "now": "Excluded",
+    "why": "Owner kept Delete; round 1 added the live-link warning (Q-04)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-04",
+    "area": "Definitions",
+    "feature": "Journey mode: an eight-step tracker with evidence",
+    "now": "Excluded",
+    "why": "Owner excluded Journey mode; Linear stage movement instead"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-05",
+    "area": "Definitions",
+    "feature": "On Hold with durations, reasons and a revisit ping",
+    "now": "Built in parity round 1",
+    "why": "Six reasons in round 1; the date reminder in round 2"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-06",
+    "area": "Definitions",
+    "feature": "Lost with reasons, competitor and restart details",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-07",
+    "area": "Definitions",
+    "feature": "Return a Qanvast lead for a refund",
+    "now": "Built in parity round 3",
+    "why": "Seven reasons added; return from any stage kept (Q-08)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-08",
+    "area": "Definitions",
+    "feature": "Many members per lead; removing the last downgrades it",
+    "now": "Not built — by design",
+    "why": "Past New the last member stays (Q-09); commission split waits for Finance"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-09",
+    "area": "Definitions",
+    "feature": "Hot, warm or cold temperature on a lead",
+    "now": "Not built — by design",
+    "why": "Owner declined temperature (Q-10)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-10",
+    "area": "Definitions",
+    "feature": "The studio's own list of lead sources",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-11",
+    "area": "Definitions",
+    "feature": "Property type, status, style, key collection and district lists",
+    "now": "Built in parity round 1",
+    "why": "Condition keeps New · Resale · Renovated by design (Q-11)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-12",
+    "area": "Definitions",
+    "feature": "Separate first-name and last-name fields",
+    "now": "Not built — by design",
+    "why": "One Lead name field kept (Q-13)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-13",
+    "area": "Definitions",
+    "feature": "Budget limited to S$1,000–5,000,000",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-14",
+    "area": "Definitions",
+    "feature": "Five required fields on a new lead",
+    "now": "Not built — by design",
+    "why": "Only name and phone are required (Q-15)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-15",
+    "area": "Definitions",
+    "feature": "Remarks plus a second Additional Info box",
+    "now": "Not built — by design",
+    "why": "One Remarks field only (Q-16)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-16",
+    "area": "Definitions",
+    "feature": "Contact attempts with channel and outcome",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-17",
+    "area": "Definitions",
+    "feature": "A next follow-up date on the lead, with a reminder",
+    "now": "Built in parity round 2",
+    "why": "Kept as tasks: Next follow-up line, Follow-up kind, reminder"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-18",
+    "area": "Definitions",
+    "feature": "Duplicate check: 'Create this lead anyway?'",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-19",
+    "area": "Definitions",
+    "feature": "Who sees and moves leads, by role",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-20",
+    "area": "Definitions",
+    "feature": "A saved activity log, including removals and deletions",
+    "now": "Built in parity round 7",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-21",
+    "area": "Definitions",
+    "feature": "Files on the lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-22",
+    "area": "Definitions",
+    "feature": "A studio question bank the client answers",
+    "now": "Built in parity round 6",
+    "why": "Per-question answer history not built, by design"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-23",
+    "area": "Definitions",
+    "feature": "Invite the homeowner to the portal",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-24",
+    "area": "Definitions",
+    "feature": "Notifications for lead events",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-25",
+    "area": "Definitions",
+    "feature": "Performance report and per-lead response time",
+    "now": "Built in parity round 5",
+    "why": "Dashboard widgets still wait for the Dashboard mocks"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-26",
+    "area": "Definitions",
+    "feature": "Custom lead fields, categories and pipeline stages",
+    "now": "Built in parity round 6",
+    "why": "Custom fields built; categories and pipeline stages stay dead"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-27",
+    "area": "Definitions",
+    "feature": "Workflow switches for stage requirements",
+    "now": "Not built — by design",
+    "why": "The Won step enforces the rules; no switches (Q-26)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-28",
+    "area": "Definitions",
+    "feature": "Designer lead preferences and a recommended assignee",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-29",
+    "area": "Definitions",
+    "feature": "Fill a new lead from a document by AI",
+    "now": "Built in parity round 3",
+    "why": "A scripted stand-in fills fixed values; no real AI (Q-28)"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-30",
+    "area": "Definitions",
+    "feature": "Country and region per lead",
+    "now": "Platform",
+    "why": "Singapore only in 2.0"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-31",
+    "area": "Definitions",
+    "feature": "Signing creates a draft project",
+    "now": "Later",
+    "why": "Won says Project created; projects come with the Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-32",
+    "area": "Definitions",
+    "feature": "Issuing entity stored on the lead",
+    "now": "Later",
+    "why": "Entities live on quotes and contracts, not on the lead"
+  },
+  {
+    "key": "LEADS",
+    "id": "DEF-33",
+    "area": "Definitions",
+    "feature": "Meetings, copilot, visualiser and hangouts",
+    "now": "Later",
+    "why": "They wait for their own modules and mocks"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-01",
+    "area": "Mismatches",
+    "feature": "Lead position: bucket, status, sub-status, studio-editable",
+    "now": "Not built — by design",
+    "why": "Seven fixed stages kept (Q-01, Q-02)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-02",
+    "area": "Mismatches",
+    "feature": "On Hold tiers, reasons and a revisit ping",
+    "now": "Built in parity round 2",
+    "why": "Reasons in round 1; the date reminder in round 2"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-03",
+    "area": "Mismatches",
+    "feature": "Lost reasons with details; closing cancels tasks",
+    "now": "Built in parity round 1",
+    "why": "Tasks stay open after Lost, by design (Q-29)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-04",
+    "area": "Mismatches",
+    "feature": "Return only a closed, not-signed Qanvast lead",
+    "now": "Not built — by design",
+    "why": "Return from any stage; the wizard parks it Lost (Q-08)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-05",
+    "area": "Mismatches",
+    "feature": "Seven return reasons with their own fields",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-06",
+    "area": "Mismatches",
+    "feature": "Removing the last member drops the lead to Unassigned",
+    "now": "Not built — by design",
+    "why": "Past New the last member cannot be removed (Q-09)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-07",
+    "area": "Mismatches",
+    "feature": "Designers may assign leads",
+    "now": "Not built — by design",
+    "why": "Designers never assign — the owner's L6 call (Q-19)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-08",
+    "area": "Mismatches",
+    "feature": "Duplicate on manual create: confirm, then hold for review",
+    "now": "Built in parity round 3",
+    "why": "\"Create anyway\" creates it; nothing is held for review"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-09",
+    "area": "Mismatches",
+    "feature": "Webhook duplicates dropped",
+    "now": "Platform",
+    "why": "Stand-in sends a known phone to Review imported leads"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-10",
+    "area": "Mismatches",
+    "feature": "Export the filtered list with 23 columns",
+    "now": "Built in parity round 4",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-11",
+    "area": "Mismatches",
+    "feature": "List opens on the last 30 days",
+    "now": "Not built — by design",
+    "why": "The list opens on every lead (Q-30)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-12",
+    "area": "Mismatches",
+    "feature": "Property status: New, Resale, Existing",
+    "now": "Not built — by design",
+    "why": "Condition keeps Renovated; Existing maps to it (Q-11)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-13",
+    "area": "Mismatches",
+    "feature": "Style list incl. Vintage, Transitional, No preference",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-14",
+    "area": "Mismatches",
+    "feature": "Key collection in 3, 6, 9 months or Later",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-15",
+    "area": "Mismatches",
+    "feature": "Required Area / District field",
+    "now": "Built in parity round 1",
+    "why": "District is an optional select of five regions (Q-12)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-16",
+    "area": "Mismatches",
+    "feature": "In person channel and Not interested outcome",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-17",
+    "area": "Mismatches",
+    "feature": "Follow-up date with a reminder 30 minutes before",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-18",
+    "area": "Mismatches",
+    "feature": "Activity keeps removals and deletions",
+    "now": "Built in parity round 7",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-19",
+    "area": "Mismatches",
+    "feature": "Bulk assign that replaces members",
+    "now": "Built in parity round 4",
+    "why": "Adds members to the selected leads; never replaces (Q-31)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-20",
+    "area": "Mismatches",
+    "feature": "Budget outside 1,000–5,000,000 refused",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-21",
+    "area": "Mismatches",
+    "feature": "Five required fields",
+    "now": "Not built — by design",
+    "why": "Two required fields kept (Q-15)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-22",
+    "area": "Mismatches",
+    "feature": "First and last name",
+    "now": "Not built — by design",
+    "why": "One Lead name field (Q-13)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-23",
+    "area": "Mismatches",
+    "feature": "Remarks and Additional info",
+    "now": "Not built — by design",
+    "why": "Remarks only (Q-16)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-24",
+    "area": "Mismatches",
+    "feature": "Portal invite stored, with resend",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-25",
+    "area": "Mismatches",
+    "feature": "Studio question bank, client answers, history",
+    "now": "Built in parity round 6",
+    "why": "Answer history not built, by design"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-26",
+    "area": "Mismatches",
+    "feature": "Events: status changed, follow-up, hold, questionnaire",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-27",
+    "area": "Mismatches",
+    "feature": "Signed creates a draft project",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-28",
+    "area": "Mismatches",
+    "feature": "Closing a lead cancels its open tasks",
+    "now": "Not built — by design",
+    "why": "Lost keeps tasks; their notifications stop instead (Q-29)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-29",
+    "area": "Mismatches",
+    "feature": "Changing a lead's members moves its tasks",
+    "now": "Not built — by design",
+    "why": "Tasks keep their own members (Q-32)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-30",
+    "area": "Mismatches",
+    "feature": "Undo after closing a lead",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-31",
+    "area": "Mismatches",
+    "feature": "Archive blocked while a signing link is live",
+    "now": "Built in parity round 1",
+    "why": "Delete now warns about live signing links (Q-04)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-32",
+    "area": "Mismatches",
+    "feature": "Six project types",
+    "now": "Not built — by design",
+    "why": "The Won step keeps its three project types (Q-34)"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-33",
+    "area": "Mismatches",
+    "feature": "Attach files when creating a lead",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-34",
+    "area": "Mismatches",
+    "feature": "Custom lead fields",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-35",
+    "area": "Mismatches",
+    "feature": "IC / NRIC, Customer ID and quote facts on the lead",
+    "now": "Built in parity round 1",
+    "why": "NRIC and Customer ID on the lead; quote status stays per quote"
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-36",
+    "area": "Mismatches",
+    "feature": "Search by name, area, phone, email",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-37",
+    "area": "Mismatches",
+    "feature": "Kanban with four bucket columns",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "MM-38",
+    "area": "Mismatches",
+    "feature": "Portal emails Homereno, Houzz, Renopedia as sources",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-01",
+    "area": "Listing",
+    "feature": "Lead list with counts",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-02",
+    "area": "Listing",
+    "feature": "Kanban, list and Performance views",
+    "now": "Built in parity round 5",
+    "why": "Performance became Leads › Insights"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-03",
+    "area": "Listing",
+    "feature": "Kanban board of the pipeline",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-04",
+    "area": "Listing",
+    "feature": "Collapse a kanban column, remembered",
+    "now": "Not built — by design",
+    "why": "The mock's bands collapse; single columns do not"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-05",
+    "area": "Listing",
+    "feature": "Status filter inside each kanban column",
+    "now": "Excluded",
+    "why": "Needs sub-statuses, which 2.0 dropped (Q-01)"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-06",
+    "area": "Listing",
+    "feature": "What a lead card shows",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-07",
+    "area": "Listing",
+    "feature": "List view columns",
+    "now": "Built in parity round 1",
+    "why": "District column in round 1; Next follow-up column in round 2"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-08",
+    "area": "Listing",
+    "feature": "Open a lead from a link",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-09",
+    "area": "Listing",
+    "feature": "Follow-up badge: today, overdue, in n days",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-10",
+    "area": "Listing",
+    "feature": "On Hold badge with the restart date",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-11",
+    "area": "Listing",
+    "feature": "Needs-attention and duplicate flags",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-12",
+    "area": "Listing",
+    "feature": "Commission pending badge",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-13",
+    "area": "Listing",
+    "feature": "Journey intro banner and mini-rail",
+    "now": "Excluded",
+    "why": "Journey mode excluded by the owner"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-14",
+    "area": "Listing",
+    "feature": "Back to top button",
+    "now": "Not built — by design",
+    "why": "Not proposed; the sticky header is enough"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-15",
+    "area": "Listing",
+    "feature": "Page context handed to the AI assistant",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-16",
+    "area": "Listing",
+    "feature": "Press C for a new lead",
+    "now": "Built in parity round 4",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-17",
+    "area": "Listing",
+    "feature": "Who sees which leads",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-18",
+    "area": "Listing",
+    "feature": "Reading old statuses into positions",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-19",
+    "area": "Listing",
+    "feature": "What counts as the pipeline",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-20",
+    "area": "Listing",
+    "feature": "Search leads",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-21",
+    "area": "Listing",
+    "feature": "Filter and sort panel",
+    "now": "Built in parity round 2",
+    "why": "Quick filters joined the panel in round 2"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-22",
+    "area": "Listing",
+    "feature": "Quick filters: overdue, unassigned, attention, hot, on hold",
+    "now": "Built in parity round 2",
+    "why": "No Hot filter (Q-10); Unseen added"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-23",
+    "area": "Listing",
+    "feature": "Sort newest or oldest",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-24",
+    "area": "Listing",
+    "feature": "Filter by bucket",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-25",
+    "area": "Listing",
+    "feature": "Filter by member",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-26",
+    "area": "Listing",
+    "feature": "Filter by source",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-27",
+    "area": "Listing",
+    "feature": "Date created filter with a 30-day default",
+    "now": "Built in parity round 4",
+    "why": "'This month' added; no default 30-day window (Q-30)"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-28",
+    "area": "Listing",
+    "feature": "Chips for active filters and Clear all",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-29",
+    "area": "Listing",
+    "feature": "Active filter count",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-30",
+    "area": "Listing",
+    "feature": "Empty states",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-31",
+    "area": "Listing",
+    "feature": "Column settings and saved views",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart; every table shares it"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-32",
+    "area": "Listing",
+    "feature": "Export as CSV",
+    "now": "Built in parity round 4",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-33",
+    "area": "Listing",
+    "feature": "Archived leads view",
+    "now": "Excluded",
+    "why": "Archive excluded; Deleted Leads takes its place"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-34",
+    "area": "Listing",
+    "feature": "Header menu: export, archived, settings",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-35",
+    "area": "Listing",
+    "feature": "Temperature on the list",
+    "now": "Not built — by design",
+    "why": "Owner declined temperature (Q-10)"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-36",
+    "area": "Listing",
+    "feature": "Phone card list with stage tabs",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "L-37",
+    "area": "Listing",
+    "feature": "Add Lead, Insights and menu in the header",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-38",
+    "area": "Listing",
+    "feature": "Band on leads nobody has opened",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart"
+  },
+  {
+    "key": "LEADS",
+    "id": "L-39",
+    "area": "Listing",
+    "feature": "Row and card menu: Delete, Return Lead",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart; 1.0 rows had no menu"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-01",
+    "area": "Lead creation",
+    "feature": "Only allowed roles see Add Lead",
+    "now": "Built in parity round 3",
+    "why": "Every role creates; a Designer's new lead is theirs"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-02",
+    "area": "Lead creation",
+    "feature": "New Lead form with sections",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-03",
+    "area": "Lead creation",
+    "feature": "Client fields: first, last, email, phone, source",
+    "now": "Not built — by design",
+    "why": "One name field; name and phone required (Q-13, Q-15)"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-04",
+    "area": "Lead creation",
+    "feature": "Property type, budget and district",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-05",
+    "area": "Lead creation",
+    "feature": "Property status, style, area size, key collection, address",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-06",
+    "area": "Lead creation",
+    "feature": "Remarks and Additional Info",
+    "now": "Not built — by design",
+    "why": "Remarks only (Q-16)"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-07",
+    "area": "Lead creation",
+    "feature": "Assign members when creating",
+    "now": "Built in parity round 3",
+    "why": "Designer self-assign in round 3; open-to-leads pool in round 6"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-08",
+    "area": "Lead creation",
+    "feature": "Attach documents when creating",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-09",
+    "area": "Lead creation",
+    "feature": "Form checks before saving",
+    "now": "Built in parity round 1",
+    "why": "Budget limits added in round 1"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-10",
+    "area": "Lead creation",
+    "feature": "Save and confirm a new lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-11",
+    "area": "Lead creation",
+    "feature": "A separate full-page New Lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-12",
+    "area": "Lead creation",
+    "feature": "Creating a lead on the server",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-13",
+    "area": "Lead creation",
+    "feature": "Duplicate check before saving",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-14",
+    "area": "Lead creation",
+    "feature": "Recommended member when assigning",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "C-15",
+    "area": "Lead creation",
+    "feature": "Fill from a document",
+    "now": "Built in parity round 3",
+    "why": "Scripted stand-in with fixed values; no real AI"
+  },
+  {
+    "key": "LEADS",
+    "id": "C-16",
+    "area": "Lead creation",
+    "feature": "Hangout, AI agent and project intake",
+    "now": "Later",
+    "why": "Hangouts, AI tools and Projects come later"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-01",
+    "area": "Intake",
+    "feature": "Duplicate detector with a studio switch",
+    "now": "Built in parity round 3",
+    "why": "Always on; no studio switch, by design (Q-18)"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-02",
+    "area": "Intake",
+    "feature": "Leads pending review queue",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-03",
+    "area": "Intake",
+    "feature": "Approve, reject, keep both",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-04",
+    "area": "Intake",
+    "feature": "Merge a duplicate into the original",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-05",
+    "area": "Intake",
+    "feature": "Approve all at once",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-06",
+    "area": "Intake",
+    "feature": "Import leads from a file",
+    "now": "2.0 only",
+    "why": "1.0 had no lead import"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-07",
+    "area": "Intake",
+    "feature": "Webhook endpoints per source",
+    "now": "Built in parity round 6",
+    "why": "A stand-in: generated URLs and demo POSTs"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-08",
+    "area": "Intake",
+    "feature": "Webhook receiving rules",
+    "now": "Platform",
+    "why": "Real receiving is the platform's; the stand-in keeps the review landing"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-09",
+    "area": "Intake",
+    "feature": "Leads fed from Qanvast",
+    "now": "2.0 only",
+    "why": "1.0 had no Qanvast feed"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-10",
+    "area": "Intake",
+    "feature": "Connect Gmail for portal emails",
+    "now": "Built in parity round 6",
+    "why": "A stand-in inbox; Sync now plays a sample enquiry"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-11",
+    "area": "Intake",
+    "feature": "Email polling every minute",
+    "now": "Platform",
+    "why": "Real polling is the platform's"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-12",
+    "area": "Intake",
+    "feature": "Sync now",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-13",
+    "area": "Intake",
+    "feature": "Source chips",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-14",
+    "area": "Intake",
+    "feature": "Assign everything the board shows",
+    "now": "Built in parity round 4",
+    "why": "Select rows, then Assign; no filter-wide 'Assign n'"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-15",
+    "area": "Intake",
+    "feature": "Tick several leads with a bulk bar",
+    "now": "Built in parity round 4",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "I-16",
+    "area": "Intake",
+    "feature": "Bulk assign rules",
+    "now": "Built in parity round 4",
+    "why": "Adds members and notifies them; never replaces (Q-31)"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-17",
+    "area": "Intake",
+    "feature": "Archive, revive, blockers and cascade",
+    "now": "Excluded",
+    "why": "Archive excluded; Delete warns about live signing links (Q-04)"
+  },
+  {
+    "key": "LEADS",
+    "id": "I-18",
+    "area": "Intake",
+    "feature": "Import history",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart"
+  },
+  {
+    "key": "LEADS",
+    "id": "R-01",
+    "area": "Reports",
+    "feature": "Performance view with turnaround times",
+    "now": "Built in parity round 5",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "R-02",
+    "area": "Reports",
+    "feature": "Turnaround time stamps",
+    "now": "Built in parity round 5",
+    "why": "Worked out from records, not stamped"
+  },
+  {
+    "key": "LEADS",
+    "id": "R-03",
+    "area": "Reports",
+    "feature": "Response time on each lead",
+    "now": "Built in parity round 5",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "R-04",
+    "area": "Reports",
+    "feature": "Checklist before converting to a project",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "R-05",
+    "area": "Reports",
+    "feature": "Dashboard lead widgets",
+    "now": "Later",
+    "why": "Waits for the Dashboard mocks (owner's hold)"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-01",
+    "area": "Lead detail",
+    "feature": "Lead drawer and links",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-02",
+    "area": "Lead detail",
+    "feature": "First-time tip on the lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-03",
+    "area": "Lead detail",
+    "feature": "Tool turned off for the studio",
+    "now": "Platform",
+    "why": "Platform admin switch; 2.0 shows coming soon"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-04",
+    "area": "Lead detail",
+    "feature": "Name, status and chips at the top",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-05",
+    "area": "Lead detail",
+    "feature": "WhatsApp, live meeting, view size, more",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-06",
+    "area": "Lead detail",
+    "feature": "Lead menu: edit, archive, return, activity",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-07",
+    "area": "Lead detail",
+    "feature": "Needs-attention and duplicate callouts",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-08",
+    "area": "Lead detail",
+    "feature": "Commission pending callout",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-09",
+    "area": "Lead detail",
+    "feature": "Remarks shown on the lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-10",
+    "area": "Lead detail",
+    "feature": "Response time card",
+    "now": "Built in parity round 5",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-11",
+    "area": "Lead detail",
+    "feature": "Meeting intelligence and briefs",
+    "now": "Later",
+    "why": "Tools module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-12",
+    "area": "Lead detail",
+    "feature": "Autosave of the whole drawer",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-13",
+    "area": "Lead detail",
+    "feature": "Checks before a status move",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-14",
+    "area": "Lead detail",
+    "feature": "Side effects of a move: tasks cancelled or reassigned",
+    "now": "Not built — by design",
+    "why": "Lost keeps tasks; tasks keep their members (Q-29, Q-32)"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-15",
+    "area": "Lead detail",
+    "feature": "Undo after 'Lead moved to Closed'",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-16",
+    "area": "Lead detail",
+    "feature": "Create Project opens on Signed",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-17",
+    "area": "Lead detail",
+    "feature": "Contact details: call, email, copy",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-18",
+    "area": "Lead detail",
+    "feature": "Invite to Portal",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-19",
+    "area": "Lead detail",
+    "feature": "Budget, property and area tiles",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-20",
+    "area": "Lead detail",
+    "feature": "Property info",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-21",
+    "area": "Lead detail",
+    "feature": "Remarks and additional info",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-22",
+    "area": "Lead detail",
+    "feature": "IC / NRIC, Customer ID, quote valid until",
+    "now": "Built in parity round 1",
+    "why": "Quote valid-until stays on each quote"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-23",
+    "area": "Lead detail",
+    "feature": "Custom fields on the lead",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-24",
+    "area": "Lead detail",
+    "feature": "Assigned designers with split and removal",
+    "now": "Built in parity round 7",
+    "why": "Removals now in Activity; commission split waits for Finance"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-25",
+    "area": "Lead detail",
+    "feature": "AI recommendation card",
+    "now": "Built in parity round 6",
+    "why": "Scored the 1.0 way, without AI"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-26",
+    "area": "Lead detail",
+    "feature": "Old notify-only assign route",
+    "now": "Dead",
+    "why": "No user could reach it"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-27",
+    "area": "Lead detail",
+    "feature": "Status and sub-status controls",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-28",
+    "area": "Lead detail",
+    "feature": "Next follow-up with its task",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-29",
+    "area": "Lead detail",
+    "feature": "Project type picker",
+    "now": "Not built — by design",
+    "why": "The Won step's three project types (Q-34)"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-30",
+    "area": "Lead detail",
+    "feature": "Contract block on the lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-31",
+    "area": "Lead detail",
+    "feature": "Old status and follow-up routes",
+    "now": "Dead",
+    "why": "No user could reach them"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-32",
+    "area": "Lead detail",
+    "feature": "Journey section: hold, resume, close",
+    "now": "Excluded",
+    "why": "Journey mode excluded; its rules live in On Hold and Lost"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-33",
+    "area": "Lead detail",
+    "feature": "Files section",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-34",
+    "area": "Lead detail",
+    "feature": "Journey evidence artifacts",
+    "now": "Excluded",
+    "why": "Excluded with Journey mode"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-35",
+    "area": "Lead detail",
+    "feature": "Homeowner questionnaire",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-36",
+    "area": "Lead detail",
+    "feature": "Ask the homeowner to answer",
+    "now": "Built in parity round 3",
+    "why": "Ask recorded; no 5-minute throttle, by design"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-37",
+    "area": "Lead detail",
+    "feature": "Activity log",
+    "now": "Built in parity round 7",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-38",
+    "area": "Lead detail",
+    "feature": "Who may return a lead, and when",
+    "now": "Built in parity round 3",
+    "why": "Rules shown, not enforced; any-stage return kept (Q-08, Q-44)"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-39",
+    "area": "Lead detail",
+    "feature": "Return wizard with seven reasons",
+    "now": "Built in parity round 3",
+    "why": "Return policy PDF and 1.0's eight tips not ported"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-40",
+    "area": "Lead detail",
+    "feature": "Refund request kept on record",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-41",
+    "area": "Lead detail",
+    "feature": "Quote summary, approvals and comments on the lead",
+    "now": "Later",
+    "why": "Quotes module; see the quote audits"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-42",
+    "area": "Lead detail",
+    "feature": "Move a lead's quotes to another entity",
+    "now": "Later",
+    "why": "Quotes module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-43",
+    "area": "Lead detail",
+    "feature": "Archive and revive",
+    "now": "Excluded",
+    "why": "Archive excluded; Deleted Leads restores instead"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-44",
+    "area": "Lead detail",
+    "feature": "Engagement state",
+    "now": "Dead",
+    "why": "Only hold and resume survive"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-45",
+    "area": "Lead detail",
+    "feature": "Promote a lead link to a project",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-46",
+    "area": "Lead detail",
+    "feature": "Conversion readiness and Create Project",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-47",
+    "area": "Lead detail",
+    "feature": "Contract flow and signing picker",
+    "now": "Later",
+    "why": "Contracts module; see the Contracts audit"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-48",
+    "area": "Lead detail",
+    "feature": "Quote approval as a task",
+    "now": "Later",
+    "why": "Quotes module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-49",
+    "area": "Lead detail",
+    "feature": "Cancel a lead's tasks",
+    "now": "Not built — by design",
+    "why": "Tasks stay open after Lost (Q-29)"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-50",
+    "area": "Lead detail",
+    "feature": "Copilot brief saved to the lead",
+    "now": "Later",
+    "why": "Tools module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-51",
+    "area": "Lead detail",
+    "feature": "Hangout lead",
+    "now": "Later",
+    "why": "Hangouts module"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-52",
+    "area": "Lead detail",
+    "feature": "What each role may do inside the lead",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "D-53",
+    "area": "Lead detail",
+    "feature": "Flags, workflow switches, region, manager setting",
+    "now": "Not built — by design",
+    "why": "Switches declined (Q-26); region is platform; managers are built"
+  },
+  {
+    "key": "LEADS",
+    "id": "D-54",
+    "area": "Lead detail",
+    "feature": "Tasks, Files, Notes, Questionnaire and Activity tabs",
+    "now": "2.0 only",
+    "why": "1.0 folded these into the drawer"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-01",
+    "area": "Stage engine",
+    "feature": "Default funnel with per-status requirements",
+    "now": "Not built — by design",
+    "why": "Seven fixed stages, each asking its own fields (Q-01)"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-02",
+    "area": "Stage engine",
+    "feature": "Deriving positions from old statuses",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-03",
+    "area": "Stage engine",
+    "feature": "Checks before a move",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-04",
+    "area": "Stage engine",
+    "feature": "Designers move forward only",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-05",
+    "area": "Stage engine",
+    "feature": "Assignment writes and downgrade",
+    "now": "Not built — by design",
+    "why": "Past New the last member stays (Q-09)"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-06",
+    "area": "Stage engine",
+    "feature": "Where a new lead starts",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-07",
+    "area": "Stage engine",
+    "feature": "Server guards on stage writes",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-08",
+    "area": "Stage engine",
+    "feature": "Journey spine, tracker and mini-rail",
+    "now": "Excluded",
+    "why": "Journey mode excluded by the owner"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-09",
+    "area": "Stage engine",
+    "feature": "Contact attempts",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-10",
+    "area": "Stage engine",
+    "feature": "AI reads a chat screenshot",
+    "now": "Platform",
+    "why": "Auto Fill is a scripted stand-in"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-11",
+    "area": "Stage engine",
+    "feature": "Evidence files per step",
+    "now": "Excluded",
+    "why": "Journey mode excluded by the owner"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-12",
+    "area": "Stage engine",
+    "feature": "Engagement state and suggestions",
+    "now": "Dead",
+    "why": "1.0 had already removed it"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-13",
+    "area": "Stage engine",
+    "feature": "Put on hold and resume",
+    "now": "Built in parity round 1",
+    "why": "Reasons in round 1; the date reminder in round 2"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-14",
+    "area": "Stage engine",
+    "feature": "Close a lead",
+    "now": "Built in parity round 1",
+    "why": "Tasks stay open after Lost, by design (Q-29)"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-15",
+    "area": "Stage engine",
+    "feature": "Follow-up automation",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-16",
+    "area": "Stage engine",
+    "feature": "Reminder 30 minutes before a follow-up",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-17",
+    "area": "Stage engine",
+    "feature": "Turnaround stamps and report",
+    "now": "Built in parity round 5",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "S-18",
+    "area": "Stage engine",
+    "feature": "Client signature moves the lead to Signed",
+    "now": "Not built — by design",
+    "why": "Signing doesn't win the lead; Won keeps its step (Q-37)"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-19",
+    "area": "Stage engine",
+    "feature": "Project created moves the lead",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-20",
+    "area": "Stage engine",
+    "feature": "AI agent moves stages",
+    "now": "Later",
+    "why": "AI tools"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-21",
+    "area": "Stage engine",
+    "feature": "Unused stage routes",
+    "now": "Dead",
+    "why": "No user could reach them"
+  },
+  {
+    "key": "LEADS",
+    "id": "S-22",
+    "area": "Stage engine",
+    "feature": "Activity wording",
+    "now": "Built in parity round 7",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-01",
+    "area": "Settings",
+    "feature": "Classic or Journey lead experience",
+    "now": "Excluded",
+    "why": "2.0 has Linear or Flexible stage movement instead"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-02",
+    "area": "Settings",
+    "feature": "Editable Lost reasons with a contacts gate",
+    "now": "Built in parity round 1",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-03",
+    "area": "Settings",
+    "feature": "Detect duplicate leads switch",
+    "now": "Not built — by design",
+    "why": "Always checked; no switch (Q-18)"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-04",
+    "area": "Settings",
+    "feature": "Designer lead preferences",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-05",
+    "area": "Settings",
+    "feature": "Open to new leads, per member",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-06",
+    "area": "Settings",
+    "feature": "Studio region",
+    "now": "Platform",
+    "why": "Singapore only"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-07",
+    "area": "Settings",
+    "feature": "Email lead sources",
+    "now": "Built in parity round 6",
+    "why": "A stand-in on Company › Integrations"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-08",
+    "area": "Settings",
+    "feature": "Lead funnel editor",
+    "now": "Not built — by design",
+    "why": "Held; 'Manage Stages' answers coming soon (Q-02)"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-09",
+    "area": "Settings",
+    "feature": "Lead categories",
+    "now": "Dead",
+    "why": "Saved in 1.0 but never used"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-10",
+    "area": "Settings",
+    "feature": "Pipeline stages table",
+    "now": "Dead",
+    "why": "The 1.0 board no longer read it"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-11",
+    "area": "Settings",
+    "feature": "Custom lead fields editor",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-12",
+    "area": "Settings",
+    "feature": "Lead sources list",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "G-13",
+    "area": "Settings",
+    "feature": "Workflow rules and approvers",
+    "now": "Not built — by design",
+    "why": "Quote approval and backup approver only; no lead switches (Q-26)"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-14",
+    "area": "Settings",
+    "feature": "Lead webhooks page",
+    "now": "Built in parity round 6",
+    "why": "A stand-in on Company › Integrations"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-15",
+    "area": "Settings",
+    "feature": "Legal entities on leads",
+    "now": "Later",
+    "why": "Entities live on quotes and contracts"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-16",
+    "area": "Settings",
+    "feature": "Feature flags page",
+    "now": "Platform",
+    "why": "Not a page in 2.0"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-17",
+    "area": "Settings",
+    "feature": "Region config, lead country, CaseTrust",
+    "now": "Platform",
+    "why": "Singapore only; CaseTrust belongs to Contracts"
+  },
+  {
+    "key": "LEADS",
+    "id": "G-18",
+    "area": "Settings",
+    "feature": "Stage movement, lead capture, who sees leads",
+    "now": "2.0 only",
+    "why": "Settings 1.0 did not have"
+  },
+  {
+    "key": "LEADS",
+    "id": "P-01",
+    "area": "Roles",
+    "feature": "Role tags including Accounting",
+    "now": "Later",
+    "why": "An Accounting role comes with Finance (Q-39)"
+  },
+  {
+    "key": "LEADS",
+    "id": "P-02",
+    "area": "Roles",
+    "feature": "Custom roles and per-member permissions",
+    "now": "Not built — by design",
+    "why": "Four fixed roles; custom roles held (Q-40)"
+  },
+  {
+    "key": "LEADS",
+    "id": "P-03",
+    "area": "Roles",
+    "feature": "What the server enforces",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "P-04",
+    "area": "Roles",
+    "feature": "Manager hierarchy",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "P-05",
+    "area": "Roles",
+    "feature": "Who may do what with leads",
+    "now": "Built in parity round 1",
+    "why": "Delete, Settings and Insights for Owners and Admins (Q-41)"
+  },
+  {
+    "key": "LEADS",
+    "id": "N-01",
+    "area": "Notifications",
+    "feature": "Lead assigned",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-02",
+    "area": "Notifications",
+    "feature": "Lead status changed",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-03",
+    "area": "Notifications",
+    "feature": "Lead captured",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-04",
+    "area": "Notifications",
+    "feature": "Follow-up reminder 30 minutes before",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-05",
+    "area": "Notifications",
+    "feature": "Hold ended — revisit",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-06",
+    "area": "Notifications",
+    "feature": "Questionnaire requested and answered",
+    "now": "Built in parity round 3",
+    "why": "Ask recorded; 'client answered' waits for the portal"
+  },
+  {
+    "key": "LEADS",
+    "id": "N-07",
+    "area": "Notifications",
+    "feature": "Task assigned and task due soon",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-08",
+    "area": "Notifications",
+    "feature": "Untouched lead",
+    "now": "2.0 only",
+    "why": "No 1.0 counterpart"
+  },
+  {
+    "key": "LEADS",
+    "id": "N-09",
+    "area": "Notifications",
+    "feature": "Sending rules and who hears what",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "N-10",
+    "area": "Notifications",
+    "feature": "Scheduled sends and daily digest",
+    "now": "Platform",
+    "why": "Real sending is the platform's; digest held (Q-42)"
+  },
+  {
+    "key": "LEADS",
+    "id": "N-11",
+    "area": "Notifications",
+    "feature": "Notification settings page",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-01",
+    "area": "Touchpoints",
+    "feature": "Dashboard lead widgets",
+    "now": "Later",
+    "why": "Waits for the Dashboard mocks"
+  },
+  {
+    "key": "LEADS",
+    "id": "T-02",
+    "area": "Touchpoints",
+    "feature": "Inbox",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-03",
+    "area": "Touchpoints",
+    "feature": "Tasks linked to leads, follow-up type",
+    "now": "Built in parity round 2",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-04",
+    "area": "Touchpoints",
+    "feature": "Convert to a project",
+    "now": "Later",
+    "why": "Projects module"
+  },
+  {
+    "key": "LEADS",
+    "id": "T-05",
+    "area": "Touchpoints",
+    "feature": "Escalations",
+    "now": "Built",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-06",
+    "area": "Touchpoints",
+    "feature": "Return and refund",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-07",
+    "area": "Touchpoints",
+    "feature": "Homeowner page and automatic link",
+    "now": "Later",
+    "why": "Portal pages come later; invites are recorded (Q-22)"
+  },
+  {
+    "key": "LEADS",
+    "id": "T-08",
+    "area": "Touchpoints",
+    "feature": "Scope questionnaire builder",
+    "now": "Built in parity round 6",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-09",
+    "area": "Touchpoints",
+    "feature": "Admin studio detail",
+    "now": "Platform",
+    "why": "Qanvast admin tooling, not ported"
+  },
+  {
+    "key": "LEADS",
+    "id": "T-10",
+    "area": "Touchpoints",
+    "feature": "Qanvast Ops leads with export and return rules",
+    "now": "Built in parity round 3",
+    "why": ""
+  },
+  {
+    "key": "LEADS",
+    "id": "T-11",
+    "area": "Touchpoints",
+    "feature": "Hangouts, copilot and entity",
+    "now": "Later",
+    "why": "Their own modules come later"
+  }
+]

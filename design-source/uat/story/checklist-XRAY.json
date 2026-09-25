@@ -1,0 +1,898 @@
+[
+ {
+  "key": "XRAY",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "One reading: your quote against another studio’s",
+  "now": "Built",
+  "why": "Retired 1.0 objectives left behind (Q-01)"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "Reading the other studio’s file",
+  "now": "Built in parity round 2",
+  "why": "Sheets read for real; PDFs and photos only by known name"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "Your side of the comparison",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "What counts as a match",
+  "now": "Built in parity round 1",
+  "why": "Plurals, trade words, one against several; corrections in round 3"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "The real price difference",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "Points to tell the client",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Brand key points",
+  "now": "Built in parity round 1",
+  "why": "Curated notes stand in for web research"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "The WhatsApp message to the client",
+  "now": "Built in parity round 3",
+  "why": "Wording in round 1; the send kept in round 3"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "History of comparisons",
+  "now": "Built in parity round 2",
+  "why": "Every reading listed, with search; Who sees leads in round 4"
+ },
+ {
+  "key": "XRAY",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "A reading over time",
+  "now": "Built in parity round 3",
+  "why": "Corrections, the changed-quote warning and Run again"
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "The basis of your total",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "Your lines printing FOC or Inclusive",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "The “below market” label",
+  "now": "Built in parity round 1",
+  "why": "Reads “Priced well below ours” — no market rates (Q-06)"
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "Naming the other studio to the client",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "Brands with nothing to raise",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "Whose WhatsApp chat opens",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "Upload mode and the lead",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "Whose comparisons you see",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "When the lead is deleted",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-01",
+  "area": "Ways in and back",
+  "feature": "X-Ray in Tools",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-02",
+  "area": "Ways in and back",
+  "feature": "“Beat this quote” link on the lead",
+  "now": "Built in parity round 2",
+  "why": "Quote rows’ Compare with another quote, phone included"
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-03",
+  "area": "Ways in and back",
+  "feature": "X-Ray from a quote",
+  "now": "Built in parity round 2",
+  "why": "Also on the Quotes tab and Tools › Quotes rows"
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-04",
+  "area": "Ways in and back",
+  "feature": "Links straight to a reading",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-05",
+  "area": "Ways in and back",
+  "feature": "Page frame, loading and crumbs",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-06",
+  "area": "Ways in and back",
+  "feature": "The way back keeps the lead",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-07",
+  "area": "Ways in and back",
+  "feature": "Who may open and run X-Ray",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XE-08",
+  "area": "Ways in and back",
+  "feature": "Phone and tablet",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-01",
+  "area": "The setup",
+  "feature": "The explainer card",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-02",
+  "area": "The setup",
+  "feature": "Two ways to start",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-03",
+  "area": "The setup",
+  "feature": "Choosing the lead",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-04",
+  "area": "The setup",
+  "feature": "Choosing the lead’s quote",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-05",
+  "area": "The setup",
+  "feature": "A lead with no quote yet",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-06",
+  "area": "The setup",
+  "feature": "Upload mode keeps the lead",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-07",
+  "area": "The setup",
+  "feature": "The dropzone, file types and 10 MB",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-08",
+  "area": "The setup",
+  "feature": "Compare button and its hint",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-09",
+  "area": "The setup",
+  "feature": "Progress while comparing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XS-10",
+  "area": "The setup",
+  "feature": "Errors that name the file",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-01",
+  "area": "Reading the files",
+  "feature": "Reading a PDF or a photo",
+  "now": "Platform",
+  "why": "Known sample names only; the platform reads the rest"
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-02",
+  "area": "Reading the files",
+  "feature": "Reading spreadsheets",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-03",
+  "area": "Reading the files",
+  "feature": "File names misread by part of a word",
+  "now": "Built in parity round 2",
+  "why": "2.0 bug fixed: whole words only"
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-04",
+  "area": "Reading the files",
+  "feature": "File size and type limits",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-05",
+  "area": "Reading the files",
+  "feature": "The other studio’s name",
+  "now": "Built",
+  "why": "A sheet takes a typed name"
+ },
+ {
+  "key": "XRAY",
+  "id": "XR-06",
+  "area": "Reading the files",
+  "feature": "Other currencies",
+  "now": "Platform",
+  "why": "S$ only (Q-23)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-01",
+  "area": "The engine",
+  "feature": "Your quote’s lines taken from the lead",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-02",
+  "area": "The engine",
+  "feature": "Both totals on one basis",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-03",
+  "area": "The engine",
+  "feature": "Trades in matching",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-04",
+  "area": "The engine",
+  "feature": "Word matching, plurals and trade words",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-05",
+  "area": "The engine",
+  "feature": "AI merge of leftover lines",
+  "now": "Platform",
+  "why": "Synonyms and your corrections stand in"
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-06",
+  "area": "The engine",
+  "feature": "One line against several",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-07",
+  "area": "The engine",
+  "feature": "Undo a wrong match",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-08",
+  "area": "The engine",
+  "feature": "The real difference sum",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-09",
+  "area": "The engine",
+  "feature": "Lines with no price",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-10",
+  "area": "The engine",
+  "feature": "Compare rates, not only totals",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XM-11",
+  "area": "The engine",
+  "feature": "Signs and zero amounts",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-01",
+  "area": "Say this",
+  "feature": "The pool of points, up to three said",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-02",
+  "area": "Say this",
+  "feature": "Work their quote leaves out",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-03",
+  "area": "Say this",
+  "feature": "Their price well below",
+  "now": "Built in parity round 1",
+  "why": "Labelled “Priced well below ours” (Q-06)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-04",
+  "area": "Say this",
+  "feature": "The same item cheaper in ours",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-05",
+  "area": "Say this",
+  "feature": "Their arithmetic errors",
+  "now": "Platform",
+  "why": "Needs a document’s stated totals"
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-06",
+  "area": "Say this",
+  "feature": "Material weaknesses worth a question",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-07",
+  "area": "Say this",
+  "feature": "Brands as points",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-08",
+  "area": "Say this",
+  "feature": "A lone question-only point is dropped",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-09",
+  "area": "Say this",
+  "feature": "Say it as a question",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-10",
+  "area": "Say this",
+  "feature": "When nothing stands out",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XP-11",
+  "area": "Say this",
+  "feature": "Names inside the sentences",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-01",
+  "area": "Key points — brands",
+  "feature": "Reading brands off the lines",
+  "now": "Platform",
+  "why": "Curated patterns stand in"
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-02",
+  "area": "Key points — brands",
+  "feature": "Web research on brands",
+  "now": "Platform",
+  "why": "Curated notes kept (Q-23)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-03",
+  "area": "Key points — brands",
+  "feature": "Your brand advantage",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-04",
+  "area": "Key points — brands",
+  "feature": "Issues with brands in their quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-05",
+  "area": "Key points — brands",
+  "feature": "Brands checked with nothing found",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-06",
+  "area": "Key points — brands",
+  "feature": "Sources for a brand note",
+  "now": "Built in parity round 1",
+  "why": "Read as sources, not dead links"
+ },
+ {
+  "key": "XRAY",
+  "id": "XK-07",
+  "area": "Key points — brands",
+  "feature": "Brands in Upload two quotes",
+  "now": "Built in parity round 1",
+  "why": "2.0 gap fixed: your file’s brands kept"
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-01",
+  "area": "The record",
+  "feature": "Which view a reading opens in",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-02",
+  "area": "The record",
+  "feature": "Caption and one-line headline",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-03",
+  "area": "The record",
+  "feature": "Three figure tiles",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-04",
+  "area": "The record",
+  "feature": "The on-paper difference line",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-05",
+  "area": "The record",
+  "feature": "The item-by-item list",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-06",
+  "area": "The record",
+  "feature": "A way to the compared quote",
+  "now": "Built in parity round 3",
+  "why": "Links to the quote editor (Q-17)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-07",
+  "area": "The record",
+  "feature": "Who ran the reading",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-08",
+  "area": "The record",
+  "feature": "A reading gone stale",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XC-09",
+  "area": "The record",
+  "feature": "Print or PDF of a reading",
+  "now": "Not built — by design",
+  "why": "The client gets the message, not a PDF (Q-24)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XW-01",
+  "area": "Sending to the client",
+  "feature": "Send dialog: edit, reset, copy, WhatsApp",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XW-02",
+  "area": "Sending to the client",
+  "feature": "What the draft message says",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XW-03",
+  "area": "Sending to the client",
+  "feature": "Whose WhatsApp chat opens",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XW-04",
+  "area": "Sending to the client",
+  "feature": "Edits to the message kept",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XW-05",
+  "area": "Sending to the client",
+  "feature": "A record of the send",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-01",
+  "area": "History, delete and who may",
+  "feature": "Recent comparisons",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-02",
+  "area": "History, delete and who may",
+  "feature": "A row in Recent",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-03",
+  "area": "History, delete and who may",
+  "feature": "Deleting a comparison",
+  "now": "Built in parity round 4",
+  "why": "Permanent; maker, Owner or Admin; logged on the lead"
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-04",
+  "area": "History, delete and who may",
+  "feature": "Whose comparisons you see",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-05",
+  "area": "History, delete and who may",
+  "feature": "A lead’s comparisons and search",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-06",
+  "area": "History, delete and who may",
+  "feature": "When the lead goes",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-07",
+  "area": "History, delete and who may",
+  "feature": "When the quote goes",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-08",
+  "area": "History, delete and who may",
+  "feature": "The lead’s Activity",
+  "now": "Built in parity round 4",
+  "why": "Runs, sends and deletes logged"
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-09",
+  "area": "History, delete and who may",
+  "feature": "Notifications about comparisons",
+  "now": "Not built — by design",
+  "why": "Neither version notifies"
+ },
+ {
+  "key": "XRAY",
+  "id": "XH-10",
+  "area": "History, delete and who may",
+  "feature": "Checks on a run",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XL-01",
+  "area": "What 1.0 retired",
+  "feature": "Four older objectives and the combined run",
+  "now": "Dead",
+  "why": "Retired in 1.0 (Q-01)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XL-02",
+  "area": "What 1.0 retired",
+  "feature": "Public share page",
+  "now": "Dead",
+  "why": "Q-01 · Q-24"
+ },
+ {
+  "key": "XRAY",
+  "id": "XL-03",
+  "area": "What 1.0 retired",
+  "feature": "PDF download of a reading",
+  "now": "Dead",
+  "why": "Q-24"
+ },
+ {
+  "key": "XRAY",
+  "id": "XL-04",
+  "area": "What 1.0 retired",
+  "feature": "Win / loss per comparison",
+  "now": "Dead",
+  "why": "The lead’s Won / Lost carries it (Q-22)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XL-05",
+  "area": "What 1.0 retired",
+  "feature": "Status and attach-a-lead routes",
+  "now": "Dead",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XF-01",
+  "area": "The platform’s",
+  "feature": "Market rate bands",
+  "now": "Platform",
+  "why": "Q-23"
+ },
+ {
+  "key": "XRAY",
+  "id": "XF-02",
+  "area": "The platform’s",
+  "feature": "Brand dossiers, admin page, sweep, kill switch",
+  "now": "Platform",
+  "why": "Q-23"
+ },
+ {
+  "key": "XRAY",
+  "id": "XF-03",
+  "area": "The platform’s",
+  "feature": "Market observations table",
+  "now": "Platform",
+  "why": "Not ported"
+ },
+ {
+  "key": "XRAY",
+  "id": "XF-04",
+  "area": "The platform’s",
+  "feature": "Telemetry, AI cost and limits",
+  "now": "Platform",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XF-05",
+  "area": "The platform’s",
+  "feature": "Running without an AI key",
+  "now": "Platform",
+  "why": "The curated readings are the product"
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-01",
+  "area": "Touchpoints",
+  "feature": "Lost reason’s competitor taken from X-Ray",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-02",
+  "area": "Touchpoints",
+  "feature": "Meeting Copilot’s competitor-quote analyser",
+  "now": "Later",
+  "why": "Meetings (held)"
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-03",
+  "area": "Touchpoints",
+  "feature": "Maison AI quote benchmarker",
+  "now": "Later",
+  "why": "Maison AI"
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-04",
+  "area": "Touchpoints",
+  "feature": "Purchase order quote compare",
+  "now": "Later",
+  "why": "Finance"
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-05",
+  "area": "Touchpoints",
+  "feature": "The homeowner portal",
+  "now": "Later",
+  "why": "The portal"
+ },
+ {
+  "key": "XRAY",
+  "id": "XZ-06",
+  "area": "Touchpoints",
+  "feature": "Upload a quote shares the reader",
+  "now": "Built in parity round 2",
+  "why": ""
+ }
+]

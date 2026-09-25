@@ -19,6 +19,9 @@ for (const t of TABLES) {
   out[t] = res.rows.map((r) => Object.fromEntries(res.columns.map((c, i) => [c, r[i] === undefined ? null : r[i]])))
   total += res.rows.length
 }
+/* (REG-667) The base state is always signed in as Dane — a snapshot taken while Demo Studio › View as shows another member must not
+   make that member everyone's "you" after a reset. */
+out.members = (out.members as Record<string, unknown>[]).map((m) => ({ ...m, is_you: m.id === 'dane' ? 1 : 0 }))
 await writeFile('fixtures/baseline.json', JSON.stringify({ takenAt: new Date().toISOString(), demoDay, ...out }, null, 0))
 console.log(`baseline snapshot: ${TABLES.length} tables, ${total} rows, demoDay ${demoDay} (${DEMO_TZ}) → fixtures/baseline.json`)
 client.close()

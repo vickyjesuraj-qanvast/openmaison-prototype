@@ -1,0 +1,1458 @@
+[
+ {
+  "key": "QED",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "Where a quote’s settings live (on the lead in 1.0)",
+  "now": "Built",
+  "why": "Kept on each quote; the move copies the lead’s values (Q-01)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "One primary quote per lead, mirrored on the lead",
+  "now": "Not built — by design",
+  "why": "No primary quote or mirror; the lead reads its quotes (Q-03)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "Quote statuses",
+  "now": "Built",
+  "why": "2.0’s six kept; a sent-back quote returns to Draft with a note"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "Quote approval by approvers",
+  "now": "Built in parity round 2",
+  "why": "Approve or Request changes with a note; no money thresholds (Q-24)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "Quote versions",
+  "now": "Built in parity round 3",
+  "why": "Per quote via Revise; Bring back added; no any-two compare (Q-26)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "Sections of a quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "Words a line prints instead of its price",
+  "now": "Built in parity round 1",
+  "why": "“By client” added; section lump sum not built (Q-15)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "Optional lines",
+  "now": "Built in parity round 4",
+  "why": "Out of the totals; the client ticks them on the confirmation link"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "Line and document discounts",
+  "now": "Built",
+  "why": "Named discounts per quote; no flat S$ line discount (Q-11)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "GST on a quote",
+  "now": "Built",
+  "why": "Per quote and issuing entity; no per-line rates (Q-12)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-11",
+  "area": "Definitions",
+  "feature": "The studio’s price book",
+  "now": "Built in parity round 5",
+  "why": "Export here; approval and history in price book parity; no tiers"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-12",
+  "area": "Definitions",
+  "feature": "Signing a quote",
+  "now": "Built in parity round 4",
+  "why": "A signed contract signs its quote; no token, expiry or code (Q-33)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-13",
+  "area": "Definitions",
+  "feature": "Comments on quote lines",
+  "now": "Built in parity round 5",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "DEF-14",
+  "area": "Definitions",
+  "feature": "Getting a quote in: upload a file or AI draft",
+  "now": "Built in parity round 5",
+  "why": "Upload a quote built; Draft with Maison AI still coming soon (Q-17)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-15",
+  "area": "Definitions",
+  "feature": "Variation orders",
+  "now": "Later",
+  "why": "Waits for Projects and Finance (Q-05)"
+ },
+ {
+  "key": "QED",
+  "id": "DEF-16",
+  "area": "Definitions",
+  "feature": "Quote locked read-only once it leaves Draft",
+  "now": "Built in parity round 2",
+  "why": "No hard lock by design; a banner offers Revise (Q-04)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "Where a quote’s settings live",
+  "now": "Built",
+  "why": "Kept on each quote (Q-01)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "Primary quote and the lead’s quote status",
+  "now": "Not built — by design",
+  "why": "Derived from the lead’s quotes, no mirror (Q-03)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "The set of quote statuses",
+  "now": "Built",
+  "why": "2.0’s six statuses kept (Q-02)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "Editing a quote after it is sent",
+  "now": "Built in parity round 2",
+  "why": "Stays editable, with a banner and Revise (Q-04)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "An approver’s own send approves it",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "Rejecting a quote with a reason",
+  "now": "Built in parity round 2",
+  "why": "Request changes with a note; back to Draft (Q-22)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "Versions: per lead, compare, restore",
+  "now": "Built in parity round 3",
+  "why": "Per quote; Bring back added; no compare (Q-26)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "A section priced as one lump sum",
+  "now": "Not built — by design",
+  "why": "One priced line or Print as one line does it (Q-15)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "Line discount in S$",
+  "now": "Not built — by design",
+  "why": "Named discounts carry amounts (Q-11)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-10",
+  "area": "Mismatches",
+  "feature": "Tax rate per line",
+  "now": "Not built — by design",
+  "why": "GST stays per quote and issuing entity (Q-12)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-11",
+  "area": "Mismatches",
+  "feature": "Signing marks the quote signed",
+  "now": "Built in parity round 4",
+  "why": "The contract raised from the quote signs it (Q-31)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-12",
+  "area": "Mismatches",
+  "feature": "The client’s picks on optional works",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "MM-13",
+  "area": "Mismatches",
+  "feature": "Deleting a quote",
+  "now": "Built in parity round 3",
+  "why": "Soft delete, Deleted Quotes; creator, Owner or Admin (Q-27, Q-28)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-14",
+  "area": "Mismatches",
+  "feature": "A quote’s valid-until date",
+  "now": "Built in parity round 3",
+  "why": "A passed date is marked, never blocked (Q-29)"
+ },
+ {
+  "key": "QED",
+  "id": "MM-15",
+  "area": "Mismatches",
+  "feature": "The client’s link: token, expiry, one-time code",
+  "now": "Not built — by design",
+  "why": "The platform’s; the link keeps the quote id (Q-33)"
+ },
+ {
+  "key": "QED",
+  "id": "QF-01",
+  "area": "The frame",
+  "feature": "Ways to open or start a quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-02",
+  "area": "The frame",
+  "feature": "One editor per quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-03",
+  "area": "The frame",
+  "feature": "Autosave",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-04",
+  "area": "The frame",
+  "feature": "Close, discard and unsaved-changes prompts",
+  "now": "Built",
+  "why": "Nothing waits unsaved; Close returns where you came from"
+ },
+ {
+  "key": "QED",
+  "id": "QF-05",
+  "area": "The frame",
+  "feature": "Side panels beside the lines",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-06",
+  "area": "The frame",
+  "feature": "Header with name, number, status and tools",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-07",
+  "area": "The frame",
+  "feature": "Items and Layout tabs per quote",
+  "now": "Built",
+  "why": "The template is edited from the quote"
+ },
+ {
+  "key": "QED",
+  "id": "QF-08",
+  "area": "The frame",
+  "feature": "Document info: IC, customer ID, valid until, ref",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QF-09",
+  "area": "The frame",
+  "feature": "Read-only quote by status",
+  "now": "Built in parity round 2",
+  "why": "No lock by design; banner with Revise (Q-04)"
+ },
+ {
+  "key": "QED",
+  "id": "QF-10",
+  "area": "The frame",
+  "feature": "Variation order mode",
+  "now": "Later",
+  "why": "Projects and Finance (Q-05)"
+ },
+ {
+  "key": "QED",
+  "id": "QL-01",
+  "area": "The grid and its lines",
+  "feature": "One grid for the quote’s lines",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-02",
+  "area": "The grid and its lines",
+  "feature": "Columns shown or hidden; client columns marked",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-03",
+  "area": "The grid and its lines",
+  "feature": "Line numbering and typed line refs",
+  "now": "Built",
+  "why": "Numbering from the template; typed refs not kept"
+ },
+ {
+  "key": "QED",
+  "id": "QL-04",
+  "area": "The grid and its lines",
+  "feature": "Line name and rich description",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-05",
+  "area": "The grid and its lines",
+  "feature": "Editable price, qty, unit, cost and markup cells",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-06",
+  "area": "The grid and its lines",
+  "feature": "Internal notes, SKU and custom columns per line",
+  "now": "Built in parity round 5",
+  "why": "Notes became line comments; SKU not drawn"
+ },
+ {
+  "key": "QED",
+  "id": "QL-07",
+  "area": "The grid and its lines",
+  "feature": "A spec or product link per line",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-08",
+  "area": "The grid and its lines",
+  "feature": "A vendor per line",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-09",
+  "area": "The grid and its lines",
+  "feature": "Row actions, sort and search",
+  "now": "Built",
+  "why": "Sort by column head stays held"
+ },
+ {
+  "key": "QED",
+  "id": "QL-10",
+  "area": "The grid and its lines",
+  "feature": "Section chips and an unpriced-rows navigator",
+  "now": "Built",
+  "why": "Navigator not added; the sum row instead"
+ },
+ {
+  "key": "QED",
+  "id": "QL-11",
+  "area": "The grid and its lines",
+  "feature": "Keyboard, copy / paste, fill, undo, drag",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-12",
+  "area": "The grid and its lines",
+  "feature": "What a line holds",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-13",
+  "area": "The grid and its lines",
+  "feature": "Price types, including By client",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-14",
+  "area": "The grid and its lines",
+  "feature": "A lump-sum line pricing its whole section",
+  "now": "Not built — by design",
+  "why": "Print as one line folds a section (Q-15)"
+ },
+ {
+  "key": "QED",
+  "id": "QL-15",
+  "area": "The grid and its lines",
+  "feature": "The studio’s own words in place of an amount",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-16",
+  "area": "The grid and its lines",
+  "feature": "Optional lines",
+  "now": "Built",
+  "why": "Always out of the totals"
+ },
+ {
+  "key": "QED",
+  "id": "QL-17",
+  "area": "The grid and its lines",
+  "feature": "Omission lines in a variation order",
+  "now": "Later",
+  "why": "Projects and Finance (Q-05)"
+ },
+ {
+  "key": "QED",
+  "id": "QL-18",
+  "area": "The grid and its lines",
+  "feature": "Highlight and text colour on a line",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-19",
+  "area": "The grid and its lines",
+  "feature": "One image per line",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-20",
+  "area": "The grid and its lines",
+  "feature": "A line knows its price-book item",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-21",
+  "area": "The grid and its lines",
+  "feature": "Tax rate per line",
+  "now": "Not built — by design",
+  "why": "GST per quote and issuing entity (Q-12)"
+ },
+ {
+  "key": "QED",
+  "id": "QL-22",
+  "area": "The grid and its lines",
+  "feature": "Comment threads on a line",
+  "now": "Built in parity round 5",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-23",
+  "area": "The grid and its lines",
+  "feature": "Badges showing where a line came from",
+  "now": "Not built — by design",
+  "why": "Not proposed"
+ },
+ {
+  "key": "QED",
+  "id": "QL-24",
+  "area": "The grid and its lines",
+  "feature": "Package tier, benchmark and confidence per line",
+  "now": "Dead",
+  "why": "Stored in 1.0, never shown"
+ },
+ {
+  "key": "QED",
+  "id": "QL-25",
+  "area": "The grid and its lines",
+  "feature": "A side panel to add or edit a line",
+  "now": "Built",
+  "why": "Edited in the table; a sheet on a phone"
+ },
+ {
+  "key": "QED",
+  "id": "QL-26",
+  "area": "The grid and its lines",
+  "feature": "Duplicate and delete lines and sections",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QL-27",
+  "area": "The grid and its lines",
+  "feature": "Waste % per line",
+  "now": "Not built — by design",
+  "why": "Put the waste in the quantity (Q-10)"
+ },
+ {
+  "key": "QED",
+  "id": "QS-01",
+  "area": "Sections",
+  "feature": "The list of sections",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QS-02",
+  "area": "Sections",
+  "feature": "Add and rename sections",
+  "now": "Built",
+  "why": "Per quote — a rename never touches other quotes"
+ },
+ {
+  "key": "QED",
+  "id": "QS-03",
+  "area": "Sections",
+  "feature": "Section and sub-section notes",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QS-04",
+  "area": "Sections",
+  "feature": "Sub-sections with their own total labels",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QS-05",
+  "area": "Sections",
+  "feature": "The studio’s category names",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QS-06",
+  "area": "Sections",
+  "feature": "Design blocks between sections",
+  "now": "Not built — by design",
+  "why": "Declined in the quote templates audit (Q-23)"
+ },
+ {
+  "key": "QED",
+  "id": "QS-07",
+  "area": "Sections",
+  "feature": "Drag a section to move it",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-01",
+  "area": "Money",
+  "feature": "Line total rounding",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-02",
+  "area": "Money",
+  "feature": "Cost, markup and price working together",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-03",
+  "area": "Money",
+  "feature": "Repricing after paste or fill",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-04",
+  "area": "Money",
+  "feature": "Quote totals: lines, discounts, then GST",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-05",
+  "area": "Money",
+  "feature": "Stored totals",
+  "now": "Built",
+  "why": "Derived from the lines, never stale"
+ },
+ {
+  "key": "QED",
+  "id": "QM-06",
+  "area": "Money",
+  "feature": "Line discount in % or S$",
+  "now": "Not built — by design",
+  "why": "Only % per line; named discounts carry amounts (Q-11)"
+ },
+ {
+  "key": "QED",
+  "id": "QM-07",
+  "area": "Money",
+  "feature": "Document discount",
+  "now": "Built",
+  "why": "Several named discounts per quote"
+ },
+ {
+  "key": "QED",
+  "id": "QM-08",
+  "area": "Money",
+  "feature": "GST switch, rate and issuing entity",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-09",
+  "area": "Money",
+  "feature": "Tax-inclusive line prices",
+  "now": "Later",
+  "why": "Held in the quote templates audit (Q-13)"
+ },
+ {
+  "key": "QED",
+  "id": "QM-10",
+  "area": "Money",
+  "feature": "Tax override per issuing entity",
+  "now": "Dead",
+  "why": "Stored in 1.0, never used"
+ },
+ {
+  "key": "QED",
+  "id": "QM-11",
+  "area": "Money",
+  "feature": "Currency",
+  "now": "Built",
+  "why": "S$ only"
+ },
+ {
+  "key": "QED",
+  "id": "QM-12",
+  "area": "Money",
+  "feature": "Rounding selling prices",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-13",
+  "area": "Money",
+  "feature": "Warning when a line sells below cost",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-14",
+  "area": "Money",
+  "feature": "Quote margin",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-15",
+  "area": "Money",
+  "feature": "Margin per category",
+  "now": "Built in parity round 1",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-16",
+  "area": "Money",
+  "feature": "Cost and markup never printed for the client",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-17",
+  "area": "Money",
+  "feature": "AI money helpers",
+  "now": "Platform",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QM-18",
+  "area": "Money",
+  "feature": "Approval thresholds by amount or margin",
+  "now": "Dead",
+  "why": "Saved but never read in 1.0 (Q-24)"
+ },
+ {
+  "key": "QED",
+  "id": "QM-19",
+  "area": "Money",
+  "feature": "Rebates on lines",
+  "now": "2.0 only",
+  "why": "Owners only, never printed"
+ },
+ {
+  "key": "QED",
+  "id": "QP-01",
+  "area": "The price book",
+  "feature": "Where the price book lives and who edits it",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-02",
+  "area": "The price book",
+  "feature": "What a price-book item holds",
+  "now": "Built in parity round 3",
+  "why": "Price book parity added the link; no SKU or tags"
+ },
+ {
+  "key": "QED",
+  "id": "QP-03",
+  "area": "The price book",
+  "feature": "Price book lists, filters and reorder",
+  "now": "Built",
+  "why": "Drag reorder not kept"
+ },
+ {
+  "key": "QED",
+  "id": "QP-04",
+  "area": "The price book",
+  "feature": "Approval of items a member adds",
+  "now": "Built in parity round 2",
+  "why": "Price book parity: proposals an Owner or Admin approves"
+ },
+ {
+  "key": "QED",
+  "id": "QP-05",
+  "area": "The price book",
+  "feature": "Archive, restore and delete items",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-06",
+  "area": "The price book",
+  "feature": "Price history per item",
+  "now": "Built in parity round 2",
+  "why": "Price book parity: the item’s History"
+ },
+ {
+  "key": "QED",
+  "id": "QP-07",
+  "area": "The price book",
+  "feature": "SKU numbers (PB-NNN)",
+  "now": "Not built — by design",
+  "why": "Not kept (price book Q-08)"
+ },
+ {
+  "key": "QED",
+  "id": "QP-08",
+  "area": "The price book",
+  "feature": "Vendor directory with default markups",
+  "now": "Later",
+  "why": "Finance"
+ },
+ {
+  "key": "QED",
+  "id": "QP-09",
+  "area": "The price book",
+  "feature": "Market rates and crowd signals",
+  "now": "Platform",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-10",
+  "area": "The price book",
+  "feature": "Import from CSV or AI",
+  "now": "Built",
+  "why": "AI reading is the platform’s"
+ },
+ {
+  "key": "QED",
+  "id": "QP-11",
+  "area": "The price book",
+  "feature": "Export the price book",
+  "now": "Built in parity round 5",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-12",
+  "area": "The price book",
+  "feature": "Picking price-book items in the quote",
+  "now": "Built",
+  "why": "Typeahead plus the Price book window’s ticks"
+ },
+ {
+  "key": "QED",
+  "id": "QP-13",
+  "area": "The price book",
+  "feature": "Save a quote line to the book",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-14",
+  "area": "The price book",
+  "feature": "Auto-match and AI search",
+  "now": "Platform",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QP-15",
+  "area": "The price book",
+  "feature": "Price snapshots",
+  "now": "Dead",
+  "why": "Written, never read in 1.0"
+ },
+ {
+  "key": "QED",
+  "id": "QP-16",
+  "area": "The price book",
+  "feature": "Volume price tiers",
+  "now": "Not built — by design",
+  "why": "Declined in the price book audit (Q-06)"
+ },
+ {
+  "key": "QED",
+  "id": "QG-01",
+  "area": "Getting lines in",
+  "feature": "Add a line by hand",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QG-02",
+  "area": "Getting lines in",
+  "feature": "Packages of lines",
+  "now": "Built",
+  "why": "My Sections"
+ },
+ {
+  "key": "QED",
+  "id": "QG-03",
+  "area": "Getting lines in",
+  "feature": "Starter quote by project type",
+  "now": "Later",
+  "why": "Held in the quote templates audit (Q-07)"
+ },
+ {
+  "key": "QED",
+  "id": "QG-04",
+  "area": "Getting lines in",
+  "feature": "Templates as a source of lines",
+  "now": "Built",
+  "why": "Templates start sections; My Sections carry lines"
+ },
+ {
+  "key": "QED",
+  "id": "QG-05",
+  "area": "Getting lines in",
+  "feature": "Quote Digitizer: upload an existing quote",
+  "now": "Built in parity round 5",
+  "why": "Spreadsheets read; PDFs only the known samples"
+ },
+ {
+  "key": "QED",
+  "id": "QG-06",
+  "area": "Getting lines in",
+  "feature": "AI hints per line",
+  "now": "Platform",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QG-07",
+  "area": "Getting lines in",
+  "feature": "Chat with AI to draft a quote",
+  "now": "Later",
+  "why": "Held — Draft with Maison AI stays coming soon (Q-17)"
+ },
+ {
+  "key": "QED",
+  "id": "QG-08",
+  "area": "Getting lines in",
+  "feature": "AI tiers, the import route and comparison",
+  "now": "Dead",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QG-09",
+  "area": "Getting lines in",
+  "feature": "Lines from a meeting brief",
+  "now": "Later",
+  "why": "Tools"
+ },
+ {
+  "key": "QED",
+  "id": "QN-01",
+  "area": "Many quotes per lead",
+  "feature": "Create a quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QN-02",
+  "area": "Many quotes per lead",
+  "feature": "One primary quote per lead",
+  "now": "Not built — by design",
+  "why": "No primary quote (Q-03)"
+ },
+ {
+  "key": "QED",
+  "id": "QN-03",
+  "area": "Many quotes per lead",
+  "feature": "Lists of quotes",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QN-04",
+  "area": "Many quotes per lead",
+  "feature": "Rename a quote",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QN-05",
+  "area": "Many quotes per lead",
+  "feature": "Clone a quote",
+  "now": "Built",
+  "why": "A copy starts clean (fixed in round 2)"
+ },
+ {
+  "key": "QED",
+  "id": "QN-06",
+  "area": "Many quotes per lead",
+  "feature": "Delete a quote",
+  "now": "Built in parity round 3",
+  "why": "Soft delete, Deleted Quotes, who may (Q-27, Q-28)"
+ },
+ {
+  "key": "QED",
+  "id": "QN-07",
+  "area": "Many quotes per lead",
+  "feature": "Quote numbers",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QN-08",
+  "area": "Many quotes per lead",
+  "feature": "Valid-until date",
+  "now": "Built in parity round 3",
+  "why": "A passed date is marked, not blocked (Q-29)"
+ },
+ {
+  "key": "QED",
+  "id": "QN-09",
+  "area": "Many quotes per lead",
+  "feature": "Which quote becomes the contract",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QN-10",
+  "area": "Many quotes per lead",
+  "feature": "Readiness before sending",
+  "now": "Built",
+  "why": "AI insights are the platform’s"
+ },
+ {
+  "key": "QED",
+  "id": "QA-01",
+  "area": "Statuses and approval",
+  "feature": "Quote status names",
+  "now": "Built",
+  "why": "2.0’s six (Q-02)"
+ },
+ {
+  "key": "QED",
+  "id": "QA-02",
+  "area": "Statuses and approval",
+  "feature": "Where statuses change",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-03",
+  "area": "Statuses and approval",
+  "feature": "An approver’s submit approves at once",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-04",
+  "area": "Statuses and approval",
+  "feature": "Status history",
+  "now": "Built in parity round 2",
+  "why": "Approval decisions stamped and shown in Activity"
+ },
+ {
+  "key": "QED",
+  "id": "QA-05",
+  "area": "Statuses and approval",
+  "feature": "Signing marks the quote signed",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-06",
+  "area": "Statuses and approval",
+  "feature": "Reopen an approved quote to revise it",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-07",
+  "area": "Statuses and approval",
+  "feature": "The lead mirrors the quote’s status",
+  "now": "Not built — by design",
+  "why": "Derived, no mirror (Q-03)"
+ },
+ {
+  "key": "QED",
+  "id": "QA-08",
+  "area": "Statuses and approval",
+  "feature": "Who approves quotes",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-09",
+  "area": "Statuses and approval",
+  "feature": "An approval task for approvers",
+  "now": "Built",
+  "why": "A notification in the bell instead"
+ },
+ {
+  "key": "QED",
+  "id": "QA-10",
+  "area": "Statuses and approval",
+  "feature": "Approve or reject in the editor",
+  "now": "Built in parity round 2",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QA-11",
+  "area": "Statuses and approval",
+  "feature": "Approve quotes from Finance",
+  "now": "Later",
+  "why": "Finance"
+ },
+ {
+  "key": "QED",
+  "id": "QA-12",
+  "area": "Statuses and approval",
+  "feature": "Approval rules and checks never read",
+  "now": "Dead",
+  "why": "Q-24"
+ },
+ {
+  "key": "QED",
+  "id": "QV-01",
+  "area": "Versions",
+  "feature": "What a version holds",
+  "now": "Built",
+  "why": "Per quote, made by Revise"
+ },
+ {
+  "key": "QED",
+  "id": "QV-02",
+  "area": "Versions",
+  "feature": "Versions drawer",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QV-03",
+  "area": "Versions",
+  "feature": "Compare two versions",
+  "now": "Built",
+  "why": "A revision prints its changes; no any-two compare (Q-26)"
+ },
+ {
+  "key": "QED",
+  "id": "QV-04",
+  "area": "Versions",
+  "feature": "Restore an older version",
+  "now": "Built in parity round 3",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QD-01",
+  "area": "Sending",
+  "feature": "The Share menu",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QD-02",
+  "area": "Sending",
+  "feature": "Share to the homeowner portal",
+  "now": "Later",
+  "why": "The portal"
+ },
+ {
+  "key": "QED",
+  "id": "QD-03",
+  "area": "Sending",
+  "feature": "Client link with a one-time code",
+  "now": "Built in parity round 4",
+  "why": "Opens only once sent; no token or code (Q-33)"
+ },
+ {
+  "key": "QED",
+  "id": "QD-04",
+  "area": "Sending",
+  "feature": "Quote Sharing settings",
+  "now": "Not built — by design",
+  "why": "Never read in 1.0 (quote templates Q-09)"
+ },
+ {
+  "key": "QED",
+  "id": "QD-05",
+  "area": "Sending",
+  "feature": "Download and print",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QD-06",
+  "area": "Sending",
+  "feature": "Sharing locked until approved",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QC-01",
+  "area": "Signing and the client",
+  "feature": "Signature request that freezes the quote",
+  "now": "Built",
+  "why": "A contract raised from the quote"
+ },
+ {
+  "key": "QED",
+  "id": "QC-02",
+  "area": "Signing and the client",
+  "feature": "Several quotes in one signing",
+  "now": "Later",
+  "why": "Contracts bundle contracts, not quotes"
+ },
+ {
+  "key": "QED",
+  "id": "QC-03",
+  "area": "Signing and the client",
+  "feature": "Signing link expires after 7 days",
+  "now": "Not built — by design",
+  "why": "No expiry (Q-33)"
+ },
+ {
+  "key": "QED",
+  "id": "QC-04",
+  "area": "Signing and the client",
+  "feature": "Signing page, one-time code and review steps",
+  "now": "Built",
+  "why": "Confirmation page; the code is the platform’s"
+ },
+ {
+  "key": "QED",
+  "id": "QC-05",
+  "area": "Signing and the client",
+  "feature": "Client accepts or declines optional add-ons",
+  "now": "Built in parity round 4",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QC-06",
+  "area": "Signing and the client",
+  "feature": "CaseTrust step",
+  "now": "Dead",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QC-07",
+  "area": "Signing and the client",
+  "feature": "Who signs",
+  "now": "Built",
+  "why": "The contract: NRIC and a second client"
+ },
+ {
+  "key": "QED",
+  "id": "QC-08",
+  "area": "Signing and the client",
+  "feature": "What signing sets off",
+  "now": "Built in parity round 4",
+  "why": "The signed quote feeds the Won step"
+ },
+ {
+  "key": "QED",
+  "id": "QC-09",
+  "area": "Signing and the client",
+  "feature": "Done page, certificate and audit trail",
+  "now": "Built",
+  "why": "Download a copy; the contract keeps the signing record"
+ },
+ {
+  "key": "QED",
+  "id": "QC-10",
+  "area": "Signing and the client",
+  "feature": "Resend, regenerate or cancel a request",
+  "now": "Built",
+  "why": "On the contract"
+ },
+ {
+  "key": "QED",
+  "id": "QC-11",
+  "area": "Signing and the client",
+  "feature": "Paper signing and portal signing",
+  "now": "Built",
+  "why": "Mark as signed; the portal later"
+ },
+ {
+  "key": "QED",
+  "id": "QY-01",
+  "area": "The payment schedule",
+  "feature": "Payment milestones and default splits",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QY-02",
+  "area": "The payment schedule",
+  "feature": "Editing the schedule",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QY-03",
+  "area": "The payment schedule",
+  "feature": "Schedule must total 100% before sending",
+  "now": "Built in parity round 4",
+  "why": "The header’s Send now runs the checks"
+ },
+ {
+  "key": "QED",
+  "id": "QY-04",
+  "area": "The payment schedule",
+  "feature": "Amounts from the quote total",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QY-05",
+  "area": "The payment schedule",
+  "feature": "Locking the schedule",
+  "now": "Built in parity round 4",
+  "why": "The payment lock holds on the server"
+ },
+ {
+  "key": "QED",
+  "id": "QY-06",
+  "area": "The payment schedule",
+  "feature": "Schedule frozen at signing",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QY-07",
+  "area": "The payment schedule",
+  "feature": "Fixed-amount rows",
+  "now": "Later",
+  "why": "Finance (quote templates Q-16)"
+ },
+ {
+  "key": "QED",
+  "id": "QY-08",
+  "area": "The payment schedule",
+  "feature": "The project-side schedule (Gantt)",
+  "now": "Later",
+  "why": "Projects"
+ },
+ {
+  "key": "QED",
+  "id": "QT-01",
+  "area": "Follow-ups and notifications",
+  "feature": "Follow-up tasks for quotes",
+  "now": "2.0 only",
+  "why": "A due date raises a follow-up task"
+ },
+ {
+  "key": "QED",
+  "id": "QT-02",
+  "area": "Follow-ups and notifications",
+  "feature": "Sent and signed notifications",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QT-03",
+  "area": "Follow-ups and notifications",
+  "feature": "Approval notifications",
+  "now": "Built in parity round 2",
+  "why": "Approved and changes-requested go to the sender"
+ },
+ {
+  "key": "QED",
+  "id": "QT-04",
+  "area": "Follow-ups and notifications",
+  "feature": "Portal bells and usage events",
+  "now": "Later",
+  "why": "Portal later; usage events are the platform’s"
+ },
+ {
+  "key": "QED",
+  "id": "QR-01",
+  "area": "Roles",
+  "feature": "Permissions per role",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "QED",
+  "id": "QR-02",
+  "area": "Roles",
+  "feature": "Server checks on quote actions",
+  "now": "Built in parity round 3",
+  "why": "Who deletes; Who sees leads on quote pages"
+ },
+ {
+  "key": "QED",
+  "id": "QR-03",
+  "area": "Roles",
+  "feature": "Accounting approves from Finance",
+  "now": "Later",
+  "why": "Finance"
+ },
+ {
+  "key": "QED",
+  "id": "QX-01",
+  "area": "Touchpoints",
+  "feature": "Quote X-Ray on a quote",
+  "now": "Built",
+  "why": "Covered by the Quote X-Ray audit"
+ },
+ {
+  "key": "QED",
+  "id": "QX-02",
+  "area": "Touchpoints",
+  "feature": "Contracts from a quote and the signing bundle",
+  "now": "Built",
+  "why": "Covered by the Contracts audit"
+ },
+ {
+  "key": "QED",
+  "id": "QX-03",
+  "area": "Touchpoints",
+  "feature": "What a signed quote creates (project, Gantt)",
+  "now": "Later",
+  "why": "Projects"
+ },
+ {
+  "key": "QED",
+  "id": "QX-04",
+  "area": "Touchpoints",
+  "feature": "Invoices, POs, variation orders, commissions",
+  "now": "Later",
+  "why": "Finance"
+ },
+ {
+  "key": "QED",
+  "id": "QX-05",
+  "area": "Touchpoints",
+  "feature": "The co-pilot’s meeting brief",
+  "now": "Later",
+  "why": "Tools"
+ }
+]

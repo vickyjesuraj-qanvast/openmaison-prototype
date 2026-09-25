@@ -2,7 +2,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { db } from '@/lib/db'
 import { leadEvents } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 
 /*
  * (REG-613, parity Q-20) The lead event log — written by the actions whose work leaves no row behind (a removal, an edit, a
@@ -18,8 +18,9 @@ export type LeadEventDetail = {
 }
 type Writer = Pick<typeof db, 'insert'>
 
-export async function logLeadEvent(tx: Writer, leadId: string, kind: LeadEventKind, detail: LeadEventDetail = {}, actorId: string | null = SESSION_MEMBER_ID): Promise<void> {
-  await tx.insert(leadEvents).values({ id: randomUUID(), leadId, kind, actorId, at: new Date(), detail })
+/** `actorId` left out = the signed-in member (REG-667: resolved inside the insert, so a caller's transaction never waits on a read). */
+export async function logLeadEvent(tx: Writer, leadId: string, kind: LeadEventKind, detail: LeadEventDetail = {}, actorId?: string | null): Promise<void> {
+  await tx.insert(leadEvents).values({ id: randomUUID(), leadId, kind, actorId: actorId === undefined ? sessionMemberSql : actorId, at: new Date(), detail })
 }
 
 /** The lead columns an edit can change, in the form's words — what "You edited the lead — Budget (S$): 68,000 → 72,000" prints. */

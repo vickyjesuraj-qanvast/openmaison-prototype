@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'node:crypto'
 import { db, type Db } from '@/lib/db'
 import { leadAssignees, leadCustomFieldValues, leadCustomFields, leadFiles, leads, members, questions, studioScopeQuestions } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { ALL_STAGES, DISTRICTS, TASK_KINDS } from '@/lib/leads/enums'
 // (REG-287) The app's one phone rule and one strict d/m/yyyy parser — the CSV import used to carry private copies
 // of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
@@ -19,7 +19,7 @@ import { digitsOnly, parseInputDate, phoneDigits, titleCaseName } from '@/lib/fo
 import { revalidateEveryLead, revalidateLead, revalidateLeadListings } from '@/lib/leads/queries'
 import { recordWonUpload } from '@/lib/contracts/won'
 
-const ME = SESSION_MEMBER_ID   // (REG-286) one stand-in for the signed-in member, shared by every module that stamps a write
+const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 
 /**
  * (REG-286) A server action is a public endpoint: its TypeScript parameter types are not runtime guarantees, and a
@@ -172,7 +172,7 @@ export async function setFollowUp(leadId: string, input: { title: string; dueAt:
   if (Number.isNaN(due.getTime())) throw new Error('bad date')
   const title = input.title.trim().slice(0, 120) || `Follow up with ${await leadName(leadId)}`
   const members = await leadMemberIds(leadId)
-  const assignees = members.length ? members : [ME]
+  const assignees = members.length ? members : [await sessionMemberId()]
   const id = randomUUID(); const now = new Date()
   await db.transaction(async (tx) => {
     await tx.insert(leadTasks).values({ id, leadId, title, kind: 'Follow-up', dueAt: due, done: false, createdAt: now, creatorId: ME, seenAt: null, updatedAt: now })

@@ -10,7 +10,7 @@ import { contractTemplates, contracts, leadTasks, leads, quotes, type Contract, 
 import { defaultQuote } from '@/lib/contracts/snapshot'
 import { fetchBrand } from '@/lib/templates/queries'
 import { issuerChoices } from '@/lib/contracts/issuer'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { revalidateLead } from '@/lib/leads/queries'
 import { AGREEMENT_TITLE, agreementHtml } from '@/lib/contracts/agreement'
 import { bundleSigningPath } from '@/lib/contracts/model'
@@ -87,7 +87,7 @@ export async function createContractDoc(input: CreateContractInput): Promise<str
     id, leadId: lead.id, title: await nextTitle(lead.id, title), status: signed ? 'Signed' : 'Draft', createdAt: now, updatedAt: now,
     body, recipientName: lead.name, recipientPhone: digits(lead.phone), contractDate: now, templateId, fromQuoteId: quote?.id ?? null, issuingEntity: quote?.issuingEntity ?? null,
     source: input.upload ? 'uploaded' : 'composed', fileName: input.upload?.fileName ?? null,
-    signedAt: signed ? now : null, signedCopy: signed ? input.upload!.fileName : null, createdBy: SESSION_MEMBER_ID, ...gates,
+    signedAt: signed ? now : null, signedCopy: signed ? input.upload!.fileName : null, createdBy: sessionMemberSql, ...gates,
   })
   if (signed) { const c = await load(id); if (c) { await db.update(contracts).set({ ...await signedSnapshot(c, now), markedBy: await actingMember() }).where(eq(contracts.id, id)); const f = await freshContract(id); if (f) await afterSigned(f, now, { marked: true }) } }   // (REG-631, Q-05 · REG-634)
   touch(lead.id, id)
@@ -245,7 +245,7 @@ export async function duplicateContract(contractId: string): Promise<string> {
   const id = randomUUID()
   await db.insert(contracts).values({
     id, leadId: c.leadId, title: `${c.title} (copy)`, status: 'Draft', createdAt: now, updatedAt: now, body: c.body, recipientName: c.recipientName, recipientPhone: c.recipientPhone,
-    contractDate: now, templateId: c.templateId, fromQuoteId: c.fromQuoteId, source: c.source, fileName: c.fileName, issuingEntity: c.issuingEntity, reminders: c.reminders, thankYou: c.thankYou, createdBy: SESSION_MEMBER_ID,
+    contractDate: now, templateId: c.templateId, fromQuoteId: c.fromQuoteId, source: c.source, fileName: c.fileName, issuingEntity: c.issuingEntity, reminders: c.reminders, thankYou: c.thankYou, createdBy: sessionMemberSql,
     requiresScroll: c.requiresScroll, requiresAccept: c.requiresAccept, acceptLabel: c.acceptLabel,
   })
   touch(c.leadId, id)
@@ -258,7 +258,7 @@ export async function saveContractAsTemplate(contractId: string, title: string):
   if (!c || !c.body) throw new Error('contract not found')
   const now = new Date()
   const id = randomUUID()
-  await db.insert(contractTemplates).values({ id, title: clean(title) || c.title, body: c.body, createdBy: SESSION_MEMBER_ID, createdAt: now, updatedAt: now, requiresScroll: c.requiresScroll, requiresAccept: c.requiresAccept, acceptLabel: c.acceptLabel })
+  await db.insert(contractTemplates).values({ id, title: clean(title) || c.title, body: c.body, createdBy: sessionMemberSql, createdAt: now, updatedAt: now, requiresScroll: c.requiresScroll, requiresAccept: c.requiresAccept, acceptLabel: c.acceptLabel })
   revalidatePath('/company/templates/contracts')
   return id
 }
@@ -317,7 +317,7 @@ export async function sendBundle(bundleId: string, contractIds: string[], recipi
   const [had] = await db.select({ id: contractBundles.id, leadId: contractBundles.leadId, signedAt: contractBundles.signedAt }).from(contractBundles).where(eq(contractBundles.id, bundleId))
   if (had && (had.leadId !== leadId || had.signedAt)) throw new Error('bundle taken')
   if (had) await db.update(contractBundles).set({ recipientName: name || null, recipientPhone: phone || null, sentAt: now }).where(eq(contractBundles.id, bundleId))
-  else await db.insert(contractBundles).values({ id: bundleId, leadId, recipientName: name || null, recipientPhone: phone || null, createdAt: now, sentAt: now, createdBy: SESSION_MEMBER_ID })
+  else await db.insert(contractBundles).values({ id: bundleId, leadId, recipientName: name || null, recipientPhone: phone || null, createdAt: now, sentAt: now, createdBy: sessionMemberSql })
   for (const [i, c] of live.entries()) {
     await db.update(contracts).set({ bundleId, bundlePosition: i, status: 'Sent to Client', sentAt: c.sentAt ?? now, sentBy: await actingMember(), ...(name ? { recipientName: name } : {}), ...(phone ? { recipientPhone: phone } : {}), updatedAt: now }).where(eq(contracts.id, c.id))
     const fresh = await freshContract(c.id); if (fresh) await afterSent(fresh, now, { quiet: true })   // (REG-634) the follow-ups; one notification below

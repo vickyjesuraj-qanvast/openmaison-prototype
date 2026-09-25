@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadFiles, quoteFiles, quotes, type LeadFile } from '@/lib/db/schema'
-import { SESSION_MEMBER_ID } from '@/lib/db/session'
+import { sessionMemberSql } from '@/lib/db/session'
 import { revalidateLead } from '@/lib/leads/queries'
 import { stampQuote } from '@/lib/quotes/stamp'
 
@@ -71,7 +71,7 @@ export async function uploadQuoteFile(quoteId: string, name = 'Living Room'): Pr
   const id = randomUUID(); const now = new Date()
   const clean = (typeof name === 'string' ? name : '').trim().slice(0, 120) || 'Living Room'
   const pdf = /\.pdf$/i.test(clean)
-  await db.insert(leadFiles).values({ id, leadId: q.leadId, kind: pdf ? 'pdf' : 'image', name: clean, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: now, parentId: null, ownerId: SESSION_MEMBER_ID, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: now })
+  await db.insert(leadFiles).values({ id, leadId: q.leadId, kind: pdf ? 'pdf' : 'image', name: clean, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: now, parentId: null, ownerId: sessionMemberSql, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: now })
   await db.insert(quoteFiles).values({ quoteId, fileId: id, createdAt: now })
   revalidateLead(q.leadId)
   const { updatedAt } = await stampQuote(quoteId)

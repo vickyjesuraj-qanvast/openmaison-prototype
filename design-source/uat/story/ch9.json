@@ -1,0 +1,274 @@
+[
+  {
+    "step": "9.01",
+    "chapter": 9,
+    "scene": "Win Sophia",
+    "module": "Lead details",
+    "try": "Check Sophia is ready to be won",
+    "how": "1. Open Sophia Wong\n2. Read the stage button and the \"LEAD STAGES\" card\n3. Open the \"Quotes\" tab, then the \"Contracts\" tab",
+    "expect": "\"Stage: Quote Sent\" with New, Contacted and Met ticked; her quote and her contract both read Signed (chapters 6 and 8).",
+    "in10": "Different from 1.0: signing doesn't move the lead by itself",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-01",
+      "LEADS:S-18",
+      "LEADS:S-03",
+      "LEADS:MM-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.02",
+    "chapter": 9,
+    "scene": "Win Sophia",
+    "module": "Lead details",
+    "try": "Open the Won step from Convert to Project",
+    "how": "1. Point at, then press, \"Convert to Project\"\n2. Read \"Attach client signed quote\" and \"Attach client signed contract\"",
+    "expect": "\"Moving to Won\" opens with her signed quote (OM-… · Signed on …) and her signed contract already picked under \"From System\".",
+    "in10": "Different from 1.0: the Won step checks quote, contract and split",
+    "as": "Dane",
+    "covers": [
+      "LEADS:R-04",
+      "LEADS:D-46",
+      "LEADS:D-30",
+      "LEADS:S-03",
+      "CTR:CA-06",
+      "QED:QC-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.03",
+    "chapter": 9,
+    "scene": "Win Sophia",
+    "module": "Lead details",
+    "try": "Check the payment split must add up to 100%",
+    "how": "1. Under \"Payment milestone\" read the four rows\n2. Change Deposit from 10 to 20\n3. Press \"Save & Convert to Project\"\n4. Press \"Reset to default\"",
+    "expect": "The split is 10/30/30/30% of her quote total; at 20 the tag reads 110% and \"Milestones must add up to 100%\"; Reset restores 100%.",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:R-04",
+      "LEADS:DEF-27",
+      "LEADS:S-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.04",
+    "chapter": 9,
+    "scene": "Win Sophia",
+    "module": "Lead details",
+    "try": "Win Sophia and convert her to a project",
+    "how": "1. Leave \"Project type\" on Whole-home renovation\n2. Press \"Save & Convert to Project\"\n3. Press \"Convert to Project\" again",
+    "expect": "\"Project created for Sophia Wong · OM-…\"; \"Stage: Won\" with every stage ticked; the second press says \"Coming soon in OpenMaison 2.0\".",
+    "in10": "Different from 1.0: no draft project is created yet",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-31",
+      "LEADS:MM-27",
+      "LEADS:D-29",
+      "LEADS:MM-32",
+      "LEADS:D-16",
+      "LEADS:R-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.05",
+    "chapter": 9,
+    "scene": "Park and resume",
+    "module": "Leads",
+    "try": "Put a lead on hold until a date you choose",
+    "how": "1. On Leads, click Priya Nair's Stage cell, then \"On Hold\"\n2. \"Reason\": Client not ready; under \"Duration\" choose \"Custom\"\n3. \"Follow up on\": a date about two months away\n4. Press \"Save & Move\"",
+    "expect": "The helper reads \"Next follow up date will be\" your date; \"Moved to On Hold\" (with Undo); her row adds \"On hold till:\" that date.",
+    "in10": "Different from 1.0: reason plus date; a reminder comes that day",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-05",
+      "LEADS:MM-02",
+      "LEADS:S-13",
+      "LEADS:L-10",
+      "LEADS:G-02",
+      "LEADS:N-05",
+      "SET:LM-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.06",
+    "chapter": 9,
+    "scene": "Park and resume",
+    "module": "Lead details",
+    "try": "Resume a lead that was on hold",
+    "how": "1. Open Mei Ling Tan\n2. Read her \"On Hold\" row in \"LEAD STAGES\"\n3. Click \"Stage: On Hold\", then \"Contacted\"\n4. Press \"Resume\"",
+    "expect": "Her row shows the till-date and \"Property delay\"; \"Resume at Contacted?\" asks first; then \"Moved to Contacted\".",
+    "in10": "Different from 1.0: resume at any stage, after a confirm",
+    "as": "Dane",
+    "covers": [
+      "LEADS:S-13",
+      "LEADS:DEF-05"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.07",
+    "chapter": 9,
+    "scene": "When a lead goes cold",
+    "module": "Lead details",
+    "try": "See the hint before marking a lead lost",
+    "how": "1. Open Jonathan Teo\n2. Click \"Stage: Contacted\", then \"Lost\"\n3. Set \"Reason\" to Unresponsive",
+    "expect": "A hint under Reason counts his logged contacts, like \"1 of 3 contacts logged — this reason usually follows 3\"; it never blocks saving.",
+    "in10": "Different from 1.0: a hint only, never a block",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-06",
+      "LEADS:MM-03",
+      "LEADS:S-14",
+      "LEADS:G-02",
+      "SET:LM-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.08",
+    "chapter": 9,
+    "scene": "When a lead goes cold",
+    "module": "Lead details",
+    "try": "Mark him lost as postponed, with a restart date",
+    "how": "1. Change \"Reason\" to Project postponed\n2. \"Expected restart (optional)\": a date about three months away\n3. Press \"Save & Move\"",
+    "expect": "\"Under 6 months away — consider On Hold instead.\" appears; then \"Moved to Lost\" with an \"Undo\" button.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-06",
+      "LEADS:S-14",
+      "LEADS:MM-03"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.09",
+    "chapter": 9,
+    "scene": "When a lead goes cold",
+    "module": "Lead details",
+    "try": "Take the Lost move back",
+    "how": "1. Press \"Undo\" in the message straight away\n2. Read the stage button and the \"LEAD STAGES\" card",
+    "expect": "Jonathan is back at \"Stage: Contacted\" and the card has no Lost row.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-15",
+      "LEADS:MM-30"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.10",
+    "chapter": 9,
+    "scene": "Send Qanvast leads back",
+    "module": "Leads",
+    "try": "Return a Qanvast lead, then undo it",
+    "how": "1. On Leads, open ⋮ on Gavin See's row, then \"Return Lead\"\n2. Read the info line and point at \"Rules\"; \"Select a reason\": Lead not contactable, a first-outreach date, attempts 3\n3. Press \"Next\", then \"Confirm\"\n4. Press \"Undo\" in the message",
+    "expect": "The line shows his return window and \"0 of 2 returns used\"; \"Lead returned successfully\"; after Undo he is back in Contacted.",
+    "in10": "Different from 1.0: any stage; the wizard parks it Lost",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-07",
+      "LEADS:MM-04",
+      "LEADS:D-38",
+      "LEADS:T-06",
+      "LEADS:DEF-20"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.11",
+    "chapter": 9,
+    "scene": "Send Qanvast leads back",
+    "module": "Lead details",
+    "try": "Return another Qanvast lead for good",
+    "how": "1. Open Jasmine Lee, then ⋮ (\"More options\") › \"Return Lead\"\n2. \"Lead refused to meet up\"; tick \"Changed mind about renovation\"; add the date and attempts\n3. Press \"Next\", read \"Term of service\", press \"Confirm\"",
+    "expect": "\"Lead returned successfully\"; her header shows RETURN PROCESSING, the stage is Lost, a \"LEAD RETURNED\" card appears and a \"Respond to Qanvast team\" task.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "LEADS:D-39",
+      "LEADS:MM-05",
+      "LEADS:D-40",
+      "LEADS:T-06"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.12",
+    "chapter": 9,
+    "scene": "Send Qanvast leads back",
+    "module": "Leads",
+    "try": "Track returns in Qanvast Ops and export them",
+    "how": "1. Click \"Qanvast Ops\" in the side navigation\n2. Click \"All Leads (…)\", then \"Return Processing\"\n3. Open ⋮ (\"More options\") › \"Export all as…\", press \"Export\"",
+    "expect": "Jasmine Lee is listed RETURN PROCESSING with her Return window; a file downloads.",
+    "in10": "Different from 1.0: the return window is shown, not enforced",
+    "as": "Dane",
+    "covers": [
+      "LEADS:T-10",
+      "LEADS:D-38"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.13",
+    "chapter": 9,
+    "scene": "Portal and tidy-up",
+    "module": "Lead details",
+    "try": "Invite a client to the homeowner portal",
+    "how": "1. Open Gerald Tan, then ⋮ (\"More options\") › \"Invite to Portal\"\n2. Check the name and phone, press \"Send via WhatsApp\"\n3. A WhatsApp tab opens — close it, do not send",
+    "expect": "\"WhatsApp opened with the invite\"; the left column's \"Portal\" row reads \"Invited\" with today's date.",
+    "in10": "Different from 1.0: sent by WhatsApp; the invite is recorded",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-23",
+      "LEADS:D-18",
+      "LEADS:MM-24",
+      "LEADS:T-07",
+      "LEADS:D-06"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.14",
+    "chapter": 9,
+    "scene": "Portal and tidy-up",
+    "module": "Leads",
+    "try": "Delete a lead you don't need",
+    "how": "1. On Leads, open ⋮ on Cheryl Lim's row, then \"Delete\"\n2. \"Reason\": Duplicate\n3. Press \"Delete\"",
+    "expect": "\"Delete this lead?\" says she is deleted for good in 30 days; \"Lead deleted\" (with Undo) and she leaves the list.",
+    "in10": "Different from 1.0: Delete with a reason replaces Archive",
+    "as": "Dane",
+    "covers": [
+      "LEADS:DEF-03",
+      "LEADS:I-17",
+      "LEADS:MM-31",
+      "LEADS:P-05",
+      "LEADS:L-39"
+    ],
+    "files": []
+  },
+  {
+    "step": "9.15",
+    "chapter": 9,
+    "scene": "Portal and tidy-up",
+    "module": "Leads",
+    "try": "Bring the deleted lead back",
+    "how": "1. Click ⋮ (\"More options\"), then \"Deleted Leads\"\n2. On Cheryl Lim's row press \"Restore\"\n3. Close the sheet",
+    "expect": "\"Lead restored\"; Cheryl Lim is back in the list at Contacted.",
+    "in10": "Different from 1.0: Deleted Leads replaces Archived Leads",
+    "as": "Dane",
+    "covers": [
+      "LEADS:L-33",
+      "LEADS:D-43",
+      "LEADS:DEF-03"
+    ],
+    "files": []
+  }
+]
