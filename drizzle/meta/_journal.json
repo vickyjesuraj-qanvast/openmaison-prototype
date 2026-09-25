@@ -260,6 +260,118 @@
       "when": 1790250934502,
       "tag": "0036_lead_parity_r7",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1790267227704,
+      "tag": "0037_price_book_section_filters",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1790273056955,
+      "tag": "0038_quote_item_vendor_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1790274069721,
+      "tag": "0039_quote_approval_record",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1790276271410,
+      "tag": "0040_quote_signed_client_choice",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1790276949081,
+      "tag": "0041_quote_item_comments",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1790281679676,
+      "tag": "0042_contract_signed_copy",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1790283151270,
+      "tag": "0043_contract_template_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1790283930814,
+      "tag": "0044_contract_signing_record",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1790284898338,
+      "tag": "0045_contract_actors",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1790290246479,
+      "tag": "0046_xray_reading",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1790292532534,
+      "tag": "0047_xray_record",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1790297989790,
+      "tag": "0048_member_active",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1790299721245,
+      "tag": "0049_question_required",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1790304137519,
+      "tag": "0050_price_book_record",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1790306125188,
+      "tag": "0051_price_book_carry",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1790324190717,
+      "tag": "0052_library_folders",
+      "breakpoints": true
     }
   ]
 }

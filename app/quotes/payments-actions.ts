@@ -7,10 +7,20 @@ import { db } from '@/lib/db'
 import { quotePayments, quotes, type QuotePayment } from '@/lib/db/schema'
 import { revalidateLead } from '@/lib/leads/queries'
 import { isDueKind, type DueKind } from '@/lib/quotes/payments'
+import { fetchQuoteRules } from '@/lib/settings/queries'
+import { changesPayments } from '@/lib/settings/types'
+import { fetchViewer } from '@/lib/leads/visibility'
 
 /* Payment Schedule (1238:29290, REG-418). Every write stamps the quote's `updatedAt` — the header's "Saved …" follows it —
    and revalidates the lead (its Activity feed derives a row from these records, lib/leads/activity.ts). */
 
+/** (REG-626, quote editor parity §8.2 · E-88) The payment lock (Settings › Quotes) holds on the server too: with it on, only Owners and
+    Admins change a schedule — the editor already shows it read-only to everyone else. */
+async function assertMayEditPayments(): Promise<void> {
+  const { paymentLock } = await fetchQuoteRules()
+  if (!paymentLock) return
+  if (!changesPayments((await fetchViewer()).role, paymentLock)) throw new Error('only Owners and Admins change the payment schedule')   // (REG-645) the rule Settings' roles table states
+}
 async function quoteOf(quoteId: string) {
   const [q] = await db.select({ id: quotes.id, leadId: quotes.leadId }).from(quotes).where(eq(quotes.id, quoteId))
   if (!q) throw new Error('quote not found')
@@ -54,6 +64,7 @@ function clean(p: PaymentPatch, current?: Pick<QuotePayment, 'dueKind' | 'dueAt'
 
 /** Presets, Add Payments with AI and undo write the whole schedule at once — validated first, then one transaction. */
 export async function replaceQuotePayments(quoteId: string, rows: PaymentInput[]): Promise<{ updatedAt: number; rows: QuotePayment[] }> {
+  await assertMayEditPayments()
   await quoteOf(quoteId)
   const now = new Date()
   const values = rows.slice(0, 50).map((r, i) => {
@@ -70,6 +81,7 @@ export async function replaceQuotePayments(quoteId: string, rows: PaymentInput[]
 
 /** An inline edit (name · description · % · amount-as-% · due) on one row. */
 export async function updateQuotePayment(id: string, patch: PaymentPatch): Promise<{ updatedAt: number }> {
+  await assertMayEditPayments()
   const r = await rowOf(id)
   const set = clean(patch, r)
   set.updatedAt = new Date()
@@ -79,6 +91,7 @@ export async function updateQuotePayment(id: string, patch: PaymentPatch): Promi
 
 /** "Add a Payment": a new row at the end of the schedule. */
 export async function createQuotePayment(quoteId: string, input: PaymentInput): Promise<{ updatedAt: number; row: QuotePayment }> {
+  await assertMayEditPayments()
   await quoteOf(quoteId)
   const rows = await list(quoteId)
   const set = clean(input)
@@ -91,6 +104,7 @@ export async function createQuotePayment(quoteId: string, input: PaymentInput): 
 
 /** The row's delete (hover, 1271:39003). */
 export async function deleteQuotePayment(id: string): Promise<{ updatedAt: number }> {
+  await assertMayEditPayments()
   const r = await rowOf(id)
   await db.delete(quotePayments).where(eq(quotePayments.id, id))
   const rest = await list(r.quoteId)
@@ -100,6 +114,7 @@ export async function deleteQuotePayment(id: string): Promise<{ updatedAt: numbe
 
 /** The handle's drag: the whole order in one write. */
 export async function reorderQuotePayments(quoteId: string, orderedIds: string[]): Promise<{ updatedAt: number }> {
+  await assertMayEditPayments()
   const rows = await list(quoteId)
   const known = new Set(rows.map((r) => r.id))
   const order = orderedIds.filter((id) => known.has(id))

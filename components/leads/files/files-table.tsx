@@ -32,6 +32,8 @@ export type FilesTableProps = {
   columns: readonly TableColumn[]
   /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
   onReorder: (keys: string[]) => void
+  /** (REG-664) While searching: where each hit lives — a line under its name (the cell is the mock's "Two line"). */
+  placeOf?: (f: FileRow) => string
 }
 
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
@@ -58,7 +60,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
  * hover pattern (.actions/.float) with the kebab only (build plan, logged). Sorting is inert (coming soon).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder }: FilesTableProps) {
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
@@ -134,6 +136,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           onMenuClose={() => setMenuRow(null)}
           menuSide={menuSide}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
+          place={placeOf?.(row)}
         />
       ))}
     </div>
@@ -145,7 +148,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place,
 }: {
   row: FileRow
   isSelected: boolean
@@ -160,6 +163,7 @@ function FileRowView({
   onOpenComments: (file: FileRow) => void
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
   L: ReturnType<typeof useColumnLayout>
+  place?: string
 }) {
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
@@ -186,7 +190,12 @@ function FileRowView({
             <Icon name="picture_as_pdf" size={24} className={styles.thumbIcon} />
           )}
         </span>
-        <button type="button" className={styles.name} onClick={open}>{row.name}</button>
+        {place !== undefined ? (
+          <span className={styles.nameStack}>
+            <button type="button" className={styles.name} onClick={open}>{row.name}</button>
+            <span className={styles.place}><Icon name="folder" size={14} weight={300} />{place}</span>
+          </span>
+        ) : <button type="button" className={styles.name} onClick={open}>{row.name}</button>}
         {/* The chip opens the viewer's comments panel straight away — the Tasks title cell's interaction (REG-253). */}
         {row.commentCount > 0 ? (
           <Tooltip label="Open comments">

@@ -21,12 +21,16 @@ import { ago } from '@/lib/templates/ago'
 import { pickerTemplates, type PickerData, type PickerExtras } from '@/lib/templates/picker'
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
+import { isSheet, readDocument, readRows, UPLOAD_ACCEPT, type UploadRead } from '@/lib/quotes/upload'
+import { parseXlsx } from '@/lib/xlsx'
+import { parseCsv } from '@/lib/csv'
+import { money2 } from '@/lib/quotes/math'
 import styles from './create-quote-modal.module.css'
 
 /** "used 2w ago" (the 1.0 card's meta): days under a week, weeks under a month, then the date. */
 /** The rail shows the default and the most recently used; the rest sit behind View all (design reference). */
 const RAIL_MAX = 3
-type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null }
+type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { kind: 'upload'; name: string; read: UploadRead | null }
 
 /**
  * Create Quote modal (REG-412 — the 1.0 "Start a quote for {lead}" screen on the 2.0 DS, chosen from the design
@@ -37,7 +41,7 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null }
  * (REG-518); making a template is Company › Templates' job — no New template here (REG-519).
  * Upload and Draft answer coming soon until their flows exist. ≤767 it is the canvas' bottom sheet (REG-353).
  */
-export function CreateQuoteModal({ open, leadName, templates, now, onClose, onStart, onSetDefault, clients, priceBookCount, render, preselect }: {
+export function CreateQuoteModal({ open, leadName, templates, now, onClose, onStart, onSetDefault, clients, priceBookCount, render, preselect, onUpload }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
@@ -55,6 +59,8 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   render?: { brand: BrandKit; sample: DocData; extras?: PickerExtras }
   /** (REG-495) Opened from a template ("Start a quote with this template"): the picker opens on it. */
   preselect?: string | null
+  /** (REG-627, parity Q-16) Upload a quote: the lines read from the file, for the page to create the quote with. Absent = coming soon. */
+  onUpload?: (read: Extract<UploadRead, { ok: true }>, clientId: string | null) => void
 }) {
   useScrollLock(open)
   const comingSoon = useComingSoon()
@@ -70,6 +76,26 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   const start = (templateId: string | null) => {
     if (clients && !clientId) { setClientError(true); return }
     onStart(templateId, clientId)
+  }
+  /* (REG-627, parity Q-16) Upload a quote: pick a file, read it here, show the lines, then the page creates the quote with them. */
+  const fileRef = useRef<HTMLInputElement>(null)
+  const pickFile = async (file: File) => {
+    setMode({ kind: 'upload', name: file.name, read: null })
+    const started = Date.now()
+    let read: UploadRead
+    try {
+      read = isSheet(file.name)
+        ? readRows(/\.csv$/i.test(file.name) ? parseCsv(await file.text()) : await parseXlsx(await file.arrayBuffer()), file.name)
+        : readDocument(file.name)
+    } catch { read = { ok: false, reason: 'unreadable' } }
+    const wait = 700 - (Date.now() - started)   // "Reading…" stays long enough to be read
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait))
+    setMode((m) => (m.kind === 'upload' && m.name === file.name ? { ...m, read } : m))
+  }
+  const createFromUpload = () => {
+    if (mode.kind !== 'upload' || !mode.read?.ok || !onUpload) return
+    if (clients && !clientId) { setClientError(true); return }
+    onUpload(mode.read, clientId)
   }
   /* A template's kebab menu and the chooser dialogs render over this panel, and the surface policy skips descendants (REG-287),
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
@@ -92,8 +118,8 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                       role="dialog" aria-modal aria-label={title} tabIndex={-1} data-testid="create-quote" data-mode={mode.kind}>
             {sheet ? <span className={styles.grabber} aria-hidden /> : null}
             <div className={styles.heading}>
-              {mode.kind === 'all' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : null}
-              <span className={styles.title}>{mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : title}</span>
+              {mode.kind !== 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : null}
+              <span className={styles.title}>{mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : title}</span>
               <Tooltip label="Close">
                 <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
                   <Icon name="close" size={24} family="outlined" />
@@ -109,7 +135,31 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                              onChange={(name) => { setClientId(clients.find((c) => c.name === name)?.id ?? null); setClientError(false) }} />
                 </section>
               ) : null}
-              {mode.kind === 'all' && picker ? (
+              {mode.kind === 'upload' ? (
+                <section className={styles.block} aria-label="Upload a quote" data-testid="upload-quote">
+                  {mode.read === null ? (
+                    <p className={styles.uploadNote} role="status"><Icon name="upload_file" size={20} weight={300} />Reading {mode.name}…</p>
+                  ) : mode.read.ok ? (
+                    <>
+                      <p className={styles.uploadNote} role="status"><Icon name="task_alt" size={20} weight={300} /><span><b>{mode.read.count} {mode.read.count === 1 ? 'line' : 'lines'}</b> read from {mode.read.source} · {money2(mode.read.totalMinor)}</span></p>
+                      <div className={styles.uploadTable} role="table" aria-label="The lines read">
+                        <div className={styles.uploadRow} role="row" data-head=""><span role="columnheader">Section</span><span role="columnheader">Item</span><span role="columnheader">Qty</span><span role="columnheader">Unit</span><span role="columnheader">Amount</span></div>
+                        {mode.read.groups.flatMap((g) => g.lines.map((l, i) => ({ g: g.name, l, i }))).slice(0, 12).map(({ g, l, i }, k) => (
+                          <div key={k} className={styles.uploadRow} role="row"><span role="cell">{i === 0 ? g ?? '—' : ''}</span><span role="cell">{l.name}</span><span role="cell">{l.qty ?? 1}</span><span role="cell">{l.unit ?? '—'}</span><span role="cell">{money2(Math.round((l.qty ?? 1) * ((l.costMinor ?? 0) + (l.markupMinor ?? 0))))}</span></div>
+                        ))}
+                      </div>
+                      {mode.read.count > 12 ? <span className={styles.uploadMore}>+ {mode.read.count - 12} more {mode.read.count - 12 === 1 ? 'line' : 'lines'}</span> : null}
+                      <p className={styles.uploadHelp}>Each amount comes in as the line’s cost with no markup — set your markup on the quote. The quote starts from the studio’s default template.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className={styles.uploadNote} role="status" data-tone="error"><Icon name="error" size={20} weight={300} /><span>We couldn’t read {mode.name}.</span></p>
+                      <p className={styles.uploadHelp}>{mode.read.reason === 'empty' ? 'The file has no lines we could use.' : 'Upload a spreadsheet (XLSX · CSV) of the quote’s lines, or start from a blank quote.'}</p>
+                      <span><Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={() => fileRef.current?.click()}>Choose another file</Button></span>
+                    </>
+                  )}
+                </section>
+              ) : mode.kind === 'all' && picker ? (
                 /* (REG-494) Every published template, searchable, with the one in hand drawn large — inside the modal. */
                 <section className={styles.block} data-fill aria-label="All templates">
                   <TemplatePicker data={picker} picked={pickedId} onPick={(id) => setMode({ kind: 'all', selectedId: id })} now={now} onUse={(id) => start(id)}
@@ -176,7 +226,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                   <section className={styles.block} aria-label="More ways to start">
                     <span className={styles.eyebrow}>More ways to start</span>
                     <div className={styles.list}>
-                      <button type="button" className={styles.row} onClick={comingSoon}>
+                      <button type="button" className={styles.row} data-testid="upload-quote-row" onClick={onUpload ? () => fileRef.current?.click() : comingSoon}>
                         <span className={styles.glyph}><Icon name="upload_file" size={20} weight={300} /></span>
                         <span className={styles.rowText}>
                           <span className={styles.rowTitle}>Upload a quote <MetaChip>PDF · XLS · JPG</MetaChip></span>
@@ -199,7 +249,13 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                 </>
               )}
             </div>
-            {mode.kind === 'all' ? (
+            <input ref={fileRef} type="file" accept={UPLOAD_ACCEPT} hidden data-testid="upload-quote-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pickFile(f) }} />
+            {mode.kind === 'upload' ? (
+              <div className={styles.foot}>
+                <Button variant="secondary" appearance="outlined" onPress={() => setMode({ kind: 'rail' })}>Cancel</Button>
+                <Button onPress={createFromUpload} isDisabled={!mode.read?.ok}>Create the quote</Button>
+              </div>
+            ) : mode.kind === 'all' ? (
               /* (REG-518) The modal footer every dialog has: Cancel · the picker's action. */
               <div className={styles.foot}>
                 <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>

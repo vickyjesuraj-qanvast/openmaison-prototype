@@ -1,0 +1,1 @@
+ALTER TABLE `contract_templates` ADD `is_default` integer DEFAULT false NOT NULL;

@@ -134,6 +134,7 @@
    rule onto Status. It clips (no ellipsis — text-overflow does not reach a flex container's items); at the mocked
    319 track the full "OM-10001 · Private" still fits with room to spare. */
 .sub { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; min-width: 0; overflow: hidden; }
+.expired { color: var(--om-color-tertiary-red-default); }   /* (REG-625) a sent quote past its Valid until — the overdue due date's red */
 
 /* Status cell: CellDataGroup H g4 — "Draft" 14/Regular + keyboard_arrow_down 20 → the status menu (910:36673). */
 .statusWrap { position: relative; display: inline-flex; }

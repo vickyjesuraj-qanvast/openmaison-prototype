@@ -1,6 +1,6 @@
 /* Quote X-Ray — setup (REG-529): an intro card you can dismiss, the setup card beside Recent comparisons (360). Cards on the
    table-card frame (r8, surface-variant stroke); every value is a token. */
-.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); }   /* (REG-639) the page ends clear of the FAB and the dock */
 .intro { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .introText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .introTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
@@ -15,7 +15,22 @@
 .eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
 .lockedLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; padding: 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }   /* (REG-530) the lead the page belongs to — read, not picked */
 .lockedName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lockedLead .lockedClear { margin-left: auto; margin-right: calc(-1 * var(--om-spacing-2)); }
 .quotes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+/* (REG-639, Q-11) a lead with nothing to compare: the two ways on */
+.noQuote { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.noQuoteActions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+/* (REG-639, Q-10) a picked file — the Files tab's row, not the Move stage's stock thumbnail (E-109) — and what was read from it */
+.file { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); }
+.fileGlyph { display: inline-flex; color: var(--om-color-tertiary-red-default); flex-shrink: 0; }
+.fileGlyph[data-kind='image'] { color: var(--om-color-primary-default); }
+.fileGlyph[data-kind='sheet'] { color: var(--om-color-tertiary-green-default); }
+.fileName { flex: 1; min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fileNote { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.fileNote > :first-child { flex-shrink: 0; }
+.fileNote[data-tone='done'] > :first-child { color: var(--om-color-tertiary-green-default); }
+.fileNote b { color: var(--om-color-on-surface-default); font-weight: 600; }
 .question { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); margin-top: var(--om-spacing-1); }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .link { color: var(--om-color-primary-default); text-decoration: none; }
@@ -42,6 +57,8 @@
 /* Recent comparisons: a 360 card of rows — the Deleted sheets' link row with a chevron and a bare delete. */
 .recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentsSearch { display: block; padding: var(--om-spacing-3) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentsSearch > * { width: 100%; }
 .recentsEmpty { padding: var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .recentList { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
 .recent { display: flex; align-items: center; gap: var(--om-spacing-1); padding: 0 var(--om-spacing-2) 0 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); transition: background-color var(--motion-hover); }
@@ -54,11 +71,11 @@
 .recentMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chev { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 @media (max-width: 1024px) {
-  .columns { flex-direction: column; }
+  .columns { flex-direction: column; align-items: stretch; }   /* (sweep S3 · T-04) stacked, the setup card fills the column like the intro and Recent */
   .recents { width: 100%; }
 }
 @media (max-width: 767px) {
-  .content { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  .content { padding: var(--om-spacing-4) var(--om-spacing-4) var(--fab-clearance); gap: var(--om-spacing-4); }
   .intro { padding: var(--om-spacing-4); }
   .card { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .grid { grid-template-columns: 1fr; gap: var(--om-spacing-4); }

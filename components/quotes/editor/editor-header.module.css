@@ -42,7 +42,9 @@
    sticky stack, wraps (title · kebab · close, then the chips line, then Send full width) and the secondary
    actions fold into the kebab (editor-header.tsx adds them there). */
 @media (max-width: 1024px) {
-  .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  /* (sweep S1 · T-02) the header keeps its 76 (the cards' sticky tops hang from it), so the chips scroll — and fade at their end,
+     over a padding they carry, so a chip sliding out of view reads as "more this way", never as a word cut off */
+  .chips { flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; padding-right: var(--om-spacing-6); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--om-spacing-6)), transparent); mask-image: linear-gradient(to right, #000 calc(100% - var(--om-spacing-6)), transparent); }
   .chips::-webkit-scrollbar { display: none; }
   /* Preview and Comments fold into the kebab from the tablet down (both answer coming soon), which gives the lead's
      name its line back — at 768 the full cluster cut it to "Olivia…"; the name keeps its width and the chips scroll. */
@@ -65,9 +67,17 @@
   .sendBtn > *, .sendBtn button { width: 100%; }
   .crumb { display: none; }
   .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
-  .chips { flex: 1 1 100%; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  /* (sweep S1 · T-01 · T-02) the quote's (or the contract's) name owns its line and wraps to a second rather than stopping at
+     "Whole-…"; its chips wrap under it rather than scroll out of sight mid-word ("CONTRA…") */
+  .titleRow > .anchor { max-width: 100%; flex-shrink: 1; }
+  .title { white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .chips { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; overflow: visible; row-gap: var(--om-spacing-1); padding-right: 0; -webkit-mask-image: none; mask-image: none; }
   .foldable { display: none; }
 }
 /* (REG-587) The Send menu's two-line items: the action, then what it means in one line. */
 .menuText { display: flex; flex-direction: column; gap: 2px; min-width: 0; white-space: normal; }
 .menuHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (REG-632, contracts parity Q-09) The contract raised from this quote — a chip that opens it. */
+.chipLink { display: inline-flex; border-radius: var(--om-radius-1); text-decoration: none; }
+.chipLink:hover > span { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.chipLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

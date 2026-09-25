@@ -15,6 +15,7 @@ import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
+import { PriceBookDialog, type PriceBookPick, type PriceBookTab } from './price-book-dialog'
 import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, PriceBookSection, QuoteItem } from '@/lib/db/schema'
@@ -25,7 +26,7 @@ import { scrollParentOf } from '@/components/om/use-stuck'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
-import { createQuoteItem, createQuoteItems, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, insertPriceBookSection, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, saveSectionToPriceBook, setQuoteItemParent, ungroupQuoteItem, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch } from '@/app/quotes/items-actions'
+import { createQuoteItem, createQuoteItems, deleteQuoteItems, duplicateQuoteItem, groupQuoteItems, insertPriceBookSection, listQuoteItems, moveQuoteItem, replaceQuoteItems, reorderQuoteItems, saveItemToPriceBook, saveSectionToPriceBook, setQuoteItemParent, undoSaveToPriceBook, ungroupQuoteItem, updateItemsPrefs, updateQuoteItem, updateQuotePricing, type ItemPatch, type SavedToBook } from '@/app/quotes/items-actions'
 import { PrintAsDialog } from './print-as-dialog'
 import { SectionCard } from '../section-card'
 import { ItemsTable, ITEMS_TABLE } from './items-table'
@@ -37,9 +38,10 @@ import type { DropSlot } from './row-drag'
 import { clearColumnWidths } from '@/lib/table-widths'
 import { ItemsSummary, maxAdditional, type Pricing } from './items-summary'
 import { ColumnSettingsDrawer } from './column-settings-drawer'
-import { useLevelFocus } from './table-menus'
+import { BookRuleContext, useLevelFocus } from './table-menus'
 import styles from './items-section.module.css'
 import { roundToStep, type RoundStep } from '@/lib/settings/types'
+import type { FolderNode } from '@/lib/folders'
 
 const AUTOSAVE_MS = 600
 
@@ -61,8 +63,14 @@ export type ItemsSeed = {
   priceBook: PriceBookItem[]
   /** (REG-566) The studio's saved sections (My Sections). */
   priceBookSections: PriceBookSection[]
+  /** (REG-664) The folders of My Items and My Sections — the Price book modal browses them. */
+  bookFolders?: { items: FolderNode[]; sections: FolderNode[] }
+  /** (REG-652, price book parity Q-03) Whether the viewer changes the price book (saves sections to My Sections). */
+  runsBook?: boolean
   /** (REG-561) The studio's trades (Settings › Quotes): the Category menu's base list. */
   trades: string[]
+  /** (REG-617, parity Q-08) The trades' notes, by the trade's name in lower case — the Section note dialog says which one a section prints. */
+  tradeNotes?: Record<string, string>
   /** (REG-556) The brand kit's colours by key — the Highlight bar and swatches. */
   brandColors: Record<string, string>
   /** (REG-562 · REG-593) The issuing entities from Company › Profile, each with its GST registration. */
@@ -89,8 +97,13 @@ export type ItemsSeed = {
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, exportTick = 0 }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, bookTick = 0, exportTick = 0, propertyType = null, commentCounts = {}, onOpenComments }: {
+  /** (REG-627, parity Q-30) Each line's comment count, and the thread's opener (the editor owns the drawer). */
+  commentCounts?: Record<string, number>
+  onOpenComments?: (itemId: string) => void
   seed: ItemsSeed
+  /** (REG-619, parity Q-27) The quote's property type as General Info holds it — My Sections for it come first in the Add Item popover. */
+  propertyType?: string | null
   open: boolean
   onToggle: () => void
   onSaved: (updatedAt: number, amountMinor: number) => void
@@ -102,6 +115,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   onPricing?: (pricing: Pricing) => void
   /** (REG-522) The Create strip's My Items: bumped by the editor, it opens the Add Item popover like Create ▾ › From My Items. */
   addTick?: number
+  /** (REG-662) The Create strip's My Items: bumped by the editor, it opens the Price book modal on My Items. */
+  bookTick?: number
   onLines?: (items: QuoteItem[]) => void
   /** (REG-497) The columns the quote's template prints for the client — an eye on their heads; null = no template known. */
   clientColumns?: Set<string> | null
@@ -122,7 +137,14 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [items, setItems] = useState<QuoteItem[]>(seed.items)
   const [priceBook, setPriceBook] = useState<PriceBookItem[]>(seed.priceBook)
   const [priceBookSections, setPriceBookSections] = useState<PriceBookSection[]>(seed.priceBookSections)
+  /* (REG-662, owner 2026-09-25) The price book opens as a modal over the editor — the Templates modal's way — from the strip's My Items and
+     the table's *Price book*; the page itself is Company's, reached from the modal's footer. */
+  const [bookOpen, setBookOpen] = useState<PriceBookTab | null>(null)
+  const [seenBookTick, setSeenBookTick] = useState(bookTick)
+  if (bookTick !== seenBookTick) { setSeenBookTick(bookTick); setBookOpen('items') }
   const [printAsOpen, setPrintAsOpen] = useState(false)   /* (REG-555) the bulk bar's Print as */
+  /* (sweep S1) a row's Print as › Custom word: the dialog opens on the word for that line — the selection is left alone */
+  const [printAsFor, setPrintAsFor] = useState<{ ids: string[]; text: string | null } | null>(null)
   const [labelling, setLabelling] = useState<QuoteItem | null>(null)   /* (REG-555) a section's sub-total label */
   const [pricing, setPricing] = useState<Pricing>(seed.pricing)
   const [view, setView] = useState<ItemsView>(ITEM_VIEWS.includes(seed.view as ItemsView) ? (seed.view as ItemsView) : 'none')
@@ -158,9 +180,10 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [removing, setRemoving] = useState<string[] | null>(null)
   const removingSection = removing && removing.length === 1 && items.find((i) => i.id === removing[0])?.kind === 'group' ? items.filter((i) => i.parentId === removing[0] || (i.parentId && items.find((p) => p.id === i.parentId)?.parentId === removing[0])).filter((i) => i.kind === 'item').length : 0   /* (REG-558) a section's confirm names its lines */
-  const [naming, setNaming] = useState<{ kind: 'room' | 'category' | 'section' } | null>(null)
+  const [naming, setNaming] = useState<{ kind: 'room' | 'category' | 'section' | 'vendor'; itemId?: string } | null>(null)
   const [imageFor, setImageFor] = useState<QuoteItem | null>(null)
   const [addOpenTick, setAddOpenTick] = useState(0)
+  const [bookPlace, setBookPlace] = useState<{ label: string; input: Pick<NonNullable<Parameters<typeof createQuoteItem>[1]>, 'parentId' | 'afterId' | 'beforeId'>; afterTop: string | null; /** (sweep S5 #13) a section lands after the top-level row, not below the line */ sectionLabel?: string } | null>(null)   // (REG-653, Q-12)
   /* The Excel benchmark's phases 2 · 3 (REG-476 / REG-477): a pasted block waiting in the mapping dialog, the Set value dialog, the
      Export dialog and the Find text (sort by head was built and removed the same day, REG-483). */
   const [pasting, setPasting] = useState<{ text: string; anchorId: string | null } | null>(null)
@@ -222,9 +245,11 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const undo = () => { const prev = history.past.at(-1); if (prev) void restore(prev, true) }
   const redo = () => { const next = history.future[0]; if (next) void restore(next, false) }
 
+  /* (REG-651, price book parity Q-02) The Add Item popover shows the price a pick lands at — the studio's step applied as the server applies it. */
+  const shownBook = useMemo(() => (seed.roundStep ? priceBook.map((p) => ({ ...p, markupMinor: roundToStep(p.costMinor, p.markupMinor, seed.roundStep, p.unit) })) : priceBook), [priceBook, seed.roundStep])
   const patchItem = (id: string, patch: ItemPatch, opts: { snapshot?: boolean } = {}) => {
     /* (REG-584) The studio's rounding rule: a selling price typed or filled lands on the step — the markup absorbs it, Round Prices' own rule. */
-    if (seed.roundStep && (patch.costMinor !== undefined || patch.markupMinor !== undefined)) { const cur = itemsRef.current.find((i) => i.id === id); if (cur && cur.kind === 'item') { const cost = patch.costMinor ?? cur.costMinor; patch = { ...patch, markupMinor: roundToStep(cost, patch.markupMinor ?? cur.markupMinor, seed.roundStep) } } }
+    if (seed.roundStep && (patch.costMinor !== undefined || patch.markupMinor !== undefined)) { const cur = itemsRef.current.find((i) => i.id === id); if (cur && cur.kind === 'item') { const cost = patch.costMinor ?? cur.costMinor; patch = { ...patch, markupMinor: roundToStep(cost, patch.markupMinor ?? cur.markupMinor, seed.roundStep, patch.unit ?? cur.unit) } } }   // (REG-651) a rate stays as typed
     if (opts.snapshot !== false && !pending.current.size) snapshot()
     // A group's answer is its children's (spec 03: a child's STATUS cell is empty) — the server cascades it, the screen at once.
     setItems((cur) => cur.map((i) => (i.id === id ? { ...i, ...patch } as QuoteItem : patch.status !== undefined && i.parentId === id ? { ...i, status: patch.status } : i)))
@@ -277,6 +302,22 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const r = await structural('add the item', () => createQuoteItem(quoteId, input))
     if (r.ok) attention([r.value.id], { focus: focusName })
   }
+  /* (REG-662) Everything ticked in the Price book modal, in the order ticked: items, then sections, each at the end of the quote — one step
+     for Undo (⌘Z), every new row brought into view and pulsed. */
+  const addFromBook = async (pick: PriceBookPick): Promise<boolean> => {
+    const before = new Set(itemsRef.current.map((i) => i.id))
+    const n = pick.filter((x) => x.tab === 'items').length, m = pick.length - n
+    const done = n && m ? `${n} ${n === 1 ? 'item' : 'items'} and ${m} ${m === 1 ? 'section' : 'sections'} added from the price book`
+      : n ? `${n} ${n === 1 ? 'item' : 'items'} added from My Items` : `${m} ${m === 1 ? 'section' : 'sections'} added from My Sections`
+    const r = await structural('add from the price book', async () => {
+      for (const x of pick) {   // in the order ticked, across both tabs — each at the end
+        if (x.tab === 'items') await createQuoteItem(quoteId, { priceBookItemId: x.id })
+        else await insertPriceBookSection(quoteId, x.id, {})
+      }
+    }, done)
+    if (r.ok) { setBookOpen(null); attention(before) }
+    return r.ok
+  }
   const removeItems = (list: string[]) => {
     const gone = new Set(list)
     for (const i of itemsRef.current) if (i.parentId && gone.has(i.parentId)) gone.add(i.id)
@@ -322,6 +363,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'category': return { category: src.category }
       case 'section': return { section: src.section }
       case 'rebate': return line ? { rebateMinor: src.rebateMinor } : null   // (REG-596)
+      case 'vendor': return line ? { vendor: src.vendor } : null   // (REG-623)
+      case 'website': return line ? { link: src.link } : null
       case 'name': return { name: src.name }
       case 'desc': return { description: src.description }
       default: return null
@@ -352,7 +395,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       const p: ItemPatch | null =
         field === 'qty' ? { qty: n } : field === 'unit' ? { unit: str } : field === 'cost' ? { costMinor: Math.round(n * 100), markupMinor: Math.max(-Math.round(n * 100), t.markupMinor) }
         : field === 'markupPct' ? { markupMinor: Math.round(t.costMinor * n / 100) } : field === 'unitPrice' ? { markupMinor: Math.max(-t.costMinor, Math.round(n * 100) - t.costMinor) }
-        : field === 'discount' ? { discountPct: n } : field === 'gst' ? { gstPct: n } : field === 'room' ? { room: str } : field === 'category' ? { category: str } : field === 'section' ? { section: str } : null
+        : field === 'discount' ? { discountPct: n } : field === 'gst' ? { gstPct: n } : field === 'room' ? { room: str } : field === 'category' ? { category: str } : field === 'section' ? { section: str }
+        : field === 'vendor' ? (t.kind === 'item' ? { vendor: str } : null) : null
       if (p) patchItem(t.id, p, { snapshot: false })
     }
     snackbar({ message: `${targets.length} ${targets.length === 1 ? 'item' : 'items'} updated` })
@@ -408,15 +452,46 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       void create(first ? { parentId: item.id, beforeId: first.id } : { parentId: item.id }, true)
     } else void create({ parentId: item.parentId ?? null, afterId: item.id }, true)
   }
+  /* (REG-653, price book parity Q-09) Save to My Items: a new entry (a Designer's is proposed) or, on a line from an item, that item updated from
+     the line — named in the menu, never a silent copy — each with Undo on its snackbar. The line points at what it was saved as. */
+  const linkLine = (id: string, bookId: string | null) => setItems((cur) => cur.map((i) => (i.id === id ? { ...i, priceBookItemId: bookId } : i)))
+  const saveToBook = async (item: QuoteItem, mode: 'new' | 'update') => {
+    const box: { r: SavedToBook | null } = { r: null }
+    if (!(await run(mode === 'update' ? 'update the item' : 'save to My Items', async () => { box.r = await saveItemToPriceBook(item.id, mode) })) || !box.r) return
+    const r = box.r
+    setPriceBook((b) => [...b.filter((p) => p.id !== r.item.id), r.item].sort((a, c) => a.name.localeCompare(c.name)))
+    linkLine(item.id, r.item.id)
+    const undo = () => { void run('undo the save', async () => {
+      await undoSaveToPriceBook(item.id, { mode: r.mode, itemId: r.item.id, prevLink: r.prevLink, previous: r.previous })
+      if (r.mode === 'update' && r.previous) { const prev = r.previous; setPriceBook((b) => b.map((p) => (p.id === prev.id ? prev : p))) }
+      else { setPriceBook((b) => b.filter((p) => p.id !== r.item.id)); linkLine(item.id, r.prevLink) }
+    }, r.mode === 'update' ? `${r.item.name} is back as it was` : 'Taken back out of My Items') }
+    snackbar({ message: r.mode === 'update' ? `${r.item.name} updated in My Items — new picks take this line’s figures` : r.item.status === 'proposed' ? 'Proposed to My Items — an Owner or an Admin approves it before the studio uses it' : 'Saved to My Items as a new item', actionLabel: 'Undo', onAction: undo })
+  }
+  /* (REG-653, price book parity Q-12) Add Item › From My Items…: the popover opens with the place this row asked for; a pick lands there. */
+  const topOf = (i: QuoteItem): QuoteItem => { let c = i; for (let k = 0; c.parentId && k < 4; k++) { const p = itemsRef.current.find((x) => x.id === c.parentId); if (!p) break; c = p } return c }
+  const askFromBook = (item: QuoteItem) => {
+    if (item.kind === 'group') {
+      const first = itemsRef.current.filter((i) => i.parentId === item.id).sort((a, b) => a.position - b.position)[0]
+      if (item.collapsed) patchItem(item.id, { collapsed: false })
+      setBookPlace({ label: `inside “${item.name}”`, input: first ? { parentId: item.id, beforeId: first.id } : { parentId: item.id }, afterTop: topOf(item).id, sectionLabel: `after “${topOf(item).name}”` })
+    } else setBookPlace({ label: `below “${item.name}”`, input: { parentId: item.parentId ?? null, afterId: item.id }, afterTop: topOf(item).id, sectionLabel: `after “${topOf(item).name}”` })
+    fromMyItems()
+  }
   const onMenu = (item: QuoteItem, action: RowMenuAction) => {
     switch (action) {
-      case 'library': void run('save to My Items', async () => { const p = await saveItemToPriceBook(item.id); setPriceBook((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Saved to My Items'); break
-      case 'saveSection': void run('save the section to My Items', async () => { const p = await saveSectionToPriceBook(item.id); setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Items — find it under My Sections in the Add Item box'); break   /* REG-566 */
+      /* (REG-652, price book parity Q-04) A Designer's save is a proposal: on their quotes at once, approved by an Owner or an Admin. */
+      case 'library': void saveToBook(item, 'new'); break
+      case 'libraryUpdate': void saveToBook(item, 'update'); break
+      case 'addFromBook': askFromBook(item); break
+      case 'saveSection': void run('save the section to My Sections', async () => { const p = await saveSectionToPriceBook(item.id); setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Sections — find it in the Add Item box'); break   /* REG-566 · (REG-653, Q-18) the book's own names */
       case 'noNumber': patchItem(item.id, { noNumber: !item.noNumber }); snackbar({ message: item.noNumber ? 'The line is numbered again' : 'The line prints without a number' }); break   /* REG-558 */
       case 'ungroup': void structural('ungroup the section', async () => { const r = await ungroupQuoteItem(item.id); onSaved(r.updatedAt, r.amountMinor) }, 'Section removed — its lines stay. Undo with ⌘Z'); break   /* REG-558 */
       case 'subtotalLabel': setLabelling(item); break   /* REG-555 (T-3) */
+      case 'subtotalClear': { const was = item.printAsText; patchItem(item.id, { printAsText: null }); snackbar({ message: 'Sub-total label removed', actionLabel: 'Undo', onAction: () => patchItem(item.id, { printAsText: was }) }); break }
       case 'oneLine': patchItem(item.id, { printOneLine: !item.printOneLine }); snackbar({ message: item.printOneLine ? 'The section prints every line again' : 'The section prints as one line — its name and its total; the lines stay yours' }); break   /* REG-585 */
       case 'description': break
+      case 'comment': onOpenComments?.(item.id); break   /* (REG-627) */
       case 'duplicate': void structural('duplicate the item', () => duplicateQuoteItem(item.id), 'Item duplicated').then((r) => { if (r.ok) attention([r.value.id]) }); break
       case 'copyName': void navigator.clipboard?.writeText(item.name).then(() => snackbar({ message: 'Name copied' }), () => fail('copy the name')); break
       case 'group': { const list = selected.has(item.id) && selected.size > 1 ? [...selected] : [item.id]; void structural('put the items in a section', () => groupQuoteItems(quoteId, list), 'Section created').then((r) => { if (r.ok) attention([r.value.id], { focus: true }) }); setSelected(new Set()); break }
@@ -507,8 +582,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* Leaving the editor inside the 400 ms window still writes the change (the cell queue and General Info flush the same way). */
   const savePrefsRef = useRef(savePrefs); useEffect(() => { savePrefsRef.current = savePrefs })
   useEffect(() => () => { if (persistColumns.current) { window.clearTimeout(persistColumns.current); persistColumns.current = null }; if (pendingColumns.current) { savePrefsRef.current({ itemsColumns: pendingColumns.current }); pendingColumns.current = null } }, [])
-  const addLabel = (kind: 'room' | 'category' | 'section', name: string) => {
-    const key = kind === 'room' ? 'rooms' : kind === 'category' ? 'categories' : 'sections'
+  const addLabel = (kind: 'room' | 'category' | 'section' | 'vendor', name: string) => {
+    const key = kind === 'room' ? 'rooms' : kind === 'category' ? 'categories' : kind === 'vendor' ? 'vendors' : 'sections'
     const next = { ...labels, [key]: labels[key].includes(name) ? labels[key] : [...labels[key], name] }
     setLabels(next); savePrefs({ itemsLabels: next })
   }
@@ -516,7 +591,10 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     rooms: [...new Set([...labels.rooms, ...items.map((i) => i.room).filter((x): x is string => !!x)])],
     categories: [...new Set([...seed.trades, ...labels.categories, ...items.map((i) => i.category).filter((x): x is string => !!x)])],   // (REG-561) the studio's trades first
     sections: [...new Set([...labels.sections, ...items.map((i) => i.section).filter((x): x is string => !!x)])],
-  }), [items, labels, seed.trades])
+    /* (REG-623, parity Q-08) The vendors My Items name first, then the ones added on this quote and the ones its lines carry. */
+    vendors: [...new Set([...priceBook.map((p) => p.vendor).filter((x): x is string => !!x).sort((a, b) => a.localeCompare(b)), ...labels.vendors, ...items.map((i) => i.vendor).filter((x): x is string => !!x)])],
+    tradeNotes: seed.tradeNotes,
+  }), [items, labels, seed.trades, seed.tradeNotes, priceBook])
   const bucketKeys = useMemo(() => {
     if (view === 'none') return []
     const list = view === 'room' ? usedLabels.rooms : view === 'category' ? usedLabels.categories : usedLabels.sections
@@ -683,9 +761,9 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           <ItemsTable
             onAddColumn={() => setSettingsOpen(true)}
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
-            items={items} priceBook={priceBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null}
+            items={items} priceBook={shownBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null} propertyType={propertyType}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
-            query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })}
+            query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })} commentCounts={commentCounts}
             h={{
               onPatch: patchItem,
               onFill: fillDown,
@@ -694,21 +772,24 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
               onInsertBelow: insertBelow,
               onMenu,
               onChooseGroup: (item, gid) => { void structural('move the item', () => setQuoteItemParent(item.id, gid), gid ? 'Moved into the section' : 'Moved out of the section').then((r) => { if (r.ok) attention([item.id]) }) },
-              onPrintAs: (item, v) => { if (v === 'custom') { setSelected(new Set([item.id])); setPrintAsOpen(true) } else setPrintAs([item.id], v) },
+              onPrintAs: (item, v) => { if (v === 'custom') { setPrintAsFor({ ids: [item.id], text: item.printAs === 'custom' ? item.printAsText : null }); setPrintAsOpen(true) } else setPrintAs([item.id], v) },
               onHighlight: (item, v) => setHighlight([item.id], v),
               onUploadImage: (item) => setImageFor(item),
               onComingSoon: comingSoon,
-              onAddLabel: (kind) => setNaming({ kind }),
+              onAddLabel: (kind, itemId) => setNaming({ kind, itemId }),
+              onNote: (message) => snackbar({ message }),
+              onComments: (item) => onOpenComments?.(item.id),
             }}
             onDropRow={commitDrag}
             fresh={fresh}
             onSelectAll={(on) => setSelected(on ? new Set(items.map((i) => i.id)) : new Set())}
             onToggleBucket={(k) => setCollapsedBuckets((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n })}
             onToggleAllBuckets={() => setCollapsedBuckets((s) => (s.size ? new Set() : new Set(bucketKeys)))}
-            onCreate={(name) => { void create({ name }, !name) }}
-            onPickPriceBook={(id) => { void create({ priceBookItemId: id }) }}
-            onPickSection={(id) => { void structural('insert the section', () => insertPriceBookSection(quoteId, id), 'Section added from My Items').then((r) => { if (r.ok) attention([r.value.id]) }) }}
-            onViewPriceBook={() => router.push(withFrom('/company/price-book', `/quotes/${quoteId}`))}   /* (REG-594) Company › Price book, with the way back */
+            onCreate={(name) => { const p = bookPlace; setBookPlace(null); void create({ name, ...(p?.input ?? {}) }, !name) }}
+            onPickPriceBook={(id) => { const p = bookPlace; setBookPlace(null); void create({ priceBookItemId: id, ...(p?.input ?? {}) }) }}
+            onPickSection={(id) => { const p = bookPlace; setBookPlace(null); void structural('insert the section', () => insertPriceBookSection(quoteId, id, p ? { afterId: p.afterTop } : {}), 'Section added from My Sections').then((r) => { if (r.ok) attention([r.value.id]) }) }}
+            bookPlace={bookPlace?.label ?? null} bookPlaceSection={bookPlace?.sectionLabel ?? null} onClearBookPlace={() => setBookPlace(null)}
+            onViewPriceBook={() => setBookOpen('items')}   /* (REG-662) the Price book modal, over the editor */
             onExport={() => setExportOpen(true)}
             addInputRef={addInputRef}
             addOpenTick={addOpenTick + addTick}
@@ -717,7 +798,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         </div>
   )
   return (
-    <>
+    <BookRuleContext.Provider value={{ runsBook: seed.runsBook !== false, bookItem: (id) => (id ? priceBook.find((p) => p.id === id && p.status === 'live') ?? null : null) }}>   {/* (REG-652) the row menu's saves read it · (REG-653) and a line's source */}
       {expanded ? (
         <>
           <SectionCard id="section-items" title={title} open={false} onToggle={() => setExpanded(false)} />
@@ -739,7 +820,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
           { label: 'Set value', onClick: () => setSetValueOpen(true) },
           { label: 'Section', onClick: () => createGroup(selectedList) },
           { label: 'Print as', onClick: () => setPrintAsOpen(true) },
-          { label: 'Hide from client', onClick: () => { snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client` }); setSelected(new Set()) } },
+          /* (sweep S1) Undo on the snackbar puts each line back as it was (its own visibility), as ⌘Z would */
+          { label: 'Hide from client', onClick: () => { const before = itemsRef.current.filter((i) => selectedList.includes(i.id)).map((i) => [i.id, i.visibility] as const); snapshot(); for (const id of selectedList) patchItem(id, { visibility: 'hidden' }, { snapshot: false }); snackbar({ message: `${selectedList.length} hidden from the client`, actionLabel: 'Undo', onAction: () => { for (const [id, v] of before) patchItem(id, { visibility: v as QuoteItem['visibility'] }, { snapshot: false }) } }); setSelected(new Set()) } },
           { label: 'Delete', tone: 'danger', onClick: () => setRemoving(selectedList) },
         ]}
         onClear={() => setSelected(new Set())}
@@ -747,12 +829,16 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <ConfirmDialog open={!!removing} title={removing && removing.length > 1 ? `Remove ${removing.length} items?` : removingSection ? 'Remove this section?' : 'Remove this item?'}
                      message={removing && removing.length > 1 ? `The ${removing.length} lines leave the quote and its totals.` : removingSection ? `The section and its ${removingSection} ${removingSection === 1 ? 'line leave' : 'lines leave'} the quote and its totals. To keep the lines, use Ungroup instead.` : 'The line leaves the quote and its totals.'} confirmLabel="Remove"
                      onConfirm={() => { const list = removing ?? []; setRemoving(null); setSelected(new Set()); void removeItems(list) }} onCancel={() => setRemoving(null)} />
-      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section label' : 'Add Category'} initial=""
-                  onSave={(name) => { if (naming) addLabel(naming.kind, name.trim()); setNaming(null) }} onClose={() => setNaming(null)} />
+      <NameDialog open={!!naming} title={naming?.kind === 'room' ? 'Add Room' : naming?.kind === 'section' ? 'Add Section label' : naming?.kind === 'vendor' ? 'Add vendor' : 'Add Category'} initial=""
+                  onSave={(name) => { if (naming) { addLabel(naming.kind, name.trim()); if (naming.itemId) patchItem(naming.itemId, { [naming.kind]: name.trim() } as ItemPatch) } setNaming(null) }} onClose={() => setNaming(null)} />   {/* (sweep S1 · U-04) the new label lands on the line that asked */}
       {/* (REG-555, T-3) A word beside the section's sub-total — "Approximate", "Estimate" — through the house name dialog. */}
+      <PriceBookDialog itemFolders={seed.bookFolders?.items} sectionFolders={seed.bookFolders?.sections} open={!!bookOpen} tab={bookOpen ?? 'items'} onTab={(t) => setBookOpen(t)} items={priceBook} sections={priceBookSections} propertyType={propertyType}
+                       onClose={() => setBookOpen(null)} onAdd={addFromBook} onManage={() => { setBookOpen(null); router.push(withFrom('/company/price-book', `/quotes/${quoteId}`)) }} />
       <NameDialog open={!!labelling} title="Label the sub-total" initial={labelling?.printAsText ?? ''}
                   onSave={(name) => { if (labelling) { patchItem(labelling.id, { printAsText: name.trim() || null }); snackbar({ message: name.trim() ? `The sub-total prints “${name.trim()}”` : 'Sub-total label removed' }) } setLabelling(null) }} onClose={() => setLabelling(null)} />
-      <PrintAsDialog open={printAsOpen} count={selected.size} onClose={() => setPrintAsOpen(false)} onApply={(v, text) => { setPrintAsOpen(false); setPrintAs(selectedList, v, text); setSelected(new Set()) }} />
+      <PrintAsDialog open={printAsOpen} count={printAsFor ? printAsFor.ids.length : selected.size} initial={printAsFor ? { key: 'custom', text: printAsFor.text } : undefined}
+                     onClose={() => { setPrintAsOpen(false); setPrintAsFor(null) }}
+                     onApply={(v, text) => { setPrintAsOpen(false); if (printAsFor) { setPrintAs(printAsFor.ids, v, text); setPrintAsFor(null) } else { setPrintAs(selectedList, v, text); setSelected(new Set()) } }} />
       <AttachFilesModal open={!!imageFor} mode="image" chrome="quote" files={seed.files} attached={[]} onClose={() => setImageFor(null)}
                         onAttach={(fileIds) => { const f = seed.files.find((x) => x.id === fileIds[0]); if (imageFor && f) patchItem(imageFor.id, { thumb: f.thumb ?? null, thumbCount: f.thumb ? 1 : 0, icon: null }); setImageFor(null) }}
                         onUploadPicked={() => { if (imageFor) patchItem(imageFor.id, { thumb: '/figma-assets/file-thumb-1.png', thumbCount: 1, icon: null }); setImageFor(null) }} />
@@ -762,6 +848,6 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                     onDone={(name, format) => snackbar({ message: `Exported ${lineCount} ${lineCount === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <SetValueDialog open={setValueOpen} count={selected.size} labels={usedLabels} onClose={() => setSetValueOpen(false)} onApply={applySet} />
       <ColumnSettingsDrawer open={settingsOpen} value={columns} onClose={() => setSettingsOpen(false)} onSave={saveColumns} onReset={() => clearColumnWidths(ITEMS_TABLE)} clientColumns={clientColumns ?? null} hidden={owner ? [] : ['rebate']} />
-    </>
+    </BookRuleContext.Provider>
   )
 }

@@ -22,7 +22,7 @@ export function ImportContractDialog({ open, onClose, onImport }: { open: boolea
   const ok = !!file && !busy
   return (
     <Dialog open={open} onClose={onClose} title="Import a contract" size="form" width={600}
-            subtitle="A PDF you already have. It joins the lead's contracts and goes out through the same signing link."
+            subtitle="A PDF you already have. It joins the lead’s contracts and goes out through the same signing link."
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button isDisabled={!ok} onPress={async () => { if (!file) return; setBusy(true); try { await onImport({ title: title.trim() || file.replace(/\.pdf$/i, ''), fileName: file, signed }) } finally { setBusy(false) } }}>{busy ? 'Importing…' : 'Import'}</Button></>}>
       <div className={styles.fields}>
         <TextField label="Contract title" value={title} onChange={setTitle} placeholder="Defaults to the file’s name" />

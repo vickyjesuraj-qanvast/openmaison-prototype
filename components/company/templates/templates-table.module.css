@@ -135,3 +135,5 @@
   .touchBtn { min-width: 44px; min-height: 44px; }
 }
 @media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .pin { background: var(--om-color-surface-default); } }
+/* (sweep S5 #10) A ticked row keeps the primary-variant fill, its frozen cells too (REG-449) — it went white again when the pointer left. */
+.row[data-selected], .row[data-selected] .pin { background: var(--om-color-primary-variant); }

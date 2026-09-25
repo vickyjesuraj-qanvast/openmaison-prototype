@@ -104,6 +104,11 @@ export const members = sqliteTable('members', {
   acceptingLeads: integer('accepting_leads', { mode: 'boolean' }).notNull().default(true),
   leadPreferences: text('lead_preferences'),
   specialty: text('specialty'),
+  // (REG-646, settings parity Q-06) 1.0's studio_members.is_active: a member is deactivated, never deleted — their records stay theirs,
+  // they leave every picker; `deactivated_at` says since when. `phone` is 1.0's profiles.phone, set when a member is added.
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  deactivatedAt: integer('deactivated_at', { mode: 'timestamp' }),
+  phone: text('phone'),
 })
 
 export const leads = sqliteTable(
@@ -175,6 +180,7 @@ export const leadTasks = sqliteTable(
     seenAt: integer('seen_at', { mode: 'timestamp' }),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
     templateId: text('template_id'),             // (REG-538) the task template it was added from — the gallery's "Added to n leads"
+    contractId: text('contract_id'),             // (REG-634, contracts parity Q-25) the contract whose Automation raised it — a follow-up closes when it is signed
   },
   (t) => [index('lead_tasks_lead_idx').on(t.leadId)],
 )
@@ -302,6 +308,17 @@ export const quotes = sqliteTable(
     /* (REG-588) A second client on the quote (co-owners): printed by the Details block and the Signature block when filled. */
     client2Name: text('client2_name'),
     client2Nric: text('client2_nric'),
+    /* (REG-624, quote editor parity Q-22 · Q-23) Approval on the record: who sent it for approval and when; who approved it; the note an
+       approver sent back with Request changes (shown to the preparer until the next send); when it first went to the client. */
+    submittedBy: text('submitted_by'),
+    submittedAt: integer('submitted_at', { mode: 'timestamp' }),
+    approvedBy: text('approved_by'),
+    reviewNote: text('review_note'),
+    reviewedBy: text('reviewed_by'),
+    reviewedAt: integer('reviewed_at', { mode: 'timestamp' }),
+    clientSentAt: integer('client_sent_at', { mode: 'timestamp' }),
+    /* (REG-626, parity Q-31) When the quote was signed — the contract raised from it signed, or Signed picked by hand. */
+    signedAt: integer('signed_at', { mode: 'timestamp' }),
   },
   (t) => [index('quotes_lead_idx').on(t.leadId)],
 )
@@ -339,6 +356,12 @@ export const priceBookSections = sqliteTable('price_book_sections', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-594)
+  /** (REG-619, parity Q-27) The property type the section suits (the leads' list; null = any) and the studio's tags, a JSON array. */
+  propertyType: text('property_type'),
+  tags: text('tags'),
+  createdBy: text('created_by'),   // (REG-652) who saved it and who changed it last
+  updatedBy: text('updated_by'),
+  folderId: text('folder_id'),   // (REG-664) its folder in My Sections (library_folders, library 'book-sections'); null = the top
 })
 export type PriceBookSection = typeof priceBookSections.$inferSelect
 
@@ -373,6 +396,7 @@ export const quoteTextTemplates = sqliteTable('quote_text_templates', {
   createdBy: text('created_by'),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+  folderId: text('folder_id'),   // (REG-664) its folder in T&Cs & Notes; null = the top
 })
 export type QuoteTextTemplate = typeof quoteTextTemplates.$inferSelect
 
@@ -391,6 +415,7 @@ export const paymentTemplates = sqliteTable('payment_templates', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  folderId: text('folder_id'),   // (REG-664) its folder in Payments; null = the top
 })
 export type PaymentTemplate = typeof paymentTemplates.$inferSelect
 
@@ -437,8 +462,38 @@ export const priceBookItems = sqliteTable('price_book_items', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-594) Company › Price book deletes softly, as the templates do (REG-502)
+  // (REG-652, price book parity Q-04) A Designer's new item is `proposed` — on its proposer's quotes at once, offered to no one else —
+  // until an Owner or an Admin approves it (`live`) or sends it back with a note (it leaves the book). Who made and last changed it.
+  status: text('status').notNull().default('live'),
+  createdBy: text('created_by'),
+  updatedBy: text('updated_by'),
+  reviewedBy: text('reviewed_by'),
+  reviewedAt: integer('reviewed_at', { mode: 'timestamp' }),
+  reviewNote: text('review_note'),
+  // (REG-653, price book parity Q-08) What a line copies besides its figures: a product or spec page, and the formatted description
+  // (bullets, bold — `description` keeps its plain text), as a quote line keeps them (REG-557, REG-623).
+  link: text('link'),
+  descriptionHtml: text('description_html'),
+  folderId: text('folder_id'),   // (REG-664) its folder in My Items; null = the top
 })
 export type PriceBookItem = typeof priceBookItems.$inferSelect
+
+/** (REG-652, price book parity Q-05) An item's history: what changed, who, when — its creation, an import, an approval, a send-back,
+ *  a delete and a restore included. `changes` holds real changes only, `{ field: [before, after] }` in the item's own units. */
+export const priceBookChanges = sqliteTable(
+  'price_book_changes',
+  {
+    id: text('id').primaryKey(),
+    itemId: text('item_id').notNull(),
+    kind: text('kind').notNull(),   // created · imported · edited · approved · sent_back · deleted · restored
+    changes: text('changes'),       // JSON
+    note: text('note'),
+    by: text('by'),                 // members.id
+    at: integer('at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [index('price_book_changes_item_idx').on(t.itemId)],
+)
+export type PriceBookChange = typeof priceBookChanges.$inferSelect
 
 /**
  * A quote's line items (Items table 1260:31225): items and groups, groups holding items through `parentId`, siblings ordered by
@@ -483,6 +538,12 @@ export const quoteItems = sqliteTable(
     printOneLine: integer('print_one_line', { mode: 'boolean' }).notNull().default(false),
     /* (REG-596) A vendor rebate on the line, Owners only: never printed, never shown to a designer; the owner's margin counts it. */
     rebateMinor: integer('rebate_minor').notNull().default(0),
+    /* (parity Q-08, REG-623) Who supplies the line — from its My Items entry when picked from there, editable; never printed. */
+    vendor: text('vendor'),
+    /* (parity Q-09, REG-623) A product or spec page for the line (http/https); never printed. */
+    link: text('link'),
+    /* (REG-626, parity Q-32) On an optional line: what the client answered on the confirmation link — want | skip; null = not asked yet. */
+    clientChoice: text('client_choice'),
     descriptionHtml: text('description_html'),               // (REG-557) the formatted description (bullets · bold · underline) the in-house editor writes; `description` keeps its plain text
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
@@ -524,6 +585,7 @@ export const quoteTemplates = sqliteTable('quote_templates', {
   reviewNote: text('review_note'),                          // the owner's "changes requested" note, until the next submit
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),   // (REG-502) soft, like leads and quotes: out of every list and picker, restorable from Deleted templates; quotes on it keep printing their pinned version
   deletedBy: text('deleted_by'),               // (REG-538) the Deleted sheet's \"Deleted by\" — it used to show whoever last edited
+  folderId: text('folder_id'),                 // (REG-664) its folder in Templates › Quotes (library_folders); null = the top
 })
 export type QuoteTemplate = typeof quoteTemplates.$inferSelect
 
@@ -539,7 +601,23 @@ export const quoteComparisons = sqliteTable('quote_comparisons', {
   resultJson: text('result_json').notNull(),      // XrayResult
   createdBy: text('created_by').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-})
+  /** (REG-638, X-Ray parity round 1) Both sides' lines as the reading read them — `{ yours: YourLine[], theirs: RefLine[] }` —
+      so a correction re-reads the same lines (Q-14), Run again keeps the other quote (Q-15) and the stale check has a baseline. */
+  inputsJson: text('inputs_json'),
+  /** The engine that made the reading (`ENGINE` in lib/xray/compare.ts); null = engine 1 (REG-529). */
+  engine: integer('engine'),
+  /** Upload two quotes: your file's name (the label drops its extension). */
+  yourFile: text('your_file'),
+  /** (REG-640, X-Ray parity round 3) The studio's corrections — `{ split: [yourLineId, theirIndex][], pair: [...] }` (Q-14) — and who made them last. */
+  overridesJson: text('overrides_json'),
+  correctedBy: text('corrected_by'),
+  correctedAt: integer('corrected_at', { mode: 'timestamp' }),
+  /** (Q-16) The last send: when, by whom, the text as it went, and how ('whatsapp' · 'copy'). */
+  sentAt: integer('sent_at', { mode: 'timestamp' }),
+  sentBy: text('sent_by'),
+  sentText: text('sent_text'),
+  sentVia: text('sent_via'),
+}, (t) => [index('quote_comparisons_lead_idx').on(t.leadId)])
 
 /** (REG-485) Every published version of a template, for History and Roll back — the design as it was, whole. */
 export const quoteTemplateVersions = sqliteTable('quote_template_versions', {
@@ -585,6 +663,32 @@ export const contracts = sqliteTable(
     signedNric: text('signed_nric'),             // (REG-563) the NRIC / FIN the client typed when signing, kept MASKED ("•••••567A") — never the full number
     createdBy: text('created_by'),               // members.id
     bundleId: text('bundle_id'),                 // (REG-591) sent together with the bundle's other documents under one signing link
+    /* (REG-631, contracts parity Q-05) The signed copy: at signing the document is kept as the client signed it — every chip's value in
+       place, the studio signature it printed, the letterhead — with its fingerprint (1.0's `document_hash`). Preview, the signing page and
+       every print of a Signed contract read these, never today's records. Cleared only when a studio-marked signature is moved back. */
+    signedBody: text('signed_body'),                           // the resolved HTML (chips as values; signature fields still fields)
+    signedStudioSignature: text('signed_studio_signature'),     // JSON { kind, name, data } — the studio signature as printed at signing
+    signedLetterhead: text('signed_letterhead'),               // JSON { name, line } — the issuer's name and address line at signing
+    documentHash: text('document_hash'),                       // SHA-256 of "html\n{title}\n{resolved body}" (1.0's per-document hash, B-26)
+    /* (REG-633, contracts parity Q-15) 1.0's per-document gates (a library document's `requires_scroll · requires_accept · accept_label`, B-02):
+       the client reads to the end and / or ticks the document's own words before going on. New contracts start with both on. */
+    requiresScroll: integer('requires_scroll', { mode: 'boolean' }).notNull().default(false),
+    requiresAccept: integer('requires_accept', { mode: 'boolean' }).notNull().default(false),
+    acceptLabel: text('accept_label'),                         // the tick's words; null = "I have read and agree to this document."
+    /* (REG-633, parity Q-16 · Q-17 · Q-18 · Q-19) the signing record — 1.0's evidence names (D-175…D-182) */
+    viewedAt: integer('viewed_at', { mode: 'timestamp' }),     // the client's first open of the link while it was out for signature
+    acceptedAt: integer('accepted_at', { mode: 'timestamp' }), // when the client ticked the document's words
+    signatureKind: text('signature_kind'),                     // 'type' | 'draw' — how the client signed online
+    signatureData: text('signature_data'),                     // a drawn signature as an SVG path (752×140), else null
+    signerPhone: text('signer_phone'),                         // the number the one-time code went to, masked ("+65 •••• 4567")
+    signerUserAgent: text('signer_user_agent'),                // the device, summarised ("Chrome on macOS")
+    signerTimezone: text('signer_timezone'),                   // the signer's time zone ("Asia/Singapore")
+    verificationMethod: text('verification_method'),           // 'phone_code' (1.0: 'phone_otp'); the code itself is the platform's
+    bundlePosition: integer('bundle_position'),                // (REG-633, parity Q-16) the order the studio ticked it in a bundle
+    /* (REG-634, contracts parity §8.2 · E-128) who did it — Activity names the member, not the contract's creator */
+    sentBy: text('sent_by'),                                   // members.id — who sent it (WhatsApp, a shared link, a bundle)
+    markedBy: text('marked_by'),                               // members.id — who marked it signed (paper, or signed elsewhere)
+    deletedBy: text('deleted_by'),                             // members.id — Deleted Contracts' "Deleted by"
   },
   (t) => [index('contracts_lead_idx').on(t.leadId)],
 )
@@ -622,6 +726,14 @@ export const contractBundles = sqliteTable('contract_bundles', {
   signedBy: text('signed_by'),
   signedNric: text('signed_nric'),
   createdBy: text('created_by'),
+  /* (REG-633, contracts parity Q-16 · Q-17 · Q-19) the bundle's own signing record — one signature, one record, the whole set's fingerprint */
+  viewedAt: integer('viewed_at', { mode: 'timestamp' }),
+  signingHash: text('signing_hash'),                           // 1.0's whole-set hash (B-29) of the documents it signed
+  signatureKind: text('signature_kind'),
+  signatureData: text('signature_data'),
+  signerPhone: text('signer_phone'),
+  signerUserAgent: text('signer_user_agent'),
+  signerTimezone: text('signer_timezone'),
 })
 export type ContractBundle = typeof contractBundles.$inferSelect
 
@@ -635,6 +747,15 @@ export const contractTemplates = sqliteTable('contract_templates', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  /** (REG-632, contracts parity Q-13) The studio's default: a contract raised from a quote or the Won step starts from it; the picker lists it first. One at most. */
+  isDefault: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  /** (REG-633, contracts parity Q-15) The gates a contract made from it starts with. */
+  requiresScroll: integer('requires_scroll', { mode: 'boolean' }).notNull().default(false),
+  requiresAccept: integer('requires_accept', { mode: 'boolean' }).notNull().default(false),
+  acceptLabel: text('accept_label'),
+  /** (REG-634, contracts parity E-126) who saved it last — the gallery's "Updated by". */
+  updatedBy: text('updated_by'),
+  folderId: text('folder_id'),   // (REG-664) its folder in Templates › Contracts; null = the top
 })
 export type ContractTemplate = typeof contractTemplates.$inferSelect
 
@@ -737,6 +858,8 @@ export const questions = sqliteTable(
     answeredAt: integer('answered_at', { mode: 'timestamp' }),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    // (REG-647, settings parity Q-13) Copied from the question bank's Required: the tab marks it and counts the required ones still open.
+    required: integer('required', { mode: 'boolean' }).notNull().default(false),
   },
   (t) => [index('questions_lead_idx').on(t.leadId)],
 )
@@ -839,6 +962,26 @@ export const taskComments = sqliteTable(
   (t) => [index('task_comments_task_idx').on(t.taskId)],
 )
 
+/**
+ * (REG-627, quote editor parity Q-30) The team's comments on a quote's line — 1.0's line threads, on the task comments' model. Kept by the
+ * line's id with no cascade: undo and Bring back write a line back under its own id, so its thread comes back with it; a line removed for
+ * good leaves its thread unread. Never printed, never shown to the client.
+ */
+export const quoteItemComments = sqliteTable(
+  'quote_item_comments',
+  {
+    id: text('id').primaryKey(),
+    quoteId: text('quote_id').notNull().references(() => quotes.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    authorId: text('author_id').notNull().references(() => members.id),
+    body: text('body').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [index('quote_item_comments_quote_idx').on(t.quoteId), index('quote_item_comments_item_idx').on(t.itemId)],
+)
+export type QuoteItemComment = typeof quoteItemComments.$inferSelect
+
 /** Files attached to a task — rows of `lead_files` (the lead's library, 902:28220 "Your files"). */
 export const taskAttachments = sqliteTable(
   'task_attachments',
@@ -861,6 +1004,7 @@ export const taskTemplates = sqliteTable('task_templates', {
   createdBy: text('created_by'),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  folderId: text('folder_id'),   // (REG-664) its folder in Templates › Tasks; null = the top
 })
 
 export const templateTasks = sqliteTable(
@@ -974,3 +1118,26 @@ export const leadEvents = sqliteTable(
   (t) => [index('lead_events_lead_idx').on(t.leadId)],
 )
 export type LeadEvent = typeof leadEvents.$inferSelect
+
+/**
+ * (REG-664, owner 2026-09-25: "folders for the templates … very similar to the Files tab, with all the move features", "wherever it is
+ * applicable and best") A studio's folders in one library — each library keeps its own set (the owner's pick): the five template tabs
+ * (`quotes` · `contracts` · `tasks` · `texts` · `payments`) and the Price book's two (`book-items` · `book-sections`). Folders nest
+ * through `parent_id`, as the Files tab's do; an entry's `folder_id` places it (null = the top). Deleting a folder never deletes what it
+ * holds: its entries and sub-folders move up a level (the owner's pick) — `deleted_at` keeps the row so Undo can put it all back.
+ */
+export const libraryFolders = sqliteTable(
+  'library_folders',
+  {
+    id: text('id').primaryKey(),
+    library: text('library').notNull(),
+    name: text('name').notNull(),
+    parentId: text('parent_id'),
+    createdBy: text('created_by'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('library_folders_library_idx').on(t.library)],
+)
+export type LibraryFolder = typeof libraryFolders.$inferSelect

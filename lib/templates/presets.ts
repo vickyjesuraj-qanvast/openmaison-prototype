@@ -5,7 +5,7 @@
  * current quote" returns one as the match, and the studio's three seeded templates wear the first three. Client-safe.
  */
 import { DEMO_BADGES, payQrSvg } from './assets'
-import { defaultBlock, newId, type CanvasElement, type ItemsBlock, type ItemsColumn, type TemplateDefaults, type TemplateDesign, type TextStyle, DEFAULT_DEFAULTS } from './model'
+import { defaultBlock, ITEM_COLUMN_KEYS, newId, type CanvasElement, type ItemsBlock, type ItemsColumn, type TemplateDefaults, type TemplateDesign, type TextStyle, DEFAULT_DEFAULTS } from './model'
 
 const PRESET_KEYS = ['letter', 'scope', 'form', 'presentation'] as const
 export type PresetKey = (typeof PRESET_KEYS)[number]
@@ -21,8 +21,8 @@ const pageno = (x: number, y: number, w: number, format: string, style: TextStyl
 
 const cols = (spec: [ItemsColumn['key'], string, number, ItemsColumn['align'], string?][]): ItemsColumn[] => {
   const on = new Map(spec.map((s) => [s[0], s]))
-  const all: ItemsColumn['key'][] = ['no', 'item', 'qty', 'unit', 'qtyUnit', 'unitPrice', 'discount', 'total']
-  const defaults: Record<ItemsColumn['key'], [string, number, ItemsColumn['align']]> = { no: ['#', 10, 'left'], item: ['Description', 0, 'left'], qty: ['Qty', 14, 'right'], unit: ['Unit', 16, 'left'], qtyUnit: ['Unit', 20, 'right'], unitPrice: ['Rate', 22, 'right'], discount: ['Disc.', 14, 'right'], total: ['Amount', 26, 'right'] }
+  const all: ItemsColumn['key'][] = [...ITEM_COLUMN_KEYS]
+  const defaults: Record<ItemsColumn['key'], [string, number, ItemsColumn['align']]> = { no: ['#', 10, 'left'], item: ['Description', 0, 'left'], qty: ['Qty', 14, 'right'], unit: ['Unit', 16, 'left'], qtyUnit: ['Unit', 20, 'right'], unitPrice: ['Rate', 22, 'right'], discount: ['Disc.', 14, 'right'], optional: ['Optional', 24, 'right'], total: ['Amount', 26, 'right'] }
   return all.map((key) => { const s = on.get(key); const d = defaults[key]; return s ? { key, label: s[1], width: s[2], align: s[3], on: true, ...(s[4] ? { color: s[4] } : {}) } : { key, label: d[0], width: d[1], align: d[2], on: false } })
 }
 const items = (over: Partial<ItemsBlock>): ItemsBlock => ({ ...(defaultBlock('items') as ItemsBlock), ...over })

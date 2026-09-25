@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { useFlagPref } from '@/lib/prefs'
-import { BLOCK_LABEL, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
+import { BLOCK_LABEL, defaultBlock, ELEMENT_LABEL, isCanvas, mm, PAPER_MM, type Block, type BlockKind, type TemplateDefaults, type TemplateDesign, type TemplateStatus, type TemplateVersion } from '@/lib/templates/model'
 import { docTotals, EMPTY_DATA, type DocData } from '@/lib/templates/data'
 import { fieldValues } from '@/lib/templates/fields'
 import { presetByKey } from '@/lib/templates/presets'
@@ -141,6 +141,12 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
     const b = docRef.current.design.blocks.find((x) => x.id === blockId); const el = b && isCanvas(b) ? b.elements.find((x) => x.id === elId) : null; if (!b || !el) return
     setSelection({ blockId }); onDesign((d) => patchBlock(d, blockId, (x) => (isCanvas(x) ? { ...x, elements: x.elements.filter((y) => y.id !== elId) } : x)))
     snackbar({ message: `${ELEMENT_LABEL[el.kind]} removed`, actionLabel: 'Undo', onAction: () => undo() })
+  }, [onDesign, snackbar, undo])
+  /* (REG-618, parity Q-19) Reset this block: its settings back to a new block's, in the same place — one undo step, and the snackbar's Undo. */
+  const resetBlock = useCallback((id: string) => {
+    const b = docRef.current.design.blocks.find((x) => x.id === id); if (!b) return
+    onDesign((d) => patchBlock(d, id, (x) => ({ ...defaultBlock(x.kind), id: x.id }) as Block))
+    snackbar({ message: `${BLOCK_LABEL[b.kind]} reset`, actionLabel: 'Undo', onAction: () => undo() })
   }, [onDesign, snackbar, undo])
   const dragStart = useRef<EditorDoc | null>(null)
   const interactive = useMemo<Interactive>(() => ({
@@ -311,7 +317,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
       ) : null}
       <div className={styles.paneBody}>
         {rightTab === 'reference' && sourceFile ? <ReferencePane file={sourceFile} underlay={underlay} onUnderlay={setUnderlay} opacity={underlayOpacity} onOpacity={setUnderlayOpacity} onDetach={() => { void detachReference() }} />
-          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} values={fieldPreview} />}
+          : <Inspector design={design} brand={brand} selection={selection} onDesign={onDesign} onSelect={setSelection} onDeleteBlock={deleteBlock} onDeleteElement={deleteElement} onResetBlock={resetBlock} values={fieldPreview} />}
       </div>
     </div>
   )

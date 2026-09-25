@@ -50,15 +50,16 @@ export function ReviewBar({ submitted, reviewNote, canApprove, now, busy, onAppr
   return null
 }
 
-/** One note and one button — Submit for approval, Request changes. */
-export function NoteDialog({ open, title, label, help, action, busy, onClose, onSubmit }: { open: boolean; title: string; label: string; help: string; action: string; busy: boolean; onClose: () => void; onSubmit: (note: string) => void }) {
+/** One note and one button — Submit for approval, Request changes. `required` (REG-624, a quote's Request changes): the button waits for a note. */
+export function NoteDialog({ open, title, label, help, action, busy, onClose, onSubmit, required = false, maxLength = 200 }: { open: boolean; title: string; label: string; help: string; action: string; busy: boolean; onClose: () => void; onSubmit: (note: string) => void; required?: boolean; maxLength?: number }) {
   const [note, setNote] = useState('')
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) setNote('') }
+  const ready = !busy && (!required || note.trim() !== '')
   return (
     <Dialog open={open} onClose={onClose} title={title} size="form" width={400}
-            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSubmit(note.trim())} isDisabled={busy}>{busy ? `${action}…` : action}</Button></>}>
-      <TextField label={label} value={note} onChange={setNote} maxLength={200} helper={help} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && !busy) { e.preventDefault(); onSubmit(note.trim()) } }} />
+            footer={<><Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={busy}>Cancel</Button><Button onPress={() => onSubmit(note.trim())} isDisabled={!ready}>{busy ? `${action}…` : action}</Button></>}>
+      <TextField label={label} value={note} onChange={setNote} maxLength={maxLength} helper={help} required={required} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && ready) { e.preventDefault(); onSubmit(note.trim()) } }} />
     </Dialog>
   )
 }

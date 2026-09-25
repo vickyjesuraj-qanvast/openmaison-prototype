@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { DatePicker } from '@/components/om/date-picker'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -13,7 +13,10 @@ import type { Quote } from '@/lib/db/schema'
 import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
 import type { LeadQuotesData } from '@/lib/leads/quotes'
-import { archiveQuote, createQuote, deleteQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { archiveQuote, listArchivedQuotes, unarchiveQuotes, createQuote, createQuoteFromUpload, deleteQuotes, deleteQuotesForever, emptyQuoteTrash, listDeletedQuotes, restoreQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { canDeleteQuote, deletedLine } from '@/lib/quotes/policy'
+import { ArchivedQuotesSheet } from './archived-quotes-sheet'
+import { DeletedQuotesSheet } from './deleted-quotes-sheet'
 import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
 import { QuotesToolbar } from './quotes-toolbar'
 import { QuotesTable, type QuoteRowAction } from './quotes-table'
@@ -35,12 +38,11 @@ import styles from './lead-quotes.module.css'
  * settings still answer coming soon. Actions run through the tabs' shared `useRun`.
  * Specs: design-source/context/lead-quotes/.
  */
-export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: string; leadName: string; data: LeadQuotesData; approval: QuoteApproval }) {
+export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true, viewer = null }: { leadId: string; leadName: string; data: LeadQuotesData; approval: QuoteApproval; /** (REG-624) */ canApprove?: boolean; /** (REG-625) who is looking — Delete follows its rule */ viewer?: { id: string; role: string } | null }) {
   const { quotes, templates, priceBookCount, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
-  const { run, fail } = useRun()
+  const { run, fail, refresh } = useRun()
 
   /* ── list state ── */
   const [query, setQuery] = useState('')
@@ -86,17 +88,28 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
     void run('change the status', () => setQuoteStatus(quote.id, status), `Quote marked ${status}`)
   }
   const openDue = (quote: Quote, anchor: HTMLElement) => { dueAnchor.current = anchor; setDueFor((d) => (d?.el === anchor ? null : { quoteId: quote.id, el: anchor })) }
+  /* (REG-625, parity Q-27 · Q-28) Deleted Quotes, and who may delete. */
+  const [deletedOpen, setDeletedOpen] = useState(false)
+  const loadDeleted = useCallback(() => listDeletedQuotes(leadId), [leadId])
+  const [archivedOpen, setArchivedOpen] = useState(false)   /* (sweep S1 · U-07) */
+  const loadArchived = useCallback(() => listArchivedQuotes(leadId), [leadId])
+  const mayDelete = (q: Quote) => !viewer || canDeleteQuote(viewer, q)
+  /* (sweep S1) a soft delete answers with Undo (REG-502), and a failure names what failed */
+  const removeQuotes = (ids: string[]) => { void run(ids.length > 1 ? 'delete the quotes' : 'delete the quote', async () => { const r = await deleteQuotes(ids); snackbar(r.deleted ? { message: deletedLine(r), actionLabel: 'Undo', onAction: () => { void restoreQuotes(ids).then(() => refresh(), () => snackbar({ message: 'Couldn’t restore — please try again' })) } } : { message: deletedLine(r) }) }) }
   const rowMenu = (quote: Quote, action: QuoteRowAction) => {
-    if (action === 'copy') {
-      const url = `${window.location.origin}/leads/${leadId}/quotes?open=${quote.id}`
-      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Link copied' }), () => fail('copy the link'))
+    if (action === 'share' || action === 'pdf' || action === 'print') {
+      /* (REG-625, parity §8.2 · E-117) the row's Preview and Share · Download as PDF · Print open what the editor's own kebab opens */
+      router.push(withFrom(`/quotes/${quote.id}/preview${action === 'share' ? '' : '?print=1'}`, here))
+    } else if (action === 'xray') {
+      router.push(withFrom(`/quote-x-ray?lead=${quote.leadId}&quote=${quote.id}`, here))   /* (REG-639) Quote X-Ray on this quote, back to this tab */
+    } else if (action === 'copy') {
+      const url = `${window.location.origin}/quotes/${quote.id}`   /* (REG-625, E-117) the quote's own address — "?open=" was read by nothing */
+      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
     } else if (action === 'archive') {
       // The Undo snackbar rides with the success (RACE-03): a failed archive shows only "Couldn’t archive the quote".
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })
     } else if (action === 'delete') {
       setDeleting([quote.id])
-    } else {
-      comingSoon()   // Preview and Share · Download as PDF · Print — no mock beyond the menu item
     }
   }
   const selectedIds = [...selected]
@@ -107,7 +120,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         query={query} onQuery={setQuery}
         onCreate={openCreate}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', `/leads/${leadId}/quotes`)) : comingSoon())}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */
+        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', `/leads/${leadId}/quotes`)) : a === 'settings' ? router.push(withFrom('/settings?section=quotes', `/leads/${leadId}/quotes`)) : a === 'archived' ? setArchivedOpen(true) : setDeletedOpen(true))}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes; (REG-625) Quotes Settings → Settings › Quotes, Deleted Quotes → the sheet */
       />
       {quotes.length === 0 ? (
         <QuotesEmpty onFromScratch={openCreate} onFromTemplate={openCreate} />
@@ -115,7 +128,7 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
       ) : (
         <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
-          quotes={visible} now={now} approval={approval}
+          quotes={visible} now={now} approval={approval} canApprove={canApprove} canDelete={mayDelete}
           selected={selected} onSelect={setSelected}
           onStatus={onStatus}
           onDue={openDue}
@@ -150,12 +163,19 @@ export function LeadQuotes({ leadId, leadName, data, approval }: { leadId: strin
         onClose={() => setCreateOpen(false)}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
+        onUpload={(read) => { void run('create the quote', async () => { const id = await createQuoteFromUpload(leadId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }}   /* (REG-627, parity Q-16) */
       />
       <DeleteQuotesDialog
         open={!!deleting} count={deleting?.length ?? 1}
         onNo={() => setDeleting(null)}
-        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); void run('delete', () => deleteQuotes(ids), ids.length === 1 ? 'Quote deleted' : `${ids.length} quotes deleted`) }}
+        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); removeQuotes(ids) }}
       />
+      <ArchivedQuotesSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb={`${leadName} / Quotes`}
+                           onUnarchive={async (ids) => { const r = await unarchiveQuotes(ids); snackbar({ message: r.restored > 1 ? `${r.restored} quotes unarchived` : 'Quote unarchived' }); refresh() }} />
+      <DeletedQuotesSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb={`${leadName} / Quotes`}
+                          onRestore={async (ids) => { const r = await restoreQuotes(ids); snackbar({ message: r.restored ? 'Quote restored' : 'Only its creator, an Owner or an Admin restores it' }); refresh() }}
+                          onDeleteForever={async (ids) => { const r = await deleteQuotesForever(ids); snackbar({ message: r.deleted ? 'Quote deleted forever' : 'The quote stays — a contract reads it, or someone else created it' }) }}
+                          onEmptyTrash={async () => { const r = await emptyQuoteTrash(leadId); snackbar({ message: `${r.deleted} ${r.deleted === 1 ? 'quote' : 'quotes'} deleted forever${r.refused ? ` — ${r.refused} kept` : ''}` }) }} />
     </div>
   )
 }

@@ -390,13 +390,27 @@ From the code reading; not reproduced on a running 1.0.
 
 **Not covered here:** the quote editor's lines, pricing, package tiers, versions, approvals and share flow (the next audit, the quote editor); Finance's invoice, PO and VO templates; Projects' timeline and milestone templates; the studio forks (El Arte, Arthaus, Flo) beyond their seed files.
 
-## 9. The owner's answers
+## 9. The owner's answers (2026-09-24, from the "Quote templates parity — the 27 decisions" doc)
 
-Pending — answer §6 by number (go · hold · no, or the alternative). Nothing is built before the answers.
+Every one of the 27 calls is **As recommended**, with no notes; every row of the doc's *Left out on purpose* table (TE-04 · TE-02 · TP-08 · TI-14 / TT-06 · TI-13 · TB-13 · TB-17 · TB-15 · TC-02 · the dead rows) is **Don't build**. Read at the doc's rev 47; no comments.
+
+| Built in the rounds | Recorded, nothing to build |
+|---|---|
+| Q-08 a note per trade · Q-10 "A1, A2" · Q-11 the Optional price column (optional lines stay out of the totals) · Q-21 the sub-total in the band · Q-16 ordinals + a footnote (fixed rows held for Finance) · Q-18 watermark opacity · Q-19 Reset this block · Q-20 a Social links element · Q-24 bank label words + SWIFT (no extra rows) · Q-25 what Prepared by prints · Q-26 a letterhead per issuing entity · Q-27 property type + tags on My Sections · Q-01…Q-04 the port rules in the devs' map | Q-01 one template · Q-02 edit the template from the quote (a 1.0 lead with its own layout ports as its own template) · Q-03 no "My preset" (a custom preset ports as a Draft) · Q-04 no per-entity templates · Q-05 2.0's publish rights · Q-06 starter sections stay names only (the Save-as-sections option not taken) · Q-07 generation rules held · Q-09 nothing from Quote Sharing · Q-12 no Round off · Q-13 GST-inclusive held · Q-14 fonts held · Q-15 the studio's own badges · Q-17 no automatic signature block · Q-22 no currency column · Q-23 no blocks between sections |
+
+Build order stays §7: round 1 the Items table, round 2 blocks and brand, round 3 content (Q-27 only), round 4 data alongside.
 
 ## 10. Build log
 
-Nothing built yet.
+**Round 1 — the Items table (built 2026-09-24, REG-617).** Q-10 *A1 · A2 · B1* · Q-11 the Optional price column (optional lines in place, out of every sum; 1.0's counting default not ported) · Q-21 the sub-total in the heading · Q-08 a note per trade (Settings › Quotes › Trades, `settings.trade_notes`, printed under a section of that name when the quote writes none; the Section note dialog names it) · a stacking fix for dialogs opened from a phone sheet. Rows closed: MM-08, MM-09, TI-01, TI-05, TI-06, TI-07, TI-11, TC-06, DEF-15.
+
+**Round 2 — blocks and brand (built 2026-09-24, REG-618).** Q-16 ordinals + a footnote · Q-18 watermark strength · Q-19 Reset this block · Q-20 the Social links element and Company › Profile's five networks · Q-24 row labels + SWIFT · Q-25 Prepared by · Q-26 an entity's own letterhead (logo, address, UEN, GST number). Rows closed: MM-15 (fixed rows held), MM-18, TB-04, TB-06, TE-05, TP-03, TP-16, TF-02, TT-07, TT-08.
+
+**Round 3 — content (built 2026-09-24, REG-619).** Q-27 property type + tags on My Sections, the Add Item popover's filter, migration 0037. Rows closed: TC-01.
+
+**Round 4 — data (2026-09-24, REG-620).** The devs' map `04-quote-templates-migration-map-2026-09-24.md`. Rows closed: §4.
+
+**Verification.** `design-source/verify/quote-templates-parity/verify-tpl-parity.cjs` — 20/20 on a production build (:3011) against a copy of the database: the three rounds at 1440, the Section note on a 390 phone, 768 touch screenshots, and no sideways scroll at 320 on Settings › Quotes, Company › Profile, My Sections and the quote editor. local.db's counts were unchanged; migration 0037 was applied to it (two empty columns).
 
 ## Appendix — the inventories
 

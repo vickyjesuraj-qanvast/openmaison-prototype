@@ -21,8 +21,8 @@ export type QuotesToolbarProps = {
   onColumns?: () => void
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
-  /** Header kebab (910:36729): Manage Templates · Quotes Settings · Deleted Quotes. */
-  onMenu: (action: 'templates' | 'settings' | 'deleted') => void
+  /** Header kebab (910:36729): Manage Templates · Quotes Settings · Deleted Quotes; (sweep S1 · U-07) Archived Quotes before Deleted. */
+  onMenu: (action: 'templates' | 'settings' | 'archived' | 'deleted') => void
 }
 
 /**
@@ -73,6 +73,7 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
           <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Quotes">
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Quotes Settings</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Quotes</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Quotes</DropdownItem>
           </Dropdown>
         </span>

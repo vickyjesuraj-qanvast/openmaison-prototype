@@ -1,0 +1,1 @@
+ALTER TABLE `questions` ADD `required` integer DEFAULT false NOT NULL;

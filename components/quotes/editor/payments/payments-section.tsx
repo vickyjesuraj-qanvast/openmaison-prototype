@@ -10,6 +10,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DatePicker } from '@/components/om/date-picker'
 import { Tooltip } from '@/components/om/tooltip'
+import { decimalTyped } from '@/lib/format'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
@@ -27,6 +28,7 @@ import { SectionCard } from '../section-card'
 import { useLevelFocus } from '../items/table-menus'
 import styles from './payments-section.module.css'
 import { MetaChip } from '@/components/om/meta-chip'
+import { placeOf, type FolderNode } from '@/lib/folders'
 
 export type PaymentsSeed = {
   quoteId: string
@@ -35,6 +37,8 @@ export type PaymentsSeed = {
   anchors: { start: number; weeks: number }
   /** (REG-538) The presets ▾: the studio's payment templates (Company › Templates › Payments), the four presets first. */
   splits: PaymentSplit[]
+  /** (REG-664) Payments' folders — the presets ▾ lists each folder's splits under its name. */
+  folders?: FolderNode[]
 }
 
 type Field = 'name' | 'description' | 'pct' | 'amount'
@@ -136,9 +140,12 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       setSplits((s) => [...s, { id, name, rows: rowsRef.current.map((r) => ({ name: r.name, description: r.description, pct: r.pct })), isPreset: false }])
     }, { message: `${name} saved as a payment template`, actionLabel: 'Open', onAction: () => router.push(withFrom(`/templates/payments/${id}`, pathname)) })
   }
+  /* (sweep S1 #10) Every optimistic write puts the row back when the server refuses — the failure snackbar never sits beside a value that was not kept. */
   const patchRow = (id: string, patch: PaymentPatch) => {
+    const before = rowsRef.current.find((r) => r.id === id)
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch, dueAt: patch.dueAt !== undefined ? (patch.dueAt ? new Date(patch.dueAt) : null) : r.dueAt } as QuotePayment : r)))
     void run('save the payment', async () => { const r = await updateQuotePayment(id, patch); onSaved(r.updatedAt) })
+      .then((ok) => { if (!ok && before) setRows((rs) => rs.map((r) => (r.id === id ? before : r))) })
   }
   const addRow = () => {
     void run('add the payment', async () => {
@@ -149,11 +156,19 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   }
   const removeRow = (row: QuotePayment) => {
     previous.current = toRows(rowsRef.current)
+    const at = rowsRef.current.findIndex((r) => r.id === row.id)
     setRows((rs) => rs.filter((r) => r.id !== row.id))
     void run('remove the payment', async () => { const r = await deleteQuotePayment(row.id); onSaved(r.updatedAt) }, { message: `${row.name} removed`, actionLabel: 'Undo', onAction: () => restore('restore the payment') })
+      .then((ok) => { if (!ok) { previous.current = null; setRows((rs) => (rs.some((r) => r.id === row.id) ? rs : [...rs.slice(0, at), row, ...rs.slice(at)])) } })
   }
   const reorder = (ids: string[]) => setRows((rs) => ids.map((id) => rs.find((r) => r.id === id)!).filter(Boolean))
-  const persistOrder = () => { void run('reorder the payments', async () => { const r = await reorderQuotePayments(quoteId, rowsRef.current.map((x) => x.id)); onSaved(r.updatedAt) }) }
+  const orderBefore = useRef<string[] | null>(null)   // the order a drag started from — put back if the drop is not kept
+  const persistOrder = () => {
+    const before = orderBefore.current
+    orderBefore.current = null
+    void run('reorder the payments', async () => { const r = await reorderQuotePayments(quoteId, rowsRef.current.map((x) => x.id)); onSaved(r.updatedAt) })
+      .then((ok) => { if (!ok && before) reorder(before) })
+  }
 
   /* ── inline edit (1271:37609): the cell becomes the 2px primary box with ✕ / ✓ under it; Enter and ✓ commit, Esc and ✕ discard ── */
   const startEdit = (row: QuotePayment, field: Field, i: number) => {
@@ -188,11 +203,11 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
       <>
         <input className={styles.editInput} data-error={over || undefined} value={edit?.draft ?? ''} autoFocus inputMode={numeric ? 'decimal' : undefined}
                aria-label={`${field === 'pct' ? 'Percentage' : field === 'amount' ? 'Amount' : field === 'name' ? 'Payment name' : 'Description'} of ${row.name}`}
-               onChange={(e) => setEdit((cur) => (cur ? { ...cur, draft: numeric ? e.target.value.replace(/[^0-9.,S$]/g, '') : e.target.value } : cur))}
+               onChange={(e) => setEdit((cur) => (cur ? { ...cur, draft: numeric ? (field === 'pct' ? decimalTyped(e.target.value, 2) : e.target.value.replace(/[^0-9.,S$]/g, '')) : e.target.value } : cur))}   /* (sweep S1) a percentage takes digits and one point — never "S", "$" or "," */
                onKeyDown={onEditKey} onBlur={onEditBlur} />
         <span className={styles.confirm}>
-          <button type="button" className={styles.cancelBtn} aria-label="Discard" onMouseDown={(e) => e.preventDefault()} onClick={() => { cancelled.current = false; setEdit(null) }}><Icon name="close" size={20} /></button>
-          <button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={commitEdit}><Icon name="done" size={20} /></button>
+          <Tooltip label="Discard"><button type="button" className={styles.cancelBtn} aria-label="Discard" onMouseDown={(e) => e.preventDefault()} onClick={() => { cancelled.current = false; setEdit(null) }}><Icon name="close" size={20} /></button></Tooltip>
+          <Tooltip label="Save"><button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={commitEdit}><Icon name="done" size={20} /></button></Tooltip>
         </span>
         <span className={styles.editGhost} aria-hidden>{field === 'amount' ? money2(amounts[i] ?? 0) : field === 'pct' ? fmtPct(row.pct) : field === 'name' ? row.name : row.description}</span>
       </>
@@ -200,12 +215,23 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   }
 
   /* ── toolbar (1271:37377) ── */
+  /* (REG-664) The splits as Templates › Payments files them: the ones at the top first, then each folder's under its name. */
+  const splitFolders = seed.folders ?? []
+  const folderOfSplit = (p: PaymentSplit) => (p.folderId && splitFolders.some((f) => f.id === p.folderId) ? p.folderId : null)
+  const splitRow = (p: PaymentSplit) => (
+    <DropdownItem key={p.id} role="menuitemradio" checked={p.id === preset} onSelect={() => applyPreset(p.id)}>
+      <span className={styles.menuText}>{p.name}</span>{p.id === preset ? <span className={styles.menuCurrent}>current</span> : null}
+    </DropdownItem>
+  )
+  const splitGroups = splitFolders.map((f) => ({ f, list: splits.filter((p) => folderOfSplit(p) === f.id) })).filter((g) => g.list.length)
   const presetRowsUi = (
     <>
-      {splits.map((p) => (
-        <DropdownItem key={p.id} role="menuitemradio" checked={p.id === preset} onSelect={() => applyPreset(p.id)}>
-          <span className={styles.menuText}>{p.name}</span>{p.id === preset ? <span className={styles.menuCurrent}>current</span> : null}
-        </DropdownItem>
+      {splits.filter((p) => !folderOfSplit(p)).map(splitRow)}
+      {splitGroups.map(({ f, list }) => (
+        <div key={f.id} role="group" aria-label={placeOf(splitFolders, f.id)} data-testid="split-group">
+          <span className={styles.menuGroup} aria-hidden><Icon name="folder" size={16} weight={300} />{placeOf(splitFolders, f.id)}</span>
+          {list.map(splitRow)}
+        </div>
       ))}
       {custom ? (
         <DropdownItem role="menuitemradio" checked onSelect={() => { setMenu(null); setMoreSub(null) }}>
@@ -283,7 +309,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
             </div>
             <Reorder.Group as="div" axis="y" values={rows.map((r) => r.id)} onReorder={reorder} className={styles.rows}>
               {rows.map((row, i) => (
-                <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragEnd={persistOrder} locked={locked}>
+                <PaymentRowView key={row.id} row={row} amount={amounts[i] ?? 0} onDragStart={() => { orderBefore.current ??= rowsRef.current.map((x) => x.id) }} onDragEnd={persistOrder} locked={locked}>
                   <div role="cell" className={`${styles.cell} ${styles.cName}`} data-editing={editing(row.id, 'name') || undefined}>
                     {editing(row.id, 'name') ? editBox(row, 'name', i) : <button type="button" className={styles.cellBtn} disabled={locked} onClick={() => startEdit(row, 'name', i)}>{row.name}</button>}
                   </div>
@@ -335,12 +361,12 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
 }
 
 /** One schedule row (44): the drag handle (pointer drag through motion, so a finger can reorder too), then the cells. */
-function PaymentRowView({ row, amount, onDragEnd, locked, children }: { row: QuotePayment; amount: number; onDragEnd: () => void; locked?: boolean; children: React.ReactNode }) {
+function PaymentRowView({ row, amount, onDragStart, onDragEnd, locked, children }: { row: QuotePayment; amount: number; onDragStart: () => void; onDragEnd: () => void; locked?: boolean; children: React.ReactNode }) {
   const controls = useDragControls()
   const [dragging, setDragging] = useState(false)
   return (
     <Reorder.Item as="div" value={row.id} dragListener={false} dragControls={controls} className={styles.row} role="row" data-dragging={dragging || undefined}
-                  data-amount={amount} onDragStart={() => setDragging(true)} onDragEnd={() => { setDragging(false); onDragEnd() }}>
+                  data-amount={amount} onDragStart={() => { setDragging(true); onDragStart() }} onDragEnd={() => { setDragging(false); onDragEnd() }}>
       <div role="cell" className={`${styles.cell} ${styles.cSel}`}>
         {locked ? null : (   /* (REG-589) no handle while the studio keeps the schedule */
         <Tooltip label="Drag to reorder">

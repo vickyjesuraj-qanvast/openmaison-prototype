@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contracts, fileComments, leadAssignees, leadEvents, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItems, quotePayments, quoteVersions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
+import { contracts, fileComments, leadAssignees, leadEvents, leadFiles, leadNotes, leadReturns, leadTasks, leads, members, questions, quoteComparisons, quoteFiles, quoteItemComments, quoteItems, quotePayments, quoteVersions, quotes, stageLogs, taskComments, type Member } from '@/lib/db/schema'
 import { presetLabel, presetOf } from '@/lib/quotes/payments'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isWizardPayload } from '@/lib/leads/stage-data'
@@ -51,13 +51,14 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     db.select().from(leadEvents).where(eq(leadEvents.leadId, leadId)),   // (REG-613) the event log — what leaves no row
   ])
   const taskIds = tasks.map((t) => t.id), fileIds = files.map((f) => f.id), quoteIds = qs.map((x) => x.id)
-  const [tComments, fComments, qLines, qPays, qFiles, qVersions] = await Promise.all([
+  const [tComments, fComments, qLines, qPays, qFiles, qVersions, qComments] = await Promise.all([
     taskIds.length ? db.select().from(taskComments).where(inArray(taskComments.taskId, taskIds)) : Promise.resolve([]),
     fileIds.length ? db.select().from(fileComments).where(inArray(fileComments.fileId, fileIds)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quoteItems).where(inArray(quoteItems.quoteId, quoteIds)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quotePayments).where(inArray(quotePayments.quoteId, quoteIds)).orderBy(asc(quotePayments.position)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quoteFiles).where(inArray(quoteFiles.quoteId, quoteIds)) : Promise.resolve([]),
     quoteIds.length ? db.select().from(quoteVersions).where(inArray(quoteVersions.quoteId, quoteIds)) : Promise.resolve([]),   // (REG-565) Revise
+    quoteIds.length ? db.select().from(quoteItemComments).where(inArray(quoteItemComments.quoteId, quoteIds)) : Promise.resolve([]),   // (REG-627) line comments
   ])
   const byMember = new Map(team.map((m) => [m.id, m]))
   const who = (id: string | null | undefined): string => (!id ? 'System' : id === ME ? 'You' : byMember.get(id)?.name ?? 'System')
@@ -100,7 +101,12 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     entries.forEach((e, i) => push({ id: `stage-${log.id}-log-${i + 1}`, at: parseInputDateTime(e.when) ?? log.createdAt, icon: 'swap_horiz', text: e.text, link: overview, actor: 'You' }))
   }
   /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
-  for (const c of cmps) push({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: { label: 'See comparison', href: `/quote-x-ray/${c.id}` }, actor: who(c.createdBy) })
+  for (const c of cmps) {
+    const seeIt = { label: 'See comparison', href: `/quote-x-ray/${c.id}?from=${encodeURIComponent(`${base}/activity`)}` }
+    push({ id: `xray-${c.id}`, at: c.createdAt, icon: 'scan', text: `${who(c.createdBy)} compared ${c.yourLabel} with ${c.otherStudio}'s quote in Quote X-Ray.`, link: seeIt, actor: who(c.createdBy) })
+    /* (REG-640, X-Ray parity Q-16) what went to the client — the last send the reading keeps */
+    if (c.sentAt) push({ id: `xray-sent-${c.id}`, at: c.sentAt, icon: 'send', text: c.sentVia === 'copy' ? `${who(c.sentBy ?? c.createdBy)} copied the comparison with ${c.otherStudio}'s quote to send to the client.` : `${who(c.sentBy ?? c.createdBy)} sent the comparison with ${c.otherStudio}'s quote to the client on WhatsApp.`, link: seeIt, actor: who(c.sentBy ?? c.createdBy) })
+  }
   for (const r of rets) push({ id: `ret-${r.id}`, at: r.returnedAt, icon: 'undo', text: `${who(r.returnedById)} returned the lead to Qanvast${r.reason ? ` (${r.reason})` : ''}.`, link: { label: 'See Overview', href: base }, actor: who(r.returnedById) })
   /* (REG-613, parity Q-20) The event log — 1.0's activity rows for what leaves no record: removals, edits, deletions, an undone
      return, every portal invite and questionnaire ask (REG-609's link stamps keep only the latest of each). */
@@ -116,9 +122,13 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       : e.kind === 'return_undone' ? `${actor} undid the return to Qanvast.`
       : e.kind === 'invite_sent' ? `${actor} invited ${lead.name} to the portal.`
       : e.kind === 'questionnaire_asked' ? `${actor} asked ${lead.name} to answer the questionnaire.`
+      : e.kind === 'comparison_deleted' ? `${actor} deleted the Quote X-Ray comparison ${q(d.title ?? '')}.`   // (REG-641)
+      : e.kind === 'contract_unsigned' ? `${actor} moved the contract ${q(d.title ?? '')} back to ${d.kind ?? 'Draft'} — its signature was cleared.`   // (REG-634)
+      : e.kind === 'contract_archived' ? `${actor} archived the contract ${q(d.title ?? '')}.`
+      : e.kind === 'contract_restored' ? `${actor} brought back the archived contract ${q(d.title ?? '')}.`
       : null
     if (!text) continue
-    const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : 'help'
+    const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : e.kind.startsWith('contract_') ? 'contract' : e.kind === 'comparison_deleted' ? 'scan' : 'help'
     const link = e.kind === 'questionnaire_asked' ? { label: 'See Questionnaire', href: `${base}/questionnaire` } : e.kind === 'task_deleted' ? { label: 'See Tasks', href: `${base}/tasks` } : e.kind === 'file_trashed' ? { label: 'See Files', href: `${base}/files` } : overview
     push({ id: `ev-${e.id}`, at: e.at, icon, text, link, actor })
   }
@@ -134,15 +144,28 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       push({ id: `task-u-${t.id}`, at: t.updatedAt, icon: 'ballot', text: t.done ? `You completed the task ${q(t.title)}.` : `You updated the task ${q(t.title)}.`, link, actor: 'You' })
     }
   }
+  /* (REG-627, parity Q-30) A comment on a quote's line — the line named while it is still on the quote. */
+  for (const c of qComments) {
+    const x = qs.find((qq) => qq.id === c.quoteId); if (!x) continue
+    const line = qLines.find((l) => l.id === c.itemId)
+    push({ id: `qc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on ${line ? `“${line.name}” in ` : ''}the quote ${q(x.number)}.`, link: { label: 'Open Quote', href: `/quotes/${x.id}` }, actor: who(c.authorId) })
+  }
   for (const c of tComments) { const t = tasks.find((x) => x.id === c.taskId); if (t) push({ id: `tc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the task ${q(t.title)}.`, link: { label: 'See Task', href: `${base}/tasks?open=${t.id}` }, actor: who(c.authorId) }) }
 
   // Quotes / contracts — created, then each stamped milestone.
   for (const x of qs) {
     const link = { label: 'See Quote', href: `${base}/quotes` }
     push({ id: `quote-${x.id}`, at: x.createdAt, icon: 'docs', text: `You created the quote ${q(x.number)}.`, link, actor: 'You' })
-    if (x.sentAt) push({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
-    if (x.approvedAt) push({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `You approved the quote ${q(x.number)}.`, link, actor: 'You' })   // fixed copy: the status can move on after the stamp
+    /* (REG-624) Approval on the record: who sent it for approval, who asked for changes (the latest note), who approved it, when it went to
+       the client. A quote from before the stamps keeps its one "sent" row. */
+    if (x.submittedAt) push({ id: `quote-sub-${x.id}`, at: x.submittedAt, icon: 'docs', text: `${who(x.submittedBy)} sent the quote ${q(x.number)} for approval.`, link, actor: who(x.submittedBy) })
+    if (x.reviewedAt && x.reviewNote) push({ id: `quote-rev-${x.id}`, at: x.reviewedAt, icon: 'docs', text: `${who(x.reviewedBy)} asked for changes on the quote ${q(x.number)}: “${x.reviewNote}”`, link, actor: who(x.reviewedBy) })
+    if (x.clientSentAt) push({ id: `quote-s-${x.id}`, at: x.clientSentAt, icon: 'docs', text: `You sent the quote ${q(x.number)} to the client.`, link, actor: 'You' })
+    else if (x.sentAt && !x.submittedAt) push({ id: `quote-s-${x.id}`, at: x.sentAt, icon: 'docs', text: `You sent the quote ${q(x.number)}.`, link, actor: 'You' })
+    if (x.approvedAt) push({ id: `quote-a-${x.id}`, at: x.approvedAt, icon: 'docs', text: `${x.approvedBy ? who(x.approvedBy) : 'You'} approved the quote ${q(x.number)}.`, link, actor: x.approvedBy ? who(x.approvedBy) : 'You' })   // fixed copy: the status can move on after the stamp
     if (x.confirmedAt) push({ id: `quote-c-${x.id}`, at: x.confirmedAt, icon: 'docs', text: `${x.confirmedBy ?? 'The client'} confirmed the quote ${q(x.number)} on its link.`, link, actor: x.confirmedBy ?? 'Client' })   // (REG-587)
+    /* (REG-626, parity Q-31) (REG-634, contracts parity E-128) who signed it: the name typed on its contract, else whoever marked that contract signed */
+    if (x.signedAt) { const sc = cs.find((c) => c.fromQuoteId === x.id && c.status === 'Signed'); push({ id: `quote-g-${x.id}`, at: x.signedAt, icon: 'docs', text: sc?.signedBy ? `${sc.signedBy} signed the quote ${q(x.number)} with its contract.` : `The quote ${q(x.number)} was signed.`, link, actor: sc?.signedBy ?? (sc?.markedBy ? who(sc.markedBy) : sc ? 'You' : 'Client') }) }
     if (x.deletedAt) push({ id: `quote-d-${x.id}`, at: x.deletedAt, icon: 'docs', text: `You deleted the quote ${q(x.number)}.`, link, actor: 'You' })
     // The editor's own records (REG-343: a new record type gets its Activity branch): the lines written (REG-415) and the
     // payment schedule set (REG-418) — dated by the records themselves, linked to the editor.
@@ -157,12 +180,17 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
   }
   for (const x of cs) {
     /* (REG-534) The editor's records: an uploaded PDF, the WhatsApp signing link, the client signing online. Rows open the editor. */
-    const link = { label: 'Open Contract', href: `/contracts/${x.id}?from=${encodeURIComponent(`${base}/contracts`)}` }
+    /* (REG-634, contracts parity E-128) a deleted contract's rows open the tab (its editor is gone); each act names who did it */
+    const link = x.deletedAt ? { label: 'See Contracts', href: `${base}/contracts` } : { label: 'Open Contract', href: `/contracts/${x.id}?from=${encodeURIComponent(`${base}/contracts`)}` }
     const by = x.createdBy ? who(x.createdBy) : 'You'
+    const sentBy = x.sentBy ? who(x.sentBy) : by, markedBy = x.markedBy ? who(x.markedBy) : by, deletedBy = x.deletedBy ? who(x.deletedBy) : by
     push({ id: `contract-${x.id}`, at: x.createdAt, icon: 'contract', text: x.source === 'uploaded' ? `${by} uploaded the contract ${q(x.title)}${x.fileName ? ` (${x.fileName})` : ''}.` : `${by} created the contract ${q(x.title)}${x.templateId ? ' from a template' : ''}.`, link, actor: by })
-    if (x.sentAt && !(x.source === 'uploaded' && x.signedAt && x.sentAt.getTime() === x.signedAt.getTime())) push({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'contract', text: `${by} sent the contract ${q(x.title)} to ${x.recipientName ?? 'the client'} for signature.`, link, actor: by })
-    if (x.signedAt) push({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'contract', text: x.signedBy ? `${x.signedBy} signed the contract ${q(x.title)} online.` : `${by} marked the contract ${q(x.title)} as signed${x.signedCopy ? ` (${x.signedCopy})` : ''}.`, link, actor: x.signedBy ?? by })
-    if (x.deletedAt) push({ id: `contract-d-${x.id}`, at: x.deletedAt, icon: 'contract', text: `${by} deleted the contract ${q(x.title)}.`, link: { label: 'See Contracts', href: `${base}/contracts` }, actor: by })
+    /* never sent, only marked signed: its sent date is the signing date and nobody sent it — no "sent" line */
+    if (x.sentAt && (x.sentBy || !(x.signedAt && !x.signedBy && x.sentAt.getTime() === x.signedAt.getTime()))) push({ id: `contract-s-${x.id}`, at: x.sentAt, icon: 'contract', text: `${sentBy} sent the contract ${q(x.title)} to ${x.recipientName ?? 'the client'} for signature.`, link, actor: sentBy })
+    /* (REG-633, contracts parity Q-17) the client's first open of the signing link */
+    if (x.viewedAt) push({ id: `contract-v-${x.id}`, at: x.viewedAt, icon: 'contract', text: `${x.recipientName ?? 'The client'} opened the contract ${q(x.title)}.`, link, actor: x.recipientName ?? 'Client' })
+    if (x.signedAt) push({ id: `contract-g-${x.id}`, at: x.signedAt, icon: 'contract', text: x.signedBy ? `${x.signedBy} signed the contract ${q(x.title)} online${x.signatureKind === 'draw' ? ', drawing the signature' : ''}.` : `${markedBy} marked the contract ${q(x.title)} as signed${x.signedCopy ? ` (${x.signedCopy})` : ''}.`, link, actor: x.signedBy ?? markedBy })
+    if (x.deletedAt) push({ id: `contract-d-${x.id}`, at: x.deletedAt, icon: 'contract', text: `${deletedBy} deleted the contract ${q(x.title)}.`, link: { label: 'See Contracts', href: `${base}/contracts` }, actor: deletedBy })
   }
 
   // Files, notes, questions, file comments. A trashed file (or anything inside a trashed folder) has no viewer route — its rows

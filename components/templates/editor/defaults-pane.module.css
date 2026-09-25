@@ -4,7 +4,7 @@
 /* (REG-538) The working-columns block: a label row, the choice chips, the note. */
 .columns { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .columnsHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-height: 32px; }
-.columnsLabel { font: var(--om-type-label-m); color: var(--om-color-on-surface); }
+.columnsLabel { font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
 .columnsNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
 

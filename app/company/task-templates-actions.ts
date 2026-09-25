@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
 import { leadTasks, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
@@ -66,16 +67,21 @@ export async function saveTaskTemplate(id: string, patch: { name?: string; keepM
   touch(id)
   return now.getTime()
 }
-export async function renameTaskTemplate(id: string, name: string): Promise<void> { await saveTaskTemplate(id, { name }) }
+export async function renameTaskTemplate(id: string, name: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await saveTaskTemplate(id, { name }) }   // (REG-646)
 export async function duplicateTaskTemplate(id: string): Promise<string> { return createTaskTemplate({ source: { kind: 'copy', id } }) }
-export async function deleteTaskTemplate(id: string): Promise<void> { await row(id); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
-export async function restoreTaskTemplates(ids: string[]): Promise<void> { if (!ids.length) return; await db.update(taskTemplates).set({ deletedAt: null }).where(inArray(taskTemplates.id, ids)); touch() }
+export async function deleteTaskTemplate(id: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
+export async function restoreTaskTemplates(ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const mine = await changeableIds(await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)))
+  if (mine.length) await db.update(taskTemplates).set({ deletedAt: null }).where(inArray(taskTemplates.id, mine)); touch()
+}
 /** Delete forever: the tasks it already added to leads keep their own rows (only their `template_id` link goes). */
 export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
   let removed = 0, kept = 0
+  const mine = new Set(await changeableIds(ids.length ? await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)) : []))   // (REG-646)
   for (const id of ids) {
     const [r] = await db.select({ deletedAt: taskTemplates.deletedAt }).from(taskTemplates).where(eq(taskTemplates.id, id))
-    if (!r?.deletedAt) { kept++; continue }
+    if (!r?.deletedAt || !mine.has(id)) { kept++; continue }
     await db.update(leadTasks).set({ templateId: null }).where(eq(leadTasks.templateId, id))
     await db.delete(taskTemplates).where(eq(taskTemplates.id, id)); removed++
   }

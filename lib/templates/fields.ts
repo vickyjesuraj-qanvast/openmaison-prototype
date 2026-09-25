@@ -4,8 +4,8 @@
  */
 import { displayDate, displayDateFull, displayDateFullWeekday } from '@/lib/format'
 import { money2 } from '@/lib/quotes/math'
-import { docEntity, type DocData, type DocTotals } from './data'
-import type { DateFormat } from './model'
+import { docEntity, docLetterhead, type DocData, type DocTotals } from './data'
+import { SOCIAL_KEYS, type DateFormat } from './model'
 
 export const FIELD_GROUPS: { label: string; fields: { key: string; label: string }[] }[] = [
   { label: 'Client', fields: [
@@ -22,7 +22,7 @@ export const FIELD_GROUPS: { label: string; fields: { key: string; label: string
     { key: 'studio_website', label: 'Website' }, { key: 'studio_uen', label: 'UEN / Co. Reg. No.' }, { key: 'studio_gst', label: 'GST Reg. No.' }, { key: 'studio_licence', label: 'HDB licence' },
     { key: 'studio_tagline', label: 'Tagline' }, { key: 'studio_social', label: 'Social links' },
   ] },
-  { label: 'Bank', fields: [{ key: 'bank_name', label: 'Bank' }, { key: 'bank_account_name', label: 'Account name' }, { key: 'bank_account', label: 'Account number' }, { key: 'paynow', label: 'PayNow' }] },
+  { label: 'Bank', fields: [{ key: 'bank_name', label: 'Bank' }, { key: 'bank_account_name', label: 'Account name' }, { key: 'bank_account', label: 'Account number' }, { key: 'bank_swift', label: 'SWIFT' }, { key: 'paynow', label: 'PayNow' }] },
   { label: 'People', fields: [{ key: 'prepared_by', label: 'Prepared by' }, { key: 'prepared_by_phone', label: 'Prepared by · phone' }, { key: 'prepared_by_role', label: 'Prepared by · role' }, { key: 'prepared_by_email', label: 'Prepared by · email' }] },
   { label: 'Page', fields: [{ key: 'page', label: 'Page number' }, { key: 'pages', label: 'Page count' }] },
 ]
@@ -35,6 +35,12 @@ export function fieldValues(d: DocData, t: DocTotals, page: PageInfo = { page: 1
   const salutation = d.client.salutation || (d.client.name ? d.client.name.split(' ')[0] ?? '' : '')
   const gstRate = d.quote.gstEnabled ? `${d.quote.gstRate}%` : ''
   const bank = docEntity(d)
+  const head = docLetterhead(d)   // (REG-618, parity Q-26) the quote's issuing entity's letterhead
+  // (REG-618, parity Q-20) The networks as typed, joined; the old one-line field while none is filled.
+  const social = SOCIAL_KEYS.filter((k) => k !== 'website').map((k) => d.studio.socials?.[k]).filter((v): v is string => !!v).join(' · ') || d.studio.social   // the website has its own {studio_website}
+  // (REG-618, parity Q-25) Settings › Quotes › Prepared by: the member, every member on the lead, or the studio.
+  const mode = d.studio.preparedByMode ?? 'member'
+  const preparedName = mode === 'studio' ? head.name : mode === 'team' && d.preparedBy.team?.length ? d.preparedBy.team.join(' · ') : d.preparedBy.name
   const fmtDate = (x: Date) => (dateFormat === 'weekday' ? displayDateFullWeekday(x) : dateFormat === 'long' ? displayDateFull(x) : displayDate(x))   // (REG-592)
   return {
     /* (REG-588) With a second client, {client_name} prints both — "Mr Tan & Mrs Tan" — and {nric} both numbers; the second stands alone under its own fields. */
@@ -44,10 +50,10 @@ export function fieldValues(d: DocData, t: DocTotals, page: PageInfo = { page: 1
     quote_number: d.quote.number, quote_title: d.quote.title, version: `v${d.quote.version}`, date: d.quote.date ? fmtDate(d.quote.date) : '', valid_until: d.quote.validUntil ? fmtDate(d.quote.validUntil) : '',
     validity_days: d.quote.validUntil && d.quote.date ? String(Math.max(0, Math.round((d.quote.validUntil.getTime() - d.quote.date.getTime()) / 86_400_000))) : '', project_ref: d.quote.projectRef,
     item_count: String(t.itemCount), subtotal: money2(t.subtotalMinor), gst_amount: money2(t.gstMinor), gst_rate: gstRate, total: money2(t.totalMinor),
-    studio_name: d.studio.name, studio_address: d.studio.address, studio_phone: d.studio.phone, studio_fax: d.studio.fax, studio_email: d.studio.email, studio_website: d.studio.website,
-    studio_uen: d.studio.uen, studio_gst: bank && !bank.gstRegistered ? '' : d.studio.gstReg, studio_licence: d.studio.licence, studio_tagline: d.studio.tagline, studio_social: d.studio.social,
-    bank_name: bank?.bankName ?? '', bank_account_name: bank?.accountName ?? '', bank_account: bank?.accountNo ?? '', paynow: bank?.payNow ?? '',
-    prepared_by: d.preparedBy.name, prepared_by_phone: d.preparedBy.phone, prepared_by_role: d.preparedBy.role, prepared_by_email: d.preparedBy.email,
+    studio_name: head.name, studio_address: head.address, studio_phone: d.studio.phone, studio_fax: d.studio.fax, studio_email: d.studio.email, studio_website: d.studio.website,
+    studio_uen: head.uen, studio_gst: head.gstReg, studio_licence: d.studio.licence, studio_tagline: d.studio.tagline, studio_social: social,
+    bank_name: bank?.bankName ?? '', bank_account_name: bank?.accountName ?? '', bank_account: bank?.accountNo ?? '', bank_swift: bank?.swift ?? '', paynow: bank?.payNow ?? '',
+    prepared_by: preparedName, prepared_by_phone: d.preparedBy.phone, prepared_by_role: mode === 'member' ? d.preparedBy.role : '', prepared_by_email: mode === 'studio' ? d.studio.email : d.preparedBy.email,
     page: String(page.page), pages: String(page.pages),
   }
 }

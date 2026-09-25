@@ -3,11 +3,12 @@ import { asc, desc, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { members, paymentTemplates, quoteTemplates, type PaymentTemplate } from '@/lib/db/schema'
 import { parseSplitRows, PRESET_SPLITS, type PaymentSplit } from '@/lib/quotes/payments'
+import { fetchViewer } from '@/lib/leads/visibility'
 
 /* Company › Templates › Payments (REG-538): the studio's milestone splits as a library. */
 
 export type PaymentTemplateRow = PaymentTemplate & { rows: ReturnType<typeof parseSplitRows>; usedBy: number; author: string | null; authorColor: string | null }
-export type PaymentTemplatesData = { templates: PaymentTemplateRow[]; deleted: PaymentTemplateRow[]; now: number }
+export type PaymentTemplatesData = { templates: PaymentTemplateRow[]; deleted: PaymentTemplateRow[]; now: number; /** (REG-646) who is looking — the menus' rename / delete rule */ viewer: { id: string; role: string } }
 
 /** Which quote templates start quotes on each split (their published or draft defaults' `paymentPreset`). */
 async function usage(): Promise<Map<string, number>> {
@@ -30,7 +31,8 @@ export async function fetchPaymentTemplatesData(): Promise<PaymentTemplatesData>
   const [all, n, team] = await Promise.all([db.select().from(paymentTemplates).orderBy(desc(paymentTemplates.isPreset), asc(paymentTemplates.createdAt)), usage(), db.select({ id: members.id, name: members.name, color: members.color }).from(members)])
   const by = new Map(team.map((m) => [m.id, { name: m.name, color: m.color }]))
   const rows = all.map((t) => withMeta(t, n, by))
-  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), now: Date.now() }
+  const v = await fetchViewer()
+  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), now: Date.now(), viewer: { id: v.id, role: v.role } }
 }
 export type PaymentTemplateEditorData = { template: PaymentTemplateRow; now: number }
 export async function fetchPaymentTemplateEditor(id: string): Promise<PaymentTemplateEditorData | null> {
@@ -42,5 +44,5 @@ export async function fetchPaymentTemplateEditor(id: string): Promise<PaymentTem
 export async function fetchPaymentSplits(): Promise<PaymentSplit[]> {
   const rows = await db.select().from(paymentTemplates).where(isNull(paymentTemplates.deletedAt)).orderBy(desc(paymentTemplates.isPreset), asc(paymentTemplates.createdAt))
   if (!rows.length) return PRESET_SPLITS
-  return rows.map((t) => ({ id: t.id, name: t.name, rows: parseSplitRows(t.rowsJson), isPreset: t.isPreset }))
+  return rows.map((t) => ({ id: t.id, name: t.name, rows: parseSplitRows(t.rowsJson), isPreset: t.isPreset, folderId: t.folderId ?? null }))
 }

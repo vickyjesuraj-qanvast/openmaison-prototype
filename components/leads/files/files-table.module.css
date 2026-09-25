@@ -206,3 +206,8 @@
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
+
+/* (REG-664) While searching, a second line under the name says where the hit lives. */
+.nameStack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nameStack .name { flex: none; }
+.place { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

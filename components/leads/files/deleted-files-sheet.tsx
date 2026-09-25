@@ -95,6 +95,8 @@ export function DeletedFilesSheet({
 
   const confirmTarget = confirm?.kind === 'forever' && confirm.ids.length === 1 ? trashed.find((f) => f.id === confirm.ids[0]) : undefined
   const confirmNoun = confirmTarget && isFolder(confirmTarget) ? 'folder' : 'file'
+  /* (REG-664) Several at once: "files" only when no folder is among them — a folder in the pick made the title say "files" regardless. */
+  const manyNoun = confirm?.kind === 'forever' && confirm.ids.some((id) => { const f = trashed.find((x) => x.id === id); return !!f && isFolder(f) }) ? 'items' : 'files'
 
   return (
     <>
@@ -207,7 +209,7 @@ export function DeletedFilesSheet({
 
       {/* Permanent-delete confirmations — the Deleted Leads sheet's dialogs with file copy (unmocked; destructive actions must confirm). */}
       <Dialog open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
-              title={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `Delete ${confirm.ids.length} files forever?` : `Delete this ${confirmNoun} forever?`}
+              title={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `Delete ${confirm.ids.length} ${manyNoun} forever?` : `Delete this ${confirmNoun} forever?`}
               subtitle={confirmTarget?.name}
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>
@@ -218,7 +220,7 @@ export function DeletedFilesSheet({
               </>}>
         <span className={styles.confirmText}>
           {confirm?.kind === 'forever' && confirm.ids.length > 1
-            ? 'This can’t be undone. These files will be removed permanently.'
+            ? manyNoun === 'files' ? 'This can’t be undone. These files will be removed permanently.' : 'This can’t be undone. These items, and everything inside the folders, will be removed permanently.'
             : confirmNoun === 'folder'
               ? 'This can’t be undone. The folder and everything inside it will be removed permanently.'
               : 'This can’t be undone. The file and its comments will be removed permanently.'}

@@ -10,7 +10,7 @@ import { DangerButton, Dialog, DialogMessage } from './dialog'
  * Esc / outside click / X cancel; the dialog consumes Esc so the surface under it stays put.
  */
 export function ConfirmDialog({
-  open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'danger', onConfirm, onCancel,
+  open, title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'danger', onConfirm, onCancel, nested = false,
 }: {
   open: boolean
   title: string
@@ -21,9 +21,12 @@ export function ConfirmDialog({
   tone?: 'danger' | 'primary'
   onConfirm: () => void
   onCancel: () => void
+  /** (REG-625) Asked from inside an open modal (a Deleted sheet): the lighter second scrim at z 120, through a portal on <body> so it
+      lands after the modal and above it — at the same layer it opened UNDER the sheet and its button could not be pressed. */
+  nested?: boolean
 }) {
   return (
-    <Dialog open={open} onClose={onCancel} title={title} width={400}
+    <Dialog open={open} onClose={onCancel} title={title} width={400} nested={nested} portal={nested}
             footer={<>
               <Button variant="secondary" appearance="outlined" onPress={onCancel}>{cancelLabel}</Button>
               {tone === 'danger' ? <DangerButton onClick={onConfirm}>{confirmLabel}</DangerButton> : <Button onPress={onConfirm}>{confirmLabel}</Button>}

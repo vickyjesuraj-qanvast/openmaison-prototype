@@ -20,7 +20,7 @@ import styles from './template-bar.module.css'
 export function TemplateCard({ state, busy, onChange, onEdit, onSaveAs }: { state: QuoteTemplateState; busy: boolean; onChange: () => void; onEdit: () => void; onSaveAs: () => void }) {
   const cur = state.current
   const pick: PickerTemplate | null = cur ? state.picker.templates.find((t) => t.id === cur.id) ?? null : null
-  const words = cur ? startsWith({ id: cur.id, name: cur.name, version: cur.pinned, isDefault: pick?.isDefault ?? false, paper: pick?.paper ?? 'A4', lastUsedAt: null, design: cur.design, defaults: cur.defaults }, (k) => presetLabel(k ?? 'default')) : null
+  const words = cur ? startsWith({ id: cur.id, name: cur.name, version: cur.pinned, isDefault: pick?.isDefault ?? false, paper: pick?.paper ?? 'A4', lastUsedAt: null, design: cur.design, defaults: cur.defaults, folderId: pick?.folderId ?? null }, (k) => presetLabel(k ?? 'default')) : null
   return (
     <div className={styles.card} data-testid="template-card">
       <span className={styles.cardThumb}>

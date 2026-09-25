@@ -15,8 +15,20 @@ export function deriveQuoteActivity(q: Quote, items: QuoteItem[], payments: Quot
   if (lines.length) ev.push({ id: 'items', at: new Date(Math.min(...lines.map((l) => l.createdAt.getTime()))), text: `${lines.length} ${lines.length === 1 ? 'item' : 'items'} added to the quote` })
   if (payments.length) ev.push({ id: 'payments', at: new Date(Math.max(...payments.map((p) => (p.updatedAt ?? p.createdAt).getTime()))), text: `Payment schedule set to ${presetLabel(presetOf(payments)).replace('Default: ', '')}` })
   if (files.length) ev.push({ id: 'files', at: new Date(Math.max(...files.map((f) => f.createdAt.getTime()))), text: `${files.length} ${files.length === 1 ? 'file' : 'files'} attached` })
-  if (q.sentAt) ev.push({ id: 'sent', at: q.sentAt, text: q.status === 'Sent for Approval' ? 'Quote sent for approval' : 'Quote sent to the client' })
-  if (q.approvedAt) ev.push({ id: 'approved', at: q.approvedAt, text: 'Quote approved' })
+  /* (REG-624, parity §8.2 · E-98) Each send reads its own stamp: the line used to say "for approval" or "to the client" by the quote's CURRENT
+     status. Who sent it for approval, the approver's last note, who approved, when it went to the client, when the client confirmed. */
+  if (q.submittedAt) ev.push({ id: 'submitted', at: q.submittedAt, text: `Quote sent for approval by ${who(q.submittedBy)}` })
+  if (q.reviewedAt && q.reviewNote) ev.push({ id: 'changes', at: q.reviewedAt, text: `Changes asked by ${who(q.reviewedBy)} — “${q.reviewNote}”` })
+  if (q.approvedAt) ev.push({ id: 'approved', at: q.approvedAt, text: q.approvedBy ? `Quote approved by ${who(q.approvedBy)}` : 'Quote approved' })
+  if (q.clientSentAt) ev.push({ id: 'sent', at: q.clientSentAt, text: 'Quote sent to the client' })
+  else if (q.sentAt && !q.submittedAt) ev.push({ id: 'sent', at: q.sentAt, text: q.status === 'Sent for Approval' ? 'Quote sent for approval' : 'Quote sent to the client' })   // a quote from before the stamps
+  if (q.confirmedAt) {
+    /* (REG-626, parity Q-32) with the client's answer on the optional works */
+    const asked = items.filter((i) => i.kind === 'item' && i.optional && i.clientChoice)
+    const wants = asked.filter((i) => i.clientChoice === 'want').map((i) => i.name)
+    ev.push({ id: 'confirmed', at: q.confirmedAt, text: `Confirmed by ${q.confirmedBy ?? 'the client'} on the link${asked.length ? (wants.length ? ` — wants ${wants.length} of ${asked.length} optional works: ${wants.join(', ')}` : ` — no optional works`) : ''}` })
+  }
+  if (q.signedAt) ev.push({ id: 'signed', at: q.signedAt, text: 'Quote signed' })   // (REG-626, parity Q-31)
   for (const v of versions) ev.push({ id: `rev-${v.id}`, at: v.createdAt, text: `Version ${v.version} kept and version ${v.version + 1} started by ${who(v.createdBy)}` })   // (REG-565)
   return ev.sort((a, b) => b.at.getTime() - a.at.getTime())
 }

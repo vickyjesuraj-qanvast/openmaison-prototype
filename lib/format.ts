@@ -113,6 +113,18 @@ export function digitsOnly(raw: string): string {
   return raw.replace(/\D/g, '')
 }
 
+/**
+ * (REG-651, price book parity Q-01) A decimal as typed: digits and one point, at most `places` decimals, thousands commas dropped —
+ * "2.80" stays "2.80", "1,500" is "1500", "12.5.3" is "12.5". The whole-dollar `groupDigits` below never takes a point.
+ */
+export function decimalTyped(raw: string, places = 3): string {
+  const s = raw.replace(/[^\d.]/g, '')
+  const i = s.indexOf('.')
+  return i < 0 ? s : s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '').slice(0, places)
+}
+/** A money figure as typed: dollars and cents. */
+export const moneyTyped = (raw: string): string => decimalTyped(raw, 2)
+
 /** Digits grouped in thousands ("70500" → "70,500"); anything else is dropped. */
 export function groupDigits(raw: string): string {
   const d = digitsOnly(raw)

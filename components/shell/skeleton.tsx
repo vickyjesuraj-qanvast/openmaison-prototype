@@ -89,11 +89,11 @@ const useCardCount = () => useSyncExternalStore(subscribeViewport, viewportCards
  * server-rendered, so no JS can know the width when the bones first paint, and a ghost that fades into a
  * differently-shaped page is the REG-74 failure. ≥768 nothing here differs from the table-only ghost.
  */
-export function LeadsSkeleton() {
+export function LeadsSkeleton({ label = 'Loading leads' }: { label?: string } = {}) {   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
   const rows = useRowCount()
   const cards = useCardCount()
   return (
-    <GhostSheet label="Loading leads">
+    <GhostSheet label={label}>
       <div className={`${styles.header} ${styles.headerPlate}`}>
         <Bone w={72} h={28} />
         {/* ≥768 the mock's Add Lead · Insights · kebab; ≤767 the three 36 squares of 1082:25131 (workspace.tsx). */}
@@ -298,20 +298,17 @@ export function SettingsSkeleton() {
       <div className={styles.header}>
         <Bone w={96} h={28} />
       </div>
-      <div className={styles.settingsRow}>
-        <div className={styles.settingsNav}>
-          {[64, 72, 68, 80, 74].map((w, i) => (
-            <span key={i} className={styles.settingsNavItem}><Bone w={20} h={20} r={4} /><Bone w={w} h={14} /></span>
-          ))}
-        </div>
-        <div className={styles.settingsPanel}>
-          <div className={styles.settingsHead}><Bone w={64} h={20} /><Bone w={420} h={14} /></div>
-          <div className={styles.settingsCard}>
+      {/* (REG-645) Settings on Company's frame: the modules' tab strip, then the module's cards at full width. */}
+      <div className={styles.tabs} aria-hidden>{[48, 112, 108, 88, 56, 52].map((w, i) => <Bone key={i} w={w} h={14} />)}</div>
+      <div className={styles.settingsBody}>
+        <div className={styles.settingsHead}><Bone w={96} h={20} /><Bone w={420} h={14} /></div>
+        {[0, 1].map((i) => (
+          <div key={i} className={styles.settingsCard}>
             <div className={styles.settingsHead}><Bone w={128} h={16} /><Bone w={360} h={12} /></div>
             <Bone w="100%" h={72} r="var(--om-radius-1)" />
             <Bone w="100%" h={72} r="var(--om-radius-1)" />
           </div>
-        </div>
+        ))}
       </div>
     </GhostSheet>
   )

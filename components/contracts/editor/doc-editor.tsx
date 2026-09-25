@@ -121,8 +121,13 @@ export const DocEditor = forwardRef<DocEditorHandle, {
          aria-readonly={readOnly || undefined} data-placeholder={placeholder} data-testid="contract-doc"
          onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState}
          onKeyDown={(e) => {
-           /* Cmd/Ctrl+B/I/U are the browser's; Tab stays in the page. */
-           if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;') }
+           /* Cmd/Ctrl+B/I/U are the browser's. (sweep S2 #10) Tab indents a list item and Shift+Tab brings it back; anywhere else Tab moves
+              on, as on every other field — it inserted spaces, and a keyboard could never leave the page. */
+           if (e.key === 'Tab') {
+             const at = window.getSelection()?.anchorNode
+             const inList = !!(at && (at instanceof Element ? at : at.parentElement)?.closest('li'))
+             if (inList) { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent') }
+           }
          }}
          onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />
   )

@@ -17,7 +17,7 @@ import { ViewerSkeleton } from './viewer-skeleton'
 import { FileInfoPanel } from './file-info-panel'
 import { NameDialog } from './name-dialog'
 import { TrashDialog } from './trash-dialog'
-import { MoveDialog } from './move-dialog'
+import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { addFileComment, createFolder, deleteFileComment, duplicateFiles, editFileComment, moveFiles, renameFile, restoreFiles, trashFiles } from '@/app/leads/files-actions'
 import { downloadBlob } from '@/lib/leads/export'
 import type { FileViewData } from '@/lib/leads/files'
@@ -231,9 +231,9 @@ export function FileViewer({ data }: { data: FileViewData }) {
       {/* Move dialog (931:39216) — browses every folder of the lead; the destination name feeds the "Moved to <folder>" snackbar. */}
       <MoveDialog
         open={moving}
-        items={[file]}
-        files={files}
-        currentFolder={folder}
+        title={`Move “${file.name}”`} root="All Files" moving={[file.id]} current={folder?.id ?? null}
+        folders={files.filter((f) => f.kind === 'folder' && !f.deletedAt).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null }))}
+        entries={files.filter((f) => f.kind !== 'folder' && !f.deletedAt).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, thumb: f.thumb }))}
         onClose={() => setMoving(false)}
         onMove={(parentId: string | null) => {
           setMoving(false)

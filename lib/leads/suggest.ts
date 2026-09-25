@@ -7,7 +7,7 @@ import { DIMENSIONS, WEIGHT, bracketOf, parsePreferences, type Dimension } from 
  * new leads are out of the pool. Pure and client-safe: the Assign popover computes it from what it already holds.
  */
 export type SuggestLead = { propertyType: string; budgetMinor: number; style: string | null; area: string | null }
-export type SuggestMember = { id: string; name: string; role: string; acceptingLeads: boolean; leadPreferences: string | null; specialty: string | null }
+export type SuggestMember = { id: string; name: string; role: string; acceptingLeads: boolean; leadPreferences: string | null; specialty: string | null; isActive?: boolean }
 export type MemberStat = { closeRate: number; projects12m: number; active: number }
 export type MemberStats = Record<string, MemberStat>
 export type Suggestion = { id: string; name: string; score: number; reason: string; breakdown: { preference: number; performance: number; specialty: number } }
@@ -47,7 +47,7 @@ export function specialtyScore(lead: SuggestLead, specialty: string | null): num
 
 /** The highest total wins; the pool is every member open to new leads. Null when nobody is open. */
 export function suggestMember(lead: SuggestLead, members: SuggestMember[], stats: MemberStats): Suggestion | null {
-  const pool = members.filter((m) => m.acceptingLeads)   // 2.0's Owner takes leads too; "Open to new leads" is the one gate
+  const pool = members.filter((m) => m.acceptingLeads && m.isActive !== false)   // (REG-646) a deactivated member is never suggested   // 2.0's Owner takes leads too; "Open to new leads" is the one gate
   if (!pool.length) return null
   const scored = pool.map((m) => {
     const pref = preferenceScore(lead, m.leadPreferences)

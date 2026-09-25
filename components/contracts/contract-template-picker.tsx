@@ -7,8 +7,13 @@ import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
+import { MetaChip } from '@/components/om/meta-chip'
 import { excerptOf } from '@/lib/contracts/tokens'
-import type { ContractTemplateOption } from '@/lib/contracts/queries'
+import type { ContractPickerData, ContractTemplateOption } from '@/lib/contracts/queries'
+import { FolderCard, FolderGroup } from '@/components/om/folders/folder-card'
+import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
+import { useFolderBrowse } from '@/components/om/folders/use-folder-browse'
+import { displayDate } from '@/lib/format'
 import styles from './contract-template-picker.module.css'
 
 /**
@@ -17,20 +22,24 @@ import styles from './contract-template-picker.module.css'
  */
 export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }: {
   open: boolean; onClose: () => void
-  /** Fetches the live templates when the dialog opens (a server action). */
-  load: () => Promise<ContractTemplateOption[]>
+  /** Fetches the live templates — and (REG-664) the library's folders — when the dialog opens (a server action). */
+  load: () => Promise<ContractPickerData>
   onUse: (templateId: string) => void | Promise<void>
   onStarter: () => void | Promise<void>
 }) {
   const [items, setItems] = useState<ContractTemplateOption[] | null>(null)
+  const [folders, setFolders] = useState<ContractPickerData['folders']>([])
+  /* (REG-664) Browse Templates › Contracts' folders; the studio default stays pinned at the top wherever it is filed. */
+  const browse = useFolderBrowse(folders, items ?? [], { query: '', pinned: (t) => t.isDefault })
   const pathname = usePathname()
   const [picked, setPicked] = useState<string | null>(null)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null) } }   // render-phase reset: the list ghosts until the fetch lands
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setPicked(null); setItems(null); browse.go(null) } }   // render-phase reset: the list ghosts until the fetch lands
   useEffect(() => {
     if (!open) return
     let live = true
-    void load().then((r) => { if (live) setItems(r) }, () => { if (live) setItems([]) })
+    /* (REG-632, parity Q-13) The studio's default arrives picked — Use template starts from it. */
+    void load().then((r) => { if (live) { setItems(r.templates); setFolders(r.folders); setPicked((p) => p ?? r.templates.find((t) => t.isDefault)?.id ?? null) } }, () => { if (live) setItems([]) })
     return () => { live = false }
   }, [open, load])
   return (
@@ -49,14 +58,22 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
           <span className={styles.emptyHelp}>Save any contract as a template from its editor, or start from the studio agreement below.</span>
         </div>
       ) : (
+        <div className={styles.browse}>
+        {browse.openAt ? <FolderCrumbs root="All templates" trail={browse.trail} onGo={browse.go} /> : null}
+        {browse.hereFolders.length ? (
+          <FolderGroup ids={browse.hereFolders.map((f) => f.id)} min={220}>
+            {browse.hereFolders.map((f) => <FolderCard key={f.id} name={f.name} count={browse.holds(f, 'template', 'templates')} onOpen={() => browse.go(f.id)} />)}
+          </FolderGroup>
+        ) : null}
         <div className={styles.grid} role="radiogroup" aria-label="Contract templates">
-          {items.map((t) => (
+          {browse.hereEntries.map((t) => (
             <button key={t.id} type="button" role="radio" aria-checked={picked === t.id} className={styles.card} data-picked={picked === t.id || undefined} onClick={() => setPicked(t.id)} onDoubleClick={() => { void onUse(t.id) }} data-testid="contract-template-option">
               <span className={styles.thumb}><span className={styles.thumbTitle}>{t.title}</span><span className={styles.thumbText}>{excerptOf(t.body, 260)}</span></span>
               <span className={styles.name}>{t.title}</span>
-              <span className={styles.meta}>Edited {t.updatedAt.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+              <span className={styles.meta}>{t.isDefault ? <MetaChip>Default</MetaChip> : null}{browse.where(t) ? `${browse.where(t)} · ` : ''}Edited {displayDate(t.updatedAt)}</span>
             </button>
           ))}
+        </div>
         </div>
       )}
     </Dialog>

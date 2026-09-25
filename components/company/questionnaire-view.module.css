@@ -1,5 +1,5 @@
 /* (REG-612) Company › Questionnaire — Profile's card shell; the bank on the Notifications settings' event table (REG-614). */
-.layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); max-width: 1040px; }
+.layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); }   /* (REG-661, owner 2026-09-25) the content's full width, as Profile and Settings */
 .card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-5); }
 .cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
@@ -25,6 +25,8 @@
 .trow:not([data-enabled]) .question { color: var(--om-color-on-surface-secondary); }
 .col { display: flex; justify-content: center; }
 .actions { display: inline-flex; gap: var(--om-spacing-1); justify-content: flex-end; }
+/* (sweep S4 #14) 768–1024: the four tracks fit the card — the Delete icon was half hidden by the table's overflow at 768–795 */
+@media (max-width: 1024px) { .thead, .trow { grid-template-columns: minmax(160px, 1fr) 80px 80px 112px; } }
 @media (max-width: 767px) {
   .thead, .trow { grid-template-columns: minmax(0, 1fr) 56px 56px; }
   .actionsHead { display: none; }

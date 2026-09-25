@@ -7,9 +7,9 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import type { QuoteItem } from '@/lib/db/schema'
 import { HIGHLIGHT_KIND, htmlToPlain, ITEM_KIND_ICON, ITEM_KIND_LABEL, isHighlight, isItemKind, isVisibility, printAsWord, type ColumnKey, type ColumnSettings, type Highlight, type ItemKind, type ItemsDensity, type PrintAs, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
-import { depthOf, descendantIds, groupTotals, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
+import { belowCost, depthOf, descendantIds, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, pct, unitPriceMinor } from '@/lib/quotes/math'
 import type { ItemPatch } from '@/app/quotes/items-actions'
-import { MoneyCell, NumberCell, TextCell } from './cell-input'
+import { LinkCell, MoneyCell, NumberCell, TextCell } from './cell-input'
 import { DescriptionDialog } from './description-dialog'
 import { LabelMenu, RowMenu, ThumbMenu, UnitMenu, VisibilityMenu } from './table-menus'
 import styles from './items-table.module.css'
@@ -40,7 +40,12 @@ export type RowHandlers = {
   onUploadImage: (item: QuoteItem) => void
   /** Upload Logo (REG-415: coming soon) — the house snackbar, never a silent no-op. */
   onComingSoon: () => void
-  onAddLabel: (kind: 'room' | 'category' | 'section') => void
+  /** (sweep S1 · U-04) the line that asked: the new label lands on it */
+  onAddLabel: (kind: 'room' | 'category' | 'section' | 'vendor', itemId?: string) => void
+  /** (REG-623) A cell's word to the studio — a link that is not a web address. */
+  onNote: (message: string) => void
+  /** (REG-627, parity Q-30) The line's comments. */
+  onComments: (item: QuoteItem) => void
   /** (REG-571) The handle pressed: the pointer drag starts (row-drag.ts). */
   onDragPointerDown: (id: string, e: ReactPointerEvent<HTMLButtonElement>) => void
 }
@@ -52,8 +57,10 @@ export type RowHandlers = {
  * inset and the client-visibility eye. Every cell edits in place and the row autosaves (items-section.tsx).
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
-export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors,
+export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors, comments = 0,
 }: {
+  /** (REG-627) How many comments the line's thread holds. */
+  comments?: number
   item: QuoteItem
   all: QuoteItem[]
   /** The brand kit's colours by key: the Highlight bar and the menu's swatches follow the kit (REG-556). */
@@ -66,7 +73,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   selected: boolean
   groups: QuoteItem[]
   selectedCount: number
-  labels: { rooms: string[]; categories: string[]; sections: string[] }
+  labels: { rooms: string[]; categories: string[]; sections: string[]; vendors: string[]; tradeNotes?: Record<string, string> }
   /** (REG-571) In the lifted block · slid aside by px · the lifted row's indent cue for the slot's depth · the slide's transform. */
   dragging: boolean
   shift: number
@@ -83,7 +90,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   onFillStart: (col: ColumnKey, id: string) => void
   h: RowHandlers
 }) {
-  const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'thumb' | 'vis' | 'row' | null>(null)
+  const [menu, setMenu] = useState<'unit' | 'room' | 'category' | 'section' | 'vendor' | 'thumb' | 'vis' | 'row' | null>(null)
   const [descOpen, setDescOpen] = useState(false)
   /* The row is ACTIVE while an editable control holds the focus — a cell input, a select, the description — or one of its
      select menus is open; never because a button in it (the group's fold, the checkbox, the chip, the kebab) was pressed
@@ -96,6 +103,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   const roomRef = useRef<HTMLButtonElement>(null)
   const catRef = useRef<HTMLButtonElement>(null)
   const secRef = useRef<HTMLButtonElement>(null)
+  const vendorRef = useRef<HTMLButtonElement>(null)
   const thumbRef = useRef<HTMLButtonElement>(null)
   const eyeRef = useRef<HTMLButtonElement>(null)
   const kebabRef = useRef<HTMLSpanElement>(null)
@@ -120,8 +128,11 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
 
   /* Drag-fill (REG-477, the Excel benchmark's phase 3): the small square at a focused box's corner; every editable column cell can be
      a source or a target — a group's only where it has the cell (its labels). `data-fill` outlines the cells a drag is about to fill. */
-  const FILLABLE: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'rebate']
+  const FILLABLE: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'rebate', 'vendor', 'website']
   const fillable = (key: ColumnKey) => FILLABLE.includes(key) && (!isGroup || key === 'room' || key === 'category' || key === 'section')
+  /* (REG-623, parity Q-13) A line selling under its cost wears a red tag — only while the Cost column is on: a screen shared with
+     "Show only what the client sees" never says it. */
+  const under = !isGroup && columns.includes('cost') && belowCost(item)
   const cell = (key: ColumnKey) => {
     const cls = `${styles.cell} ${COL_CLASS[key]}`
     const st: CSSProperties | undefined = colW[key] || colStyle ? { ...(colW[key] ? { width: colW[key] } : {}), ...colStyle?.(key) } : undefined
@@ -143,7 +154,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         case 'markup':
           return isGroup ? <><span className={styles.sum}>{money2(sums!.markupMinor)}</span><span className={styles.sub}>({pct(Number((sums!.costMinor > 0 ? (sums!.markupMinor / sums!.costMinor) * 100 : 0).toFixed(2)))})</span></> : (
             <>
-              <MoneyCell fit minor={item.markupMinor} onCommit={(v) => patch({ markupMinor: v })} ariaLabel={`Markup of ${item.name}`} />
+              <MoneyCell fit signed minor={item.markupMinor} onCommit={(v) => patch({ markupMinor: Math.max(-item.costMinor, v) })} ariaLabel={`Markup of ${item.name}`} />
               <span className={styles.sub}>({pct(Number(markupPct(item).toFixed(2)))})</span>
             </>
           )
@@ -166,10 +177,23 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
                 <span>{value ?? empty}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
               </button>
               <LabelMenu open={menu === key} anchor={ref} options={options} value={value} onClose={() => setMenu(null)} title={title}
-                         onPick={(v) => patch({ [key]: v } as ItemPatch)} addLabel={empty} onAdd={() => h.onAddLabel(key)} />
+                         onPick={(v) => patch({ [key]: v } as ItemPatch)} addLabel={empty} onAdd={() => h.onAddLabel(key, item.id)} />
             </>
           )
         }
+        case 'vendor':   // (REG-623, parity Q-08) who supplies the line: My Items' vendors, the ones added on this quote, the ones in use
+          return isGroup ? null : (
+            <>
+              <button ref={vendorRef} type="button" className={styles.pick} data-edit="" data-empty={item.vendor ? undefined : ''} aria-haspopup="menu" aria-expanded={menu === 'vendor'} aria-label={item.vendor ? `Vendor of ${item.name}: ${item.vendor}` : `Add a vendor to ${item.name}`} onClick={() => toggle('vendor')} onKeyDown={clearKey(!!item.vendor, () => patch({ vendor: null }))}>
+                <span>{item.vendor ?? 'Add vendor'}</span><span className={styles.pickChev}><Icon name="expand_more" size={16} /></span>
+              </button>
+              <LabelMenu open={menu === 'vendor'} anchor={vendorRef} options={labels.vendors} value={item.vendor} onClose={() => setMenu(null)} title="Vendor/Sub"
+                         onPick={(v) => patch({ vendor: v })} addLabel="Add vendor" onAdd={() => h.onAddLabel('vendor', item.id)} />
+            </>
+          )
+        case 'website':   // (REG-623, parity Q-09) a product or spec page, never printed
+          return isGroup ? null : <LinkCell value={item.link} placeholder="Add link" onCommit={(v) => patch({ link: v })} ariaLabel={`Link for ${item.name}`}
+                                            onInvalid={() => h.onNote('Not a web address — a link starts with https://')} />
         case 'type':
           return isGroup ? null : <span className={kind ? undefined : styles.muted}>{kind ? ITEM_KIND_LABEL[kind] : '–'}</span>
         case 'rebate':   // (REG-596) Owners only — the table hides the column for everyone else
@@ -195,7 +219,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
   return (
     <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-group={item.kind === 'group' || undefined} data-child={child || undefined} data-depth={depth || undefined} data-selected={selected || undefined}
          data-highlight={hl ? HIGHLIGHT_KIND[hl] : undefined} style={hl || dragStyle ? ({ ...(hl ? { '--hl': brandColors[hl] } : {}), ...dragStyle } as CSSProperties) : undefined}
-         data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || undefined}
+         data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || menu === 'vendor' || undefined}
          data-dragging={dragging || undefined} data-drop-depth={dropDepth ?? undefined} data-shift={shift ? '' : undefined} data-fresh={fresh || undefined} data-full={showFull || undefined}
          onFocusCapture={onFocusCapture} onBlurCapture={onBlurCapture}
          onPointerMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ix', `${Math.round(e.clientX - r.left)}px`) }}>
@@ -246,8 +270,11 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             {isGroup && item.printOneLine ? <span className={styles.groupTag}><Tooltip label="Prints for the client as one line — the section’s name and its total. The lines stay yours."><span><Tag appearance="outlined">One line</Tag></span></Tooltip></span> : null}   {/* (REG-585) */}
             {word ? <span className={styles.groupTag}><Tooltip label={item.printAs === 'behalf' ? 'Paid on the client’s behalf — counts, no GST' : `Prints “${word}” in place of the amount — not counted`}><span><Tag appearance="outlined">{word}</Tag></span></Tooltip></span> : null}   {/* (REG-555) */}
             {!isGroup && item.optional ? <span className={styles.groupTag}><Tag appearance="outlined">Optional</Tag></span> : null}   {/* (REG-492) */}
+            {!isGroup && item.optional && item.clientChoice ? <span className={styles.groupTag} data-testid="client-choice"><Tooltip label={item.clientChoice === 'want' ? 'Ticked on the confirmation link — clear its Optional mark to add it to the totals' : 'Left unticked on the confirmation link'}><span><Tag appearance="outlined" color={item.clientChoice === 'want' ? 'green' : undefined}>{item.clientChoice === 'want' ? 'Client wants it' : 'Client said no'}</Tag></span></Tooltip></span> : null}   {/* (REG-626, parity Q-32) */}
+            {under ? <span className={styles.groupTag} data-testid="below-cost"><Tooltip label={`Sells for ${money2(lineTotalMinor(item))}, costs ${money2(lineCostMinor(item))} — ${money2(lineCostMinor(item) - lineTotalMinor(item))} under its cost`}><span><Tag appearance="outlined" color="red">Below cost</Tag></span></Tooltip></span> : null}   {/* (REG-623) */}
+            {!isGroup && comments > 0 ? <Tooltip label={`${comments} ${comments === 1 ? 'comment' : 'comments'} — open the thread`}><button type="button" className={styles.commentCount} data-testid="line-comment-count" aria-label={`${comments} ${comments === 1 ? 'comment' : 'comments'} on ${item.name}`} onClick={() => h.onComments(item)}><Icon name="comment" size={16} weight={300} />{comments}</button></Tooltip> : null}   {/* (REG-627) */}
             {isGroup && childCount > 0 ? <span className={styles.groupCount}>{childCount} {childCount === 1 ? 'item' : 'items'}</span> : null}   {/* (REG-463) only once the group holds something */}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
-            {child ? (
+            {child || vis !== 'visible' ? (   /* (sweep S1) a top-level line that isn't fully shown keeps its eye too — its state and the way back */
               <>
                 <Tooltip label="Client visibility" disabled={menu === 'vis'}>
                   <button ref={eyeRef} type="button" className={styles.eye} aria-haspopup="menu" aria-expanded={menu === 'vis'} aria-label={`Client visibility: ${vis}`} onClick={() => toggle('vis')}>
@@ -293,20 +320,25 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
         </div>
         {/* Expand = the S 400 modal with a bigger box (REG-444) — the in-house rich editor since REG-557 (bullets · numbers · bold · underline);
             Save writes through the row's patch, so it autosaves and undoes like a cell. A section's dialog edits its note under the band. */}
-        <DescriptionDialog open={descOpen} name={item.name} kind={isGroup ? 'section' : 'item'} value={item.description ?? ''} html={item.descriptionHtml} onClose={() => setDescOpen(false)}
+        <DescriptionDialog open={descOpen} name={item.name} kind={isGroup ? 'section' : 'item'} value={item.description ?? ''} html={item.descriptionHtml} onClose={() => setDescOpen(false)} tradeNote={isGroup ? labels.tradeNotes?.[item.name.trim().toLowerCase()] : undefined}
                            onSave={(text, html) => { if (text !== (item.description ?? '') || html !== (item.descriptionHtml ?? null)) patch({ description: text, descriptionHtml: html }) }} />
       </div>
       {columns.map(cell)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}>
         {word && item.printAs !== 'behalf' ? (
-          /* (REG-555) The word the client reads stands where the amount would; the line's own figure stays under it for the studio. */
-          <span className={styles.totalWord}><span className={styles.total}>{word}</span><span className={styles.totalUnder}>{money2(total)} · not counted</span></span>
+          /* (REG-555) The word the client reads stands where the amount would; the line's own figure stays under it for the studio —
+             struck through, as it leaves the totals (REG-623: "S$1,950.00 · not counted" needed 160 px of the cell's 100 and lost its
+             start; the words moved to the tooltip). */
+          <Tooltip label={`Prints “${word}” — ${money2(total)} not counted`}>
+            <span className={styles.totalWord} tabIndex={0}><span className={styles.total}>{word}</span><span className={styles.totalUnder} data-struck="">{money2(total)}</span></span>
+          </Tooltip>
         ) : isGroup && item.printAsText ? (
           /* (REG-576) The sub-total's label with its cue — a bare word read as a stray. */
           <span className={styles.totalWord}><span className={styles.total}>{money2(total)}</span><span className={styles.totalUnder}>prints “{item.printAsText}”</span></span>
         ) : item.printAs === 'behalf' ? (
-          <span className={styles.totalWord}><span className={styles.total}>{money2(total)}</span><span className={styles.totalUnder}>on behalf · no GST</span></span>
+          /* The name's tag already says On behalf; the cell keeps what differs — no GST on it. */
+          <span className={styles.totalWord}><span className={styles.total}>{money2(total)}</span><span className={styles.totalUnder}>no GST</span></span>
         ) : <span className={styles.total}>{money2(total)}</span>}
         <span ref={kebabRef} className={styles.kebab} data-open={menu === 'row' || undefined}>
           <Tooltip label="More options" disabled={menu === 'row'}>

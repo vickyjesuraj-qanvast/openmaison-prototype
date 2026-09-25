@@ -7,6 +7,7 @@ import type { QuoteTemplate } from '@/lib/db/schema'
 import { parseDefaults, parseDesign, type BrandKit, type ItemsBlock, type TemplateDefaults, type TemplateDesign } from './model'
 import { presetByKey } from './presets'
 import type { DocData } from './data'
+import type { FolderNode } from '@/lib/folders'
 
 /** The starter sections as typed, trimmed, without the empty lines. */
 export const cleanGroups = (g: string[]) => g.map((x) => x.trim()).filter(Boolean)
@@ -20,15 +21,19 @@ export type PickerTemplate = {
   lastUsedAt: number | null
   design: TemplateDesign
   defaults: TemplateDefaults
+  /** (REG-664) Its folder in Templates › Quotes (null = the top). */
+  folderId: string | null
 }
 /** (REG-538) `splits` and `texts` name what a template's defaults point at — the payment library and the text library — so the facts read "Deposit-heavy 20/40/40" and "Standard T&Cs", not a key. */
-export type PickerData = { templates: PickerTemplate[]; brand: BrandKit; sample: DocData; splits?: { id: string; name: string }[]; texts?: { id: string; kind: string; title: string }[] }
-export type PickerExtras = Pick<PickerData, 'splits' | 'texts'>
+export type PickerData = { templates: PickerTemplate[]; brand: BrandKit; sample: DocData; splits?: { id: string; name: string }[]; texts?: { id: string; kind: string; title: string }[]
+  /** (REG-664) The studio's quote-template folders — the picker browses them as the gallery does. */
+  folders?: FolderNode[] }
+export type PickerExtras = Pick<PickerData, 'splits' | 'texts' | 'folders'>
 
 export function toPickerTemplate(row: QuoteTemplate): PickerTemplate {
   return {
     id: row.id, name: row.name, version: row.version, isDefault: row.isDefault, paper: row.paper, lastUsedAt: row.lastUsedAt ? row.lastUsedAt.getTime() : null,
-    design: parseDesign(row.designJson, presetByKey('letter').design()), defaults: parseDefaults(row.defaultsJson),
+    design: parseDesign(row.designJson, presetByKey('letter').design()), defaults: parseDefaults(row.defaultsJson), folderId: row.folderId ?? null,
   }
 }
 /** Only published templates can start or print a quote; the default first, then the most recently used. */

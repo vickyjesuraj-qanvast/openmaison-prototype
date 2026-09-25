@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
 import { ToolsPopover } from './tools-popover'
+import { CompanyPopover } from '@/components/company/company-popover'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -51,6 +52,7 @@ export function MobileChrome() {
   const close = useCallback(() => setOpen(false), [])
   const comingSoon = useComingSoon()
   const [toolsOpen, setToolsOpen] = useState(false)   // (REG-422) Tools › the tile sheet
+  const [companyOpen, setCompanyOpen] = useState(false)   // (REG-646, settings parity Q-11) More › Company — the rail's panel as a bottom sheet
   const pathname = usePathname()
   /* (REG-287) The sheet only exists ≤767 — leaving mobile closes it (render-phase adjust on the house hook). */
   const mobile = useMediaQuery(MOBILE)
@@ -72,6 +74,8 @@ export function MobileChrome() {
       <Link key={it.label} href={it.href} className={styles.sheetItem} aria-current={active(it.href) ? 'page' : undefined} onClick={close}>
         {inner}
       </Link>
+    ) : it.label === 'Company' ? (
+      <button key={it.label} type="button" className={styles.sheetItem} aria-haspopup="menu" onClick={() => { close(); setCompanyOpen(true) }}>{inner}</button>
     ) : (
       <button key={it.label} type="button" className={styles.sheetItem} onClick={() => { close(); comingSoon() }}>{inner}</button>
     )
@@ -125,6 +129,7 @@ export function MobileChrome() {
           )
         })}
         <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
+        <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} />
         <button type="button" className={styles.dockItem} data-active={open || undefined}
                 aria-label="More" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} /></span>

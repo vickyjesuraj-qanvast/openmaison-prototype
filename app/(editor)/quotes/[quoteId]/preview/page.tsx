@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { fetchQuotePreview } from '@/lib/templates/queries'
 import { QuotePreview } from '@/components/quotes/preview/quote-preview'
 import { readFrom } from '@/lib/nav'
+import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,5 +20,6 @@ export default async function QuotePreviewPage({ params, searchParams }: { param
   const version = sp.version && /^\d+$/.test(sp.version) ? Number(sp.version) : undefined   // (REG-565) a kept version, read-only
   const data = await fetchQuotePreview(quoteId, version)
   if (!data) notFound()
+  if (!(await canOpenLead(await fetchViewer(), data.quote.leadId))) notFound()   /* (REG-625, parity §8.2 · E-135) the studio's preview follows Who sees leads; the client's /confirm link does not */
   return <QuotePreview data={data} from={readFrom(sp.from)} print={sp.print === '1'} />
 }

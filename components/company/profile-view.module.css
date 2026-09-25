@@ -92,7 +92,10 @@
 .qrWell img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .qrWell:hover { background: var(--om-color-hover-04p); }
 .qrWell:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.qrWell .wellEmpty { flex-direction: column; font: var(--om-type-caption-m); text-align: center; }
+.qrWell .wellEmpty { flex-direction: column; font: var(--om-type-caption-s); text-align: center; }
 
 /* (REG-593) The entity's GST switch row. */
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-height: 36px; cursor: pointer; }
+/* (REG-618) The Social links sub-heading inside Company details. */
+.subTitle { margin: 0; font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.entityState { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }   /* (REG-647) Retired · Bring back */

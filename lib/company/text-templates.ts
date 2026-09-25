@@ -2,11 +2,12 @@ import 'server-only'
 import { asc, desc, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { members, quoteTemplates, quoteTextTemplates, type QuoteTextTemplate } from '@/lib/db/schema'
+import { fetchViewer } from '@/lib/leads/visibility'
 
 /* Company › Templates › T&Cs & Notes (REG-538): the text library behind the quote editor's My Templates, as a page. */
 
 export type TextTemplateRow = QuoteTextTemplate & { usedBy: number; author: string | null; authorColor: string | null }
-export type TextTemplatesData = { templates: TextTemplateRow[]; deleted: TextTemplateRow[]; now: number }
+export type TextTemplatesData = { templates: TextTemplateRow[]; deleted: TextTemplateRow[]; now: number; /** (REG-646) who is looking — the menus' rename / delete rule */ viewer: { id: string; role: string } }
 
 /** Which quote templates name each text template in their Defaults (published or draft). */
 export async function textTemplateUsage(): Promise<Map<string, number>> {
@@ -26,7 +27,8 @@ export async function fetchTextTemplatesData(): Promise<TextTemplatesData> {
   const [all, n, team] = await Promise.all([db.select().from(quoteTextTemplates).orderBy(desc(quoteTextTemplates.updatedAt), asc(quoteTextTemplates.createdAt)), textTemplateUsage(), db.select({ id: members.id, name: members.name, color: members.color }).from(members)])
   const by = new Map(team.map((m) => [m.id, m]))
   const rows: TextTemplateRow[] = all.map((t) => { const m = t.createdBy ? by.get(t.createdBy) : undefined; return { ...t, usedBy: n.get(t.id) ?? 0, author: m?.name ?? null, authorColor: m?.color ?? null } })
-  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), now: Date.now() }
+  const v = await fetchViewer()
+  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), now: Date.now(), viewer: { id: v.id, role: v.role } }
 }
 export type TextTemplateEditorData = { template: TextTemplateRow; now: number }
 export async function fetchTextTemplateEditor(id: string): Promise<TextTemplateEditorData | null> {

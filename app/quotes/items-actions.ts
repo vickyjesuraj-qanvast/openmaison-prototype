@@ -4,12 +4,13 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { priceBookItems, priceBookSections, quoteItems, quotes, type PriceBookItem, type PriceBookSection, type QuoteItem } from '@/lib/db/schema'
+import { members, priceBookItems, priceBookSections, quoteItems, quotes, type PriceBookItem, type PriceBookSection, type QuoteItem } from '@/lib/db/schema'
 import { revalidateLead } from '@/lib/leads/queries'
-import { isDensity, isHighlight, isItemKind, isItemStatus, isItemsView, isPrintAs, isVisibility, parseColumns, parseLabels, parseSavedSection, type ColumnSettings, type ItemLabels, type SavedLine, type SavedSection } from '@/lib/quotes/items-model'
+import { cleanLink, isDensity, isHighlight, isItemKind, isItemStatus, isItemsView, isPrintAs, isVisibility, parseColumns, parseLabels, parseSavedSection, type ColumnSettings, type ItemLabels, type SavedLine, type SavedSection } from '@/lib/quotes/items-model'
 import { descendantIds, parseDiscounts, quoteTotals, type NamedDiscount } from '@/lib/quotes/math'
-import { fetchQuoteRules } from '@/lib/settings/queries'
+import { fetchQuoteRules, fetchStudio } from '@/lib/settings/queries'
 import { roundToStep } from '@/lib/settings/types'
+import { PROPERTY_TYPES } from '@/lib/leads/enums'   // (REG-619) a saved section remembers the quote's property type
 
 /* Items section (1260:31209, REG-415). Every write ends in `sync`: the quote's amount is DERIVED from its lines (REG-343 / REG-403)
    — the Quotes tab, the Overview card and the Move stage window read `quotes.amount_minor`, so it is recomputed here, never typed.
@@ -40,10 +41,13 @@ async function sync(quoteId: string): Promise<{ updatedAt: number; amountMinor: 
   touch(q.leadId, quoteId)
   return { updatedAt: now.getTime(), amountMinor: t.totalMinor }
 }
-/** Siblings renumbered 0…n so a position is never shared. */
+/** Siblings renumbered 0…n so a position is never shared — and returned in that order, so an index IS a position. (REG-662) Saved
+    lines can carry gaps (1, 2, 3, 4, 6 …), and a place read as "the count" or "index + 1" then landed mid-list: every placement
+    below reads its list through here first. */
 async function renumber(quoteId: string, parentId: string | null) {
   const sibs = (await linesOf(quoteId)).filter((i) => (i.parentId ?? null) === parentId)
   for (let i = 0; i < sibs.length; i++) if (sibs[i]!.position !== i) await db.update(quoteItems).set({ position: i }).where(eq(quoteItems.id, sibs[i]!.id))
+  return sibs.map((x, i) => ({ ...x, position: i }))
 }
 /** Every group's children renumbered — after a delete or a regroup. */
 async function renumberAll(quoteId: string) {
@@ -55,8 +59,10 @@ async function renumberAll(quoteId: string) {
 const num = (v: unknown, lo: number, hi: number, fallback: number) => { const n = typeof v === 'number' && Number.isFinite(v) ? v : fallback; return Math.min(hi, Math.max(lo, n)) }
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : undefined)
 const label = (v: unknown) => (v === null ? null : str(v, 60)?.trim() || null)
+/** (REG-623) A vendor's name, as long as My Items allows (80). */
+const vendorName = (v: unknown) => (v === null ? null : str(v, 80)?.trim() || null)
 
-export type ItemPatch = Partial<Pick<QuoteItem, 'name' | 'description' | 'status' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section' | 'visibility' | 'collapsed' | 'icon' | 'thumb' | 'thumbCount' | 'optional' | 'printAs' | 'printAsText' | 'highlight' | 'noNumber' | 'descriptionHtml' | 'printOneLine' | 'rebateMinor'>>
+export type ItemPatch = Partial<Pick<QuoteItem, 'name' | 'description' | 'status' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section' | 'visibility' | 'collapsed' | 'icon' | 'thumb' | 'thumbCount' | 'optional' | 'printAs' | 'printAsText' | 'highlight' | 'noNumber' | 'descriptionHtml' | 'printOneLine' | 'rebateMinor' | 'vendor' | 'link'>>
 
 /** Public endpoint: every field is bounded and every enum checked before it is written. */
 function cleanPatch(p: ItemPatch): Partial<typeof quoteItems.$inferInsert> {
@@ -82,6 +88,8 @@ function cleanPatch(p: ItemPatch): Partial<typeof quoteItems.$inferInsert> {
   if (p.noNumber !== undefined) set.noNumber = !!p.noNumber   // (REG-558)
   if (p.printOneLine !== undefined) set.printOneLine = !!p.printOneLine   // (REG-585) a section as one printed line
   if (p.rebateMinor !== undefined) set.rebateMinor = Math.round(num(p.rebateMinor, 0, 1e11, 0))   // (REG-596) Owners only
+  if (p.vendor !== undefined) set.vendor = vendorName(p.vendor)   // (REG-623, parity Q-08)
+  if (p.link !== undefined) set.link = typeof p.link === 'string' ? cleanLink(p.link) ?? null : null   // (REG-623, parity Q-09) http / https only; anything else is dropped
   if (p.collapsed !== undefined) set.collapsed = !!p.collapsed
   if (p.icon !== undefined) set.icon = p.icon === null ? null : isItemKind(p.icon) ? p.icon : null
   if (p.thumb !== undefined) set.thumb = p.thumb === null ? null : str(p.thumb, 300) ?? null
@@ -117,8 +125,14 @@ export async function createQuoteItem(quoteId: string, input: CreateItemInput = 
     if (kind === 'group' && p.parentId) parentId = p.parentId
   }
   let pb: PriceBookItem | null = null
-  if (input.priceBookItemId) { const [row] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, input.priceBookItemId)); pb = row ?? null }
-  const sibs = (await linesOf(quoteId)).filter((i) => (i.parentId ?? null) === parentId)
+  if (input.priceBookItemId) {
+    const [row] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, input.priceBookItemId)); pb = row ?? null
+    /* (REG-652, price book parity Q-04 · Q-11) A deleted item, or someone else's proposal, is not taken — a page opened before the change still offers it. */
+    const { fetchViewer } = await import('@/lib/leads/visibility')
+    const { itemPickable } = await import('@/lib/company/price-book-rules')
+    if (pb && (pb.deletedAt || !itemPickable(await fetchViewer(), pb))) throw new Error('item not in the book')
+  }
+  const sibs = await renumber(quoteId, parentId)
   let position = sibs.length
   const anchor = input.afterId ?? input.beforeId ?? null
   if (anchor) {
@@ -132,21 +146,22 @@ export async function createQuoteItem(quoteId: string, input: CreateItemInput = 
   const name = (str(input.name, 200) ?? '').trim() || (pb ? pb.name : kind === 'group' ? 'New section' : 'Item')
   await db.insert(quoteItems).values({
     id, quoteId, parentId, kind, position, name,
-    description: pb?.description ?? null,
+    description: pb?.description ?? null, descriptionHtml: pb?.descriptionHtml ?? null,   // (REG-653, price book parity Q-08) the formatted description travels
     icon: pb ? (isItemKind(pb.kind) ? pb.kind : null) : null,
     thumb: pb?.thumb ?? null, thumbCount: pb?.thumb ? 1 : 0,
     status, qty: 1, unit: pb?.unit ?? null,
-    costMinor: pb?.costMinor ?? 0, markupMinor: roundToStep(pb?.costMinor ?? 0, pb?.markupMinor ?? 0, (await fetchQuoteRules()).roundStep), discountPct: 0, gstPct: 9,   // (REG-584) the studio's rounding rule
+    costMinor: pb?.costMinor ?? 0, markupMinor: roundToStep(pb?.costMinor ?? 0, pb?.markupMinor ?? 0, (await fetchQuoteRules()).roundStep, pb?.unit), discountPct: 0, gstPct: (await fetchStudio()).gstPct,   // (REG-584) the studio's rounding rule · (REG-645) its GST rate
     category: label(input.category) ?? pb?.category ?? null, room: label(input.room), section: label(input.section),
+    vendor: pb?.vendor ?? null, link: pb?.link ?? null,   // (REG-623, parity Q-08) the line knows who supplies it · (REG-653) and its product page
     visibility: 'visible', collapsed: false, priceBookItemId: pb?.id ?? null, createdAt: now, updatedAt: now,
   })
-  if (pb) await db.update(priceBookItems).set({ updatedAt: now }).where(eq(priceBookItems.id, pb.id))
+  /* (REG-651, price book parity Q-17 · E-63) A pick is a use, not an edit: the item's "edited" stays its last change. */
   await renumber(quoteId, parentId)
   await sync(q.id)
   return itemOf(id)
 }
 
-export type BulkLine = Pick<ItemPatch, 'name' | 'description' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section'>
+export type BulkLine = Pick<ItemPatch, 'name' | 'description' | 'qty' | 'unit' | 'costMinor' | 'markupMinor' | 'discountPct' | 'gstPct' | 'room' | 'category' | 'section' | 'vendor' | 'link'>
 /** Paste from a spreadsheet (REG-476): the mapped lines land in ONE transaction — after `afterId` among `parentId`'s children, else
     at the end of that list — every field bounded by `cleanPatch` as a cell edit is. Returns how many landed. */
 export async function createQuoteItems(quoteId: string, lines: BulkLine[], place: { parentId?: string | null; afterId?: string | null } = {}): Promise<number> {
@@ -156,16 +171,17 @@ export async function createQuoteItems(quoteId: string, lines: BulkLine[], place
   let parentId = place.parentId ?? null
   let status: QuoteItem['status'] = 'Pending'
   if (parentId) { const p = await itemOf(parentId); if (p.quoteId !== quoteId || p.kind !== 'group') parentId = null; else status = p.status }
-  const sibs = (await linesOf(quoteId)).filter((i) => (i.parentId ?? null) === parentId)
+  const sibs = await renumber(quoteId, parentId)
   let position = sibs.length
   if (place.afterId) { const idx = sibs.findIndex((s) => s.id === place.afterId); if (idx >= 0) position = idx + 1 }
   const now = new Date()
-  const rules = await fetchQuoteRules()   // (REG-584)
+  const [rules, studio] = await Promise.all([fetchQuoteRules(), fetchStudio()])   // (REG-584) · (REG-645) the studio's GST rate for a line that brings none
   const values = clean.map((set, k) => ({
     id: randomUUID(), quoteId, parentId, kind: 'item' as const, position: position + k,
     name: set.name ?? 'Item', description: set.description ?? null, icon: null, thumb: null, thumbCount: 0, status,
-    qty: set.qty ?? 1, unit: set.unit ?? null, costMinor: set.costMinor ?? 0, markupMinor: roundToStep(set.costMinor ?? 0, Math.max(-(set.costMinor ?? 0), set.markupMinor ?? 0), rules.roundStep),
-    discountPct: set.discountPct ?? 0, gstPct: set.gstPct ?? 9, room: set.room ?? null, category: set.category ?? null, section: set.section ?? null,
+    qty: set.qty ?? 1, unit: set.unit ?? null, costMinor: set.costMinor ?? 0, markupMinor: roundToStep(set.costMinor ?? 0, Math.max(-(set.costMinor ?? 0), set.markupMinor ?? 0), rules.roundStep, set.unit),
+    discountPct: set.discountPct ?? 0, gstPct: set.gstPct ?? studio.gstPct, room: set.room ?? null, category: set.category ?? null, section: set.section ?? null,
+    vendor: set.vendor ?? null, link: set.link ?? null,   // (REG-623)
     visibility: 'visible' as const, collapsed: false, priceBookItemId: null, createdAt: now, updatedAt: now,
   }))
   await db.transaction(async (tx) => {
@@ -228,7 +244,7 @@ export async function ungroupQuoteItem(groupId: string): Promise<{ updatedAt: nu
 export async function duplicateQuoteItem(itemId: string): Promise<QuoteItem> {
   const src = await itemOf(itemId)
   const all = await linesOf(src.quoteId)
-  const sibs = all.filter((i) => (i.parentId ?? null) === (src.parentId ?? null))
+  const sibs = await renumber(src.quoteId, src.parentId ?? null)
   const at = sibs.findIndex((s) => s.id === src.id) + 1
   for (const s of sibs) if (s.position >= at) await db.update(quoteItems).set({ position: s.position + 1 }).where(eq(quoteItems.id, s.id))
   const now = new Date()
@@ -288,10 +304,10 @@ export async function setQuoteItemParent(itemId: string, parentId: string | null
     }
   }
   const from = i.parentId ?? null
-  const sibs = all.filter((s) => (s.parentId ?? null) === parentId && s.id !== i.id)
+  const end = (await renumber(i.quoteId, parentId)).length   // (REG-662) past the last, gaps or not
   const status = parentId ? all.find((x) => x.id === parentId)!.status : i.status   // a child carries its group's answer; a line leaving keeps its own (it gets its chip back)
   const now = new Date()
-  await db.update(quoteItems).set({ parentId, position: sibs.length, status, updatedAt: now }).where(eq(quoteItems.id, i.id))
+  await db.update(quoteItems).set({ parentId, position: end, status, updatedAt: now }).where(eq(quoteItems.id, i.id))
   if (i.kind === 'group') { const under = [...descendantIds(all, [i.id])].filter((x) => x !== i.id); if (under.length) await db.update(quoteItems).set({ status, updatedAt: now }).where(inArray(quoteItems.id, under)) }
   await renumber(i.quoteId, from)
   await sync(i.quoteId)
@@ -301,6 +317,7 @@ export async function setQuoteItemParent(itemId: string, parentId: string | null
     (REG-558) Lines that all sit in one section get a sub-section there; otherwise the section is a top one. */
 export async function groupQuoteItems(quoteId: string, ids: string[], name = 'New section'): Promise<QuoteItem> {
   const q = await quoteOf(quoteId)
+  await renumberAll(quoteId)   // (REG-662) positions without gaps, so "the end" below is the end
   const all = await linesOf(quoteId)
   const picked = all.filter((i) => ids.includes(i.id) && i.kind === 'item')
   const first = picked[0]
@@ -323,40 +340,109 @@ export async function groupQuoteItems(quoteId: string, ids: string[], name = 'Ne
   return itemOf(id)
 }
 
-/** Row menu › Save to Your Library: the line becomes a price-book entry (name, description, kind, unit, cost, markup). */
-export async function saveItemToPriceBook(itemId: string): Promise<PriceBookItem> {
+/** What a save to My Items did — the row menu's Undo reads it back (REG-653, price book parity Q-09). */
+export type SavedToBook = { mode: 'new' | 'update'; item: PriceBookItem; /** the entry the line pointed at before */ prevLink: string | null; /** an update: the item as it was */ previous: PriceBookItem | null }
+const fromLine = (i: QuoteItem, cur?: PriceBookItem) => ({
+  name: i.name, description: i.description, descriptionHtml: i.descriptionHtml, kind: isItemKind(i.icon) ? i.icon : cur?.kind ?? 'purchase', unit: i.unit ?? cur?.unit ?? 'Pieces',
+  costMinor: i.costMinor, markupMinor: i.markupMinor, category: i.category, vendor: i.vendor, link: i.link, thumb: i.thumb,
+})
+/** Row menu › Save to My Items: the line becomes a price-book entry (name, description, kind, unit, cost, markup, category, vendor, link,
+    photo). (REG-653, price book parity Q-09) On a line that came from an item, `update` writes the line back into that item instead —
+    an Owner's or an Admin's — so nothing is duplicated unasked; a new entry is the other, named choice. */
+export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update' = 'new'): Promise<SavedToBook> {
   const i = await itemOf(itemId)
-  if (i.kind !== 'item') throw new Error('sections are saved with Save section to My Items')
+  if (i.kind !== 'item') throw new Error('sections are saved with Save section to My Sections')
+  /* (REG-652, price book parity Q-04) An Owner's or an Admin's save joins the book; a Designer's is proposed — on their quotes at once, offered to no one else until approved. */
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const { newItemStatus, runsBook, BOOK_RULE } = await import('@/lib/company/price-book-rules')
+  const v = await fetchViewer()
+  if (mode === 'update') {
+    if (!runsBook(v)) throw new Error(BOOK_RULE)
+    const [cur] = i.priceBookItemId ? await db.select().from(priceBookItems).where(eq(priceBookItems.id, i.priceBookItemId)) : []
+    if (!cur || cur.deletedAt) throw new Error('item not in the book')
+    const q = await quoteOf(i.quoteId)
+    const { updatePriceBookItem } = await import('@/app/company/price-book-actions')
+    const item = await updatePriceBookItem(cur.id, fromLine(i, cur), `Updated from ${q.number}`)
+    touch(q.leadId, q.id)
+    return { mode, item, prevLink: cur.id, previous: cur }
+  }
+  const status = newItemStatus(v)
   const now = new Date()
   const id = randomUUID()
-  await db.insert(priceBookItems).values({ id, name: i.name, description: i.description, kind: isItemKind(i.icon) ? i.icon : 'purchase', unit: i.unit ?? 'Pieces', costMinor: i.costMinor, markupMinor: i.markupMinor, category: i.category, thumb: i.thumb, createdAt: now, updatedAt: now })
+  await db.insert(priceBookItems).values({ id, ...fromLine(i), createdAt: now, updatedAt: now, status, createdBy: v.id, updatedBy: v.id })   // (REG-623) the vendor goes with it · (REG-653) the formatted description, the link
+  { const { logBookChange } = await import('@/lib/company/price-book-history'); await logBookChange(id, 'created', v.id, null, `Saved from quote line “${i.name}”`, now) }
+  if (status === 'proposed') {
+    const { notify } = await import('@/lib/notifications/emit'); const { studioRunnerIds } = await import('@/lib/notifications/queries')
+    const [me] = await db.select({ name: members.name }).from(members).where(eq(members.id, v.id))
+    await notify('price_book_proposed', await studioRunnerIds(), { title: `${me?.name ?? 'Someone'} proposed “${i.name}” for My Items`, body: 'Approve it, or send it back with a note', href: '/company/price-book', actorId: v.id })
+  }
   await db.update(quoteItems).set({ priceBookItemId: id }).where(eq(quoteItems.id, i.id))
   const q = await quoteOf(i.quoteId)
   touch(q.leadId, q.id)
   const [row] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, id))
-  return row!
+  return { mode, item: row!, prevLink: i.priceBookItemId, previous: null }
+}
+/** (REG-653, Q-09) Undo on the save's snackbar: a new entry leaves the book again (nothing else used it yet) and the line points where
+    it did; an update writes the item's figures back — History keeps both steps. */
+export async function undoSaveToPriceBook(lineId: string, saved: { mode: 'new' | 'update'; itemId: string; prevLink: string | null; previous: PriceBookItem | null }): Promise<void> {
+  const i = await itemOf(lineId)
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const { itemChangeBlock } = await import('@/lib/company/price-book-rules')
+  const v = await fetchViewer()
+  const [cur] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, saved.itemId))
+  if (!cur) return
+  const block = itemChangeBlock(v, cur)
+  if (block) throw new Error(block)
+  if (saved.mode === 'update' && saved.previous) {
+    const p = saved.previous
+    const { updatePriceBookItem } = await import('@/app/company/price-book-actions')
+    await updatePriceBookItem(cur.id, { name: p.name, description: p.description, descriptionHtml: p.descriptionHtml, kind: p.kind, unit: p.unit, costMinor: p.costMinor, markupMinor: p.markupMinor, category: p.category, vendor: p.vendor, link: p.link, thumb: p.thumb }, 'Undone')
+  } else if (saved.mode === 'new') {
+    const others = await db.select({ id: quoteItems.id }).from(quoteItems).where(and(eq(quoteItems.priceBookItemId, cur.id)))
+    if (others.some((o) => o.id !== i.id)) throw new Error('already used on another line')
+    const { priceBookChanges } = await import('@/lib/db/schema')
+    await db.delete(priceBookItems).where(eq(priceBookItems.id, cur.id))
+    await db.delete(priceBookChanges).where(eq(priceBookChanges.itemId, cur.id))
+    const [back] = saved.prevLink ? await db.select({ id: priceBookItems.id }).from(priceBookItems).where(eq(priceBookItems.id, saved.prevLink)) : []
+    await db.update(quoteItems).set({ priceBookItemId: back ? back.id : null }).where(eq(quoteItems.id, i.id))
+  }
+  const q = await quoteOf(i.quoteId)
+  touch(q.leadId, q.id)
+  revalidatePath('/company/price-book')
 }
 
 /* ── (REG-566) Saved sections: "Save section to My Items" and "My Sections" in the Add Item popover ── */
 const savedLine = (i: QuoteItem): SavedLine => ({
   name: i.name, description: i.description, descriptionHtml: i.descriptionHtml, qty: i.qty, unit: i.unit, costMinor: i.costMinor, markupMinor: i.markupMinor, discountPct: i.discountPct, gstPct: i.gstPct,
   room: i.room, category: i.category, section: i.section, printAs: i.printAs, printAsText: i.printAsText, highlight: i.highlight, icon: i.icon,
+  vendor: i.vendor, link: i.link,   // (REG-623)
+  /* (REG-653, price book parity Q-10 · E-67) hidden or priced-off lines stay so, optional ones stay out of the sums, and the rest travels */
+  visibility: isVisibility(i.visibility) ? i.visibility : 'visible', optional: i.optional, noNumber: i.noNumber, rebateMinor: i.rebateMinor, thumb: i.thumb, thumbCount: i.thumbCount, priceBookItemId: i.priceBookItemId,
 })
-/** Row menu on a section › Save section to My Items: the section, its lines and its sub-sections, as one reusable block. */
+/** (REG-653, Q-10) A section's own marks: one-line print, the sub-total's word, its highlight, its visibility. */
+const savedMarks = (g: QuoteItem) => ({ printOneLine: g.printOneLine, printAsText: g.printAsText, highlight: g.highlight, visibility: isVisibility(g.visibility) ? g.visibility : 'visible' as const })
+/** Row menu on a section › Save section to My Sections: the section, its lines and its sub-sections, as one reusable block. */
 export async function saveSectionToPriceBook(groupId: string, name?: string): Promise<PriceBookSection> {
+  /* (REG-652, price book parity Q-03) My Sections are the Owners' and Admins'. */
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const { runsBook, SECTION_RULE } = await import('@/lib/company/price-book-rules')
+  const v = await fetchViewer()
+  if (!runsBook(v)) throw new Error(SECTION_RULE)
   const g = await itemOf(groupId)
   if (g.kind !== 'group') throw new Error('not a section')
   const all = await linesOf(g.quoteId)
   const kids = all.filter((i) => i.parentId === g.id).sort((a, b) => a.position - b.position)
   const body: SavedSection = {
-    name: (str(name, 200) ?? '').trim() || g.name, description: g.description, descriptionHtml: g.descriptionHtml,
+    name: (str(name, 200) ?? '').trim() || g.name, description: g.description, descriptionHtml: g.descriptionHtml, ...savedMarks(g),
     lines: kids.filter((k) => k.kind === 'item').map(savedLine),
-    subs: kids.filter((k) => k.kind === 'group').map((s) => ({ name: s.name, description: s.description, descriptionHtml: s.descriptionHtml, lines: all.filter((i) => i.parentId === s.id && i.kind === 'item').sort((a, b) => a.position - b.position).map(savedLine) })),
+    subs: kids.filter((k) => k.kind === 'group').map((s) => ({ name: s.name, description: s.description, descriptionHtml: s.descriptionHtml, ...savedMarks(s), lines: all.filter((i) => i.parentId === s.id && i.kind === 'item').sort((a, b) => a.position - b.position).map(savedLine) })),
   }
   const now = new Date()
   const id = randomUUID()
-  await db.insert(priceBookSections).values({ id, name: body.name, description: g.description, linesJson: JSON.stringify(body), createdAt: now, updatedAt: now })
   const q = await quoteOf(g.quoteId)
+  // (REG-619, parity Q-27) The section remembers the property type of the quote it came from, as 1.0's packages took the lead's.
+  const propertyType = q.propertyType && (PROPERTY_TYPES as readonly string[]).includes(q.propertyType) ? q.propertyType : null
+  await db.insert(priceBookSections).values({ id, name: body.name, description: g.description, linesJson: JSON.stringify(body), propertyType, createdAt: now, updatedAt: now, createdBy: v.id, updatedBy: v.id })
   touch(q.leadId, q.id)
   const [row] = await db.select().from(priceBookSections).where(eq(priceBookSections.id, id))
   return row!
@@ -365,28 +451,34 @@ export async function saveSectionToPriceBook(groupId: string, name?: string): Pr
 export async function insertPriceBookSection(quoteId: string, sectionId: string, place: { afterId?: string | null } = {}): Promise<QuoteItem> {
   const q = await quoteOf(quoteId)
   const [row] = await db.select().from(priceBookSections).where(eq(priceBookSections.id, sectionId))
-  if (!row) throw new Error('saved section not found')
+  if (!row || row.deletedAt) throw new Error('saved section not found')   // (REG-653, Q-11) a page opened before the delete still lists it
   const body = parseSavedSection(row.linesJson)
   if (!body) throw new Error('saved section unreadable')
-  const top = (await linesOf(quoteId)).filter((i) => !i.parentId)
+  const top = await renumber(quoteId, null)
   let position = top.length
   if (place.afterId) { const idx = top.findIndex((s) => s.id === place.afterId); if (idx >= 0) position = idx + 1 }
   const now = new Date()
   const id = randomUUID()
-  const rules = await fetchQuoteRules()   // (REG-584)
+  const [rules, studio] = await Promise.all([fetchQuoteRules(), fetchStudio()])   // (REG-584) · (REG-653, Q-10 · E-69) the studio's GST rate, not the one the section was saved with
+  /* (REG-653, Q-10) a line keeps its link to My Items only while that item is still live in the book */
+  const linked = [...body.lines, ...body.subs.flatMap((s) => s.lines)].map((l) => l.priceBookItemId).filter((x): x is string => !!x)
+  const live = new Set(linked.length ? (await db.select({ id: priceBookItems.id }).from(priceBookItems).where(and(inArray(priceBookItems.id, linked), isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live')))).map((r) => r.id) : [])
   const line = (l: SavedLine, parentId: string, k: number) => ({
-    id: randomUUID(), quoteId, parentId, kind: 'item' as const, position: k, name: l.name, description: l.description, descriptionHtml: l.descriptionHtml, icon: isItemKind(l.icon) ? l.icon : null, thumb: null, thumbCount: 0, status: 'Pending' as const,
-    qty: l.qty, unit: l.unit, costMinor: l.costMinor, markupMinor: roundToStep(l.costMinor, Math.max(-l.costMinor, l.markupMinor), rules.roundStep), discountPct: l.discountPct, gstPct: l.gstPct, room: l.room, category: l.category, section: l.section,
-    printAs: isPrintAs(l.printAs) ? l.printAs : null, printAsText: l.printAsText, highlight: isHighlight(l.highlight) ? l.highlight : null, visibility: 'visible' as const, collapsed: false, priceBookItemId: null, createdAt: now, updatedAt: now,
+    id: randomUUID(), quoteId, parentId, kind: 'item' as const, position: k, name: l.name, description: l.description, descriptionHtml: l.descriptionHtml, icon: isItemKind(l.icon) ? l.icon : null, thumb: l.thumb ?? null, thumbCount: l.thumb ? Math.max(1, l.thumbCount ?? 1) : 0, status: 'Pending' as const,
+    qty: l.qty, unit: l.unit, costMinor: l.costMinor, markupMinor: roundToStep(l.costMinor, Math.max(-l.costMinor, l.markupMinor), rules.roundStep, l.unit), discountPct: l.discountPct, gstPct: studio.gstPct, room: l.room, category: l.category, section: l.section,
+    printAs: isPrintAs(l.printAs) ? l.printAs : null, printAsText: l.printAsText, highlight: isHighlight(l.highlight) ? l.highlight : null, visibility: l.visibility ?? 'visible', collapsed: false,
+    optional: l.optional === true, noNumber: l.noNumber === true, rebateMinor: Math.max(0, Math.round(l.rebateMinor ?? 0)), priceBookItemId: l.priceBookItemId && live.has(l.priceBookItemId) ? l.priceBookItemId : null, createdAt: now, updatedAt: now,
+    vendor: vendorName(l.vendor ?? null), link: l.link ? cleanLink(l.link) ?? null : null,   // (REG-623)
   })
+  const marks = (g: { printOneLine?: boolean; printAsText?: string | null; highlight?: string | null; visibility?: string }) => ({ printOneLine: g.printOneLine === true, printAsText: g.printAsText ?? null, highlight: isHighlight(g.highlight) ? g.highlight : null, visibility: g.visibility && isVisibility(g.visibility) ? g.visibility : 'visible' })
   await db.transaction(async (tx) => {
     for (const s of top) if (s.position >= position) await tx.update(quoteItems).set({ position: s.position + 1 }).where(eq(quoteItems.id, s.id))
-    await tx.insert(quoteItems).values({ id, quoteId, parentId: null, kind: 'group', position, name: body.name, description: body.description, descriptionHtml: body.descriptionHtml, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: 9, visibility: 'visible', collapsed: false, priceBookItemId: sectionId, createdAt: now, updatedAt: now })   // (REG-594) the section it came from — the Price book's "Used in n quotes"
+    await tx.insert(quoteItems).values({ id, quoteId, parentId: null, kind: 'group', position, name: body.name, description: body.description, descriptionHtml: body.descriptionHtml, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: studio.gstPct, ...marks(body), collapsed: false, priceBookItemId: sectionId, createdAt: now, updatedAt: now })   // (REG-594) the section it came from — the Price book's "Used in n quotes"
     let k = 0
     for (const l of body.lines) await tx.insert(quoteItems).values(line(l, id, k++))
     for (const s of body.subs) {
       const sid = randomUUID()
-      await tx.insert(quoteItems).values({ id: sid, quoteId, parentId: id, kind: 'group', position: k++, name: s.name, description: s.description, descriptionHtml: s.descriptionHtml, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: 9, visibility: 'visible', collapsed: false, createdAt: now, updatedAt: now })
+      await tx.insert(quoteItems).values({ id: sid, quoteId, parentId: id, kind: 'group', position: k++, name: s.name, description: s.description, descriptionHtml: s.descriptionHtml, status: 'Pending', qty: 1, costMinor: 0, markupMinor: 0, discountPct: 0, gstPct: studio.gstPct, ...marks(s), collapsed: false, createdAt: now, updatedAt: now })
       let j = 0
       for (const l of s.lines) await tx.insert(quoteItems).values(line(l, sid, j++))
     }
@@ -395,10 +487,6 @@ export async function insertPriceBookSection(quoteId: string, sectionId: string,
   await renumber(quoteId, null)
   await sync(q.id)
   return itemOf(id)
-}
-/** The studio's saved sections, newest first — the popover's list after a save. */
-export async function listPriceBookSections(): Promise<PriceBookSection[]> {
-  return db.select().from(priceBookSections).where(isNull(priceBookSections.deletedAt)).orderBy(asc(priceBookSections.name))
 }
 
 /** Undo / redo: the editor keeps snapshots of the lines and writes one back whole. */
@@ -423,6 +511,8 @@ export async function replaceQuoteItems(quoteId: string, items: QuoteItem[]): Pr
       unit: set.unit ?? null, costMinor: set.costMinor ?? 0, markupMinor: Math.max(-(set.costMinor ?? 0), set.markupMinor ?? 0), discountPct: set.discountPct ?? 0, gstPct: set.gstPct ?? 9,
       room: set.room ?? null, category: set.category ?? null, section: set.section ?? null, visibility: set.visibility ?? 'visible', collapsed: set.collapsed ?? false,
       optional: set.optional ?? false, printAs: set.printAs ?? null, printAsText: set.printAsText ?? null, highlight: set.highlight ?? null, noNumber: set.noNumber ?? false,
+      /* (parity §8.2 · E-32, REG-623) Undo used to write a line back without these four — a section lost its one-line print, a line its rebate. */
+      printOneLine: set.printOneLine ?? false, rebateMinor: set.rebateMinor ?? 0, vendor: set.vendor ?? null, link: set.link ?? null,
       priceBookItemId: typeof i.priceBookItemId === 'string' ? i.priceBookItemId : null,
       createdAt: Number.isFinite(c.getTime()) ? c : now, updatedAt: now,
     }

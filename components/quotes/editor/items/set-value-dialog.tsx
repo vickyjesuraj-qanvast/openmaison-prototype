@@ -7,7 +7,7 @@ import { TextField } from '@/components/om/text-field'
 import { UNITS } from '@/lib/quotes/items-model'
 import { filterNumeric, readNumber } from '@/lib/quotes/arith'
 
-export type SetField = 'qty' | 'unit' | 'cost' | 'markupPct' | 'unitPrice' | 'discount' | 'gst' | 'room' | 'category' | 'section'
+export type SetField = 'qty' | 'unit' | 'cost' | 'markupPct' | 'unitPrice' | 'discount' | 'gst' | 'room' | 'category' | 'section' | 'vendor'
 const FIELDS: { key: SetField; label: string; kind: 'number' | 'money' | 'pct' | 'unit' | 'label' }[] = [
   { key: 'qty', label: 'Qty', kind: 'number' },
   { key: 'unit', label: 'Unit', kind: 'unit' },
@@ -19,6 +19,7 @@ const FIELDS: { key: SetField; label: string; kind: 'number' | 'money' | 'pct' |
   { key: 'room', label: 'Room', kind: 'label' },
   { key: 'category', label: 'Category', kind: 'label' },
   { key: 'section', label: 'Section label', kind: 'label' },
+  { key: 'vendor', label: 'Vendor/Sub', kind: 'label' },   // (REG-623) every ticked line from one supplier
 ]
 
 /**
@@ -29,7 +30,7 @@ const FIELDS: { key: SetField; label: string; kind: 'number' | 'money' | 'pct' |
 export function SetValueDialog({ open, count, labels, onClose, onApply }: {
   open: boolean
   count: number
-  labels: { rooms: string[]; categories: string[]; sections: string[] }
+  labels: { rooms: string[]; categories: string[]; sections: string[]; vendors: string[] }
   onClose: () => void
   onApply: (field: SetField, value: string | number) => void
 }) {
@@ -38,7 +39,7 @@ export function SetValueDialog({ open, count, labels, onClose, onApply }: {
   const [wasOpen, setWasOpen] = useState(false)
   if (open !== wasOpen) { setWasOpen(open); if (open) setValue('') }   // render-phase adjust: every opening starts empty
   const def = FIELDS.find((f) => f.key === field)!
-  const options = def.kind === 'unit' ? UNITS : def.kind === 'label' ? (field === 'room' ? labels.rooms : field === 'category' ? labels.categories : labels.sections) : null
+  const options = def.kind === 'unit' ? UNITS : def.kind === 'label' ? (field === 'room' ? labels.rooms : field === 'category' ? labels.categories : field === 'vendor' ? labels.vendors : labels.sections) : null
   const numeric = def.kind === 'number' || def.kind === 'money' || def.kind === 'pct'
   const n = numeric ? readNumber(value.trim()) : NaN
   const valid = numeric ? value.trim() !== '' && Number.isFinite(n) && n >= 0 && (def.kind !== 'pct' || field === 'markupPct' || n <= 100) : value.trim() !== ''

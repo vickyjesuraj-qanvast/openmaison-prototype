@@ -1,0 +1,9 @@
+/* (REG-627) The line comments drawer on the Tasks comments' stylesheet (comments-panel.module.css) — a thread per line in the all-lines view,
+   each headed by its line's name as a button that opens that thread. */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.group + .group { padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.lineHead { display: flex; align-items: center; gap: var(--om-spacing-2); width: 100%; min-height: 32px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-default); }
+.lineName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) { .lineHead:hover { color: var(--om-color-primary-default); } }
+.lineHead:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.empty { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

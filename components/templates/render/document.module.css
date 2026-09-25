@@ -108,6 +108,12 @@
 .caption { text-align: center; margin-top: 2px; }
 .pageBreakMark { height: 0; }
 .watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; font: 700 120px/1 Inter, system-ui, sans-serif; color: rgba(20, 18, 31, .07); transform: rotate(-28deg); letter-spacing: .1em; text-transform: uppercase; }
+/* (REG-618, parity Q-16) The payment schedule's footnote. */
+.payFoot { margin-top: 1.5mm; white-space: pre-line; }
+/* (REG-618, parity Q-20) The Social links element: a mark and a handle per network, in a row that wraps or a column. */
+.social { display: flex; flex-wrap: wrap; align-items: center; }
+.social[data-layout='column'] { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; }
+.socialItem { display: inline-flex; align-items: center; gap: .35em; white-space: nowrap; }
 .powered { position: absolute; font: 400 8px/1 Inter, system-ui, sans-serif; color: var(--om-color-on-surface-secondary); }
 
 /* ── thumbnails ── */

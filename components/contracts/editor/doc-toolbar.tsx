@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState } from 'react'
+import { useId, useState, useRef } from 'react'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -8,6 +8,7 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { TOKEN_GROUPS, tokenChip, type TokenKey, type TokenValues } from '@/lib/contracts/tokens'
 import tools from '@/components/quotes/editor/text/rich-editor.module.css'
 import styles from './contract-editor.module.css'
@@ -36,6 +37,8 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
 }) {
   const snackbar = useSnackbar()
   const [menu, setMenu] = useState<'style' | 'align' | 'smart' | null>(null)
+  const styleAnchor = useRef<HTMLSpanElement>(null)
+  const alignAnchor = useRef<HTMLSpanElement>(null)
   const [smartGroup, setSmartGroup] = useState<string | null>(null)
   const [linkOpen, setLinkOpen] = useState(false)
   const [url, setUrl] = useState('')
@@ -69,18 +72,19 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
           {tool('redo', 'Redo', () => editor.current?.exec('redo'))}
         </span>
         <span className={styles.barRule} aria-hidden />
-        <span className={`${styles.barGroup} ${styles.anchor}`}>
+        <span className={`${styles.barGroup} ${styles.anchor}`} ref={styleAnchor}>
           <button type="button" className={styles.styleBtn} aria-haspopup="menu" aria-expanded={menu === 'style'} data-open={menu === 'style' || undefined} disabled={disabled}
                   onMouseDown={keep} onClick={() => setMenu((m) => (m === 'style' ? null : 'style'))}>
             {cur.label}<span className={styles.chev} data-open={menu === 'style' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          <Dropdown open={menu === 'style'} onClose={() => setMenu(null)} align="left" width={220} sheetTitle="Text style">
+          {/* (sweep S2 #1) through the body portal — inside the tools' sideways scroller the menu was clipped to nothing */}
+          <PortalMenu open={menu === 'style'} anchor={styleAnchor} onClose={() => setMenu(null)} align="left" width={220} role="menu" sheetTitle="Text style">
             {BLOCKS.map((b) => (
               <DropdownItem key={b.kind} role="menuitemradio" checked={b.kind === state.block} onSelect={() => { setMenu(null); editor.current?.formatBlock(b.kind) }}>
                 <span className={`${styles.menuText} ${b.cls ?? ''}`}>{b.label}</span>
               </DropdownItem>
             ))}
-          </Dropdown>
+          </PortalMenu>
         </span>
         <span className={styles.barRule} aria-hidden />
         <span className={styles.barGroup}>
@@ -90,20 +94,20 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
           {tool('format_paint', 'Highlight', () => editor.current?.toggleHighlight(), state.highlight)}
         </span>
         <span className={styles.barRule} aria-hidden />
-        <span className={`${styles.barGroup} ${styles.anchor}`}>
+        <span className={`${styles.barGroup} ${styles.anchor}`} ref={alignAnchor}>
           <Tooltip label="Alignment" disabled={menu === 'align'}>
             <button type="button" className={styles.styleBtn} aria-label={`Alignment: ${curAlign.label}`} aria-haspopup="menu" aria-expanded={menu === 'align'} data-open={menu === 'align' || undefined} disabled={disabled}
                     onMouseDown={keep} onClick={() => setMenu((m) => (m === 'align' ? null : 'align'))}>
               <Icon name={curAlign.icon} size={24} weight={300} /><span className={styles.chev} data-open={menu === 'align' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>
           </Tooltip>
-          <Dropdown open={menu === 'align'} onClose={() => setMenu(null)} align="left" width={200} sheetTitle="Alignment">
+          <PortalMenu open={menu === 'align'} anchor={alignAnchor} onClose={() => setMenu(null)} align="left" width={200} role="menu" sheetTitle="Alignment">
             {ALIGNS.map((x) => (
               <DropdownItem key={x.a} role="menuitemradio" checked={x.a === state.align} onSelect={() => { setMenu(null); editor.current?.align(x.a) }}>
                 <span className={styles.menuIcon}><Icon name={x.icon} size={20} /></span>{x.label}
               </DropdownItem>
             ))}
-          </Dropdown>
+          </PortalMenu>
         </span>
         <span className={styles.barGroup}>
           {tool('format_list_bulleted', 'Bulleted list', () => editor.current?.exec('insertUnorderedList'), state.ul)}
@@ -131,22 +135,27 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
               <>
                 <DropdownItem onSelect={() => setSmartGroup(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{smart.label}</DropdownItem>
                 <DropdownDivider />
+                {/* (REG-632, parity Q-12) Each record with what it prints on this document; an empty one says so — it prints its label in brackets. */}
                 {smart.tokens.map((t) => (
                   <DropdownItem key={t.key} onSelect={() => insertToken(t.key)}>
                     <span className={styles.menuText}>{t.label}</span>
-                    <span className={styles.menuSample}>{values[t.key] || '—'}</span>
+                    {values[t.key]?.trim() ? <span className={styles.menuSample}>{values[t.key]}</span> : <span className={styles.menuSample} data-empty title={`Prints “[${t.label}]” until it is filled in`}>Empty</span>}
                   </DropdownItem>
                 ))}
               </>
             ) : (
               <>
                 <div className={styles.menuHead}>Insert a record</div>
-                {TOKEN_GROUPS.map((g) => (
-                  <DropdownItem key={g.key} submenu onSelect={() => setSmartGroup(g.key)}>
-                    <span className={styles.menuText}>{g.label}</span>
-                    <span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span>
-                  </DropdownItem>
-                ))}
+                {TOKEN_GROUPS.map((g) => {
+                  const empty = g.tokens.filter((t) => !values[t.key]?.trim()).length
+                  return (
+                    <DropdownItem key={g.key} submenu onSelect={() => setSmartGroup(g.key)}>
+                      <span className={styles.menuText}>{g.label}</span>
+                      {empty ? <span className={styles.menuSample} data-empty>{empty} empty</span> : null}
+                      <span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span>
+                    </DropdownItem>
+                  )
+                })}
               </>
             )}
           </Dropdown>

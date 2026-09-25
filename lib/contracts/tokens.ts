@@ -8,7 +8,7 @@
 export type TokenKey =
   | 'client.name' | 'client.phone' | 'client.email'
   | 'lead.address' | 'lead.propertyType' | 'lead.projectRef'
-  | 'studio.name' | 'studio.address' | 'studio.phone' | 'studio.email' | 'studio.uen'
+  | 'studio.name' | 'studio.address' | 'studio.phone' | 'studio.email' | 'studio.uen' | 'studio.gst'
   | 'quote.number' | 'quote.total' | 'quote.validUntil'
   | 'date.today' | 'date.contract'
 export type TokenGroup = { key: string; label: string; tokens: { key: TokenKey; label: string }[] }
@@ -16,7 +16,7 @@ export type TokenGroup = { key: string; label: string; tokens: { key: TokenKey; 
 export const TOKEN_GROUPS: TokenGroup[] = [
   { key: 'client', label: 'Client', tokens: [{ key: 'client.name', label: 'Client name' }, { key: 'client.phone', label: 'Client phone' }, { key: 'client.email', label: 'Client email' }] },
   { key: 'lead', label: 'Project', tokens: [{ key: 'lead.address', label: 'Property address' }, { key: 'lead.propertyType', label: 'Property type' }, { key: 'lead.projectRef', label: 'Project ref' }] },
-  { key: 'studio', label: 'Studio', tokens: [{ key: 'studio.name', label: 'Studio name' }, { key: 'studio.address', label: 'Studio address' }, { key: 'studio.phone', label: 'Studio phone' }, { key: 'studio.email', label: 'Studio email' }, { key: 'studio.uen', label: 'UEN' }] },
+  { key: 'studio', label: 'Studio', tokens: [{ key: 'studio.name', label: 'Studio name' }, { key: 'studio.address', label: 'Studio address' }, { key: 'studio.phone', label: 'Studio phone' }, { key: 'studio.email', label: 'Studio email' }, { key: 'studio.uen', label: 'UEN' }, { key: 'studio.gst', label: 'GST reg. no.' }] },   /* (REG-632, parity Q-11) the issuer's GST number */
   { key: 'quote', label: 'Quote', tokens: [{ key: 'quote.number', label: 'Quote number' }, { key: 'quote.total', label: 'Quote total' }, { key: 'quote.validUntil', label: 'Quote valid until' }] },
   { key: 'date', label: 'Date', tokens: [{ key: 'date.today', label: 'Today’s date' }, { key: 'date.contract', label: 'Contract date' }] },
 ]

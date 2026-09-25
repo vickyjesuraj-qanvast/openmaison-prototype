@@ -87,7 +87,8 @@ export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, c
             <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={open === 'more'} onClick={() => setOpen((m) => (m === 'more' ? null : 'more'))} />
           </Tooltip>
           <Dropdown open={open === 'more'} onClose={() => setOpen(null)} align="right" width={264} sheetTitle={title}>
-            <span onClick={() => setOpen(null)} style={{ display: 'contents' }}>
+            {/* (sweep S2 #23) a greyed row stays put — its press closed the menu with nothing done; an enabled row still closes it */}
+            <span onClick={(e) => { const item = (e.target as HTMLElement).closest('[role^="menuitem"]'); if (item && item.getAttribute('aria-disabled') !== 'true' && !item.hasAttribute('aria-haspopup')) setOpen(null) }} style={{ display: 'contents' }}>
               {folded ? foldedItems : null}
               {menu}
             </span>

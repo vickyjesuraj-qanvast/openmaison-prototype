@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { BLOCK_LABEL, isCanvas, mm, mergeBrand, PAPER_MM, resolveColor, type BrandKit, type CanvasBlock, type TemplateDesign } from '@/lib/templates/model'
+import { BLOCK_LABEL, isCanvas, mm, mergeBrand, PAPER_MM, resolveColor, WATERMARK_OPACITY, type BrandKit, type CanvasBlock, type TemplateDesign } from '@/lib/templates/model'
 import { fieldValues } from '@/lib/templates/fields'
 import { clientViewFromDesign, type ClientView } from '@/lib/templates/client-view'
-import { docTotals, type DocData } from '@/lib/templates/data'
+import { docLetterhead, docTotals, type DocData } from '@/lib/templates/data'
 import { CanvasView, type Interactive, type RenderCtx } from './canvas'
 import { buildSlices, type PageCtx, type Slice, type TableExtras } from './slices'
 import styles from './document.module.css'
@@ -74,7 +74,9 @@ function plan(slices: Slice[], heights: Record<string, number>, tables: Record<s
  * and over the footer canvases; the cover is its own page. `interactive` turns on selection, dragging and inline text.
  */
 export function TemplateDocument({ design, brand: studioBrand, data, view, zoom = 1, interactive, onPaginated, firstPageOnly, watermark, print, underlay, className }: DocumentProps) {
-  const brand = useMemo(() => mergeBrand(studioBrand, design.brand), [studioBrand, design.brand])
+  // (REG-618, parity Q-26) A quote raised under another issuing entity prints that entity's logo wherever the template places the brand logo.
+  const entityLogo = useMemo(() => docLetterhead(data).logo, [data])
+  const brand = useMemo(() => { const b = mergeBrand(studioBrand, design.brand); return entityLogo ? { ...b, logo: entityLogo } : b }, [studioBrand, design.brand, entityLogo])
   const paper = PAPER_MM[design.page.paper]
   const m = design.page.margins
   const pageW = mm(paper.w), pageH = mm(paper.h)
@@ -196,7 +198,7 @@ export function TemplateDocument({ design, brand: studioBrand, data, view, zoom 
                   {showFoot ? <div className={styles.ftr} style={{ bottom: mm(m.bottom), left: mm(m.left) }}><CanvasView block={footer} ctx={pctx} width={paper.w - m.left - m.right} height={ftrH} onMeasure={onCanvasMeasure} measureKey={measureKey} /></div> : null}
                 </>
               )}
-              {wm ? <div className={styles.watermark} aria-hidden>{wm}</div> : null}
+              {wm ? <div className={styles.watermark} aria-hidden style={watermark ? undefined : { color: `rgba(20, 18, 31, ${(design.page.watermarkOpacity ?? WATERMARK_OPACITY) / 100})` }}>{wm}</div> : null}
               {last && cv.branding && !p.cover ? <div className={styles.powered} style={{ bottom: Math.max(2, mm(m.bottom) / 2 - 6), right: mm(m.right) }}>Powered by OpenMaison</div> : null}
             </div>
           )

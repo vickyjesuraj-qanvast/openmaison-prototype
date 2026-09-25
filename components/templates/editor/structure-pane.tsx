@@ -7,7 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
-import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, type Block, type BlockKind, type Paper, type TemplateDesign } from '@/lib/templates/model'
+import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, WATERMARK_OPACITY, type Block, type BlockKind, type Paper, type TemplateDesign } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { flowBlocks, patchBlock, reorderFlow } from './editor-state'
 import { Group, Num, Seg, Sub, Txt, Sel } from './inspector-controls'
@@ -67,6 +67,8 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
             <Num key={side} label={`${side.charAt(0).toUpperCase()}${side.slice(1)}`} unit="mm" value={design.page.margins[side]} min={0} max={60} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, margins: { ...d.page.margins, [side]: v } } }), { coalesce: `margin-${side}` })} />
           ))}
           <Txt label="Watermark" value={design.page.watermark} fields={false} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, watermark: v } }), { coalesce: 'watermark' })} />
+          {/* (REG-618, parity Q-18) How strongly the watermark word prints. */}
+          {design.page.watermark ? <Num label="Watermark strength" unit="%" value={design.page.watermarkOpacity ?? WATERMARK_OPACITY} min={3} max={40} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, watermarkOpacity: v } }), { coalesce: 'watermark-opacity' })} /> : null}
           {/* (REG-592) How the dates print — Dyel's "Sunday, 7 February 2026". */}
           <Sel label="Dates print as" value={design.page.dateFormat} options={[{ value: 'short', label: '17 Sep ’26' }, { value: 'long', label: '17 September 2026' }, { value: 'weekday', label: 'Sunday, 17 September 2026' }]} onChange={(v) => onDesign((d) => ({ ...d, page: { ...d.page, dateFormat: v } }))} />
         </Group>

@@ -20,9 +20,10 @@ export function DeleteContractsDialog({ open, count, onNo, onYes }: { open: bool
               <DangerButton onClick={onYes}>Yes</DangerButton>
             </>}>
       <span style={{ margin: '-12px 0', font: 'var(--om-type-body-m)', color: 'var(--om-color-on-surface-default)' }}>
+        {/* (REG-631, contracts parity E-115) Deleting is soft: the editor's dialog and this one say the same thing. */}
         {many
-          ? 'Are you sure you want to delete these contracts from this project? This action cannot be undone.'
-          : 'Are you sure you want to delete this contract from this project? This action cannot be undone.'}
+          ? 'Are you sure you want to delete these contracts? You can restore them from Deleted Contracts.'
+          : 'Are you sure you want to delete this contract? You can restore it from Deleted Contracts.'}
       </span>
     </Dialog>
   )

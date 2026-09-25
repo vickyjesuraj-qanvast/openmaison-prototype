@@ -174,3 +174,15 @@
   .panel[data-mode='all'] .block[data-fill] { flex: 0 0 auto; min-height: auto; }
   .panel[data-mode='all'] .block[data-fill] > * { flex: 0 0 auto; }
 }
+
+/* (REG-627, parity Q-16) Upload a quote: the reading line, the lines read (a compact table: Section · Item · Qty · Unit · Amount), the rule. */
+.uploadNote { display: flex; align-items: center; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.uploadNote[data-tone='error'] { color: var(--om-color-tertiary-red-default); }
+.uploadTable { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.uploadRow { display: grid; grid-template-columns: minmax(96px, 160px) minmax(0, 1fr) 56px 72px 112px; gap: var(--om-spacing-3); align-items: center; min-height: 40px; padding: 0 var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.uploadRow + .uploadRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.uploadRow[data-head] { min-height: 36px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.uploadRow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uploadRow > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.uploadMore, .uploadHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) { .uploadRow { grid-template-columns: minmax(0, 1fr) 96px; } .uploadRow > span:nth-child(1), .uploadRow > span:nth-child(3), .uploadRow > span:nth-child(4) { display: none; } }

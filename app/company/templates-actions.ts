@@ -8,7 +8,8 @@ import { quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quote
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { STUDIO_KEY, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
-import { members } from '@/lib/db/schema'
+import { fetchViewer } from '@/lib/leads/visibility'
+import { assertMayChangeTemplate, assertMaySetDefault } from '@/lib/company/template-guard'
 import { findSplit, presetOf } from '@/lib/quotes/payments'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { createPaymentTemplate } from '@/app/company/payment-templates-actions'
@@ -123,9 +124,9 @@ export async function publishTemplate(id: string, opts: { note?: string; setDefa
   const row = await templateRow(id)
   if (row.deletedAt) throw new Error('deleted')   // (REG-502) a deleted template cannot publish — the client flag was the only guard
   const now = new Date()
-  // (REG-501) With approval required, only an Owner or Admin publishes; a Designer submits (submitTemplate).
-  const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
-  if (approval === 'required' && !(await isApprover(ME, me?.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
+  // (REG-501) With approval required, only an Owner or Admin publishes; a Designer submits (submitTemplate). (REG-646) The signed-in member's role decides.
+  const [approval, viewer] = await Promise.all([fetchTemplateApproval(), fetchViewer()])
+  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
   let design: TemplateDesign, defaults: TemplateDefaults
   if (row.draftJson) {
     const j = JSON.parse(row.draftJson) as { design?: unknown; defaults?: unknown }
@@ -153,6 +154,8 @@ export async function submitTemplate(id: string, note: string): Promise<void> {
 
 /** (REG-501) Request changes: the submission ends and the note waits at the top of the designer's editor until they submit again. */
 export async function requestTemplateChanges(id: string, note: string): Promise<void> {
+  const viewer = await fetchViewer()
+  if (!(await isApprover(viewer.id, viewer.role))) throw new Error('approvers only')   // (REG-646, E-87) only an approver answers a submission
   await templateRow(id)
   await db.update(quoteTemplates).set({ submittedAt: null, reviewNote: note.trim() || 'Changes requested', updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
@@ -163,8 +166,8 @@ export async function rollbackTemplate(id: string, version: number): Promise<{ v
   const row = await templateRow(id)
   if (row.deletedAt) throw new Error('deleted')
   // (REG-501) A rollback publishes: under approval it is an Owner's / Admin's move, exactly like Publish.
-  const [approval, [me]] = await Promise.all([fetchTemplateApproval(), db.select({ role: members.role }).from(members).where(eq(members.id, ME))])
-  if (approval === 'required' && !(await isApprover(ME, me?.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
+  const [approval, viewer] = await Promise.all([fetchTemplateApproval(), fetchViewer()])
+  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
   const [v] = await db.select().from(quoteTemplateVersions).where(and(eq(quoteTemplateVersions.templateId, id), eq(quoteTemplateVersions.version, version)))
   if (!v) throw new Error('version not found')
   const now = new Date()
@@ -177,6 +180,7 @@ export async function rollbackTemplate(id: string, version: number): Promise<{ v
 }
 
 export async function renameTemplate(id: string, name: string): Promise<void> {
+  await assertMayChangeTemplate(undefined)   // (REG-646) a quote template keeps no author: Owners and Admins
   const clean = name.trim()
   if (!clean) throw new Error('empty')
   await templateRow(id)
@@ -185,6 +189,7 @@ export async function renameTemplate(id: string, name: string): Promise<void> {
 }
 
 export async function setDefaultTemplate(id: string): Promise<void> {
+  await assertMaySetDefault()   // (REG-646) what every Blank Quote starts with is the Owners' and Admins' call
   const row = await templateRow(id)
   if (row.status !== 'published' || row.deletedAt) throw new Error('not published')
   await db.update(quoteTemplates).set({ isDefault: false })
@@ -202,6 +207,7 @@ export async function duplicateTemplate(id: string): Promise<string> {
  * approval cannot be deleted.
  */
 export async function deleteTemplate(id: string): Promise<void> {
+  await assertMayChangeTemplate(undefined)
   const row = await templateRow(id)
   if (row.isDefault) throw new Error('default')
   if (row.submittedAt) throw new Error('awaiting approval')
@@ -209,12 +215,14 @@ export async function deleteTemplate(id: string): Promise<void> {
   touch(id)
 }
 export async function restoreTemplate(id: string): Promise<void> {
+  await assertMayChangeTemplate(undefined)
   await templateRow(id)
   await db.update(quoteTemplates).set({ deletedAt: null, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
 /** Delete forever: only once no live quote is on the template — they would lose what they print through. */
 export async function deleteTemplateForever(id: string): Promise<void> {
+  await assertMayChangeTemplate(undefined)
   const row = await templateRow(id)
   if (!row.deletedAt) throw new Error('not deleted')
   const [uses] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.templateId, id), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))   // the gallery's usedBy predicate: live, unarchived quotes
@@ -335,9 +343,36 @@ export async function loadQuoteDocData(quoteId: string): Promise<DocData | null>
   return fetchQuoteDocData(quoteId)
 }
 
-/** Company › Templates › Brand kit (the kit) and Company › Profile (the company details): one `brand` record every template prints (REG-554). */
-export async function saveBrand(setting: BrandSetting): Promise<void> {
-  const clean = parseBrandSetting(setting)
+/** Company › Templates › Brand kit (the kit) and Company › Profile (the company details): one `brand` record every template prints (REG-554).
+    (REG-646, settings parity Q-07 · E-86) Owners and Admins only; each page sends only its own half, merged onto the record as it is now —
+    Profile and the Brand kit open in two tabs no longer overwrite each other's changes. */
+export async function saveBrand(part: { kit?: BrandSetting['kit']; details?: BrandSetting['details'] }): Promise<void> {
+  const viewer = await fetchViewer()
+  if (viewer.role !== 'Owner' && viewer.role !== 'Admin') throw new Error('owners and admins only')
+  const [cur] = await db.select().from(settings).where(eq(settings.key, BRAND_KEY)).limit(1)
+  let stored: Partial<BrandSetting> = {}
+  if (cur) { try { stored = JSON.parse(cur.value) as Partial<BrandSetting> } catch { stored = {} } }
+  const clean = parseBrandSetting({ ...stored, ...(part.kit ? { kit: part.kit } : {}), ...(part.details ? { details: part.details } : {}) })
+  /* (REG-647, settings parity Q-12 · E-90) The website's intake address keeps the slug it was first given: a studio renamed before it set
+     one of its own keeps the address its form already points at. */
+  if (part.details) {
+    const before = parseBrandSetting(stored).details.name
+    if (before && before !== clean.details.name) {
+      const { fetchLeadCapture, LEAD_CAPTURE_KEY } = await import('@/lib/settings/queries')
+      const { intakeSlug } = await import('@/lib/settings/types')
+      const cap = await fetchLeadCapture()
+      if (!cap.emailSlug) {
+        const value = JSON.stringify({ ...cap, emailSlug: intakeSlug(before) })
+        await db.insert(settings).values({ key: LEAD_CAPTURE_KEY, value, updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } })
+      }
+    }
+  }
+  /* (REG-647, settings parity Q-10) An entity in use is retired, never removed; a renamed entity's quotes and contracts follow it. */
+  if (part.details) {
+    const { reconcileEntities } = await import('@/lib/company/entities')
+    const refusal = await reconcileEntities(parseBrandSetting(stored).details.entities, clean.details.entities)
+    if (refusal) throw new Error(refusal)
+  }
   const now = new Date()
   await db.insert(settings).values({ key: BRAND_KEY, value: JSON.stringify(clean), updatedAt: now }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(clean), updatedAt: now } })
   // The studio record (settings key `studio`, REG-415) owns the name and phone the quote editor prints: keep it in step.
@@ -358,12 +393,14 @@ export async function setItemOptional(quoteId: string, itemId: string, optional:
 
 /** (REG-524) The Deleted Templates sheet's bulk Restore — one action, one revalidation. */
 export async function restoreTemplates(ids: string[]): Promise<void> {
+  await assertMayChangeTemplate(undefined)
   const now = new Date()
   for (const id of ids) await db.update(quoteTemplates).set({ deletedAt: null, updatedAt: now, updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch()
 }
 /** (REG-524) Bulk Delete Forever: the in-use ones are skipped (the sheet never offers them), the rest go in one pass. */
 export async function deleteTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
+  await assertMayChangeTemplate(undefined)
   let removed = 0, kept = 0
   for (const id of ids) {
     const [row] = await db.select({ deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, id))

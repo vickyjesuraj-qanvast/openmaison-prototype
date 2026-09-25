@@ -111,8 +111,10 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
  * `variant="notes"` = Notes › Auto Fill (931:45344, spec 02): 552×168, the helper 237 wide and centred.
  * Keyboard: the box is a real tab stop; Enter / Space open the file picker (audit 2026-08-30).
  */
-export function Dropzone({ title, helper, onPick, uploading, accept, variant, onBrowse }: {
+export function Dropzone({ title, helper, onPick, uploading, accept, variant, onBrowse, label = 'Upload file' }: {
   title: ReactNode; helper?: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
+  /** (sweep S3) What the box uploads, for a screen reader — two dropzones side by side must not both be "Upload file". */
+  label?: string
   /** notes = the Auto Fill box (168 tall) · compact = the quote editor's 68px strip (1267:36650, REG-419). */
   variant?: 'notes' | 'compact'
   /** A click / Enter opens THIS (the quote editor's Attach files modal) instead of the native picker; a drop still uploads. */
@@ -142,7 +144,7 @@ export function Dropzone({ title, helper, onPick, uploading, accept, variant, on
       onDrop={(e) => { e.preventDefault(); setOver(false); onPick(e.dataTransfer.files[0]) }}
       role="button"
       tabIndex={0}
-      aria-label="Upload file"
+      aria-label={label}
     >
       <span className={styles.dropTitle}>{title}</span>
       {helper ? <span className={styles.dropHelper}>{helper}</span> : null}

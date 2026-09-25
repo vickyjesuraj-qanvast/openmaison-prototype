@@ -1,8 +1,9 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leads, members, quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, settings, type Member, type Quote, type QuoteItem, type QuotePayment, type QuoteTemplate } from '@/lib/db/schema'
-import { fetchStudio, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
+import { fetchViewer } from '@/lib/leads/visibility'
+import { leadAssignees, leads, members, quoteItems, quotePayments, quoteTemplateVersions, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, settings, type Member, type Quote, type QuoteItem, type QuotePayment, type QuoteTemplate } from '@/lib/db/schema'
+import { fetchQuoteRules, fetchStudio, fetchTemplateApproval, fetchTradeNotes, isApprover } from '@/lib/settings/queries'
 import type { TemplateApproval } from '@/lib/settings/types'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { isPaper, parseDefaults, parseDesign, isTemplateStatus, type BrandKit, type StudioDetails, type TemplateDefaults, type TemplateDesign, type TemplateRecord, type TemplateSummary, type TemplateVersion } from './model'
@@ -14,15 +15,18 @@ import type { PickerExtras } from './picker'
 
 /** (REG-538) What every picker names beside a template's defaults: the payment library's names and the live text templates' titles. */
 export async function pickerExtras(): Promise<PickerExtras> {
-  const [splits, texts] = await Promise.all([
+  const [splits, texts, folders] = await Promise.all([
     fetchPaymentSplits(),
     db.select({ id: quoteTextTemplates.id, kind: quoteTextTemplates.kind, title: quoteTextTemplates.title }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)).orderBy(asc(quoteTextTemplates.createdAt)),
+    fetchFolders('quotes'),   // (REG-664)
   ])
-  return { splits: splits.map((s) => ({ id: s.id, name: s.name })), texts }
+  return { splits: splits.map((s) => ({ id: s.id, name: s.name })), texts, folders: folders.map((f) => ({ id: f.id, name: f.name, parentId: f.parentId })) }
 }
 import { readiness, type Readiness } from './readiness'
 import { pickerTemplates, type PickerData } from './picker'
 import { diffQuoteItems, withRemoved } from '@/lib/quotes/diff'
+import { fetchQuoteContract } from '@/lib/quotes/contract-link'
+import { fetchFolders } from '@/lib/company/folders'
 
 /* Company › Templates › Quote templates (REG-485): the studio's templates, one template with its draft and versions, and
    the document data the preview and the thumbnails render through them. A template whose design was never saved (the
@@ -33,10 +37,11 @@ export const fallbackDesign = (): TemplateDesign => presetByKey('letter').design
 
 /** The brand kit (settings key `brand`) with the studio record's name and phone on top — those two live in Settings already. */
 export async function fetchBrand(): Promise<BrandSetting> {
-  const [row, studio] = await Promise.all([db.select().from(settings).where(eq(settings.key, BRAND_KEY)).limit(1), fetchStudio()])
+  const [row, studio, tradeNotes, rules] = await Promise.all([db.select().from(settings).where(eq(settings.key, BRAND_KEY)).limit(1), fetchStudio(), fetchTradeNotes(), fetchQuoteRules()])
   let setting = DEFAULT_BRAND_SETTING
   if (row[0]) { try { setting = parseBrandSetting(JSON.parse(row[0].value)) } catch { setting = DEFAULT_BRAND_SETTING } }
-  return { kit: setting.kit, details: { ...setting.details, name: studio.name, phone: studio.phone || setting.details.phone } }
+  // (REG-617, parity Q-08) The trades' notes ride with the details so every renderer — preview, PDF, client view, the editor's sample — prints them.
+  return { kit: setting.kit, details: { ...setting.details, name: studio.name, phone: studio.phone || setting.details.phone, tradeNotes, preparedByMode: rules.preparedBy, gstRegistered: studio.gstRegistered } }   // (REG-618, parity Q-25) · (REG-645) the studio's GST registration
 }
 
 const stamp = (d: Date | null | undefined) => (d ? d.getTime() : null)
@@ -54,27 +59,30 @@ function summary(row: QuoteTemplate, usedBy: number, team: Member[]): TemplateSu
     updatedAt: stamp(row.updatedAt) ?? stamp(row.publishedAt) ?? stamp(row.createdAt), updatedBy: who(row.updatedBy, team), publishedAt: stamp(row.publishedAt), lastUsedAt: stamp(row.lastUsedAt),
     usedBy, hasDraft, sourceFile: row.sourceFile, design: status === 'draft' && draft ? draft.design : published,
     submitted: row.submittedAt ? { by: who(row.submittedBy, team), at: row.submittedAt.getTime(), note: row.submitNote ?? '' } : null, reviewNote: row.reviewNote,
-    deletedAt: stamp(row.deletedAt), deletedBy: who(row.deletedBy, team),
+    deletedAt: stamp(row.deletedAt), deletedBy: who(row.deletedBy, team), folderId: row.folderId ?? null, createdAt: row.createdAt.getTime(),
   }
 }
 
-export type TemplatesData = { templates: TemplateSummary[]; /** (REG-502) the soft-deleted ones, for the Deleted templates sheet */ deleted: TemplateSummary[]; brand: BrandKit; studio: StudioDetails; sample: DocData; now: number; /** (REG-501) the studio's approval setting — the gallery hides an empty Awaiting filter when it is off */ approval: TemplateApproval }
+export type TemplatesData = { templates: TemplateSummary[]; /** (REG-502) the soft-deleted ones, for the Deleted templates sheet */ deleted: TemplateSummary[]; brand: BrandKit; studio: StudioDetails; sample: DocData; now: number; /** (REG-501) the studio's approval setting — the gallery hides an empty Awaiting filter when it is off */ approval: TemplateApproval
+  /** (REG-646, settings parity Q-07) Whether the viewer runs the studio: the default, rename and delete are theirs, as are Profile and the brand kit. */
+  canRun: boolean }
 
 /** The gallery: every template that is not archived first, archived last; usage = live quotes that started from it. */
 export async function fetchTemplates(): Promise<TemplatesData> {
-  const [rows, team, uses, brand, approval] = await Promise.all([
+  const [rows, team, uses, brand, approval, viewer] = await Promise.all([
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.updatedAt), asc(quoteTemplates.createdAt)),
     db.select().from(members),
     db.select({ templateId: quotes.templateId, n: sql<number>`count(*)` }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId)).where(and(isNull(quotes.deletedAt), isNull(quotes.archivedAt), isNull(leads.deletedAt))).groupBy(quotes.templateId),   // (REG-538) quotes on a deleted lead do not count
     fetchBrand(),
     fetchTemplateApproval(),
+    fetchViewer(),
   ])
   const usedBy = new Map(uses.map((u) => [u.templateId, u.n]))
   const blank = usedBy.get(null) ?? 0   // (REG-538) a quote with no template prints through the studio default: it counts for it
   const all = rows.map((r) => summary(r, (usedBy.get(r.id) ?? 0) + (r.isDefault && !r.deletedAt ? blank : 0), team))
   const templates = all.filter((t) => !t.deletedAt)
   const deleted = all.filter((t) => !!t.deletedAt).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0))
-  return { approval,  templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  return { approval, canRun: viewer.role === 'Owner' || viewer.role === 'Admin', templates, deleted, brand: brand.kit, studio: brand.details, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
 }
 
 export async function fetchTemplate(id: string): Promise<TemplateRecord | null> {
@@ -169,21 +177,24 @@ export async function fetchQuoteVersions(quoteId: string): Promise<{ id: string;
 export async function fetchQuoteDocData(quoteId: string, version?: number): Promise<DocData | null> {
   const [quote] = await db.select().from(quotes).where(and(eq(quotes.id, quoteId), isNull(quotes.deletedAt)))
   if (!quote) return null
-  const [leadRows, team, liveItems, livePayments, brand] = await Promise.all([
+  const [leadRows, team, liveItems, livePayments, brand, assignees] = await Promise.all([
     db.select({ name: leads.name, phone: leads.phone, email: leads.email }).from(leads).where(eq(leads.id, quote.leadId)),
     db.select().from(members),
     db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId)).orderBy(asc(quoteItems.position), asc(quoteItems.createdAt)),
     db.select().from(quotePayments).where(eq(quotePayments.quoteId, quoteId)).orderBy(asc(quotePayments.position), asc(quotePayments.createdAt)),
     fetchBrand(),
+    db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, quote.leadId)),   // (REG-618, parity Q-25)
   ])
   const lead = leadRows[0]
   if (!lead) return null
+  const teamIds = assignees.map((a) => a.memberId)
+  const signer = quote.status === 'Signed' ? (await fetchQuoteContract(quoteId))?.signer ?? null : null   // (REG-632, contracts parity Q-09)
   if (version && version < quote.version) {
     const [row] = await db.select().from(quoteVersions).where(and(eq(quoteVersions.quoteId, quoteId), eq(quoteVersions.version, version)))
     const snap = row ? reviveSnapshot(row.snapshotJson) : null
-    if (snap) return docDataFromRecords({ quote: snap.quote, lead, studio: brand.details, members: team, items: snap.items, payments: snap.payments })
+    if (snap) return docDataFromRecords({ quote: snap.quote, lead, studio: brand.details, members: team, items: snap.items, payments: snap.payments, teamIds })
   }
-  return docDataFromRecords({ quote, lead, studio: brand.details, members: team, items: liveItems, payments: livePayments })
+  return docDataFromRecords({ quote, lead, studio: brand.details, members: team, items: liveItems, payments: livePayments, teamIds, signer })
 }
 
 export type QuotePreviewData = {

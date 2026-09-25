@@ -13,3 +13,5 @@
 }
 .ghost[data-leaving] { opacity: 0; pointer-events: none; }
 .ghost > * { flex: 1; min-width: 0; }
+/* (sweep S1) a ghost is never printed: printing during the beat prints the page itself */
+@media print { .ghost { display: none; } .content { opacity: 1 !important; } }

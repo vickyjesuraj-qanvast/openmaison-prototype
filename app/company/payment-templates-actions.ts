@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
 import { paymentTemplates, quotePayments, quotes, quoteTemplates } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
@@ -49,12 +50,12 @@ export async function savePaymentTemplate(id: string, patch: { name?: string; ro
   touch(id)
   return now.getTime()
 }
-export async function renamePaymentTemplate(id: string, name: string): Promise<void> { await savePaymentTemplate(id, { name }) }
+export async function renamePaymentTemplate(id: string, name: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await savePaymentTemplate(id, { name }) }   // (REG-646)
 export async function duplicatePaymentTemplate(id: string): Promise<string> { return createPaymentTemplate({ source: { kind: 'copy', id } }) }
 /** Soft delete; the studio default (the seeded 10/30/30/30) stays — every fallback lands on it. */
 export async function deletePaymentTemplate(id: string): Promise<void> {
   if (id === DEFAULT_SPLIT_ID) throw new Error('default')
-  await row(id)
+  await assertMayChangeTemplate((await row(id)).createdBy)
   await db.update(paymentTemplates).set({ deletedAt: new Date() }).where(eq(paymentTemplates.id, id))
   /* (REG-581) Every quote template that started quotes on it falls back to the studio default in writing, not silently. */
   const rows = await db.select({ id: quoteTemplates.id, defaultsJson: quoteTemplates.defaultsJson, draftJson: quoteTemplates.draftJson }).from(quoteTemplates)
@@ -68,7 +69,8 @@ export async function deletePaymentTemplate(id: string): Promise<void> {
 }
 export async function restorePaymentTemplates(ids: string[]): Promise<void> {
   if (!ids.length) return
-  await db.update(paymentTemplates).set({ deletedAt: null }).where(inArray(paymentTemplates.id, ids)); touch()
+  const mine = await changeableIds(await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)))
+  if (mine.length) await db.update(paymentTemplates).set({ deletedAt: null }).where(inArray(paymentTemplates.id, mine)); touch()
 }
 /** How many live quote templates start quotes on the split — the Deleted sheet's guard. */
 async function usedBy(id: string): Promise<number> {
@@ -82,9 +84,10 @@ async function usedBy(id: string): Promise<number> {
 }
 export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
   let removed = 0, kept = 0
+  const mine = new Set(await changeableIds(ids.length ? await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)) : []))   // (REG-646)
   for (const id of ids) {
     const [r] = await db.select({ deletedAt: paymentTemplates.deletedAt }).from(paymentTemplates).where(eq(paymentTemplates.id, id))
-    if (!r?.deletedAt || id === DEFAULT_SPLIT_ID || (await usedBy(id)) > 0) { kept++; continue }
+    if (!r?.deletedAt || id === DEFAULT_SPLIT_ID || !mine.has(id) || (await usedBy(id)) > 0) { kept++; continue }
     await db.delete(paymentTemplates).where(eq(paymentTemplates.id, id)); removed++
   }
   touch()

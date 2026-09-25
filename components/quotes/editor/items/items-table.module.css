@@ -16,7 +16,7 @@
 .sentinel { height: 0; }
 .headBar { position: sticky; top: var(--items-head-top, calc(var(--editor-sticky, 124px) + var(--section-top-h, 69px))); z-index: 10; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; background: var(--om-color-surface-default); }
 .headBar::-webkit-scrollbar { display: none; }
-.headBar[data-stuck] { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant), 0 4px 8px -4px rgba(0, 0, 0, .16); }
+.headBar[data-stuck] { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant), var(--om-elevation-level-1); }
 .scroller { position: relative; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }   /* the native bar is hidden: the sticky bar under the viewport is the scrollbar now (REG-570) */
 .scroller::-webkit-scrollbar { display: none; }
 .table { display: flex; flex-direction: column; min-width: max-content; }
@@ -93,7 +93,7 @@
 .row[data-selected] .colTotal { background: var(--om-color-primary-variant); }
 .bucket .colTotal, .head .colTotal { background: var(--om-color-surface-default); }
 .bucket .colTotal { background: var(--om-color-surface-bg); }
-.wrap[data-more] .colTotal { box-shadow: -6px 0 8px -4px rgba(0, 0, 0, .16); }
+.wrap[data-more] .colTotal { box-shadow: var(--om-shadow-frozen-column-mirrored); }   /* (sweep S1 #32) the listing's frozen-column shadow (REG-286) */
 
 /* Selection cell: drag_indicator · add · checkbox, 20px glyphs 4 apart (1260:31254). */
 .handle, .plus, .foldAll {
@@ -120,7 +120,7 @@
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb[data-empty] { box-shadow: none; border: var(--om-border-2) dashed var(--om-color-on-surface-border); }
 /* "1/2" badge (1260:31287): 10/500 on a dark pill at the thumb's top-left. */
-.badge { position: absolute; left: 4px; top: 4px; padding: 1px 4px; border-radius: var(--om-radius-1); background: rgba(26, 26, 26, .72); color: var(--om-color-surface-default); font: var(--om-type-caption-xs); }
+.badge { position: absolute; left: 4px; top: 4px; padding: 1px 4px; border-radius: var(--om-radius-1); background: var(--om-color-overlay-60p); color: var(--om-color-surface-default); font: var(--om-type-caption-xs); }
 .itemText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); position: relative; }   /* the active description field overlays the clamp */
 .nameRow { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; min-height: 20px; cursor: text; }
 .desc { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
@@ -153,7 +153,7 @@
 /* A group row: cards glyph after the name, the fold chevron at the cell's right, a 4px tertiary-blue bar down the cell's left edge (1260:31364). */
 .groupBar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--om-color-tertiary-blue-default); }
 .groupTag { display: inline-flex; flex-shrink: 0; }   /* the DS Tag "Group" after the name (REG-445) */
-.groupCount { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }   /* "3 items" after the Group tag (REG-463) */
+.groupCount { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }   /* "3 items" after the Group tag (REG-463) */
 .fold { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); margin-left: auto; }   /* flush with the text column, 16 from the cell edge (1260:31357) */
 .fold:hover { background: var(--om-color-hover-08p); }
 /* A child row (1260:31402): tinted cell, 32 inset, the eye that opens the visibility menu. */
@@ -379,7 +379,10 @@
 .row[data-highlight='fill']:not([data-selected]) .colTotal { background: color-mix(in srgb, var(--hl) 28%, var(--om-color-surface-default)); }
 /* (REG-555) Print as: the word stands where the amount would, the figure under it in the caption size. */
 .totalWord { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
-.totalUnder { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.totalUnder { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }   /* (REG-623) a long label ends in "…" instead of losing its start under the frozen edge */
+.totalUnder[data-struck] { text-decoration: line-through; }
+.totalWord { max-width: 100%; outline: none; }
+.totalWord:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-0-5); }
 /* (REG-557) A formatted description keeps its bullets in the resting text; the button wraps like the clamp. */
 .descBtn[data-rich] { white-space: pre-line; text-align: left; }
 
@@ -403,3 +406,21 @@
 .cardsWrap .addRow { display: flex; height: auto; padding: var(--om-spacing-2) 0; }
 .cardsWrap .addInner { position: static; display: flex; flex-wrap: wrap; width: 100%; max-width: 100%; padding-right: 0; gap: var(--om-spacing-3) var(--om-spacing-4); }
 .cardsWrap .addField { width: 100%; flex: 1 1 100%; }
+
+/* (REG-623, parity Q-09) Website Link: the short address in the primary ink at rest (a link reads as one), the Open glyph after it; the
+   box takes the whole cell while the row is active and the glyph steps aside, as the other boxes do. */
+.linkCell { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; width: 100%; }
+.linkCell .input[data-link]:not(:focus) { color: var(--om-color-primary-default); }
+.linkOpen { display: inline-flex; flex-shrink: 0; color: var(--om-color-primary-default); border-radius: var(--om-radius-1); padding: 2px; }
+@media (hover: hover) { .linkOpen:hover { background: var(--om-color-hover-08p); } }
+.linkOpen:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+.row[data-active] .linkOpen { display: none; }
+@media (hover: none) { .linkOpen { position: relative; } .linkOpen::after { content: ''; position: absolute; inset: -12px; } }
+
+/* (REG-627, parity Q-30) A line's comment count after its name: the glyph and the number, quiet until pointed at; a press opens the thread. */
+.commentCount { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; height: 20px; padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+@media (hover: hover) { .commentCount:hover { background: var(--om-color-hover-08p); color: var(--om-color-primary-default); } }
+.commentCount:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+@media (hover: none) { .commentCount { position: relative; } .commentCount::after { content: ''; position: absolute; inset: -12px -4px; } }
+/* (sweep S1) Find with nothing to show: one quiet row where the lines would be. */
+.findEmpty { grid-column: 1 / -1; padding: var(--om-spacing-5) var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

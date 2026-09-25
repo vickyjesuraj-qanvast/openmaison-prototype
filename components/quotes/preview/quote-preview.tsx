@@ -14,7 +14,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { withFrom } from '@/lib/nav'
 import { mm, PAPER_MM, ITEM_COLUMN_LABEL, type ItemsColumnKey } from '@/lib/templates/model'
 import { docTotals } from '@/lib/templates/data'
-import { money2 } from '@/lib/quotes/math'
+import { money2, pct } from '@/lib/quotes/math'
 import { displayDate } from '@/lib/format'
 import { readiness, type ReadinessSection } from '@/lib/templates/readiness'
 import { clientViewDiff, type ClientView, AMOUNTS_LABEL } from '@/lib/templates/client-view'
@@ -28,6 +28,8 @@ import { TemplatePicker, defaultPick } from '@/components/templates/template-pic
 import { sendQuote } from '@/app/quotes/actions'
 import { setQuoteTextVisible } from '@/app/quotes/text-actions'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
+import { PageReveal } from '@/components/shell/page-reveal'
+import { PreviewSkeleton } from './preview-skeleton'
 import styles from './quote-preview.module.css'
 
 const SECTION_ANCHOR: Record<ReadinessSection, string> = { general: 'general', items: 'items', payments: 'payment', terms: 'terms', notes: 'notes', signature: 'signature' }
@@ -107,7 +109,8 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
   const pickerSel = defaultPick(data.picker, pickedTpl, template?.id ?? null)
   const applyTemplate = (id: string) => { setPickerOpen(false); setPickedTpl(null); setBusy(true); void setQuoteTemplate(quote.id, id).then(() => { snackbar({ message: 'Template changed' }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t change the template — please try again' })).finally(() => setBusy(false)) }
 
-  return (
+  /* (sweep S1 #27) The page's own ghost holds the first beat, like every page (PageReveal); printing skips it — a ghost is never printed. */
+  const page = (
     <div className={styles.page} data-print={print || undefined} data-testid="quote-preview">
       <style>{`@page { size: ${design.page.paper}; margin: 0 }`}</style>
       <header className={styles.bar}>
@@ -130,7 +133,8 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name={copied ? 'check' : 'link'} size={20} />} onPress={() => { void copy() }}>{copied ? 'Copied' : 'Copy link'}</Button>
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name="download" size={20} />} onPress={() => window.print()}>Download PDF</Button>
           {kept ? <Button onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Current version</Button>
-            : canSend ? <Button onPress={() => { void send() }} isDisabled={busy || !ready.ready}>Send</Button> : <Tooltip label={`Quote is ${status}`}><span><Button isDisabled>Send</Button></span></Tooltip>}
+            /* (sweep S1) this press sends nothing — no link, no WhatsApp — it records that the quote went out; the editor's Send ▾ sends */
+            : canSend ? <Tooltip label="Records that the quote went to the client — send its link from the editor’s Send"><span><Button onPress={() => { void send() }} isDisabled={busy || !ready.ready}>Mark as sent</Button></span></Tooltip> : <Tooltip label={`Quote is ${status}`}><span><Button isDisabled>Mark as sent</Button></span></Tooltip>}
         </div>
       </header>
       <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print."
@@ -176,7 +180,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
               <div className={styles.internalGrid}>
                 <span><span className={styles.internalLabel}>Cost</span><span className={styles.internalValue}>{money2(totals.costMinor)}</span></span>
                 <span><span className={styles.internalLabel}>Selling</span><span className={styles.internalValue}>{money2(totals.subtotalMinor - totals.additionalMinor)}</span></span>
-                <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>{money2(totals.marginMinor)} · {Math.round(totals.marginPct)}%</span></span>
+                <span><span className={styles.internalLabel}>Margin</span><span className={styles.internalValue}>{money2(totals.marginMinor)} · {pct(Math.round(totals.marginPct))}</span></span>
                 <span><span className={styles.internalLabel}>Lines</span><span className={styles.internalValue}>{totals.itemCount}</span></span>
               </div>
             </section>
@@ -189,7 +193,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
           <aside className={styles.panel} aria-label="What your client sees">
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>What your client sees</span>
-              <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={20} onClick={() => setPanel(false)} />
+              <Tooltip label="Close"><IconButton icon="close" label="Close" size={24} variant="bare" iconSize={20} onClick={() => setPanel(false)} /></Tooltip>
             </div>
 
             <div className={styles.panelBody}>
@@ -263,4 +267,5 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
       </div>
     </div>
   )
+  return print ? page : <PageReveal skeleton={<PreviewSkeleton />}>{page}</PageReveal>
 }

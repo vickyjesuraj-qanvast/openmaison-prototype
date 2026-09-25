@@ -336,7 +336,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/leads/imports') }}>Lead Import History</DropdownItem>
       <DropdownItem onSelect={() => { setKebabOpen(false); setNowTick(Date.now()); setExportOpen(true) }}>Export all as…</DropdownItem>
       <DropdownItem onSelect={() => { setKebabOpen(false); setDeletedOpen(true) }}>Deleted Leads</DropdownItem>
-      <DropdownItem onSelect={() => { setKebabOpen(false); router.push('/settings') }}>Leads Settings</DropdownItem>
+      <DropdownItem onSelect={() => { setKebabOpen(false); router.push(withFrom('/settings?section=leads', '/leads')) }}>Leads Settings</DropdownItem>   {/* (REG-645) Lead management, Back returns here */}
     </Dropdown>
   )
 
@@ -620,6 +620,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         onClose={() => { setLost(null); setPendingDrop(null) }}
         reason={lostReason} setReason={setLostReason}
         options={lostOptions} reasons={leadReasons.lost} contactCount={rows.find((r) => r.id === lost)?.contactCount ?? 0} today={new Date(initialNow)}
+        competitorHint={rows.find((r) => r.id === lost)?.lastComparison ?? null}   /* (REG-640) */
         onSave={(d) => {
           const lead = rows.find((r) => r.id === lost)
           setLost(null)

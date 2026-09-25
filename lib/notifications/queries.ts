@@ -123,6 +123,6 @@ export async function leadMemberIds(leadId: string): Promise<string[]> {
   return rows.map((r) => r.memberId)
 }
 export async function studioRunnerIds(): Promise<string[]> {
-  const rows = await db.select({ id: members.id }).from(members).where(inArray(members.role, ['Owner', 'Admin']))
+  const rows = await db.select({ id: members.id }).from(members).where(and(inArray(members.role, ['Owner', 'Admin']), eq(members.isActive, true)))   // (REG-646)
   return rows.map((r) => r.id)
 }

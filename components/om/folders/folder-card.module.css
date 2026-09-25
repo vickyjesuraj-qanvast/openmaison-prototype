@@ -1,0 +1,66 @@
+/* (REG-664) The Files tab's folder card and Folders group (931:39084 · 931:39089), moved here from files-grid.module.css so every
+   library files the same way. Geometry, states and the touch rules are the Files tab's (REG-273 · REG-307 · REG-378 · REG-398 · REG-544). */
+.group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.groupHead { display: flex; align-items: center; gap: var(--om-spacing-2); height: 24px; }
+.groupTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.row { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--folder-min, 299px), 1fr)); gap: var(--om-spacing-4); }   /* a host's own track (the galleries' 248) rides --folder-min */
+
+.folder {
+  position: relative;
+  height: 56px;
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  padding: var(--om-spacing-3);
+  background: var(--om-color-surface-bg);
+  border-radius: var(--om-radius-1);
+  transition: background-color var(--motion-hover);
+  min-width: 0;
+}
+.folder:hover { background: var(--om-color-hover-04p); }
+.folder[data-selected] { background: var(--om-color-primary-variant); }
+.folderMain {
+  flex: 1; min-width: 0; height: 100%;
+  display: flex; align-items: center; gap: var(--om-spacing-2);
+  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+  color: inherit; font: inherit;
+  border-radius: var(--om-radius-1);
+}
+.folderMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.folderIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.folderTexts { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.folderName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.folderCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.kebab {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
+  transition: background-color var(--motion-hover);
+}
+.kebab:hover { background: var(--om-color-hover-08p); }
+.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
+
+.pick { display: none; }
+@media (hover: hover) and (min-width: 768px) {
+  .pick { position: absolute; left: var(--om-spacing-3); top: 50%; transform: translateY(-50%); z-index: 1; align-items: center; }
+  .folder:hover .pick, .folder[data-selected] .pick { display: inline-flex; }
+  .folder:hover .folderIcon, .folder[data-selected] .folderIcon { visibility: hidden; }
+}
+@media (max-width: 1024px) {
+  .row { grid-template-columns: repeat(auto-fill, minmax(var(--folder-min-narrow, 220px), 1fr)); }
+}
+@media (max-width: 767px) {
+  .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .folder { height: auto; min-height: 96px; flex-direction: column; align-items: stretch; gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
+  .folderMain { flex-direction: column; align-items: flex-start; height: auto; gap: var(--om-spacing-1); }
+  .folder .menuWrap { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); }
+  .folder .kebab { margin: 0; }
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .kebab { width: 44px; height: 44px; margin: -10px; }
+  .groupHead { height: auto; min-height: 44px; }
+  .folderMain { position: relative; }
+  .folderMain::after { content: ''; position: absolute; inset: -12px 0; }
+}
+@media (hover: none) and (max-width: 1024px) {
+  .pick { display: inline-flex; align-items: center; flex-shrink: 0; }
+}

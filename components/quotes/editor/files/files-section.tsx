@@ -62,9 +62,11 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   const filesRef = useRef(files); useEffect(() => { filesRef.current = files })
   useEffect(() => { onCount(files.length) }, [files.length, onCount])
 
+  /* (sweep S1 #10) An optimistic write that the server refuses is put back — never a value on screen that was not kept. */
   const toggleVisible = (next: boolean) => {
     setVisible(next)
     void run('save the setting', async () => { const r = await setQuoteFilesVisible(quoteId, next); onSaved(r.updatedAt) })
+      .then((ok) => { if (!ok) setVisible(!next) })
   }
   /* The modal answers with the files newly ticked (its "Attach n Files" counts those) — they join the ones the quote already carries. */
   const attachSet = (ids: string[]) => {
@@ -81,17 +83,20 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   }
   const remove = (file: LeadFile) => {
     setMenuFor(null)
+    const at = filesRef.current.findIndex((f) => f.id === file.id)
     setFiles((fs) => fs.filter((f) => f.id !== file.id))
     void run('remove the file', async () => { const r = await detachQuoteFile(quoteId, file.id); onSaved(r.updatedAt) },
       { message: `${file.name} removed from the quote`, actionLabel: 'Undo', onAction: () => { void run('restore the file', async () => { const r = await attachQuoteFiles(quoteId, [file.id]); setFiles(r.files); onSaved(r.updatedAt) }) } })
+      .then((ok) => { if (!ok) setFiles((fs) => (fs.some((f) => f.id === file.id) ? fs : [...fs.slice(0, Math.max(0, at)), file, ...fs.slice(Math.max(0, at))])) })
   }
   const rename = (file: LeadFile, name: string) => {
     setRenaming(null)
     const v = name.trim()
     if (!v || v === file.name) return
-    setFiles((fs) => fs.map((f) => (f.id === file.id ? { ...f, name: v } : f)))
-    setLeadFiles((fs) => fs.map((f) => (f.id === file.id ? { ...f, name: v } : f)))
+    const named = (n: string) => (fs: LeadFile[]) => fs.map((f) => (f.id === file.id ? { ...f, name: n } : f))
+    setFiles(named(v)); setLeadFiles(named(v))
     void run('rename the file', () => renameFile(file.id, v), 'File renamed')
+      .then((ok) => { if (!ok) { setFiles(named(file.name)); setLeadFiles(named(file.name)) } })
   }
   /* Download: an image downloads its thumbnail as a real file (the demo has no originals); anything else is coming soon — the viewer's rule. */
   const download = async (file: LeadFile) => {
@@ -106,7 +111,9 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
   const openFile = (file: LeadFile) => router.push(withFrom(`/leads/${leadId}/files/${file.id}`, `/quotes/${quoteId}`))   /* (REG-465) Back returns to the quote */
 
   const toolbar = (
-    <label className={styles.switchRow}>Show in client view <Switch size="sm" isSelected={visible} onChange={toggleVisible} aria-label="Show in client view" /></label>
+    <Tooltip label="The files show on the client’s confirmation page">   {/* (REG-626, parity §8.2 · E-91) the switch now reaches the client */}
+      <label className={styles.switchRow}>Show in client view <Switch size="sm" isSelected={visible} onChange={toggleVisible} aria-label="Show in client view" /></label>
+    </Tooltip>
   )
 
   return (

@@ -33,7 +33,7 @@ export async function fetchLeadQuotes(leadId: string): Promise<LeadQuotesData> {
       .where(and(eq(quotes.leadId, leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt)))
       .orderBy(asc(quotes.createdAt)),
     db.select().from(quoteTemplates).orderBy(desc(quoteTemplates.isDefault), desc(quoteTemplates.lastUsedAt), asc(quoteTemplates.createdAt)),
-    db.select({ n: count() }).from(priceBookItems),
+    db.select({ n: count() }).from(priceBookItems).where(and(isNull(priceBookItems.deletedAt), eq(priceBookItems.status, 'live'))),   // (REG-653, price book parity Q-11) the live book — not the trash, not proposals
     db.select().from(members),
     fetchBrand(),
     pickerExtras(),

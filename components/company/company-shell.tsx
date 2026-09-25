@@ -8,7 +8,7 @@ import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { Tabs } from '@/components/om/tabs'
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
-import { TEMPLATE_KINDS } from '@/lib/company/sections'
+import { TEMPLATE_KINDS, tabBones } from '@/lib/company/sections'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './company-shell.module.css'
 
@@ -18,27 +18,36 @@ import styles from './company-shell.module.css'
  * Ops frame), then the section's own **tab strip** where it has peers (Templates: Quotes · Contracts · Tasks · T&Cs & Notes · Payments — every kind live, REG-538), then the panel at
  * full width. Profile has no peers and no strip. The rail's Company panel is the way between sections.
  */
-export function CompanyShell({ title, tabs, actions, from, children }: {
+export function CompanyShell({ title, tabs, actions, from, activeHref, crumb = 'Company', skeleton, form = false, onSoon, children }: {
   title: string
-  /** The section's peers as routed tabs; omit for a section with none (Profile). */
-  tabs?: { label: string; href: string }[]
+  /** The section's peers as routed tabs; omit for a section with none (Profile). A tab marked `soon` is inert (`onSoon`). */
+  tabs?: { label: string; href: string; soon?: boolean }[]
   actions?: ReactNode
   /** (REG-538) Where the page was opened from — an editor's Manage Templates: the L2 header with Back, and the tabs keep it. */
   from?: string
+  /** (REG-645) The selected tab when it is not the path alone — Settings' modules live in `?section=`. */
+  activeHref?: string
+  /** (REG-645) What the L2 crumb calls this frame — Company, or Settings on Settings' own pages. */
+  crumb?: string
+  skeleton?: ReactNode
+  /** (sweep S4 #26) A page of form cards in one column (Profile, Members, Integrations, the Questionnaire, the brand kit): its ghost says so. */
+  form?: boolean
+  onSoon?: () => void
   children: ReactNode
 }) {
   const pathname = usePathname()
-  const items = from && tabs ? tabs.map((t) => ({ ...t, href: withFrom(t.href, from) })) : tabs
+  const items = from && tabs ? tabs.map((t) => (t.soon ? t : { ...t, href: withFrom(t.href, from) })) : tabs
+  const active = activeHref ? (from ? withFrom(activeHref, from) : activeHref) : pathname
   const origin = from ? fromLabel(from) ?? 'Back' : null
   return (
-    <PageReveal skeleton={<CompanySkeleton tabs={!!tabs} />}>
+    <PageReveal skeleton={skeleton ?? <CompanySkeleton tabs={!!tabs} tabWidths={tabs ? tabBones(tabs.map((t) => t.label)) : undefined} form={form} />}>   {/* (sweep S4 #26) the same ghost the route's loading.tsx drew */}
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         {from ? (
-          <PageHeaderL2 backHref={from} crumbs={[{ label: origin!, href: from }, { label: 'Company' }]} title={title} actions={actions} scrollShadow={!tabs} />
+          <PageHeaderL2 backHref={from} crumbs={[{ label: origin!, href: from }, { label: crumb }]} title={title} actions={actions} scrollShadow={!tabs} />
         ) : (
           <PageHeader title={title} actions={actions} scrollShadow={!tabs} />
         )}
-        {items ? <Tabs items={items} activeHref={pathname} aria-label={`${title} sections`} className={styles.stickyTabs} /> : null}
+        {items ? <Tabs items={items} activeHref={active} aria-label={`${title} sections`} className={styles.stickyTabs} onSoon={onSoon} /> : null}
         <div className={pageStyles.content}>{children}</div>
       </div>
     </PageReveal>
@@ -49,13 +58,14 @@ export function CompanyShell({ title, tabs, actions, from, children }: {
 export const templateTabs = () => TEMPLATE_KINDS.map((k) => ({ label: k.label, href: k.href }))
 
 /** The route's ghost (loading.tsx + PageReveal): header, the tab strip, a grid of card bones. */
-export function CompanySkeleton({ tabs = true, form = false }: { tabs?: boolean; form?: boolean }) {
+export function CompanySkeleton({ tabs = true, form = false, tabWidths = tabBones(TEMPLATE_KINDS.map((k) => k.label)) }: { tabs?: boolean; form?: boolean; /** (REG-653, Q-18) one bone per tab the section has */ tabWidths?: number[] }) {
   return (
     <GhostSheet label="Loading company">
       <div className={styles.ghostHead}><Bone w={160} h={28} /></div>
-      {tabs ? <div className={styles.ghostTabs} aria-hidden>{[52, 44, 40, 72, 76].map((w, i) => <Bone key={i} w={w} h={14} />)}</div> : null}
+      {tabs ? <div className={styles.ghostTabs} aria-hidden>{tabWidths.map((w, i) => <Bone key={i} w={w} h={14} />)}</div> : null}
       <div className={pageStyles.content} aria-hidden>
-        {form ? <div className={styles.ghostGrid}>{[0, 1].map((i) => <Bone key={i} w="100%" h={360} r={8} />)}</div> : <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>}
+        {/* (sweep S4 #26) a form page is one column of cards, as the page draws it — never the gallery's grid */}
+        {form ? <div className={styles.ghostForm}>{[0, 1].map((i) => <Bone key={i} w="100%" h={360} r={8} />)}</div> : <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>}
       </div>
     </GhostSheet>
   )

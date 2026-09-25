@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Checkbox } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { FolderCard, FolderGroup } from '@/components/om/folders/folder-card'
+import { countLine } from '@/lib/folders'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
@@ -29,6 +32,8 @@ export type FilesGridProps = {
   onOpenComments: (file: FileRow) => void
   onFolderMenu: (folder: FileRow, action: FolderAction) => void
   onFileMenu: (file: FileRow, action: FileAction) => void
+  /** (REG-664) While searching: where each hit lives ("Kitchen" · "All Files") — a search reaches every folder. */
+  placeOf?: (f: FileRow) => string
 }
 
 /** The tile's kind glyph: "image" 20/Regular red, "picture_as_pdf" for a PDF (931:39125 caption). */
@@ -50,8 +55,13 @@ const kindIcon = (f: FileRow) => (f.kind === 'pdf' || f.mime === 'application/pd
  * every row (files-table.tsx "Cell / Selection"). The checkbox is not rendered at all above 767 (`display: none`), so the
  * desktop mock is untouched; `useMediaQuery` only swaps what the tap DOES, which no stylesheet can express.
  */
-export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu }: FilesGridProps) {
+export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf }: FilesGridProps) {
   const [menu, setMenu] = useState<string | null>(null)
+  /* (REG-664) The folder card is the shared one (components/om/folders); its menu opens through the portal, anchored to the kebab. */
+  const [folderMenu, setFolderMenu] = useState<string | null>(null)
+  const folderAnchor = useRef<HTMLElement | null>(null)
+  const menuFolder = folderMenu ? folders.find((f) => f.id === folderMenu) ?? null : null
+  const pickFolder = (a: FolderAction) => { const f = menuFolder; setFolderMenu(null); if (f) onFolderMenu(f, a) }
   /* (REG-385) The tap-opens convention belongs to the POINTER, not the width: a touch tablet at 768–1024 had the
      desktop's "one tap selects, double-tap opens" — a gesture no touch platform teaches — with no checkbox to
      select with either. TOUCH_TABLET is the same hook REG-307/310 use for every other hover-only affordance. */
@@ -76,61 +86,23 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
 
   return (
     <div className={styles.groups}>
-      {folders.length > 0 ? (() => {
-        const ids = folders.map((f) => f.id)
-        const { all, some } = groupState(ids)
-        return (
-          /* Folders group (931:39084, V g16): head H g8 (checkbox 24 + "Folders" 14/Semi Bold) + cards row H g16. */
-          <div className={styles.group} role="group" aria-label="Folders">
-            <div className={styles.groupHead}>
-              <Checkbox isSelected={all} isIndeterminate={some} onChange={() => toggleGroup(ids)} aria-label="Select all folders" />
-              <span className={styles.groupTitle}>Folders</span>
-            </div>
-            <div className={`${styles.row} ${styles.foldersRow}`}>
-              {folders.map((f) => {
-                const isOn = selected.has(f.id)
-                const open = menu === f.id
-                return (
-                  /* Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 → folder 24 · texts (name 14/Semi Bold,
-                     "n items" 10/Regular secondary) · more_vert 24/Light. Selected (frame 97): fill #eee5ff. */
-                  <div key={f.id} className={styles.folder} data-testid="folder-card" data-selected={isOn || undefined}>
-                    {/* The card's selection affordance: inline on touch (REG-273, the tap opens); over the folder icon on
-                        hover / while selected with a mouse (REG-544, tester feedback: a click opens the folder everywhere —
-                        it used to select, with double-click to open). */}
-                    <span className={styles.pick}>
-                      <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
-                    </span>
-                    <button
-                      type="button" className={styles.folderMain}
-                      aria-label={`Open ${f.name}`}
-                      onClick={() => onOpenFolder(f)}
-                    >
-                      <Icon name="folder" size={24} className={styles.folderIcon} />
-                      <span className={styles.folderTexts}>
-                        <span className={styles.folderName}>{f.name}</span>
-                        <span className={styles.folderCount}>{f.itemCount === 1 ? '1 item' : `${f.itemCount} items`}</span>
-                      </span>
-                    </button>
-                    <span className={styles.menuWrap}>
-                      <Tooltip label="Folder actions" disabled={open}>
-                        <button
-                          type="button" className={styles.kebab}
-                          aria-label={`Actions for ${f.name}`}
-                          aria-haspopup="menu" aria-expanded={open}
-                          onClick={() => setMenu((m) => (m === f.id ? null : f.id))}
-                        >
-                          <Icon name="more_vert" size={24} weight={300} />
-                        </button>
-                      </Tooltip>
-                      <FolderMenu open={open} onClose={() => setMenu(null)} name={f.name} onPick={(a) => { setMenu(null); onFolderMenu(f, a) }} />
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })() : null}
+      {folders.length > 0 ? (
+        /* Folders group (931:39084, V g16): head H g8 (checkbox 24 + "Folders" 14/Semi Bold) + cards row H g16 — the shared pieces. */
+        <FolderGroup ids={folders.map((f) => f.id)} selected={selected} onSelect={onSelect}>
+          {folders.map((f) => (
+            <FolderCard key={f.id} name={f.name} selected={selected.has(f.id)} onToggle={() => toggle(f.id)} onOpen={() => onOpenFolder(f)}
+                        count={placeOf ? `${placeOf(f)} · ${countLine(f.itemCount, 'item', 'items')}` : countLine(f.itemCount, 'item', 'items')}
+                        menuOpen={folderMenu === f.id} onMenu={(el) => { folderAnchor.current = el; setFolderMenu((m) => (m === f.id ? null : f.id)) }} />
+          ))}
+        </FolderGroup>
+      ) : null}
+      <PortalMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} align="right" width={200} role="menu" sheetTitle={menuFolder?.name ?? ''}>
+        {/* Folder kebab menu 931:40130 (200×154) — verbatim order; Delete #db382a. */}
+        <DropdownItem onSelect={() => pickFolder('open')}>Open</DropdownItem>
+        <DropdownItem onSelect={() => pickFolder('move')}>Move</DropdownItem>
+        <DropdownItem onSelect={() => pickFolder('rename')}>Rename</DropdownItem>
+        <DropdownItem onSelect={() => pickFolder('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
+      </PortalMenu>
 
       {groups.map((g) => {
         const ids = g.files.map((f) => f.id)
@@ -163,6 +135,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                       onClick={() => (touch ? onOpenFile(f) : toggle(f.id))}
                       onDoubleClick={() => onOpenFile(f)}
                     >
+                      {placeOf ? <span className={styles.tilePlace}><Icon name="folder" size={16} weight={300} /><span className={styles.tilePlaceName}>{placeOf(f)}</span></span> : null}
                       {f.thumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={f.thumb} alt="" className={styles.tileImg} width={291} height={200} />

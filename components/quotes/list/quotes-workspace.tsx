@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { PageReveal } from '@/components/shell/page-reveal'
@@ -9,7 +9,7 @@ import { Icon } from '@/components/om/icon'
 import { Button } from '@/components/ds'
 import { LeadsSkeleton } from '@/components/shell/skeleton'
 import { DatePicker } from '@/components/om/date-picker'
-import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
+import { useSnackbar } from '@/components/om/snackbar'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -19,7 +19,10 @@ import { QuotesEmpty } from '@/components/leads/quotes/quotes-empty'
 import { QuotesFiltersModal } from '@/components/leads/quotes/quotes-filters-modal'
 import { DeleteQuotesDialog } from '@/components/leads/quotes/delete-dialog'
 import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
-import { archiveQuote, createQuote, deleteQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { archiveQuote, listArchivedQuotes, unarchiveQuotes, createQuote, createQuoteFromUpload, deleteQuotes, deleteQuotesForever, emptyQuoteTrash, listDeletedQuotes, restoreQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
+import { canDeleteQuote, deletedLine } from '@/lib/quotes/policy'
+import { DeletedQuotesSheet } from '@/components/leads/quotes/deleted-quotes-sheet'
+import { ArchivedQuotesSheet } from '@/components/leads/quotes/archived-quotes-sheet'
 import type { Quote } from '@/lib/db/schema'
 import { EMPTY_QUOTE_FILTERS, activeQuoteFilterCount, applyQuoteFilters, searchQuotes, type QuoteFilters, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { StudioQuotesData } from '@/lib/quotes/list'
@@ -40,8 +43,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
   const { quotes, leads, templates, priceBookCount, approval, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
-  const comingSoon = useComingSoon()
-  const { run, fail } = useRun()
+  const { run, fail, refresh } = useRun()
   const nameOf = useMemo(() => new Map(quotes.map((q) => [q.id, q.leadName])), [quotes])
 
   const templateFilter = templateId ? templates.find((t) => t.id === templateId) ?? null : null   /* (REG-495) ?template= scopes the list */
@@ -84,26 +86,37 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
     void run('change the status', () => setQuoteStatus(quote.id, status), `Quote marked ${status}`)
   }
   const openDue = (quote: Quote, anchor: HTMLElement) => { dueAnchor.current = anchor; setDueFor((d) => (d?.el === anchor ? null : { quoteId: quote.id, el: anchor })) }
+  /* (REG-625, parity Q-27 · Q-28) Deleted Quotes across the studio, and who may delete. */
+  const [deletedOpen, setDeletedOpen] = useState(false)
+  const loadDeleted = useCallback(() => listDeletedQuotes(null), [])
+  const [archivedOpen, setArchivedOpen] = useState(false)   /* (sweep S1 · U-07) */
+  const loadArchived = useCallback(() => listArchivedQuotes(null), [])
+  const mayDelete = (q: Quote) => canDeleteQuote(data.viewer, q)
+  /* (sweep S1) a soft delete answers with Undo (REG-502), and a failure names what failed */
+  const removeQuotes = (ids: string[]) => { void run(ids.length > 1 ? 'delete the quotes' : 'delete the quote', async () => { const r = await deleteQuotes(ids); snackbar(r.deleted ? { message: deletedLine(r), actionLabel: 'Undo', onAction: () => { void restoreQuotes(ids).then(() => router.refresh(), () => snackbar({ message: 'Couldn’t restore — please try again' })) } } : { message: deletedLine(r) }) }, undefined, { refresh: true }) }
   const rowMenu = (quote: Quote, action: QuoteRowAction) => {
+    if (action === 'share' || action === 'pdf' || action === 'print') {
+      router.push(withFrom(`/quotes/${quote.id}/preview${action === 'share' ? '' : '?print=1'}`, '/quotes'))   /* (REG-625, E-117) */
+      return
+    }
+    if (action === 'xray') { router.push(withFrom(`/quote-x-ray?lead=${quote.leadId}&quote=${quote.id}`, '/quotes')); return }   /* (REG-639) */
     if (action === 'copy') {
       const url = `${window.location.origin}/quotes/${quote.id}`
-      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Link copied' }), () => fail('copy the link'))
+      void navigator.clipboard?.writeText(url).then(() => snackbar({ message: 'Quote link copied' }), () => fail('copy the link'))
     } else if (action === 'archive') {
       void run('archive the quote', () => archiveQuote(quote.id), { message: 'Quote archived', actionLabel: 'Undo', onAction: () => { void run('restore the quote', () => archiveQuote(quote.id, true), 'Quote restored') } })
     } else if (action === 'delete') {
       setDeleting([quote.id])
-    } else {
-      comingSoon()
     }
   }
   const selectedIds = [...selected]
 
   return (
-    <PageReveal skeleton={<LeadsSkeleton />}>
+    <PageReveal skeleton={<LeadsSkeleton label="Loading quotes" />}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title="Quotes" />
         <div className={styles.frame}>
-          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', '/quotes')) : comingSoon())}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */ />
+          <QuotesToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} query={query} onQuery={setQuery} searchPlaceholder="Search title, number, client…" onCreate={() => setCreateOpen(true)} onFilter={() => setFiltersOpen(true)} filterCount={filterCount} onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/quotes', '/quotes')) : a === 'settings' ? router.push(withFrom('/settings?section=quotes', '/quotes')) : a === 'archived' ? setArchivedOpen(true) : setDeletedOpen(true))}   /* (REG-516) Manage Templates goes to Company › Templates › Quotes */ />
           {templateFilter ? (
             <div className={styles.templateChip} role="status">
               <Icon name="style" size={18} weight={300} /> Quotes on <b>{templateFilter.name}</b>
@@ -112,15 +125,24 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
           ) : null}
           {quotes.length === 0 ? (
             <QuotesEmpty onFromScratch={() => setCreateOpen(true)} onFromTemplate={() => setCreateOpen(true)} />
+          ) : templateFilter && visible.length === 0 && !nothingMatches ? (
+            /* (sweep S1) no quote prints through this template — say so, with the way back to every quote */
+            <TabSearchEmpty noun="quotes" searching={false} onClearAll={() => router.replace('/quotes')} />
           ) : nothingMatches ? (
             <TabSearchEmpty noun="quotes" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_QUOTE_FILTERS) }} />
           ) : (
-            <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} quotes={visible} now={now} approval={approval} selected={selected} onSelect={setSelected}
+            <QuotesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} quotes={visible} now={now} approval={approval} canApprove={data.canApprove} canDelete={mayDelete} selected={selected} onSelect={setSelected}
                          onStatus={onStatus} onDue={openDue} onView={openQuote} onRowMenu={rowMenu}
                          clientOf={(q) => ({ name: nameOf.get(q.id) ?? '', href: withFrom(`/leads/${q.leadId}/quotes`, '/quotes') })} />
           )}
         </div>
         <DetailBulkBar count={selected.size} actions={[{ label: 'Delete', tone: 'danger', onClick: () => setDeleting(selectedIds) }]} onClear={() => setSelected(new Set())} />
+        <ArchivedQuotesSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb="Tools / Quotes" showLead
+                             onUnarchive={async (ids) => { const r = await unarchiveQuotes(ids); snackbar({ message: r.restored > 1 ? `${r.restored} quotes unarchived` : 'Quote unarchived' }); refresh() }} />
+        <DeletedQuotesSheet open={deletedOpen} onClose={() => setDeletedOpen(false)} load={loadDeleted} crumb="Tools / Quotes" showLead
+                            onRestore={async (ids) => { const r = await restoreQuotes(ids); snackbar({ message: r.restored ? 'Quote restored' : 'Only its creator, an Owner or an Admin restores it' }); refresh() }}
+                            onDeleteForever={async (ids) => { const r = await deleteQuotesForever(ids); snackbar({ message: r.deleted ? 'Quote deleted forever' : 'The quote stays — a contract reads it, or someone else created it' }) }}
+                            onEmptyTrash={async () => { const r = await emptyQuoteTrash(null); snackbar({ message: `${r.deleted} ${r.deleted === 1 ? 'quote' : 'quotes'} deleted forever${r.refused ? ` — ${r.refused} kept` : ''}` }) }} />
         <DatePicker open={!!dueFor} anchorRef={dueAnchor} anchorKey={dueFor?.quoteId ?? ''} value={dueQuote?.dueAt ?? null} today={new Date(now)} label="Due date"
                     onSelect={(date) => { const q = dueQuote; setDueFor(null); if (q) void run('set the due date', () => setQuoteDue(q.id, date), date ? { message: 'Due date set — follow-up task added', actionLabel: 'View', onAction: () => router.push(withFrom(`/leads/${q.leadId}/tasks`, '/quotes')) } : 'Due date cleared') }} onClose={() => setDueFor(null)} />
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
@@ -128,9 +150,10 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
         <CreateQuoteModal open={createOpen} leadName="" clients={leads} templates={templates} priceBookCount={priceBookCount} now={now} onClose={() => { setCreateOpen(false); setPreselect(null) }}
                           render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
-                          onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }} />
+                          onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
+                          onUpload={(read, clientId) => { if (!clientId) return; void run('create the quote', async () => { const id = await createQuoteFromUpload(clientId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }} />
         <DeleteQuotesDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}
-                            onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); void run('delete', () => deleteQuotes(ids), ids.length === 1 ? 'Quote deleted' : `${ids.length} quotes deleted`, { refresh: true }) }} />
+                            onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); removeQuotes(ids) }} />
       </div>
     </PageReveal>
   )

@@ -7,8 +7,10 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { DropdownItem } from '@/components/leads/dropdown'
 import { Tooltip } from '@/components/om/tooltip'
+import { Chips } from '@/components/om/chips'
 import { money2, pct, sharePct, type CategoryShare, type NamedDiscount, type QuoteTotals } from '@/lib/quotes/math'
 import type { Studio } from '@/lib/settings/types'
+import { decimalTyped } from '@/lib/format'
 import styles from './items-section.module.css'
 
 export type Pricing = { additionalDiscountMode: 'pct' | 'amount'; additionalDiscountValue: number; gstEnabled: boolean; issuingEntity: string | null; /** (REG-559) the named discounts after the additional one */ discounts: NamedDiscount[] }
@@ -24,7 +26,7 @@ export const maxAdditional = (mode: Pricing['additionalDiscountMode'], subtotalM
 export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabel = 'GST 9%', shares, onPickCategory, onPricing, onRound }: {
   totals: QuoteTotals
   /** (REG-562 · REG-593) The studio's issuing entities (Company › Profile) with their GST registration; the first is the studio itself. */
-  entities: { name: string; gstRegistered: boolean }[]
+  entities: { name: string; gstRegistered: boolean; retired?: boolean }[]
   /** (REG-532) By category — the subtotal split by the lines' categories; a row opens that bucket in View by: Category. */
   shares: CategoryShare[]
   onPickCategory: (name: string) => void
@@ -52,7 +54,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
     if (e.key === 'Escape') { e.preventDefault(); cancelled.current = true; e.currentTarget.blur() }
   }
   const entity = pricing.issuingEntity ?? studio.name
-  const entityOptions = [...new Set([studio.name, ...entities.map((e) => e.name), ...(pricing.issuingEntity ? [pricing.issuingEntity] : [])])]
+  const entityOptions = [...new Set([studio.name, ...entities.filter((e) => !e.retired).map((e) => e.name), ...(pricing.issuingEntity ? [pricing.issuingEntity] : [])])]   // (REG-647) retired entities stay where named
   /* (REG-593) The picked entity's GST registration — the studio's own from Settings, the others' from Company › Profile. */
   const registered = pricing.issuingEntity ? (entities.find((e) => e.name === pricing.issuingEntity)?.gstRegistered ?? true) : studio.gstRegistered
   /* (REG-559) Named discounts: each row edits in place and writes the whole list; the applied amount prints on the right. */
@@ -66,7 +68,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
                    onChange={(v) => { const e = entities.find((x) => x.name === v); const reg = v === studio.name ? studio.gstRegistered : (e?.gstRegistered ?? true); onPricing({ issuingEntity: v === studio.name ? null : v, gstEnabled: reg }) }} />   {/* (REG-593) the entity brings its GST with it */}
         <span className={styles.entityHelper}>{registered ? 'GST-Registered' : 'Not GST-registered — no GST on this quote'}</span>
       </div>
-      {shares.length ? <ItemsBreakdown shares={shares} onPick={onPickCategory} /> : null}
+      {shares.length ? <ItemsBreakdown shares={shares} onPick={onPickCategory} owner={owner} /> : null}
       <div className={styles.totals} data-testid="quote-totals">
         <div className={styles.trow}>
           <span className={`${styles.tlabel} ${styles.tlabelTight}`}>Subtotal <span className={styles.dot}>·</span> <span className={styles.count}>{totals.itemCount} {totals.itemCount === 1 ? 'item' : 'items'}</span></span>
@@ -143,7 +145,7 @@ function DiscountRow({ d, applied, subtotalMinor, onPatch, onRemove }: { d: Name
         <DropdownItem role="menuitemradio" checked={d.mode === 'amount'} onSelect={() => { setModeOpen(false); onPatch({ mode: 'amount' }) }}>S$</DropdownItem>
       </PortalMenu>
       <input className={`${styles.mini} ${styles.miniInput} ${styles.discValue}`} inputMode="decimal" aria-label="Discount value" value={value ?? (d.value ? String(d.value) : '0.00')}
-             onFocus={() => setValue(d.value ? String(d.value) : '')} onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, ''))} onBlur={commitValue} onKeyDown={onKey(commitValue)} />
+             onFocus={() => setValue(d.value ? String(d.value) : '')} onChange={(e) => setValue(decimalTyped(e.target.value, 2))} onBlur={commitValue} onKeyDown={onKey(commitValue)} />
       <span className={styles.discAmount}>−{money2(applied)}</span>
       <Tooltip label="Remove this discount"><button type="button" className={styles.discRemove} aria-label="Remove this discount" onClick={onRemove}><Icon name="close" size={16} /></button></Tooltip>
     </div>
@@ -157,20 +159,37 @@ function DiscountRow({ d, applied, subtotalMinor, onPatch, onRemove }: { d: Name
  * a category whose lines carry no price reads "n · no cost" with an empty bar. A row is a button: it switches View by to Category
  * and opens that bucket alone. Internal — it never prints in Preview or the client view.
  */
-function ItemsBreakdown({ shares, onPick }: { shares: CategoryShare[]; onPick: (name: string) => void }) {
+function ItemsBreakdown({ shares, onPick, owner }: { shares: CategoryShare[]; onPick: (name: string) => void; owner: boolean }) {
   const rows = Math.ceil(shares.length / 2)
+  /* (REG-623, parity Q-14) Owners read each category's margin as well — 1.0's margin panel "By Category": the category's lines against
+     what they cost the studio, before the quote's own discounts; the bar shades by 1.0's bands (20 % and up green, 10–20 yellow, under
+     10 red). The share stays the default for everyone. */
+  const [mode, setMode] = useState<'share' | 'margin'>('share')
+  const margin = owner && mode === 'margin'
+  const band = (p: number) => (p >= 20 ? 'good' : p >= 10 ? 'fair' : 'low')
   return (
     <section className={styles.bycat} aria-label="By category" data-testid="items-by-category">
-      <div className={styles.bycatHead}>By category <span className={styles.bycatMeta}>· {shares.length} · share of the subtotal</span></div>
+      <div className={styles.bycatHead}>
+        <span>By category <span className={styles.bycatMeta}>· {shares.length} · {margin ? 'margin before the quote’s discounts' : 'share of the subtotal'}</span></span>
+        {owner ? <Chips className={styles.bycatMode} label="Show" options={[{ value: 'share', label: 'Share' }, { value: 'margin', label: 'Margin' }]} value={mode} onChange={(v) => setMode(v === 'margin' ? 'margin' : 'share')} testId="bycat-mode" /> : null}
+      </div>
       <div className={styles.shares} style={{ '--rows': rows } as CSSProperties}>
         {shares.map((c) => (
-          <Tooltip key={c.name} label={`Open ${c.name} in View by: Category`}>
+          <Tooltip key={c.name} label={margin && c.marginPct !== null ? `${money2(c.totalMinor - c.costMinor)} on ${money2(c.totalMinor)} · open ${c.name} in View by: Category` : `Open ${c.name} in View by: Category`}>
             <button type="button" className={styles.share} data-testid="items-share" onClick={() => onPick(c.name)}>
               <span className={styles.shareName}>{c.name}</span>
-              <span className={styles.track} aria-hidden><span className={styles.fill} style={{ width: `${Math.min(100, c.pct).toFixed(1)}%` }} /></span>
-              {c.totalMinor > 0
-                ? <span className={styles.shareVal}>{sharePct(c.pct)}</span>
-                : <span className={styles.shareVal} data-none="">{c.count} <span className={styles.dot}>·</span> no cost</span>}
+              {margin ? (
+                <span className={styles.track} aria-hidden><span className={styles.fill} data-band={c.marginPct === null ? undefined : band(c.marginPct)} style={{ width: `${Math.max(0, Math.min(100, c.marginPct ?? 0)).toFixed(1)}%` }} /></span>
+              ) : (
+                <span className={styles.track} aria-hidden><span className={styles.fill} style={{ width: `${Math.min(100, c.pct).toFixed(1)}%` }} /></span>
+              )}
+              {margin
+                ? (c.marginPct === null
+                    ? <span className={styles.shareVal} data-none="">{c.count} <span className={styles.dot}>·</span> no price</span>
+                    : <span className={styles.shareVal} data-neg={c.marginPct < 0 || undefined} data-testid="items-share-margin">{c.marginPct < 0 ? '−' : ''}{sharePct(Math.abs(c.marginPct))}</span>)
+                : c.totalMinor > 0
+                  ? <span className={styles.shareVal}>{sharePct(c.pct)}</span>
+                  : <span className={styles.shareVal} data-none="">{c.count} <span className={styles.dot}>·</span> no cost</span>}
             </button>
           </Tooltip>
         ))}

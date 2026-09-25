@@ -4,6 +4,9 @@
 .table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
 .row { display: grid; grid-template-columns: minmax(240px, 1fr) 140px 140px 280px; align-items: center; min-height: 60px; }
 .table[data-lead] .row { grid-template-columns: minmax(240px, 1fr) 180px 140px 140px 280px; }
+/* (REG-634, contracts parity E-124) Deleted Contracts' fifth column: who deleted it. Deleted Quotes keeps its four. */
+.table[data-by] .row { grid-template-columns: minmax(240px, 1fr) 140px 140px 140px 280px; }
+.table[data-by][data-lead] .row { grid-template-columns: minmax(200px, 1fr) 160px 120px 140px 140px 280px; }
 .row[data-head] { min-height: 48px; background: var(--om-color-surface-bg); }
 .row[data-head] .cell { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
 .row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
@@ -13,8 +16,27 @@
 .title > :first-child { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .actions { justify-content: flex-end; gap: var(--om-spacing-2); }
 .empty { padding: var(--om-spacing-8) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (sweep S1 · U-08) The selection column (Deleted Quotes; the libraries' Deleted sheet has one), a ticked row, and the load retry. */
+.table[data-select] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 280px; }
+.table[data-select][data-lead] .row { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 280px; }
+/* (sweep S2 · U-08) Deleted Contracts' selection column beside its Deleted by column. */
+.table[data-select][data-by] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 140px 280px; }
+.table[data-select][data-by][data-lead] .row { grid-template-columns: 48px minmax(200px, 1fr) 160px 120px 140px 140px 280px; }
+/* (sweep S1 · U-07) Archived Quotes: one action, so a narrower Actions column */
+.table[data-select][data-kind='archived'] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 160px; }
+.table[data-select][data-kind='archived'][data-lead] .row { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 160px; }
+.sel { padding-right: 0; }
+.row[data-selected] { background: var(--om-color-primary-variant); }
+.retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
+/* (sweep S1) 768–1024: the dialog is narrower than the columns — the table scrolls sideways inside it, its actions still reachable (the listing model), never clipped */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .table { overflow-x: auto; }
+  .row { width: max-content; min-width: 100%; }
+}
 @media (max-width: 767px) {
-  .row { grid-template-columns: 1fr; row-gap: 0; padding: var(--om-spacing-2) 0; }
+  .row, .table[data-select] .row, .table[data-select][data-lead] .row, .table[data-select][data-kind='archived'] .row, .table[data-select][data-kind='archived'][data-lead] .row, .table[data-select][data-by] .row, .table[data-select][data-by][data-lead] .row { grid-template-columns: 1fr; row-gap: 0; padding: var(--om-spacing-2) 0; }
   .row[data-head] { display: none; }
   .actions { justify-content: flex-start; }
 }
+/* (REG-625) Deleted Quotes: a quote's amount rides in its title cell, quieter, so the Status column stays one word wide. */
+.amount { margin-left: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }

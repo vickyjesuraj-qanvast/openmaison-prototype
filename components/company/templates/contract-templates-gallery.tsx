@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSnackbar } from '@/components/om/snackbar'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
@@ -10,7 +11,9 @@ import { excerptOf, outlineOf } from '@/lib/contracts/tokens'
 import { withFrom } from '@/lib/nav'
 import { templateKind } from '@/lib/company/sections'
 import type { ContractTemplateRow, ContractTemplatesData } from '@/lib/contracts/queries'
-import { contractFromTemplate, createContractTemplate, deleteContractTemplate, deleteContractTemplatesForever, duplicateContractTemplate, emptyContractTemplateTrash, renameContractTemplate, restoreContractTemplates } from '@/app/company/contract-templates-actions'
+import { contractFromTemplate, createContractTemplate, deleteContractTemplate, deleteContractTemplatesForever, duplicateContractTemplate, emptyContractTemplateTrash, renameContractTemplate, restoreContractTemplates, setDefaultContractTemplate } from '@/app/company/contract-templates-actions'
+import { MetaChip } from '@/components/om/meta-chip'
+import { canDeleteTemplateForever } from '@/lib/contracts/policy'
 import { fetchContractOptionsAction } from '@/app/contracts/read-actions'
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
 import type { TokenValues } from '@/lib/contracts/tokens'
@@ -18,16 +21,29 @@ import { LibraryGallery } from './library-gallery'
 import { PickOneDialog, type PickOption } from './pick-one-dialog'
 import styles from './library-gallery.module.css'
 import own from './contract-templates-gallery.module.css'
+import { templateChangeBlock, templateDefaultBlock } from '@/lib/company/template-rules'
+import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 
 /**
  * Company › Templates › Contracts (REG-534 → REG-538): the shared library gallery with the contract kind's pieces — a paper
  * thumbnail, "Starts with" as a column, New template ▾ (Blank · From the studio agreement · From a contract…), and the kebab's
  * "New contract from this template" (a lead picker, then the editor). No versions, no approval (owner 2026-09-18).
  */
-export function ContractTemplatesGallery({ data, brand, studio, values, from }: { data: ContractTemplatesData; brand: BrandKit; studio: StudioDetails; values: TokenValues; from?: string }) {
+export function ContractTemplatesGallery({ data, brand, studio, values, from, folders = [] }: { data: ContractTemplatesData; folders?: Folder[]; brand: BrandKit; studio: StudioDetails; values: TokenValues; from?: string }) {
   const { templates, deleted, leads, now } = data
   const router = useRouter()
   const { run, fail } = useRun()
+  const snackbar = useSnackbar()
+  /* (REG-634, contracts parity E-132) Deleted from its editor: said here, with the gallery's Undo, once. */
+  const params = useSearchParams(), pathname = usePathname()
+  const deletedId = params.get('deleted')
+  useEffect(() => {
+    if (!deletedId) return
+    const t = data.deleted.find((x) => x.id === deletedId)
+    const rest = new URLSearchParams(params.toString()); rest.delete('deleted')
+    router.replace(`${pathname}${rest.toString() ? `?${rest}` : ''}`, { scroll: false })
+    if (t) snackbar({ message: `${t.title} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the template', () => restoreContractTemplates([t.id]), `${t.title} restored`).then(() => router.refresh()) } })
+  }, [deletedId])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   const [pickFor, setPickFor] = useState<string | null>(null)
   const [fromContract, setFromContract] = useState(false)
   const kind = templateKind('contracts')!
@@ -37,7 +53,7 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from }: 
   const loadContracts = useCallback(async (): Promise<PickOption[]> => (await fetchContractOptionsAction()).map((c) => ({ id: c.id, label: c.title, sub: c.leadName })), [])
 
   return (
-    <LibraryGallery<ContractTemplateRow> kind={kind} from={from} items={templates} deleted={deleted} now={now} ariaLabel="Contract templates" tableKey="contract-templates"
+    <LibraryGallery<ContractTemplateRow> kind={kind} from={from} folders={{ library: 'contracts', list: folders, block: folderBlock(data.viewer) }} items={templates} deleted={deleted} now={now} ariaLabel="Contract templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="contract-templates"
       newMenu={(close) => (<>
         <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
         <DropdownItem onSelect={() => { close(); void create(() => createContractTemplate({ source: { kind: 'starter' } }), 'create the template') }}>From the studio agreement</DropdownItem>
@@ -53,13 +69,18 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from }: 
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} contract${t.usedBy === 1 ? '' : 's'}`)}
       columns={[{ key: 'excerpt', label: 'Starts with', track: '320px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{excerptOf(t.body, 120) || '—'}</span> }, { key: 'used', label: 'Used by', track: '140px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} contract{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not used yet</span>) }]}
       onOpen={(t) => open(t.id)}
-      kebab={(t) => [{ label: 'New contract from this template', onSelect: () => setPickFor(t.id) }]}
+      chips={(t) => (t.isDefault ? <MetaChip>Default</MetaChip> : null)}   /* (REG-632, parity Q-13) */
+      kebab={(t) => [
+        { label: 'New contract from this template', onSelect: () => setPickFor(t.id) },
+        { label: 'Set as default', disabled: t.isDefault || !!templateDefaultBlock(data.viewer), title: templateDefaultBlock(data.viewer) ?? (t.isDefault ? 'Already the default' : 'Contracts raised from a quote or the Won step start from it'), onSelect: () => { void run('set the default', () => setDefaultContractTemplate(t.id), `${t.title} is the default contract template`) } },
+      ]}
       onDuplicate={(t) => create(() => duplicateContractTemplate(t.id), 'duplicate the template')}
       onRename={(t, name) => renameContractTemplate(t.id, name)}
       onDelete={(t) => deleteContractTemplate(t.id)}
       deleteMessage={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.')}
       onRestore={(ids) => restoreContractTemplates(ids)} onDeleteForever={(ids) => deleteContractTemplatesForever(ids)} onEmptyTrash={() => emptyContractTemplateTrash()}
       deletedMeta={{ label: 'Starts with', value: (t) => excerptOf(t.body, 40) || '—' }}
+      keepReason={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract names' : 'contracts name'} it — kept while they do` : canDeleteTemplateForever(data.viewer, t) ? null : 'Only its creator, an Owner or an Admin')}   /* (REG-634, parity Q-21 · Q-24) */
       empty={{ title: 'No contract templates yet', help: 'Start from the studio agreement, or save any contract as a template from its editor.' }}>
       <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} onPick={(leadId) => { const id = pickFor; setPickFor(null); if (id && leadId) void contractFromTemplate(id, leadId).then((cid) => router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`), () => fail('create the contract')) }} />
       <PickOneDialog open={fromContract} onClose={() => setFromContract(false)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"

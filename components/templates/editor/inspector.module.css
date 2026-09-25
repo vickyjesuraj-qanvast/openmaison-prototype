@@ -17,7 +17,7 @@
 .txt { display: flex; align-items: flex-start; gap: var(--om-spacing-1); }
 .txt > :first-child { flex: 1; min-width: 0; }
 .txtGrow { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
-.helper { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-3); }
+.helper { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-3); }
 .area { width: 100%; min-height: 72px; }
 .fieldsAnchor { position: relative; display: inline-flex; flex-shrink: 0; margin-top: 10px; }
 .menuGroup { display: block; padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }

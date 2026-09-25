@@ -3,6 +3,7 @@ import { like, or } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { imports } from '@/lib/db/schema'
 import { fetchLeadCapture, fetchStudio } from '@/lib/settings/queries'
+import { withoutSecrets } from '@/lib/settings/types'
 import { IntegrationsView } from '@/components/company/integrations-view'
 import { readFrom } from '@/lib/nav'
 import { fetchViewer } from '@/lib/leads/visibility'
@@ -19,5 +20,6 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     searchParams,
     fetchViewer(),   /* (REG-612) */
   ])
-  return <IntegrationsView capture={capture} studioName={studio.name} arrivals={arrivals.map((a) => ({ fileName: a.fileName, at: a.createdAt.getTime(), rows: a.importedRows }))} from={readFrom(sp.from)} canManage={runsStudio(viewer.role)} />
+  const canManage = runsStudio(viewer.role)
+  return <IntegrationsView capture={canManage ? capture : withoutSecrets(capture)} studioName={studio.name} arrivals={arrivals.map((a) => ({ fileName: a.fileName, at: a.createdAt.getTime(), rows: a.importedRows }))} from={readFrom(sp.from)} canManage={canManage} />
 }

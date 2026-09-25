@@ -1,9 +1,9 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { DEFAULT_LEAD_SOURCES, parseLeadSources, type LeadSourceEntry, DEFAULT_LEAD_VISIBILITY, parseLeadVisibility, type LeadVisibility, DEFAULT_LEAD_CAPTURE, parseLeadCapture, type LeadCapture, DEFAULT_LEAD_REASONS, parseLeadReasons, type LeadReasons } from '@/lib/settings/types'
-import { quoteItems, settings } from '@/lib/db/schema'
-import { DEFAULT_NUMBERING, DEFAULT_QUOTE_APPROVAL, DEFAULT_QUOTE_RULES, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, DEFAULT_TEMPLATE_APPROVAL, parseNumbering, parseQuoteApproval, parseQuoteRules, parseStageMovement, parseStudio, parseTemplateApproval, parseTrades, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type Studio, type TemplateApproval } from './types'
+import { priceBookItems, quoteItems, settings } from '@/lib/db/schema'
+import { approves, DEFAULT_NUMBERING, DEFAULT_QUOTE_APPROVAL, DEFAULT_QUOTE_RULES, DEFAULT_STAGE_MOVEMENT, DEFAULT_STUDIO, DEFAULT_TEMPLATE_APPROVAL, parseNumbering, parseQuoteApproval, parseQuoteRules, parseStageMovement, parseStudio, parseTemplateApproval, parseTrades, parseTradeNotes, tradeKey, type Numbering, type QuoteApproval, type QuoteRules, type StageMovement, type Studio, type TemplateApproval } from './types'
 
 export const STAGE_MOVEMENT_KEY = 'stage_movement'
 
@@ -56,8 +56,26 @@ export const TRADES_KEY = 'trades'
 export async function fetchTrades(): Promise<{ trades: string[]; managed: boolean }> {
   const [row] = await db.select().from(settings).where(eq(settings.key, TRADES_KEY)).limit(1)
   if (row) { try { const t = parseTrades(JSON.parse(row.value)); return { trades: t, managed: true } } catch { /* fall through to the quotes' own */ } }
-  const used = await db.select({ category: quoteItems.category }).from(quoteItems).where(and(isNotNull(quoteItems.category), eq(quoteItems.kind, 'item')))
-  return { trades: [...new Set(used.map((u) => u.category!).filter(Boolean))].sort((a, b) => a.localeCompare(b)), managed: false }
+  /* (REG-651, price book parity Q-07) Unset, the trades are the categories the quotes and My Items already use — one list, never two. */
+  const [used, book] = await Promise.all([
+    db.select({ category: quoteItems.category }).from(quoteItems).where(and(isNotNull(quoteItems.category), eq(quoteItems.kind, 'item'))),
+    db.select({ category: priceBookItems.category }).from(priceBookItems).where(and(isNotNull(priceBookItems.category), isNull(priceBookItems.deletedAt))),
+  ])
+  const seen = new Map<string, string>()
+  for (const c of [...used, ...book].map((u) => u.category!.trim()).filter(Boolean)) if (!seen.has(c.toLowerCase())) seen.set(c.toLowerCase(), c)
+  return { trades: [...seen.values()].sort((a, b) => a.localeCompare(b)), managed: false }
+}
+
+export const TRADE_NOTES_KEY = 'trade_notes'
+
+/** (REG-617, parity Q-08) The studio's note per trade (Settings › Quotes › Trades); only the trades in the list count. */
+export async function fetchTradeNotes(list?: string[]): Promise<Record<string, string>> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, TRADE_NOTES_KEY)).limit(1)
+  if (!row) return {}
+  let notes: Record<string, string> = {}
+  try { notes = parseTradeNotes(JSON.parse(row.value)) } catch { return {} }
+  const trades = new Set((list ?? (await fetchTrades()).trades).map(tradeKey))
+  return Object.fromEntries(Object.entries(notes).filter(([k]) => trades.has(k)))
 }
 
 export const QUOTE_RULES_KEY = 'quote_rules'
@@ -73,8 +91,7 @@ export async function fetchQuoteRules(): Promise<QuoteRules> {
 export async function isApprover(memberId: string | null | undefined, role: string | null | undefined): Promise<boolean> {
   if (role === 'Owner' || role === 'Admin') return true
   if (!memberId) return false
-  const rules = await fetchQuoteRules()
-  return rules.backupApproverId !== null && rules.backupApproverId === memberId
+  return approves(role, memberId, (await fetchQuoteRules()).backupApproverId)
 }
 
 export const LEAD_SOURCES_KEY = 'lead_sources'

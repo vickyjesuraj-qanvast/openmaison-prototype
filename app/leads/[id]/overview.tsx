@@ -379,7 +379,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onQuote={onNewQuote}
             onCallLog={onNewContactLog}
             onNote={onNewNote}
-            onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(`/leads/${lead.id}`)}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else comingSoon() }}   /* (REG-529, REG-534) */   /* (REG-529) */
+            onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(href(tab))}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else comingSoon() }}   /* (REG-529, REG-534; REG-639: back to the tab it was pressed on) */
           />
         </div>
       </div>
@@ -465,6 +465,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
         onClose={() => setLost(false)}
         reason={lostReason} setReason={setLostReason}
         options={lostOptions} reasons={leadReasons.lost} contactCount={lead.contactCount} today={new Date(now)}
+        competitorHint={lead.lastComparison}   /* (REG-640) */
         onSave={(d) => {
           setLost(false)
           const from = lead.stage

@@ -1,10 +1,12 @@
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
 import { resolveTokens, SIGN_LABEL, type SignKey, type TokenValues } from '@/lib/contracts/tokens'
 import { displayDateLong } from '@/lib/format'
+import { sanitizeContractHtml } from '@/lib/contracts/sanitize'
+import type { SignedLetterhead } from '@/lib/contracts/policy'
 import styles from './contract-paper.module.css'
 
 export type StudioSignature = { kind: 'draw' | 'type'; name: string; data: string | null } | null
-export type ClientSignature = { name: string; at: Date; /** (REG-563) the masked NRIC the client typed when signing */ nric?: string | null } | null
+export type ClientSignature = { name: string; at: Date; /** (REG-563) the masked NRIC the client typed when signing */ nric?: string | null; /** (REG-633, parity Q-18) a drawn signature's path */ drawing?: string | null } | null
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -22,8 +24,9 @@ export function renderSignFields(html: string, o: { studio: StudioSignature; cli
       return `<span class="${styles.box} ${initial ? styles.initial : ''}" data-sign="${key}"><span class="${styles.mark}">${mark}</span><span class="${styles.caption}">${esc(label)} · ${esc(o.studioName)}</span></span>`
     }
     const c = o.client
-    const mark = c ? `<span class="${styles.typed}">${esc(initial ? initials(c.name) : c.name)}</span>` : `<span class="${styles.blank}" data-live="${o.live ? '1' : ''}"></span>`
-    const caption = c ? `${esc(label)} · ${esc(c.name)}${c.nric ? ` · NRIC ${esc(c.nric)}` : ''} · ${esc(displayDateLong(c.at))}` : `${esc(label)}${o.live ? ' · sign below' : ''}`   /* (REG-563) the masked NRIC the client typed */
+    const drawn = c?.drawing && !initial && /^[ML0-9. ]+$/.test(c.drawing)
+    const mark = c ? (drawn ? `<svg viewBox="0 0 752 140" class="${styles.drawn}" aria-label="${esc(c.name)}"><path d="${esc(c.drawing!)}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>` : `<span class="${styles.typed}">${esc(initial ? initials(c.name) : c.name)}</span>`) : `<span class="${styles.blank}" data-live="${o.live ? '1' : ''}"></span>`
+    const caption = c ? `${esc(label)} · ${esc(c.name)}${c.nric ? ` · NRIC ${esc(c.nric)}` : ''} · ${esc(displayDateLong(c.at))}` : `${esc(label)}${o.live ? ' · your signature goes here' : ''}`   /* (sweep S2 #5) the box's place on a phone is above the paper, never "below" */   /* (REG-563) the masked NRIC the client typed */
     return `<span class="${styles.box} ${styles.client} ${initial ? styles.initial : ''}" data-sign="${key}" data-signed="${c ? '1' : ''}"><span class="${styles.mark}">${mark}</span><span class="${styles.caption}">${caption}</span></span>`
   })
 }
@@ -34,28 +37,33 @@ const initials = (name: string) => name.trim().split(/\s+/).map((w) => w[0]?.toU
  * resolved and its signature fields drawn. Preview, the signing page and the PDF (print) all render this; the gallery's
  * thumbnails render it scaled.
  */
-export function ContractPaper({ html, values, brand, studio, studioSignature, client, live, width, compact }: {
+export function ContractPaper({ html, values, brand, studio, studioSignature, client, live, width, compact, letterhead }: {
   html: string
   values: TokenValues
   brand: BrandKit
   studio: StudioDetails
   studioSignature: StudioSignature
   client: ClientSignature
-  /** The signing page: the client's box says "sign below". */
+  /** The signing page: the client's box says where their signature goes. */
   live?: boolean
   width?: number
   /** A thumbnail: no letterhead paddings. */
   compact?: boolean
+  /** (REG-631, contracts parity Q-05) A signed contract prints the letterhead it was signed under, not today's. */
+  letterhead?: SignedLetterhead | null
 }) {
-  const resolved = renderSignFields(resolveTokens(html, values), { studio: studioSignature, client, studioName: values['studio.name'] ?? studio.name, live })
-  const line = [studio.address, studio.phone, studio.email, studio.uen ? `UEN ${studio.uen}` : ''].filter(Boolean).join(' · ')
+  /* (REG-631, E-130) The allowlist again at print: whatever reached the record, the page shows only the editor's own markup. */
+  const issuer = letterhead?.name || values['studio.name'] || studio.name
+  const logo = letterhead?.logo ?? brand.logo
+  const resolved = renderSignFields(resolveTokens(sanitizeContractHtml(html), values), { studio: studioSignature, client, studioName: issuer, live })
+  const line = letterhead ? letterhead.line : [studio.address, studio.phone, studio.email, studio.uen ? `UEN ${studio.uen}` : ''].filter(Boolean).join(' · ')
   return (
     <article className={styles.paper} data-compact={compact || undefined} style={width ? { width } : undefined} data-testid="contract-paper">
       <header className={styles.head}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {brand.logo ? <img className={styles.logo} src={brand.logo} alt="" /> : null}
+        {logo ? <img className={styles.logo} src={logo} alt="" /> : null}
         <span className={styles.studio}>
-          <span className={styles.studioName}>{values['studio.name'] || studio.name}</span>
+          <span className={styles.studioName}>{issuer}</span>
           {line ? <span className={styles.studioLine}>{line}</span> : null}
         </span>
       </header>

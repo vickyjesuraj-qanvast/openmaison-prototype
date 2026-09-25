@@ -54,7 +54,7 @@ export async function addStudioQuestions(leadId: string): Promise<number> {
   await db.insert(questions).values(missing.map((q) => {
     const t = isBankType(q.questionType) ? q.questionType : 'text'
     const opts = leadOptions(t, parseBankOptions(q.options))
-    return { id: randomUUID(), leadId, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: order++, createdAt: now }
+    return { id: randomUUID(), leadId, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: order++, createdAt: now, required: q.isRequired }   // (REG-647)
   }))
   touch(leadId)
   return missing.length

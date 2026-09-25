@@ -1,0 +1,26 @@
+/* Quote X-Ray's ghosts (REG-639): the setup's and the record's own frames — the same paddings, widths and gaps as the pages. */
+.content { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); }
+.intro { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-5) var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); }
+.columns { display: flex; gap: var(--om-spacing-6); align-items: flex-start; }
+.card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.foot { display: flex; align-items: center; justify-content: space-between; padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recent { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-5); min-height: 60px; justify-content: center; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recent:nth-child(2) { border-top: 0; }
+.column { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); max-width: 960px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.cardHead { display: flex; align-items: center; justify-content: space-between; }
+.point { display: flex; gap: var(--om-spacing-3); }
+.pointBody { flex: 1; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+@media (max-width: 1024px) {
+  .columns { flex-direction: column; }
+  .recents { width: 100%; }
+}
+@media (max-width: 767px) {
+  .content, .column { padding: var(--om-spacing-4) var(--om-spacing-4) var(--fab-clearance); gap: var(--om-spacing-4); }
+  .card { padding: var(--om-spacing-4); }
+  .grid, .tiles { grid-template-columns: 1fr; }
+}

@@ -3,8 +3,9 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
 import { db } from '@/lib/db'
-import { quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
+import { libraryFolders, quoteTextTemplates, quotes, type QuoteTextTemplate, quoteTemplates } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { isBlankHtml, isTextKind, type TextKind } from '@/lib/quotes/text'
 import { stampQuote } from '@/lib/quotes/stamp'
@@ -45,10 +46,12 @@ export async function listTextTemplates(kind: TextKind): Promise<QuoteTextTempla
 }
 
 /** New Template › Save / Save and Add (1238:33173) — and the library page's New template. */
-export async function createTextTemplate(kind: TextKind, title: string, body: string): Promise<QuoteTextTemplate> {
+export async function createTextTemplate(kind: TextKind, title: string, body: string, folderId: string | null = null): Promise<QuoteTextTemplate> {
   const k = kindOf(kind)
   const id = randomUUID(); const now = new Date()
-  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: SESSION_MEMBER_ID })
+  /* (REG-664) Made inside a folder of My Templates, it is filed there — when that folder is still one of T&Cs & Notes'. */
+  const [folder] = folderId ? await db.select({ id: libraryFolders.id }).from(libraryFolders).where(and(eq(libraryFolders.id, folderId), eq(libraryFolders.library, 'texts'), isNull(libraryFolders.deletedAt))) : []
+  await db.insert(quoteTextTemplates).values({ id, kind: k, title: str(title, 120).trim() || 'Untitled template', body: cleanHtml(body), createdAt: now, updatedAt: now, createdBy: SESSION_MEMBER_ID, folderId: folder?.id ?? null })
   const [row] = await db.select().from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
   touch(id)
   return row!
@@ -62,7 +65,9 @@ export async function updateTextTemplate(id: string, title: string, body: string
   touch(id)
   return row
 }
+const textAuthor = async (id: string) => (await db.select({ createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id)))[0]?.createdBy ?? null
 export async function renameTextTemplate(id: string, title: string): Promise<void> {
+  await assertMayChangeTemplate(await textAuthor(id))   // (REG-646)
   await db.update(quoteTextTemplates).set({ title: str(title, 120).trim() || 'Untitled template', updatedAt: new Date() }).where(eq(quoteTextTemplates.id, id)); touch(id)
 }
 export async function duplicateTextTemplate(id: string): Promise<string> {
@@ -73,6 +78,7 @@ export async function duplicateTextTemplate(id: string): Promise<string> {
 }
 /** Delete is soft (REG-538): the template leaves the modal and the Defaults selects and waits in Deleted Templates. */
 export async function deleteTextTemplate(id: string): Promise<void> {
+  await assertMayChangeTemplate(await textAuthor(id))
   await db.update(quoteTextTemplates).set({ deletedAt: new Date() }).where(eq(quoteTextTemplates.id, id))
   await clearTextFromTemplateDefaults(id)   // (REG-581) no quote template keeps naming it — what the delete dialog promises
   touch(id)
@@ -91,15 +97,17 @@ async function clearTextFromTemplateDefaults(id: string): Promise<void> {
 }
 export async function restoreTextTemplates(ids: string[]): Promise<void> {
   if (!ids.length) return
-  await db.update(quoteTextTemplates).set({ deletedAt: null }).where(inArray(quoteTextTemplates.id, ids)); touch()
+  const mine = await changeableIds(await db.select({ id: quoteTextTemplates.id, createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(inArray(quoteTextTemplates.id, ids)))
+  if (mine.length) await db.update(quoteTextTemplates).set({ deletedAt: null }).where(inArray(quoteTextTemplates.id, mine)); touch()
 }
 /** Delete forever: skipped while a quote template's Defaults still name it (the sheet says so). */
 export async function deleteTextTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
   const usage = await textTemplateUsage()
   let removed = 0, kept = 0
+  const mine = new Set(await changeableIds(ids.length ? await db.select({ id: quoteTextTemplates.id, createdBy: quoteTextTemplates.createdBy }).from(quoteTextTemplates).where(inArray(quoteTextTemplates.id, ids)) : []))   // (REG-646)
   for (const id of ids) {
     const [r] = await db.select({ deletedAt: quoteTextTemplates.deletedAt }).from(quoteTextTemplates).where(eq(quoteTextTemplates.id, id))
-    if (!r?.deletedAt || (usage.get(id) ?? 0) > 0) { kept++; continue }
+    if (!r?.deletedAt || !mine.has(id) || (usage.get(id) ?? 0) > 0) { kept++; continue }
     await db.delete(quoteTextTemplates).where(eq(quoteTextTemplates.id, id)); removed++
   }
   touch()

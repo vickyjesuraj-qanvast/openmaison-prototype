@@ -198,3 +198,10 @@
 .row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant-hover); }
 /* (REG-525) A finger cannot hover: the row keeps its fill after a tap. */
 @media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .colSel, .row:hover .colTitle, .row:hover .pin, .row:hover .selCell { background: var(--om-color-surface-default); } .row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant); } }
+/* (sweep S5 #28) From 768 up the table scrolls inside itself, both ways, so its head holds at the top as the rows go by (it scrolled
+   away with them); on a phone the rows are cards and the body scrolls, as before. */
+@media (min-width: 768px) {
+  .body { overflow: hidden; }
+  .card { overflow: auto; min-height: 0; flex-shrink: 1; }
+  .head { position: sticky; top: 0; z-index: 4; background: var(--om-color-surface-default); }
+}

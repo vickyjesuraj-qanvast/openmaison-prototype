@@ -61,6 +61,7 @@ export function QuestionCard({
     <div className={styles.card} data-testid="question-card" data-state={state}>
       <div className={styles.head}>
         <p className={styles.q}><span className={styles.qLabel}>Q: </span>{question.text}</p>
+        {question.required && !answered ? <Tag appearance="outlined" className={styles.tag} data-testid="question-required">Required</Tag> : null}   {/* (REG-647) the bank's Required */}
         {mode === 'view' && !answered ? <Link variant="primary" onPress={onAnswer}>Answer</Link> : null}
         {answered ? <Tag appearance="outlined" className={styles.tag}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
       </div>

@@ -21,7 +21,7 @@ export function ContractsEmpty({ onFromScratch, onFromTemplate }: { onFromScratc
           <p className={styles.body}>Create contracts and share it with your clients</p>
         </div>
         <div className={styles.buttons}>
-          <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From Scratch</Button>
+          <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From the studio agreement</Button>   {/* (sweep S2 #20) the mock's "From Scratch" made the full agreement — one name for one action, the picker's */}
           <Button onPress={onFromTemplate}>From Template</Button>
         </div>
       </div>

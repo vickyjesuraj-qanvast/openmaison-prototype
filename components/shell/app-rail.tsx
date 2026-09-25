@@ -186,7 +186,7 @@ export function AppRail({ badges }: { badges?: Record<string, number> } = {}) {
         </div>
       </nav>
       <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
-      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['/company'] ?? 0} />
+      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} />
     </div>
   )
 }

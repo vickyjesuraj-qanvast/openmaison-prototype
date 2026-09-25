@@ -96,7 +96,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
           </div>
           {summary ? (
             <div className={styles.summary}>
-              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} askedAt={askedAt} />
+              <SummaryCard total={summary.total} clientAnswered={summary.clientAnswered} studioAnswered={summary.studioAnswered} askedAt={askedAt} requiredOpen={questions.filter((q) => q.required && !q.answeredBy).length} />
             </div>
           ) : null}
         </div>

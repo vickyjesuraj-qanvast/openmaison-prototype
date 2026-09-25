@@ -1,7 +1,7 @@
 import 'server-only'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadFiles, leads, members, priceBookItems, priceBookSections, quoteFiles, quoteItems, quotePayments, quoteTextTemplates, quoteVersions, quotes, type LeadFile, type Member, type PriceBookItem, type PriceBookSection, type Quote, type QuoteItem, type QuotePayment, type QuoteTextTemplate, type QuoteVersion } from '@/lib/db/schema'
+import { leadAssignees, leadFiles, leads, members, priceBookItems, priceBookSections, quoteFiles, quoteItemComments, quoteItems, quotePayments, quoteTextTemplates, quoteVersions, quotes, type LeadFile, type Member, type PriceBookItem, type PriceBookSection, type Quote, type QuoteItem, type QuoteItemComment, type QuotePayment, type QuoteTextTemplate, type QuoteVersion } from '@/lib/db/schema'
 import { fetchQuoteApproval, fetchQuoteRules, fetchStudio, fetchTrades, isApprover } from '@/lib/settings/queries'
 import { deriveQuoteActivity, type QuoteEvent } from '@/lib/quotes/activity'
 import type { QuoteApproval, QuoteRules, Studio } from '@/lib/settings/types'
@@ -10,13 +10,24 @@ import type { BrandKit, StudioDetails } from '@/lib/templates/model'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import type { PaymentSplit } from '@/lib/quotes/payments'
 import { diffQuoteItems } from '@/lib/quotes/diff'
+import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
+import { itemPickable, runsBook } from '@/lib/company/price-book-rules'
+import { fetchQuoteContract, type QuoteContract } from './contract-link'
+import { fetchFolders } from '@/lib/company/folders'
+import type { FolderNode } from '@/lib/folders'
 
 /* Quote editor (1271:40301) — one loader for the page: the quote, its lead, the lead's other quotes (the title chevron
    switches between them), the studio's members (Prepared by) and the lifecycle setting that decides what Send does. */
 
 export type EditorLead = { id: string; name: string; phone: string; email: string | null; propertyType: string; propertyAddress: string | null; estimatedStartDate: Date | null }
 export type QuoteSibling = { id: string; number: string; title: string; status: string }
+export type { QuoteContract }
 export type QuoteEditorData = {
+  contract: QuoteContract | null
+  /** (REG-652, price book parity Q-03) Whether the viewer changes the price book — My Sections are theirs to save to. */
+  runsBook: boolean
+  /** (REG-627, parity Q-30) The team's comments on the quote's lines, oldest first. */
+  lineComments: QuoteItemComment[]
   quote: Quote
   lead: EditorLead
   siblings: QuoteSibling[]
@@ -35,6 +46,8 @@ export type QuoteEditorData = {
   priceBookSections: PriceBookSection[]
   /** (REG-561) The studio's trades (Settings › Quotes) — the Category menu's base list. */
   trades: string[]
+  /** (REG-618, parity Q-25) The lead's members — "Prepared by: every member on the lead" in the live client view. */
+  teamIds: string[]
   /** (REG-565) The quote's earlier versions, newest first — the header's Version History. */
   versions: QuoteVersion[]
   studio: Studio
@@ -55,12 +68,16 @@ export type QuoteEditorData = {
   /** (REG-497) The brand kit and company details the live client view draws with. */
   brand: BrandKit
   studioDetails: StudioDetails
+  /** (REG-664) The folders of the libraries this page picks from — My Templates (T&Cs & Notes), the payment presets, the Price book's two tabs. */
+  libraryFolders: { texts: FolderNode[]; payments: FolderNode[]; bookItems: FolderNode[]; bookSections: FolderNode[] }
   now: number
 }
 
 export async function fetchQuoteEditor(quoteId: string): Promise<QuoteEditorData | null> {
   const [quote] = await db.select().from(quotes).where(and(eq(quotes.id, quoteId), isNull(quotes.deletedAt)))
   if (!quote) return null
+  const viewer = await fetchViewer()
+  if (!(await canOpenLead(viewer, quote.leadId))) return null   /* (REG-625, parity §8.2 · E-135) Who sees leads reaches the quote's own URL: not your lead, not your quote */
   const [leadRows, siblings, team, quoteApproval, items, priceBook, studio, files, payments, attachedRows, textTemplates, templateState, brandSetting, paymentSplits, sections, trades, versions, rules] = await Promise.all([
     db.select({ id: leads.id, name: leads.name, phone: leads.phone, email: leads.email, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, quote.leadId)),
     db.select({ id: quotes.id, number: quotes.number, title: quotes.title, status: quotes.status }).from(quotes)
@@ -82,6 +99,7 @@ export async function fetchQuoteEditor(quoteId: string): Promise<QuoteEditorData
     db.select().from(quoteVersions).where(eq(quoteVersions.quoteId, quoteId)).orderBy(asc(quoteVersions.version)),
     fetchQuoteRules(),
   ])
+  const assignees = await db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, quote.leadId))
   const lead = leadRows[0]
   if (!lead) return null
   const me = team.find((m) => m.isYou) ?? null
@@ -89,5 +107,12 @@ export async function fetchQuoteEditor(quoteId: string): Promise<QuoteEditorData
   const lastKept = versions[versions.length - 1]
   const prev = lastKept ? reviveSnapshot(lastKept.snapshotJson) : null
   const changes = prev ? diffQuoteItems(prev.items, items).counts : null
-  return { quote, lead, siblings, members: team, me, quoteApproval, rules, canApprove, changes, items, priceBook, priceBookSections: sections, trades: trades.trades, versions: [...versions].reverse(), studio, files, payments, quoteFiles: attachedRows.map((r) => r.file), textTemplates, paymentSplits, activity: deriveQuoteActivity(quote, items, payments, attachedRows.map((r) => ({ createdAt: r.at })), team, versions), templateState, brand: brandSetting.kit, studioDetails: brandSetting.details, now: Date.now() }
+  const lineComments = await db.select().from(quoteItemComments).where(eq(quoteItemComments.quoteId, quoteId)).orderBy(asc(quoteItemComments.createdAt))   // (REG-627)
+  const contract = await fetchQuoteContract(quoteId)
+  const node = (f: { id: string; name: string; parentId: string | null }) => ({ id: f.id, name: f.name, parentId: f.parentId })
+  const [fTexts, fPayments, fItems, fSections] = await Promise.all([fetchFolders('texts'), fetchFolders('payments'), fetchFolders('book-items'), fetchFolders('book-sections')])   // (REG-664)
+  const libraryFolders = { texts: fTexts.map(node), payments: fPayments.map(node), bookItems: fItems.map(node), bookSections: fSections.map(node) }
+  /* (REG-652, price book parity Q-04) The Add Item popover offers the live book and the viewer's own proposals. */
+  return { libraryFolders, contract, lineComments, quote, lead, siblings, members: team, me, quoteApproval, rules, canApprove, changes, items, priceBook: priceBook.filter((p) => itemPickable(viewer, p)), priceBookSections: sections, runsBook: runsBook(viewer), trades: trades.trades, teamIds: assignees.map((a) => a.memberId), versions: [...versions].reverse(), studio, files, payments, quoteFiles: attachedRows.map((r) => r.file), textTemplates, paymentSplits, activity: deriveQuoteActivity(quote, items, payments, attachedRows.map((r) => ({ createdAt: r.at })), team, versions), templateState, brand: brandSetting.kit, studioDetails: brandSetting.details, now: Date.now() }
 }
+

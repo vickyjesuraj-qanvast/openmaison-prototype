@@ -17,6 +17,7 @@ import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMile
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
+import { pickable } from '@/lib/leads/assign-policy'
 
 // OUTCOMES / SCHEDULE / CONTACT_MODES live in lib/leads/enums.ts — shared with the Notes tab (REG-186, REG-319).
 
@@ -35,7 +36,7 @@ export function NewPanel({
       <p className={styles.panelTitle}>New</p>
       <div className={styles.stack12}>
         <SectionRow label="Members" />
-        {team.map((m) => (
+        {pickable(team, data.assignees).map((m) => (   /* (REG-646) active members, and any already ticked */
           <div key={m.id} className={styles.memberRow}>
             <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
             <span className={styles.memberText}>

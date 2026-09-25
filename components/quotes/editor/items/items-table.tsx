@@ -12,10 +12,10 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { isBlock, sumLines } from '@/lib/quotes/clipboard'
 import type { PriceBookItem, QuoteItem } from '@/lib/db/schema'
-import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
+import { COLUMN_LABEL, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, shortLink, UNLABELLED, type ColumnKey, type ColumnSettings, type ItemsDensity, type ItemsView } from '@/lib/quotes/items-model'
 import { countedLines, descendantIds, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, markupPct, money2, numberItems, pct, unitPriceMinor } from '@/lib/quotes/math'
 import type { PriceBookSection } from '@/lib/db/schema'
-import { parseSavedSection, savedSectionCount } from '@/lib/quotes/items-model'
+import { parseSavedSection, parseSectionTags, savedSectionCount } from '@/lib/quotes/items-model'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
 import { useRowDrag, type DragRow, type DropSlot } from './row-drag'
@@ -76,6 +76,8 @@ function columnTexts(key: ColumnKey, display: Display[], items: QuoteItem[]): [s
       case 'section': out.push([i.section ?? 'Add label', 24]); break
       case 'type': if (!isGroup) out.push([isItemKind(i.icon) ? ITEM_KIND_LABEL[i.icon] : '–', 0]); break
       case 'rebate': if (!isGroup) out.push([money2(i.rebateMinor), 0]); break   // (REG-596)
+      case 'vendor': if (!isGroup) out.push([i.vendor ?? 'Add vendor', 24]); break   // (REG-623) + the select's chevron
+      case 'website': if (!isGroup) out.push([i.link ? shortLink(i.link) : 'Add link', i.link ? 24 : 0]); break   // + the Open glyph
       case 'margin': { const price = isGroup ? sums!.unitPriceMinor : unitPriceMinor(i); const cost = isGroup ? sums!.costMinor : i.costMinor; out.push([price > 0 ? pct(Number((((price - cost) / price) * 100).toFixed(1))) : '–', 0]); break }
       default: out.push(['–', 0])
     }
@@ -136,9 +138,13 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 
 export function ItemsTable({
   items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
-  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick,
-  query, onPasteBlock, clientColumns, onAddColumn,
+  onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, bookPlace = null, bookPlaceSection = null, onClearBookPlace,
+  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {},
 }: {
+  /** (REG-627, parity Q-30) Each line's comment count, by id. */
+  commentCounts?: Record<string, number>
+  /** (REG-619, parity Q-27) The quote's property type — the Add Item popover's My Sections filter. */
+  propertyType?: string | null
   /** The head's + opens the Column settings drawer (its catalogue is where a column is added). */
   onAddColumn?: () => void
   items: QuoteItem[]
@@ -156,7 +162,7 @@ export function ItemsTable({
   /** A head dragged to a new place (REG-462): the visible keys in their new order. */
   onReorder: (keys: ColumnKey[]) => void
   details: ColumnSettings['details']
-  labels: { rooms: string[]; categories: string[]; sections: string[] }
+  labels: { rooms: string[]; categories: string[]; sections: string[]; vendors: string[]; tradeNotes?: Record<string, string> }
   selected: Set<string>
   collapsedBuckets: Set<string>
   showFull: Set<string>
@@ -172,6 +178,10 @@ export function ItemsTable({
   onCreate: (name: string) => void
   onPickPriceBook: (id: string) => void
   onViewPriceBook: () => void
+  /** (REG-653, price book parity Q-12) Where the Add Item popover's pick lands when a row asked for it, and the way back to the end. */
+  bookPlace?: string | null
+  bookPlaceSection?: string | null
+  onClearBookPlace?: () => void
   /** Export As → the house Export dialog (REG-478). */
   onExport: () => void
   addInputRef: React.RefObject<HTMLInputElement | null>
@@ -235,15 +245,20 @@ export function ItemsTable({
   const fullDisplay = useMemo(() => buildDisplay(items.map((i) => (i.kind === 'group' && i.collapsed ? { ...i, collapsed: false } : i)), view, viewLabels, new Set()), [items, view, viewLabels])
   /* Find (REG-477): the rows whose name or description carry the text, each under its group (the band its number needs) and its bucket. */
   const q = query.trim().toLowerCase()
-  const shown = useMemo(() => {
-    if (!q) return display
+  const found = useMemo(() => {
+    if (!q) return null
     const hit = (i: QuoteItem) => i.name.toLowerCase().includes(q) || (i.description ?? '').toLowerCase().includes(q)
     const keep = new Set<string>()
     for (const i of items) if (hit(i)) { keep.add(i.id); if (i.parentId) keep.add(i.parentId) }
-    const buckets = new Set(display.flatMap((d) => (d.kind === 'row' && keep.has(d.item.id) ? [d.bucket] : [])))
-    return display.filter((d) => (d.kind === 'row' ? keep.has(d.item.id) : buckets.has(d.key)))
-  }, [display, items, q])
-  const sums = useMemo(() => sumLines(items), [items])
+    return keep
+  }, [items, q])
+  const shown = useMemo(() => {
+    if (!found) return display
+    const buckets = new Set(display.flatMap((d) => (d.kind === 'row' && found.has(d.item.id) ? [d.bucket] : [])))
+    return display.filter((d) => (d.kind === 'row' ? found.has(d.item.id) : buckets.has(d.key)))
+  }, [display, found])
+  /* (sweep S1) while Find is on, the Sum row adds up what it shows — never every line beside two rows */
+  const sums = useMemo(() => sumLines(found ? items.filter((i) => found.has(i.id)) : items), [items, found])
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
@@ -358,8 +373,8 @@ export function ItemsTable({
     return (
       <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
         <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
-                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} />
-        <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
+                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} commentCounts={commentCounts} />
+        <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
       </div>
     )
   }
@@ -403,10 +418,11 @@ export function ItemsTable({
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
                      {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)}
-                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} />
+                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} />
           ))}
+          {found && !shown.some((d) => d.kind === 'row') ? <div className={styles.findEmpty} role="row" data-testid="find-empty"><span role="cell">No items match “{query.trim()}”</span></div> : null}   {/* (sweep S1) */}
           <SumRow sums={sums} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
-          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} />
+          <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
         </div>
       </div>
       <SideScrollbar scroller={scroller} />
@@ -516,10 +532,15 @@ function BucketRow({ d, all, columns, colW, colStyle, autonumber, folded, onTogg
  * matches, Enter adds the active one — or, with nothing active, a blank line named as typed ("Item" when nothing is typed,
  * like Create ▾ › New Item). "Create New Item" is always live (spec 04 draws it enabled). The field keeps focus for the next line.
  */
-function AddItemRow({ number, autonumber, priceBook, sections, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick }: {
-  number: number; autonumber: boolean; priceBook: PriceBookItem[]; sections: PriceBookSection[]; onCreate: (name: string) => void; onPick: (id: string) => void; onPickSection: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
+function AddItemRow({ number, autonumber, priceBook, sections, propertyType, onCreate, onPick, onPickSection, onViewPriceBook, onExport, inputRef, openTick, place = null, placeSection = null, onClearPlace }: {
+  number: number; autonumber: boolean; priceBook: PriceBookItem[]; sections: PriceBookSection[]; propertyType: string | null; onCreate: (name: string) => void; onPick: (id: string) => void; onPickSection: (id: string) => void; onViewPriceBook: () => void; onExport: () => void
   inputRef: React.RefObject<HTMLInputElement | null>
   openTick: number
+  /** (REG-653, price book parity Q-12) Where a pick lands when a row asked for it (the row menu's Add Item › From My Items…): "below “Painting”". */
+  place?: string | null
+  /** (sweep S5 #13) Where a section pick lands with that place — after the row's top-level section: "after “Bathrooms”". */
+  placeSection?: string | null
+  onClearPlace?: () => void
 }) {
   const listId = useId()
   const [q, setQ] = useState('')
@@ -527,27 +548,59 @@ function AddItemRow({ number, autonumber, priceBook, sections, onCreate, onPick,
   const [active, setActive] = useState(-1)
   const [seenTick, setSeenTick] = useState(openTick)
   if (openTick !== seenTick) { setSeenTick(openTick); setOpen(true) }   // Create › From My Items opens it outright (render-phase adjust)
+  /* (sweep S5 #12) …and the field keeps the focus: the row menu, closing, handed it back to its kebab after the press had put it here. */
+  const mountTick = useRef(openTick)   // a remount (the section expanded again) is not a press
+  useEffect(() => { if (seenTick !== mountTick.current) { const r = requestAnimationFrame(() => inputRef.current?.focus()); return () => cancelAnimationFrame(r) } }, [seenTick, inputRef])
   const anchor = useRef<HTMLDivElement>(null)
+  /* (REG-653, price book parity Q-12 · E-74) Every item that matches — the list scrolls and counts them all — found by its name, description,
+     vendor, category or kind, as the Company page's search finds them. */
   const matches = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return (s ? priceBook.filter((p) => p.name.toLowerCase().includes(s) || (p.description ?? '').toLowerCase().includes(s) || (p.vendor ?? '').toLowerCase().includes(s)) : priceBook).slice(0, 8)   /* (REG-594) a vendor's name finds its items */
+    return s ? priceBook.filter((p) => [p.name, p.description ?? '', p.vendor ?? '', p.category ?? '', ITEM_KIND_LABEL[isItemKind(p.kind) ? p.kind : 'purchase']].some((f) => f.toLowerCase().includes(s))) : priceBook
   }, [q, priceBook])
-  /* (REG-566) The saved sections that match, with their line counts; a pick inserts the whole section at the end of the table. */
-  const sectionMatches = useMemo(() => {
+  /* (REG-566) The saved sections that match, with their line counts; a pick inserts the whole section at the end of the table.
+     (REG-619, parity Q-27) A section made for another property type waits under "Show all" — 1.0's "the lead's type, or none" — and a tag finds it. */
+  const [allTypes, setAllTypes] = useState(false)
+  const { sectionMatches, otherTypes } = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return sections.filter((x) => !s || x.name.toLowerCase().includes(s)).slice(0, 6).map((x) => { const body = parseSavedSection(x.linesJson); return { id: x.id, name: x.name, count: body ? savedSectionCount(body) : 0 } })
-  }, [q, sections])
+    const found = sections.map((x) => ({ x, tags: parseSectionTags(x.tags) }))
+      .filter(({ x, tags }) => !s || x.name.toLowerCase().includes(s) || tags.some((t) => t.toLowerCase().includes(s)))
+    const fits = (x: PriceBookSection) => !propertyType || !x.propertyType || x.propertyType === propertyType
+    const shown = allTypes ? found : found.filter(({ x }) => fits(x))
+    return {
+      otherTypes: found.length - found.filter(({ x }) => fits(x)).length,
+      sectionMatches: shown.map(({ x, tags }) => { const body = parseSavedSection(x.linesJson); return { id: x.id, name: x.name, count: body ? savedSectionCount(body) : 0, propertyType: x.propertyType, tags } }),
+    }
+  }, [q, sections, propertyType, allTypes])
+  /* (REG-653, Q-12) One keyboard walk over the items and then the sections. (sweep S5 #12) "At the end instead" and "Show all" are in the walk
+     too — they were pointer-only; leaving the field closes the box and keeps the place (Escape or At the end instead let it go). */
+  const typeToggle = !!(otherTypes && propertyType)
+  const options = useMemo(() => [
+    ...(place ? [{ kind: 'end' as const, id: 'end' }] : []),
+    ...matches.map((m) => ({ kind: 'item' as const, id: m.id })),
+    ...(typeToggle ? [{ kind: 'allTypes' as const, id: 'all-types' }] : []),
+    ...sectionMatches.map((x) => ({ kind: 'section' as const, id: x.id })),
+  ], [place, matches, typeToggle, sectionMatches])
+  const idx = (kind: string, id: string) => options.findIndex((o) => o.kind === kind && o.id === id)
+  const close = () => { setOpen(false); setActive(-1); onClearPlace?.() }
+  const shut = () => { setOpen(false); setActive(-1) }
   const create = () => { onCreate(q.trim()); setQ(''); setActive(-1); setOpen(false) }
   const pick = (id: string) => { onPick(id); setQ(''); setActive(-1); setOpen(false) }
+  const pickSection = (id: string) => { onPickSection(id); setQ(''); setActive(-1); setOpen(false) }
+  const optId = (i: number) => `${listId}-opt-${i}`
+  const walk = (dir: 1 | -1) => setActive((a) => {
+    const n = options.length ? (a < 0 ? (dir === 1 ? 0 : options.length - 1) : (a + dir + options.length) % options.length) : -1
+    if (n >= 0) requestAnimationFrame(() => document.getElementById(optId(n))?.scrollIntoView({ block: 'nearest' }))
+    return n
+  })
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); setActive((a) => (matches.length ? (a + 1) % matches.length : -1)) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); if (!open) setOpen(true); setActive((a) => (matches.length ? (a <= 0 ? matches.length - 1 : a - 1) : -1)) }
-    else if (e.key === 'Enter') { e.preventDefault(); const m = active >= 0 ? matches[active] : undefined; if (m) pick(m.id); else create() }
-    else if (e.key === 'Escape') { setOpen(false); setActive(-1); (e.target as HTMLInputElement).blur() }
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); walk(1) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (!open) setOpen(true); walk(-1) }
+    else if (e.key === 'Enter') { e.preventDefault(); const o = active >= 0 ? options[active] : undefined; if (o?.kind === 'item') pick(o.id); else if (o?.kind === 'section') pickSection(o.id); else if (o?.kind === 'end') { onClearPlace?.(); setActive(-1) } else if (o?.kind === 'allTypes') { setAllTypes((v) => !v); setActive(-1) } else create() }
+    else if (e.key === 'Escape') { close(); (e.target as HTMLInputElement).blur() }
   }
   // Focus leaving the field closes the popover — unless it went INTO the popover (a row or Create New Item press).
-  const onBlur = (e: FocusEvent<HTMLInputElement>) => { const t = e.relatedTarget; if (!(t instanceof Element && t.closest('[data-om-menu]'))) { setOpen(false); setActive(-1) } }
-  const optId = (i: number) => `${listId}-opt-${i}`
+  const onBlur = (e: FocusEvent<HTMLInputElement>) => { const t = e.relatedTarget; if (!(t instanceof Element && t.closest('[data-om-menu]'))) shut() }
   return (
     <div className={styles.addRow} role="row" data-add-item="">
       <div className={styles.addInner} role="cell">
@@ -555,42 +608,57 @@ function AddItemRow({ number, autonumber, priceBook, sections, onCreate, onPick,
         <div ref={anchor} className={styles.addField}>
           <TextField label="Add Item" value={q} size="s" inputRef={inputRef} onChange={(v) => { setQ(v); setActive(-1); if (!open) setOpen(true) }} onKeyDown={onKey}
                      inputProps={{ role: 'combobox', 'aria-expanded': open, 'aria-controls': open ? listId : undefined, 'aria-autocomplete': 'list', 'aria-activedescendant': open && active >= 0 ? optId(active) : undefined, autoComplete: 'off', onBlur }} />
-          <PortalMenu open={open} anchor={anchor} onClose={() => { setOpen(false); setActive(-1) }} role="listbox" width={360} id={listId} className={sec.popoverMenu}>
+          <PortalMenu open={open} anchor={anchor} onClose={close} role="listbox" width={360} id={listId} className={sec.popoverMenu} autoFocus={false}>
             <div className={sec.popover}>
-              <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>Create New Item</Button></div>
-              <div className={sec.popHead}>My Items ({matches.length})</div>
-              {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'Nothing in My Items yet'}</div> : matches.map((p, i) => (
-                <button key={p.id} id={optId(i)} type="button" role="option" aria-selected={i === active} data-active={i === active || undefined} className={sec.popRow} onClick={() => pick(p.id)}>
-                  <span className={sec.popThumb}>
-                    {p.thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.thumb} alt="" />
-                    ) : <Icon name={ITEM_KIND_ICON[isItemKind(p.kind) ? p.kind : 'purchase']} size={24} weight={300} />}
-                  </span>
-                  <span className={sec.popText}>
-                    <span className={sec.popName}>{p.name}</span>
-                    <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}{p.vendor ? ` · by ${p.vendor}` : ''}</span>   {/* (REG-594) */}
-                  </span>
-                </button>
-              ))}
-              {sectionMatches.length ? (
-                <>
-                  <div className={sec.popHead}>My Sections ({sectionMatches.length})</div>
-                  {sectionMatches.map((x) => (
-                    <button key={x.id} type="button" role="option" aria-selected={false} className={sec.popRow} data-testid="my-section" onClick={() => { onPickSection(x.id); setQ(''); setActive(-1); setOpen(false) }}>
-                      <span className={sec.popThumb}><Icon name="folder" size={24} weight={300} /></span>
-                      <span className={sec.popText}>
-                        <span className={sec.popName}>{x.name}</span>
-                        <span className={sec.popMeta}>Section · {x.count} {x.count === 1 ? 'item' : 'items'}</span>
-                      </span>
-                    </button>
-                  ))}
-                </>
+              {place ? (
+                <div className={sec.popPlace} data-testid="add-item-place">
+                  <span>An item lands {place}</span>
+                  <button type="button" id={optId(idx('end', 'end'))} role="option" aria-selected={active === idx('end', 'end')} data-active={active === idx('end', 'end') || undefined} className={sec.popToggle} onMouseDown={(e) => e.preventDefault()} onClick={() => onClearPlace?.()}>At the end instead</button>
+                </div>
               ) : null}
+              <div className={sec.popCreate}><Button variant="primary" appearance="outlined" onPress={create}>Create New Item</Button></div>
+              <div className={sec.popList} data-testid="add-item-list">
+                <div className={sec.popHead}>My Items ({matches.length})</div>
+                {matches.length === 0 ? <div className={sec.popEmpty}>{q.trim() ? `No items match “${q.trim()}”` : 'Nothing in My Items yet'}</div> : matches.map((p) => { const i = idx('item', p.id); return (
+                  <button key={p.id} id={optId(i)} type="button" role="option" aria-selected={i === active} data-active={i === active || undefined} className={sec.popRow} onClick={() => pick(p.id)}>
+                    <span className={sec.popThumb}>
+                      {p.thumb ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.thumb} alt="" />
+                      ) : <Icon name={ITEM_KIND_ICON[isItemKind(p.kind) ? p.kind : 'purchase']} size={24} weight={300} />}
+                    </span>
+                    <span className={sec.popText}>
+                      <span className={sec.popName}>{p.name}</span>
+                      <span className={sec.popMeta}>{money2(p.costMinor + p.markupMinor)} / {p.unit}{p.vendor ? ` · by ${p.vendor}` : ''}{p.status === 'proposed' ? ' · Proposed' : ''}</span>   {/* (REG-594; REG-652 a proposal of your own says so) */}
+                    </span>
+                  </button>
+                ) })}
+                {sectionMatches.length || otherTypes ? (
+                  <>
+                    <div className={sec.popHead}>
+                      <span>My Sections ({sectionMatches.length})</span>
+                      {typeToggle ? <button type="button" id={optId(idx('allTypes', 'all-types'))} role="option" aria-selected={active === idx('allTypes', 'all-types')} data-active={active === idx('allTypes', 'all-types') || undefined} className={sec.popToggle} data-testid="sections-all-types" onMouseDown={(e) => e.preventDefault()} onClick={() => setAllTypes((v) => !v)}>{allTypes ? `For ${propertyType} only` : `Show all · ${otherTypes} more`}</button> : null}
+                    </div>
+                    {placeSection ? <div className={sec.popPlace} data-testid="add-section-place"><span>A section lands {placeSection}</span></div> : null}
+                    {sectionMatches.map((x) => {
+                      const i = idx('section', x.id)
+                      return (
+                        <button key={x.id} id={optId(i)} type="button" role="option" aria-selected={i === active} data-active={i === active || undefined} className={sec.popRow} data-testid="my-section" onClick={() => pickSection(x.id)}>
+                          <span className={sec.popThumb}><Icon name="format_list_bulleted" size={24} weight={300} /></span>
+                          <span className={sec.popText}>
+                            <span className={sec.popName}>{x.name}</span>
+                            <span className={sec.popMeta}>Section · {x.count} {x.count === 1 ? 'item' : 'items'}{x.propertyType ? ` · ${x.propertyType}` : ''}{x.tags.length ? ` · ${x.tags.join(', ')}` : ''}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </>
+                ) : null}
+              </div>
             </div>
           </PortalMenu>
         </div>
-        <button type="button" className={styles.link} onClick={onViewPriceBook}>View Price Book</button>
+        <button type="button" className={styles.link} onClick={onViewPriceBook}>Price book</button>   {/* (REG-662, owner 2026-09-25) one name — the modal, Company's page and this link */}
         <button type="button" className={styles.link} onClick={onExport}>Export As</button>
       </div>
     </div>

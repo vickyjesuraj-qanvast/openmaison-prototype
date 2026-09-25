@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
@@ -15,9 +17,12 @@ import styles from './files-toolbar.module.css'
 export type FilesView = 'list' | 'grid'
 
 export type FilesToolbarProps = {
-  /** The open folder (frame 91) — null at the root ("All Files"). */
-  folder: FileRow | null
-  onBack: () => void
+  /** (REG-664) The way from the top down to the open folder (frame 91) — empty at the root ("All Files"). */
+  trail: FileRow[]
+  /** A crumb or Back (up one level): the folder to open, null = All Files. */
+  onGo: (folderId: string | null) => void
+  /** (REG-664) New Folder, beside New File — the tab could make a folder only from the empty state or inside the Move dialog. */
+  onNewFolder: () => void
   /** Breadcrumb kebab (931:39719 → folder menu 200×118): Move · Rename · Delete. */
   onFolderMenu: (action: 'move' | 'rename' | 'delete') => void
   query: string
@@ -44,50 +49,38 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ folder, onBack, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu }: FilesToolbarProps) {
+export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
+  const folder = trail[trail.length - 1] ?? null
+  const folderAnchor = useRef<HTMLElement | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
 
   return (
     <div className={styles.bar}>
       {folder ? (
-        /* Breadcrumb row (931:39719, H g12): back · crumb (H g4) · folder kebab. "All Files" is plain text here — the mock
-           draws it as a label, the arrow is the only way back (no invented link). */
-        <div className={styles.crumbRow}>
-          <Tooltip label="Back to All Files">
-            <button type="button" className={styles.back} aria-label="Back to All Files" onClick={onBack}>
-              <Icon name="arrow_back" size={24} weight={300} />
-            </button>
-          </Tooltip>
-          <div className={styles.crumb}>
-            <span className={styles.crumbRoot}>All Files</span>
-            <span className={styles.crumbRoot} aria-hidden>/</span>
-            <h2 className={styles.crumbTitle}>{folder.name}</h2>
+        /* Breadcrumb row (931:39719, H g12). (REG-664) The shared crumb: every folder on the way is a link, Back goes up one level, and
+           the folder's menu (Move · Rename · Delete) opens through the portal with the folder's own name on a phone's sheet (it said
+           "New Folder"). */
+        <>
+          <div className={styles.crumbRow}>
+            <FolderCrumbs root="All Files" trail={trail} onGo={onGo} menuOpen={menu === 'folder'}
+                          onMenu={(el) => { folderAnchor.current = el; setMenu((m) => (m === 'folder' ? null : 'folder')) }} />
           </div>
-          <span className={styles.menuWrap}>
-            <Tooltip label="Folder actions" disabled={menu === 'folder'}>
-              <button
-                type="button" className={styles.folderKebab}
-                aria-label={`Actions for ${folder.name}`}
-                aria-haspopup="menu" aria-expanded={menu === 'folder'}
-                onClick={() => setMenu((m) => (m === 'folder' ? null : 'folder'))}
-              >
-                <Icon name="more_vert" size={20} weight={300} />
-              </button>
-            </Tooltip>
-            <Dropdown open={menu === 'folder'} onClose={() => setMenu(null)} align="left" sheetTitle="New Folder">
-              {/* Folder menu 200×118 (frame 91 @339,176) — verbatim order. */}
-              <DropdownItem onSelect={pick(() => onFolderMenu('move'))}>Move</DropdownItem>
-              <DropdownItem onSelect={pick(() => onFolderMenu('rename'))}>Rename</DropdownItem>
-              <DropdownItem onSelect={pick(() => onFolderMenu('delete'))}><span className={styles.danger}>Delete</span></DropdownItem>
-            </Dropdown>
-          </span>
-        </div>
+          <PortalMenu open={menu === 'folder'} anchor={folderAnchor} onClose={() => setMenu(null)} align="left" width={200} role="menu" sheetTitle={folder.name}>
+            {/* Folder menu 200×118 (frame 91 @339,176) — verbatim order. */}
+            <DropdownItem onSelect={pick(() => onFolderMenu('move'))}>Move</DropdownItem>
+            <DropdownItem onSelect={pick(() => onFolderMenu('rename'))}>Rename</DropdownItem>
+            <DropdownItem onSelect={pick(() => onFolderMenu('delete'))}><span className={styles.danger}>Delete</span></DropdownItem>
+          </PortalMenu>
+        </>
       ) : (
         <h2 className={styles.title}>All Files</h2>
       )}
       <div className={styles.actions}>
+        <Tooltip label="New Folder">
+          <IconButton icon="create_new_folder" label="New Folder" className={styles.touchBtn} onClick={onNewFolder} />
+        </Tooltip>
         <span className={styles.menuWrap}>
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}

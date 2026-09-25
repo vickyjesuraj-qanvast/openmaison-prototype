@@ -1,0 +1,4 @@
+Item,Qty,Unit,Rate,Category
+"Wardrobe, master bedroom",1,Lot,3200,Carpentry
+"Kitchen cabinets, top",12,ft run,180,Carpentry
+False ceiling,120,sqft,6.5,Ceiling

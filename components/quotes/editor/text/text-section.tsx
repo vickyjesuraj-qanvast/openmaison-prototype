@@ -17,10 +17,11 @@ import { SectionCard } from '../section-card'
 import { RichEditor, type RichEditorHandle } from './rich-editor'
 import { TemplatesModal } from './templates-modal'
 import styles from './text-section.module.css'
+import type { FolderNode } from '@/lib/folders'
 
 const AUTOSAVE_MS = 600
 
-export type TextSeed = { quoteId: string; kind: TextKind; html: string; visible: boolean; templates: QuoteTextTemplate[] }
+export type TextSeed = { quoteId: string; kind: TextKind; html: string; visible: boolean; templates: QuoteTextTemplate[]; /** (REG-664) T&Cs & Notes' folders — My Templates browses them */ folders?: FolderNode[] }
 
 /** The Maison AI mark in the button's leading-icon slot (1263:36257). */
 function AiMark() {
@@ -124,10 +125,14 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
   )
 
   return (
-    <SectionCard id={`section-${kind}`} title={label} open={open} onToggle={onToggle} actions={actions} onHandlePointerDown={onHandlePointerDown}>
-      <RichEditor ref={editor} value={html} onChange={change} placeholder={TEXT_PLACEHOLDER[kind]} label={label}
-                  right={<Button variant="primary" appearance="outlined" iconStart={<AiMark />} isDisabled={writing} onPress={write}>{writing ? 'Writing…' : 'Write with AI'}</Button>} />
-      <TemplatesModal open={modal} kind={kind} templates={templates} onClose={() => setModal(false)} onAdd={addTemplate} onTemplates={setTemplates} />
-    </SectionCard>
+    <>
+      <SectionCard id={`section-${kind}`} title={label} open={open} onToggle={onToggle} actions={actions} onHandlePointerDown={onHandlePointerDown}>
+        <RichEditor ref={editor} value={html} onChange={change} placeholder={TEXT_PLACEHOLDER[kind]} label={label}
+                    right={<Button variant="primary" appearance="outlined" iconStart={<AiMark />} isDisabled={writing} onPress={write}>{writing ? 'Writing…' : 'Write with AI'}</Button>} />
+      </SectionCard>
+      {/* (REG-664, bug fix) Outside the card's body: My Templates sits in the section's top bar, so a collapsed section opens it too —
+          inside the body it was unmounted while collapsed and the press did nothing. */}
+      <TemplatesModal open={modal} kind={kind} templates={templates} folders={seed.folders} onClose={() => setModal(false)} onAdd={addTemplate} onTemplates={setTemplates} />
+    </>
   )
 }

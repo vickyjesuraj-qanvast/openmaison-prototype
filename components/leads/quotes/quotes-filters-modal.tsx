@@ -8,6 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
+import { Chips } from '@/components/om/chips'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -149,14 +150,8 @@ export function QuotesFiltersModal({
                     {/* the mock types "Dates " with a trailing space — rendered trimmed */}
                     <span className={styles.sectionTitle}>Dates</span>
                     <div className={styles.dateGroup}>
-                      <div className={styles.chips} role="group" aria-label="Dates">
-                        {PRESETS.map((p) => (
-                          <button key={p.key} type="button" className={styles.chip} aria-pressed={draft.date === p.key}
-                                  data-selected={draft.date === p.key || undefined} onClick={() => pickPreset(p.key)}>
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
+                      {/* (sweep S1) the house chip group (REG-614), single — pressing the chosen chip again clears it, as before */}
+                      <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.date || null} onChange={(k) => pickPreset(k as Exclude<QuoteDatePreset, ''>)} />
                       {custom ? (
                         <div className={styles.dateRow}>
                           <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined}

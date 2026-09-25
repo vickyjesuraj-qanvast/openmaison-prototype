@@ -11,6 +11,8 @@
 .full { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
 .full > :first-child { flex: 0 1 611px; min-width: 240px; }
 /* Two-column field rows go single column ≤767 (responsive.md). */
+/* (sweep S1 · T-03) Up to 1024 a row holds one pair, not two: at 768 four fields a row cut "Olivia Martinez" to "Olivia Mart". */
+@media (max-width: 1024px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 767px) {
   .grid { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
   .pair { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-4); }

@@ -33,9 +33,20 @@
 .theirName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.num[data-sign='less'] { color: var(--om-color-tertiary-red-default); }
-.num[data-sign='more'] { color: var(--om-color-tertiary-green-default); }
+/* (REG-638) Difference = yours − theirs, the Real difference tile's sign: ours less reads green (1.0's tile), ours more plain. */
+.num[data-sign='less'] { color: var(--om-color-tertiary-green-default); }
+.figure { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.qty { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+/* (REG-640 → sweep S3) The row's kebab is parked at the VISIBLE right edge, the listing's way (quotes-table.module.css .actions,
+   REG-430): a zero-width sticky item laid over the row's tracks, its float hanging to the left — shown on hover or focus, always
+   on touch. The Status column keeps room for it (REG-446: a hover control never covers the value the row exists to show). */
+.actions { grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center; position: sticky; right: 0; width: 0; height: 0; overflow: visible; z-index: 4; opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
+.actionsInner { position: absolute; right: var(--om-spacing-4); top: 50%; transform: translateY(-50%); display: flex; }
+.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+.row:hover .actions, .row:focus-within .actions, .actions[data-open] { opacity: 1; pointer-events: auto; }
+@media (hover: none) { .actions { opacity: 1; pointer-events: auto; } }
+.card[data-actions] .cell.colStatus { padding-right: calc(var(--om-spacing-4) + 36px + var(--om-spacing-3)); }
 @media (max-width: 1024px) {
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
@@ -47,14 +58,25 @@
   .card, .card[data-overflow] { display: flex; flex-direction: column; gap: var(--om-spacing-3); background: none; border: 0; overflow: visible; }
   .card::after { content: none; }
   .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; background: none; border-right: 0; }
-  .row { display: grid; grid-template-columns: 1fr auto; grid-auto-rows: auto; width: auto; min-width: 0; padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-3) var(--om-spacing-5); row-gap: var(--om-spacing-1); column-gap: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+  /* (sweep S3) two equal halves: a long studio name can no longer squeeze Yours until its figure draws over its label */
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-rows: auto; width: auto; min-width: 0; padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-3) var(--om-spacing-5); row-gap: var(--om-spacing-2); column-gap: var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+  .card[data-actions] .cell.colItem { padding-right: 44px; }
+  .actions { position: absolute; grid-area: auto; top: var(--om-spacing-2); right: var(--om-spacing-2); width: auto; height: auto; transform: none; }
+  .actionsInner { position: static; transform: none; }
+  .float { box-shadow: none; background: none; }
+  .card[data-actions] .cell.colStatus { padding-right: 0; }
   .cell { padding: 0; border-top: 0; min-width: 0; }
   .cell.colItem { grid-column: 1 / -1 !important; grid-row: 1 !important; }
   .cell.colTrade { grid-column: 1 !important; grid-row: 2 !important; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
   .cell.colStatus { grid-column: 2 !important; grid-row: 2 !important; justify-content: flex-end; }
+  /* (sweep S3) each side's name sits over its figure — it can't be drawn over at any width */
+  .cell.colYours, .cell.colTheirs { flex-direction: column; align-items: flex-start; gap: 2px; }
   .cell.colYours { grid-column: 1 !important; grid-row: 3 !important; }
-  .cell.colYours::before { content: 'Yours · '; color: var(--om-color-on-surface-secondary); white-space: pre; }
-  .cell.colTheirs { grid-column: 2 !important; grid-row: 3 !important; justify-content: flex-end; }
+  .cell.colYours::before { content: 'Yours'; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+  .cell.colTheirs { grid-column: 2 !important; grid-row: 3 !important; align-items: flex-end; text-align: right; }
+  /* (REG-639, E-113) the other side's figure says whose it is, as Yours does */
+  .cell.colTheirs::before { content: attr(data-label); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell.colYours .figure { align-items: flex-start; }
   .cell.colDiff { grid-column: 1 / -1 !important; grid-row: 4 !important; font: var(--om-type-body-s); }
   .cell.colDiff::before { content: 'Difference · '; color: var(--om-color-on-surface-secondary); white-space: pre; }
 }

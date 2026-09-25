@@ -134,6 +134,8 @@ export type TextContext = {
   createdAt: Date
   totalMinor: number
   gstEnabled: boolean
+  /** (REG-645) The rate the quote's lines carry — the studio's rate (Settings › Quotes & pricing › GST) for a new line. */
+  gstPct: number
   /** The sections of works, in the order the lines run (a line's section, else its category). */
   works: string[]
   itemCount: number
@@ -157,7 +159,7 @@ export function aiTerms(c: TextContext): string {
     h('2. Scope of Works'),
     p(`The scope covers ${c.itemCount} ${c.itemCount === 1 ? 'item' : 'items'} of ${works}${c.propertyType ? ` for a ${c.propertyType}` : ''}, as listed in this quotation. Anything not listed is a variation, quoted and agreed in writing before it is carried out.`),
     h('3. Price and Validity'),
-    p(`The contract sum is ${money2(c.totalMinor)}${c.gstEnabled ? ', inclusive of GST at 9%' : ', with GST not applied'}. This quotation is valid ${validity(c)}.`),
+    p(`The contract sum is ${money2(c.totalMinor)}${c.gstEnabled ? `, inclusive of GST at ${c.gstPct}%` : ', with GST not applied'}. This quotation is valid ${validity(c)}.`),
     h('4. Payment'),
     p(`Payment is made in the milestones agreed: ${sched}. Works commence only after the deposit has been received; an invoice unpaid for more than 7 days may lead to the works being suspended.`),
     h('5. Timeline'),
@@ -174,6 +176,6 @@ export function aiNotes(c: TextContext): string {
   return [
     p(`This quotation covers ${c.itemCount} ${c.itemCount === 1 ? 'item' : 'items'}${works}${c.propertyType ? ` for the ${c.propertyType}` : ''}${c.siteAddress ? ` at ${c.siteAddress}` : ''}.`),
     p(`Works are scheduled to start on about ${displayDate(c.start)} and run for about ${c.weeks} weeks; the dates move with material lead times and the confirmation of selections.`),
-    p(`Prices are ${c.gstEnabled ? 'inclusive of GST at 9%' : 'shown without GST'} and the quotation is valid ${validity(c)}.`),
+    p(`Prices are ${c.gstEnabled ? `inclusive of GST at ${c.gstPct}%` : 'shown without GST'} and the quotation is valid ${validity(c)}.`),
   ].join('')
 }

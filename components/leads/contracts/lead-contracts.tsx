@@ -10,9 +10,15 @@ import type { Contract } from '@/lib/db/schema'
 import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters, searchContracts, type ContractFilters, type ContractStatus } from '@/lib/leads/contract-filters'
 import type { LeadContractsData } from '@/lib/leads/contracts'
 import { withFrom } from '@/lib/nav'
-import { bundleMessage, bundleSigningLink, firstName, signingLink } from '@/lib/contracts/model'
-import { archiveContract, deleteContracts, setContractStatus } from '@/app/leads/contracts-actions'
-import { createContractDoc, deleteContractsForever, emptyContractTrash, restoreContracts, sendBundle } from '@/app/contracts/actions'
+import { bundleMessage, contractLink, firstName } from '@/lib/contracts/model'
+import { archiveContract, deleteContracts, listArchivedContracts, setContractStatus, unarchiveContracts } from '@/app/leads/contracts-actions'
+import { ArchivedContractsSheet } from '@/components/contracts/archived-contracts-sheet'
+import { createContractDoc, deleteContractsForever, emptyContractTrash, restoreContracts, sendBundle, shareContractLink } from '@/app/contracts/actions'
+import { canDeleteContract, CONTRACT_DELETE_RULE, contractsDeletedLine, unsignBlock } from '@/lib/contracts/policy'
+import { SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
+import { MarkSignedDialog } from '@/components/contracts/editor/dialogs'
+import { markContractSigned } from '@/app/contracts/actions'
+import { UnsignDialog } from '@/components/contracts/unsign-dialog'
 import { SendBundleDialog } from '@/components/contracts/send-bundle-dialog'
 import { fetchContractTemplateOptionsAction, fetchDeletedContractsAction } from '@/app/contracts/read-actions'
 import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
@@ -42,7 +48,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
-  const { run, fail } = useRun()
+  const { run, fail, refresh } = useRun()
   const from = `/leads/${leadId}/contracts`
 
   /* ── list state ── */
@@ -64,6 +70,12 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   const [deletedOpen, setDeletedOpen] = useState(false)
   const [bundleOpen, setBundleOpen] = useState(false)   /* (REG-591) */
   const [creating, setCreating] = useState(false)
+  const [unsign, setUnsign] = useState<{ contract: Contract; to: 'Draft' | 'Sent to Client' } | null>(null)   /* (REG-631, parity Q-04) */
+  const [marking, setMarking] = useState<Contract | null>(null)   /* (sweep S2 #3) Signed from a list asks for its date and copy */
+  const [archivedOpen, setArchivedOpen] = useState(false)   /* (sweep S2 · U-07) */
+  const loadArchived = useCallback(() => listArchivedContracts(leadId), [leadId])
+  const statusBlock = useCallback((c: Contract, to: ContractStatus) => (to !== 'Signed' && c.status === 'Signed' ? unsignBlock(c, data.viewer) : null), [data.viewer])
+  const deleteBlock = useCallback((c: Contract) => (canDeleteContract(data.viewer, c) ? null : CONTRACT_DELETE_RULE), [data.viewer])   /* (REG-634, parity Q-21) */
   const bundleable = useMemo(() => contracts.filter((c) => c.status !== 'Signed'), [contracts])
 
   const openEditor = (id: string) => router.push(withFrom(`/contracts/${id}`, from))
@@ -76,16 +88,28 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
   }
   const newBlank = () => { void create({}, 'Contract created') }
 
-  // The `?new=1` landing (the Overview's Contract quick link, the Won step's Create Contract) and the `om:contracts:new` event both create one and open it.
-  useCreateIntent({ event: CREATE_EVENTS.contracts, landing: { href: from }, onIntent: () => { newBlank() } })
+  // The `?new=1` landing (the Overview's Contract quick link, the Won step's Create Contract) and the `om:contracts:new` event both create one and open it —
+  // (REG-632, parity Q-13) from the studio's default template when one is set, else the starter agreement.
+  useCreateIntent({ event: CREATE_EVENTS.contracts, landing: { href: from }, onIntent: () => { void create({ templateId: 'default' }, 'Contract created') } })
 
   const onStatus = (contract: Contract, status: ContractStatus) => {
     if (status === contract.status) return
+    if (contract.status === 'Signed' && status !== 'Signed') { setUnsign({ contract, to: status }); return }   // (REG-631, parity Q-04) asks first
+    /* (sweep S2 #3) the status menu keeps Send's checks, and Signed goes through Mark as signed — its date and its copy, as the editor asks */
+    if (status === 'Sent to Client' && contract.status === 'Draft') { const why = sendBlock(contract); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return } }
+    if (status === 'Signed') { setMarking(contract); return }
     void run('change the status', () => setContractStatus(contract.id, status), `Contract marked ${status}`)
   }
   const rowMenu = (contract: Contract, action: ContractRowAction) => {
     if (action === 'share') router.push(withFrom(`/contracts/${contract.id}/preview`, from))
-    else if (action === 'copy') void navigator.clipboard?.writeText(contract.bundleId ? bundleSigningLink(contract.bundleId) : signingLink(contract.id)).then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))   /* (REG-591) a bundled document's link is the bundle's */
+    else if (action === 'copy') {
+      /* (REG-591) a bundled document's link is the bundle's. (REG-631, parity Q-07) Copying a Draft's link shares it — Sent to Client from then on. */
+      /* (sweep S2 #2) Send's checks first, then the share, then the copy — a copied link the server then refused left a link out that never worked */
+      if (contract.status === 'Draft') { const why = sendBlock(contract); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return } }
+      const copyNow = (done: string) => (navigator.clipboard ? navigator.clipboard.writeText(contractLink(contract)) : Promise.reject(new Error('no clipboard'))).then(() => snackbar({ message: done }), () => fail('copy the link'))
+      if (contract.status === 'Draft') void run('share the link', () => shareContractLink(contract.id)).then((ok) => { if (ok) void copyNow('Signing link copied — the contract is Sent to Client now') })
+      else void copyNow('Signing link copied')
+    }
     else if (action === 'pdf' || action === 'print') router.push(withFrom(`/contracts/${contract.id}/preview?print=1`, from))
     else if (action === 'archive') {
       // The Undo snackbar rides with the success (RACE-03): a failed archive shows only "Couldn’t archive the contract".
@@ -101,8 +125,8 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'blank' ? newBlank() : kind === 'template' ? setPickerOpen(true) : kind === 'import' ? setImportOpen(true) : comingSoon())}
         onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
-        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundleOpen(true) : comingSoon())}
-        bundleCount={bundleable.length}
+        onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'archived' ? setArchivedOpen(true) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundleOpen(true) : comingSoon())}
+        bundleCount={bundleable.filter((c) => !sendBlock(c)).length}   /* (sweep S2 #7) what can go out */
       />
       {contracts.length === 0 ? (
         <ContractsEmpty onFromScratch={newBlank} onFromTemplate={() => setPickerOpen(true)} />
@@ -113,9 +137,15 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
           contracts={visible}
           onStatus={onStatus}
           onView={(c) => openEditor(c.id)}
-          onRowMenu={rowMenu}
+          onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock}
         />
       )}
+      <ArchivedContractsSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb={`${data.lead.name} / Contracts`}
+                              onUnarchive={async (ids) => { const r = await unarchiveContracts(ids); snackbar({ message: r.restored > 1 ? `${r.restored} contracts unarchived` : 'Contract unarchived' }); refresh() }} />
+      <MarkSignedDialog open={!!marking} onClose={() => setMarking(null)} today={new Date(now)}
+                        onSave={async (o) => { const m = marking; if (!m) return; const ok = await run('mark the contract signed', () => markContractSigned(m.id, o), 'Contract marked Signed'); if (ok) setMarking(null) }} />
+      <UnsignDialog to={unsign?.to ?? null} signedAt={unsign?.contract.signedAt ?? null} onCancel={() => setUnsign(null)}
+                    onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${u.to}`) }} />
       <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
       <ContractsFiltersModal
         open={filtersOpen} value={filters} now={now}
@@ -125,7 +155,7 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       <DeleteContractsDialog
         open={!!deleting} count={deleting?.length ?? 1}
         onNo={() => setDeleting(null)}
-        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; void run('delete', () => deleteContracts(ids), ids.length === 1 ? 'Contract deleted' : `${ids.length} contracts deleted`) }}
+        onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; void run('delete', async () => { const r = await deleteContracts(ids); snackbar({ message: contractsDeletedLine(r) }) }) }}
       />
       <ContractTemplatePicker open={pickerOpen} onClose={() => setPickerOpen(false)} load={loadTemplates}
                               onUse={(templateId) => { setPickerOpen(false); void create({ templateId }, 'Contract created from the template') }}
@@ -133,7 +163,9 @@ export function LeadContracts({ leadId, data }: { leadId: string; data: LeadCont
       <ImportContractDialog open={importOpen} onClose={() => setImportOpen(false)}
                             onImport={(o) => { setImportOpen(false); void create({ upload: { fileName: o.fileName, signed: o.signed, title: o.title } }, o.signed ? 'Signed contract imported' : 'Contract imported') }} />
       {/* (REG-591) Send together: the WhatsApp window opens on the press (a popup blocker eats one opened after the round trip — REG-534), then the bundle is recorded. */}
-      <SendBundleDialog open={bundleOpen} onClose={() => setBundleOpen(false)} contracts={bundleable} defaults={{ name: data.lead.name, phone: data.lead.phone }}
+      {/* (REG-633, E-118) addressed to the documents' recipient; Copy link records the bundle so the copied link opens */}
+      <SendBundleDialog open={bundleOpen} onClose={() => setBundleOpen(false)} contracts={bundleable} defaults={{ name: bundleable[0]?.recipientName || data.lead.name, phone: bundleable[0]?.recipientPhone || data.lead.phone }}
+                        onShare={({ bundleId, contractIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }), 'Signing link copied — the documents are Sent to Client now') }}
                         draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
                         onSend={({ bundleId, contractIds, name, phone, message }) => {
                           setBundleOpen(false)

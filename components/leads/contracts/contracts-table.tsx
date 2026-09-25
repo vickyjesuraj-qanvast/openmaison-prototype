@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { menuSideFor } from '@/components/leads/menu-side'
+import { DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
@@ -18,6 +18,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import type { Contract } from '@/lib/db/schema'
 import { displayDate } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
+import { CLIENT_SIGNED_RULE, UNSIGN_ROLE_RULE } from '@/lib/contracts/policy'
 import styles from './contracts-table.module.css'
 
 /** Row kebab — not mocked for Contracts; copied from the Quotes row kebab (910:36723, REG-177…179):
@@ -34,6 +35,10 @@ export type ContractsTableProps = {
   columns: readonly TableColumn[]
   /** A head dropped in a new place — the visible keys in their new order (useTableColumns.reorder). */
   onReorder: (keys: string[]) => void
+  /** (REG-631, contracts parity Q-04) Why a status is out of reach for this row (a signature the client made; not an Owner / Admin), else null. */
+  statusBlock?: (contract: Contract, status: ContractStatus) => string | null
+  /** (REG-634, contracts parity Q-21) Why this row's Delete is out of reach (not its creator, an Owner or an Admin), else null. */
+  deleteBlock?: (contract: Contract) => string | null
 }
 
 /* Column order + head copy — exactly as the mock types it (931:38691, spec 01-listing-empty.txt). Every head carries unfold_more 16. */
@@ -54,11 +59,8 @@ const SORTABLE: Record<string, boolean> = { title: false, signedCopy: false, lea
 export const contractColumnDefs = (withLead: boolean) => CONTRACT_COLUMN_DEFS.filter((d) => d.key !== 'lead' || withLead)
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, lead: styles.colLead, status: styles.colStatus, created: styles.colCreated, signedCopy: styles.colSignedCopy, sent: styles.colSent, updated: styles.colUpdated }
 
-/* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
-   ~550px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
-   (REG-286) The measurement was copied from the quotes twin into this file verbatim; both now call the one shared
-   rule in components/leads/menu-side.ts. The row kebab draws six items. */
-const MENU_ITEMS = 6
+/* (sweep S2 #4 · U-09) The row kebab and the Status menu open through the body portal (PortalMenu flips on the viewport), as the quotes
+   twin's do — inline in the scrolling card, a one-row table showed only Archive and Delete and the Status list was cut. */
 
 /**
  * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
@@ -66,10 +68,9 @@ const MENU_ITEMS = 6
  * No selection column, no bottom bar. Structure copied from components/leads/quotes/quotes-table.tsx (the Quotes twin):
  * every icon-only control carries a Tooltip (REG-75); sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder }: ContractsTableProps) {
+export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder, statusBlock, deleteBlock }: ContractsTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
-  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
   const [statusRow, setStatusRow] = useState<string | null>(null)
   const colWidths = useColumnWidths('lead-contracts')
   const tracks = gridTemplateFor(columns, colWidths)
@@ -80,7 +81,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   return (
-    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined} data-lead={columns.some((c) => c.key === 'lead') || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 48 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
@@ -109,14 +110,9 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
           onStatusToggle={() => setStatusRow((s) => (s === contract.id ? null : contract.id))}
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === contract.id}
-          onMenuToggle={(trigger) => {
-            if (menuRow !== contract.id) setMenuSide(menuSideFor(trigger, MENU_ITEMS))   /* measure the room below the kebab before it opens */
-            setMenuRow((m) => (m === contract.id ? null : contract.id))
-          }}
+          onMenuToggle={() => setMenuRow((m) => (m === contract.id ? null : contract.id))}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
-          menuSide={menuSide}
-          onStatus={onStatus} onView={onView} onRowMenu={onRowMenu}
+          onStatus={onStatus} onView={onView} onRowMenu={onRowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock}
           lead={leadOf ? leadOf(contract) : null} showLead={columns.some((c) => c.key === 'lead')}
         />
       ))}
@@ -129,8 +125,8 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
 function ContractRowView({
   contract,
   statusOpen, onStatusToggle, onStatusClose,
-  menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onStatus, onView, onRowMenu, L, lead, showLead,
+  menuOpen, onMenuToggle, onMenuClose,
+  onStatus, onView, onRowMenu, L, lead, showLead, statusBlock, deleteBlock,
 }: {
   contract: Contract
   lead: { name: string; href: string } | null
@@ -139,16 +135,20 @@ function ContractRowView({
   onStatusToggle: () => void
   onStatusClose: () => void
   menuOpen: boolean
-  onMenuToggle: (trigger: HTMLElement) => void
+  onMenuToggle: () => void
   onMenuClose: () => void
-  menuSide: 'up' | 'down'
   onStatus: (contract: Contract, status: ContractStatus) => void
   onView: (contract: Contract) => void
   onRowMenu: (contract: Contract, action: ContractRowAction) => void
   L: ReturnType<typeof useColumnLayout>
+  statusBlock?: (contract: Contract, status: ContractStatus) => string | null
+  deleteBlock?: (contract: Contract) => string | null
 }) {
   const pick = (action: ContractRowAction) => () => { onMenuClose(); onRowMenu(contract, action) }
+  const noDelete = deleteBlock?.(contract) ?? null
   const pickStatus = (status: ContractStatus) => () => { onStatusClose(); onStatus(contract, status) }
+  const statusAnchor = useRef<HTMLSpanElement>(null)
+  const kebab = useRef<HTMLSpanElement>(null)
 
   return (
     <div className={styles.row} role="row">
@@ -161,14 +161,14 @@ function ContractRowView({
       {/* (REG-534) Tools › Contracts: the lead, a link to its Contracts tab — the quotes list's Client column (REG-422). */}
       {showLead ? (
         <div className={`${styles.cell} ${styles.colLead} ${L.pinned('lead') ? styles.pin : ''}`} role="cell" data-col="lead" data-pin-edge={L.edge('lead') || undefined} style={L.style('lead')}>
-          {lead ? <Link href={lead.href} className={styles.leadLink}>{lead.name}</Link> : <span>-</span>}
+          {lead ? <Link href={lead.href} className={styles.leadLink}>{lead.name}</Link> : <span>--</span>}
         </div>
       ) : null}
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu over CONTRACT_STATUSES
           (not mocked — the Quotes status menu 910:36673 pattern, current marked; REG-178). */}
       <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
-        <span className={styles.statusWrap}>
+        <span className={styles.statusWrap} ref={statusAnchor}>
           <button
             type="button" className={styles.statusBtn}
             aria-haspopup="menu" aria-expanded={statusOpen}
@@ -178,23 +178,25 @@ function ContractRowView({
             {contract.status}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          <Dropdown open={statusOpen} onClose={onStatusClose} align="left" sheetTitle="Status">
+          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={260} role="menu" sheetTitle="Status">
             {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
                 aria-current + the "current" meta — DropdownItem takes no attributes. */}
             {CONTRACT_STATUSES.map((s) => {
               const isCurrent = s === contract.status
+              const block = isCurrent ? null : statusBlock?.(contract, s) ?? null
+              /* (sweep S2 #23) a refused status says why in the row itself — a native title never shows on a touch screen; a press on it does nothing */
               return (
                 <button
                   key={s} type="button" role="menuitem" className={menuStyles.item}
-                  aria-current={isCurrent ? 'step' : undefined}
-                  onClick={pickStatus(s)}
+                  aria-current={isCurrent ? 'step' : undefined} aria-disabled={block ? true : undefined}
+                  onClick={block ? (e) => e.preventDefault() : pickStatus(s)}
                 >
                   <span className={styles.itemText}>{s}</span>
-                  {isCurrent ? <span className={styles.meta}>current</span> : null}
+                  {isCurrent ? <span className={styles.meta}>current</span> : block ? <span className={styles.meta} title={block}>{block === CLIENT_SIGNED_RULE ? 'signed by the client' : block === UNSIGN_ROLE_RULE ? 'Owner or Admin' : block}</span> : null}
                 </button>
               )
             })}
-          </Dropdown>
+          </PortalMenu>
         </span>
       </div>
 
@@ -203,7 +205,15 @@ function ContractRowView({
       <div className={`${styles.cell} ${styles.colSignedCopy} ${L.pinned('signedCopy') ? styles.pin : ''}`} role="cell" data-col="signedCopy" data-pin-edge={L.edge('signedCopy') || undefined} style={L.style('signedCopy')}>
         <span className={styles.oneLine}>{contract.signedCopy ?? '-'}</span>
       </div>
-      <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>{contract.sentAt ? displayDate(contract.sentAt) : '-'}</div>
+      <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>
+        {contract.sentAt ? (
+          <span className={styles.sentCell}>
+            <span>{displayDate(contract.sentAt)}</span>
+            {/* (REG-633, contracts parity Q-17) the client's first open of the link, while it is out for signature */}
+            {contract.viewedAt && contract.status !== 'Draft' ? <span className={styles.viewed} data-testid="contract-viewed">Viewed {displayDate(contract.viewedAt)}</span> : null}
+          </span>
+        ) : '-'}
+      </div>
       <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(contract.updatedAt ?? contract.createdAt)}</div>
 
       {/* Row hover actions — not mocked for Contracts; the Quotes "Hover button" (910:36644 / 910:36709) copied:
@@ -213,22 +223,22 @@ function ContractRowView({
         <span className={styles.float}>
           <Button variant="primary" appearance="outlined" onPress={() => onView(contract)}>View</Button>
         </span>
-        <span className={styles.menuWrap}>
+        <span className={styles.menuWrap} ref={kebab}>
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <IconButton icon="more_vert" label={`More actions for ${contract.title}`} variant="primary"
-                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
+                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
             </Tooltip>
           </span>
-          <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide} sheetTitle={contract.title}>
+          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={220} role="menu" sheetTitle={contract.title}>
             {/* Quotes row kebab 910:36723 — verbatim order (REG-177). */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
             <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
             <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
-            <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-          </Dropdown>
+            <DropdownItem onSelect={pick('delete')} disabled={!!noDelete}><span className={noDelete ? undefined : styles.danger}>Delete</span>{noDelete ? <span className={styles.meta} title={noDelete}>creator, Owner or Admin</span> : null}</DropdownItem>   {/* (sweep S2 #23) the quotes kebab's words */}
+          </PortalMenu>
         </span>
         </span>
       </span>

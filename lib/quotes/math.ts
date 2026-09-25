@@ -53,6 +53,17 @@ export const bearsCost = (l: Pick<Line, 'kind' | 'status' | 'optional' | 'printA
 /** A Declined line stays on the table but leaves every total; so does an optional line and a line that prints a word. */
 export const counts = (l: Pick<Line, 'kind' | 'status' | 'optional' | 'printAs'>) => l.kind === 'item' && l.status !== 'Declined' && !l.optional && !printsWord(l)
 
+/**
+ * (REG-623, parity Q-13) A line that sells below what it costs: its total after the line discount, before GST, is under Qty × Cost.
+ * 1.0's cost-exceeds-price warning (B-48): a line whose price is a word (FOC, Inclusive, By client …) is deliberate and never
+ * flagged, nor is a line with nothing to sell yet (a zero total — an unpriced row or a 100 % discount), nor one the client declined.
+ */
+export const belowCost = (l: Pick<Line, 'kind' | 'status' | 'printAs' | 'qty' | 'costMinor' | 'markupMinor' | 'discountPct'>) => {
+  if (l.kind !== 'item' || l.status === 'Declined' || printsWord(l)) return false
+  const total = lineTotalMinor(l)
+  return total > 0 && lineCostMinor(l) > total
+}
+
 /** Every id under a set of groups, however deep (REG-558). */
 export function descendantIds<T extends Pick<Line, 'id' | 'parentId'>>(items: T[], roots: Iterable<string>): Set<string> {
   const out = new Set<string>(roots)
@@ -70,6 +81,9 @@ export function ancestorIds<T extends Pick<Line, 'id' | 'parentId'>>(items: T[],
 }
 /** How deep a row sits: 0 at the top, 1 in a section, 2 in a sub-section. */
 export const depthOf = <T extends Pick<Line, 'id' | 'parentId'>>(items: T[], id: string) => ancestorIds(items, id).length
+
+/** (REG-596) A vendor rebate lowers the line's true cost — a rebate per unit, never past the line's cost. The owner's figures count it. */
+export const trueCostMinor = (l: Pick<Line, 'qty' | 'costMinor' | 'rebateMinor'>) => lineCostMinor(l) - Math.min(lineCostMinor(l), Math.round(l.qty * (l.rebateMinor ?? 0)))
 
 /** The lines that price: items the client has not declined, outside any group the client declined. */
 export function countedLines<T extends Line>(items: T[]): T[] {
@@ -113,7 +127,7 @@ export function quoteTotals(items: Line[], q: QuotePricing): QuoteTotals {
   // (REG-555) The cost of FOC / Inclusive / Packaged lines is the studio's: it meets the margin though it prints as a word.
   const declined = descendantIds(items, items.filter((i) => i.kind === 'group' && i.status === 'Declined').map((i) => i.id))
   /* (REG-596) A vendor rebate lowers the line's true cost: the owner's margin counts it, nothing printed does. */
-  const trueCost = (l: Line) => lineCostMinor(l) - Math.min(lineCostMinor(l), Math.round(l.qty * (l.rebateMinor ?? 0)))   // a rebate per unit, never past the line's cost
+  const trueCost = trueCostMinor
   const costMinor = lines.reduce((s, l) => s + trueCost(l), 0) + items.filter((i) => bearsCost(i) && !declined.has(i.id)).reduce((s, l) => s + trueCost(l), 0)
   // The additional discount never exceeds what there is to discount (a degenerate negative subtotal discounts nothing).
   const base = Math.max(0, subtotalMinor)
@@ -138,19 +152,27 @@ export function quoteTotals(items: Line[], q: QuotePricing): QuoteTotals {
  * category, else its group's, else Uncategorized (items-table.tsx `buildDisplay`). Biggest share first, Uncategorized last; `pct` is the
  * share of the subtotal, so the rows agree with the Subtotal line beside them. A bucket whose lines carry no price keeps its count.
  */
-export type CategoryShare = { name: string; count: number; totalMinor: number; pct: number }
+export type CategoryShare = {
+  name: string; count: number; totalMinor: number; pct: number
+  /** (REG-623, parity Q-14) What the category's lines cost the studio — rebates counted, FOC / Inclusive / Packaged work included — and
+      its margin on its own lines before the quote's discounts (null when nothing in it sells). Owners only on screen. */
+  costMinor: number; marginPct: number | null
+}
 export function categoryShares<T extends Line & { category: string | null }>(items: T[], unlabelled = 'Uncategorized'): CategoryShare[] {
   const byId = new Map(items.map((i) => [i.id, i]))
   const labelOf = (l: T) => { let cur: T | undefined = l; while (cur) { if (cur.category) return cur.category; cur = cur.parentId ? byId.get(cur.parentId) : undefined } return unlabelled }
   const acc = new Map<string, CategoryShare>()
   for (const l of countedLines(items)) {
     const name = labelOf(l)
-    const cur = acc.get(name) ?? { name, count: 0, totalMinor: 0, pct: 0 }
-    cur.count += 1; cur.totalMinor += lineTotalMinor(l); acc.set(name, cur)
+    const cur = acc.get(name) ?? { name, count: 0, totalMinor: 0, pct: 0, costMinor: 0, marginPct: null }
+    cur.count += 1; cur.totalMinor += lineTotalMinor(l); cur.costMinor += trueCostMinor(l); acc.set(name, cur)
   }
+  // Work the client reads as a word but the studio still pays for (quoteTotals' rule) meets its own category's margin.
+  const declined = descendantIds(items, items.filter((i) => i.kind === 'group' && i.status === 'Declined').map((i) => i.id))
+  for (const l of items) { if (!bearsCost(l) || declined.has(l.id)) continue; const c = acc.get(labelOf(l)); if (c) c.costMinor += trueCostMinor(l) }
   const subtotal = [...acc.values()].reduce((s, c) => s + c.totalMinor, 0)
   return [...acc.values()]
-    .map((c) => ({ ...c, pct: subtotal > 0 ? (c.totalMinor / subtotal) * 100 : 0 }))
+    .map((c) => ({ ...c, pct: subtotal > 0 ? (c.totalMinor / subtotal) * 100 : 0, marginPct: c.totalMinor > 0 ? ((c.totalMinor - c.costMinor) / c.totalMinor) * 100 : null }))
     .sort((a, b) => (a.name === unlabelled ? 1 : b.name === unlabelled ? -1 : b.totalMinor - a.totalMinor || a.name.localeCompare(b.name)))
 }
 /** "44%" — one decimal under 10 so the small trades stay apart ("5.5%", "1.3%"). */
@@ -163,7 +185,8 @@ export function money2(minor: number): string {
   return `${v < 0 ? '−' : ''}S$${s}`
 }
 /** "10.99%" style — one or two decimals, no trailing zeros ("10%" · "12.5%"). */
-export const pct = (p: number) => `${Number.isInteger(p) ? p : Number(p.toFixed(2))}%`
+/** (sweep S1 · U-03) A loss prints the house minus: "−40%", never the hyphen "-40%". */
+export const pct = (p: number) => { const a = Math.abs(p); return `${p < 0 ? '−' : ''}${Number.isInteger(a) ? a : Number(a.toFixed(2))}%` }
 
 /** Line numbering (1260:31259 "1", "4.1"): top-level rows count 1…n; a group's children n.1, n.2 — and a sub-section's n.1.1 (REG-558).
     A line marked "no number" gets '' and the count passes over it. */

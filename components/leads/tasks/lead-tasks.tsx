@@ -351,7 +351,7 @@ export function LeadTasks({ leadId, data, header }: { leadId: string | null; dat
         onClose={() => setFiltersOpen(false)}
       />
       <ChooseTemplateDialog
-        open={chooseTemplate} templates={templates}
+        open={chooseTemplate} templates={templates} folders={data.templateFolders}
         onSelect={(id) => { setChooseTemplate(false); void run('apply the template', async () => { const n = await applyTemplate(studio ? null : leadId, id); snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added from the template` }) }) }}
         onManage={() => { setChooseTemplate(false); manageTemplates() }}
         onClose={() => setChooseTemplate(false)}

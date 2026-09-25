@@ -17,30 +17,7 @@
 .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(299px, 1fr)); gap: var(--om-spacing-4); }
 
 /* ---- Folder card 299×56 (931:39089): fill #f2f2f2 r4, inner H g8 p12 ---- */
-.folder {
-  position: relative;
-  height: 56px;                          /* width = the row's track (299 at the mocked 1244) */
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  padding: var(--om-spacing-3);
-  background: var(--om-color-surface-bg);
-  border-radius: var(--om-radius-1);
-  transition: background-color var(--motion-hover);
-}
-.folder:hover { background: var(--om-color-hover-04p); }                 /* hover not mocked — the overview file tile's hover-04p */
-.folder[data-selected] { background: var(--om-color-primary-variant); }  /* frame 97: fill #eee5ff */
 /* The open / select area — a bare button carrying the icon + texts (the kebab sits beside it, never inside). */
-.folderMain {
-  flex: 1; min-width: 0; height: 100%;
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
-  color: inherit; font: inherit;
-  border-radius: var(--om-radius-1);
-}
-.folderMain:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.folderIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* folder 24/Regular #666666 */
-.folderTexts { flex: 1; min-width: 0; display: flex; flex-direction: column; }  /* V g0, 211×32 */
-.folderName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Semi Bold */
-.folderCount { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "17 items" 10/Regular #666666 */
 
 /* Kebab: bare more_vert 24/Light secondary (931:39089 / 931:39125) — the attach-files modal's .folderKebab at 24. */
 .kebab {
@@ -51,7 +28,6 @@
 }
 .kebab:hover { background: var(--om-color-hover-08p); }
 .kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.menuWrap { position: relative; display: inline-flex; flex-shrink: 0; }
 
 /* ---- Tile 299×262 (931:39125): V p4, fill #f2f2f2 r4 → image 291×200 r2 + caption 291×54 ---- */
 .tile {
@@ -119,16 +95,10 @@
 .danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */
 
 /* The mobile-only selection affordances (REG-273, see the touch block below) — never rendered on the desktop mock. */
-.pick, .tilePick { display: none; }
+.tilePick { display: none; }
 
-/* (REG-544) With a mouse the folder card opens on click, so selection moves to a checkbox that takes the folder icon's
-   place on hover and while selected — the card's geometry never shifts, and the mock's card at rest is untouched.
-   `(hover: hover)` and ≥768 keep the touch block below (inline checkbox, tap opens) and the stacked phone card as they are. */
-@media (hover: hover) and (min-width: 768px) {
-  .pick { position: absolute; left: var(--om-spacing-3); top: 50%; transform: translateY(-50%); z-index: 1; align-items: center; }
-  .folder:hover .pick, .folder[data-selected] .pick { display: inline-flex; }
-  .folder:hover .folderIcon, .folder[data-selected] .folderIcon { visibility: hidden; }
-}
+/* (REG-664) The folder card and its Folders group — with their hover checkbox (REG-544), the stacked phone card (REG-378 · REG-398)
+   and the touch boxes (REG-307) — are the shared pieces now: components/om/folders/folder-card.module.css. */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────
    Tablet and down: fluid tracks — minmax 220 (160 at mobile, below); the tile gives up its fixed
@@ -142,19 +112,6 @@
 /* Mobile (REG-269): tracks bottom out at 160 so two tiles ride a 390 screen. */
 @media (max-width: 767px) {
   .row { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-  /* (REG-378, canvas 3f) Folders are two-up stacked cards — a folder icon and its kebab on the first line, the
-     name and its item count beneath — not one full-width row each. The inline checkbox eating the name's width
-     was the reason the row had been forced to a single column; stacking removes it. */
-  .foldersRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .folder { position: relative; height: auto; min-height: 96px; flex-direction: column; align-items: stretch; gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
-  .folderMain { flex-direction: column; align-items: flex-start; height: auto; gap: var(--om-spacing-1); }
-  /* (REG-398) The kebab takes the card's top-right corner so the stack under it is just icon · name · count
-     (canvas 3f). It is the WRAPPER that moves, not the button: the button sits inside `.menuWrap`, which is
-     `position: relative` and so was its containing block — the absolute kebab positioned inside a zero-height
-     wrapper at the END of the card's column and painted BELOW the card, outside its fill, with the menu
-     anchored there too. */
-  .folder .menuWrap { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); }
-  .folder .kebab { margin: 0; }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────
@@ -176,31 +133,20 @@
   /* Group head: the DS checkbox is a 44px target on a touch pointer (app/globals.css), so the head keeps
      a 44px line of its own instead of letting it bleed into the cards below. */
   .groupHead { height: auto; min-height: 44px; }
-
-  /* (REG-307, audit at 768 on a touch pointer) The folder card is 56 tall but its open / select button is the 32px
-     content box inside the 12px padding — the tap target was 32. The button's hit area grows to the card's full
-     56 through ::after; nothing drawn moves. */
-  .folderMain { position: relative; }
-  .folderMain::after { content: ''; position: absolute; inset: -12px 0; }
 }
 
 /* (REG-385) These pair with files-grid.tsx, whose `useMediaQuery(TOUCH_TABLET)` is what makes the tap open — the
    checkbox is only wanted where the tap does, and a stylesheet cannot follow that hook. Its query is this one:
    a touch pointer at tablet width or below. A mouse never matches it, at any width. */
 @media (hover: none) and (max-width: 1024px) {
-  /* Selection affordance (the tap now opens — see files-grid.tsx). The folder card carries it inline,
-     ahead of the icon; the tile floats it over the image's top-left on a white plate so it reads on any
-     photo. Both are the DS Checkbox, drawn at its mocked 24 with a 44px touch box on a touch pointer. */
-  .pick { display: inline-flex; align-items: center; flex-shrink: 0; }
+  /* Selection affordance (the tap now opens — see files-grid.tsx): the tile floats it over the image's top-left on a white plate
+     so it reads on any photo — the DS Checkbox, drawn at its mocked 24 with a 44px touch box on a touch pointer. */
   .tilePick {
     display: inline-flex; position: absolute; z-index: 2;
     left: var(--om-spacing-2); top: var(--om-spacing-2);
     background: var(--om-color-surface-default);
     border-radius: var(--om-radius-1);
   }
-  /* (REG-378) …and the folders group stays TWO up: the reason it went one per row was the checkbox in front of
-     the name leaving ~40px for it, which the stacked card above removes — the name now has the card's full
-     width on its own line. The canvas draws two (3f). */
 }
 
 /* (REG-377) A tile's comment chip is absolutely placed at the tile's bottom-right (line ~100); app/globals.css
@@ -210,3 +156,13 @@
 @media (hover: none) {
   .tile .chip { position: absolute; right: 44px; bottom: var(--om-spacing-4); }
 }
+
+/* (REG-664) A search reaches every folder: each hit says where it lives, on a white plate over the image's bottom-left — the tile keeps its size. */
+.tilePlace {
+  position: absolute; left: var(--om-spacing-3); top: calc(4px + 200px - 32px); z-index: 1; max-width: calc(100% - 24px);
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 24px; padding: 0 var(--om-spacing-2);
+  background: var(--om-color-surface-default); border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-1);
+  color: var(--om-color-on-surface-secondary); pointer-events: none;
+}
+.tilePlaceName { font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 1024px) { .tilePlace { top: auto; bottom: 62px; } }

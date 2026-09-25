@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties, ReactNode } from 'react'
-import { mm, resolveColor, type BankBlock, type DetailsBlock, type ItemsBlock, type ItemsColumn, type PaymentsBlock, type SignatureBlock, type TextSourceBlock, type TitleBlock, type TotalsBlock, type TemplateDesign } from '@/lib/templates/model'
+import { BANK_ROW_LABEL, mm, resolveColor, type BankBlock, type DetailsBlock, type ItemsBlock, type ItemsColumn, type PaymentsBlock, type SignatureBlock, type TextSourceBlock, type TitleBlock, type TotalsBlock, type TemplateDesign } from '@/lib/templates/model'
 import { resolveFields } from '@/lib/templates/fields'
 import type { ClientView } from '@/lib/templates/client-view'
 import { docEntity, type DocItem, type DocTotals } from '@/lib/templates/data'
@@ -46,7 +46,8 @@ type Line = DocItem & { noPrice: boolean }
 type Area = { label: string; lines: Line[]; sub?: boolean; note?: string | null; noteHtml?: string | null; highlight?: string | null }
 type Section = { id: string; label: string; note: string | null; noteHtml?: string | null; areas: Area[]; lines: Line[]; totalMinor: number; /** (REG-555, T-3) the word beside the sub-total */ subLabel?: string | null; highlight?: string | null }
 
-function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Section[]; optional: Line[] } {
+/** `tradeNotes` = the studio's note per trade (REG-617, parity Q-08); `inPlace` = the Optional price column prints: optional lines stay in their sections (Q-11). */
+function sections(b: ItemsBlock, items: DocItem[], view: ClientView, tradeNotes: Record<string, string>, inPlace: boolean): { main: Section[]; optional: Line[] } {
   const groups = items.filter((i) => i.kind === 'group')
   const declinedGroups = new Set(groups.filter((g) => g.status === 'Declined').map((g) => g.id))
   const underDeclined = (i: DocItem): boolean => { let cur = i.parentId; const seen = new Set<string>(); while (cur && !seen.has(cur)) { if (declinedGroups.has(cur)) return true; seen.add(cur); cur = items.find((x) => x.id === cur)?.parentId ?? null } return false }
@@ -69,11 +70,14 @@ function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Se
     return { ...g, kind: 'item', qty: 1, unit: null, costMinor: cost, markupMinor: total - cost, discountPct: 0, gstPct: 9, visibility: 'visible', optional: false, printAs: null, printAsText: null, noNumber: false, noPrice: false }
   }
   const lines: Line[] = [...rawLines.filter((l) => !underRolled(l.id)), ...rolled.filter((g) => !underRolled(g.id)).map(rollup)]
-  const optional = lines.filter((l) => l.optional)
-  const priced = lines.filter((l) => !l.optional)
+  const optional = inPlace ? [] : lines.filter((l) => l.optional)
+  const priced = lines.filter((l) => !l.optional || (inPlace && view.optionalWorks))
   const byPos = (a: DocItem, c: DocItem) => a.position - c.position
   const groupOf = (label: string) => groups.find((g) => g.name.trim().toLowerCase() === label.trim().toLowerCase())
-  const noteOf = (label: string) => (b.groupNotes ? groupOf(label)?.description ?? null : null)
+  /* (REG-617, parity Q-08) A section with no note of its own prints its trade's note from Settings › Quotes › Trades. */
+  const tradeNote = (label: string) => tradeNotes[label.trim().toLowerCase()] || null
+  const ownNote = (g: DocItem | undefined) => !!g && !!((g.description ?? '').trim() || g.descriptionHtml)
+  const noteOf = (label: string) => { if (!b.groupNotes) return null; const g = groupOf(label); return ownNote(g) ? g!.description ?? null : tradeNote(label) }
   let main: Section[] = []
   if (b.groupBy === 'none') {
     const top = items.filter((i) => !i.parentId).sort(byPos)
@@ -95,7 +99,7 @@ function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Se
         flushRun()
         const hasSubs = areas.some((a) => a.sub)
         const all = areas.flatMap((a) => a.lines)
-        main.push({ id: t.id, label: t.name, note: b.groupNotes ? t.description : null, noteHtml: b.groupNotes ? t.descriptionHtml : null, areas: hasSubs ? areas : [], lines: hasSubs ? all : own, totalMinor: 0, subLabel: t.printAsText, highlight: t.highlight })
+        main.push({ id: t.id, label: t.name, note: b.groupNotes ? (ownNote(t) ? t.description : tradeNote(t.name)) : null, noteHtml: b.groupNotes && ownNote(t) ? t.descriptionHtml : null, areas: hasSubs ? areas : [], lines: hasSubs ? all : own, totalMinor: 0, subLabel: t.printAsText, highlight: t.highlight })
       }
       else { const l = priced.find((x) => x.id === t.id); if (l) loose.push(l) }
     }
@@ -106,10 +110,10 @@ function sections(b: ItemsBlock, items: DocItem[], view: ClientView): { main: Se
     const order: string[] = []
     for (const l of priced.sort(byPos)) { const k = labelOf(l); if (!order.includes(k)) order.push(k) }
     // A label bucket that matches one of the quote's sections by name carries that section's note, sub-total label and highlight (REG-555 · REG-556).
-    main = order.map((label, i) => ({ id: `sec-${i}`, label, note: noteOf(label), noteHtml: b.groupNotes ? groupOf(label)?.descriptionHtml ?? null : null, areas: [], lines: priced.filter((l) => labelOf(l) === label), totalMinor: 0, subLabel: groupOf(label)?.printAsText ?? null, highlight: groupOf(label)?.highlight ?? null }))
+    main = order.map((label, i) => ({ id: `sec-${i}`, label, note: noteOf(label), noteHtml: b.groupNotes && ownNote(groupOf(label)) ? groupOf(label)?.descriptionHtml ?? null : null, areas: [], lines: priced.filter((l) => labelOf(l) === label), totalMinor: 0, subLabel: groupOf(label)?.printAsText ?? null, highlight: groupOf(label)?.highlight ?? null }))
   }
   for (const s of main) {
-    s.totalMinor = s.lines.reduce((sum, l) => sum + (l.noPrice || printsWord(l) || l.change === 'removed' ? 0 : lineTotalMinor(l)), 0)
+    s.totalMinor = s.lines.reduce((sum, l) => sum + (l.noPrice || printsWord(l) || l.change === 'removed' || l.optional ? 0 : lineTotalMinor(l)), 0)   // an optional line printed in place never counts (REG-492)
     if (b.subGroupBy !== 'none' && !s.areas.length) {
       const f = b.subGroupBy
       const order: string[] = []
@@ -124,6 +128,7 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   const { brand, data, values } = ctx
   const tid = b.id
   const cols: ItemsColumn[] = b.columns.filter((c) => c.on && view.columns[c.key] !== false)
+  const optCol = cols.some((c) => c.key === 'optional')   // (REG-617, parity Q-11) optional lines print in place, priced in their own column
   const descriptions = view.descriptions ? b.descriptions : 'none'
   const photos = b.photos && view.photos
   const cellStyle = textCss(b.style, brand, 'table')
@@ -154,13 +159,16 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
     return HIGHLIGHT_KIND[key] === 'fill' ? { background: c } : { color: c }
   }
   const span = cols.length || 1
-  const bandRow = (label: string, key: string, tone: 'section' | 'optional' = 'section', hl?: string | null) => {
+  const bandRow = (label: string, key: string, tone: 'section' | 'optional' = 'section', hl?: string | null, amount?: ReactNode) => {
     const style = b.bandStyle
     const h = hlStyle(hl)
     const bg = h?.background ? String(h.background) : style === 'grey' ? resolveColor('band', brand) : style === 'accent' ? resolveColor('accent', brand) : style === 'black' ? '#000' : undefined
     const fg = h?.color ? String(h.color) : style === 'black' || style === 'accent' ? '#fff' : ink
     const text = <span style={{ ...textCss({ ...b.areaStyle, weight: 700, underline: style === 'underlined' || style === 'inline' || style === 'grey' }, brand, 'table'), color: fg }}>{label}</span>
-    if (style === 'inline') return table(<tr key={key} data-band>{cols.map((c, i) => cell(c, i === (cols.findIndex((x) => x.key === 'item')) ? text : null))}</tr>)
+    const last = cols.length - 1
+    if (style === 'inline') return table(<tr key={key} data-band>{cols.map((c, i) => cell(c, i === (cols.findIndex((x) => x.key === 'item')) ? text : amount && i === last && last > 0 ? <span style={{ fontWeight: 700 }}>{amount}</span> : null))}</tr>)
+    /* (REG-617, parity Q-21) The section's sub-total in its band: the label across, the amount in the last column's place. */
+    if (amount && last > 0) return table(<tr key={key} data-band><td colSpan={span - 1} style={{ background: bg, color: fg, padding: pad }}>{text}</td><td data-band-amount style={{ background: bg, color: fg, padding: pad, textAlign: cols[last]!.align, fontWeight: 700 }}>{amount}</td></tr>, tone === 'optional' ? styles.optional : undefined)
     return table(<tr key={key} data-band><td colSpan={span} style={{ background: bg, color: fg, padding: pad }}>{text}</td></tr>, tone === 'optional' ? styles.optional : undefined)
   }
   const inset = mm(cols[0]?.key === 'no' ? cols[0].width : 0) + 4
@@ -204,7 +212,9 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
             case 'qtyUnit': { const qu = (n: number) => (n && l.unit ? `${n} ${l.unit}` : l.unit ?? (n > 1 ? String(n) : '')); return cell(c, <>{was && was.qty !== l.qty ? <span className={styles.was}>{qu(was.qty)}</span> : null}{qu(l.qty)}</>, st) }   /* (REG-595) the old quantity struck before the new */
             case 'unitPrice': return cell(c, hideAmount ? null : word ? null : <>{was && was.unitPriceMinor !== unitPriceMinor(l) ? strike(was.unitPriceMinor) : null}{amount(unitPriceMinor(l), false)}</>, st)
             case 'discount': return cell(c, l.discountPct && !word ? `${l.discountPct}%` : '', st)
-            case 'total': return cell(c, hideAmount ? null : <>{was && was.totalMinor !== total ? strike(was.totalMinor) : null}{amount(total, true)}</>, st)
+            /* (REG-617, parity Q-11) With the Optional price column on, an optional line's price stands there and its Total stays empty — out of every sum. */
+            case 'optional': return cell(c, hideAmount || !l.optional ? null : <>{was && was.totalMinor !== total ? strike(was.totalMinor) : null}{amount(total, true)}</>, st)
+            case 'total': return cell(c, hideAmount || (optCol && l.optional) ? null : <>{was && was.totalMinor !== total ? strike(was.totalMinor) : null}{amount(total, true)}</>, st)
           }
         })}
       </tr>,
@@ -218,7 +228,7 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
     </tr>,
   )
 
-  const { main, optional } = sections(b, data.items, view)
+  const { main, optional } = sections(b, data.items, view, data.studio.tradeNotes ?? {}, optCol)
   const headStyle = textCss(b.headerStyle, brand, 'small')
   const headBg = b.headerRow === 'band' ? resolveColor('band', brand) : b.headerRow === 'black' ? '#000' : undefined
   const head = b.headerRow === 'none' ? null : table(
@@ -238,12 +248,18 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
   if (head) push({ key: `${tid}:head`, node: head, isHead: true, keepWithNext: true })
   let counter = 0
   const nested = b.numbering === 'nested'   // (REG-558) 1 · 1.1 · a b c
+  const lettered = b.numbering === 'lettered'   // (REG-617, parity Q-10) A1 · A2 · B1
+  const subAt = b.subtotalAt ?? 'row'
   main.forEach((s, si) => {
     const label = b.sectionLabel === 'letters' ? `${LETTERS[si % 26]}  ${s.label}` : b.sectionLabel === 'numbers' || nested ? `${si + 1}  ${s.label}` : s.label
     const gk = s.id
-    if (s.label) push({ key: `${tid}:${s.id}:band`, node: bandRow(label, `${s.id}-band`, 'section', s.highlight), groupKey: gk, groupStart: true, keepWithNext: true, breakBefore: b.groupNewPage && si > 0 })
+    const subWord = s.subLabel ? ` (${s.subLabel})` : ''
+    const onlyOptional = s.lines.length > 0 && s.lines.every((l) => l.optional)   // a section of optional lines only has nothing to sum
+    const inBand = view.amounts === 'lines' && b.subtotals && !!s.label && subAt !== 'row' && !onlyOptional
+    const bandAmount = inBand ? <>{money(s.totalMinor, false, false)}{subWord ? <div style={{ fontWeight: 400 }}>{subWord.trim()}</div> : null}</> : undefined
+    if (s.label) push({ key: `${tid}:${s.id}:band`, node: bandRow(label, `${s.id}-band`, 'section', s.highlight, bandAmount), groupKey: gk, groupStart: true, keepWithNext: true, breakBefore: b.groupNewPage && si > 0 })
     if (s.note || s.noteHtml) push({ key: `${tid}:${s.id}:note`, node: noteRow(s.note ?? '', `${s.id}-note`, s.noteHtml), groupKey: gk, keepWithNext: true })
-    if (b.numbering === 'group' || nested) counter = 0
+    if (b.numbering === 'group' || lettered || nested) counter = 0
     const areas = s.areas.length ? s.areas : [{ label: '', lines: s.lines }]
     let subCounter = 0
     areas.forEach((a, ai) => {
@@ -257,14 +273,15 @@ function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view
         let no = ''
         if (!l.noNumber) {   // (REG-558) a "no number" line is passed over
           if (nested) { if (a.sub) { subCounter += 1; no = LETTERS[(subCounter - 1) % 26]!.toLowerCase() } else { counter += 1; no = `${si + 1}.${counter}` } }
-          else { counter += 1; no = b.numbering === 'none' ? '' : String(counter) }
+          else { counter += 1; no = b.numbering === 'none' ? '' : lettered ? `${LETTERS[si % 26]}${counter}` : String(counter) }
         }
-        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, hideAmount), groupKey: gk, amountMinor: l.noPrice || printsWord(l) || l.change === 'removed' ? 0 : lineTotalMinor(l) })
+        push({ key: `${tid}:${l.id}`, node: lineRow(l, no, l.id, hideAmount), groupKey: gk, amountMinor: l.noPrice || printsWord(l) || l.change === 'removed' || l.optional ? 0 : lineTotalMinor(l) })
       })
     })
     const subLabel = s.subLabel ? ` (${s.subLabel})` : ''   // (REG-555, T-3) "Sub-total for Masonry (Approximate)"
-    if (view.amounts === 'sections') push({ key: `${tid}:${s.id}:lump`, node: sumRow(`Lump sum${subLabel}`, s.totalMinor, `${s.id}-lump`), groupKey: gk })
-    else if (view.amounts === 'lines' && b.subtotals && s.label) push({ key: `${tid}:${s.id}:sub`, node: sumRow(`${b.subtotalLabel.replace('{section}', s.label)}${subLabel}`, s.totalMinor, `${s.id}-sub`), groupKey: gk })
+    if (onlyOptional) { /* no sub-total or lump sum for a section of optional lines */ }
+    else if (view.amounts === 'sections') push({ key: `${tid}:${s.id}:lump`, node: sumRow(`Lump sum${subLabel}`, s.totalMinor, `${s.id}-lump`), groupKey: gk })
+    else if (view.amounts === 'lines' && b.subtotals && s.label && subAt !== 'band') push({ key: `${tid}:${s.id}:sub`, node: sumRow(`${b.subtotalLabel.replace('{section}', s.label)}${subLabel}`, s.totalMinor, `${s.id}-sub`), groupKey: gk })
   })
   if (optional.length && b.optionalSection && view.optionalWorks) {
     push({ key: `${tid}:opt:band`, node: bandRow(b.optionalTitle, 'opt-band', 'optional'), groupKey: 'optional', groupStart: true, keepWithNext: true })
@@ -312,32 +329,39 @@ function totalsNode(b: TotalsBlock, ctx: RenderCtx, view: ClientView, t: DocTota
   }
 }
 
+/** 1st · 2nd · 3rd · 4th … 11th · 12th · 13th · 21st (REG-618, parity Q-16). */
+const ordinal = (n: number) => { const t = n % 100; const s = t >= 11 && t <= 13 ? 'th' : n % 10 === 1 ? 'st' : n % 10 === 2 ? 'nd' : n % 10 === 3 ? 'rd' : 'th'; return `${n}${s}` }
+
 function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
   const { brand, data, values } = ctx
+  const mark = (i: number) => (b.ordinals ? ordinal(i + 1) : b.letters ? LETTERS[i % 26]! : String(i + 1))   // (REG-618, parity Q-16)
+  const foot = b.footnote?.trim() ? <div className={styles.payFoot} style={textCss({ role: 'small', color: 'grey' }, brand)}>{resolveFields(b.footnote, values)}</div> : null
   const style = textCss(b.style, brand)
   const titleStyle = textCss(b.titleStyle, brand)
   const ink = resolveColor('ink', brand)
   const title = b.title ? <div className={styles.payTitle} data-band={b.band || undefined} style={{ ...titleStyle, background: b.band ? '#000' : undefined }}>{resolveFields(b.title, values)}</div> : null
   const rows = data.payments
   const m = (minor: number) => moneyText(minor, 'S$').figure
-  if (!rows.length) return <div style={style}>{title}<div className={styles.muted}>No payment schedule on this quote.</div></div>
+  if (!rows.length) return <div style={style}>{title}<div className={styles.muted}>No payment schedule on this quote.</div>{foot}</div>
   /* (REG-560) The Total line under the milestones — the sum of the amounts, and the percentages' sum — unless the template hides it. */
   const totalMinor = rows.reduce((s, p) => s + p.amountMinor, 0), totalPct = rows.reduce((s, p) => s + p.pct, 0)
   const totalLine = b.showTotal ? <div className={styles.payTotal} style={{ borderTopColor: ink }}><span>Total</span><span>{totalPct}%{b.showAmounts ? ` · ${m(totalMinor)}` : ''}</span></div> : null
   if (b.layout === 'list') return (
     <div style={style}>{title}
-      <ol className={styles.payList} data-letters={b.letters || undefined}>
-        {rows.map((p, i) => <li key={i}><span>{b.letters ? `${LETTERS[i % 26]}  ` : ''}{p.description || p.name} - <b style={{ color: resolveColor('red', brand) }}>{p.pct}%</b>{b.showAmounts ? ` (${m(p.amountMinor)})` : ''}{b.showDue && p.due ? ` · ${p.due}` : ''}</span></li>)}
+      <ol className={styles.payList} data-letters={b.letters || b.ordinals || undefined}>
+        {rows.map((p, i) => <li key={i}><span>{b.letters || b.ordinals ? `${mark(i)}  ` : ''}{p.description || p.name} - <b style={{ color: resolveColor('red', brand) }}>{p.pct}%</b>{b.showAmounts ? ` (${m(p.amountMinor)})` : ''}{b.showDue && p.due ? ` · ${p.due}` : ''}</span></li>)}
       </ol>
       {totalLine}
+      {foot}
     </div>
   )
   if (b.layout === 'cards') return (
     <div style={style}>{title}
       <div className={styles.payCards}>
-        {rows.map((p, i) => <div key={i} className={styles.payCard} style={{ borderColor: resolveColor('light', brand) }}><div className={styles.payPct}>{p.name} · {p.pct}%</div>{b.showAmounts ? <div className={styles.payAmt}>{m(p.amountMinor)}</div> : null}<div className={styles.muted}>{p.description}{b.showDue && p.due ? ` · ${p.due}` : ''}</div></div>)}
+        {rows.map((p, i) => <div key={i} className={styles.payCard} style={{ borderColor: resolveColor('light', brand) }}><div className={styles.payPct}>{b.letters || b.ordinals ? `${mark(i)} · ` : ''}{p.name} · {p.pct}%</div>{b.showAmounts ? <div className={styles.payAmt}>{m(p.amountMinor)}</div> : null}<div className={styles.muted}>{p.description}{b.showDue && p.due ? ` · ${p.due}` : ''}</div></div>)}
       </div>
       {totalLine}
+      {foot}
     </div>
   )
   return (
@@ -346,7 +370,7 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
         <tbody>
           {rows.map((p, i) => (
             <tr key={i}>
-              <td style={{ width: mm(8), textAlign: 'center' }}>{b.letters ? LETTERS[i % 26] : i + 1}</td>
+              <td style={{ width: mm(b.ordinals ? 10 : 8), textAlign: 'center' }}>{mark(i)}</td>
               <td><b>{p.pct}%</b> - {p.description || p.name}</td>
               {b.showDue ? <td style={{ width: mm(28) }}>{p.due}</td> : null}
               {b.showAmounts ? <td style={{ width: mm(30), textAlign: 'right' }}>{m(p.amountMinor)}</td> : null}
@@ -362,6 +386,7 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
           ) : null}
         </tbody>
       </table>
+      {foot}
     </div>
   )
 }
@@ -371,7 +396,9 @@ function bankNode(b: BankBlock, ctx: RenderCtx): ReactNode {
   const { brand, data, values } = ctx
   const e = docEntity(data)
   const style = textCss(b.style, brand)
-  const rows: [string, string][] = e ? ([['Bank', e.bankName], ['Account name', e.accountName], ['Account number', e.accountNo], ['PayNow', e.payNow]] as [string, string][]).filter((r) => !!r[1]) : []
+  // (REG-618, parity Q-24) The studio's own words for each row, and the SWIFT code beside the account.
+  const word = (k: keyof typeof BANK_ROW_LABEL) => resolveFields(b.labels?.[k]?.trim() || BANK_ROW_LABEL[k], values)
+  const rows: [string, string][] = e ? ([[word('bank'), e.bankName], [word('accountName'), e.accountName], [word('accountNo'), e.accountNo], [word('swift'), e.swift], [word('payNow'), e.payNow]] as [string, string][]).filter((r) => !!r[1]) : []
   const title = b.title ? <div className={styles.textTitle} style={textCss(b.titleStyle, brand)}>{resolveFields(b.title, values)}</div> : null
   const body = rows.length ? (
     <table className={styles.kv} style={{ borderSpacing: `0 ${mm(0.6)}px` }}><tbody>

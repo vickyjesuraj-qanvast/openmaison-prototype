@@ -5,7 +5,7 @@
  * export — the lines take the same shape, so they paste straight into a sheet. Client-safe, no DOM.
  */
 import type { QuoteItem } from '@/lib/db/schema'
-import { UNITS } from './items-model'
+import { cleanLink, ITEM_KINDS, ITEM_KIND_LABEL, UNITS } from './items-model'
 import { countedLines, flattenItems, groupTotals, lineCostMinor, lineTotalMinor, numberItems, unitPriceMinor } from './math'
 
 /* ── in: a pasted block ── */
@@ -41,16 +41,21 @@ export function isBlock(text: string, where: 'cell' | 'add'): boolean {
   return rows.length > 1 || (rows.length === 1 && rows[0]!.length > 1)
 }
 
-export const PASTE_FIELDS = ['name', 'description', 'qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'skip'] as const
+export const PASTE_FIELDS = ['name', 'description', 'kind', 'qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'vendor', 'link', 'skip'] as const
+/** (REG-653, price book parity Q-13) What a quote's paste maps, and what an import into My Items maps — the book keeps no quantity,
+    discount, GST, room or section label, and a quote line's kind is its icon, so each list offers only what its target keeps. */
+export const QUOTE_PASTE_FIELDS = PASTE_FIELDS.filter((f) => f !== 'kind')
+export const BOOK_PASTE_FIELDS = PASTE_FIELDS.filter((f) => !['qty', 'discount', 'gst', 'room', 'section'].includes(f))
 export type PasteField = (typeof PASTE_FIELDS)[number]
 export const PASTE_FIELD_LABEL: Record<PasteField, string> = {
-  name: 'Item', description: 'Description', qty: 'Qty', unit: 'Unit', cost: 'Cost', markup: 'Markup', unitPrice: 'Unit Price',
-  discount: 'Discount (%)', gst: 'GST (%)', room: 'Room', category: 'Category', section: 'Section label', skip: 'Skip this column',
+  name: 'Item', description: 'Description', kind: 'Kind', qty: 'Qty', unit: 'Unit', cost: 'Cost', markup: 'Markup', unitPrice: 'Unit Price',
+  discount: 'Discount (%)', gst: 'GST (%)', room: 'Room', category: 'Category', section: 'Section label', vendor: 'Vendor/Sub', link: 'Website Link', skip: 'Skip this column',   // (REG-623)
 }
 /** What a sheet's header row tends to call each field (Singapore renovation quotes: "Description of work", "Rate", "Amount"). */
 const ALIASES: Record<Exclude<PasteField, 'skip'>, string[]> = {
   name: ['item', 'items', 'name', 'item name', 'description of work', 'work', 'works', 'title', 'product', 'scope', 'particulars'],
   description: ['description', 'desc', 'details', 'notes', 'remarks', 'specification', 'spec', 'specs'],
+  kind: ['kind', 'item kind', 'item type', 'cost type'],   // (REG-653, Q-14) the export's Kind column comes back
   qty: ['qty', 'quantity', 'no', 'nos', 'count', 'units'],
   unit: ['unit', 'uom', 'unit type', 'measure', 'per', 'unit of measure'],
   cost: ['cost', 'cost price', 'unit cost', 'buy', 'purchase', 'purchase price', 'supplier price', 'rate'],
@@ -61,6 +66,8 @@ const ALIASES: Record<Exclude<PasteField, 'skip'>, string[]> = {
   room: ['room', 'area', 'location', 'space', 'zone'],
   category: ['category', 'cat', 'type', 'trade', 'group'],
   section: ['section', 'phase', 'stage', 'part'],
+  vendor: ['vendor', 'vendor sub', 'supplier', 'subcontractor', 'sub contractor', 'sub con', 'subcon', 'contractor'],   // (REG-623)
+  link: ['website link', 'website', 'link', 'url', 'product link', 'spec link', 'spec sheet link', 'web link'],
 }
 const norm = (s: string) => s.toLowerCase().replace(/\(s\$\)|s\$|\$/g, '').replace(/[^a-z0-9% ]+/g, ' ').replace(/\s+/g, ' ').trim()
 function fieldForHeader(cell: string): PasteField | null {
@@ -123,6 +130,8 @@ export function guessColumns(rows: string[][]): PasteField[] {
 export type PasteLine = {
   name: string; description?: string | null; qty?: number; unit?: string | null; costMinor?: number; markupMinor?: number
   discountPct?: number; gstPct?: number; room?: string | null; category?: string | null; section?: string | null
+  /** (REG-623) */ vendor?: string | null; link?: string | null
+  /** (REG-653, Q-13) My Items' kind — design · fee · labour · delivery · purchase — read from the key or its label */ kind?: string
 }
 export function toLines(rows: string[][], map: PasteField[], header: boolean): PasteLine[] {
   const out: PasteLine[] = []
@@ -137,6 +146,7 @@ export function toLines(rows: string[][], map: PasteField[], header: boolean): P
       switch (f) {
         case 'name': line.name = v.slice(0, 200); break
         case 'description': line.description = v.slice(0, 2000); break
+        case 'kind': { const k = ITEM_KINDS.find((x) => x === v.trim().toLowerCase() || ITEM_KIND_LABEL[x].toLowerCase() === v.trim().toLowerCase()); if (k) line.kind = k; break }
         case 'qty': if (n !== null && n >= 0) line.qty = n; break
         case 'unit': line.unit = (UNITS.find((u) => u.toLowerCase() === v.toLowerCase()) ?? v).slice(0, 40); break
         case 'cost': if (n !== null && n >= 0) line.costMinor = Math.round(n * 100); break
@@ -147,6 +157,8 @@ export function toLines(rows: string[][], map: PasteField[], header: boolean): P
         case 'room': line.room = v.slice(0, 60); break
         case 'category': line.category = v.slice(0, 60); break
         case 'section': line.section = v.slice(0, 60); break
+        case 'vendor': line.vendor = v.slice(0, 80); break   // (REG-623)
+        case 'link': { const u = cleanLink(v); if (u) line.link = u; break }   // a cell that is not a web address is left out
       }
     })
     if (unitPrice !== null) {
@@ -164,9 +176,9 @@ export function toLines(rows: string[][], map: PasteField[], header: boolean): P
 /* ── out: a selection or the whole table ── */
 
 export type SheetCell = string | number | null
-export const EXPORT_HEAD = ['#', 'Item', 'Description', 'Qty', 'Unit', 'Cost', 'Markup', 'Unit Price', 'Discount (%)', 'GST (%)', 'Room', 'Category', 'Section label', 'Total'] as const
+export const EXPORT_HEAD = ['#', 'Item', 'Description', 'Qty', 'Unit', 'Cost', 'Markup', 'Unit Price', 'Discount (%)', 'GST (%)', 'Room', 'Category', 'Section label', 'Vendor/Sub', 'Website Link', 'Total'] as const
 /** The money columns in EXPORT_HEAD: they print with two decimals. */
-export const EXPORT_MONEY_COLS = [5, 6, 7, 13]
+export const EXPORT_MONEY_COLS = [5, 6, 7, 15]
 const dollars = (minor: number) => Math.round(minor) / 100
 
 /** Every line in table order (a group before its children, with its sums), or only the ids given, as sheet cells. */
@@ -178,9 +190,9 @@ export function exportRows(items: QuoteItem[], only?: Set<string>): SheetCell[][
     const n = numbers.get(i.id) ?? ''
     if (i.kind === 'group') {
       const s = groupTotals(items, i.id)
-      out.push([n, i.name, i.description ?? '', null, null, dollars(s.costMinor), dollars(s.markupMinor), dollars(s.unitPriceMinor), null, null, i.room ?? '', i.category ?? '', i.section ?? '', dollars(s.totalMinor)])
+      out.push([n, i.name, i.description ?? '', null, null, dollars(s.costMinor), dollars(s.markupMinor), dollars(s.unitPriceMinor), null, null, i.room ?? '', i.category ?? '', i.section ?? '', '', '', dollars(s.totalMinor)])
     } else {
-      out.push([n, i.name, i.description ?? '', i.qty, i.unit ?? '', dollars(i.costMinor), dollars(i.markupMinor), dollars(unitPriceMinor(i)), i.discountPct, i.gstPct, i.room ?? '', i.category ?? '', i.section ?? '', dollars(lineTotalMinor(i))])
+      out.push([n, i.name, i.description ?? '', i.qty, i.unit ?? '', dollars(i.costMinor), dollars(i.markupMinor), dollars(unitPriceMinor(i)), i.discountPct, i.gstPct, i.room ?? '', i.category ?? '', i.section ?? '', i.vendor ?? '', i.link ?? '', dollars(lineTotalMinor(i))])
     }
   }
   return out

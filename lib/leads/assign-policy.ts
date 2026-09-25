@@ -10,10 +10,16 @@ export type Viewer = { id: string; role: string; /** the Designers who report to
 
 export const runsStudio = (role: string | null | undefined) => role === 'Owner' || role === 'Admin'
 
-/** The member ids `viewer` may put on a lead: everyone · the team and themselves · nobody. */
-export function assignableIds(viewer: Viewer, team: Member[]): string[] {
-  if (runsStudio(viewer.role)) return team.map((m) => m.id)
-  if (viewer.role === 'Manager') return team.filter((m) => m.id === viewer.id || viewer.teamIds.includes(m.id)).map((m) => m.id)
+/** (REG-646, settings parity Q-06) A deactivated member keeps their records and leaves every picker; one still on the record being
+    edited (`keep`) stays listed, so they can be taken off. */
+export const pickable = <T extends { id: string; isActive?: boolean | null }>(team: T[], keep: readonly string[] = []): T[] =>
+  team.filter((m) => m.isActive !== false || keep.includes(m.id))
+
+/** The member ids `viewer` may put on a lead: everyone · the team and themselves · nobody — active members only (REG-646). */
+export function assignableIds(viewer: Viewer, team: Pick<Member, 'id' | 'isActive'>[]): string[] {
+  const live = team.filter((m) => m.isActive !== false)
+  if (runsStudio(viewer.role)) return live.map((m) => m.id)
+  if (viewer.role === 'Manager') return live.filter((m) => m.id === viewer.id || viewer.teamIds.includes(m.id)).map((m) => m.id)
   return []
 }
 

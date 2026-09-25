@@ -186,7 +186,7 @@ export type LostDetail = { otherReason?: string; competitor?: string; restartAt?
  * block (the owner's call, 2026-09-24): Save never waits on it.
  */
 export function LostDialog({
-  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today,
+  open, onClose, onSave, reason, setReason, options = DEFAULT_LOST_REASONS.map((r) => r.name), reasons = DEFAULT_LOST_REASONS, contactCount = 0, today, competitorHint = null,
 }: {
   open: boolean; onClose: () => void; onSave: (detail: LostDetail) => void
   reason: string; setReason: (v: string) => void
@@ -198,9 +198,13 @@ export function LostDialog({
   contactCount?: number
   /** The host's clock, for the restart date picker (never Date.now() in render). */
   today: Date
+  /** (REG-640, X-Ray parity Q-18) The lead's latest Quote X-Ray — the competitor starts as its other studio, editable. */
+  competitorHint?: { studio: string; at: number } | null
 }) {
   const [other, setOther] = useState('')
-  const [competitor, setCompetitor] = useState('')
+  const [competitor, setCompetitor] = useState(competitorHint?.studio ?? '')
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) { setWasOpen(open); if (open) setCompetitor(competitorHint?.studio ?? '') }
   const [restart, setRestart] = useState('')   // d/m/yyyy, the DateField's canonical string
   const [showErrors, setShowErrors] = useState(false)
   const restartDate = restart ? parseInputDate(restart) : null
@@ -238,7 +242,8 @@ export function LostDialog({
         <TextField label="Other reason" required value={other} onChange={setOther} error={showErrors ? errors.other : undefined} />
       ) : null}
       {reason === LOST_COMPETITOR ? (
-        <TextField label="Competitor (optional)" value={competitor} onChange={setCompetitor} maxLength={80} trailingIcon={null} />
+        <TextField label="Competitor (optional)" value={competitor} onChange={setCompetitor} maxLength={80} trailingIcon={null}
+                   helper={competitorHint && competitor === competitorHint.studio ? `From the Quote X-Ray of ${displayDate(new Date(competitorHint.at))}` : undefined} />
       ) : null}
       {reason === LOST_POSTPONED ? (<>
         <DateField label="Expected restart (optional)" value={restart} onChange={setRestart} today={today} error={showErrors ? errors.restart : undefined} />

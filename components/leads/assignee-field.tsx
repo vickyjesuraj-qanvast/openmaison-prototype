@@ -8,6 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import styles from './assignee-field.module.css'
+import { pickable } from '@/lib/leads/assign-policy'
 
 /**
  * Assign member — a searchable, multi-select member picker for the Lead form (user 2026-08-31, REG-231).
@@ -53,7 +54,8 @@ export function AssigneeField({ team, value, onChange, error, inputRef, locked }
   }
 
   const q = query.trim().toLowerCase()
-  const matches = q ? team.filter((m) => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q)) : team
+  const listed = pickable(team, value)   // (REG-646) a deactivated member leaves the picker unless already on the lead
+  const matches = q ? listed.filter((m) => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q)) : listed
   const picked = team.filter((m) => value.includes(m.id))
 
   const toggle = (id: string) => {

@@ -1,0 +1,36 @@
+/* (REG-662) The price book in the quote editor: the tabs and a search on one row, the chips under, a bordered list of 64px rows —
+   a tick, the item's photo or kind, its name over its kind · vendor · category, its price per unit at the end. A ticked row takes the
+   primary-variant fill (REG-449), as a ticked row does in every list. */
+.body { display: flex; flex-direction: column; gap: var(--om-spacing-4); flex: 1 1 auto; min-height: 0; }
+/* The toolbar and the chips hold; only the list scrolls, inside the modal's fixed height (a shrinking list clipped its last rows). */
+.body > * { flex-shrink: 0; }
+.body > .list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; container-type: inline-size; }
+.search { flex: 0 1 360px; min-width: 200px; margin-left: auto; }
+/* Too narrow for one row (a tablet): the search takes its own row, whole — not a 360 box stranded at the right. */
+@container (max-width: 720px) { .search { flex: 1 1 100%; margin-left: 0; } }
+.list { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.row { display: grid; grid-template-columns: auto 40px minmax(0, 1fr) auto; align-items: center; gap: var(--om-spacing-3); min-height: 64px; padding: var(--om-spacing-2) var(--om-spacing-4); cursor: pointer; transition: background-color var(--motion-hover); flex-shrink: 0; }
+.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row:hover { background: var(--om-color-hover-04p); }
+.row[data-selected] { background: var(--om-color-primary-variant); }
+.thumb { width: 40px; height: 40px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.name { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.price { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.unit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: 64px var(--om-spacing-6); text-align: center; border: var(--om-border-1) dashed var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.emptyTitle { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.emptyHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 56ch; }
+@media (hover: none) { .row:hover { background: none; } .row[data-selected] { background: var(--om-color-primary-variant); } }
+@media (max-width: 767px) {
+  .row { grid-template-columns: auto 40px minmax(0, 1fr); row-gap: 2px; }
+  .name { white-space: normal; }   /* a phone shows the whole name, on two lines if it needs them */
+  .price { grid-column: 3; text-align: left; }
+}
+/* (REG-664) A folder in the list: the shared folder row, ruled like the item rows. */
+.folderItem { flex-shrink: 0; }
+.folderItem + .folderItem, .folderItem + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.body > [data-testid="folder-crumbs"] { flex-shrink: 0; }

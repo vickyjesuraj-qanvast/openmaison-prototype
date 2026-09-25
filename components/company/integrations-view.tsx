@@ -14,12 +14,21 @@ import { connectGmail, createWebhook, disconnectGmail, regenerateWebhook, revoke
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useCopy } from '@/components/om/use-copy'
 import { CompanyShell } from './company-shell'
+import { ReadOnlyNote } from './read-only-note'
 import { intakeAddress, type LeadCapture } from '@/lib/settings/types'
 import { setLeadCapture, simulateArrival } from '@/app/leads/capture-actions'
 import { displayDateTimeDot } from '@/lib/format'
 import styles from './integrations-view.module.css'
 
 type Arrival = { fileName: string; at: number; rows: number }
+
+/** (sweep S4 #25) A secret copied through the house hook: the button reads "Copied", and a failed copy says so — never the secret in a snackbar. */
+function CopyButton({ text, label, done, what, variant = 'text' }: { text: string; label: string; done: string; what: string; variant?: 'text' | 'outlined' }) {
+  const { copied, copy } = useCopy(text, { done, failed: `Couldn’t copy the ${what} — please try again` })
+  return variant === 'text'
+    ? <Button appearance="text" iconStart={<Icon name={copied ? 'check' : 'content_copy'} size={18} />} onPress={() => { void copy() }}>{copied ? 'Copied' : label}</Button>
+    : <Button variant="secondary" appearance="outlined" onPress={() => { void copy() }}>{copied ? 'Copied' : label}</Button>
+}
 
 /** The Meta form's fields and the lead fields they land in — fixed for the demo; the platform maps a real form's questions. */
 const META_MAP: [string, string][] = [['Full name', 'Lead name'], ['Phone number', 'Lead phone'], ['Email', 'Lead email'], ['Property type', 'Property type'], ['What do you need?', 'Remarks']]
@@ -51,7 +60,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
     const prev = capture
     setCapture((c) => ({ ...c, ...patch, meta: { ...c.meta, ...(patch.meta ?? {}) } }))
     try { const next = await setLeadCapture(patch); setCapture(next); snackbar({ message: done }) }
-    catch { setCapture(prev); snackbar({ message: 'Couldn’t save — please try again' }) }
+    catch { setCapture(prev); snackbar({ message: 'Couldn’t save the integration — please try again' }) }   // (sweep S4 #28)
   }
   const simulate = async (channel: 'email' | 'meta', formName?: string) => {
     if (busy) return
@@ -71,12 +80,11 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
   const [domain, setDomain] = useState('')
   const activeHooks = capture.webhooks.filter((w) => w.active)
   const email = capture.email
-  const copyText = (text: string, done: string) => { navigator.clipboard.writeText(text).then(() => snackbar({ message: done })).catch(() => snackbar({ message: text })) }
   const generate = async () => {
     if (busy) return
     setBusy('hook')
     try { const r = await createWebhook({ platform, label: hookLabel, notes: hookNotes }); setCapture((c) => ({ ...c, webhooks: [r.webhook, ...c.webhooks] })); setCreated(r); setHookLabel(''); setHookNotes(''); snackbar({ message: 'Webhook created' }); router.refresh() }
-    catch { snackbar({ message: 'Failed to create webhook' }) } finally { setBusy(null) }
+    catch { snackbar({ message: 'Couldn’t create the webhook — please try again' }) } finally { setBusy(null) }   // (REG-645, E-106) the house error line
   }
   const post = async (w: Webhook) => {
     if (busy) return
@@ -88,10 +96,10 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t simulate the POST — please try again' }) } finally { setBusy(null) }
   }
-  const regen = async (w: Webhook) => { try { const next = await regenerateWebhook(w.id); if (next) { setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? next : x)) })); setCreated({ webhook: next, key: next.key }); snackbar({ message: 'Token regenerated — copy the new URL' }) } } catch { snackbar({ message: 'Failed to regenerate token' }) } }
-  const revoke = async (w: Webhook) => { try { await revokeWebhook(w.id); setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? { ...x, active: false } : x)) })); if (created?.webhook.id === w.id) setCreated(null); snackbar({ message: 'Webhook revoked' }); router.refresh() } catch { snackbar({ message: 'Failed to revoke webhook' }) } }
-  const connect = async () => { try { setCapture(await connectGmail()); snackbar({ message: 'Gmail connected — the platforms below are monitored' }); router.refresh() } catch { snackbar({ message: 'Couldn’t connect — please try again' }) } }
-  const disconnect = async () => { try { setCapture(await disconnectGmail()); snackbar({ message: 'Gmail disconnected' }); router.refresh() } catch { snackbar({ message: 'Couldn’t disconnect — please try again' }) } }
+  const regen = async (w: Webhook) => { try { const next = await regenerateWebhook(w.id); if (next) { setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? next : x)) })); setCreated({ webhook: next, key: next.key }); snackbar({ message: 'Token regenerated — copy the new URL' }) } } catch { snackbar({ message: 'Couldn’t regenerate the token — please try again' }) } }
+  const revoke = async (w: Webhook) => { try { await revokeWebhook(w.id); setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? { ...x, active: false } : x)) })); if (created?.webhook.id === w.id) setCreated(null); snackbar({ message: 'Webhook revoked' }); router.refresh() } catch { snackbar({ message: 'Couldn’t revoke the webhook — please try again' }) } }
+  const connect = async () => { try { setCapture(await connectGmail()); snackbar({ message: 'Gmail connected — the platforms below are monitored' }); router.refresh() } catch { snackbar({ message: 'Couldn’t connect Gmail — please try again' }) } }
+  const disconnect = async () => { try { setCapture(await disconnectGmail()); snackbar({ message: 'Gmail disconnected' }); router.refresh() } catch { snackbar({ message: 'Couldn’t disconnect Gmail — please try again' }) } }
   const sync = async () => {
     if (busy) return
     setBusy('gmail')
@@ -100,13 +108,14 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
       setCapture((c) => ({ ...c, email: { ...c.email, lastSyncAt: Date.now(), stats: { ...c.email.stats, found: c.email.stats.found + 1, created: c.email.stats.created + (r.outcome === 'created' ? 1 : 0), duplicates: c.email.stats.duplicates + (r.outcome === 'duplicate' ? 1 : 0) } } }))
       snackbar({ message: r.outcome === 'created' ? `${r.name} enquired via ${r.platform} — a new lead, unread` : `${r.name} enquired via ${r.platform} — a known number, waiting in Review imported leads`, actionLabel: 'Open leads', onAction: () => router.push('/leads') })
       router.refresh()
-    } catch { snackbar({ message: 'Couldn’t sync — please try again' }) } finally { setBusy(null) }
+    } catch { snackbar({ message: 'Couldn’t sync Gmail — please try again' }) } finally { setBusy(null) }
   }
   const addDomain = () => { const d = domain.trim().toLowerCase().replace(/^@?/, '@'); if (d.length < 2 || email.custom.includes(d)) return; setDomain(''); void save({ email: { ...email, custom: [...email.custom, d] } }, `${d} monitored`) }
   const last = (list: Arrival[]) => (list.length ? `${list.length} ${list.length === 1 ? 'lead' : 'leads'} so far · last ${displayDateTimeDot(new Date(Math.max(...list.map((a) => a.at))))}` : 'Nothing has arrived yet')
   return (
-    <CompanyShell title="Integrations" from={from}>
+    <CompanyShell title="Integrations" from={from} form>
       <div className={styles.layout} data-testid="integrations">
+        {canManage ? null : <ReadOnlyNote text="Only Owners and Admins connect, generate or change integrations." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="int-qanvast">
           <div className={styles.cardHead}>
             <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2><MetaChip color="green">Connected</MetaChip></div>
@@ -125,7 +134,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
           </div>
           <div className={styles.meta}>
             <span>{last(emailArrivals)}</span>
-            <Button appearance="text" iconStart={<Icon name="mail" size={18} />} isDisabled={busy !== null} onPress={() => { void simulate('email') }}>{busy === 'email' ? 'Arriving…' : 'Simulate an enquiry arriving (demo)'}</Button>
+            {canManage ? <Button appearance="text" iconStart={<Icon name="mail" size={18} />} isDisabled={busy !== null} onPress={() => { void simulate('email') }}>{busy === 'email' ? 'Arriving…' : 'Simulate an enquiry arriving (demo)'}</Button> : null}
           </div>
         </section>
 
@@ -138,14 +147,16 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
             <>
               <div className={styles.row}>
                 <span className={styles.page}><Icon name="storefront" size={20} weight={300} />{capture.meta.page}</span>
-                <Button variant="secondary" appearance="outlined" onPress={() => { void save({ meta: { ...capture.meta, connected: false } }, 'Meta Lead Ads disconnected') }}>Disconnect</Button>
+                {canManage ? <Button variant="secondary" appearance="outlined" onPress={() => { void save({ meta: { ...capture.meta, connected: false } }, 'Meta Lead Ads disconnected') }}>Disconnect</Button> : null}   {/* (REG-646, Q-07) Owners and Admins */}
               </div>
-              <div className={styles.forms} role="group" aria-label="Lead forms">
-                <span className={styles.eyebrow}>Lead forms</span>
+              {/* (sweep S4 #20) the house list of switches — Settings' event table: a caption head, 56px rows, the switch under its column */}
+              <div className={styles.formTable} role="table" aria-label="Lead forms">
+                <div className={styles.formHead} role="row"><span role="columnheader">Lead form</span><span role="columnheader" className={styles.formCol}>Sends leads</span></div>
                 {capture.meta.forms.map((f) => (
-                  <label key={f.id} className={styles.form}>
-                    <span className={styles.formName}>{f.name}</span>
-                    <Switch size="sm" isSelected={f.on} aria-label={`${f.name} sends leads`} onChange={(on: boolean) => { void save({ meta: { ...capture.meta, forms: capture.meta.forms.map((x) => (x.id === f.id ? { ...x, on } : x)) } }, on ? `${f.name} now sends leads` : `${f.name} no longer sends leads`) }} />
+                  <label key={f.id} className={styles.formRow} role="row">
+                    <span className={styles.formName} role="cell">{f.name}</span>
+                    <span className={styles.formCol} role="cell">
+                    <Switch size="sm" isSelected={f.on} isDisabled={!canManage} aria-label={`${f.name} sends leads`} onChange={(on: boolean) => { void save({ meta: { ...capture.meta, forms: capture.meta.forms.map((x) => (x.id === f.id ? { ...x, on } : x)) } }, on ? `${f.name} now sends leads` : `${f.name} no longer sends leads`) }} /></span>
                   </label>
                 ))}
               </div>
@@ -155,13 +166,13 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
               </div>
               <div className={styles.meta}>
                 <span>{last(metaArrivals)}</span>
-                <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null || !capture.meta.forms.some((f) => f.on)} onPress={() => { void simulate('meta', capture.meta.forms.find((f) => f.on)?.name) }}>{busy === 'meta' ? 'Arriving…' : 'Simulate a form submission (demo)'}</Button>
+                {canManage ? <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null || !capture.meta.forms.some((f) => f.on)} onPress={() => { void simulate('meta', capture.meta.forms.find((f) => f.on)?.name) }}>{busy === 'meta' ? 'Arriving…' : 'Simulate a form submission (demo)'}</Button> : null}
               </div>
             </>
           ) : (
             <div className={styles.row}>
-              <Button iconStart={<Icon name="link" size={20} />} onPress={() => { void save({ meta: { ...capture.meta, connected: true, page: `${studioName.replace(/ Pte\.? Ltd\.?$/i, '')} · Facebook page` } }, 'Meta Lead Ads connected') }}>Connect a Facebook page</Button>
-              <span className={styles.hint}>The platform opens Meta’s login; the prototype connects a stand-in page.</span>
+              {canManage ? <Button iconStart={<Icon name="link" size={20} />} onPress={() => { void save({ meta: { ...capture.meta, connected: true, page: `${studioName.replace(/ Pte\.? Ltd\.?$/i, '')} · Facebook page` } }, 'Meta Lead Ads connected') }}>Connect a Facebook page</Button> : null}
+              <span className={styles.hint}>{canManage ? 'The platform opens Meta’s login; the prototype connects a stand-in page.' : 'An Owner or an Admin connects the studio’s Facebook page.'}</span>
             </div>
           )}
         </section>
@@ -194,11 +205,11 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
             <div className={styles.created} role="status" data-testid="webhook-created">
               <span className={styles.createdTitle}>{created.webhook.platform === 'google_ads' ? 'Connect in Google Ads' : created.webhook.platform === 'meta' ? 'Connect Meta via Zapier / Make' : 'Webhook created'}</span>
               <span className={styles.eyebrow}>Webhook URL</span>
-              <div className={styles.row}><code className={styles.address} data-testid="webhook-url">{webhookUrl(created.webhook.token)}</code><Button variant="secondary" appearance="outlined" onPress={() => copyText(webhookUrl(created.webhook.token), 'Webhook URL copied')}>Copy URL</Button></div>
+              <div className={styles.row}><code className={styles.address} data-testid="webhook-url">{webhookUrl(created.webhook.token)}</code><CopyButton variant="outlined" text={webhookUrl(created.webhook.token)} label="Copy URL" done="Webhook URL copied" what="webhook URL" /></div>
               {created.key ? (
                 <>
                   <span className={styles.eyebrow}>Signing key</span>
-                  <div className={styles.row}><code className={styles.address} data-testid="webhook-key">{created.key}</code><Button variant="secondary" appearance="outlined" onPress={() => copyText(created.key!, 'Key copied')}>Copy key</Button></div>
+                  <div className={styles.row}><code className={styles.address} data-testid="webhook-key">{created.key}</code><CopyButton variant="outlined" text={created.key} label="Copy key" done="Key copied" what="signing key" /></div>
                   <span className={styles.hint}>Shown once — copy it now. You can regenerate later, but the old key stops working.</span>
                 </>
               ) : null}
@@ -211,12 +222,13 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
               {activeHooks.map((w) => (
                 <li key={w.id} className={styles.hook} data-testid="webhook-row">
                   <div className={styles.hookHead}><span className={styles.hookLabel}>{w.label}</span><MetaChip>{WEBHOOK_PLATFORMS.find((p) => p.key === w.platform)?.label ?? w.platform}</MetaChip>{w.notes ? <span className={styles.hint}>{w.notes}</span> : null}</div>
-                  <div className={styles.meta} data-testid="webhook-counters"><span>{w.received} received</span><span>{w.created} created</span><span>{w.duplicates} dupes</span><span>{w.lastAt ? `Last: ${displayDateTimeDot(new Date(w.lastAt))}` : 'No requests received yet.'}</span></div>
+                  <div className={styles.meta} data-testid="webhook-counters"><span>{w.received} received</span><span>{w.created} created</span><span>{w.duplicates} {w.duplicates === 1 ? 'duplicate' : 'duplicates'}</span><span>{w.lastAt ? `Last: ${displayDateTimeDot(new Date(w.lastAt))}` : 'No requests received yet.'}</span></div>
                   <div className={styles.row}>
-                    <Button appearance="text" iconStart={<Icon name="content_copy" size={18} />} onPress={() => copyText(webhookUrl(w.token), 'Webhook URL copied')}>Copy URL</Button>
-                    <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null} onPress={() => { void post(w) }}>{busy === w.id ? 'Arriving…' : 'Simulate a POST (demo)'}</Button>
+                    {/* (sweep S4 #17) the URL carries the endpoint's secret token — only Owners and Admins are sent it, and only they copy it */}
+                    {canManage && w.token ? <CopyButton text={webhookUrl(w.token)} label="Copy URL" done="Webhook URL copied" what="webhook URL" /> : null}
                     {canManage ? (
                       <>
+                        <Button appearance="text" iconStart={<Icon name="send" size={18} />} isDisabled={busy !== null} onPress={() => { void post(w) }}>{busy === w.id ? 'Arriving…' : 'Simulate a POST (demo)'}</Button>
                         <Button appearance="text" iconStart={<Icon name="refresh" size={18} />} onPress={() => setConfirm({ kind: 'regen', w })}>Regenerate</Button>
                         <Button appearance="text" iconStart={<Icon name="delete" size={18} />} onPress={() => setConfirm({ kind: 'revoke', w })}>Revoke</Button>
                       </>
@@ -272,7 +284,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
                 </div>
               </div>
               <div className={styles.row}>
-                <Button iconStart={<Icon name="refresh" size={20} />} isDisabled={busy !== null || email.platforms.length + email.custom.length === 0} onPress={() => { void sync() }}>{busy === 'gmail' ? 'Syncing…' : 'Sync now'}</Button>
+                {canManage ? <Button iconStart={<Icon name="refresh" size={20} />} isDisabled={busy !== null || email.platforms.length + email.custom.length === 0} onPress={() => { void sync() }}>{busy === 'gmail' ? 'Syncing…' : 'Sync now'}</Button> : null}
                 {canManage ? <Button variant="secondary" appearance="outlined" onPress={() => { void disconnect() }}>Disconnect</Button> : null}
               </div>
             </>

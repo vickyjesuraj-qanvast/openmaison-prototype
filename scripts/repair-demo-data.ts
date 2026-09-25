@@ -1,10 +1,11 @@
 process.env.TZ = process.env.TZ ?? 'Asia/Kolkata'   // before any Date: every `when` string and every due hour is local (the demo machine runs IST)
 
+import { randomUUID } from 'node:crypto'
 import { createClient, type InStatement } from '@libsql/client'
-import { compareQuotes, type YourLine } from '@/lib/xray/compare'
+import { compareQuotes, ENGINE, refAsYours, type YourLine } from '@/lib/xray/compare'
+import { yourLinesFrom } from '@/lib/xray/lines'
 import { AGREEMENT_TITLE, VARIATION_TITLE, agreementHtml, variationHtml } from '@/lib/contracts/agreement'
 import { readOtherQuote } from '@/lib/xray/reference'
-import { lineTotalMinor } from '@/lib/quotes/math'
 import { createHash } from 'node:crypto'
 import { DATABASE_AUTH_TOKEN, DATABASE_URL } from './env'
 import { emptyWizardData, SYSTEM_CONTRACT, SYSTEM_QUOTE, type WizardData } from '../lib/leads/stage-data'
@@ -15,7 +16,9 @@ import { resolveTokens, TEMPLATE_SEED } from '../lib/quotes/text'
 import { projectRef, VALIDITY_DAYS } from '../lib/quotes/refs'
 import { STAGES } from '../lib/leads/enums'
 import { PRESETS } from '../lib/templates/presets'
-import { DEFAULT_BRAND_SETTING } from '../lib/templates/brand'
+import { DEFAULT_BRAND_SETTING, parseBrandSetting } from '../lib/templates/brand'
+import { snapshotColumns, type ContractLead, type ContractQuote } from '../lib/contracts/snapshot'
+import type { Contract } from '../lib/db/schema'
 import { DEMO_BADGES } from '../lib/templates/assets'
 
 /**
@@ -750,22 +753,35 @@ async function main() {
     note('Showflat Presentation awaits approval, submitted by Sarah 2h ago')
   }
 
-  /* ── R33 · two Quote X-Ray comparisons (REG-529) ─────────────────────────────────────────────────
+  /* ── R33 · two Quote X-Ray comparisons (REG-529; engine 2, REG-638) ────────────────────────────
      Recent comparisons and the leads' Activity need real readings: two studio quotes compared with two of the reference
-     quotes through the same engine the page runs — nothing typed in "as the mock shows". */
+     quotes through the same engine the page runs — nothing typed in "as the mock shows". Since REG-638 the lines are read
+     the way the page reads them (lib/xray/lines.ts — the quote's own count, in its order) and the reading keeps both sides'
+     lines and its engine. */
   console.log('\nR33 quote comparisons')
+  const studioName = async () => {
+    const row = (await client.execute(`SELECT value FROM settings WHERE key = 'brand'`)).rows[0]
+    try { return (row ? (JSON.parse(String(row.value)) as { details?: { name?: string } }).details?.name : null) || DEFAULT_BRAND_SETTING.details.name } catch { return DEFAULT_BRAND_SETTING.details.name }
+  }
+  const quoteLines = async (quoteId: string): Promise<YourLine[]> => {
+    const rows = (await client.execute({ sql: `SELECT id, parent_id, kind, status, position, optional, print_as, print_as_text, name, description, category, room, qty, unit, cost_minor, markup_minor, discount_pct, gst_pct FROM quote_items WHERE quote_id = ?`, args: [quoteId] })).rows
+    return yourLinesFrom(rows.map((r) => ({ id: String(r.id), parentId: (r.parent_id as string | null) ?? null, kind: String(r.kind), status: String(r.status), position: Number(r.position), optional: Number(r.optional) === 1,
+      printAs: (r.print_as as string | null) ?? null, printAsText: (r.print_as_text as string | null) ?? null, name: String(r.name ?? ''), description: (r.description as string | null) ?? null,
+      category: (r.category as string | null) ?? null, room: (r.room as string | null) ?? null, qty: Number(r.qty), unit: (r.unit as string | null) ?? null,
+      costMinor: Number(r.cost_minor), markupMinor: Number(r.markup_minor), discountPct: Number(r.discount_pct), gstPct: Number(r.gst_pct) })) as never)
+  }
   {
     const picks: [string, string, string, number][] = [['OM-10008', 'Flo Design Sample Quotation.pdf', 'xray-1', 2], ['OM-10001', 'Cove Interior Quotation.pdf', 'xray-2', 5]]
+    const studio = await studioName()
     for (const [number, file, seed, daysAgo] of picks) {
-      const q = (await client.execute({ sql: `SELECT id, lead_id, title FROM quotes WHERE number = ? AND deleted_at IS NULL`, args: [number] })).rows[0]
+      const q = (await client.execute({ sql: `SELECT id, lead_id, title, amount_minor FROM quotes WHERE number = ? AND deleted_at IS NULL`, args: [number] })).rows[0]
       if (!q) { note(`${number} not found — no comparison seeded`); continue }
       const other = readOtherQuote(file)!
-      const items = (await client.execute({ sql: `SELECT i.id, i.name, i.description, i.qty, i.unit, i.cost_minor, i.markup_minor, i.discount_pct, i.optional, i.category, i.room, g.category AS g_category, g.room AS g_room, g.name AS g_name FROM quote_items i LEFT JOIN quote_items g ON g.id = i.parent_id WHERE i.quote_id = ? AND i.kind = 'item' AND i.status <> 'Declined'`, args: [String(q.id)] })).rows
-      const yours: YourLine[] = items.map((i) => ({ id: String(i.id), name: String(i.name), description: (i.description as string | null) ?? null, trade: ((i.category ?? i.g_category ?? i.g_name) as string | null) ?? null, room: ((i.room ?? i.g_room) as string | null) ?? null, qty: Number(i.qty), unit: (i.unit as string | null) ?? null, amountMinor: lineTotalMinor({ qty: Number(i.qty), costMinor: Number(i.cost_minor), markupMinor: Number(i.markup_minor), discountPct: Number(i.discount_pct) }), optional: Number(i.optional) === 1 }))
+      const yours = await quoteLines(String(q.id))
       const lead = (await client.execute({ sql: `SELECT name FROM leads WHERE id = ?`, args: [String(q.lead_id)] })).rows[0]
-      const result = compareQuotes(yours, other, { yourLabel: `${number} · ${String(q.title)}`, yourStudio: DEFAULT_BRAND_SETTING.details.name, clientName: lead ? String(lead.name) : null })
-      await client.execute({ sql: `INSERT OR IGNORE INTO quote_comparisons (id, lead_id, quote_id, your_label, other_studio, other_file, result_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'dane', ?)`,
-        args: [sid(seed, 'quote_comparison'), String(q.lead_id), String(q.id), `${number} · ${String(q.title)}`, other.studio, file, JSON.stringify(result), NOW - daysAgo * 86400] })
+      const result = compareQuotes(yours, other, { yourLabel: `${number} · ${String(q.title)}`, yourStudio: studio, clientName: lead ? String(lead.name) : null, quoteTotalMinor: Number(q.amount_minor) })
+      await client.execute({ sql: `INSERT OR IGNORE INTO quote_comparisons (id, lead_id, quote_id, your_label, other_studio, other_file, result_json, created_by, created_at, inputs_json, engine) VALUES (?, ?, ?, ?, ?, ?, ?, 'dane', ?, ?, ?)`,
+        args: [sid(seed, 'quote_comparison'), String(q.lead_id), String(q.id), `${number} · ${String(q.title)}`, other.studio, file, JSON.stringify(result), NOW - daysAgo * 86400, JSON.stringify({ yours, theirs: other.lines }), ENGINE] })
       note(`${number} compared with ${other.studio} (${result.compared} items)`)
     }
   }
@@ -887,7 +903,7 @@ async function main() {
   {
     const nowS = Math.floor(Date.now() / 1000)
     const v = await client.execute(`UPDATE price_book_items SET vendor = 'Floor Xpert' WHERE name = 'Vinyl flooring, supply and install' AND vendor IS NULL`)
-    const tiles: [string, string, number, number][] = [['pb-tiles-hafary', 'Hafary', 85000, 25000], ['pb-tiles-sbh', 'Soon Bee Huat', 82000, 28000]]
+    const tiles: [string, string, number, number][] = [['pb-tiles-hafary', 'Hafary', 850, 250], ['pb-tiles-sbh', 'Soon Bee Huat', 820, 280]]   // (REG-651) per sqft, like the book's other floors — R56 corrects rows written with the old × 100 figures
     let added = 0
     for (const [id, vendor, cost, markup] of tiles) {
       const r = await client.execute({ sql: `INSERT OR IGNORE INTO price_book_items (id, name, description, kind, unit, cost_minor, markup_minor, category, thumb, vendor, created_at, updated_at) VALUES (?, 'Homogeneous tiles 600×600, supply and lay', 'Matt finish, rectified edges, laid on screed', 'purchase', 'sqft', ?, ?, 'Tiling', NULL, ?, ?, ?)`, args: [id, cost, markup, vendor, nowS - 40 * 86400, nowS - 40 * 86400] })
@@ -1075,7 +1091,335 @@ async function main() {
     }
   }
 
+  /* ── R46 · a line picked from My Items knows its vendor (REG-623, quote editor parity Q-08) ─────────────────────────────
+     The editor copies the item's vendor onto a line picked from My Items since REG-623; the demo lines picked before it carry
+     the item's vendor too, so the Vendor/Sub column reads the same whichever came first. Only an empty vendor is filled. */
+  console.log('\nR46 line vendors from My Items')
+  {
+    const r = await client.execute(`UPDATE quote_items SET vendor = (SELECT p.vendor FROM price_book_items p WHERE p.id = quote_items.price_book_item_id)
+      WHERE vendor IS NULL AND kind = 'item' AND price_book_item_id IS NOT NULL AND EXISTS (SELECT 1 FROM price_book_items p WHERE p.id = quote_items.price_book_item_id AND p.vendor IS NOT NULL)`)
+    console.log(`  ${r.rowsAffected} lines given their item's vendor`)
+  }
+
+  /* ── R47 · the approval on the record (REG-624, quote editor parity Q-22) ─────────────────────────────────────────────
+     A demo quote that went through approval shows who sent it and who approved it; one the client has shows when it went to them.
+     Sent for approval by its creator on its Sent stamp, approved by the studio's Owner on its Approved stamp, sent to the client two
+     hours after the approval. Only empty stamps are filled. */
+  console.log('\nR47 quote approval records')
+  {
+    const a = await client.execute(`UPDATE quotes SET submitted_at = sent_at, submitted_by = coalesce(created_by, prepared_by)
+      WHERE submitted_at IS NULL AND sent_at IS NOT NULL AND ((approved_at IS NOT NULL AND approved_at >= sent_at) OR status = 'Sent for Approval')`)
+    const b = await client.execute(`UPDATE quotes SET approved_by = (SELECT id FROM members WHERE role = 'Owner' ORDER BY is_you DESC LIMIT 1) WHERE approved_at IS NOT NULL AND approved_by IS NULL`)
+    const c = await client.execute(`UPDATE quotes SET client_sent_at = CASE WHEN approved_at IS NOT NULL THEN approved_at + 7200 ELSE sent_at END
+      WHERE client_sent_at IS NULL AND status IN ('Sent to Client', 'Confirmed', 'Signed') AND coalesce(approved_at, sent_at) IS NOT NULL`)
+    console.log(`  ${a.rowsAffected} sent for approval · ${b.rowsAffected} approvers named · ${c.rowsAffected} sent to the client`)
+  }
+
+  /* ── R48 · a quote the client has reads Shared (REG-625, quote editor parity §8.2 · E-124) ─────────────────────────────
+     Every quote printed "Private" — nothing ever set Shared. Since REG-625 a send to the client sets it and Revise puts it back; the
+     demo's quotes the client has follow. */
+  console.log('\nR48 shared quotes')
+  {
+    const r = await client.execute(`UPDATE quotes SET visibility = 'Shared' WHERE visibility <> 'Shared' AND status IN ('Sent to Client', 'Confirmed', 'Signed')`)
+    console.log(`  ${r.rowsAffected} quotes the client has now read Shared`)
+  }
+
+  /* ── R49 · a signed quote was signed through its contract (REG-626, quote editor parity Q-31) ─────────────────────────────
+     Since REG-626 a contract raised from a quote signs the quote with it. The demo's Won leads each hold one signed quote and one signed
+     contract that never named each other: the contract now names its quote, and the quote carries the contract's signing date. */
+  console.log('\nR49 signed quotes ↔ their contracts')
+  {
+    const a = await client.execute(`UPDATE contracts SET from_quote_id = (SELECT q.id FROM quotes q WHERE q.lead_id = contracts.lead_id AND q.status = 'Signed' AND q.deleted_at IS NULL)
+      WHERE from_quote_id IS NULL AND status = 'Signed' AND deleted_at IS NULL
+        AND (SELECT count(*) FROM quotes q WHERE q.lead_id = contracts.lead_id AND q.status = 'Signed' AND q.deleted_at IS NULL) = 1
+        AND (SELECT count(*) FROM contracts c2 WHERE c2.lead_id = contracts.lead_id AND c2.status = 'Signed' AND c2.deleted_at IS NULL) = 1`)
+    const b = await client.execute(`UPDATE quotes SET signed_at = coalesce((SELECT c.signed_at FROM contracts c WHERE c.from_quote_id = quotes.id AND c.status = 'Signed' AND c.deleted_at IS NULL), updated_at)
+      WHERE status = 'Signed' AND signed_at IS NULL`)
+    console.log(`  ${a.rowsAffected} contracts name their quote · ${b.rowsAffected} quotes dated`)
+  }
+
+  /* ── R50 · a signed contract keeps the copy it was signed as (REG-631, contracts parity Q-04 · Q-05 · D-49) ─────────────────
+     Since REG-631 every path that signs a contract keeps its text with each chip's value in place, the letterhead, the studio signature
+     it printed and a fingerprint; a contract that is not Signed holds no signing stamp. The demo's signed contracts were signed before
+     that: each keeps its records as they read on its signing day. A phone cut to its first eight digits (+65 9123 4567 → 65912345)
+     is put back from its lead. */
+  console.log('\nR50 signed contracts keep their copy')
+  {
+    const cleared = await client.execute(`UPDATE contracts SET signed_at = NULL, signed_by = NULL, signed_nric = NULL, signed_copy = NULL, signed_body = NULL, signed_letterhead = NULL, signed_studio_signature = NULL, document_hash = NULL
+      WHERE status <> 'Signed' AND (signed_at IS NOT NULL OR signed_by IS NOT NULL OR signed_nric IS NOT NULL OR document_hash IS NOT NULL OR (source = 'composed' AND signed_copy IS NOT NULL))`)
+    const phones = await client.execute(`UPDATE contracts SET recipient_phone = (SELECT l.phone FROM leads l WHERE l.id = contracts.lead_id)
+      WHERE recipient_phone = '65' || substr((SELECT l.phone FROM leads l WHERE l.id = contracts.lead_id), 1, 6)`)
+    const bundlePhones = await client.execute(`UPDATE contract_bundles SET recipient_phone = (SELECT l.phone FROM leads l WHERE l.id = contract_bundles.lead_id)
+      WHERE recipient_phone = '65' || substr((SELECT l.phone FROM leads l WHERE l.id = contract_bundles.lead_id), 1, 6)`)
+    type Row = Record<string, string | number | null>
+    const pending = rows<Row>(await client.execute(`SELECT * FROM contracts WHERE status = 'Signed' AND document_hash IS NULL`))
+    let kept = 0
+    if (pending.length) {
+      const [brandRow] = rows<{ value: string }>(await client.execute(`SELECT value FROM settings WHERE key = 'brand'`))
+      const studio = brandRow ? parseBrandSetting(JSON.parse(brandRow.value)).details : DEFAULT_BRAND_SETTING.details
+      const team = rows<{ id: string; name: string; signatureKind: string | null; signatureName: string | null; signatureData: string | null }>(await client.execute(`SELECT id, name, signature_kind AS signatureKind, signature_name AS signatureName, signature_data AS signatureData FROM members`))
+      const at = (v: string | number | null | undefined) => (v === null || v === undefined ? null : new Date(Number(v) * 1000))
+      for (const r of pending) {
+        const c = { id: r.id, leadId: r.lead_id, title: r.title, status: r.status, createdAt: at(r.created_at)!, body: r.body, recipientName: r.recipient_name, recipientPhone: r.recipient_phone, contractDate: at(r.contract_date), templateId: r.template_id, fromQuoteId: r.from_quote_id, source: r.source, fileName: r.file_name, issuingEntity: r.issuing_entity, createdBy: r.created_by } as unknown as Contract
+        const [lead] = rows<ContractLead>(await client.execute({ sql: `SELECT id, name, phone, email, property_type AS propertyType, property_address AS propertyAddress, lead_address AS leadAddress FROM leads WHERE id = ?`, args: [String(r.lead_id)] }))
+        const qs = rows<{ id: string; number: string; title: string; amountMinor: number; validUntil: number | null; projectRef: string | null; status: string }>(await client.execute({ sql: `SELECT id, number, title, amount_minor AS amountMinor, valid_until AS validUntil, project_ref AS projectRef, status FROM quotes WHERE lead_id = ? AND archived_at IS NULL AND deleted_at IS NULL ORDER BY created_at`, args: [String(r.lead_id)] }))
+          .map((q): ContractQuote => ({ ...q, validUntil: q.validUntil === null ? null : new Date(q.validUntil * 1000) }))
+        const snap = snapshotColumns(c, { lead: lead ?? null, studio, quotes: qs, team, sessionId: 'dane', at: at(r.signed_at) ?? at(r.updated_at) ?? new Date() })
+        await client.execute({ sql: `UPDATE contracts SET signed_body = ?, signed_letterhead = ?, signed_studio_signature = ?, document_hash = ? WHERE id = ?`, args: [snap.signedBody, snap.signedLetterhead, snap.signedStudioSignature, snap.documentHash, String(r.id)] })
+        kept++
+      }
+    }
+    console.log(`  ${kept} signed contracts keep their copy · ${cleared.rowsAffected} unsigned contracts cleared of signing stamps · ${phones.rowsAffected + bundlePhones.rowsAffected} phones put back`)
+  }
+
+  /* ── R51 · a contract names its quote and its issuer; the Won log names the signed contract (REG-632, contracts parity Q-08 · Q-10 · Q-14) ─
+     Since REG-632 a contract names the quote it reads from the start — the lead's Signed quote, else its latest — and is issued by that
+     quote's entity; nothing reads another quote in its place. A contract made before names none: it takes the one it was reading. The
+     demo's Won logs name the placeholder file the Won step offers while their lead's signed contract has its own signed copy — the log now
+     names that copy, the way the Won step lists it (REG-343). */
+  console.log('\nR51 contracts ↔ their quotes · Won logs ↔ their contracts')
+  {
+    const pick = `(SELECT q.id FROM quotes q WHERE q.lead_id = contracts.lead_id AND q.deleted_at IS NULL AND q.archived_at IS NULL ORDER BY (q.status = 'Signed') DESC, (CASE WHEN q.status = 'Signed' THEN q.created_at ELSE -q.created_at END) ASC LIMIT 1)`
+    const a = await client.execute(`UPDATE contracts SET from_quote_id = ${pick} WHERE from_quote_id IS NULL AND status <> 'Signed' AND deleted_at IS NULL AND ${pick} IS NOT NULL`)
+    const b = await client.execute(`UPDATE contracts SET issuing_entity = (SELECT q.issuing_entity FROM quotes q WHERE q.id = contracts.from_quote_id)
+      WHERE issuing_entity IS NULL AND status <> 'Signed' AND (SELECT q.issuing_entity FROM quotes q WHERE q.id = contracts.from_quote_id) IS NOT NULL`)
+    const c = await client.execute(`UPDATE stage_logs SET payload = json_set(payload, '$.wonContract', (SELECT coalesce(c.signed_copy, c.title || '.pdf') FROM contracts c WHERE c.lead_id = stage_logs.lead_id AND c.status = 'Signed' AND c.deleted_at IS NULL AND c.archived_at IS NULL ORDER BY c.signed_at DESC LIMIT 1))
+      WHERE to_stage = 'Won' AND json_extract(payload, '$.wonContractTab') = 'system'
+        AND EXISTS (SELECT 1 FROM contracts c WHERE c.lead_id = stage_logs.lead_id AND c.status = 'Signed' AND c.deleted_at IS NULL AND c.archived_at IS NULL)
+        AND NOT EXISTS (SELECT 1 FROM contracts c WHERE c.lead_id = stage_logs.lead_id AND c.status = 'Signed' AND c.deleted_at IS NULL AND coalesce(c.signed_copy, c.title || '.pdf') = json_extract(stage_logs.payload, '$.wonContract'))`)
+    console.log(`  ${a.rowsAffected} contracts name their quote · ${b.rowsAffected} take its issuer · ${c.rowsAffected} Won logs name their signed contract`)
+  }
+
+  /* ── R52 · an online signature carries its record (REG-633, contracts parity Q-18 · Q-19) ────────────────────────────────
+     Since REG-633 a signature made online keeps how it was made and how the phone was confirmed. One made before keeps what is known:
+     a typed name, confirmed by the one-time code. (The demo's signed contracts were marked signed by the studio; none changes.) */
+  console.log('\nR52 online signatures carry their record')
+  {
+    const a = await client.execute(`UPDATE contracts SET signature_kind = coalesce(signature_kind, 'type'), verification_method = coalesce(verification_method, 'phone_code')
+      WHERE status = 'Signed' AND signed_by IS NOT NULL AND (signature_kind IS NULL OR verification_method IS NULL)`)
+    const b = await client.execute(`UPDATE contracts SET bundle_position = (SELECT count(*) FROM contracts c2 WHERE c2.bundle_id = contracts.bundle_id AND (c2.created_at < contracts.created_at OR (c2.created_at = contracts.created_at AND c2.id < contracts.id)))
+      WHERE bundle_id IS NOT NULL AND bundle_position IS NULL`)
+    console.log(`  ${a.rowsAffected} online signatures given their record's basics · ${b.rowsAffected} bundled documents placed in their bundle's order`)
+  }
+
+  /* ── R53 · a contract names who acted on it; a template who saved it last (REG-634, contracts parity E-128 · E-126) ─────────────
+     Since REG-634 a send, a studio-marked signature and a delete each keep who did it, and Activity names them. The demo's contracts were
+     made, sent and marked by the member who made them; a contract only marked signed (its sent date is its signing date, nobody signed
+     online) was never sent, so it names no sender. A template made before names its maker as its last editor. */
+  console.log('\nR53 who acted on each contract')
+  {
+    const a = await client.execute(`UPDATE contracts SET marked_by = created_by WHERE status = 'Signed' AND signed_by IS NULL AND marked_by IS NULL AND created_by IS NOT NULL`)
+    const b = await client.execute(`UPDATE contracts SET sent_by = created_by WHERE sent_at IS NOT NULL AND sent_by IS NULL AND created_by IS NOT NULL
+      AND NOT (signed_at IS NOT NULL AND signed_by IS NULL AND sent_at = signed_at)`)
+    const c = await client.execute(`UPDATE contracts SET deleted_by = created_by WHERE deleted_at IS NOT NULL AND deleted_by IS NULL AND created_by IS NOT NULL`)
+    const d = await client.execute(`UPDATE contract_templates SET updated_by = created_by WHERE updated_by IS NULL AND created_by IS NOT NULL`)
+    console.log(`  ${a.rowsAffected} marked · ${b.rowsAffected} sent · ${c.rowsAffected} deleted · ${d.rowsAffected} templates name their last editor`)
+  }
+
+  /* ── R54 · every reading by the engine of today (REG-638, X-Ray parity round 1) ──────────────────────────────────────
+     Engine 2 reads your side as the quote counts it, matches plurals, trade words and one line against several, and never
+     tells the client that work is missing when the other quote lists it (E-98). A reading from engine 1 is read again —
+     the same two quotes (the studio quote's lines, the other file's reference), the same date and maker — so no demo record
+     keeps a claim the engine no longer makes. A file compared with itself is a test, not a reading (E-112): removed. */
+  console.log('\nR54 quote comparisons read by engine 2')
+  {
+    const studio = await studioName()
+    const old = (await client.execute(`SELECT c.id, c.lead_id, c.quote_id, c.your_label, c.other_file, q.amount_minor, q.deleted_at AS q_deleted, l.name AS lead_name FROM quote_comparisons c
+      LEFT JOIN quotes q ON q.id = c.quote_id LEFT JOIN leads l ON l.id = c.lead_id WHERE c.engine IS NULL OR c.engine < ${ENGINE}`)).rows
+    let reread = 0, removed = 0, kept = 0
+    for (const c of old) {
+      const other = readOtherQuote(String(c.other_file))
+      if (!other) { kept += 1; continue }
+      let yours: YourLine[] | null = null
+      if (c.quote_id && c.amount_minor !== null) yours = await quoteLines(String(c.quote_id))
+      else if (!c.quote_id) {
+        const mine = readOtherQuote(String(c.your_label))
+        if (mine && mine.key === other.key) { await client.execute({ sql: `DELETE FROM quote_comparisons WHERE id = ?`, args: [String(c.id)] }); removed += 1; continue }
+        if (mine) yours = refAsYours(mine)
+      }
+      if (!yours) { kept += 1; continue }
+      const result = compareQuotes(yours, other, { yourLabel: String(c.your_label), yourStudio: studio, clientName: c.lead_name ? String(c.lead_name) : null, quoteTotalMinor: c.quote_id && c.amount_minor !== null ? Number(c.amount_minor) : null })
+      await client.execute({ sql: `UPDATE quote_comparisons SET result_json = ?, inputs_json = ?, engine = ? WHERE id = ?`, args: [JSON.stringify(result), JSON.stringify({ yours, theirs: other.lines }), ENGINE, String(c.id)] })
+      reread += 1
+    }
+    console.log(`  ${reread} read again · ${removed} self-comparisons removed · ${kept} left as they were`)
+  }
+
+  /* ── R55 · the studio's records hold (REG-647, Accounts Setup parity round 3) ─────────────────────────────────────────────
+     The issuing entities carry their own ids (a rename is carried to what names them); the website's intake address keeps its slug
+     once given; a lead's questions copied from a Required bank question are marked required; the base state's "Test" quote template —
+     from a test run, used by no quote, in every picker (E-109) — waits in Deleted Templates, restorable. */
+  console.log('\nR55 entities by id · the intake slug · required questions · the test template')
+  {
+    const brand = (await client.execute(`SELECT value FROM settings WHERE key = 'brand'`)).rows[0]
+    let ids = 0
+    if (brand) {
+      const v = JSON.parse(String(brand.value)) as { details?: { entities?: { id?: string; name?: string }[] } }
+      const ents = v.details?.entities ?? []
+      ents.forEach((e, i) => { if (!e.id) { e.id = i === 0 ? 'studio' : `entity-${randomUUID()}`; ids += 1 } })
+      if (ids) await client.execute({ sql: `UPDATE settings SET value = ? WHERE key = 'brand'`, args: [JSON.stringify(v)] })
+    }
+    const cap = (await client.execute(`SELECT value FROM settings WHERE key = 'lead_capture'`)).rows[0]
+    let slug = ''
+    if (cap) {
+      const v = JSON.parse(String(cap.value)) as { emailSlug?: string }
+      if (!v.emailSlug) {
+        v.emailSlug = (await studioName()).toLowerCase().replace(/pte\.? ltd\.?/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
+        slug = v.emailSlug
+        await client.execute({ sql: `UPDATE settings SET value = ? WHERE key = 'lead_capture'`, args: [JSON.stringify(v)] })
+      }
+    }
+    const req = await client.execute(`UPDATE questions SET required = 1 WHERE required = 0 AND text IN (SELECT question FROM studio_scope_questions WHERE is_required = 1)`)
+    const test = await client.execute({ sql: `UPDATE quote_templates SET deleted_at = ?, deleted_by = 'dane' WHERE name = 'Test' AND deleted_at IS NULL AND is_default = 0
+      AND id NOT IN (SELECT template_id FROM quotes WHERE template_id IS NOT NULL AND deleted_at IS NULL)`, args: [NOW] })
+    console.log(`  ${ids} entity ids · ${slug ? `slug ${slug}` : 'slug kept'} · ${req.rowsAffected} questions marked required · ${test.rowsAffected} test template to Deleted Templates`)
+  }
+
+  /* ── R56 · the demo's book tells the truth (REG-651, price book parity Q-17 · E-63…E-65) ─────────────────────────────────
+     The two tile items were written at S$1,100 a square foot (× 100, R38's slip); a pick on 2026-09-23 stamped Cement screeding
+     "edited"; and a test run left OM-10001 two blank lines, a Cement screeding pick at 1 Lot and three empty sections. */
+  console.log('\nR56 the demo book: tiles per sqft · a pick is not an edit · OM-10001 without a test run\'s lines')
+  {
+    const t1 = await client.execute(`UPDATE price_book_items SET cost_minor = 850, markup_minor = 250 WHERE id = 'pb-tiles-hafary' AND cost_minor = 85000`)
+    const t2 = await client.execute(`UPDATE price_book_items SET cost_minor = 820, markup_minor = 280 WHERE id = 'pb-tiles-sbh' AND cost_minor = 82000`)
+    const stamp = await client.execute(`UPDATE price_book_items SET updated_at = (SELECT updated_at FROM price_book_items WHERE id = 'd962133c-b692-415d-ad0a-ee93b40e2127')
+      WHERE id = '10994815-affe-49f1-a363-984f8de7a5f3' AND updated_at = 1790160282`)
+    const leftovers = ['10fe8faf-9fac-45f7-9b80-d20c55c001ae', '381555d0-6a9a-43e4-933e-2e7d891ba955', 'd1ed6477-5fe7-4621-bf52-f6a20125ef0e', '083ca74f-b6ed-41c4-bdd1-3c06ce1a3e13',
+      '88d56186-8ef5-4972-93c8-c4ae53c226df', 'cfb62bac-a598-4259-a443-73f22c867c0a', 'f7d7f24d-0268-4db9-a212-a30a5b652deb', '11efa0aa-fcbd-42a6-ab71-d8b154e1ca19']
+    const om1 = rows<{ id: string; additional_discount_mode: string; additional_discount_value: number; gst_enabled: number }>(await client.execute(`SELECT id, additional_discount_mode, additional_discount_value, gst_enabled FROM quotes WHERE number = 'OM-10001'`))[0]
+    let gone = 0
+    if (om1) {
+      const del = await client.execute({ sql: `DELETE FROM quote_items WHERE quote_id = ? AND created_at BETWEEN 1790150000 AND 1790190000 AND id IN (${leftovers.map(() => '?').join(',')})`, args: [om1.id, ...leftovers] })
+      gone = del.rowsAffected
+      if (gone) {
+        const items = rows<{ id: string; parent_id: string | null; kind: string; status: string; qty: number; cost_minor: number; markup_minor: number; discount_pct: number; gst_pct: number }>(await client.execute({ sql: 'SELECT id, parent_id, kind, status, qty, cost_minor, markup_minor, discount_pct, gst_pct FROM quote_items WHERE quote_id = ?', args: [om1.id] }))
+        const t = quoteTotals(items.map((i) => ({ id: i.id, parentId: i.parent_id, kind: i.kind, status: i.status, qty: i.qty, costMinor: i.cost_minor, markupMinor: i.markup_minor, discountPct: i.discount_pct, gstPct: i.gst_pct })),
+          { additionalDiscountMode: om1.additional_discount_mode, additionalDiscountValue: om1.additional_discount_value, gstEnabled: om1.gst_enabled === 1 })
+        await client.execute({ sql: 'UPDATE quotes SET amount_minor = ? WHERE id = ?', args: [t.totalMinor, om1.id] })
+      }
+    }
+    console.log(`  ${t1.rowsAffected + t2.rowsAffected} tile items re-priced · ${stamp.rowsAffected} pick stamp undone · ${gone} test lines off OM-10001`)
+  }
+
+  /* ── R57 · who made each item, and its history from the start (REG-652, price book parity Q-03…Q-05) ─────────────────────
+     Every item and section written before the gate names the Owner who kept the book; every item's History starts with its
+     creation. One of Sarah's proposals waits for approval, with the bell's notice to the Owners and Admins — the queue the
+     demo shows. Idempotent. */
+  console.log('\nR57 the book\'s record: made by · a History for every item · one proposal waiting')
+  {
+    const owner = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE role = 'Owner' AND is_active = 1 ORDER BY is_you DESC, id LIMIT 1`))[0]?.id ?? 'dane'
+    const a = await client.execute({ sql: `UPDATE price_book_items SET created_by = ? WHERE created_by IS NULL`, args: [owner] })
+    await client.execute(`UPDATE price_book_items SET updated_by = created_by WHERE updated_by IS NULL`)
+    const b = await client.execute({ sql: `UPDATE price_book_sections SET created_by = ? WHERE created_by IS NULL`, args: [owner] })
+    await client.execute(`UPDATE price_book_sections SET updated_by = created_by WHERE updated_by IS NULL`)
+    const nowS = Math.floor(Date.now() / 1000), at = nowS - 26 * 3600
+    const p = await client.execute({ sql: `INSERT OR IGNORE INTO price_book_items (id, name, description, kind, unit, cost_minor, markup_minor, category, thumb, vendor, created_at, updated_at, status, created_by, updated_by)
+      VALUES ('pb-proposal-skirting', 'Skirting, PVC 80 mm', 'White, clipped to the wall', 'purchase', 'ft run', 320, 130, 'Flooring', NULL, NULL, ?, ?, 'proposed', 'sarah', 'sarah')`, args: [at, at] })
+    if (p.rowsAffected) {
+      const runners = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE role IN ('Owner', 'Admin') AND is_active = 1`))
+      for (const r of runners) await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'price_book_proposed', 'Sarah proposed “Skirting, PVC 80 mm” for My Items', 'Approve it, or send it back with a note', '/company/price-book', NULL, NULL, 'in_app,email', 'sarah', ?, NULL)`, args: [`n-pb-proposal-skirting-${r.id}`, r.id, at] })
+    }
+    const h = await client.execute(`INSERT INTO price_book_changes (id, item_id, kind, changes, note, by, at)
+      SELECT 'pbc-created-' || i.id, i.id, 'created', NULL, NULL, i.created_by, i.created_at FROM price_book_items i WHERE NOT EXISTS (SELECT 1 FROM price_book_changes c WHERE c.item_id = i.id)`)
+    console.log(`  ${a.rowsAffected} items and ${b.rowsAffected} sections named to ${owner} · ${h.rowsAffected} histories started · ${p.rowsAffected} proposal added`)
+  }
+
+  /* ── R58 · the comparisons' words as the engine writes them (sweep S3) ───────────────────────────────────────────────
+     The engine's sentences took curly apostrophes ("doesn’t", "it’s", "I’ve"); a reading already made keeps its figures and gets
+     the same words. What went to a client (`sent_text`) is a record of what was sent and is never rewritten. Idempotent. */
+  console.log('\nR58 quote comparisons in the house apostrophe')
+  {
+    const studios = rows<{ other_studio: string }>(await client.execute(`SELECT DISTINCT other_studio FROM quote_comparisons`)).map((x) => x.other_studio)
+    let r = await client.execute(`UPDATE quote_comparisons SET result_json = replace(replace(replace(replace(result_json, 'doesn''t', 'doesn’t'), 'it''s', 'it’s'), 'can''t', 'can’t'), 'I''ve', 'I’ve')
+      WHERE result_json LIKE '%doesn''t%' OR result_json LIKE '%it''s%' OR result_json LIKE '%can''t%' OR result_json LIKE '%I''ve%'`)
+    let n = r.rowsAffected
+    for (const st of studios) { r = await client.execute({ sql: `UPDATE quote_comparisons SET result_json = replace(result_json, ? || '''s', ? || '’s') WHERE instr(result_json, ? || '''s') > 0`, args: [st, st, st] }); n += r.rowsAffected }   // "Flo Design’s quote"
+    r = { rowsAffected: n } as typeof r
+    console.log(`  ${r.rowsAffected} readings reworded`)
+  }
+
+  /* ── R59 · demo folders in every library (REG-664, owner 2026-09-25: "create folders of its types and add at least one file under it
+     across templates") ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+     Each library gets folders named by the kinds it holds — quotes by property type, contracts by document, the task checklists by
+     stage, the texts by the jobs they cover, the splits by job size, the book by trade and room — and each holds at least one entry.
+     A folder is written once (a fixed id); its entries are filed only in the run that writes it, and only while they still sit at
+     the top — a studio's own filing is never undone. The studio default quote template and payment split stay at the top. Idempotent. */
+  console.log('\nR59 demo folders in every library')
+  {
+    const owner = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE role = 'Owner' AND is_active = 1 ORDER BY is_you DESC, id LIMIT 1`))[0]?.id ?? 'dane'
+    const at = Math.floor(Date.now() / 1000) - 2 * 86400
+    const plan: [id: string, library: string, name: string, table: string, column: string, entries: string[]][] = [
+      ['lf-quotes-hdb', 'quotes', 'HDB', 'quote_templates', 'name', ['4-Room BTO', '5-Room BTO']],
+      ['lf-quotes-showflats', 'quotes', 'Show flats', 'quote_templates', 'name', ['Showflat Presentation']],
+      ['lf-contracts-agreements', 'contracts', 'Agreements', 'contract_templates', 'title', ['Interior Design Service Agreement']],
+      ['lf-contracts-variations', 'contracts', 'Variations', 'contract_templates', 'title', ['Variation Order']],
+      ['lf-tasks-followup', 'tasks', 'Lead follow-up', 'task_templates', 'name', ['Leads Template']],
+      ['lf-tasks-meetings', 'tasks', 'Meetings', 'task_templates', 'name', ['Template 1']],
+      ['lf-texts-hdb', 'texts', 'HDB', 'quote_text_templates', 'title', ['Terms and Conditions for HDB Works', 'Terms and Conditions for BTO Works']],
+      ['lf-texts-site', 'texts', 'Site rules', 'quote_text_templates', 'title', ['Working Hours and Site Access', 'Material Lead Times']],
+      ['lf-payments-full', 'payments', 'Full renovation', 'payment_templates', 'name', ['20/40/40']],
+      ['lf-payments-small', 'payments', 'Small jobs', 'payment_templates', 'name', ['30/70', '50/50']],
+      ['lf-items-wet', 'book-items', 'Wet works', 'price_book_items', 'name', ['Hacking of existing floor and wall tiles', 'Cement screeding and waterproofing', 'Homogeneous tiles 600×600, supply and lay']],
+      ['lf-items-kitchen', 'book-items', 'Kitchen', 'price_book_items', 'name', ['Kitchen carpentry, top and bottom cabinets', 'Plumbing works, kitchen and bathrooms']],
+      ['lf-sections-bathrooms', 'book-sections', 'Bathrooms', 'price_book_sections', 'name', ['Bathrooms — full works']],
+    ]
+    let made = 0, filed = 0
+    for (const [id, library, name, table, column, entries] of plan) {
+      const r = await client.execute({ sql: `INSERT OR IGNORE INTO library_folders (id, library, name, parent_id, created_by, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?)`, args: [id, library, name, owner, at, at] })
+      if (!r.rowsAffected) continue
+      made++
+      for (const e of entries) filed += (await client.execute({ sql: `UPDATE ${table} SET folder_id = ? WHERE ${column} = ? AND folder_id IS NULL AND deleted_at IS NULL`, args: [id, e] })).rowsAffected
+    }
+    console.log(`  ${made} folders made · ${filed} entries filed`)
+  }
+
   const checks: [string, string][] = [
+    ['demo folder with nothing filed in it (REG-664)', `SELECT f.library || ' · ' || f.name FROM library_folders f WHERE f.deleted_at IS NULL AND f.id LIKE 'lf-%' AND NOT EXISTS (SELECT 1 FROM library_folders c WHERE c.parent_id = f.id AND c.deleted_at IS NULL)
+      AND NOT EXISTS (SELECT 1 FROM quote_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM contract_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
+      AND NOT EXISTS (SELECT 1 FROM task_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
+      AND NOT EXISTS (SELECT 1 FROM payment_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM price_book_items x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
+      AND NOT EXISTS (SELECT 1 FROM price_book_sections x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)`],
+    ['entry filed in a folder of another library, or one that is gone (REG-664)', `SELECT 'quotes · ' || name FROM quote_templates t WHERE folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = t.folder_id AND f.library = 'quotes' AND f.deleted_at IS NULL)
+      UNION ALL SELECT 'book-items · ' || name FROM price_book_items t WHERE folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = t.folder_id AND f.library = 'book-items' AND f.deleted_at IS NULL)`],
+    ['quote comparison with a straight apostrophe in its words (sweep S3)', `SELECT your_label FROM quote_comparisons WHERE result_json LIKE '%doesn''t%' OR result_json LIKE '%it''s %' OR result_json LIKE '%I''ve%' OR instr(result_json, other_studio || '''s') > 0`],
+    ['price-book item or section naming nobody who made it (REG-652)', `SELECT name FROM price_book_items WHERE created_by IS NULL UNION ALL SELECT name FROM price_book_sections WHERE created_by IS NULL`],
+    ['price-book item with no History (REG-652)', `SELECT name FROM price_book_items i WHERE NOT EXISTS (SELECT 1 FROM price_book_changes c WHERE c.item_id = i.id)`],
+    ['price-book item in no known state, or a send-back note on an item that is not waiting in the trash (REG-652)', `SELECT name FROM price_book_items WHERE status NOT IN ('live', 'proposed') OR (review_note IS NOT NULL AND (deleted_at IS NULL OR status <> 'proposed'))`],
+    ['price-book history for an item that is gone (REG-652)', `SELECT c.id FROM price_book_changes c WHERE NOT EXISTS (SELECT 1 FROM price_book_items i WHERE i.id = c.item_id)`],
+    ['a price-book rate over S$500 a square foot (REG-651)', `SELECT name FROM price_book_items WHERE deleted_at IS NULL AND lower(unit) IN ('sqft', 'sqm') AND cost_minor + markup_minor > 50000`],
+    ['no active Owner (REG-646)', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM members WHERE role = 'Owner' AND is_active = 1)`],
+    ['backup approver who cannot be one (REG-646)', `SELECT json_extract(value, '$.backupApproverId') FROM settings WHERE key = 'quote_rules' AND json_extract(value, '$.backupApproverId') IS NOT NULL
+      AND json_extract(value, '$.backupApproverId') NOT IN (SELECT id FROM members WHERE is_active = 1 AND role NOT IN ('Owner', 'Admin'))`],
+    ['issuing entity without an id (REG-647)', `SELECT 'brand' FROM settings, json_each(json_extract(settings.value, '$.details.entities')) e WHERE settings.key = 'brand' AND json_extract(e.value, '$.id') IS NULL`],
+    ['lead capture with no kept intake slug (REG-647)', `SELECT 'lead_capture' FROM settings WHERE key = 'lead_capture' AND coalesce(json_extract(value, '$.emailSlug'), '') = ''`],
+    ['quote comparison from an older engine (REG-638)', `SELECT your_label FROM quote_comparisons WHERE engine IS NULL OR engine < ${ENGINE}`],
+    ['quote comparison sent with no sender or text (REG-640)', `SELECT your_label FROM quote_comparisons WHERE sent_at IS NOT NULL AND (sent_by IS NULL OR sent_text IS NULL OR sent_via NOT IN ('whatsapp', 'copy'))`],
+    ['quote comparison corrected with no corrections kept (REG-640)', `SELECT your_label FROM quote_comparisons WHERE (corrected_at IS NULL) <> (overrides_json IS NULL) OR (overrides_json IS NOT NULL AND NOT json_valid(overrides_json))`],
+    ['quote comparison without the lines it read (REG-638)', `SELECT your_label FROM quote_comparisons WHERE inputs_json IS NULL OR NOT json_valid(inputs_json)`],
+    ['studio-marked signature naming nobody (REG-634)', `SELECT title FROM contracts WHERE status = 'Signed' AND signed_by IS NULL AND marked_by IS NULL`],
+    ['deleted contract naming nobody (REG-634)', `SELECT title FROM contracts WHERE deleted_at IS NOT NULL AND deleted_by IS NULL`],
+    ['follow-up task on a contract that is gone (REG-634)', `SELECT t.title FROM lead_tasks t WHERE t.contract_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM contracts c WHERE c.id = t.contract_id)`],
+    ['online signature with no signing record (REG-633)', `SELECT title FROM contracts WHERE status = 'Signed' AND signed_by IS NOT NULL AND (signature_kind IS NULL OR verification_method IS NULL)`],
+    ['drawn signature with no drawing (REG-633)', `SELECT title FROM contracts WHERE signature_kind = 'draw' AND (signature_data IS NULL OR signature_data = '')`],
+    ['bundled document with no place in its bundle (REG-633)', `SELECT title FROM contracts WHERE bundle_id IS NOT NULL AND bundle_position IS NULL`],
+    ['contract naming a quote of another lead (REG-632)', `SELECT c.title FROM contracts c JOIN quotes q ON q.id = c.from_quote_id WHERE q.lead_id <> c.lead_id`],
+    ['Won log naming a signed contract the lead does not have (REG-632)', `SELECT l.name FROM stage_logs s JOIN leads l ON l.id = s.lead_id WHERE s.to_stage = 'Won' AND json_extract(s.payload, '$.wonContractTab') = 'system' AND EXISTS (SELECT 1 FROM contracts c WHERE c.lead_id = s.lead_id AND c.status = 'Signed' AND c.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM contracts c WHERE c.lead_id = s.lead_id AND c.status = 'Signed' AND c.deleted_at IS NULL AND coalesce(c.signed_copy, c.title || '.pdf') = json_extract(s.payload, '$.wonContract'))`],
+    ['Won upload with no contract behind it (REG-632)', `SELECT l.name FROM stage_logs s JOIN leads l ON l.id = s.lead_id WHERE s.to_stage = 'Won' AND json_extract(s.payload, '$.wonContractTab') = 'upload' AND NOT EXISTS (SELECT 1 FROM contracts c WHERE c.lead_id = s.lead_id AND c.source = 'uploaded' AND c.file_name = json_extract(s.payload, '$.wonContractUploaded') AND c.deleted_at IS NULL)`],
+    ['signed contract without the copy kept at signing (REG-631)', `SELECT title FROM contracts WHERE status = 'Signed' AND document_hash IS NULL`],
+    ['contract that is not signed holding a signing stamp (REG-631)', `SELECT title FROM contracts WHERE status <> 'Signed' AND (signed_at IS NOT NULL OR signed_by IS NOT NULL OR signed_nric IS NOT NULL OR document_hash IS NOT NULL)`],
+    ['contract NRIC kept whole (REG-631, REG-563)', `SELECT title FROM contracts WHERE signed_nric IS NOT NULL AND signed_nric NOT LIKE '•••••%'`],
+    ['line comment on a quote that is gone (REG-627)', `SELECT c.id FROM quote_item_comments c WHERE NOT EXISTS (SELECT 1 FROM quotes q WHERE q.id = c.quote_id)`],
+    ['line comment by someone who is not a member (REG-627)', `SELECT c.id FROM quote_item_comments c WHERE NOT EXISTS (SELECT 1 FROM members m WHERE m.id = c.author_id)`],
+    ['signed quote with no signing date (REG-626)', `SELECT number FROM quotes WHERE status = 'Signed' AND signed_at IS NULL`],
+    ['signed contract whose quote is not signed (REG-626)', `SELECT c.title FROM contracts c JOIN quotes q ON q.id = c.from_quote_id WHERE c.status = 'Signed' AND c.deleted_at IS NULL AND q.deleted_at IS NULL AND q.status <> 'Signed'`],
+    ['client answer on a line that is not optional (REG-626)', `SELECT i.name FROM quote_items i WHERE i.client_choice IS NOT NULL AND (i.optional = 0 OR i.client_choice NOT IN ('want', 'skip'))`],
+    ['quote the client has still reading Private (REG-625)', `SELECT number FROM quotes WHERE status IN ('Sent to Client', 'Confirmed', 'Signed') AND visibility <> 'Shared'`],
+    ['approved quote with no approver on its record (REG-624)', `SELECT number FROM quotes WHERE approved_at IS NOT NULL AND approved_by IS NULL`],
+    ['quote waiting for approval with no sender (REG-624)', `SELECT number FROM quotes WHERE status = 'Sent for Approval' AND submitted_at IS NULL`],
+    ['quote the client has, never sent to them (REG-624)', `SELECT number FROM quotes WHERE status IN ('Sent to Client', 'Confirmed', 'Signed') AND client_sent_at IS NULL`],
+    ['approval before its send (REG-624)', `SELECT number FROM quotes WHERE submitted_at IS NOT NULL AND approved_at IS NOT NULL AND approved_at < submitted_at`],
+    ['line picked from My Items without the item\'s vendor (REG-623)', `SELECT q.number || ' · ' || i.name FROM quote_items i JOIN quotes q ON q.id = i.quote_id JOIN price_book_items p ON p.id = i.price_book_item_id WHERE i.kind = 'item' AND i.vendor IS NULL AND p.vendor IS NOT NULL`],
+    ['line link that is not a web address (REG-623)', `SELECT q.number || ' · ' || i.name FROM quote_items i JOIN quotes q ON q.id = i.quote_id WHERE i.link IS NOT NULL AND i.link NOT LIKE 'http://%' AND i.link NOT LIKE 'https://%'`],
     ['notification pointing at a missing lead (REG-604)', `SELECT n.title FROM notifications n WHERE n.lead_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.id = n.lead_id)`],
     ['designer reporting to someone who is not a Manager (REG-601)', `SELECT d.name FROM members d JOIN members m ON m.id = d.manager_id WHERE m.role <> 'Manager'`],
     ['member with an unknown role (REG-601)', `SELECT name FROM members WHERE role NOT IN ('Owner', 'Admin', 'Manager', 'Designer')`],
@@ -1109,7 +1453,10 @@ async function main() {
     ['import reporting skipped rows it does not have', `SELECT i.file_name FROM imports i WHERE i.skipped_rows > 0 AND (SELECT count(*) FROM import_rows r WHERE r.import_id = i.id) = 0`],
     ['quote with no prepared-by member or property type (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.prepared_by IS NULL OR q.property_type IS NULL)`],
     ['no default quote design template', `SELECT 'quote_templates' WHERE NOT EXISTS (SELECT 1 FROM quote_templates WHERE is_default = 1)`],
-    ['quote comparison whose quote is gone', `SELECT c.your_label FROM quote_comparisons c WHERE c.quote_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM quotes q WHERE q.id = c.quote_id AND q.deleted_at IS NULL)`],
+    /* (REG-641, X-Ray parity Q-21 · D-43) a deleted quote's comparisons stay and say so — only a quote that no longer exists is gone */
+    ['quote comparison whose quote is gone', `SELECT c.your_label FROM quote_comparisons c WHERE c.quote_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM quotes q WHERE q.id = c.quote_id)`],
+    ['quote comparison on a lead that is gone for good (REG-641)', `SELECT c.your_label FROM quote_comparisons c WHERE c.lead_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.id = c.lead_id)`],
+    ['quote comparison whose quote is on another lead (REG-641)', `SELECT c.your_label FROM quote_comparisons c JOIN quotes q ON q.id = c.quote_id WHERE c.lead_id IS NOT NULL AND q.lead_id <> c.lead_id`],
     ['quote with no project ref or validity (editor General Info)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND (q.project_ref IS NULL OR q.valid_until IS NULL)`],
     ['priced quote with no lines (Items section)', `SELECT q.number FROM quotes q WHERE q.deleted_at IS NULL AND q.amount_minor > 0 AND NOT EXISTS (SELECT 1 FROM quote_items i WHERE i.quote_id = q.id)`],
     ['no studio record', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = 'studio')`],

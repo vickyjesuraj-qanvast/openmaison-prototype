@@ -1,0 +1,16 @@
+/* (REG-633, contracts parity Q-19) The signing record: a card under the paper (and on its own page when printed). */
+.record { width: 816px; max-width: 100%; margin: var(--om-spacing-6) auto 0; padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.record[data-compact] { width: auto; margin: 0; padding: 0; border: 0; background: none; }
+.title { margin: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.rows { margin: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.row { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: var(--om-spacing-4); font: var(--om-type-body-m); }
+.row dt { color: var(--om-color-on-surface-secondary); }
+.row dd { margin: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 767px) {
+  .record { padding: var(--om-spacing-4); }
+  .row { grid-template-columns: 1fr; gap: 0; }
+}
+@media print {
+  .record { break-before: page; border: 0; padding: 0; }
+}

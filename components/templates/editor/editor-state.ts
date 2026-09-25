@@ -93,5 +93,6 @@ export function defaultElement(kind: CanvasElement['kind']): CanvasElement {
     case 'signature': return { id, kind, x: 0, y: 2, w: 174, columns: [{ id: newId('c'), heading: '{prepared_by}', lines: ['{studio_name}'], image: 'member' }, { id: newId('c'), heading: '{client_name}', lines: ['Client'], image: 'client' }], style: { role: 'body' }, headingStyle: { role: 'body', weight: 700 }, lineWeight: 0.5, lineColor: 'ink' }
     case 'badges': return { id, kind, x: 0, y: 2, w: 174, h: 10, items: [], gap: 2, align: 'left' }
     case 'pageno': return { id, kind, x: 140, y: 2, w: 34, format: 'Page {page} of {pages}', style: { role: 'small', align: 'right' } }
+    case 'social': return { id, kind, x: 0, y: 2, w: 174, networks: ['website', 'instagram', 'facebook', 'tiktok', 'whatsapp', 'linkedin'], layout: 'row', gap: 4, style: { role: 'small', color: 'grey' } }   // (REG-618, parity Q-20)
   }
 }

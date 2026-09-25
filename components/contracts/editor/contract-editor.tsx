@@ -12,25 +12,38 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useCopy } from '@/components/om/use-copy'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { EditorSkeleton } from '@/components/quotes/editor/editor-skeleton'
+import { ContractSkeleton } from './contract-skeleton'
+import { MSG } from '@/lib/forms'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useFlagPref } from '@/lib/prefs'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { Drawer } from '@/components/om/drawer'
 import { withFrom } from '@/lib/nav'
 import { displayDate, inputDate, parseInputDate, phoneTyped } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
-import { firstName, savedLabel, signingLink, signingMessage } from '@/lib/contracts/model'
+import { contractLink, firstName, longDate, savedLabel, signingLink, signingMessage } from '@/lib/contracts/model'
+import { contractIssuer, issuerChoices } from '@/lib/contracts/issuer'
+import { money2 } from '@/lib/quotes/math'
+import bannerStyles from '@/components/quotes/editor/template-bar.module.css'
 import { isBlankDoc, outlineOf, type TokenValues } from '@/lib/contracts/tokens'
 import type { ContractEditorData } from '@/lib/contracts/queries'
-import { duplicateContract, markContractSigned, saveContractAsTemplate, saveContractDoc, sendContract, setContractAutomation, setContractStatusDoc } from '@/app/contracts/actions'
+import { duplicateContract, markContractSigned, saveContractAsTemplate, saveContractDoc, sendContract, setContractAutomation, setContractStatusDoc, shareContractLink } from '@/app/contracts/actions'
+import { canDeleteContract, CONTRACT_DELETE_RULE, contractsDeletedLine, unsignBlock } from '@/lib/contracts/policy'
+import { contractReadiness } from '@/lib/contracts/readiness'
+import { ContractPaper } from '@/components/contracts/render/contract-paper'
+import { ContractBanner } from './contract-banner'
+import { UnsignDialog } from '@/components/contracts/unsign-dialog'
+import { SigningRecord } from '@/components/contracts/sign/signing-record'
+import { Dialog } from '@/components/om/dialog'
 import { archiveContract, deleteContracts } from '@/app/leads/contracts-actions'
 import { ContractHeader } from './contract-header'
 import { DocEditor, IDLE_STATE, type DocEditorHandle, type DocState } from './doc-editor'
 import { DocToolbar } from './doc-toolbar'
 import { OutlinePane } from './outline-pane'
 import { ESignPanel } from './esign-panel'
-import { AutomationPopover, MarkSignedDialog, RecipientDialog, SaveTemplateDialog, SendContractDialog } from './dialogs'
+import { AutomationDialog, AutomationPopover, MarkSignedDialog, RecipientDialog, SaveTemplateDialog, SendContractDialog } from './dialogs'
 import quoteStyles from '@/components/quotes/editor/quote-editor.module.css'
 import styles from './contract-editor.module.css'
 
@@ -63,6 +76,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const [clock, setClock] = useState(now)
   useEffect(() => { const t = setInterval(() => setClock(Date.now()), 30_000); return () => clearInterval(t) }, [])
   const [docState, setDocState] = useState<DocState>(IDLE_STATE)
+  const [gates, setGates] = useState({ requiresScroll: contract.requiresScroll, requiresAccept: contract.requiresAccept, acceptLabel: contract.acceptLabel })   // (REG-633, parity Q-15)
 
   /* ── autosave (the quote editor's General Info rhythm) ── */
   const dirty = useRef<Parameters<typeof saveContractDoc>[1]>({})
@@ -72,7 +86,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     const patch = dirty.current
     if (!Object.keys(patch).length) return
     dirty.current = {}
-    try { setUpdatedAt(await saveContractDoc(contract.id, patch)) } catch { snackbar({ message: 'Couldn’t save the contract — please try again' }) }
+    try { setUpdatedAt(await saveContractDoc(contract.id, patch)) }
+    catch (e) { snackbar({ message: e instanceof Error && e.message === 'too-large' ? 'The document is too large to save — use a smaller picture' : e instanceof Error && e.message === 'signed' ? 'A signed contract stays as it was signed' : 'Couldn’t save the contract — please try again' }) }
   }, [contract.id, snackbar])
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
   const queue = useCallback((patch: Parameters<typeof saveContractDoc>[1]) => {
@@ -87,15 +102,32 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     return () => window.removeEventListener('pagehide', onHide)
   }, [])
 
+  /* ── (REG-632, parity Q-08 · Q-10) the quote it names and who issues it ── */
+  const [quoteId, setQuoteId] = useState<string | null>(contract.fromQuoteId)
+  const [entity, setEntity] = useState<string | null>(contract.issuingEntity)
+  const [quoteOpen, setQuoteOpen] = useState(false)
+  const [entityOpen, setEntityOpen] = useState(false)
+  const namedQuote = quoteId && quoteId === data.quote?.id ? data.quote : data.quotes.find((q) => q.id === quoteId) ?? null
+  const quoteGone = quoteId && quoteId === contract.fromQuoteId ? data.quoteGone : null
+  const entities = issuerChoices(studio, contract.issuingEntity)   // (REG-647) retired entities stay only where named
+  const issuer = contractIssuer(studio, entity)
+
   /* ── live token samples (Smart Text's right column follows the meta row) ── */
-  const values: TokenValues = useMemo(() => ({ ...data.values, 'client.name': recipientName || lead.name, 'client.phone': `+65 ${phoneTyped(recipientPhone || lead.phone)}`, 'date.contract': new Date(contractDate).toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' }) }), [data.values, recipientName, recipientPhone, contractDate, lead.name, lead.phone])
+  const values: TokenValues = useMemo(() => ({
+    ...data.values, 'client.name': recipientName || lead.name, 'client.phone': `+65 ${phoneTyped(recipientPhone || lead.phone)}`, 'date.contract': new Date(contractDate).toLocaleDateString('en-SG', { day: 'numeric', month: 'long', year: 'numeric' }),
+    'quote.number': namedQuote?.number ?? '', 'quote.total': namedQuote ? money2(namedQuote.amountMinor) : '', 'quote.validUntil': namedQuote?.validUntil ? longDate(namedQuote.validUntil) : '', 'lead.projectRef': namedQuote?.projectRef ?? '',
+    'studio.name': issuer.name, 'studio.address': issuer.address, 'studio.uen': issuer.uen, 'studio.gst': issuer.gstReg,
+  }), [data.values, recipientName, recipientPhone, contractDate, lead.name, lead.phone, namedQuote, issuer])
   const outline = useMemo(() => outlineOf(body), [body])
 
   /* ── panes and overlays ── */
   const [outlinePref, setOutlinePref] = useFlagPref('om.contracts.outline', true)
+  const narrow = useMediaQuery(TABLET_DOWN)   // (REG-634, E-114) ≤1024 the Outline is a drawer
+  const [outlineDrawer, setOutlineDrawer] = useState(false)
   const [esign, setEsign] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [autoOpen, setAutoOpen] = useState(false)
+  const [autoDialog, setAutoDialog] = useState(false)   /* (sweep S2 #9) from the folded kebab */
   const [sendOpen, setSendOpen] = useState(false)
   const [signedOpen, setSignedOpen] = useState(false)
   const [recipientOpen, setRecipientOpen] = useState(false)
@@ -103,8 +135,24 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const [templateBusy, setTemplateBusy] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const fabRef = useRef<HTMLSpanElement>(null)
   const link = signingLink(contract.id)
-  const { copied, copy } = useCopy(link, { done: 'Signing link copied' })
+  const { copied, copy } = useCopy(contractLink({ id: contract.id, bundleId: contract.bundleId, status }), {   /* (REG-633, E-118) a bundled document copies the bundle's link */ done: status === 'Draft' ? 'Signing link copied — the contract is Sent to Client now' : 'Signing link copied' })
+  const [unsignTo, setUnsignTo] = useState<'Draft' | 'Sent to Client' | null>(null)
+  const [recordOpen, setRecordOpen] = useState(false)
+  const [sentAt, setSentAt] = useState<number | null>(contract.sentAt ? contract.sentAt.getTime() : null)
+  const viewer = { id: me?.id ?? null, role: me?.role }
+  const signedLock = status === 'Signed'   // (REG-631, parity Q-04) a signed contract's title, recipient, date and text stay as signed
+  const canDelete = canDeleteContract(viewer, contract)   // (REG-634, parity Q-21)
+  const pickQuote = (id: string | null) => {
+    setQuoteOpen(false)
+    if (id === quoteId) return
+    setQuoteId(id)
+    const q = id ? data.quotes.find((x) => x.id === id) : null
+    if (q) setEntity(q.issuingEntity && q.issuingEntity !== entities[0] ? q.issuingEntity : null)   // the quote's issuer comes with it (the server does the same)
+    queue({ fromQuoteId: id })
+  }
+  const pickEntity = (name: string) => { setEntityOpen(false); const next = name === entities[0] ? null : name; if (next === entity) return; setEntity(next); queue({ issuingEntity: name }) }
 
   const backHref = from ?? `/leads/${lead.id}/contracts`
   const close = () => { void flushRef.current(); router.push(backHref) }
@@ -112,18 +160,44 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const blank = !uploaded && isBlankDoc(body)
   const canSend = status !== 'Signed' && !blank
   const sendHint = status === 'Signed' ? 'Contract is signed' : 'Add some content first'
+  /* (REG-634, parity Q-22) Send's checks — the quote's readiness pattern: a blocking one is named with the way to fix it, the rest ride in the dialog. */
+  const issues = useMemo(() => contractReadiness({ source: contract.source, body, values, hasStudioSignature: !!data.studioSignature, hasQuote: !!namedQuote }), [contract.source, body, values, data.studioSignature, namedQuote])
+  const blockIssue = issues.find((i) => i.blocking) ?? null
+  const sayBlocked = () => { if (blockIssue) snackbar({ message: `Before you send: ${blockIssue.label}`, ...(blockIssue.fix === 'esign' ? { actionLabel: 'Show me', onAction: () => setEsign(true) } : {}) }) }
+  const sendError = (e: unknown) => { const m = e instanceof Error ? e.message : ''; return m === 'no-client-field' ? 'Insert a Client signature field before sending' : m === 'phone' ? `${MSG.phone} for the client first — Edit recipient` : m === 'empty' ? 'Add some content before sending' : 'Couldn’t send the contract — please try again' }
 
+  const applyStatus = (s: 'Draft' | 'Sent to Client') => {
+    const was = { status, signedAt }
+    setStatus(s); setSignedAt(null)
+    void setContractStatusDoc(contract.id, s).then(() => { snackbar({ message: `Contract marked ${s}` }); if (s === 'Sent to Client' && !sentAt) setSentAt(Date.now()); router.refresh() },
+      (e: unknown) => { setStatus(was.status); setSignedAt(was.signedAt); snackbar({ message: e instanceof Error && e.message.length < 120 && !/fetch|network/i.test(e.message) ? e.message : 'Couldn’t change the status — please try again' }) })
+  }
   const changeStatus = (s: ContractStatus) => {
     setStatusOpen(false)
     if (s === status) return
     if (s === 'Signed') { setSignedOpen(true); return }
-    setStatus(s); setSignedAt(null)
-    void setContractStatusDoc(contract.id, s).then(() => snackbar({ message: `Contract marked ${s}` }), () => snackbar({ message: 'Couldn’t change the status — please try again' }))
+    /* (REG-631, parity Q-04) Leaving Signed asks first — and only a studio-marked signature, only for an Owner or an Admin. */
+    if (status === 'Signed') { if (!unsignBlock({ status, signedBy: contract.signedBy }, viewer)) setUnsignTo(s); return }
+    applyStatus(s)
   }
+  /* (REG-631, parity Q-07) Copying a Draft's link shares it: the contract is Sent to Client from then on. */
+  const shareDraft = (): Promise<boolean> => {
+    if (status !== 'Draft') return Promise.resolve(true)
+    return flushRef.current().then(() => shareContractLink(contract.id)).then((r) => { setStatus(r.status); setSentAt(r.sentAt); router.refresh(); return true }, (e: unknown) => { snackbar({ message: sendError(e) }); return false })
+  }
+  const copyLink = () => {
+    if (status === 'Draft' && blank) { snackbar({ message: 'Add some content before sharing the link' }); return }
+    if (status === 'Draft' && blockIssue) { sayBlocked(); return }   // (REG-634, parity Q-22) sharing is sending
+    /* (sweep S2 #2) a Draft is shared first and copied once the server has it — a copied link the server then refused never opened */
+    if (status !== 'Draft') { void copy(); return }
+    void flushRef.current().then(() => shareContractLink(contract.id)).then((r) => { setStatus(r.status); setSentAt(r.sentAt); router.refresh(); void copy() }, (e: unknown) => snackbar({ message: sendError(e) }))
+  }
+  /* A refused save puts the switch back (sweep S2) — the panel said on while the record said off. */
+  const changeAuto = (p: { reminders?: boolean; thankYou?: boolean }) => { const prev = auto; setAuto((a) => ({ ...a, ...p })); void setContractAutomation(contract.id, p).catch(() => { setAuto(prev); snackbar({ message: 'Couldn’t save the automation — please try again' }) }) }
   const onMenu = (a: 'duplicate' | 'template' | 'pdf' | 'print' | 'archive' | 'delete' | 'preview' | 'auto' | 'copy') => {
     if (a === 'preview') { go(withFrom(`/contracts/${contract.id}/preview`, from)); return }
     if (a === 'pdf' || a === 'print') { go(withFrom(`/contracts/${contract.id}/preview?print=1`, from)); return }
-    if (a === 'copy') { void copy(); return }
+    if (a === 'copy') { copyLink(); return }
     if (a === 'auto') { setAutoOpen((o) => !o); return }
     if (a === 'duplicate') { void flushRef.current().then(() => duplicateContract(contract.id)).then((id) => { snackbar({ message: 'Contract duplicated' }); router.push(withFrom(`/contracts/${id}`, from)) }, () => snackbar({ message: 'Couldn’t duplicate the contract — please try again' })); return }
     if (a === 'template') { if (uploaded) { comingSoon(); return } setTemplateOpen(true); return }
@@ -137,37 +211,39 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
               iconEnd={<span className={quoteStyles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
               onPress={() => setStatusOpen((o) => !o)}>{status}</Button>
       <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" sheetTitle="Status">
-        {CONTRACT_STATUSES.map((s) => (
-          <DropdownItem key={s} role="menuitemradio" checked={s === status} onSelect={() => changeStatus(s)}>
-            <span className={quoteStyles.menuText}>{s}</span>
-            {s === status ? <span className={quoteStyles.menuCurrent}>current</span> : null}
-          </DropdownItem>
-        ))}
+        {CONTRACT_STATUSES.map((s) => {
+          const block = s !== status && status === 'Signed' ? unsignBlock({ status, signedBy: contract.signedBy }, viewer) : null
+          return (
+            <DropdownItem key={s} role="menuitemradio" checked={s === status} onSelect={() => changeStatus(s)} disabled={!!block} title={block ?? undefined}>
+              <span className={quoteStyles.menuText}>{s}</span>
+              {s === status ? <span className={quoteStyles.menuCurrent}>current</span> : null}
+            </DropdownItem>
+          )
+        })}
       </Dropdown>
     </span>
   )
 
   return (
-    <PageReveal skeleton={<EditorSkeleton />}>
+    <PageReveal skeleton={<ContractSkeleton />}>
       <div className={styles.page} data-testid="contract-editor">
         <ContractHeader crumbs={[{ label: 'Leads', href: '/leads' }, { label: lead.name, href: `/leads/${lead.id}` }, { label: 'Contracts', href: `/leads/${lead.id}/contracts` }]} title={title.trim() || 'Untitled contract'} siblings={siblings} currentId={contract.id}
                         onSwitch={(id) => go(withFrom(`/contracts/${id}`, from))}
-                        chips={<>{signedAt ? <MetaChip>Signed {displayDate(signedAt)}</MetaChip> : null}{uploaded ? <MetaChip>Uploaded PDF</MetaChip> : null}{contract.templateId ? <MetaChip>From template</MetaChip> : null}</>}
+                        chips={<>{signedAt ? <MetaChip>Signed {displayDate(signedAt)}</MetaChip> : null}{uploaded ? <MetaChip>Uploaded PDF</MetaChip> : null}{contract.templateId ? <MetaChip>From template</MetaChip> : null}{contract.bundleId && status === 'Sent to Client' ? <MetaChip>Sent together</MetaChip> : null}</>}
                         savedLabel={savedLabel(updatedAt, clock)} statusSlot={statusPill}
-                        primary={{ label: 'Send', onPress: () => setSendOpen(true), disabled: !canSend, hint: sendHint }}
+                        primary={{ label: 'Send', onPress: () => { if (blockIssue) { sayBlocked(); return } setSendOpen(true) }, disabled: !canSend, hint: sendHint }}
                         actions={<>
                           <Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')}>Preview</Button>
                           <span className={quoteStyles.anchor}>
                             <Tooltip label="Automation" disabled={autoOpen}><IconButton icon="notifications" label="Automation" selected={autoOpen || auto.reminders || auto.thankYou} aria-haspopup="menu" aria-expanded={autoOpen} onClick={() => onMenu('auto')} /></Tooltip>
-                            <AutomationPopover open={autoOpen} onClose={() => setAutoOpen(false)} reminders={auto.reminders} thankYou={auto.thankYou}
-                                               onChange={(p) => { setAuto((a) => ({ ...a, ...p })); void setContractAutomation(contract.id, p).catch(() => snackbar({ message: 'Couldn’t save the automation — please try again' })) }} />
+                            <AutomationPopover open={autoOpen} onClose={() => setAutoOpen(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
                           </span>
                           <Tooltip label={copied ? 'Copied' : 'Copy signing link'}><IconButton icon="link" label="Copy signing link" onClick={() => onMenu('copy')} /></Tooltip>
                         </>}
                         foldedItems={<>
                           <DropdownItem onSelect={() => onMenu('preview')}>Preview</DropdownItem>
                           <DropdownItem onSelect={() => onMenu('copy')}>Copy signing link</DropdownItem>
-                          <DropdownItem onSelect={() => onMenu('auto')}>Automation</DropdownItem>
+                          <DropdownItem onSelect={() => setAutoDialog(true)}>Automation</DropdownItem>
                           <DropdownDivider />
                         </>}
                         menu={<>
@@ -178,42 +254,108 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                           <DropdownItem onSelect={() => onMenu('print')}>Print</DropdownItem>
                           <DropdownDivider />
                           <DropdownItem onSelect={() => onMenu('archive')}>Archive</DropdownItem>
-                          <DropdownItem tone="danger" onSelect={() => onMenu('delete')}>Delete</DropdownItem>
+                          <DropdownItem tone={canDelete ? 'danger' : undefined} onSelect={() => onMenu('delete')} disabled={!canDelete} title={canDelete ? undefined : CONTRACT_DELETE_RULE}>Delete</DropdownItem>
                         </>}
                         onClose={close} />
 
         <div className={styles.meta} data-testid="contract-meta">
-          <input className={styles.titleInput} value={title} placeholder="Contract title" aria-label="Contract title" maxLength={120}
-                 onChange={(e) => { setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
+          <input className={styles.titleInput} value={title} placeholder="Contract title" aria-label="Contract title" maxLength={120} readOnly={signedLock} aria-readonly={signedLock || undefined}
+                 onChange={(e) => { if (signedLock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
           <div className={styles.metaEnd}>
-            <Tooltip label="Edit recipient">
-              <button type="button" className={styles.recipient} onClick={() => setRecipientOpen(true)} data-testid="contract-recipient">
+            <Tooltip label={signedLock ? 'Signed — the recipient stays as signed' : 'Edit recipient'}>
+              <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setRecipientOpen(true) }} aria-disabled={signedLock || undefined} data-testid="contract-recipient">
                 <Icon name="person" size={20} weight={300} />
                 <span className={styles.recipientName}>{recipientName || lead.name}</span>
                 <span className={styles.recipientMeta}>· {phoneTyped(recipientPhone)}</span>
-                <span className={styles.recipientEdit}><Icon name="edit" size={16} weight={300} /></span>
+                {signedLock ? null : <span className={styles.recipientEdit}><Icon name="edit" size={16} weight={300} /></span>}
               </button>
             </Tooltip>
+            {/* (REG-632, parity Q-08) The quote this contract reads — named, never swapped for another. */}
+            <span className={quoteStyles.anchor}>
+              <Tooltip label={signedLock ? 'Signed — the quote stays as signed' : 'The quote this contract reads'} disabled={quoteOpen}>
+                <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setQuoteOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={quoteOpen} aria-disabled={signedLock || undefined} data-testid="contract-quote">
+                  <Icon name="request_quote" size={20} weight={300} />
+                  <span className={styles.recipientName}>{namedQuote ? namedQuote.number : 'No quote'}</span>
+                  {namedQuote ? <span className={styles.recipientMeta}>· {money2(namedQuote.amountMinor)}</span> : null}
+                  {quoteGone ? <span className={styles.quoteWarn} aria-label={`The quote was ${quoteGone}`}><Icon name="warning" size={16} /></span> : null}
+                  {signedLock ? null : <span className={styles.recipientEdit}><Icon name="keyboard_arrow_down" size={16} weight={300} /></span>}
+                </button>
+              </Tooltip>
+              <Dropdown open={quoteOpen} onClose={() => setQuoteOpen(false)} align="right" width={340} sheetTitle="Quote">
+                {data.quotes.map((q) => (
+                  <DropdownItem key={q.id} role="menuitemradio" checked={q.id === quoteId} onSelect={() => pickQuote(q.id)}>
+                    <span className={quoteStyles.menuText}>{q.number} · {q.title}</span>
+                    <span className={quoteStyles.menuCurrent}>{money2(q.amountMinor)} · {q.status}</span>
+                  </DropdownItem>
+                ))}
+                {data.quotes.length ? <DropdownDivider /> : null}
+                <DropdownItem role="menuitemradio" checked={!quoteId} onSelect={() => pickQuote(null)}><span className={quoteStyles.menuText}>No quote</span></DropdownItem>
+              </Dropdown>
+            </span>
+            {/* (REG-632, parity Q-10) Issued by — offered when Company › Profile names two or more entities. */}
+            {entities.length > 1 ? (
+              <span className={quoteStyles.anchor}>
+                <Tooltip label={signedLock ? 'Signed — the issuer stays as signed' : 'Issued by'} disabled={entityOpen}>
+                  <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setEntityOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={entityOpen} aria-disabled={signedLock || undefined} data-testid="contract-issuer">
+                    <Icon name="domain" size={20} weight={300} />
+                    <span className={styles.recipientName}>{issuer.name}</span>
+                    {signedLock ? null : <span className={styles.recipientEdit}><Icon name="keyboard_arrow_down" size={16} weight={300} /></span>}
+                  </button>
+                </Tooltip>
+                <Dropdown open={entityOpen} onClose={() => setEntityOpen(false)} align="right" width={280} sheetTitle="Issued by">
+                  {entities.map((name, i) => (
+                    <DropdownItem key={name} role="menuitemradio" checked={(entity ?? entities[0]) === name} onSelect={() => pickEntity(name)}>
+                      <span className={quoteStyles.menuText}>{name}</span>
+                      {i === 0 ? <span className={quoteStyles.menuCurrent}>the studio</span> : null}
+                    </DropdownItem>
+                  ))}
+                </Dropdown>
+              </span>
+            ) : null}
             <span className={styles.dateBox}>
-              <DateField label="Contract date" size="s" value={inputDate(new Date(contractDate))} today={new Date(now)}
+              <DateField label="Contract date" size="s" value={inputDate(new Date(contractDate))} today={new Date(now)} disabled={signedLock}
                          onChange={(v) => { const d = parseInputDate(v); if (d) { setContractDate(d.getTime()); queue({ contractDate: d.getTime() }) } }} />
             </span>
           </div>
         </div>
 
+        {/* (REG-632, parity Q-08) The quote it names was archived or deleted: said, never replaced by another. */}
+        {quoteGone && namedQuote && !signedLock ? (
+          <div className={bannerStyles.banner} role="status" data-tone="changes" data-testid="contract-quote-gone">
+            <span className={bannerStyles.bannerIcon}><Icon name="warning" size={20} weight={300} /></span>
+            <span className={bannerStyles.bannerText}>{namedQuote.number} was {quoteGone}. This contract still quotes it — pick the quote it should read.</span>
+            <span className={bannerStyles.bannerActions}><Button variant="secondary" appearance="outlined" onPress={() => setQuoteOpen(true)}>Pick a quote</Button></span>
+          </div>
+        ) : null}
+        <ContractBanner status={status} recipient={recipientName || lead.name} sentAt={sentAt} signedAt={signedAt ? signedAt.getTime() : null} signedBy={status === 'Signed' ? contract.signedBy : null} now={clock}
+                        viewedAt={contract.viewedAt ? contract.viewedAt.getTime() : null} onRecord={status === 'Signed' && data.signed ? () => setRecordOpen(true) : undefined} />
+        {/* (REG-633, parity Q-19) the signing record, as the client's page and the print carry it */}
+        <Dialog open={recordOpen} onClose={() => setRecordOpen(false)} title="Signing record" size="modal" width={600}>
+          <SigningRecord compact r={{ signedBy: contract.signedBy, signedAt, nric: contract.signedNric, signatureKind: contract.signatureKind, phone: contract.signerPhone, device: contract.signerUserAgent, timezone: contract.signerTimezone, viewedAt: contract.viewedAt, acceptedAt: contract.acceptedAt, hash: data.signed?.hash ?? null }} />
+        </Dialog>
+
         {!uploaded ? (
           <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign}
-                      onOutline={() => setOutlinePref(!outlinePref)} outlineOpen={outlinePref} disabled={status === 'Signed'} />
+                      onOutline={() => (narrow ? setOutlineDrawer((o) => !o) : setOutlinePref(!outlinePref))} outlineOpen={narrow ? outlineDrawer : outlinePref} disabled={status === 'Signed'} />
         ) : null}
 
         <div className={styles.body}>
-          {!uploaded && outlinePref ? <OutlinePane items={outline} onPick={(i) => editor.current?.scrollToHeading(i)} onClose={() => setOutlinePref(false)} /> : null}
+          {!uploaded && outlinePref && !narrow ? <OutlinePane items={outline} onClose={() => setOutlinePref(false)}
+                                                      onPick={(i) => { if (editor.current) editor.current.scrollToHeading(i); else (document.querySelector('[data-testid="contract-signed-copy"]')?.querySelectorAll('h1, h2, h3')[i] as HTMLElement | undefined)?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }} /> : null}
           <div className={styles.stage}>
             {uploaded ? (
               <div className={styles.uploaded} data-testid="contract-uploaded">
                 <span className={styles.uploadedGlyph}><Icon name="picture_as_pdf" size={32} /></span>
                 <span className={styles.uploadedName}>{contract.fileName ?? title}</span>
-                <span className={styles.uploadedHelp}>An uploaded PDF — there is no document to edit here. Send shares it through the signing link; mark it signed when the copy comes back.</span>
+                <span className={styles.uploadedHelp}>An uploaded PDF — there is no document to edit here. Send shares the signing link, which names the file for the client to sign; mark it signed when a signed copy comes back.</span>
+                {/* (sweep S2 #17) an uploaded PDF has no formatting bar, so its eSignatures (Before the client signs) open from here */}
+                <Button variant="secondary" appearance="outlined" iconStart={<Icon name="draw" size={20} />} onPress={() => setEsign(true)} isDisabled={status === 'Signed'}>Before the client signs</Button>
+              </div>
+            ) : status === 'Signed' && data.signed?.body ? (
+              /* (REG-631, parity Q-05) Signed: the copy kept at signing, as the client and every print see it. */
+              <div className={styles.signedCopy} data-testid="contract-signed-copy">
+                <ContractPaper html={data.signed.body} values={values} brand={data.brand} studio={studio} studioSignature={data.signed.studioSignature} letterhead={data.letterhead}
+                               client={signedAt ? { name: contract.signedBy ?? recipientName ?? lead.name, at: signedAt, nric: contract.signedNric, drawing: contract.signatureKind === 'draw' ? contract.signatureData : null } : null} />
               </div>
             ) : (
               <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
@@ -224,8 +366,14 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
           </div>
         </div>
 
-        <ESignPanel open={esign} onClose={() => setEsign(false)} hasStudioSignature={!!me?.signatureKind} onInsert={(html) => editor.current?.insertHtml(html)} />
-        <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} defaults={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone }}
+        <Drawer open={!uploaded && narrow && outlineDrawer} onClose={() => setOutlineDrawer(false)} title="Outline" label="Outline" width={320}>
+          <OutlinePane inDrawer items={outline} onClose={() => setOutlineDrawer(false)}
+                       onPick={(i) => { setOutlineDrawer(false); if (editor.current) editor.current.scrollToHeading(i); else (document.querySelector('[data-testid="contract-signed-copy"]')?.querySelectorAll('h1, h2, h3')[i] as HTMLElement | undefined)?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }} />
+        </Drawer>
+        <ESignPanel open={esign} onClose={() => setEsign(false)} hasStudioSignature={!!me?.signatureKind} onInsert={(html) => editor.current?.insertHtml(html)}
+                    gates={gates} uploaded={uploaded} locked={signedLock} onGates={(p) => { setGates((g) => ({ ...g, ...p })); queue(p) }} />
+        <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} defaults={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone }} onCopy={status === 'Draft' ? shareDraft : undefined}
+                            notes={issues.filter((i) => !i.blocking).map((i) => i.label)}
                             draft={(name) => signingMessage({ clientFirst: firstName(name), studio: values['studio.name'] ?? studio.name, title: title.trim() || 'agreement', link })}
                             onSend={async ({ name, phone, message }) => {
                               /* The chat opens on the press itself (a window opened after the round-trip is a blocked popup); the record follows. */
@@ -233,13 +381,14 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                               await flushRef.current()
                               try {
                                 const r = await sendContract(contract.id, { name, phone })
-                                setStatus(r.status); setRecipientName(name); setRecipientPhone(phone); setUpdatedAt(r.updatedAt); setSendOpen(false)
+                                setStatus(r.status); setRecipientName(name); setRecipientPhone(phone); setUpdatedAt(r.updatedAt); setSentAt(r.sentAt); setSendOpen(false)
                                 snackbar({ message: `Sent to ${name} for signature` })
-                              } catch { snackbar({ message: blank ? 'Add some content before sending' : 'Couldn’t send the contract — please try again' }) }
+                              } catch (e) { snackbar({ message: sendError(e) }) }
                             }} />
+        <AutomationDialog open={autoDialog} onClose={() => setAutoDialog(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
         <MarkSignedDialog open={signedOpen} onClose={() => setSignedOpen(false)} today={new Date(now)}
                           onSave={async (o) => {
-                            try { await markContractSigned(contract.id, o); setStatus('Signed'); setSignedAt(new Date(o.signedOn)); setSignedOpen(false); snackbar({ message: 'Contract marked Signed' }) }
+                            try { await flushRef.current(); await markContractSigned(contract.id, o); setStatus('Signed'); setSignedAt(new Date(o.signedOn)); setSignedOpen(false); snackbar({ message: 'Contract marked Signed' }); router.refresh() }
                             catch { snackbar({ message: 'Couldn’t mark the contract signed — please try again' }) }
                           }} />
         <RecipientDialog open={recipientOpen} onClose={() => setRecipientOpen(false)} name={recipientName} phone={recipientPhone}
@@ -250,10 +399,12 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                               try { await flushRef.current(); const id = await saveContractAsTemplate(contract.id, name); setTemplateOpen(false); snackbar({ message: `${name} saved to your contract templates`, actionLabel: 'Open', onAction: () => router.push(`/templates/contracts/${id}?from=${encodeURIComponent(`/contracts/${contract.id}`)}`) }) }
                               catch { snackbar({ message: 'Couldn’t save the template — please try again' }) } finally { setTemplateBusy(false) }
                             }} />
-        <ConfirmDialog open={deleteOpen} title="Delete Contract" message="Are you sure you want to delete this contract from this project? You can restore it from Deleted Contracts." confirmLabel="Delete" tone="danger"
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteContracts([contract.id]).then(() => { snackbar({ message: 'Contract deleted' }); router.push(backHref) }, () => snackbar({ message: 'Couldn’t delete the contract — please try again' })) }} />
-        <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-        <MaisonFab onPress={() => setAiOpen((o) => !o)} />
+        {/* (REG-631, parity Q-04) Moving a studio-marked signature back: said plainly, then every signing stamp goes. */}
+        <UnsignDialog to={unsignTo} signedAt={signedAt} onCancel={() => setUnsignTo(null)} onConfirm={() => { const to = unsignTo; setUnsignTo(null); if (to) applyStatus(to) }} />
+        <ConfirmDialog open={deleteOpen} title="Delete Contract" message="Are you sure you want to delete this contract? You can restore it from Deleted Contracts." confirmLabel="Delete" tone="danger"
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteContracts([contract.id]).then((r) => { snackbar({ message: contractsDeletedLine(r) }); if (r.deleted) router.push(backHref) }, () => snackbar({ message: 'Couldn’t delete the contract — please try again' })) }} />
+        <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} anchorRef={fabRef} />   {/* (sweep S2 #30) the FAB's own press toggles it */}
+        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
       </div>
     </PageReveal>
   )

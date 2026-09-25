@@ -16,9 +16,9 @@
   border-left: var(--om-border-1) solid var(--om-color-surface-variant);
   overflow: hidden;                               /* fixed-width children reveal cleanly while the width animates */
 }
-/* Width change runs on the shell rail's timing (components/shell/app-rail.module.css: width var(--motion-modal, 0.2s) ease),
+/* Width change runs on the shell rail's timing (components/shell/app-rail.module.css: width var(--motion-modal)),
    armed only after the first toggle so a remembered "expanded" strip never animates open on load. */
-.aside[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
+.aside[data-animate] { transition: width var(--motion-modal); }
 .aside[data-state='expanded'] {
   width: 140px;
   gap: var(--om-spacing-3);                       /* V g12 */

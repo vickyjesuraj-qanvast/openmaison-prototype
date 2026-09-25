@@ -4,7 +4,7 @@
  * is "one we couldn't read". Amounts are S$ minor units; 0 = the line prints FOC / Inclusive / no price given.
  */
 export type RefLine = { trade: string; room: string | null; name: string; qty: number; unit: string | null; amountMinor: number; brand?: string }
-export type RefQuote = { key: 'dyel' | 'flo' | 'cove'; studio: string; lines: RefLine[] }
+export type RefQuote = { key: 'dyel' | 'flo' | 'cove' | 'sheet'; studio: string; lines: RefLine[] }
 
 const L = (trade: string, room: string | null, name: string, qty: number, unit: string | null, amount: number, brand?: string): RefLine => ({ trade, room, name, qty, unit, amountMinor: Math.round(amount * 100), brand })
 
@@ -91,11 +91,15 @@ const COVE: RefQuote = { key: 'cove', studio: 'Cove Interior', lines: [
 
 export const REFERENCE_QUOTES: RefQuote[] = [FLO, DYEL, COVE]
 
-/** Which reference the uploaded file is — by name, exactly as the Recreate dialog reads the same three PDFs. Null = unreadable. */
+/**
+ * Which reference the uploaded file is — by name. Null = unreadable. (REG-639, X-Ray parity §8.2) Whole words only: "floor
+ * plan.pdf", "workflow.xlsx", "information.pdf" and "scope of works.pdf" are not the reference quotes (they were, by substring —
+ * E-95); "Cove floor quote.pdf" is Cove's. An underscore or a dash counts as a break ("flo_design", "cove-interior").
+ */
 export function readOtherQuote(fileName: string): RefQuote | null {
   const n = fileName.toLowerCase()
-  if (/flo|scope/.test(n)) return FLO
-  if (/sharon|dyel|sales.?contract/.test(n)) return DYEL
-  if (/stanley|cove|form/.test(n)) return COVE
+  if (/(?<![a-z])flo(?![a-z])/.test(n)) return FLO
+  if (/(?<![a-z])(dyel|sharon)(?![a-z])|sales[\s_-]*contract/.test(n)) return DYEL
+  if (/(?<![a-z])(cove|stanley)(?![a-z])/.test(n)) return COVE
   return null
 }

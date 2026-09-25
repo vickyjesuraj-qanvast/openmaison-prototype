@@ -15,7 +15,7 @@
   background: var(--om-color-surface-default);   /* the strip is white in both states (1260:31160 sits on the white page frame) */
   overflow: hidden;
 }
-.aside[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
+.aside[data-animate] { transition: width var(--motion-modal); }
 .aside[data-state='expanded'] { width: 140px; gap: var(--om-spacing-3); }
 
 .toggle {

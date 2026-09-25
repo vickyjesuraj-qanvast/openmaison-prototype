@@ -18,7 +18,10 @@ export const MSG = {
   future: 'Choose a date after today',   // On Hold › Follow up on (REG-453)
   mapField: 'Select a field or Ignore',   // Import Leads › mapping (REG-317)
   budgetRange: 'Enter a budget between S$1,000 and S$5,000,000',   // (REG-607, parity Q-14) 1.0's bounds
-  nric: 'Enter a valid NRIC / FIN, e.g. S1234567A',   // (REG-607, parity Q-35) the lead's IC, checked like the signing page's
+  nric: 'Enter a valid NRIC / FIN, e.g. S1234567A',
+  folderLength: 'Keep a folder’s name to 60 characters',   // (REG-664) the Files tab and every library's folders
+  folderTaken: 'A folder here already has this name',
+  url: 'Enter a web address, e.g. hafary.com.sg/tiles',   // (sweep S5 #24) a product or spec page   // (REG-607, parity Q-35) the lead's IC, checked like the signing page's
 } as const
 
 /** (REG-607) The budget a studio can record on a lead — 1.0's bounds, in dollars. */

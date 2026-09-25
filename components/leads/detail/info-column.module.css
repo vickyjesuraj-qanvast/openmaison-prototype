@@ -52,7 +52,7 @@
 
 /* (REG-304) Whole-column collapse — the Create strip's twin (quick-links.module.css): 72 wide, p24, the toggle ·
    a 24×1 rule · one 24px glyph per block, 24 apart. The width runs on the rail's timing, armed after a toggle only. */
-.column[data-animate] { transition: width var(--motion-modal, 0.2s) ease, flex-basis var(--motion-modal, 0.2s) ease; }
+.column[data-animate] { transition: width var(--motion-modal), flex-basis var(--motion-modal); }
 .column[data-state='collapsed'] { flex-basis: 72px; width: 72px; align-items: flex-start; overflow: hidden; }
 .nameActions { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); flex-shrink: 0; }
 .stripToggle {

@@ -9,6 +9,8 @@ import { SESSION_MEMBER_ID } from '@/lib/db/session'
  * deletion, an undo, a send), read back by the Activity feed. Everything else stays derived from the records themselves.
  */
 export type LeadEventKind = 'member_removed' | 'field_edited' | 'task_deleted' | 'note_deleted' | 'file_trashed' | 'file_deleted' | 'return_undone' | 'invite_sent' | 'questionnaire_asked'
+  | 'contract_unsigned' | 'contract_archived' | 'contract_restored'   // (REG-634, contracts parity E-128) what a contract's own stamps can't show
+  | 'comparison_deleted'   // (REG-641, X-Ray parity Q-20) a Quote X-Ray reading removed — the row goes, the trail stays
 export type FieldChange = { key: string; label: string; from: string; to: string }
 export type LeadEventDetail = {
   memberId?: string; name?: string; title?: string; kind?: string; when?: string | null; reason?: string | null; phone?: string

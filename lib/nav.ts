@@ -35,5 +35,7 @@ export function fromLabel(from: string | undefined): string | undefined {
   if (p.startsWith('/leads')) return 'Leads'
   if (p.startsWith('/templates/')) return 'Template editor'
   if (p.startsWith('/company')) return 'Company'
+  if (p.startsWith('/settings')) return 'Settings'   // (REG-645) Settings' modules link to the Company pages that hold their records
+  if (p.startsWith('/quote-x-ray')) return 'Quote X-Ray'
   return undefined
 }

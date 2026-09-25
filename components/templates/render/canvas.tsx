@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type TextStyle } from '@/lib/templates/model'
+import { BLOCK_LABEL, ELEMENT_LABEL, mm, MM_PX, resolveColor, SOCIAL_LABEL, type BrandKit, type CanvasBlock, type CanvasElement, type SignatureColumn, type SocialKey, type TextStyle } from '@/lib/templates/model'
 import { isEmptyResolved, resolveFields } from '@/lib/templates/fields'
 import { stampSvg } from '@/lib/templates/assets'
-import type { DocData } from '@/lib/templates/data'
+import { docLetterhead, type DocData } from '@/lib/templates/data'
 import { textCss, pt } from './styles'
 import styles from './document.module.css'
 
@@ -23,7 +23,8 @@ export function SignatureMark({ image, ctx, height }: { image: SignatureColumn['
   const { data, brand } = ctx
   if (image === 'none') return null
   if (image === 'stamp') {
-    return <img className={styles.sigImg} style={{ height }} src={brand.stamp ?? stampSvg(data.studio.name, data.studio.uen)} alt="" draggable={false} />
+    const head = docLetterhead(data)   // (REG-618) a quote raised under another entity stamps with that entity's name and UEN
+    return <img className={styles.sigImg} style={{ height }} src={brand.stamp ?? stampSvg(head.name, head.uen)} alt="" draggable={false} />
   }
   if (image === 'member') {
     const s = data.memberSignature
@@ -54,6 +55,19 @@ export function SignatureColumns({ columns, style, headingStyle, lineWeight, lin
       </div>
     </div>
   )
+}
+
+/** (REG-618, parity Q-20) A plain outline mark per network, drawn in the text's colour — simple shapes, not the networks' own logos. */
+export function SocialMark({ kind, size }: { kind: SocialKey; size: number }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true as const, style: { flex: '0 0 auto' } }
+  switch (kind) {
+    case 'website': return <svg {...common} fill="none" stroke="currentColor" strokeWidth={1.6}><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="4" ry="9" /><path d="M3 12h18" /></svg>
+    case 'instagram': return <svg {...common} fill="none" stroke="currentColor" strokeWidth={1.6}><rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" /></svg>
+    case 'facebook': return <svg {...common} fill="currentColor"><path d="M13.3 21v-7.3h2.4l.4-2.9h-2.8V9c0-.8.3-1.4 1.4-1.4h1.5V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.6 1.3-3.6 3.8v2.1H8v2.9h2.4V21z" /></svg>
+    case 'tiktok': return <svg {...common} fill="currentColor"><path d="M14 3h2.6c.3 1.9 1.5 3.2 3.4 3.4V9c-1.3 0-2.4-.4-3.4-1.1v7.3A5.2 5.2 0 1 1 11.4 10v2.7a2.5 2.5 0 1 0 2.6 2.5z" /></svg>
+    case 'whatsapp': return <svg {...common} fill="none" stroke="currentColor" strokeWidth={1.6}><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.3 20.7l4.4-1.1A8.8 8.8 0 1 0 12 3.2z" /><path d="M9.2 8.2c.2-.4.4-.4.7-.4h.4c.2 0 .3.1.4.3l.6 1.5c.1.2 0 .4-.1.5l-.5.6c.5 1 1.4 1.9 2.4 2.4l.6-.5c.1-.1.3-.2.5-.1l1.5.6c.2.1.3.2.3.4v.4c0 .3-.1.5-.4.7-.5.3-1.1.4-1.7.2-2.2-.6-4-2.4-4.6-4.6-.2-.6-.1-1.2.2-1.6z" fill="currentColor" stroke="none" /></svg>
+    case 'linkedin': return <svg {...common} fill="currentColor"><path d="M5 9h3v10H5zM6.5 4.5a1.7 1.7 0 1 1 0 3.4 1.7 1.7 0 0 1 0-3.4zM10 9h2.9v1.4c.4-.8 1.4-1.6 2.9-1.6 3 0 3.6 2 3.6 4.6V19h-3v-4.9c0-1.2 0-2.6-1.6-2.6s-1.8 1.2-1.8 2.5v5H10z" /></svg>
+  }
 }
 
 function imageSrc(src: string, brand: BrandKit): string | null {
@@ -128,6 +142,18 @@ function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; bloc
       break
     }
     case 'pageno': inner = <div className={styles.text} style={textCss(el.style, brand)}>{resolveFields(el.format, values)}</div>; break
+    case 'social': {
+      // (REG-618, parity Q-20) Each filled network from Company › Profile: its mark and the handle as typed; nothing prints for an empty one.
+      const css = textCss(el.style, brand)
+      const size = (parseFloat(String(css.fontSize)) || 12) * 1.15
+      const rows = el.networks.map((k) => ({ k, v: (k === 'website' ? ctx.data.studio.website : ctx.data.studio.socials?.[k]) ?? '' })).filter((r) => r.v)   // the website is the company's Website field
+      inner = rows.length ? (
+        <div className={styles.social} data-layout={el.layout} style={{ ...css, gap: mm(el.gap) }}>
+          {rows.map((r) => <span key={r.k} className={styles.socialItem} title={SOCIAL_LABEL[r.k]}><SocialMark kind={r.k} size={size} /><span>{r.v}</span></span>)}
+        </div>
+      ) : interactive ? <div className={styles.imgBox}><span className={styles.imgEmpty}>Social links — add them in Company › Profile</span></div> : null
+      break
+    }
   }
 
   if (!interactive) return <div className={styles.el} style={base} data-el-id={el.id} data-el-kind={el.kind}>{inner}</div>
@@ -173,7 +199,7 @@ function Element({ el, block, ctx, width, shift = 0 }: { el: CanvasElement; bloc
    push down whatever sits under them, and the canvas grows to hold everything (a box or a picture is a background, never a pusher).
    The gap a pushed element keeps from the one above it, in mm. */
 const PUSH_GAP_MM = 1
-const PUSHES = new Set<CanvasElement['kind']>(['text', 'kv', 'signature', 'badges', 'pageno'])
+const PUSHES = new Set<CanvasElement['kind']>(['text', 'kv', 'signature', 'badges', 'pageno', 'social'])
 
 /** A canvas block: the header, the footer or the cover — elements placed in mm on a band of the block's height. `onMeasure` reports how
     tall the content really is (px at 1:1) so the document can give the header or the footer the room it needs (REG-569). */

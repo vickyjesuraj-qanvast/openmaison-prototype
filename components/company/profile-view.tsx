@@ -8,24 +8,31 @@ import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
+import { ReadOnlyScope } from '@/components/om/read-only'
+import { ReadOnlyNote } from './read-only-note'
+import { MetaChip } from '@/components/om/meta-chip'
 import { CompanyShell } from './company-shell'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { saveBrand } from '@/app/company/templates-actions'
-import { EMPTY_ENTITY, type IssuingEntity, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
+import { EMPTY_ENTITY, SOCIAL_LABEL, type IssuingEntity, type SocialKey, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
+import { readFileAsDataUrl } from '@/lib/templates/files'
 import type { BrandSetting } from '@/lib/templates/brand'
 import type { DocData } from '@/lib/templates/data'
+import { EMAIL_RE, MSG } from '@/lib/forms'
+import { isSgPhone, phoneDigits } from '@/lib/format'
 import styles from './profile-view.module.css'
 
-type TextKey = Exclude<keyof StudioDetails, 'entities'>
+type TextKey = Exclude<keyof StudioDetails, 'entities' | 'tradeNotes' | 'socials' | 'preparedByMode' | 'gstRegistered'>
 const DETAIL_FIELDS: { key: TextKey; label: string; wide?: boolean; helper?: string }[] = [
   { key: 'name', label: 'Company name' }, { key: 'uen', label: 'UEN / Co. Reg. No.' }, { key: 'address', label: 'Address', wide: true }, { key: 'phone', label: 'Phone' }, { key: 'fax', label: 'Fax' },
   { key: 'email', label: 'Email' }, { key: 'website', label: 'Website' }, { key: 'gstReg', label: 'GST Reg. No.' }, { key: 'licence', label: 'HDB licence' },
   /* (REG-562) The testers' tagline and social links: two fields, two template fields. */
   { key: 'tagline', label: 'Tagline', wide: true, helper: 'Prints where a template places {studio_tagline} — a cover, a footer.' },
-  { key: 'social', label: 'Social links', wide: true, helper: 'Handles or links, as you want them printed — {studio_social}.' },
 ]
-const ENTITY_FIELDS: { key: Exclude<keyof IssuingEntity, 'payNowQr' | 'name' | 'gstRegistered'>; label: string }[] = [
-  { key: 'bankName', label: 'Bank' }, { key: 'accountName', label: 'Account name' }, { key: 'accountNo', label: 'Account number' }, { key: 'payNow', label: 'PayNow (UEN or mobile)' },
+/* (REG-618, parity Q-20) One field per network, as the studio wants it printed; the website is the Website field above. */
+const SOCIAL_FIELDS: SocialKey[] = ['instagram', 'facebook', 'tiktok', 'whatsapp', 'linkedin']
+const ENTITY_FIELDS: { key: 'bankName' | 'accountName' | 'accountNo' | 'swift' | 'payNow'; label: string }[] = [
+  { key: 'bankName', label: 'Bank' }, { key: 'accountName', label: 'Account name' }, { key: 'accountNo', label: 'Account number' }, { key: 'swift', label: 'SWIFT / BIC' }, { key: 'payNow', label: 'PayNow (UEN or mobile)' },   // (REG-618, parity Q-24) SWIFT
 ]
 
 /**
@@ -37,7 +44,9 @@ const ENTITY_FIELDS: { key: Exclude<keyof IssuingEntity, 'payNowQr' | 'name' | '
  * 2026-09-23, "inside the template is better"). Both save the one `brand` record; the default template's first page on the
  * right redraws as you edit.
  */
-export function ProfileView({ brand, previewDesign, previewName, sample }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData }) {
+export function ProfileView({ brand, previewDesign, previewName, sample, from, canRun = true, usage = {} }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean
+  /** (REG-647, settings parity Q-10) How many live quotes and contracts name each entity (by its saved name) — an entity in use is retired, not removed. */
+  usage?: Record<string, number> }) {
   const snackbar = useSnackbar()
   const [details, setDetails] = useState<StudioDetails>(brand.details)
   const [saved, setSaved] = useState<StudioDetails>(brand.details)
@@ -46,11 +55,27 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
   const entities = details.entities.length ? details.entities : [EMPTY_ENTITY(details.name)]
   const setEntity = (i: number, patch: Partial<IssuingEntity>) => setDetails((d) => ({ ...d, entities: entities.map((e, j) => (j === i ? { ...e, ...patch } : e)) }))
 
+  /* (REG-647) An entity keeps its id: its uses are counted under the name it was saved with. */
+  const usesOf = (e: IssuingEntity) => usage[saved.entities.find((x) => x.id === e.id)?.name ?? e.name] ?? 0
+  /* (sweep S4 #23 · #27) The details check as every other form does: the name is required, a phone or fax is a Singapore number (the
+     +65 is allowed and the spacing is kept as typed — it prints as written), an email looks like one. Shown after the first Save, cleared live. */
+  const [tried, setTried] = useState(false)
+  const val = (k: TextKey) => String(details[k] ?? '').trim()
+  const detailErrors: Partial<Record<TextKey, string>> = {
+    name: val('name') ? undefined : MSG.required,
+    phone: val('phone') && !isSgPhone(phoneDigits(val('phone'))) ? MSG.phone : undefined,
+    fax: val('fax') && !isSgPhone(phoneDigits(val('fax'))) ? MSG.phone : undefined,
+    email: val('email') && !EMAIL_RE.test(val('email')) ? MSG.email : undefined,
+  }
   const save = async () => {
+    if (Object.values(detailErrors).some(Boolean)) { setTried(true); document.getElementById('details')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return }
+    const names = entities.slice(1).map((e) => e.name.trim().toLowerCase())
+    if (names.some((n) => !n)) { snackbar({ message: 'Give every entity a name' }); return }
+    if (new Set([details.name.trim().toLowerCase(), ...names]).size !== names.length + 1) { snackbar({ message: 'Two entities can’t share a name' }); return }
     setBusy(true)
     try {
       const next = { ...details, entities: entities.map((e, i) => (i === 0 ? { ...e, name: details.name } : e)) }
-      await saveBrand({ kit: brand.kit, details: next }); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })
+      await saveBrand({ details: next }); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })   // (REG-646) its own half only
     }
     catch { snackbar({ message: 'Couldn’t save the company details — please try again' }) }
     finally { setBusy(false) }
@@ -63,6 +88,12 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
     window.addEventListener('beforeunload', onUnload)
     return () => window.removeEventListener('beforeunload', onUnload)
   }, [dirty])
+  /* (REG-618, parity Q-26) An entity's logo is kept as the picture itself, downscaled — as the brand kit keeps its logo. */
+  const pickLogo = (i: number) => {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'
+    input.onchange = async () => { const f = input.files?.[0]; if (f) { setEntity(i, { logo: await readFileAsDataUrl(f, 800) }); snackbar({ message: 'Logo added' }) } }
+    input.click()
+  }
   /* The PayNow QR: any picked image lands as the sample QR asset (the prototype keeps no uploads, REG-415's rule). */
   const pickQr = (i: number) => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'
@@ -71,10 +102,12 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
   }
 
   return (
-    <CompanyShell title="Profile" actions={<>
+    <CompanyShell title="Profile" from={from} form actions={canRun ? <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
-    </>}>
+    </> : null}>
+      {canRun ? null : <ReadOnlyNote />}
+      <ReadOnlyScope readOnly={!canRun}>
       <div className={styles.layout} data-testid="profile">
         <div className={styles.form}>
           <section id="details" className={styles.card} aria-labelledby="profile-details">
@@ -82,8 +115,16 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
             <div className={styles.details}>
               {DETAIL_FIELDS.map((f) => (
                 <div key={f.key} className={f.wide ? styles.detailWide : undefined}>
-                  <TextField label={f.label} value={details[f.key]} onChange={(v) => setDetails((d) => ({ ...d, [f.key]: v }))} helper={f.helper} />
+                  <TextField label={f.label} value={details[f.key]} onChange={(v) => setDetails((d) => ({ ...d, [f.key]: v }))} helper={f.helper} required={f.key === 'name'}
+                             error={tried ? detailErrors[f.key] : undefined} inputMode={f.key === 'phone' || f.key === 'fax' ? 'tel' : f.key === 'email' ? 'email' : undefined} />
                 </div>
+              ))}
+            </div>
+            {/* (REG-618, parity Q-20) Social links: {studio_social} prints them in a line; the templates' Social links element prints each with its mark. */}
+            <div className={styles.cardHead}><h3 className={styles.subTitle}>Social links</h3><p className={styles.cardHelp}>Handles or links, as you want them printed. {'{studio_social}'} prints the filled ones in a line; the Social links element on a template prints each with its mark.</p></div>
+            <div className={styles.details} data-testid="social-links">
+              {SOCIAL_FIELDS.map((k) => (
+                <div key={k}><TextField label={SOCIAL_LABEL[k]} value={details.socials?.[k] ?? ''} onChange={(v) => setDetails((d) => ({ ...d, socials: { ...(d.socials ?? {}), [k]: v } }))} /></div>
               ))}
             </div>
           </section>
@@ -95,7 +136,9 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
                 <div className={styles.entityHead}>
                   {i === 0 ? <span className={styles.entityName}>{details.name || 'The studio'} <span className={styles.cardHelp}>· the studio itself</span></span>
                     : <div className={styles.entityNameField}><TextField label="Entity name" value={e.name} onChange={(v) => setEntity(i, { name: v })} /></div>}
-                  {i > 0 ? <Tooltip label="Remove this entity"><IconButton icon="delete" label="Remove this entity" size={36} variant="bare" iconSize={20} onClick={() => setDetails((d) => ({ ...d, entities: entities.filter((_, j) => j !== i) }))} /></Tooltip> : null}
+                  {i > 0 && e.retired ? <span className={styles.entityState} data-testid="entity-retired"><MetaChip>Retired</MetaChip><Button appearance="text" onPress={() => setEntity(i, { retired: false })}>Bring back</Button></span> : null}
+                  {i > 0 && !e.retired && usesOf(e) > 0 ? <Tooltip label={`On ${usesOf(e)} ${usesOf(e) === 1 ? 'quote or contract' : 'quotes and contracts'} — it keeps printing there; retired, it is no longer offered`}><span><Button appearance="text" onPress={() => setEntity(i, { retired: true })}>Retire</Button></span></Tooltip> : null}
+                  {i > 0 && !e.retired && usesOf(e) === 0 ? <Tooltip label="Remove this entity"><IconButton icon="delete" label="Remove this entity" size={36} variant="bare" iconSize={20} onClick={() => setDetails((d) => ({ ...d, entities: entities.filter((_, j) => j !== i) }))} /></Tooltip> : null}
                 </div>
                 <div className={styles.details}>
                   {ENTITY_FIELDS.map((f) => <div key={f.key}><TextField label={f.label} value={e[f.key]} onChange={(v) => setEntity(i, { [f.key]: v })} /></div>)}
@@ -110,9 +153,26 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
                   <span className={styles.cardHelp}>{e.payNowQr ? 'Prints beside the bank details where the block shows the QR.' : 'Upload the PayNow QR your bank gives you; it prints beside the bank details.'}</span>
                   {e.payNowQr ? <Button appearance="text" variant="secondary" onPress={() => setEntity(i, { payNowQr: null })}>Remove QR</Button> : null}
                 </div>
+                {/* (REG-618, parity Q-26) Another entity's own letterhead: quotes raised under it print its name, logo, address and numbers. */}
+                {i > 0 ? <>
+                  <h3 className={styles.subTitle}>Letterhead</h3>
+                  <div className={styles.details} data-testid="entity-letterhead">
+                    <div className={styles.detailWide}><TextField label="Registered address" value={e.address} onChange={(v) => setEntity(i, { address: v })} helper="Left blank, the studio's address prints." /></div>
+                    <div><TextField label="UEN / Co. Reg. No." value={e.uen} onChange={(v) => setEntity(i, { uen: v })} helper="Prints only this entity's own number." /></div>
+                    {e.gstRegistered ? <div><TextField label="GST Reg. No." value={e.gstReg} onChange={(v) => setEntity(i, { gstReg: v })} /></div> : null}
+                  </div>
+                  <div className={styles.qrRow}>
+                    <button type="button" className={styles.qrWell} onClick={() => pickLogo(i)} aria-label={e.logo ? `Replace ${e.name || 'this entity'}'s logo` : `Add ${e.name || 'this entity'}'s logo`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {e.logo ? <img src={e.logo} alt="" /> : <span className={styles.wellEmpty}><Icon name="add_photo_alternate" size={20} weight={300} /> Logo</span>}
+                    </button>
+                    <span className={styles.cardHelp}>{e.logo ? 'Prints in place of the brand logo on quotes raised under this entity.' : 'Quotes raised under this entity print its logo where a template places the brand logo; without one, the brand kit\'s logo prints.'}</span>
+                    {e.logo ? <Button appearance="text" variant="secondary" onPress={() => setEntity(i, { logo: null })}>Remove logo</Button> : null}
+                  </div>
+                </> : null}
               </div>
             ))}
-            {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('')] }))}>Add an entity</Button></span> : null}
+            {entities.length < 6 ? <span className={styles.markActions}><Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setDetails((d) => ({ ...d, entities: [...entities, EMPTY_ENTITY('', crypto.randomUUID())] }))}>Add an entity</Button></span> : null}
           </section>
           {/* (REG-554) The kit lives with the templates now; this is the way there for whoever comes here for the logo. */}
           <Link href="/company/templates/brand" className={styles.kitLink} data-testid="brand-kit-link">
@@ -131,6 +191,7 @@ export function ProfileView({ brand, previewDesign, previewName, sample }: { bra
           </Tooltip>
         </aside>
       </div>
+      </ReadOnlyScope>
     </CompanyShell>
   )
 }

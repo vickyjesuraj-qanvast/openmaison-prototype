@@ -7,6 +7,7 @@ import { displayDate, displayTime } from '@/lib/format'
 import { money2 } from '@/lib/quotes/math'
 import type { QuoteVersion } from '@/lib/db/schema'
 import type { Member } from '@/lib/db/schema'
+import { Tooltip } from '@/components/om/tooltip'
 import styles from './version-history.module.css'
 
 /**
@@ -14,7 +15,7 @@ import styles from './version-history.module.css'
  * when it was kept, by whom, what it was and its amount, and Open (the read-only preview at `?version=n`). Revise sits in the
  * drawer's head for a quote past Draft: it keeps this version and starts the next.
  */
-export function VersionHistoryDrawer({ open, onClose, current, versions, members, canRevise, reviseHint, onRevise, onOpen, changes }: {
+export function VersionHistoryDrawer({ open, onClose, current, versions, members, canRevise, reviseHint, onRevise, onOpen, changes, canBringBack = false, onBringBack }: {
   open: boolean
   /** (REG-595) What changed since the last kept version — added · removed · changed. */
   changes?: { added: number; removed: number; changed: number } | null
@@ -26,6 +27,9 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
   reviseHint: string
   onRevise: () => void
   onOpen: (version: number) => void
+  /** (REG-625, parity Q-25) A Draft takes a kept version back; a quote the client has is revised first. */
+  canBringBack?: boolean
+  onBringBack?: (version: number) => void
 }) {
   const who = (id: string | null) => members.find((m) => m.id === id)?.name ?? 'the studio'
   const snapshot = (v: QuoteVersion): { status: string; amountMinor: number } => {
@@ -59,7 +63,14 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
                   <span className={styles.title}>Version {v.version}</span>
                   <span className={styles.meta}>{snap.status} · {money2(snap.amountMinor)} · kept {displayDate(v.createdAt)} {displayTime(v.createdAt)} by {who(v.createdBy)}{v.note ? ` · ${v.note}` : ''}</span>
                 </span>
-                <Button appearance="text" onPress={() => onOpen(v.version)}>Open</Button>
+                <span className={styles.actions}>
+                  <Button appearance="text" onPress={() => onOpen(v.version)}>Open</Button>
+                  {onBringBack ? (
+                    <Tooltip label={canBringBack ? `Put version ${v.version}’s lines back into the draft` : 'Revise first — only a draft takes a version back'}>
+                      <span><Button appearance="text" isDisabled={!canBringBack} onPress={() => onBringBack(v.version)}>Bring back</Button></span>
+                    </Tooltip>
+                  ) : null}
+                </span>
               </li>
             )
           })}

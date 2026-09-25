@@ -1,5 +1,8 @@
 /* Quote X-Ray — the record (REG-529): one reading column (max 960, centred like the quote Preview), cards on the table-card frame. */
-.column { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); max-width: 960px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+/* (REG-640) the header kebab's anchor, and the stale banner (the quote editor's banner) on the reading column's width */
+.anchor { position: relative; display: inline-flex; }
+.banner { box-sizing: border-box; width: min(calc(960px - 2 * var(--om-spacing-6)), calc(100% - 2 * var(--om-spacing-6))); margin: var(--om-spacing-6) auto 0; }
+.column { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6) var(--om-spacing-6) var(--fab-clearance); max-width: 960px; width: 100%; margin: 0 auto; box-sizing: border-box; }   /* (REG-639) clear of the FAB */
 .card { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); }
 .cardTitle { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
@@ -8,12 +11,6 @@
 .eyebrow b { color: var(--om-color-on-surface-default); }
 .headline { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); text-wrap: balance; }
 .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
-.tile { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); min-width: 0; }
-.tile[data-tone='primary'] { background: var(--om-color-primary-variant); }
-.tile[data-tone='primary'] .tileValue { color: var(--om-color-primary-default); }
-.tileLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tileValue { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
-.tileHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .footnote { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .footnote > :first-child { flex-shrink: 0; margin-top: 1px; }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
@@ -34,18 +31,15 @@
 .brandName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .brandMeta { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: none; margin-left: var(--om-spacing-1); }
 .brandText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
-.impact { font: var(--om-type-caption-s); padding: 2px var(--om-spacing-2); border-radius: var(--om-radius-full); white-space: nowrap; }
-.impact[data-impact='high'] { background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); }
-.impact[data-impact='mild'] { background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-on-tertiary-yellow-variant); }
-.sources { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
-.source { display: inline-flex; align-items: center; gap: 2px; font: var(--om-type-caption-s); color: var(--om-color-primary-default); }
+/* (REG-638, Q-09) sources read as sources — the curated notes' domains, not links that open nothing */
+.sources { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
 .also { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); padding-top: var(--om-spacing-1); }
 /* Item by item: the table card — head row with the legend and Column settings, the table inside. */
 .tableCard { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
 .tableHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
 .tableTools { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .legend { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
-.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.swatch { width: 10px; height: 10px; border-radius: var(--om-radius-0-5); display: inline-block; }
 .swatch[data-status='yours-only'] { background: var(--om-color-tertiary-green-default); }
 .swatch[data-status='theirs-only'] { background: var(--om-color-tertiary-red-default); }
 .swatch[data-status='unpriced'] { background: var(--om-color-on-surface-border); }
@@ -53,7 +47,8 @@
 .link { color: var(--om-color-primary-default); text-decoration: none; }
 .link:hover { text-decoration: underline; }
 @media (max-width: 767px) {
-  .column { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
+  .banner { width: auto; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
+  .column { padding: var(--om-spacing-4) var(--om-spacing-4) var(--fab-clearance); gap: var(--om-spacing-4); }
   .card { padding: var(--om-spacing-4); }
   .tiles { grid-template-columns: 1fr; }
   .cardHead { flex-wrap: wrap; }

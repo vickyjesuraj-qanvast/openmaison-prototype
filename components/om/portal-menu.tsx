@@ -22,7 +22,7 @@ import menuStyles from '@/components/leads/menus.module.css'
  *  anchored to a cell that can sit anywhere — the same branch Dropdown has. Callers that pass none (a select's own
  *  option list, a combobox's results under its field) keep the anchored surface. */
 export function PortalMenu({
-  open, anchor, onClose, align = 'left', width, children, role = 'listbox', sheetTitle, id, className,
+  open, anchor, onClose, align = 'left', width, children, role = 'listbox', sheetTitle, id, className, autoFocus = true,
 }: {
   open: boolean
   anchor: RefObject<HTMLElement | null>
@@ -37,10 +37,12 @@ export function PortalMenu({
   id?: string
   /** Extra class on the surface (a popover that rounds to r8, 1271:40932). */
   className?: string
+  /** (sweep S5 #12) A combobox's list keeps focus in its field (aria-activedescendant walks it) — the menu must not take focus on open. */
+  autoFocus?: boolean
 }) {
   const menuRef = useRef<HTMLDivElement | null>(null)
   const sheet = useSheetLayout() && sheetTitle !== undefined
-  useMenuKeyboard(open && !sheet, menuRef, onClose)   // (REG-286) keyboard reach — see the note above
+  useMenuKeyboard(open && !sheet, menuRef, onClose, { autoFocus })   // (REG-286) keyboard reach — see the note above
 
   // Position via callback ref (runs before paint) — measured-DOM styling
   // without a state round-trip.

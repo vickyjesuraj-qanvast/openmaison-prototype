@@ -34,3 +34,6 @@ export const bundleSigningLink = (bundleId: string) => (typeof window === 'undef
 export function bundleMessage(o: { clientFirst: string; studio: string; titles: string[]; link: string }): string {
   return `Hi ${o.clientFirst}, here are ${o.titles.length} documents from ${o.studio} for your review and signature — ${o.titles.join(', ')}: ${o.link}\n\nOpen the link, read each one, and sign once at the bottom; your signature covers all of them. You’ll get a one-time code on this number to confirm it’s you.`
 }
+
+/** (REG-633, contracts parity E-118) A document out for signature in a bundle is signed through the bundle's one link — every screen copies that one. */
+export const contractLink = (c: { id: string; bundleId: string | null; status: string }) => (c.bundleId && c.status === 'Sent to Client' ? bundleSigningLink(c.bundleId) : signingLink(c.id))

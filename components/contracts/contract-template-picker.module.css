@@ -1,6 +1,6 @@
 /* Contract template picker (REG-534): the quote picker's cards — a paper thumb over the name and the edited stamp — three or four across. */
 .sub { display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
-.manage { color: var(--om-color-primary-default); text-decoration: none; font: var(--om-type-subheading-m); font-size: 12px; }
+.manage { color: var(--om-color-primary-default); text-decoration: none; font: var(--om-type-subheading-s); }   /* (sweep S2 #29) the 12px heading token, not a size on top of the 14 */
 .manage:hover { text-decoration: underline; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--om-spacing-4); min-height: 320px; align-content: start; }
 .card { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); text-align: left; cursor: pointer; transition: border-color var(--motion-hover), box-shadow var(--motion-hover); }
@@ -11,10 +11,12 @@
 .thumbTitle { font: var(--om-type-caption-s); font-weight: 700; color: var(--om-color-on-surface-default); text-transform: uppercase; letter-spacing: .02em; }
 .thumbText { font-size: 8px; line-height: 12px; color: var(--om-color-on-surface-secondary); overflow: hidden; }
 .name { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.meta { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .ghost { aspect-ratio: 1 / 1.35; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
 .empty { min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2); text-align: center; }
 .emptyGlyph { color: var(--om-color-on-surface-secondary); }
 .emptyTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .emptyHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 420px; }
 @media (max-width: 767px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* (REG-664) The folders above the cards, and the crumb inside one. */
+.browse { display: flex; flex-direction: column; gap: var(--om-spacing-5); }

@@ -27,15 +27,17 @@ const PERIODS: { key: Period; label: string }[] = [
 ]
 const COLUMN_SETS = ['Everything', 'As the list shows'] as const
 
-export function ExportDialog({ open, rows = [], all, shown, listingColumns, now, onClose, onDone, title = 'Export Leads', download }: {
+export function ExportDialog({ open, rows = [], all, shown, listingColumns, now, onClose, onDone, title = 'Export Leads', download, scope: counts }: {
   open: boolean; rows?: LeadRow[]; onClose: () => void; onDone: (fileName: string, format: ExportFormat, count?: number) => void
   /** The statement's two sets — every lead, and what the list shows — plus the listing's visible column keys, in order. */
   all?: LeadRow[]; shown?: LeadRow[]; listingColumns?: string[]
   /** The leads export's date stamp; a caller with its own `download` (Tasks, the quote editor's Items) needs none. */
   now?: number
   title?: string
-  /** Custom downloader (returns the file name); defaults to the leads export. */
-  download?: (format: ExportFormat) => string
+  /** Custom downloader (returns the file name); defaults to the leads export. (REG-653) With `scope`, it is told which set. */
+  download?: (format: ExportFormat, scope: 'all' | 'shown') => string
+  /** (REG-653, price book parity Q-14) Another list's two sets — every entry and what the list shows — for a caller with its own `download`. */
+  scope?: { all: number; shown: number; noun: string }
 }) {
   const [format, setFormat] = useState<ExportFormat>('CSV')
   const [scope, setScope] = useState<'all' | 'shown'>('all')
@@ -71,15 +73,15 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
   }, [statement, rows, scope, all, shown, period, from, to, clock])
   const keys = columnSet === 'As the list shows' && listingColumns ? listingColumns.flatMap((k) => LISTING_EXPORT[k] ?? []) : null
   const exportNow = () => {
-    if (rangeBad || (statement && picked.length === 0)) return
-    const name = download ? download(format) : downloadLeads(picked, format, new Date(clock), keys)
-    onDone(name, format, picked.length)
+    if (rangeBad || (statement && picked.length === 0) || (counts && (scope === 'all' ? counts.all : counts.shown) === 0)) return
+    const name = download ? download(format, scope) : downloadLeads(picked, format, new Date(clock), keys)
+    onDone(name, format, counts ? (scope === 'all' ? counts.all : counts.shown) : picked.length)
     onClose()
   }
   return (
     <Dialog open={open} onClose={onClose} title={title} width={400} size="form"
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
-                     <Button onPress={exportNow} isDisabled={rangeBad || (statement && picked.length === 0)}>Export</Button></>}>
+                     <Button onPress={exportNow} isDisabled={rangeBad || (statement && picked.length === 0) || (!!counts && (scope === 'all' ? counts.all : counts.shown) === 0)}>Export</Button></>}>
       {statement ? (
         <>
           <div className={styles.group} data-testid="export-scope">
@@ -99,6 +101,15 @@ export function ExportDialog({ open, rows = [], all, shown, listingColumns, now,
           ) : null}
           <TextField label="Columns" mode="select" value={columnSet} options={COLUMN_SETS} onChange={setColumnSet} />
         </>
+      ) : null}
+      {counts ? (
+        <div className={styles.group} data-testid="export-scope">
+          <span className={styles.label}>Which {counts.noun}</span>
+          <RadioGroup aria-label={`Which ${counts.noun}`} value={scope} onChange={(v) => setScope(v as 'all' | 'shown')}>
+            <div className={styles.row}><Radio value="all">All {counts.noun} ({counts.all})</Radio></div>
+            <div className={styles.row}><Radio value="shown" isDisabled={counts.shown === 0}>What the list shows ({counts.shown})</Radio></div>   {/* (sweep S5 #26) nothing shown, nothing to export — it made a header-only file */}
+          </RadioGroup>
+        </div>
       ) : null}
       <TextField label="Choose file format" value={format} mode="select" options={EXPORT_FORMATS} onChange={(v) => setFormat(v as ExportFormat)} />
       {statement ? (

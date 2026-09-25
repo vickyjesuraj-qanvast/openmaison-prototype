@@ -1,7 +1,5 @@
 /* (REG-604) The bell's feed inside the Drawer. */
 .body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-.readAll { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: var(--om-radius-1); background: none; color: var(--om-color-on-surface-default); cursor: pointer; }
-.readAll:hover { background: var(--om-color-hover-04p, var(--om-color-surface-variant)); }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .row { border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .rowBtn { display: grid; grid-template-columns: 36px minmax(0, 1fr) 12px; align-items: flex-start; gap: var(--om-spacing-3); width: 100%; padding: var(--om-spacing-3) var(--om-spacing-2); border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: var(--om-radius-1); }
@@ -26,3 +24,4 @@
 .glyph[data-kind='stage_changed'], .glyph[data-kind='task_assigned'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
 .glyph[data-kind='task_due_soon'], .glyph[data-kind='hold_due'] { background: var(--om-color-tertiary-yellow-variant2, #fdf1dc); color: var(--om-color-tertiary-yellow-default); }
 .glyph[data-kind='question_answered'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
+.retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }   /* (sweep S4 #10) */

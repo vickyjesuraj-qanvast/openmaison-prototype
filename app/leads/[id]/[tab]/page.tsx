@@ -8,6 +8,7 @@ import { fetchLeadTasks } from '@/lib/leads/tasks'
 import { LeadTasks } from '@/components/leads/tasks/lead-tasks'
 import { fetchLeadQuotes } from '@/lib/leads/quotes'
 import { LeadQuotes } from '@/components/leads/quotes/lead-quotes'
+import { isApprover } from '@/lib/settings/queries'   // (REG-624)
 import { fetchLeadContracts } from '@/lib/leads/contracts'
 import { LeadContracts } from '@/components/leads/contracts/lead-contracts'
 import { fetchLeadFiles } from '@/lib/leads/files'
@@ -66,7 +67,7 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
   if (tab === 'quotes') {
     // Quotes (910-36240): the same wide frame; the tab owns its table, menus, filters and dialogs.
     const { detail, data } = await loadFrame(id, fetchLeadQuotes)
-    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuotes leadId={id} leadName={detail.lead.name} data={data} approval={detail.quoteApproval} />} />
+    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadQuotes leadId={id} leadName={detail.lead.name} data={data} approval={detail.quoteApproval} canApprove={await isApprover(detail.viewer.id, detail.viewer.role)} viewer={{ id: detail.viewer.id, role: detail.viewer.role }} />} />
   }
   if (tab === 'contracts') {
     // Contracts (931-38609): the same wide frame; the tab owns its table, menus, filters and dialogs.

@@ -19,7 +19,10 @@ import { FilesGrid } from './files-grid'
 import { FilesTable } from './files-table'
 import { NameDialog } from './name-dialog'
 import { TrashDialog } from './trash-dialog'
-import { MoveDialog } from './move-dialog'
+import { MoveDialog } from '@/components/om/folders/move-dialog'
+import { FolderEmpty } from '@/components/om/folders/folder-empty'
+import { Button } from '@/components/ds'
+import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
 import { UploadToast } from './upload-toast'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
@@ -75,7 +78,8 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const pathname = usePathname(); const search = params.toString()
   const here = search ? `${pathname}?${search}` : pathname
   const openFolder = (f: FileRow) => { setQuery(''); router.push(withFrom(`${rootHref}?folder=${f.id}`, from)) }
-  const back = () => { setQuery(''); router.push(withFrom(rootHref, from)) }
+  /* (REG-664) A crumb or Back: Back goes up ONE level (it jumped to All Files), and every folder on the way is a link. */
+  const goTo = (id: string | null) => { setQuery(''); router.push(withFrom(id ? `${rootHref}?folder=${id}` : rootHref, from)) }
   const openFile = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}`, here))
   /* The comment chip (grid tile + list row) opens the viewer with its comments panel already open —
      the Tasks title-cell chip's interaction (REG-253, user 2026-09-01). */
@@ -86,7 +90,16 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   // Search spans every folder (a hit outside the open folder is still a hit); otherwise the open folder's children.
-  const visible = useMemo(() => (query.trim() ? searchFiles(files, query) : childrenOf(files, currentId)), [files, query, currentId])
+  // (REG-664) Folders come first in both views — the list mixed them in among the files by date.
+  const visible = useMemo(() => {
+    const rows = query.trim() ? searchFiles(files, query) : childrenOf(files, currentId)
+    return [...rows.filter(isFolder), ...rows.filter((f) => !isFolder(f))]
+  }, [files, query, currentId])
+  /* (REG-664) The folders as the shared kit reads them — the crumb, the Move dialog, the name check, a hit's location. */
+  const folderNodes = useMemo<FolderNode[]>(() => files.filter(isFolder).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null })), [files])
+  const trail = useMemo(() => folderPath(files, currentId), [files, currentId])
+  const searching = query.trim() !== ''
+  const hitPlace = searching ? (f: FileRow) => placeOf(folderNodes, f.parentId ?? null) || 'All Files' : undefined
   const folders = useMemo(() => visible.filter(isFolder), [visible])
   const groups = useMemo(() => groupByDay(visible.filter((f) => !isFolder(f))), [visible])
   // Selection follows the visible set (render-phase adjust).
@@ -184,7 +197,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   return (
     <div className={styles.tab}>
       <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)}
-        folder={folder} onBack={back}
+        trail={trail} onGo={goTo} onNewFolder={() => openName({ mode: 'create' })}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'local' ? pickFiles() : comingSoon())}   // From Company Files · From Google Drive — no mock beyond the menu item
@@ -194,20 +207,25 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
       />
       {files.length === 0 ? (
         <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} />
+      ) : folder && !searching && visible.length === 0 ? (
+        /* (REG-664) An empty folder says so (it showed nothing at all). */
+        <FolderEmpty help="Upload files here with New File, or move files in from their ⋯ menu.">
+          <Button variant="primary" appearance="outlined" onPress={pickFiles}>Upload Files</Button>
+        </FolderEmpty>
       ) : view === 'grid' ? (
         // An open folder with nothing inside shows the grid with no groups (no empty-folder mock).
         <FilesGrid
           folders={folders} groups={groups}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onFolderMenu={itemMenu} onFileMenu={itemMenu}
+          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace}
         />
       ) : (
         <FilesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           rows={visible}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onRowMenu={itemMenu}
+          onRowMenu={itemMenu} placeOf={hitPlace}
         />
       )}
       {/* Hidden picker behind New File › From Local Files and the empty state's Upload Files (REG-149: any file works). */}
@@ -229,6 +247,12 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         open={!!nameDialog?.open}
         title={nameDialog?.payload.mode === 'rename' ? (isFolder(nameDialog.payload.target) ? 'Rename Folder' : 'Rename File') : 'Create Folder'}
         initial={nameDialog?.payload.mode === 'rename' ? nameDialog.payload.target.name : ''}
+        validate={(name: string) => {
+          const d = nameDialog?.payload
+          if (d?.mode === 'rename' && !isFolder(d.target)) return null   // a file's name: required only (Save waits while it is empty)
+          const parent = d?.mode === 'rename' ? d.target.parentId ?? null : currentId
+          return folderNameProblem(name, foldersIn(folderNodes, parent), d?.mode === 'rename' ? d.target.id : null)
+        }}
         onSave={(name: string) => {
           const d = nameDialog?.open ? nameDialog.payload : null; closeName(); if (!d) return
           if (d.mode === 'create') void run('create the folder', () => createFolder(leadId, name, currentId), 'Folder created')
@@ -242,7 +266,9 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         onYes={confirmTrash}
       />
       <MoveDialog
-        open={!!move?.open} items={moveRows} files={files} currentFolder={moveFolder}
+        open={!!move?.open} title={moveRows.length === 1 && moveRows[0] ? `Move “${moveRows[0].name}”` : `Move ${moveRows.length} items`}
+        root="All Files" folders={folderNodes} moving={move?.payload ?? []} current={moveFolder?.id ?? null}
+        entries={files.filter((f) => !isFolder(f)).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null, thumb: f.thumb }))}
         onMove={(parentId: string | null) => {
           const ids = move?.open ? move.payload : null; closeMove(); if (!ids?.length) return
           const dest = parentId ? nameOf(parentId) : ''

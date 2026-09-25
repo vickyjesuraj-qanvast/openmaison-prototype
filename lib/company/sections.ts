@@ -12,12 +12,12 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'members', icon: 'group', label: 'Members', help: 'People, roles and who reports to whom', href: '/company/members' },   /* (REG-601) live */
     { key: 'questionnaire', icon: 'quiz', label: 'Questionnaire', help: 'The questions every lead starts with', href: '/company/questionnaire' },   /* (REG-612) live */
     { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
-    { key: 'price-book', icon: 'menu_book', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-594) */
+    { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
   ] },
   { title: 'Operations', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },
     { key: 'reports', icon: 'analytics', label: 'Reports', help: 'Sales, pipeline and team' },
-    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, calendars and accounting', href: '/company/integrations' },   /* (REG-602) live */
+    { key: 'integrations', icon: 'link', label: 'Integrations', help: 'Qanvast, the website form, Meta Lead Ads, webhooks and Gmail', href: '/company/integrations' },   /* (REG-602) live */
   ] },
 ]
 
@@ -37,6 +37,10 @@ export const templateKind = (key: string) => TEMPLATE_KINDS.find((k) => k.key ==
 /** (REG-594) Company › Price book: the two libraries a quote line can start from, as the section's tab strip. */
 export const PRICE_BOOK_TABS = [{ label: 'My Items', href: '/company/price-book' }, { label: 'My Sections', href: '/company/price-book/sections' }] as const
 export const PRICE_BOOK_KINDS: Record<'items' | 'sections', TemplateKind> = {
-  items: { key: 'items', icon: 'menu_book', label: 'My Items', title: 'My Items', help: 'Every product and service the studio prices, ready to drop into a quote.', href: '/company/price-book', live: true },
-  sections: { key: 'sections', icon: 'folder', label: 'My Sections', title: 'My Sections', help: 'Whole sections saved from quotes — a room or a trade with its lines.', href: '/company/price-book/sections', live: true },
+  items: { key: 'items', icon: 'list_alt', label: 'My Items', title: 'My Items', help: 'Every product and service the studio prices, ready to drop into a quote.', href: '/company/price-book', live: true },
+  sections: { key: 'sections', icon: 'format_list_bulleted', label: 'My Sections', title: 'My Sections', help: 'Whole sections saved from quotes — a room or a trade with its lines.', href: '/company/price-book/sections', live: true },
 }
+
+/** (sweep S4 #26) One ghost bone per tab, as wide as its label reads — the route's loading.tsx (a server component) and CompanyShell's reveal
+    draw the same strip. Here, not in the client shell: a server component cannot call a function from a 'use client' module. */
+export const tabBones = (labels: string[]) => labels.map((l) => Math.max(32, Math.round(l.length * 7.4)))

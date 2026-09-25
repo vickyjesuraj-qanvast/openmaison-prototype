@@ -37,6 +37,13 @@
 .fill { display: block; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); transition: width var(--motion-toggle); }
 .shareVal { text-align: right; font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .shareVal[data-none] { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+/* (REG-623, parity Q-14) The owner's Share · Margin chips sit at the head's right; a margin bar shades by 1.0's bands, a loss reads red. */
+.bycatHead { justify-content: space-between; min-height: 32px; }
+.bycatMode { flex-shrink: 0; }
+.fill[data-band='good'] { background: var(--om-color-tertiary-green-default); }
+.fill[data-band='fair'] { background: var(--om-color-tertiary-yellow-default); }
+.fill[data-band='low'] { background: var(--om-color-tertiary-red-default); }
+.shareVal[data-neg] { color: var(--om-color-tertiary-red-default); }
 @media (max-width: 1024px) { .shares { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); } }   /* one column where the left block is narrow */
 /* Margin strip (owners only): tertiary-green-variant2, r4, p8, g16. */
 .margin { display: flex; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-green-variant2); font: var(--om-type-body-s); }
@@ -72,7 +79,11 @@
 .popRow { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .popRow:hover, .popRow[data-active] { background: var(--om-color-hover-04p); }   /* the keyboard's active option (aria-activedescendant) */
 .popRow + .popRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.popHead { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.popHead { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+/* (REG-619, parity Q-27) Show all · n more / For {type} only — a text control in the My Sections head. */
+.popToggle { padding: 0; border: 0; background: none; font: var(--om-type-body-s); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; }
+.popToggle:hover { text-decoration: underline; }
+.popToggle:focus-visible, .popToggle[data-active] { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }   /* (sweep S5 #12) the key walk's active toggle reads as the focused one */
 .popCreate { padding: var(--om-spacing-3) var(--om-spacing-4); }
 .popCreate > * { width: 100%; }
 .popThumb { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); overflow: hidden; }
@@ -99,10 +110,15 @@
 
 /* ≤1024 the toolbar is folded (items-section.tsx `compact`): three 36px controls that always fit on the title row (REG-354 / REG-384). */
 .tools[data-compact] { flex-wrap: nowrap; }
-@media (max-width: 767px) {
-  .below { grid-template-columns: minmax(0, 1fr); padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
+/* (sweep S1) Up to 1024 the 434 totals card no longer fits beside By category (at 768 the left block was 140px and the shares
+   painted under the card): the block stacks — Issuing Entity, the totals, then By category — as it does on a phone. */
+@media (max-width: 1024px) {
+  .below { grid-template-columns: minmax(0, 1fr); }
   .totals { grid-column: 1; grid-row: 2; width: 100%; }   /* (REG-532) the money first, then By category */
   .bycat { grid-row: 3; }
+}
+@media (max-width: 767px) {
+  .below { padding: var(--om-spacing-4); row-gap: var(--om-spacing-4); }
   .tlabel, .tvalue, .tcontrols { flex-basis: 50%; }
 }
 /* Touch (REG-273 / REG-312): every 36px control in the toolbar, the 24px row kebab and unit / label picks, the 20px links and
@@ -120,11 +136,14 @@
 .descDialogArea { width: 100%; }
 .descDialogArea textarea { min-height: 192px; }   /* eight lines of 24 — the DS field's own rows are for a remark, not a scope line */
 .find { display: inline-flex; width: 240px; }   /* Find (REG-477): the box the search glyph opens */
+/* (sweep S1) On a phone the open box takes the toolbar's row by itself (the house ToolbarSearch's way) — it ran the head 60px
+   past the card beside AI, Create and More. */
+@media (max-width: 767px) { .find { flex: 1 1 auto; width: auto; min-width: 0; } .tools:has(.find) > :not(.find) { display: none; } }
 
 /* ── Round 1 of the testers' asks (2026-09-23) ── */
 /* (REG-555) The Print as menu: two-line rows — the word, then what it does — in the row menu's 300 width. */
 .menuText { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.menuHelp { font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); white-space: normal; }
+.menuHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 /* (REG-556) The Highlight menu's swatches: 16px squares in the kit's colours; None is an outlined empty one. */
 .swatch { display: inline-block; width: 16px; height: 16px; border-radius: var(--om-radius-0-5); border: var(--om-border-1) solid var(--om-color-on-surface-border); }
 .swatch[data-none] { background: linear-gradient(135deg, transparent 45%, var(--om-color-on-surface-border) 45%, var(--om-color-on-surface-border) 55%, transparent 55%); }
@@ -139,3 +158,8 @@
 .discAmount { flex: 0 0 auto; min-width: 88px; text-align: right; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .addDisc { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-primary-default); display: inline-flex; align-items: center; gap: var(--om-spacing-1); align-self: flex-start; }
 .addDisc:hover { color: var(--om-color-on-primary-variant); }
+/* (REG-653, price book parity Q-12) The Add Item popover lists every item: the lists scroll under Create New Item; a row that asked for the
+   pick says where it lands. */
+.popList { max-height: min(360px, 50vh); overflow-y: auto; overscroll-behavior: contain; }
+.popPlace { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.popPlace > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

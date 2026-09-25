@@ -7,11 +7,13 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { EditorSkeleton } from '@/components/quotes/editor/editor-skeleton'
+import { ContractSkeleton } from './contract-skeleton'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useFlagPref } from '@/lib/prefs'
+import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
+import { Drawer } from '@/components/om/drawer'
 import { savedLabel } from '@/lib/contracts/model'
 import { outlineOf } from '@/lib/contracts/tokens'
 import type { ContractTemplateEditorData } from '@/lib/contracts/queries'
@@ -31,7 +33,7 @@ const AUTOSAVE_MS = 600
  * Saved · Done (back) · kebab (Duplicate · Delete) · ✕.
  */
 export function ContractTemplateEditor({ data, from }: { data: ContractTemplateEditorData; from?: string }) {
-  const { template, usedBy, now, values } = data
+  const { template, usedBy, now, values, changeBlock } = data
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -43,11 +45,16 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
   useEffect(() => { const t = setInterval(() => setClock(Date.now()), 30_000); return () => clearInterval(t) }, [])
   const [docState, setDocState] = useState<DocState>(IDLE_STATE)
   const [outlinePref, setOutlinePref] = useFlagPref('om.contracts.outline', true)
+  const narrow = useMediaQuery(TABLET_DOWN)   // (sweep S2 #19) ≤1024 the Outline is a drawer, as in the contract editor (REG-634, E-114) — the pane toggled and showed nothing
+  const [outlineDrawer, setOutlineDrawer] = useState(false)
   const [esign, setEsign] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const fabRef = useRef<HTMLSpanElement>(null)
+  const [gates, setGates] = useState({ requiresScroll: template.requiresScroll, requiresAccept: template.requiresAccept, acceptLabel: template.acceptLabel })   // (REG-633, parity Q-15)
 
-  const dirty = useRef<{ title?: string; body?: string }>({})
+  type Patch = { title?: string; body?: string; requiresScroll?: boolean; requiresAccept?: boolean; acceptLabel?: string | null }
+  const dirty = useRef<Patch>({})
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flush = useCallback(async () => {
     if (timer.current) { clearTimeout(timer.current); timer.current = null }
@@ -57,18 +64,24 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
     try { setUpdatedAt(await saveContractTemplate(template.id, patch)) } catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
   }, [template.id, snackbar])
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
-  const queue = useCallback((patch: { title?: string; body?: string }) => {
+  const queue = useCallback((patch: Patch) => {
     dirty.current = { ...dirty.current, ...patch }
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => { void flushRef.current() }, AUTOSAVE_MS)
   }, [])
   useEffect(() => () => { void flushRef.current() }, [])
+  /* (REG-634, contracts parity E-132) Closing the tab within the autosave's wait still saves — the contract editor's flush. */
+  useEffect(() => {
+    const onHide = () => { void flushRef.current() }
+    window.addEventListener('pagehide', onHide)
+    return () => window.removeEventListener('pagehide', onHide)
+  }, [])
   const outline = useMemo(() => outlineOf(body), [body])
   const backHref = from ?? '/company/templates/contracts'
   const close = () => { void flushRef.current(); router.push(backHref) }
 
   return (
-    <PageReveal skeleton={<EditorSkeleton />}>
+    <PageReveal skeleton={<ContractSkeleton />}>
       <div className={styles.page} data-testid="contract-template-editor">
         <ContractHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Contracts', href: '/company/templates/contracts' }]} title={title.trim() || 'Untitled template'}
                         chips={<><MetaChip>Template</MetaChip><MetaChip>{usedBy === 0 ? 'Not used yet' : `Used by ${usedBy} ${usedBy === 1 ? 'contract' : 'contracts'}`}</MetaChip></>}
@@ -77,31 +90,40 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
                         menu={<>
                           <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateContractTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/contracts/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                           <DropdownDivider />
-                          <DropdownItem tone="danger" onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
+                          {/* (sweep S2 #16) Delete is Rename's rule: its author, an Owner or an Admin — offered to everyone and refused after, before */}
+                          <DropdownItem tone="danger" disabled={!!changeBlock} onSelect={() => setDeleteOpen(true)}>Delete{changeBlock ? <span className={styles.menuMeta} title={changeBlock}>author, Owner or Admin</span> : null}</DropdownItem>
                         </>}
                         onClose={close} />
         <div className={styles.meta} data-testid="contract-meta">
-          <input className={styles.titleInput} value={title} placeholder="Template name" aria-label="Template name" maxLength={120}
-                 onChange={(e) => { setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
+          <input className={styles.titleInput} value={title} placeholder="Template name" aria-label="Template name" maxLength={120} readOnly={!!changeBlock} title={changeBlock ?? undefined}
+                 onChange={(e) => { if (changeBlock) return; setTitle(e.target.value); queue({ title: e.target.value }) }} onBlur={() => { void flushRef.current() }} />
           <div className={styles.metaEnd}>
             <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: 'Smart Text chips fill in from the lead, the quote and your studio when a contract starts from this template' })}>How chips fill in</Button>
           </div>
         </div>
-        <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign} onOutline={() => setOutlinePref(!outlinePref)} outlineOpen={outlinePref} />
+        <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign} onOutline={() => (narrow ? setOutlineDrawer((o) => !o) : setOutlinePref(!outlinePref))} outlineOpen={narrow ? outlineDrawer : outlinePref} />
         <div className={styles.body}>
-          {outlinePref ? <OutlinePane items={outline} onPick={(i) => editor.current?.scrollToHeading(i)} onClose={() => setOutlinePref(false)} /> : null}
+          {outlinePref && !narrow ? <OutlinePane items={outline} onPick={(i) => editor.current?.scrollToHeading(i)} onClose={() => setOutlinePref(false)} /> : null}
           <div className={styles.stage}>
             <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
               <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={setDocState} label="Template document" placeholder="Start writing the template, or insert a record with Smart Text…" />
             </div>
           </div>
         </div>
-        <ESignPanel open={esign} onClose={() => setEsign(false)} hasStudioSignature onInsert={(html) => editor.current?.insertHtml(html)} />
+        <Drawer open={narrow && outlineDrawer} onClose={() => setOutlineDrawer(false)} title="Outline" label="Outline" width={320}>
+          <OutlinePane inDrawer items={outline} onClose={() => setOutlineDrawer(false)} onPick={(i) => { setOutlineDrawer(false); editor.current?.scrollToHeading(i) }} />
+        </Drawer>
+        <ESignPanel open={esign} onClose={() => setEsign(false)} hasStudioSignature onInsert={(html) => editor.current?.insertHtml(html)}
+                    gates={gates} onGates={(p) => { setGates((g) => ({ ...g, ...p })); queue(p) }} />
         <ConfirmDialog open={deleteOpen} title={`Delete ${title.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
                        message={usedBy ? `${usedBy} ${usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.'}
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteContractTemplate(template.id).then(() => { snackbar({ message: 'Template deleted' }); router.push('/company/templates/contracts') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
-        <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
-        <MaisonFab onPress={() => setAiOpen((o) => !o)} />
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void flushRef.current().then(() => deleteContractTemplate(template.id)).then(() => {
+                         /* (REG-634, E-132) the gallery's Undo, and back where the editor was opened from */
+                         /* the gallery says it, with Undo — a snackbar here would go with the editor's layout — and its Back keeps `from` */
+                         router.push(`/company/templates/contracts?deleted=${encodeURIComponent(template.id)}${from ? `&from=${encodeURIComponent(from)}` : ''}`)
+                       }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
+        <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} anchorRef={fabRef} />   {/* (sweep S2 #30) the FAB's own press toggles it */}
+        <span ref={fabRef} style={{ display: 'contents' }}><MaisonFab onPress={() => setAiOpen((o) => !o)} /></span>
       </div>
     </PageReveal>
   )

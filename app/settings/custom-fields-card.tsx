@@ -57,8 +57,8 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
                 <span className={styles.fieldLabel}>{f.label}</span>
                 <span className={styles.fieldMeta}><MetaChip>{CUSTOM_FIELD_TYPE_LABELS[f.fieldType]}</MetaChip>{f.options.length ? <span>{f.options.join(' · ')}</span> : null}</span>
               </span>
-              <span className={styles.eventCol} role="cell"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isRequired} isDisabled={!canManage} aria-label={`${f.label} required`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isRequired: on } : x)), on ? `${f.label} is required` : `${f.label} is optional`) }} /></label></span>
-              <span className={styles.eventCol} role="cell"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isActive} isDisabled={!canManage} aria-label={`${f.label} active`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isActive: on } : x)), on ? `${f.label} is back on every lead` : `${f.label} hidden — its values are kept`) }} /></label></span>
+              <span className={styles.eventCol} role="cell" data-label="Required"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isRequired} isDisabled={!canManage} aria-label={`${f.label} required`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isRequired: on } : x)), on ? `${f.label} is required` : `${f.label} is optional`) }} /></label></span>
+              <span className={styles.eventCol} role="cell" data-label="Active"><label className={styles.switchRow}><Switch size="sm" isSelected={f.isActive} isDisabled={!canManage} aria-label={`${f.label} active`} onChange={(on: boolean) => { void write(fields.map((x) => (x.id === f.id ? { ...x, isActive: on } : x)), on ? `${f.label} is back on every lead` : `${f.label} hidden — its values are kept`) }} /></label></span>
               <span className={styles.fieldActions} role="cell">
                 {canManage ? (
                   <>
@@ -108,7 +108,7 @@ function FieldDialog({ open, field, onClose, onSave }: { open: boolean; field: C
           {options.map((o, i) => (
             <div key={i} className={styles.optionRow}>
               <TextField label={`Option ${i + 1}`} value={o} onChange={(v) => setOptions((os) => os.map((x, j) => (j === i ? v : x)))} maxLength={60} trailingIcon={null} />
-              <IconButton icon="close" label={`Remove option ${i + 1}`} size={24} variant="bare" iconSize={16} disabled={options.length <= 1} onClick={() => setOptions((os) => os.filter((_, j) => j !== i))} />
+              <Tooltip label="Remove this option"><IconButton icon="close" label={`Remove option ${i + 1}`} size={24} variant="bare" iconSize={16} disabled={options.length <= 1} onClick={() => setOptions((os) => os.filter((_, j) => j !== i))} /></Tooltip>   {/* (sweep S4 #22) */}
             </div>
           ))}
           {pressed && errOpts ? <span className={styles.fieldError} role="alert">{errOpts}</span> : null}

@@ -10,5 +10,5 @@ export const dynamic = 'force-dynamic'
 export default async function BrandKitPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
   const [brand, data, sp] = await Promise.all([fetchBrand(), fetchTemplates(), searchParams])
   const preview = data.templates.find((t) => t.isDefault) ?? data.templates.find((t) => t.status === 'published') ?? null
-  return <BrandKitView brand={brand} previewDesign={preview?.design ?? null} previewName={preview?.name ?? null} sample={data.sample} from={readFrom(sp.from)} />
+  return <BrandKitView brand={brand} previewDesign={preview?.design ?? null} previewName={preview?.name ?? null} sample={data.sample} from={readFrom(sp.from)} canRun={data.canRun} />
 }

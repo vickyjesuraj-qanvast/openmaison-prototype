@@ -27,7 +27,7 @@
 .typed { font-family: var(--om-font-family-noto-serif, Georgia, serif); font-style: italic; font-size: 24px; line-height: 32px; }
 .initial .typed { font-size: 18px; line-height: 24px; }
 .blank { display: block; height: 40px; }
-.caption { padding-top: var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caption { padding-top: var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: anywhere; }   /* (sweep S2 #6) the name, the NRIC and the date wrap — one ellipsized line lost the date on the preview, the signed page and the PDF */
 .client:not([data-signed='1']) .mark { border-bottom-color: var(--om-color-primary-default); }
 .client:not([data-signed='1']) .caption { color: var(--om-color-primary-default); }
 .client[data-signed='1'] .typed { color: var(--om-color-on-surface-default); }

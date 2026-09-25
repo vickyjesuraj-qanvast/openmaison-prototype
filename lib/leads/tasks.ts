@@ -1,11 +1,12 @@
 import 'server-only'
 import { countPendingTemplates } from '@/lib/templates/queries'   // (REG-286) libSQL must never reach the browser bundle: every client import of this module is `import type`
-import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { unreadCount } from '@/lib/notifications/queries'
 import { isOverdue } from '@/lib/format'
 import { leadFiles, leadTasks, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks, type LeadFile, type LeadTask, type Member, type Tag, type TaskComment, type TaskTemplate, leads } from '@/lib/db/schema'
+import { fetchFolders } from '@/lib/company/folders'
 
 /* Lead Details › Tasks (902-36216) — one loader for the tab; joins resolved in memory (a lead has a handful of tasks). */
 
@@ -25,6 +26,8 @@ export type LeadTasksData = {
   tags: Tag[]
   files: LeadFile[]
   templates: TemplateRow[]
+  /** (REG-664) Templates › Tasks' folders — Choose Template browses them. */
+  templateFolders: { id: string; name: string; parentId: string | null }[]
   team: Member[]
   now: number
 }
@@ -71,7 +74,8 @@ async function loadTasks(scope: { leadId: string } | 'studio'): Promise<LeadTask
   // Newest first, as the listing mock reads (the new task sits on top).
   tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   const templates: TemplateRow[] = tpls.map((tp) => ({ ...tp, tasks: tplTasks.filter((x) => x.templateId === tp.id).map((x) => ({ id: x.id, title: x.title, description: x.description, kind: x.kind })) }))
-  return { tasks, tags: allTags, files, templates, team, now: Date.now(), leads: leadRows }
+  const templateFolders = (await fetchFolders('tasks')).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId }))   // (REG-664)
+  return { tasks, tags: allTags, files, templates, templateFolders, team, now: Date.now(), leads: leadRows }
 }
 
 export async function fetchLeadTasks(leadId: string): Promise<LeadTasksData> {
@@ -95,6 +99,18 @@ export async function countOverdueTasks(): Promise<number> {
 
 /** What the rail draws on its items (REG-466): the Tasks item's overdue count, keyed by href; nothing when there is nothing to say. */
 export async function railBadges(): Promise<Record<string, number>> {
-  const [overdue, pending, unread] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell
-  return { ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending > 0 ? { '/company': pending } : {}), ...(unread > 0 ? { notifications: unread } : {}) }
+  const [overdue, pending, unread, proposed] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount(), countProposalsToReview()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell · (REG-652) proposed items
+  return {
+    ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending + proposed > 0 ? { '/company': pending + proposed } : {}), ...(unread > 0 ? { notifications: unread } : {}),
+    ...(pending > 0 ? { 'company:templates': pending } : {}), ...(proposed > 0 ? { 'company:price-book': proposed } : {}),   // the Company panel's rows
+  }
+}
+/** (REG-652, price book parity Q-04) Proposed items an Owner or an Admin has to answer — nobody else's queue. */
+async function countProposalsToReview(): Promise<number> {
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const { runsBook } = await import('@/lib/company/price-book-rules')
+  const { priceBookItems } = await import('@/lib/db/schema')
+  if (!runsBook(await fetchViewer())) return 0
+  const [row] = await db.select({ n: sql<number>`count(*)` }).from(priceBookItems).where(sql`${priceBookItems.status} = 'proposed' AND ${priceBookItems.deletedAt} IS NULL`)
+  return Number(row?.n ?? 0)
 }

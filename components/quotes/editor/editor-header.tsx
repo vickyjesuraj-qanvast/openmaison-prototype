@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -9,7 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
-import type { EditorLead, QuoteSibling } from '@/lib/quotes/editor'
+import type { EditorLead, QuoteContract, QuoteSibling } from '@/lib/quotes/editor'
 import styles from './editor-header.module.css'
 
 export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink'
@@ -30,8 +31,13 @@ export type SendMode = 'next' | 'confirmation' | 'signature'
  */
 export function EditorHeader({
   lead, quoteId, title, number, version, status, siblings, savedLabel, canSend, sendHint, statusSlot,
-  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval',
+  onSwitch, onSend, onMenu, onClose, clientViewOn = false, onClientView, sendKind = 'approval', contract = null, contractHref, deleteBlock = null,
 }: {
+  /** (sweep S1) why the viewer may not delete this quote — the kebab's Delete greys with the rule, as the lists' do */
+  deleteBlock?: string | null
+  /** (REG-632, contracts parity Q-09) The contract raised from this quote, as a chip that opens it. */
+  contract?: QuoteContract | null
+  contractHref?: string
   lead: EditorLead
   quoteId: string
   /** The quote's title as General Info holds it (live); the number stands in while it is empty. */
@@ -87,6 +93,11 @@ export function EditorHeader({
             <MetaChip>{number}</MetaChip>
             <MetaChip>Version {version}</MetaChip>
             <MetaChip>{status}</MetaChip>
+            {contract && contractHref ? (
+              <Tooltip label={`Open ${contract.title}`}>
+                <Link href={contractHref} className={styles.chipLink} data-testid="quote-contract-chip"><MetaChip icon="contract">Contract · {contract.status}</MetaChip></Link>
+              </Tooltip>
+            ) : null}
           </div>
           <span className={styles.saved} role="status">
             <span className={styles.savedIcon} aria-hidden><Icon name="check_circle" size={20} /></span>
@@ -169,7 +180,7 @@ export function EditorHeader({
             <DropdownItem onSelect={pick(() => onMenu('print'))}>Print</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('history'))}>Version History</DropdownItem>
             <DropdownDivider />
-            <DropdownItem tone="danger" onSelect={pick(() => onMenu('delete'))}>Delete</DropdownItem>
+            <DropdownItem tone="danger" disabled={!!deleteBlock} title={deleteBlock ?? undefined} onSelect={pick(() => onMenu('delete'))}>Delete</DropdownItem>
           </Dropdown>
         </span>
         <span className={`${styles.rule} ${styles.foldable}`} aria-hidden />

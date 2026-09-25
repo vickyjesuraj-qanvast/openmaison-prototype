@@ -16,3 +16,11 @@
 .more { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .place { width: 240px; }
 @media (max-width: 767px) { .place { width: 100%; } }
+/* (REG-653, price book parity Q-13) My Items' import: each previewed row's state, and the notes under the sheet. */
+.stateHead { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); display: flex; align-items: center; width: 150px; }
+.state { width: 150px; color: var(--om-color-on-surface-secondary); }
+.state[data-state='match'] { color: var(--om-color-primary-default); }
+.state[data-state='repeat'] { text-decoration: line-through; }
+.notes { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.note { display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.note[data-tone='warn'] { color: var(--om-color-tertiary-red-default); }

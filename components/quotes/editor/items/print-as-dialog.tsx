@@ -15,11 +15,11 @@ const OPTIONS: { key: PrintAs | 'price'; label: string; help: string }[] = [
  * (REG-555) Print as for the ticked lines — the bulk bar's way to mark a whole run FOC, Inclusive, KIV, On behalf, Packaged or a
  * word of the studio's own. The form dialog shell (784:113420), as Set value.
  */
-export function PrintAsDialog({ open, count, onClose, onApply }: { open: boolean; count: number; onClose: () => void; onApply: (v: PrintAs | null, text: string | null) => void }) {
+export function PrintAsDialog({ open, count, onClose, onApply, initial }: { open: boolean; count: number; onClose: () => void; onApply: (v: PrintAs | null, text: string | null) => void; /** (sweep S1) a row's Print as › Custom word opens on the word, with the line's own */ initial?: { key: PrintAs | 'price'; text?: string | null } }) {
   const [key, setKey] = useState<PrintAs | 'price'>('foc')
   const [text, setText] = useState('')
   const [wasOpen, setWasOpen] = useState(false)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setKey('foc'); setText('') } }   // render-phase adjust: every opening starts on FOC
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setKey(initial?.key ?? 'foc'); setText(initial?.text ?? '') } }   // render-phase adjust: every opening starts where it was asked (the bulk bar: FOC)
   const def = OPTIONS.find((o) => o.key === key)!
   const valid = key !== 'custom' || text.trim() !== ''
   return (

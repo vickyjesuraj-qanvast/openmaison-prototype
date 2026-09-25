@@ -47,8 +47,11 @@ export function useCopy(
   // The host can unmount with a timer pending — clear it rather than leave it running.
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
-  const copy = useCallback(() => {
-    void navigator.clipboard?.writeText(text).then(
+  /* (sweep S3) `copy` answers whether it worked — a caller that keeps a record of the copy (X-Ray's send) keeps it only then — and a
+     browser with no clipboard gets the failure line, never silence. */
+  const copy = useCallback((): Promise<boolean> => {
+    const write = navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard'))
+    return write.then(
       () => {
         snackbar({ message: done })
         setState((s) => {
@@ -60,8 +63,9 @@ export function useCopy(
           )
           return { key: resetOn, copied: true, run }
         })
+        return true
       },
-      () => snackbar({ message: failed }),
+      () => { snackbar({ message: failed }); return false },
     )
   }, [text, snackbar, done, failed, resetOn])
 

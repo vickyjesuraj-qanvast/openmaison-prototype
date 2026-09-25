@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button, Checkbox } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { menuSideFor } from '@/components/leads/menu-side'
+import { DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
@@ -19,11 +19,12 @@ import type { Member, Quote } from '@/lib/db/schema'
 import { Avatar } from '@/components/om/avatar'
 import { displayDate, money } from '@/lib/format'
 import { isQuoteOverdue, quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { DELETE_RULE, validityPassed } from '@/lib/quotes/policy'
 import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-table.module.css'
 
 /** Row kebab (910:36723): Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. */
-export type QuoteRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'archive' | 'delete'
+export type QuoteRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'xray' | 'archive' | 'delete'
 
 export type QuotesTableProps = {
   quotes: (Quote & { creator?: Member | null })[]
@@ -31,6 +32,10 @@ export type QuotesTableProps = {
   now: number
   /** Settings › Leads › Quote approval — decides which statuses the row menu can offer. */
   approval: QuoteApproval
+  /** (REG-624, parity §8.2 · E-104) Whether the viewer may mark a quote Approved — else the menu shows it "approvers only", as the editor's pill does. */
+  canApprove?: boolean
+  /** (REG-625, parity Q-28) Whether the viewer may delete this quote — its creator, an Owner or an Admin; else the kebab's Delete waits. */
+  canDelete?: (quote: Quote) => boolean
   selected: Set<string>
   onSelect: (ids: Set<string>) => void
   onStatus: (quote: Quote, status: QuoteStatus) => void
@@ -69,12 +74,7 @@ export const quoteColumnDefs = (withClient: boolean, withApproval: boolean) => Q
 const SORTABLE: Record<string, boolean> = { title: false, creator: false }
 const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, creator: styles.colCreator, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, updated: styles.colUpdated, approval: styles.colApproval }
 
-/* Which way a row kebab opens is measured when it is pressed, not counted from the row index: a 3-row table leaves
-   ~560px of empty frame under the last row, and the old count flipped the menu up over the tabs and the toolbar.
-   (REG-286) That measurement used to be copied out into this file, the Contracts twin, the leads table and the kanban
-   card — four hand-written answers to one question, and Tasks / Files never got it at all. It now lives once in
-   components/leads/menu-side.ts; the row kebab draws six items. */
-const MENU_ITEMS = 6
+/* (REG-639) The row kebab opens through the body portal (PortalMenu flips on the viewport), so no count of its items is needed. */
 
 /**
  * Lead Details › Quotes table (910:36322) — specs design-source/context/lead-quotes/01-listing-table.txt +
@@ -82,10 +82,9 @@ const MENU_ITEMS = 6
  * Structure copied from components/leads/tasks/tasks-table.tsx: every icon-only control carries a Tooltip (REG-75);
  * sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf, columns, onReorder }: QuotesTableProps) {
+export function QuotesTable({ quotes, now, approval, canApprove = true, canDelete, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf, columns, onReorder }: QuotesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
-  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')   /* measured on open — only one row menu is open at a time */
   const [statusRow, setStatusRow] = useState<string | null>(null)
   const statuses = quoteStatuses(approval)
   /* The head list follows the studio's lifecycle like the status menu does (REG-214): a studio that does not review
@@ -141,18 +140,15 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
           selected={selected.has(quote.id)}
           onToggleSelect={() => toggleOne(quote.id)}
           statuses={statuses}
+          lockApproved={approval === 'required' && !canApprove}
+          deletable={canDelete ? canDelete(quote) : true}
           showApproval={showApproval}
           statusOpen={statusRow === quote.id}
           onStatusToggle={() => setStatusRow((s) => (s === quote.id ? null : quote.id))}
           onStatusClose={() => setStatusRow(null)}
           menuOpen={menuRow === quote.id}
-          onMenuToggle={(trigger) => {
-            if (menuRow !== quote.id) setMenuSide(menuSideFor(trigger, MENU_ITEMS))   /* measure the room below the kebab before it opens */
-            setMenuRow((m) => (m === quote.id ? null : quote.id))
-          }}
+          onMenuToggle={() => setMenuRow((m) => (m === quote.id ? null : quote.id))}
           onMenuClose={() => setMenuRow(null)}
-          /* Kebab flips up only when the menu would not fit below the row (measured above), never by row count. */
-          menuSide={menuSide}
           onStatus={onStatus} onDue={onDue} onView={onView} onRowMenu={onRowMenu}
           client={clientOf ? clientOf(quote) : null}
         />
@@ -165,9 +161,9 @@ export function QuotesTable({ quotes, now, approval, selected, onSelect, onStatu
 /* ---------------------------------------------------------------------------------------------- */
 
 function QuoteRowView({
-  quote, now, selected, onToggleSelect, statuses, showApproval,
+  quote, now, selected, onToggleSelect, statuses, lockApproved, deletable, showApproval,
   statusOpen, onStatusToggle, onStatusClose,
-  menuOpen, onMenuToggle, onMenuClose, menuSide,
+  menuOpen, onMenuToggle, onMenuClose,
   onStatus, onDue, onView, onRowMenu, client, L,
 }: {
   quote: Quote & { creator?: Member | null }
@@ -176,6 +172,9 @@ function QuoteRowView({
   selected: boolean
   onToggleSelect: () => void
   statuses: readonly QuoteStatus[]
+  /** (REG-624) Approved is an approver's word: shown, not pickable, as the editor's pill shows it. */
+  lockApproved: boolean
+  deletable: boolean
   showApproval: boolean
   statusOpen: boolean
   onStatusToggle: () => void
@@ -183,7 +182,6 @@ function QuoteRowView({
   menuOpen: boolean
   onMenuToggle: (trigger: HTMLElement) => void
   onMenuClose: () => void
-  menuSide: 'up' | 'down'
   onStatus: (quote: Quote, status: QuoteStatus) => void
   onDue: (quote: Quote, anchor: HTMLElement) => void
   onView: (quote: Quote) => void
@@ -192,6 +190,10 @@ function QuoteRowView({
 }) {
   const overdue = isQuoteOverdue(quote, now)
   const pick = (action: QuoteRowAction) => () => { onMenuClose(); onRowMenu(quote, action) }
+  /* (REG-639) The row menu goes through the body portal: an inline menu was clipped by the card's sideways scroller — on a
+     one-row table neither side had room, and the eighth item (Compare with another quote) made it worse. */
+  const kebab = useRef<HTMLSpanElement>(null)
+  const statusAnchor = useRef<HTMLSpanElement>(null)
   const pickStatus = (status: QuoteStatus) => () => { onStatusClose(); onStatus(quote, status) }
 
   return (
@@ -209,6 +211,8 @@ function QuoteRowView({
             <span>{quote.number}</span>
             <span>·</span>
             <span>{quote.visibility}</span>
+            {/* (REG-625, parity Q-29) Out with the client past its Valid until: marked, never blocked. */}
+            {validityPassed(quote, now) ? <><span>·</span><Tooltip label={`Valid until ${displayDate(quote.validUntil!)} has passed — nothing is blocked; extend Quote Valid Until if the price still stands`}><span className={styles.expired} data-testid="validity-passed" tabIndex={0}>Expired {displayDate(quote.validUntil!)}</span></Tooltip></> : null}
             {client ? <><span className={styles.subClient}>·</span><span className={styles.subClient}>{client.name}</span></> : null}
           </span>
         </div>
@@ -222,7 +226,7 @@ function QuoteRowView({
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu 910:36673 (all five, current marked). */}
       <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
-        <span className={styles.statusWrap}>
+        <span className={styles.statusWrap} ref={statusAnchor}>
           <button
             type="button" className={styles.statusBtn}
             aria-haspopup="menu" aria-expanded={statusOpen}
@@ -232,7 +236,8 @@ function QuoteRowView({
             {quote.status}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          <Dropdown open={statusOpen} onClose={onStatusClose} align="left" sheetTitle="Status">
+          {/* (sweep S1 · U-01) through the portal, as the kebab since REG-639: a short table's scroller can't clip it, a sticky layer can't cover it */}
+          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={240} role="menu" sheetTitle="Status">
             {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
                 aria-current + the "current" meta — DropdownItem takes no attributes. */}
             {/* The studio's lifecycle, not the full five: a studio that does not review quotes internally can never
@@ -240,18 +245,19 @@ function QuoteRowView({
                 Overview widget draws its track from. A quote already holding a retired status still shows it above. */}
             {statuses.map((s) => {
               const isCurrent = s === quote.status
+              const locked = lockApproved && s === 'Approved' && !isCurrent
               return (
                 <button
                   key={s} type="button" role="menuitem" className={menuStyles.item}
-                  aria-current={isCurrent ? 'step' : undefined}
-                  onClick={pickStatus(s)}
+                  aria-current={isCurrent ? 'step' : undefined} aria-disabled={locked || undefined} disabled={locked}
+                  onClick={locked ? undefined : pickStatus(s)}
                 >
                   <span className={styles.itemText}>{s}</span>
-                  {isCurrent ? <span className={styles.meta}>current</span> : null}
+                  {isCurrent ? <span className={styles.meta}>current</span> : locked ? <span className={styles.meta}>approvers only</span> : null}
                 </button>
               )
             })}
-          </Dropdown>
+          </PortalMenu>
         </span>
       </div>
 
@@ -294,22 +300,24 @@ function QuoteRowView({
         <span className={styles.float}>
           <Button variant="primary" appearance="outlined" onPress={() => onView(quote)}>View</Button>
         </span>
-        <span className={styles.menuWrap}>
+        <span className={styles.menuWrap} ref={kebab}>
           <span className={styles.float}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <IconButton icon="more_vert" label={`More actions for ${quote.title}`} variant="primary"
                           aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
-          <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide} sheetTitle={quote.title}>
+          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={200} role="menu" sheetTitle={quote.title}>
             {/* 910:36723 — verbatim order. */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
             <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
             <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
+            {/* (REG-639, X-Ray parity Q-12) the quote editor's kebab entry, on the row — and a phone's way into X-Ray from a lead */}
+            <DropdownItem onSelect={pick('xray')}>Compare with another quote</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
-            <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-          </Dropdown>
+            <DropdownItem disabled={!deletable} onSelect={pick('delete')}><span className={styles.danger}>Delete</span>{deletable ? null : <span className={styles.meta} title={DELETE_RULE}>creator, Owner or Admin</span>}</DropdownItem>   {/* (sweep S1) the rule's own people — Admins may too */}
+          </PortalMenu>
         </span>
         </span>
       </span>

@@ -13,7 +13,23 @@ import { revalidateLeadListings } from '@/lib/leads/queries'
    submission; the prototype records the arrival the way the platform would — as a one-row import that lands in the listing
    (a known phone goes to Review imported leads instead), source Website or Meta Ads, the primary band on the new row. */
 
-export async function setLeadCapture(patch: Partial<LeadCapture>): Promise<LeadCapture> {
+/** (REG-646, settings parity Q-07 · E-85) The page's own writes — Meta's connection and forms, the monitored email platforms — for Owners
+    and Admins only; the webhooks, their log and the sync counts are written by their own guarded actions, never through this door. */
+export async function setLeadCapture(patch: { meta?: Partial<LeadCapture['meta']>; email?: { platforms?: string[]; custom?: string[] } }): Promise<LeadCapture> {
+  await guard()
+  const email = patch.email ? { ...(patch.email.platforms ? { platforms: patch.email.platforms } : {}), ...(patch.email.custom ? { custom: patch.email.custom } : {}) } : undefined
+  return writeLeadCapture({ ...(patch.meta ? { meta: patch.meta as LeadCapture['meta'] } : {}), ...(email ? { email: email as LeadCapture['email'] } : {}) })
+}
+/** (REG-647) A webhook's label is a lead source the studio lists — added (live) when it is not one yet, so its leads never carry an off-list source. */
+async function ensureSource(name: string): Promise<void> {
+  const { fetchLeadSources, LEAD_SOURCES_KEY } = await import('@/lib/settings/queries')
+  const { sources } = await fetchLeadSources()
+  if (sources.some((s) => s.name.toLowerCase() === name.toLowerCase())) return
+  const next = [...sources.filter((s) => s.name !== 'Others'), { name: name.slice(0, 40), retired: false }, ...sources.filter((s) => s.name === 'Others')].slice(0, 40)
+  await db.insert(settings).values({ key: LEAD_SOURCES_KEY, value: JSON.stringify(next), updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(next), updatedAt: new Date() } })
+  revalidatePath('/leads', 'layout')
+}
+async function writeLeadCapture(patch: Partial<LeadCapture>): Promise<LeadCapture> {
   const cur = await fetchLeadCapture()
   const next = parseLeadCapture({ ...cur, ...patch, meta: { ...cur.meta, ...(patch.meta ?? {}) }, email: { ...cur.email, ...(patch.email ?? {}) } })
   await db.insert(settings).values({ key: LEAD_CAPTURE_KEY, value: JSON.stringify(next), updatedAt: new Date() })
@@ -26,7 +42,7 @@ export type Arrival = { name: string; phone: string; email?: string; propertyTyp
 
 /** An incoming lead from the website form (`email`), a Meta form (`meta`), a webhook POST (`webhook`, REG-612) or an ingested
  *  platform email (`gmail`, REG-612): recorded as an import and added to the listing. `via` = the webhook's label or the sender domain. */
-export async function captureLead(channel: 'email' | 'meta' | 'webhook' | 'gmail', arrival: Arrival, formName?: string, via?: string): Promise<{ importId: string; approved: number; flagged: number }> {
+async function captureLead(channel: 'email' | 'meta' | 'webhook' | 'gmail', arrival: Arrival, formName?: string, via?: string): Promise<{ importId: string; approved: number; flagged: number }> {
   const capture = await fetchLeadCapture()
   if (channel === 'meta' && !capture.meta.connected) throw new Error('Meta is not connected')
   if (channel === 'gmail' && !capture.email.connected) throw new Error('Gmail is not connected')
@@ -48,6 +64,7 @@ const SAMPLE_ARRIVALS: Arrival[] = [
   { name: 'Marcus Ong', phone: '97720186', email: 'marcus.ong@example.com', propertyType: 'Executive Condo', address: 'Parc Canberra', budget: '110000', message: 'Whole-unit renovation, family of four, timeline three months.' },
 ]
 export async function simulateArrival(channel: 'email' | 'meta', formName?: string): Promise<{ name: string; approved: number; flagged: number; importId: string }> {
+  await guard()   // (REG-646) the demo's triggers are the studio runners', as the pages offer them
   const pick = SAMPLE_ARRIVALS[Math.floor(Math.random() * SAMPLE_ARRIVALS.length)]!
   const r = await captureLead(channel, pick, formName)
   return { name: pick.name, ...r }
@@ -64,7 +81,8 @@ export async function createWebhook(input: { platform: WebhookPlatform; label?: 
   const platform = WEBHOOK_PLATFORMS.find((p) => p.key === input.platform) ?? WEBHOOK_PLATFORMS[0]!
   const key = platform.key === 'google_ads' ? hex(24) : null
   const webhook: Webhook = { id: randomUUID(), platform: platform.key, label: (input.label ?? '').trim().slice(0, 80) || platform.defaultLabel, notes: (input.notes ?? '').trim().slice(0, 200), token: hex(24), key, received: 0, created: 0, duplicates: 0, lastAt: null, active: true, createdAt: Date.now() }
-  await setLeadCapture({ webhooks: [webhook, ...cur.webhooks] })
+  await writeLeadCapture({ webhooks: [webhook, ...cur.webhooks] })
+  await ensureSource(webhook.label)   // (REG-647, settings parity Q-12) its leads carry the label as their source — one of the studio's own
   return { webhook, key }
 }
 export async function regenerateWebhook(id: string): Promise<Webhook | null> {
@@ -72,16 +90,17 @@ export async function regenerateWebhook(id: string): Promise<Webhook | null> {
   const cur = await fetchLeadCapture()
   let out: Webhook | null = null
   const webhooks = cur.webhooks.map((w) => (w.id === id && w.active ? (out = { ...w, token: hex(24), key: w.platform === 'google_ads' ? hex(24) : null }) : w))
-  await setLeadCapture({ webhooks })
+  await writeLeadCapture({ webhooks })
   return out
 }
 export async function revokeWebhook(id: string): Promise<void> {
   await guard()
   const cur = await fetchLeadCapture()
-  await setLeadCapture({ webhooks: cur.webhooks.map((w) => (w.id === id ? { ...w, active: false } : w)) })
+  await writeLeadCapture({ webhooks: cur.webhooks.map((w) => (w.id === id ? { ...w, active: false } : w)) })
 }
 /** The demo's POST: a sample arrival through the endpoint — the counters and the log move as the platform's would. */
 export async function simulateWebhook(id: string): Promise<{ name: string; outcome: 'created' | 'duplicate' }> {
+  await guard()
   const cur = await fetchLeadCapture()
   const w = cur.webhooks.find((x) => x.id === id && x.active)
   if (!w) throw new Error('no such webhook')
@@ -89,7 +108,7 @@ export async function simulateWebhook(id: string): Promise<{ name: string; outco
   const r = await captureLead('webhook', pick, undefined, w.label)
   const outcome: 'created' | 'duplicate' = r.flagged > 0 ? 'duplicate' : 'created'
   const now = Date.now()
-  await setLeadCapture({
+  await writeLeadCapture({
     webhooks: cur.webhooks.map((x) => (x.id === id ? { ...x, received: x.received + 1, created: x.created + (outcome === 'created' ? 1 : 0), duplicates: x.duplicates + (outcome === 'duplicate' ? 1 : 0), lastAt: now } : x)),
     webhookLog: [{ at: now, webhookId: id, outcome, name: pick.name }, ...cur.webhookLog].slice(0, 50),
   })
@@ -102,17 +121,18 @@ export async function connectGmail(): Promise<LeadCapture> {
   await guard()
   const studio = await fetchStudio()
   const slug = studio.name.toLowerCase().replace(/pte\.? ltd\.?/g, '').replace(/[^a-z0-9]+/g, '').slice(0, 24) || 'studio'
-  return setLeadCapture({ email: { connected: true, address: `leads@${slug}.sg`, lastSyncAt: null } as Partial<LeadCapture['email']> as LeadCapture['email'] })
+  return writeLeadCapture({ email: { connected: true, address: `leads@${slug}.sg`, lastSyncAt: null } as Partial<LeadCapture['email']> as LeadCapture['email'] })
 }
 export async function disconnectGmail(): Promise<LeadCapture> {
   await guard()
-  return setLeadCapture({ email: { connected: false } as Partial<LeadCapture['email']> as LeadCapture['email'] })
+  return writeLeadCapture({ email: { connected: false } as Partial<LeadCapture['email']> as LeadCapture['email'] })
 }
 export async function setEmailPlatforms(platforms: string[], custom: string[]): Promise<LeadCapture> {
   await guard()
-  return setLeadCapture({ email: { platforms, custom } as Partial<LeadCapture['email']> as LeadCapture['email'] })
+  return writeLeadCapture({ email: { platforms, custom } as Partial<LeadCapture['email']> as LeadCapture['email'] })
 }
 export async function syncGmail(): Promise<{ name: string; platform: string; outcome: 'created' | 'duplicate' }> {
+  await guard()
   const cur = await fetchLeadCapture()
   if (!cur.email.connected) throw new Error('Gmail is not connected')
   const platforms = [...cur.email.platforms, ...cur.email.custom]
@@ -122,6 +142,6 @@ export async function syncGmail(): Promise<{ name: string; platform: string; out
   const r = await captureLead('gmail', pick, undefined, platform)
   const outcome: 'created' | 'duplicate' = r.flagged > 0 ? 'duplicate' : 'created'
   const s = cur.email.stats
-  await setLeadCapture({ email: { ...cur.email, lastSyncAt: Date.now(), stats: { found: s.found + 1, created: s.created + (outcome === 'created' ? 1 : 0), duplicates: s.duplicates + (outcome === 'duplicate' ? 1 : 0), failed: s.failed } } })
+  await writeLeadCapture({ email: { ...cur.email, lastSyncAt: Date.now(), stats: { found: s.found + 1, created: s.created + (outcome === 'created' ? 1 : 0), duplicates: s.duplicates + (outcome === 'duplicate' ? 1 : 0), failed: s.failed } } })
   return { name: pick.name, platform, outcome }
 }

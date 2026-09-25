@@ -1,10 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ago } from '@/lib/templates/ago'
@@ -26,13 +28,17 @@ const CHANNEL_WORD: Record<string, string> = { email: 'email', whatsapp: 'WhatsA
  */
 export function NotificationsPanel() {
   const router = useRouter()
+  const pathname = usePathname()   // (REG-645) Settings' Back returns to the page the bell was opened on
   const snackbar = useSnackbar()
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<FeedRow[] | null>(null)
+  const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(0)
+  /* (sweep S4 #10) a failed first load says so with a retry — never "Loading…" for ever; a failed refresh keeps what was shown and says so */
   const load = useCallback(async () => {
+    setFailed(false)
     try { const r = await fetchFeedAction(); setRows(r.rows); setNow(Date.now()) }
-    catch { snackbar({ message: 'Couldn’t load notifications — please try again' }) }
+    catch { setFailed(true); snackbar({ message: 'Couldn’t load the notifications — please try again' }) }
   }, [snackbar])
   useEffect(() => {
     const onOpen = () => { setOpen(true); void load() }
@@ -42,21 +48,31 @@ export function NotificationsPanel() {
   const unread = rows?.filter((r) => r.readAt === null).length ?? 0
   const openRow = (r: FeedRow) => {
     setOpen(false)
-    if (!r.derived && r.readAt === null) { setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: Date.now() } : x)) ?? rs); void markNotificationRead(r.id).then(() => router.refresh()) }
+    if (!r.derived && r.readAt === null) {
+      setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: Date.now() } : x)) ?? rs)
+      void markNotificationRead(r.id).then(() => router.refresh(), () => setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: null } : x)) ?? rs))   // (sweep S4 #10) a refused mark stays unread
+    }
     if (r.href) router.push(r.href)
   }
+  /* (sweep S4 #8) Mark all as read reads the notices; a follow-up that is due is work, not a notice — it stays until the work is done, and the
+     snackbar says so instead of "All caught up" beside it. A due row wears "Due", never the unread dot it could not lose. */
   const readAll = () => {
+    const prev = rows
+    const due = rows?.filter((x) => x.derived).length ?? 0
     setRows((rs) => rs?.map((x) => (x.derived ? x : { ...x, readAt: x.readAt ?? Date.now() })) ?? rs)
-    void markAllNotificationsRead().then(() => { router.refresh(); snackbar({ message: 'All caught up' }) })
+    void markAllNotificationsRead().then(
+      () => { router.refresh(); snackbar({ message: due ? `All read — ${due} ${due === 1 ? 'follow-up is' : 'follow-ups are'} due and ${due === 1 ? 'stays' : 'stay'} until done` : 'All caught up' }) },
+      () => { setRows(prev); snackbar({ message: 'Couldn’t mark the notifications as read — please try again' }) })
   }
   return (
     <Drawer open={open} onClose={() => setOpen(false)} title="Notifications" label="Notifications" width={400}
             actions={unread > 0 && rows?.some((r) => !r.derived && r.readAt === null) ? (
-              <Tooltip label="Mark all as read"><button type="button" className={styles.readAll} aria-label="Mark all as read" onClick={readAll}><Icon name="check_circle" size={24} weight={300} /></button></Tooltip>
+              <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
             ) : undefined}>
       <div className={styles.body} data-testid="notifications-panel">
         {rows === null ? (
-          <p className={styles.empty}>Loading…</p>
+          failed ? <p className={styles.empty} role="status">Couldn’t load the notifications — <button type="button" className={styles.retry} onClick={() => { void load() }}>try again</button></p>
+            : <p className={styles.empty}>Loading…</p>
         ) : rows.length === 0 ? (
           <div className={styles.emptyState}>
             <span className={styles.emptyGlyph}><Icon name="notifications" size={40} weight={300} /></span>
@@ -77,7 +93,7 @@ export function NotificationsPanel() {
                       {r.body ? <span className={styles.sub}>{r.body}</span> : null}
                       <span className={styles.meta}>{r.derived ? 'Due' : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
                     </span>
-                    {r.readAt === null ? <span className={styles.dot} aria-label="Unread" /> : null}
+                    {r.readAt === null && !r.derived ? <span className={styles.dot} aria-label="Unread" /> : null}
                   </button>
                 </li>
               )
@@ -86,7 +102,7 @@ export function NotificationsPanel() {
         )}
       </div>
       <div className={styles.foot}>
-        <Button appearance="text" onPress={() => { setOpen(false); router.push('/settings?section=notifications') }}>Notification settings</Button>
+        <Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button>
       </div>
     </Drawer>
   )

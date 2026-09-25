@@ -29,7 +29,13 @@ export async function markAllNotificationsRead(): Promise<void> {
   await db.update(notifications).set({ readAt: new Date() }).where(and(eq(notifications.memberId, m.id), isNull(notifications.readAt)))
   touch()
 }
+/** (REG-646, settings parity Q-07) The studio's notification rules and messages are its Owners' and Admins' to change, on the server too (E-84). */
+async function assertRunsStudio(): Promise<void> {
+  const m = await me()
+  if (m.role !== 'Owner' && m.role !== 'Admin') throw new Error('owners and admins only')
+}
 export async function setNotificationRules(patch: Partial<NotificationRules>): Promise<NotificationRules> {
+  await assertRunsStudio()
   const cur = await fetchNotificationRules()
   const next = parseRules({ ...cur, ...patch, channels: { ...cur.channels, ...(patch.channels ?? {}) } })
   await db.insert(settings).values({ key: RULES_KEY, value: JSON.stringify(next), updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(next), updatedAt: new Date() } })
@@ -37,6 +43,7 @@ export async function setNotificationRules(patch: Partial<NotificationRules>): P
   return next
 }
 export async function setMessageTemplate(t: MessageTemplate): Promise<MessageTemplate[]> {
+  await assertRunsStudio()
   const cur = await fetchMessageTemplates()
   const next = parseTemplates(cur.map((x) => (x.event === t.event && x.channel === t.channel ? t : x)))
   await db.insert(settings).values({ key: TEMPLATES_KEY, value: JSON.stringify(next), updatedAt: new Date() }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(next), updatedAt: new Date() } })

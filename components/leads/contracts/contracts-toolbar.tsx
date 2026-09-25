@@ -21,7 +21,7 @@ export type ContractsToolbarProps = {
   /** Number of active filter groups — badge on the filter button (listing pattern). */
   filterCount: number
   /** Header kebab — not mocked; the Quotes kebab (910:36729) copied: Manage Templates · Contracts Settings · Deleted Contracts. */
-  onMenu: (action: 'templates' | 'settings' | 'deleted' | 'bundle') => void
+  onMenu: (action: 'templates' | 'settings' | 'archived' | 'deleted' | 'bundle') => void
   /** (REG-591) How many documents could go together — the item is inert below two. */
   bundleCount?: number
 }
@@ -62,7 +62,7 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
             </Button>
           )}
           <Dropdown open={menu === 'new'} onClose={() => setMenu(null)} align="left" sheetTitle="New Contract">
-            <DropdownItem onSelect={pick(() => onNew('blank'))}>From Blank</DropdownItem>
+            <DropdownItem onSelect={pick(() => onNew('blank'))}>From the studio agreement</DropdownItem>   {/* (sweep S2 #20) what it makes — the full agreement, as the picker says; "From Blank" made no blank */}
             <DropdownItem onSelect={pick(() => onNew('template'))}>From Template</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('import'))}>Import from File</DropdownItem>
             <DropdownItem onSelect={pick(() => onNew('ai'))}>Create with AI</DropdownItem>
@@ -92,9 +92,10 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
           <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
             {/* (REG-591) Send together: every unsigned document of the lead under one signing link. */}
-            <DropdownItem disabled={bundleCount < 2} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
+            <DropdownItem disabled={bundleCount < 2} onSelect={pick(() => onMenu('bundle'))}>Send together for signature{bundleCount < 2 ? <span className={styles.menuMeta}>needs two documents ready to go</span> : null}</DropdownItem>   {/* (sweep S2 #23) greyed with its reason */}
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
+            <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Contracts</DropdownItem>   {/* (sweep S2 · U-07) */}
             <DropdownItem onSelect={pick(() => onMenu('deleted'))}>Deleted Contracts</DropdownItem>
           </Dropdown>
         </span>

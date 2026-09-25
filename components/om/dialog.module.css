@@ -5,7 +5,7 @@
   background: var(--om-color-overlay-60p);   /* the mock's scrim (780:91936 Overlay = overlay/60p), as every other modal */
   display: flex; align-items: center; justify-content: center;
 }
-.overlay[data-nested] { background: var(--om-color-overlay-20p); }   /* second scrim layered over an open modal (Move stage window) */
+.overlay[data-nested] { background: var(--om-color-overlay-20p); z-index: 120; }   /* second scrim layered over an open modal (Move stage window) — (REG-617) and over a phone sheet (z 115), which it used to open under */
 .dialog {
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);

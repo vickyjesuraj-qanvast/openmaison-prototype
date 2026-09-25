@@ -16,6 +16,8 @@ import { DEMO_BADGES, stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import styles from '../profile-view.module.css'
+import { ReadOnlyScope } from '@/components/om/read-only'
+import { ReadOnlyNote } from '@/components/company/read-only-note'
 
 const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular', value: 400 }, { label: 'Semibold', value: 600 }, { label: 'Bold', value: 700 }]
 
@@ -25,7 +27,7 @@ const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular'
  * of Templates, beside the kinds that inherit it. The company details it prints stay under Company › Profile. Saved as
  * one record with them (`settings` key `brand`); the default template's first page on the right redraws as you edit.
  */
-export function BrandKitView({ brand, previewDesign, previewName, sample, from }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string }) {
+export function BrandKitView({ brand, previewDesign, previewName, sample, from, canRun = true }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean }) {
   const snackbar = useSnackbar()
   const [kit, setKit] = useState<BrandKit>(brand.kit)
   const [saved, setSaved] = useState<BrandKit>(brand.kit)
@@ -38,7 +40,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from }
 
   const save = async () => {
     setBusy(true)
-    try { await saveBrand({ kit, details }); setSaved(kit); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
+    try { await saveBrand({ kit });   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
     catch { snackbar({ message: 'Couldn’t save the brand kit — please try again' }) }
     finally { setBusy(false) }
   }
@@ -62,10 +64,12 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from }
   }, [dirty])
 
   return (
-    <CompanyShell title="Templates" tabs={templateTabs()} from={from} actions={<>
+    <CompanyShell title="Templates" tabs={templateTabs()} from={from} form actions={!canRun ? null : <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </>}>
+      {canRun ? null : <ReadOnlyNote />}
+      <ReadOnlyScope readOnly={!canRun}>
       <div className={styles.layout} data-testid="brand-kit">
         <div className={styles.form}>
           <p className={styles.lead}>Every template starts from this kit — its logo, stamp, badges, colours and type. Change one thing here and every template that uses it follows. A template can still differ on its own Brand tab.</p>
@@ -164,6 +168,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from }
           </Tooltip>
         </aside>
       </div>
+      </ReadOnlyScope>
     </CompanyShell>
   )
 }

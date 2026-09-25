@@ -9,28 +9,8 @@
 .title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
 
-/* Breadcrumb row (931:39719, H g12): arrow_back 24/Light ink · crumb (H g4) · more_vert 20/Light secondary. */
+/* Breadcrumb row (931:39719): the shared crumb lives in components/om/folders/folder-crumbs (REG-664); this box keeps its place in the bar. */
 .crumbRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }
-.back {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); flex-shrink: 0;
-  transition: background-color var(--motion-hover);
-}
-.back:hover { background: var(--om-color-hover-08p); }
-.back:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.crumb { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
-.crumbRoot { font: var(--om-type-body-l); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "All Files" · "/" 16/Regular #666666 */
-.crumbTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }   /* folder name 16/Bold */
-/* Folder kebab: bare more_vert 20/Light secondary (931:39719) — the attach-files modal's .folderKebab, copied. */
-.folderKebab {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
-  transition: background-color var(--motion-hover);
-}
-.folderKebab:hover { background: var(--om-color-hover-08p); }
-.folderKebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* Menu anchors (New File button · folder kebab · header kebab) — the Dropdown positions itself against these. */
 .menuWrap { position: relative; display: inline-flex; }
@@ -80,8 +60,6 @@
    36 is the DS size and the box IS the mark there, so it grows with the target. Desktop never enters.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .back { width: 44px; height: 44px; margin: -10px; }
-  .folderKebab { width: 44px; height: 44px; margin: -12px; }
   /* `min-*` beats the DS `width/height: 36px` whatever the selector's specificity. */
   .touchBtn { min-width: 44px; min-height: 44px; }
   .viewToggle button { min-width: 44px; min-height: 44px; }

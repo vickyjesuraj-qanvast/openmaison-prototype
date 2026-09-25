@@ -18,6 +18,10 @@ import { TEXT_LABEL, TOKENS, textPreview, tokenText, type TextKind } from '@/lib
 import { createTextTemplate, deleteTextTemplate, updateTextTemplate } from '@/app/quotes/text-actions'
 import { RichEditor, type RichEditorHandle } from './rich-editor'
 import styles from './templates-modal.module.css'
+import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
+import { FolderPickRow } from '@/components/om/folders/folder-pick-row'
+import { useFolderBrowse } from '@/components/om/folders/use-folder-browse'
+import type { FolderNode } from '@/lib/folders'
 
 /**
  * My Templates (1238:33084 empty · 1238:33258 list · 1238:33173 New Template; REG-420): the L 800 modal titled
@@ -37,7 +41,7 @@ const previewOf = (t: QuoteTextTemplate) => {
   return more || line !== rest ? `${line}…` : line
 }
 
-export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTemplates }: {
+export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTemplates, folders = [] }: {
   open: boolean
   kind: TextKind
   templates: QuoteTextTemplate[]
@@ -45,6 +49,8 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   /** The template's body, ready to append — the host resolves the tokens. */
   onAdd: (t: QuoteTextTemplate) => void
   onTemplates: (next: QuoteTextTemplate[]) => void
+  /** (REG-664) T&Cs & Notes' folders — the library is browsed as Company › Templates files it. */
+  folders?: FolderNode[]
 }) {
   const { run } = useRun()
   const router = useRouter()
@@ -57,14 +63,17 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   const tokenRef = useRef<HTMLButtonElement>(null)
   const editor = useRef<RichEditorHandle>(null)
   const label = TEXT_LABEL[kind]
-  const shown = templates.filter((t) => !query.trim() || t.title.toLowerCase().includes(query.trim().toLowerCase()))   // Search matches titles — a body match would light up templates whose text merely mentions the word
+  const browse = useFolderBrowse(folders, templates, { query })
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) { setWasOpen(open); if (open) browse.go(null) }   // every opening starts at the top
+  const shown = browse.hereEntries.filter((t) => !query.trim() || t.title.toLowerCase().includes(query.trim().toLowerCase()))   // Search matches titles — a body match would light up templates whose text merely mentions the word
   const close = () => { setEditing(null); setMenuFor(null); onClose() }
 
   const save = (andAdd: boolean) => {
     const e = editing
     if (!e || !e.title.trim()) return
     void run('save the template', async () => {
-      const row = e.id ? await updateTextTemplate(e.id, e.title, e.body) : await createTextTemplate(kind, e.title, e.body)
+      const row = e.id ? await updateTextTemplate(e.id, e.title, e.body) : await createTextTemplate(kind, e.title, e.body, browse.finding ? null : browse.openAt)
       onTemplates(e.id ? templates.map((t) => (t.id === row.id ? row : t)) : [...templates, row])
       setEditing(null)
       if (andAdd) { onAdd(row); onClose() }
@@ -115,18 +124,20 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
                   <Button onPress={() => setEditing({ id: null, title: '', body: '' })}>Create New</Button>
                 </div>
               }>
-        {shown.length === 0 ? (
+        {!browse.finding && browse.openAt ? <FolderCrumbs root="My Templates" trail={browse.trail} onGo={browse.go} /> : null}
+        {shown.length === 0 && browse.hereFolders.length === 0 ? (
           <div className={styles.empty} role="status">
             <span className={styles.emptyTitle}>{templates.length ? 'No templates match' : 'No templates yet'}</span>
             <span className={styles.emptyLine}>{templates.length ? 'Try another search' : 'Create a template and you’ll see it here'}</span>
           </div>
         ) : (
           <div className={styles.list} role="list" aria-label={`${label} templates`}>
+            {browse.hereFolders.map((f) => <div key={f.id} role="listitem"><FolderPickRow name={f.name} holds={browse.holds(f, 'template', 'templates')} onOpen={() => browse.go(f.id)} /></div>)}
             {shown.map((t) => (
               <div key={t.id} className={styles.card} role="listitem">
                 <div className={styles.cardText}>
                   <span className={styles.cardTitle}>{t.title}</span>
-                  <span className={styles.cardLine}>{previewOf(t)}</span>
+                  <span className={styles.cardLine}>{browse.where(t) ? `${browse.where(t)} · ` : ''}{previewOf(t)}</span>
                 </div>
                 <div className={styles.cardActions}>
                   <Button variant="primary" appearance="outlined" onPress={() => { onAdd(t); onClose() }}>Add</Button>

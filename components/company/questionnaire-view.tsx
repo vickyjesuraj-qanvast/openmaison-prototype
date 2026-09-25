@@ -12,6 +12,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell } from './company-shell'
+import { ReadOnlyNote } from './read-only-note'
 import { runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import type { StudioScopeQuestion } from '@/lib/db/schema'
 import { BANK_TYPES, BANK_TYPE_LABELS, isBankType, needsOptions, parseBankOptions, type BankType } from '@/lib/company/question-bank'
@@ -35,25 +36,32 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
   const canEdit = runsStudio(viewer.role)
   const [editing, setEditing] = useState<{ q: StudioScopeQuestion | null } | null>(null)   // { q: null } = a new question
   const [deleting, setDeleting] = useState<StudioScopeQuestion | null>(null)
-  const run = async (fn: () => Promise<unknown>, done: string) => { try { await fn(); snackbar({ message: done }); router.refresh() } catch { snackbar({ message: 'Couldn’t save — please try again' }) } }
+  /* (sweep S4 #11 · #28) Every optimistic change is put back when the server refuses it, and the refusal names what failed. */
+  const run = async (what: string, fn: () => Promise<unknown>, done: string, prev?: typeof rows): Promise<boolean> => {
+    try { await fn(); snackbar({ message: done }); router.refresh(); return true }
+    catch { if (prev) setRows(prev); snackbar({ message: `Couldn’t ${what} — please try again` }); return false }
+  }
   const flag = (q: StudioScopeQuestion, patch: { enabled?: boolean; required?: boolean }) => {
+    const prev = rows
     setRows((rs) => rs.map((x) => (x.id === q.id ? { ...x, ...(patch.enabled !== undefined ? { isEnabled: patch.enabled } : {}), ...(patch.required !== undefined ? { isRequired: patch.required } : {}) } : x)))
-    void run(() => setScopeQuestionFlags(q.id, patch), patch.enabled !== undefined ? (patch.enabled ? 'Question enabled — new leads start with it' : 'Question disabled — new leads skip it') : (patch.required ? 'Marked required' : 'No longer required'))
+    void run('save the question', () => setScopeQuestionFlags(q.id, patch), patch.enabled !== undefined ? (patch.enabled ? 'Question active — new leads start with it' : 'Question inactive — new leads skip it') : (patch.required ? 'Marked required' : 'No longer required'), prev)
   }
   const move = (q: StudioScopeQuestion, dir: 'up' | 'down') => {
+    const prev = rows
     setRows((rs) => { const i = rs.findIndex((x) => x.id === q.id), j = dir === 'up' ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= rs.length) return rs; const n = [...rs]; [n[i], n[j]] = [n[j]!, n[i]!]; return n })
-    void run(() => moveScopeQuestion(q.id, dir), 'Order saved')
+    void run('move the question', () => moveScopeQuestion(q.id, dir), 'Order saved', prev)
   }
   return (
-    <CompanyShell title="Questionnaire" from={from}>
+    <CompanyShell title="Questionnaire" from={from} form>
       <div className={styles.layout} data-testid="questionnaire-bank">
+        {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins change the question bank." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="bank-title">
           <div className={styles.cardHead}>
             <div className={styles.titleRow}>
               <h2 id="bank-title" className={styles.cardTitle}>Question bank</h2>
               {canEdit ? <Button iconStart={<Icon name="add" size={20} />} onPress={() => setEditing({ q: null })}>Add question</Button> : null}
             </div>
-            <p className={styles.cardHelp}>Customise the questions homeowners answer about their project. New leads start with the enabled questions; an older lead adds them from its Questionnaire tab. Ask the client sends the lead’s questionnaire to the portal.</p>
+            <p className={styles.cardHelp}>Customise the questions homeowners answer about their project. New leads start with the active questions; an older lead adds them from its Questionnaire tab. Ask the client sends the lead’s questionnaire to the portal.</p>
           </div>
           {rows.length === 0 ? (
             <p className={styles.empty} data-testid="bank-empty">No questions yet — add the first one, and every new lead will start with it.</p>
@@ -64,7 +72,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
               <div className={styles.thead} role="row">
                 <span role="columnheader">Question</span>
                 <span role="columnheader" className={styles.col}>Required</span>
-                <span role="columnheader" className={styles.col}>Enabled</span>
+                <span role="columnheader" className={styles.col}>Active</span>   {/* (sweep S4 · U-10) one word with Settings' custom fields */}
                 <span role="columnheader" className={styles.actionsHead} aria-label="Actions" />
               </div>
               {rows.map((q, i) => {
@@ -77,7 +85,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
                       <span className={styles.meta}><MetaChip>{BANK_TYPE_LABELS[t]}</MetaChip>{opts.length ? <span className={styles.options}>{opts.join(' · ')}</span> : null}</span>
                     </span>
                     <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isRequired} isDisabled={!canEdit} aria-label={`${q.question} required`} onChange={(on: boolean) => flag(q, { required: on })} /></label></span>
-                    <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isEnabled} isDisabled={!canEdit} aria-label={`${q.question} enabled`} onChange={(on: boolean) => flag(q, { enabled: on })} /></label></span>
+                    <span className={styles.col} role="cell"><label className={styles.flag}><Switch size="sm" isSelected={q.isEnabled} isDisabled={!canEdit} aria-label={`${q.question} active`} onChange={(on: boolean) => flag(q, { enabled: on })} /></label></span>
                     <span className={styles.actions} role="cell">
                       {canEdit ? (
                         <>
@@ -101,15 +109,16 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
                         setEditing(null)
                         const options = input.options.length ? JSON.stringify(input.options) : null
                         if (q) {
+                          const prev = rows
                           setRows((rs) => rs.map((x) => (x.id === q.id ? { ...x, question: input.question, questionType: input.type, options, isRequired: input.required } : x)))
-                          await run(() => updateScopeQuestion(q.id, input), 'Question saved')
+                          await run('save the question', () => updateScopeQuestion(q.id, input), 'Question saved', prev)
                         } else {
                           /* The new row joins the list at once — the refresh confirms it. */
-                          await run(async () => { const id = await createScopeQuestion(input); setRows((rs) => [...rs, { id, question: input.question, questionType: input.type, options, isRequired: input.required, isEnabled: true, sortOrder: rs.length, createdAt: new Date() }]) }, 'Question added')
+                          await run('add the question', async () => { const id = await createScopeQuestion(input); setRows((rs) => [...rs, { id, question: input.question, questionType: input.type, options, isRequired: input.required, isEnabled: true, sortOrder: rs.length, createdAt: new Date() }]) }, 'Question added')
                         }
                       }} />
       <ConfirmDialog open={!!deleting} title="Delete this question?" message={deleting ? `“${deleting.question}” leaves the bank. Leads that already carry it keep their copy.` : undefined} confirmLabel="Delete"
-                     onCancel={() => setDeleting(null)} onConfirm={() => { const q = deleting; setDeleting(null); if (q) { setRows((rs) => rs.filter((x) => x.id !== q.id)); void run(() => deleteScopeQuestion(q.id), 'Question deleted') } }} />
+                     onCancel={() => setDeleting(null)} onConfirm={() => { const q = deleting; setDeleting(null); if (q) { const prev = rows; setRows((rs) => rs.filter((x) => x.id !== q.id)); void run('delete the question', () => deleteScopeQuestion(q.id), 'Question deleted', prev) } }} />
     </CompanyShell>
   )
 }
@@ -141,7 +150,7 @@ function QuestionDialog({ open, question, onClose, onSave }: { open: boolean; qu
           {options.map((o, i) => (
             <div key={i} className={styles.optionRow}>
               <TextField label={`Option ${i + 1}`} value={o} onChange={(v) => setOptions((os) => os.map((x, j) => (j === i ? v : x)))} maxLength={60} trailingIcon={null} />
-              <IconButton icon="close" label={`Remove option ${i + 1}`} size={24} variant="bare" iconSize={16} disabled={options.length <= 1} onClick={() => setOptions((os) => os.filter((_, j) => j !== i))} />
+              <Tooltip label="Remove this option"><IconButton icon="close" label={`Remove option ${i + 1}`} size={24} variant="bare" iconSize={16} disabled={options.length <= 1} onClick={() => setOptions((os) => os.filter((_, j) => j !== i))} /></Tooltip>
             </div>
           ))}
           {pressed && errOpts ? <span className={styles.error} role="alert">{errOpts}</span> : null}

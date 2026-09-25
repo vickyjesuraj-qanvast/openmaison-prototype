@@ -2,7 +2,7 @@
  * "What your client sees" (REG-490, the Houzz preview panel done our way): the client-facing switches a quote can turn
  * per quote, seeded from its template. Cost and markup are never among them. Client-safe.
  */
-import type { ItemsBlock, ItemsColumnKey, TemplateDesign } from './model'
+import { ITEM_COLUMN_KEYS, type ItemsBlock, type ItemsColumnKey, type TemplateDesign } from './model'
 
 export type ClientView = {
   columns: Record<ItemsColumnKey, boolean>
@@ -27,7 +27,7 @@ export const AMOUNTS_LABEL: Record<ClientView['amounts'], string> = { lines: 'A 
 /** The template's own client view — what its blocks print. */
 export function clientViewFromDesign(design: TemplateDesign): ClientView {
   const items = design.blocks.find((b): b is ItemsBlock => b.kind === 'items')
-  const columns = Object.fromEntries((['no', 'item', 'qty', 'unit', 'qtyUnit', 'unitPrice', 'discount', 'total'] as ItemsColumnKey[]).map((k) => [k, items?.columns.find((c) => c.key === k)?.on ?? false])) as ClientView['columns']
+  const columns = Object.fromEntries((ITEM_COLUMN_KEYS as readonly ItemsColumnKey[]).map((k) => [k, items?.columns.find((c) => c.key === k)?.on ?? false])) as ClientView['columns']
   const has = (kind: string) => design.blocks.some((b) => b.kind === kind && !b.hidden)
   const totals = design.blocks.find((b) => b.kind === 'totals')
   return {

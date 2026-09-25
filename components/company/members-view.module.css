@@ -1,5 +1,5 @@
 /* Company › Members (REG-601): Profile's card shell, one row per member. */
-.layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); max-width: 1040px; }
+.layout { display: flex; flex-direction: column; gap: var(--om-spacing-6); }   /* (REG-661, owner 2026-09-25) the content's full width, as Profile and Settings — a 1040 cap left half a wide screen empty */
 .card { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-5); }
 .cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .cardTitle { margin: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
@@ -13,7 +13,15 @@
 .field { min-width: 0; }
 .team { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-@media (max-width: 1024px) { .row { grid-template-columns: 40px minmax(160px, 1fr) 170px 200px 80px; } }
+/* (sweep S4 #3) 768–1024: one line was wider than the card ("n leads" clipped) — the row takes two lines: who and their leads, then the two fields */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .row:not(.inactiveRow) { grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) auto; row-gap: var(--om-spacing-3); }
+  .row:not(.inactiveRow) > .who { grid-column: 2 / 4; grid-row: 1; }
+  .row:not(.inactiveRow) > .count { grid-column: 4; grid-row: 1; }
+  .row:not(.inactiveRow) > .field:nth-child(3) { grid-column: 2; grid-row: 2; }
+  .row:not(.inactiveRow) > .field:nth-child(4) { grid-column: 3 / -1; grid-row: 2; }
+  .row:not(.inactiveRow) > :first-child { grid-row: 1; align-self: center; }
+}
 @media (max-width: 767px) {
   .card { padding: var(--om-spacing-4); }
   .row { grid-template-columns: 40px minmax(0, 1fr); grid-auto-rows: auto; row-gap: var(--om-spacing-3); }
@@ -27,3 +35,13 @@
 .switchLabel { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); cursor: pointer; flex-shrink: 0; }
 .prefSummary { flex: 1; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 767px) { .prefRow { flex-wrap: wrap; } .prefSummary { flex-basis: 100%; white-space: normal; } }
+
+/* (REG-646, settings parity Q-06) A deactivated member's row — name, role and since when, their leads, Reactivate — and the Add member form. */
+.inactiveRow { grid-template-columns: 40px minmax(200px, 1fr) 90px auto; }
+.inactiveRow .name { color: var(--om-color-on-surface-secondary); }
+.addForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); align-items: start; }
+@media (max-width: 767px) {
+  .inactiveRow { grid-template-columns: 40px minmax(0, 1fr); }
+  .inactiveRow > :nth-child(n + 3) { grid-column: 2; justify-self: start; }
+  .addForm { grid-template-columns: minmax(0, 1fr); }
+}

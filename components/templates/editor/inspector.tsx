@@ -7,7 +7,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { BLOCK_ICON, BLOCK_LABEL, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, type Align, type Block, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
+import { BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_LABEL, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, type Align, type Block, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import { defaultElement, duplicateBlock, flowBlocks, moveBlock, patchBlock, patchElement, removeBlock } from './editor-state'
@@ -15,14 +15,14 @@ import { ColorPick, Field, Group, Num, Seg, Sel, StyleEditor, Sub, Sw, Txt } fro
 import styles from './inspector.module.css'
 
 export type DesignSetter = (fn: (d: TemplateDesign) => TemplateDesign, opts?: { coalesce?: string }) => void
-type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string> }
+type Props = { design: TemplateDesign; brand: BrandKit; selection: Selection; onDesign: DesignSetter; onSelect: (s: Selection) => void; /** (REG-542) the host removes with an Undo snackbar */ onDeleteBlock?: (id: string) => void; onDeleteElement?: (blockId: string, elId: string) => void; /** (REG-618, parity Q-19) the host resets a block to a new block's settings, with an Undo snackbar */ onResetBlock?: (id: string) => void; /** (REG-569) the quote on the page: a field in a text shows what it prints as */ values?: Record<string, string> }
 
 const ALIGN_OPTS: { value: Align; label: string; icon: string }[] = [{ value: 'left', label: 'Left', icon: 'format_align_left' }, { value: 'center', label: 'Centre', icon: 'format_align_center' }, { value: 'right', label: 'Right', icon: 'format_align_right' }]
-const ELEMENT_KINDS: CanvasElement['kind'][] = ['text', 'image', 'kv', 'rule', 'box', 'signature', 'badges', 'pageno']
-const ELEMENT_ICON: Record<CanvasElement['kind'], string> = { text: 'text_fields', image: 'image', kv: 'list_alt', rule: 'horizontal_rule', box: 'rectangle', signature: 'draw', badges: 'verified', pageno: 'tab' }
+const ELEMENT_KINDS: CanvasElement['kind'][] = ['text', 'image', 'kv', 'rule', 'box', 'signature', 'badges', 'pageno', 'social']
+const ELEMENT_ICON: Record<CanvasElement['kind'], string> = { text: 'text_fields', image: 'image', kv: 'list_alt', rule: 'horizontal_rule', box: 'rectangle', signature: 'draw', badges: 'verified', pageno: 'tab', social: 'share' }
 const htmlToText = (h: string) => h.replace(/<\/p>\s*<p[^>]*>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
 const textToHtml = (t: string) => t.split('\n').map((l) => `<p>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`).join('')
-const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')[0] : e.kind === 'kv' ? e.rows.map((r) => r.label).filter(Boolean).join(' · ') : e.kind === 'image' ? (e.src === 'logo' || e.src === 'logo-dark' ? 'Logo' : e.src === 'stamp' ? 'Stamp' : 'Picture') : e.kind === 'pageno' ? '' : e.kind === 'signature' ? `${e.columns.length} columns` : ''
+const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')[0] : e.kind === 'kv' ? e.rows.map((r) => r.label).filter(Boolean).join(' · ') : e.kind === 'image' ? (e.src === 'logo' || e.src === 'logo-dark' ? 'Logo' : e.src === 'stamp' ? 'Stamp' : 'Picture') : e.kind === 'pageno' ? '' : e.kind === 'signature' ? `${e.columns.length} columns` : e.kind === 'social' ? e.networks.map((k) => SOCIAL_LABEL[k]).join(' · ') : ''
 
 /**
  * The inspector (REG-486; 5b/5c corrected): what the selected block or element can change — the five controls that
@@ -30,7 +30,7 @@ const elementText = (e: CanvasElement) => e.kind === 'text' ? e.text.split('\n')
  */
 const TOTAL_LINE_LABEL: Record<string, string> = { pages: 'Page totals', subtotal: 'Subtotal', discount: 'Line discounts', additional: 'Additional discount', gst: 'GST', total: 'Grand total' }
 
-export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, values }: Props) {
+export function Inspector({ design, brand, selection, onDesign, onSelect, onDeleteBlock, onDeleteElement, onResetBlock, values }: Props) {
   const block = design.blocks.find((b) => b.id === selection?.blockId) ?? null
   if (!block) {
     /* (REG-542) The resting state says what to do in three plain steps — "Inspector" meant nothing to a studio owner. */
@@ -51,10 +51,10 @@ export function Inspector({ design, brand, selection, onDesign, onSelect, onDele
   }
   const element = isCanvas(block) && selection?.elementId ? block.elements.find((e) => e.id === selection.elementId) ?? null : null
   if (element && isCanvas(block)) return <ElementInspector block={block} element={element} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteElement} values={values} />
-  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} values={values} />
+  return <BlockInspector block={block} design={design} brand={brand} onDesign={onDesign} onSelect={onSelect} onDelete={onDeleteBlock} onReset={onResetBlock} values={values} />
 }
 
-function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, values }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; values?: Record<string, string> }) {
+function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete, onReset, values }: { block: Block; design: TemplateDesign; brand: BrandKit; onDesign: DesignSetter; onSelect: (s: Selection) => void; onDelete?: (id: string) => void; onReset?: (id: string) => void; values?: Record<string, string> }) {
   const upd = (patch: Record<string, unknown>, coalesce?: string) => onDesign((d) => patchBlock(d, b.id, (x) => ({ ...x, ...patch }) as Block), coalesce ? { coalesce: `${b.id}:${coalesce}` } : undefined)
   const style = (key: string, label: string, more = false) => <StyleEditor label={label} value={(b as unknown as Record<string, TextStyle>)[key] ?? {}} onChange={(s) => upd({ [key]: s })} brand={brand} more={more} />
   const flow = flowBlocks(design)
@@ -78,21 +78,21 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
       </div>
       <div className={styles.body}>
         <div className={styles.grid}>
-          {canvas ? <CanvasFields block={b} brand={brand} upd={upd} onDesign={onDesign} onSelect={onSelect} /> : null}
+          {canvas ? <CanvasFields block={b} brand={brand} upd={upd} onDesign={onDesign} onSelect={onSelect} onReset={onReset} /> : null}
           {b.kind === 'details' ? <>
             <Seg label="Layout" value={b.layout} options={[{ value: 'columns', label: 'Two columns' }, { value: 'stacked', label: 'One column' }, { value: 'form', label: 'Form lines' }]} onChange={(v) => upd({ layout: v })} />
             <Num label="Label width" unit="mm" value={b.labelWidth} min={8} max={80} onChange={(v) => upd({ labelWidth: v })} wide />
             <KvRows label="Left column" rows={b.left} onChange={(rows) => upd({ left: rows }, 'left')} values={values} />
             <KvRows label="Right column" rows={b.right} onChange={(rows) => upd({ right: rows }, 'right')} values={values} />
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Values')}{style('labelStyle', 'Labels')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'title' ? <>
             <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
             <Txt label="Subject line" value={b.subject} onChange={(v) => upd({ subject: v }, 'subject')} values={values} />
             <Txt label="Introduction" value={b.intro} multiline onChange={(v) => upd({ intro: v }, 'intro')} values={values} />
-            <Group title="More options"><Sub>Text styles</Sub>{style('titleStyle', 'Title')}{style('subjectStyle', 'Subject')}{style('introStyle', 'Introduction')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('titleStyle', 'Title')}{style('subjectStyle', 'Subject')}{style('introStyle', 'Introduction')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
-          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} /> : null}
+          {b.kind === 'items' ? <ItemsFields b={b} upd={upd} style={style} onReset={onReset} /> : null}
           {b.kind === 'totals' ? <>
             <div className={styles.list} role="group" aria-label="Lines">
               {b.lines.map((l, i) => (
@@ -106,16 +106,18 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Seg label="Where it sits" value={b.layout} options={[{ value: 'right', label: 'On the right' }, { value: 'full', label: 'Full width' }]} onChange={(v) => upd({ layout: v })} />
             {b.layout === 'right' ? <Num label="Width" unit="mm" value={b.width} min={40} max={200} onChange={(v) => upd({ width: v })} wide /> : null}
             <Sel label="Lines" value={b.rules} options={[{ value: 'none', label: 'None' }, { value: 'top', label: 'A line above the total' }, { value: 'double', label: 'A double line under the total' }, { value: 'grid', label: 'Boxed' }]} onChange={(v) => upd({ rules: v })} />
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('totalStyle', 'Grand total')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('totalStyle', 'Grand total')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'payments' ? <>
             <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
             <Seg label="Shown as" value={b.layout} options={[{ value: 'table', label: 'Table' }, { value: 'list', label: 'List' }, { value: 'cards', label: 'Cards' }]} onChange={(v) => upd({ layout: v })} />
             <Sw label="Show amounts" value={b.showAmounts} onChange={(v) => upd({ showAmounts: v })} />
             <Sw label="Show due dates" value={b.showDue} onChange={(v) => upd({ showDue: v })} />
-            <Sw label="Letter the milestones (A, B, C)" value={b.letters} onChange={(v) => upd({ letters: v })} />
+            {/* (REG-618, parity Q-16) How the milestones are marked: numbers, letters or ordinals. */}
+            <Seg label="Milestones are marked" value={b.ordinals ? 'ordinals' : b.letters ? 'letters' : 'numbers'} options={[{ value: 'numbers', label: '1 · 2 · 3' }, { value: 'letters', label: 'A · B · C' }, { value: 'ordinals', label: '1st · 2nd' }]} onChange={(v) => upd({ letters: v === 'letters', ordinals: v === 'ordinals' || undefined })} />
             <Sw label="Total line under the milestones" value={!!b.showTotal} onChange={(v) => upd({ showTotal: v })} hint="The percentages' sum and, with amounts on, the quote total" />   {/* (REG-560, T-2) */}
-            <Group title="More options"><Sw label="Title as a black band" value={b.band} onChange={(v) => upd({ band: v })} /><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Txt label="Footnote under the schedule" value={b.footnote ?? ''} multiline onChange={(v) => upd({ footnote: v || undefined }, 'footnote')} values={values} />   {/* (REG-618, parity Q-16) */}
+            <Group title="More options"><Sw label="Title as a black band" value={b.band} onChange={(v) => upd({ band: v })} /><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'bank' ? <>
             <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
@@ -123,47 +125,51 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
             <Sw label="PayNow QR" value={b.qr} onChange={(v) => upd({ qr: v })} hint="Prints when the issuing entity has a QR uploaded in Company › Profile" />
             {b.qr ? <Num label="QR size" unit="mm" value={b.qrWidth} min={12} max={60} onChange={(v) => upd({ qrWidth: v })} /> : null}
             <Sel label="Box" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
-            <span className={styles.note}>The bank, account and PayNow come from Company › Profile › Issuing entities; the quote’s Issuing Entity picks which one prints.</span>
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <span className={styles.note}>The bank, account, SWIFT and PayNow come from Company › Profile › Issuing entities; the quote’s Issuing Entity picks which one prints.</span>
+            <Group title="More options">
+              {/* (REG-618, parity Q-24) The studio's own words for each row. */}
+              <Sub>Row labels</Sub>
+              {BANK_ROWS.map((k) => <Txt key={k} label={BANK_ROW_LABEL[k]} value={b.labels?.[k] ?? BANK_ROW_LABEL[k]} fields={false} onChange={(v) => upd({ labels: { ...(b.labels ?? {}), [k]: v } }, `label-${k}`)} />)}
+              <Sub>Text styles</Sub>{style('style', 'Rows')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'terms' || b.kind === 'notes' ? <>
             <Txt label="Title" value={b.title} onChange={(v) => upd({ title: v }, 'title')} values={values} />
             <Sw label="Number the paragraphs" value={b.numbered} onChange={(v) => upd({ numbered: v })} />
             <Sw label="Box each paragraph" value={b.grid} onChange={(v) => upd({ grid: v })} />
             <span className={styles.note}>{b.kind === 'terms' ? 'The text is each quote’s Terms and Conditions section; the Defaults tab picks the template a new quote starts with.' : 'The text is each quote’s Additional Notes section.'}</span>
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Paragraphs')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Paragraphs')}{style('titleStyle', 'Title')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'signature' ? <>
             <SignatureColumns columns={b.columns} onChange={(columns) => upd({ columns }, 'columns')} values={values} />
             <Num label="Line thickness" unit="pt" value={b.lineWeight} min={0} max={4} step={0.25} onChange={(v) => upd({ lineWeight: v })} />
             <ColorPick label="Line colour" value={b.lineColor} onChange={(c) => upd({ lineColor: c ?? 'ink' })} brand={brand} />
             <Txt label="Sentence above the signatures" value={b.preamble ?? ''} onChange={(v) => upd({ preamble: v || undefined }, 'preamble')} values={values} />
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('headingStyle', 'Names')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Lines')}{style('headingStyle', 'Names')}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'text' ? <>
             <Txt label="Text" value={htmlToText(b.html)} multiline onChange={(v) => upd({ html: textToHtml(v) }, 'html')} values={values} />
             <Seg label="Box around it" value={b.box} options={[{ value: 'none', label: 'None' }, { value: 'tint', label: 'Tinted' }, { value: 'outline', label: 'Outlined' }]} onChange={(v) => upd({ box: v })} />
-            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Text', true)}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Text styles</Sub>{style('style', 'Text', true)}<Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'image' ? <>
             <ImageSource value={b.src} onChange={(src) => upd({ src })} />
             <Num label="Width" unit="mm" value={b.width} min={5} max={200} onChange={(v) => upd({ width: v })} wide />
             <Seg label="Sits on the" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} />
             <Txt label="Caption" value={b.caption ?? ''} onChange={(v) => upd({ caption: v || undefined }, 'caption')} values={values} />
-            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
           {b.kind === 'divider' ? <>
             <Num label="Thickness" unit="pt" value={b.weight} min={0.25} max={6} step={0.25} onChange={(v) => upd({ weight: v })} wide />
             <ColorPick label="Colour" value={b.color} onChange={(c) => upd({ color: c ?? 'ink' })} brand={brand} wide />
-            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
-          {b.kind === 'spacer' ? <><Num label="Height" unit="mm" value={b.height} min={1} max={200} onChange={(v) => upd({ height: v })} wide /><Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group></> : null}
+          {b.kind === 'spacer' ? <><Num label="Height" unit="mm" value={b.height} min={1} max={200} onChange={(v) => upd({ height: v })} wide /><Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group></> : null}
           {b.kind === 'pagebreak' ? <span className={styles.note}>Everything after this point starts on a new page.</span> : null}
           {b.kind === 'badges' ? <>
             <Num label="Height" unit="mm" value={b.height} min={4} max={40} onChange={(v) => upd({ height: v })} />
             <Seg label="Sit on the" value={b.align} options={ALIGN_OPTS} onChange={(v) => upd({ align: v })} wide={false} />
             <span className={styles.note}>The badges come from the brand kit — Templates › Brand kit.</span>
-            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} /></Group>
+            <Group title="More options"><Sub>Placement</Sub><BlockOptions b={b} upd={upd} onReset={onReset} /></Group>
           </> : null}
         </div>
       </div>
@@ -171,8 +177,8 @@ function BlockInspector({ block: b, design, brand, onDesign, onSelect, onDelete,
   )
 }
 
-/** Start on a new page · keep with next · space before / after · hidden (every flow block). */
-function BlockOptions({ b, upd }: { b: Block; upd: (patch: Record<string, unknown>) => void }) {
+/** Start on a new page · keep with next · space before / after · hidden (every flow block) — and (REG-618) Reset this block. */
+function BlockOptions({ b, upd, onReset }: { b: Block; upd: (patch: Record<string, unknown>) => void; onReset?: (id: string) => void }) {
   if (isCanvas(b)) return null
   return (
     <>
@@ -180,11 +186,21 @@ function BlockOptions({ b, upd }: { b: Block; upd: (patch: Record<string, unknow
       <Sw label="Keep together with what follows" value={!!b.keepWithNext} onChange={(v) => upd({ keepWithNext: v || undefined })} hint="Moves to the next page together with the part after it" />
       <Num label="Space before" unit="mm" value={b.spaceBefore ?? 0} min={0} max={100} onChange={(v) => upd({ spaceBefore: v || undefined })} />
       <Num label="Space after" unit="mm" value={b.spaceAfter ?? 0} min={0} max={100} onChange={(v) => upd({ spaceAfter: v || undefined })} />
+      {onReset ? <ResetBlock onReset={() => onReset(b.id)} /> : null}
     </>
   )
 }
 
-function CanvasFields({ block: b, brand, upd, onDesign, onSelect }: { block: CanvasBlock; brand: BrandKit; upd: (p: Record<string, unknown>) => void; onDesign: DesignSetter; onSelect: (s: Selection) => void }) {
+/** (REG-618, parity Q-19) Reset this block: back to a new block's settings — the host's snackbar offers Undo. */
+function ResetBlock({ onReset }: { onReset: () => void }) {
+  return (
+    <span className={styles.addRow}>
+      <Button appearance="text" iconStart={<Icon name="restart_alt" size={20} />} onPress={onReset}>Reset this block</Button>
+    </span>
+  )
+}
+
+function CanvasFields({ block: b, brand, upd, onDesign, onSelect, onReset }: { block: CanvasBlock; brand: BrandKit; upd: (p: Record<string, unknown>) => void; onDesign: DesignSetter; onSelect: (s: Selection) => void; onReset?: (id: string) => void }) {
   const [addOpen, setAddOpen] = useState(false)
   return (
     <>
@@ -215,7 +231,7 @@ function CanvasFields({ block: b, brand, upd, onDesign, onSelect }: { block: Can
           {ELEMENT_KINDS.map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); const el = defaultElement(k); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: [...x.elements, el] } : x))); onSelect({ blockId: b.id, elementId: el.id }) }}>{ELEMENT_LABEL[k]}</DropdownItem>)}
         </Dropdown>
       </span>
-      <Group title="More options"><Sw label="Hidden from the page" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} /></Group>
+      <Group title="More options"><Sw label="Hidden from the page" value={!!b.hidden} onChange={(v) => upd({ hidden: v || undefined })} />{onReset ? <ResetBlock onReset={() => onReset(b.id)} /> : null}</Group>
     </>
   )
 }
@@ -278,6 +294,23 @@ function ElementInspector({ block: b, element: e, brand, onDesign, onSelect, onD
           </> : null}
           {e.kind === 'pageno' ? <>
             <Txt label="Reads" value={e.format} onChange={(v) => upd({ format: v }, 'format')} values={values} />
+            {style('style', 'Style')}
+          </> : null}
+          {e.kind === 'social' ? <>
+            {/* (REG-618, parity Q-20) Which networks print — each only when Company › Profile has it. */}
+            <Field label="Networks" wide>
+              <div className={styles.list}>
+                {SOCIAL_KEYS.map((k) => (
+                  <label key={k} className={styles.row} data-off={!e.networks.includes(k) || undefined}>
+                    <Switch size="sm" isSelected={e.networks.includes(k)} onChange={(on: boolean) => upd({ networks: on ? SOCIAL_KEYS.filter((x) => x === k || e.networks.includes(x)) : e.networks.filter((x) => x !== k) })} aria-label={`Print ${SOCIAL_LABEL[k]}`} />
+                    <span className={styles.rowLabel}>{SOCIAL_LABEL[k]}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+            <Seg label="Laid out" value={e.layout} options={[{ value: 'row', label: 'In a row' }, { value: 'column', label: 'One under another' }]} onChange={(v) => upd({ layout: v })} />
+            <Num label="Space between" unit="mm" value={e.gap} min={0} max={20} step={0.5} onChange={(v) => upd({ gap: v })} />
+            <span className={styles.note}>The handles come from Company › Profile › Social links; a network left empty there prints nothing.</span>
             {style('style', 'Style')}
           </> : null}
           <Group title="Position and size" open>
@@ -353,7 +386,7 @@ function ImageSource({ value, onChange, dark }: { value: string; onChange: (src:
   )
 }
 
-function ItemsFields({ b, upd, style }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode }) {
+function ItemsFields({ b, upd, style, onReset }: { b: ItemsBlock; upd: (p: Record<string, unknown>, c?: string) => void; style: (key: string, label: string) => ReactNode; onReset?: (id: string) => void }) {
   const col = (i: number, patch: Partial<ItemsBlock['columns'][number]>) => upd({ columns: b.columns.map((c, j) => (j === i ? { ...c, ...patch } : c)) }, `col-${i}`)
   const nextAlign = (a: Align): Align => (a === 'left' ? 'center' : a === 'center' ? 'right' : 'left')
   const ALIGN_WORD: Record<Align, string> = { left: 'left', center: 'centre', right: 'right' }
@@ -362,7 +395,7 @@ function ItemsFields({ b, upd, style }: { b: ItemsBlock; upd: (p: Record<string,
       <Sel label="Group the items by" value={b.groupBy} options={[{ value: 'none', label: 'The quote’s own sections' }, { value: 'category', label: 'Trade' }, { value: 'room', label: 'Room' }, { value: 'section', label: 'Section label' }]} onChange={(v) => upd({ groupBy: v })} />
       <Sel label="Then split each by" value={b.subGroupBy} options={[{ value: 'none', label: 'Nothing' }, { value: 'room', label: 'Room' }, { value: 'category', label: 'Trade' }]} onChange={(v) => upd({ subGroupBy: v })} />
       <Seg label="Sections are marked" value={b.sectionLabel} options={[{ value: 'letters', label: 'A · B · C' }, { value: 'numbers', label: '1 · 2 · 3' }, { value: 'none', label: 'Not at all' }]} onChange={(v) => upd({ sectionLabel: v })} />
-      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ numbering: v })} />
+      <Sel label="Item numbers" value={b.numbering} options={[{ value: 'group', label: 'Start again in each section' }, { value: 'area', label: 'Start again in each room' }, { value: 'continuous', label: 'Run through the whole quote' }, { value: 'lettered', label: 'A1 · A2 · B1' }, { value: 'nested', label: '1 · 1.1 · a b c' }, { value: 'none', label: 'None' }]} onChange={(v) => upd({ numbering: v })} />
       <Sel label="Section headings" value={b.bandStyle} options={[{ value: 'grey', label: 'Grey band' }, { value: 'accent', label: 'Accent band' }, { value: 'black', label: 'Black band' }, { value: 'underlined', label: 'Underlined words' }, { value: 'inline', label: 'In the description column' }]} onChange={(v) => upd({ bandStyle: v })} />
       <Field label="Columns" wide>
         <div className={styles.list}>
@@ -401,21 +434,28 @@ function ItemsFields({ b, upd, style }: { b: ItemsBlock; upd: (p: Record<string,
         <Sel label="A line that costs nothing prints" value={b.zeroAmount} options={[{ value: 'FOC', label: 'FOC' }, { value: 'Inclusive', label: 'Inclusive' }, { value: '0.00', label: '0.00' }, { value: 'blank', label: 'Nothing' }]} onChange={(v) => upd({ zeroAmount: v })} />
         <Sel label="Items hidden from the client" value={b.hiddenItems} options={[{ value: 'omit', label: 'Left out' }, { value: 'no-price', label: 'Shown without a price' }]} onChange={(v) => upd({ hiddenItems: v })} />
         <Sw label="Sub-total under each section" value={b.subtotals} onChange={(v) => upd({ subtotals: v })} />
-        {b.subtotals ? <Txt label="Sub-total reads" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} /> : null}
+        {/* (REG-617, parity Q-21) Where the sub-total sits: after the items, in the section's heading, or both. */}
+        {b.subtotals ? <Seg label="Sub-total sits" value={b.subtotalAt ?? 'row'} options={[{ value: 'row', label: 'After the items' }, { value: 'band', label: 'In the heading' }, { value: 'both', label: 'Both' }]} onChange={(v) => upd({ subtotalAt: v })} /> : null}
+        {b.subtotals && (b.subtotalAt ?? 'row') !== 'band' ? <Txt label="Sub-total reads" value={b.subtotalLabel} fields={false} onChange={(v) => upd({ subtotalLabel: v }, 'subtotalLabel')} /> : null}
         <Sw label="One lump sum per section" value={b.lumpSum} onChange={(v) => upd({ lumpSum: v })} hint="Prints one amount per section instead of a price on every line" />
         <Sw label="A total for each page" value={b.pageTotals} onChange={(v) => upd({ pageTotals: v })} />
         {b.pageTotals ? <Txt label="Page total reads" value={b.pageTotalLabel} fields={false} onChange={(v) => upd({ pageTotalLabel: v }, 'pageTotalLabel')} /> : null}
         <Sub>Sections and pages</Sub>
-        <Sw label="Section notes" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="The note under a section's name in the quote editor prints under its heading" />
-        <Sw label="Optional works section" value={b.optionalSection} onChange={(v) => upd({ optionalSection: v })} hint="Lines marked optional print here, out of the totals" />
-        {b.optionalSection ? <Txt label="That section is called" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} /> : null}
+        <Sw label="Section notes" value={b.groupNotes} onChange={(v) => upd({ groupNotes: v })} hint="A section's own note prints under its heading; a section without one prints its trade's note from Settings › Quotes & pricing" />
+        {/* (REG-617, parity Q-11) With the Optional price column on, optional lines stay in their sections — the Optional works section has nothing left to print. */}
+        {b.columns.some((c) => c.key === 'optional' && c.on)
+          ? <span className={styles.note}>The Optional price column is on: lines marked optional print in their own sections, priced in that column and out of the totals.</span>
+          : <>
+            <Sw label="Optional works section" value={b.optionalSection} onChange={(v) => upd({ optionalSection: v })} hint="Lines marked optional print here, out of the totals" />
+            {b.optionalSection ? <Txt label="That section is called" value={b.optionalTitle} fields={false} onChange={(v) => upd({ optionalTitle: v }, 'optionalTitle')} /> : null}
+          </>}
         <Sw label="Keep a section on one page" value={b.keepGroups} onChange={(v) => upd({ keepGroups: v })} />
         <Sw label="Each section on a new page" value={b.groupNewPage} onChange={(v) => upd({ groupNewPage: v })} />
         <Sw label="Fill the page with empty rows" value={b.fillPage} onChange={(v) => upd({ fillPage: v })} />
         <Sub>Text styles</Sub>
         {style('style', 'Rows')}{style('headerStyle', 'Column headings')}{style('areaStyle', 'Section and room names')}{style('groupNoteStyle', 'Section notes')}{style('descriptionStyle', 'Descriptions')}
         <Sub>Placement</Sub>
-        <BlockOptions b={b} upd={upd} />
+        <BlockOptions b={b} upd={upd} onReset={onReset} />
       </Group>
     </>
   )

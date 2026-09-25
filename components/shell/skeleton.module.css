@@ -65,10 +65,7 @@
 }
 
 /* Mirrors the Settings page: 240px section rail, 720px panel, card-framed setting group. */
-.settingsRow { display: flex; gap: var(--om-spacing-6); align-items: flex-start; padding: var(--om-spacing-6); }
-.settingsNav { width: 240px; flex-shrink: 0; background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); padding: var(--om-spacing-2) 0; display: flex; flex-direction: column; }
-.settingsNavItem { display: flex; align-items: center; gap: var(--om-spacing-3); height: 52px; padding: 0 var(--om-spacing-4) 0 var(--om-spacing-6); }
-.settingsPanel { flex: 1; max-width: 720px; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.settingsBody { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }   /* (REG-645) the modules' page (leads.module.css .content) */
 .settingsHead { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .settingsCard { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 
@@ -99,9 +96,6 @@
   /* om Tabs at ≤1024 (om/tabs.module.css): tighter rhythm, scrollbar hidden, the cut-off tab is the affordance. */
   .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  /* Settings: the section rail narrows to 200 (settings.module.css .nav) and the panel loses its cap. */
-  .settingsNav { width: 200px; }
-  .settingsPanel { max-width: none; }
 }
 
 @media (max-width: 767px) {
@@ -119,16 +113,7 @@
   .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .toolbarRight { flex: 1 1 100%; }
   .searchGrow { flex: 1 1 auto; min-width: 0; }
-  /* Settings stacks and the 240 rail becomes the nav's own chip row — same grey track, 4px inset, 44px pills
-     scrolled sideways with the scrollbar hidden (settings.module.css ≤767 .content / .nav / .tab). */
-  .settingsRow { flex-direction: column; align-items: stretch; gap: var(--om-spacing-4); padding: var(--om-spacing-4); }
-  .settingsNav {
-    width: 100%; flex-direction: row;
-    padding: var(--om-spacing-1); gap: var(--om-spacing-1);
-    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
-  }
-  .settingsNav::-webkit-scrollbar { display: none; }
-  .settingsNavItem { flex: 0 0 auto; height: 44px; padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); }
+  .settingsBody { padding: var(--om-spacing-4); }
   .settingsCard { padding: var(--om-spacing-4); }
 }
 

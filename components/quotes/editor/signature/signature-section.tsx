@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type PointerEvent } from 'react'
-import { Button, Switch } from '@/components/ds'
+import { useState, type PointerEvent } from 'react'
+import { SignaturePad } from '@/components/om/signature-pad'
+import { Button, Switch, Radio, RadioGroup } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
-import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { saveMemberSignature, setClientSignatureRequired } from '@/app/quotes/signature-actions'
@@ -99,7 +99,7 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
         </div>
         <div className={styles.pane}>
           <div className={styles.clientBox} data-required={required || undefined}>
-            <span className={styles.clientTitle}>Client signs online</span>
+            <span className={styles.clientTitle}>{required ? 'Client signs online' : 'Client signs on paper'}</span>   {/* (sweep S1) the title follows the switch */}
             <span className={styles.clientMeta}>{required ? 'Requested when you send · signed on approval' : 'Not requested — the client signs on paper'}</span>
           </div>
           <div className={styles.who}>
@@ -125,44 +125,24 @@ function SignatureSettings({ open, value, onChange, onClose, onSave }: {
   onClose: () => void
   onSave: () => void
 }) {
-  const svg = useRef<SVGSVGElement>(null)
-  const drawing = useRef(false)
   const v = value ?? { kind: 'type' as const, name: '', data: '' }
   const canSave = !!v.name.trim() && (v.kind === 'type' || !!v.data)
-  const point = (e: ReactPointerEvent<SVGSVGElement>) => {
-    const r = svg.current!.getBoundingClientRect()
-    const x = ((e.clientX - r.left) / r.width) * 752, y = ((e.clientY - r.top) / r.height) * 140
-    return `${Math.max(0, Math.min(752, x)).toFixed(1)} ${Math.max(0, Math.min(140, y)).toFixed(1)}`
-  }
-  const down = (e: ReactPointerEvent<SVGSVGElement>) => { drawing.current = true; svg.current?.setPointerCapture(e.pointerId); onChange({ ...v, data: `${v.data}${v.data ? ' ' : ''}M ${point(e)}` }) }
-  const move = (e: ReactPointerEvent<SVGSVGElement>) => { if (!drawing.current) return; onChange({ ...v, data: `${v.data} L ${point(e)}` }) }
-  const up = () => { drawing.current = false }
   return (
     <Dialog open={open} onClose={onClose} title="Signature Settings" size="modal" width={800}
             footer={<><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button><Button onPress={onSave} isDisabled={!canSave}>Save</Button></>}>
       <div className={styles.settings}>
       <TextField label="Designer Name" required value={v.name} onChange={(name) => onChange({ ...v, name })} autoFocus />
-      <div className={styles.modeRow} role="radiogroup" aria-label="Show signature as">
-        <span className={styles.modeLabel}>Show signature as</span>
-        {(['draw', 'type'] as const).map((k) => (
-          <button key={k} type="button" role="radio" aria-checked={v.kind === k} className={styles.radio} onClick={() => onChange({ ...v, kind: k })}>
-            <span className={styles.radioIcon} data-on={v.kind === k || undefined}><Icon name={v.kind === k ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} family="outlined" /></span>{k === 'draw' ? 'Draw' : 'Type'}
-          </button>
-        ))}
+      {/* (sweep S1) the DS radio group — arrow keys walk it, as every other radio pair in the app */}
+      <div className={styles.modeRow}>
+        <span className={styles.modeLabel} id="sig-mode-label">Show signature as</span>
+        <RadioGroup aria-labelledby="sig-mode-label" orientation="horizontal" value={v.kind} onChange={(k) => onChange({ ...v, kind: k === 'type' ? 'type' : 'draw' })}>
+          <span className={styles.modeRadios}><Radio value="draw">Draw</Radio><Radio value="type">Type</Radio></span>
+        </RadioGroup>
       </div>
-      <div className={styles.preview} data-kind={v.kind}>
-        {v.kind === 'type' ? (
-          <span className={styles.typed}>{v.name.trim() || 'Your name'}</span>
-        ) : (
-          <>
-            <svg ref={svg} className={styles.canvas} viewBox="0 0 752 140" preserveAspectRatio="none" role="img" aria-label="Draw your signature"
-                 onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}>
-              {v.data ? <path d={v.data} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /> : null}
-            </svg>
-            <button type="button" className={styles.clear} onClick={() => onChange({ ...v, data: '' })} disabled={!v.data}>Clear</button>
-          </>
-        )}
-      </div>
+      {/* (REG-633) the draw box is the shared pad (components/om/signature-pad.tsx) — the client's signing page draws on the same one */}
+      {v.kind === 'type' ? (
+        <div className={styles.preview} data-kind="type"><span className={styles.typed}>{v.name.trim() || 'Your name'}</span></div>
+      ) : <SignaturePad value={v.data} onChange={(data) => onChange({ ...v, data })} />}
       </div>
     </Dialog>
   )

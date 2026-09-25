@@ -19,6 +19,11 @@
 .bannerIcon { display: inline-flex; flex-shrink: 0; }
 .bannerText { flex: 1; min-width: 0; }
 .bannerActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+/* (REG-624) The approval bar and the sent banner on the same card: a request for changes reads on the page's own surface with a rule, as
+   the template editor's changes bar does (review-bar.module.css); the waiting line and the hint are the banner's quieter words. */
+.banner[data-tone='changes'] { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); }
+.bannerWait { font: var(--om-type-body-s); opacity: .8; flex-shrink: 0; }
+.bannerHint { color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) {
   .banner { flex-wrap: wrap; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
   .bannerActions { width: 100%; justify-content: flex-end; }
@@ -30,4 +35,4 @@
 }
 
 /* (REG-538) The Save as template dialog's switch row. */
-.saveRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface); cursor: pointer; }
+.saveRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }

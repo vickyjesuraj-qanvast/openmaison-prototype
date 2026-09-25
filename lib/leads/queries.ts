@@ -3,7 +3,7 @@ import { parseInputDate, parseInputDateTime, titleCaseName } from '@/lib/format'
 import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs, leadNotes } from '@/lib/db/schema'
+import { importRows, imports, leadAssignees, leadReturns, leadTasks, leads, members, stageLogs, leadNotes, quoteComparisons } from '@/lib/db/schema'
 import type { ImportBatch, ImportRow, Lead, LeadTask, Member, StageLog } from '@/lib/db/schema'
 import { STAGES, type Stage } from '@/lib/leads/enums'
 import { DETAIL_TABS, detailHref } from '@/lib/leads/stage-policy'
@@ -24,6 +24,8 @@ export type LeadRow = Lead & {
   lastContact: LastContact | null
   /** (REG-607) How many contacts are logged — the Contacted stage's entries and the Notes tab's logs — for the Lost dialog's "n of 3 contacts logged" hint. */
   contactCount: number
+  /** (REG-640, X-Ray parity Q-18) The lead's latest Quote X-Ray: the other studio it was compared with — the Lost dialog's competitor. */
+  lastComparison: { studio: string; at: number } | null
 }
 export type LastContact = { at: Date; channel: string | null; outcome: string | null }
 
@@ -70,6 +72,8 @@ type RowParts = {
   rets: { leadId: string; status: string }[]
   /** (REG-600) The Notes tab's contact logs — when, how, what came of it. */
   contacts: { leadId: string; contactedAt: Date | null; createdAt: Date; channel: string | null; outcome: string | null }[]
+  /** (REG-640) The leads' comparisons, newest first — the latest names the competitor. */
+  xrays: { leadId: string | null; otherStudio: string; createdAt: Date }[]
 }
 
 /** (REG-600) The latest contact of a lead: the Notes tab's logs and the Contacted stage's entries (their typed "when", else the move's time). */
@@ -87,7 +91,7 @@ function lastContactOf(leadId: string, contacts: RowParts['contacts'], logs: Sta
  * lead can never render differently in the table than on its own page — the second assembler this replaced would
  * have drifted the first time one of them learnt a new field.
  */
-function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts }: RowParts): LeadRow[] {
+function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts, xrays }: RowParts): LeadRow[] {
   const byMember = new Map(team.map((m) => [m.id, m]))
   const holdFollowUps = new Map<string, string>()
   const logsByLead = new Map<string, typeof logs>()
@@ -123,13 +127,14 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts 
       returnStatus: latestReturn.get(l.id) ?? null,
       lastContact: lastContactOf(l.id, contacts, logsByLead.get(l.id) ?? [], stageData),
       contactCount: contacts.filter((c) => c.leadId === l.id).length + (stageData.logs?.length ?? 0),   // (REG-607)
+      lastComparison: ((x) => (x ? { studio: x.otherStudio, at: x.createdAt.getTime() } : null))(xrays.find((x) => x.leadId === l.id)),   // (REG-640)
     }
   })
 }
 
 /** Full listing payload — 18 rows; joins resolved in memory. */
 export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]; now: number }> {
-  const [allLeads, tasks, links, team, logs, rets, contacts] = await Promise.all([
+  const [allLeads, tasks, links, team, logs, rets, contacts, xrays] = await Promise.all([
     db.select().from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
     db.select().from(leadTasks).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees),
@@ -137,8 +142,9 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
     db.select().from(stageLogs).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(eq(leadNotes.kind, 'contact')),   // (REG-600)
+    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(isNotNull(quoteComparisons.leadId)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
   ])
-  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets, contacts }), team, now: Date.now() }
+  return { rows: buildLeadRows(allLeads, { tasks, links, team, logs, rets, contacts, xrays }), team, now: Date.now() }
 }
 
 /**
@@ -150,7 +156,7 @@ export async function fetchLeadRows(): Promise<{ rows: LeadRow[]; team: Member[]
  * `logs` rides along because the caller needs the lead's stage logs too, and this already loaded them.
  */
 export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; team: Member[]; logs: StageLog[]; now: number }> {
-  const [rows, tasks, links, team, logs, rets, contacts] = await Promise.all([
+  const [rows, tasks, links, team, logs, rets, contacts, xrays] = await Promise.all([
     db.select().from(leads).where(and(eq(leads.id, id), isNull(leads.deletedAt))).limit(1),   // a trashed lead has no detail page, exactly as the listing path excluded it
     db.select().from(leadTasks).where(eq(leadTasks.leadId, id)).orderBy(sql`${leadTasks.dueAt} is null, ${leadTasks.dueAt} asc`),
     db.select().from(leadAssignees).where(eq(leadAssignees.leadId, id)),
@@ -158,8 +164,9 @@ export async function fetchLeadRow(id: string): Promise<{ row: LeadRow | null; t
     db.select().from(stageLogs).where(eq(stageLogs.leadId, id)).orderBy(asc(stageLogs.createdAt)),
     db.select({ leadId: leadReturns.leadId, status: leadReturns.status }).from(leadReturns).where(eq(leadReturns.leadId, id)).orderBy(asc(leadReturns.returnedAt)),
     db.select({ leadId: leadNotes.leadId, contactedAt: leadNotes.contactedAt, createdAt: leadNotes.createdAt, channel: leadNotes.channel, outcome: leadNotes.outcome }).from(leadNotes).where(and(eq(leadNotes.leadId, id), eq(leadNotes.kind, 'contact'))),
+    db.select({ leadId: quoteComparisons.leadId, otherStudio: quoteComparisons.otherStudio, createdAt: quoteComparisons.createdAt }).from(quoteComparisons).where(eq(quoteComparisons.leadId, id)).orderBy(desc(quoteComparisons.createdAt)),   // (REG-640)
   ])
-  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets, contacts })[0] ?? null, team, logs, now: Date.now() }
+  return { row: buildLeadRows(rows, { tasks, links, team, logs, rets, contacts, xrays })[0] ?? null, team, logs, now: Date.now() }
 }
 
 /** Deleted Leads folder (779:26316): soft-deleted leads, most recently archived first. */

@@ -6,7 +6,7 @@ import { PortalMenu } from './portal-menu'
 import { useReadOnly } from './read-only'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './text-field.module.css'
-import { digitsOnly, groupDigits } from '@/lib/format'
+import { digitsOnly, groupDigits, decimalTyped, moneyTyped } from '@/lib/format'
 
 export type TextFieldProps = {
   label: string
@@ -47,7 +47,8 @@ export type TextFieldProps = {
    * 'digits' keeps 0-9 (phone, area, %), 'amount' keeps digits and groups thousands ("70,500").
    * Junk never shows in the box; validation only has to check emptiness / length.
    */
-  numeric?: 'digits' | 'amount'
+  /** digits · whole dollars grouped ("70,500") · (REG-651) money — dollars and cents · decimal — up to three places (a quantity, a rate). */
+  numeric?: 'digits' | 'amount' | 'money' | 'decimal'
   maxLength?: number
   autoComplete?: string
   name?: string
@@ -101,10 +102,20 @@ export function TextField({
     setMenuOpen(false)
     if (listRef.current?.contains(document.activeElement)) controlRef.current?.focus()   // never strand focus on a removed option
   }
+  /* (REG-639) Type to find: letters typed in quick succession move to the first option that starts with them, as a native
+     list does — the lead lists run to dozens of names (X-Ray parity Q-11, 1.0's searchable picker). */
+  const typed = useRef({ text: '', at: 0 })
   const onListKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const items = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
     const i = items.indexOf(document.activeElement as HTMLElement)
     const go = (n: number) => { e.preventDefault(); items[(n + items.length) % items.length]?.focus() }
+    if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key !== ' ' || typed.current.text !== '')) {
+      const now = e.timeStamp
+      typed.current = { text: (now - typed.current.at < 700 ? typed.current.text : '') + e.key.toLowerCase(), at: now }
+      const hit = items.find((el) => (el.textContent ?? '').trim().toLowerCase().startsWith(typed.current.text))
+      if (hit) { e.preventDefault(); hit.focus() }
+      return
+    }
     if (e.key === 'ArrowDown') go(i + 1)
     else if (e.key === 'ArrowUp') go(i - 1)
     else if (e.key === 'Home') go(0)
@@ -140,10 +151,10 @@ export function TextField({
           <input
             {...inputProps}
             id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
-            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
+            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric === 'money' || numeric === 'decimal' ? 'decimal' : numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
             disabled={disabled} required={required}
             aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
-            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
+            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : numeric === 'money' ? moneyTyped(e.target.value) : numeric === 'decimal' ? decimalTyped(e.target.value) : e.target.value)}
             onFocus={(e) => { setFocused(true); onFocus?.(); inputProps?.onFocus?.(e) }}
             onBlur={(e) => { setFocused(false); onBlur?.(); inputProps?.onBlur?.(e) }}
             onKeyDown={onKeyDown}
@@ -175,10 +186,10 @@ export function TextField({
           <input
             {...inputProps}
             id={id} ref={inputRef} autoFocus={autoFocus} className={styles.control} name={name}
-            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
+            value={value} placeholder={placeholder} type={type} inputMode={inputMode ?? (numeric === 'money' || numeric === 'decimal' ? 'decimal' : numeric ? 'numeric' : undefined)} maxLength={maxLength} autoComplete={autoComplete}
             disabled={disabled} required={required}
             aria-invalid={hasError || undefined} aria-describedby={message ? supportId : undefined}
-            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : e.target.value)}
+            onChange={(e) => onChange?.(numeric === 'amount' ? groupDigits(e.target.value) : numeric === 'digits' ? digitsOnly(e.target.value) : numeric === 'money' ? moneyTyped(e.target.value) : numeric === 'decimal' ? decimalTyped(e.target.value) : e.target.value)}
             onFocus={(e) => { setFocused(true); onFocus?.(); inputProps?.onFocus?.(e) }}
             onBlur={(e) => { setFocused(false); onBlur?.(); inputProps?.onBlur?.(e) }}
             onKeyDown={onKeyDown}

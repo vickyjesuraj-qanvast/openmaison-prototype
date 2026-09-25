@@ -40,6 +40,9 @@
   color: var(--om-color-on-primary-variant);
 }
 .btn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* (sweep S3) A disabled icon button looks it — the disabled ink, no wash — wherever it stands. */
+.btn:disabled, .btn[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); cursor: default; }
+.btn:disabled:hover, .btn[aria-disabled='true']:hover { background: transparent; }
 
 /* ── Touch ergonomics (REG-273, rebuilt REG-344) ──────────────────────────────────────────────────────
    A fingertip wants 44; the mock draws 36 and 24. Growing the button to 44 (and giving the space back as a

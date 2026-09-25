@@ -19,9 +19,10 @@ export function DeleteQuotesDialog({ open, count, onNo, onYes }: { open: boolean
               <DangerButton onClick={onYes}>Yes</DangerButton>
             </>}>
       <span style={{ margin: '-12px 0', font: 'var(--om-type-body-m)', color: 'var(--om-color-on-surface-default)' }}>
+        {/* (sweep S1 · U-05) quotes delete softly (REG-625) — the words say where they go, not that it can't be undone */}
         {many
-          ? 'Are you sure you want to delete these quotes from this project? This action cannot be undone.'
-          : 'Are you sure you want to delete this quote from this project? This action cannot be undone.'}
+          ? 'Are you sure you want to delete these quotes? They move to Deleted Quotes, where you can restore them.'
+          : 'Are you sure you want to delete this quote? It moves to Deleted Quotes, where you can restore it.'}
       </span>
     </Dialog>
   )

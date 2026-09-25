@@ -2,7 +2,7 @@
 .fields { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-4); }
 @media (max-width: 767px) { .pair { grid-template-columns: 1fr; } }
-.pasteBox textarea { min-height: 168px; font-family: var(--om-font-family-mono, ui-monospace, Menlo, monospace); font-size: 12px; white-space: pre; }
+.pasteBox textarea { min-height: 168px; font: var(--om-type-body-s); white-space: pre; }   /* (sweep S5 #35) the house type */
 .pasteBox { display: block; }
 
 /* The item card's picture: the kind's glyph on the thumb band with the unit price under it. */
@@ -10,18 +10,59 @@
 .itemThumb[data-kind='purchase'] { color: var(--om-color-primary-default); }
 .itemPrice { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .itemUnit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.glyph { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 36px; border-radius: 4px; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+.glyph { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 36px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--om-color-on-surface-secondary); }
 .oneLine { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-width: 0; }
 
 /* The section editor's line rows. */
 .lines { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.lineRow { display: grid; grid-template-columns: minmax(0, 1fr) 88px 128px auto; gap: var(--om-spacing-2); align-items: center; }
-.lineTools { display: inline-flex; gap: 2px; }
+.lineRow { display: grid; grid-template-columns: minmax(0, 1fr) 80px 120px 128px auto; gap: var(--om-spacing-2); align-items: center; }   /* (REG-653) Item · Qty · Unit · Unit price · tools */
+.lineTools { display: inline-flex; gap: var(--om-spacing-1); }   /* (sweep S5 #19) 36px targets a step apart — 24s two pixels apart overlapped under a finger */
 .subHead { display: flex; align-items: center; gap: var(--om-spacing-3); margin-top: var(--om-spacing-2); }
 .subHead > :first-child { flex: 1; min-width: 0; }
 .subLines { padding-left: var(--om-spacing-5); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
 .eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
 .addLine { align-self: flex-start; }
-@media (max-width: 767px) { .lineRow { grid-template-columns: 1fr 72px; } .lineRow > :nth-child(3) { grid-column: 1; } .lineTools { grid-column: 2; justify-self: end; } }
+@media (max-width: 767px) { .lineRow { grid-template-columns: 1fr 1fr; } .lineRow > :first-child { grid-column: 1 / -1; } .lineTools { grid-column: 1 / -1; justify-self: end; } }
+
+/* (REG-652, price book parity Q-04) The proposal bar at the top of a proposed item's dialog — the quote editor's approval bar (template-bar.module.css .banner) without its page margins. */
+.banner { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); border-radius: var(--om-radius-2); font: var(--om-type-body-m); }
+.bannerIcon { display: inline-flex; flex-shrink: 0; }
+.bannerText { flex: 1; min-width: 0; }
+.bannerActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.bannerWait { font: var(--om-type-body-s); opacity: .8; flex-shrink: 0; }
+@media (max-width: 767px) { .banner { flex-wrap: wrap; } .bannerActions { width: 100%; justify-content: flex-end; } }
+@media (hover: none) { .bannerActions button { min-height: 44px; } }
+
+/* (REG-652, price book parity Q-05) The item's History: newest first, what changed as "Cost S$12.00 → S$13.50", who and when. */
+.history { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.historyList { display: flex; flex-direction: column; gap: var(--om-spacing-3); margin: 0; padding: 0; list-style: none; }
+.historyRow { display: flex; flex-direction: column; gap: 2px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.historyHead { color: var(--om-color-on-surface-default); }
+.historyHead b { font-weight: 600; }
+.historyLine { font-variant-numeric: tabular-nums; }
+.historyNote { font-style: italic; }
+.historyMore { align-self: flex-start; }
+
+/* (REG-653, price book parity Q-08) The item's formatted description, and its photo well — the Profile's logo well (profile-view.module.css .qrWell). */
+.richBox { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.photoRow { display: flex; align-items: center; gap: var(--om-spacing-4); flex-wrap: wrap; }
+.photoWell { width: 96px; height: 96px; flex-shrink: 0; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: var(--om-spacing-1); overflow: hidden; }
+.photoWell img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--om-radius-0-5); }
+.photoWell:hover:not(:disabled) { background: var(--om-color-hover-04p); }
+.photoWell:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.photoWell:disabled { cursor: default; }
+.wellEmpty { display: inline-flex; flex-direction: column; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-caption-m); color: var(--om-color-on-surface-secondary); }
+.photoHelp { flex: 1; min-width: 200px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* The card's picture when the item has a photo. */
+.itemPhoto { width: 120px; height: 96px; object-fit: cover; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-1); }
+.glyph img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--om-radius-1); }
+/* (sweep S5 #20 · #25) A read-only description with its shape, and the History's retry. */
+.richRead { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow-wrap: anywhere; }
+.richRead :where(p, ul, ol) { margin: 0 0 var(--om-spacing-2); }
+.richRead :where(p, ul, ol):last-child { margin-bottom: 0; }
+.retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
+/* (sweep S5 #6) The import's kept file, back from the mapping step. */
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); color: var(--om-color-on-surface-secondary); }
+.fileName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

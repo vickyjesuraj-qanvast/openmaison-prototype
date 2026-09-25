@@ -6,7 +6,7 @@
 .box[data-kind='type'], .box[data-kind='draw'] { background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); }
 .choose { display: inline-flex; gap: var(--om-spacing-3); }
 /* The signature face (1263:36013 "Menu text" 32 tall): the name at 24/700. */
-.typed { font-size: 24px; line-height: 32px; font-weight: 700; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 var(--om-spacing-4); }
+.typed { font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 var(--om-spacing-4); }
 .drawing { width: 100%; height: 100%; display: block; }
 .who { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the rule 12 above the name (1263:35910) */
 .whoRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
@@ -27,11 +27,6 @@
 .settings { display: flex; flex-direction: column; gap: 20px; }
 .modeRow { display: flex; align-items: center; gap: var(--om-spacing-5); }
 .modeLabel { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
-.radio { display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: 0; background: none; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
-.radio:hover { background: var(--om-color-hover-04p); }
-.radio:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.radioIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
-.radioIcon[data-on] { color: var(--om-color-primary-default); }
 .preview { position: relative; height: 140px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--om-color-on-surface-default); }
 .canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .clear { position: absolute; top: 20px; right: 20px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }
@@ -47,5 +42,5 @@
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .link, .clear { position: relative; }
   .link::after, .clear::after { content: ''; position: absolute; inset: -12px; }
-  .radio { min-height: 44px; }
 }
+.modeRadios { display: inline-flex; align-items: center; gap: var(--om-spacing-6); }   /* (sweep S1) the DS radios in a row */

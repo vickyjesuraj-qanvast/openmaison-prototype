@@ -12,6 +12,10 @@ import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import type { TemplateRow } from '@/lib/leads/tasks'
 import styles from './template-dialogs.module.css'
+import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
+import { FolderPickRow } from '@/components/om/folders/folder-pick-row'
+import { useFolderBrowse } from '@/components/om/folders/use-folder-browse'
+import type { FolderNode } from '@/lib/folders'
 
 /* Lead Details › Tasks › templates (902:29194): Choose Template 600×600 · Save as Template 400×495 (new / existing). */
 
@@ -59,24 +63,27 @@ function TemplateShell({
 
 /** Choose Template (902:29198) — search · "My templates" · single-select rows · Manage Templates / Cancel / Select. */
 export function ChooseTemplateDialog({
-  open, templates, onSelect, onManage, onClose,
+  open, templates, onSelect, onManage, onClose, folders = [],
 }: {
   open: boolean
   templates: TemplateRow[]
+  /** (REG-664) Templates › Tasks' folders — browsed as the gallery files them; a search looks in every folder. */
+  folders?: FolderNode[]
   onSelect: (id: string) => void
   onManage: () => void
   onClose: () => void
 }) {
   const [picked, setPicked] = useState<string | null>(null)
   const [q, setQ] = useState('')
+  const browse = useFolderBrowse(folders, templates, { query: q })
   const [wasOpen, setWasOpen] = useState(false)
-  // Render-phase adjust: every opening starts clean (no selection, empty search).
+  // Render-phase adjust: every opening starts clean (no selection, empty search, the top of the library).
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) { setPicked(null); setQ('') }
+    if (open) { setPicked(null); setQ(''); browse.go(null) }
   }
   const needle = q.trim().toLowerCase()
-  const shown = needle ? templates.filter((t) => t.name.toLowerCase().includes(needle)) : templates
+  const shown = needle ? browse.hereEntries.filter((t) => t.name.toLowerCase().includes(needle)) : browse.hereEntries
   return (
     <TemplateShell open={open} kind="choose" title="Choose Template" onClose={onClose}
                    footer={<>
@@ -87,7 +94,8 @@ export function ChooseTemplateDialog({
                      <Button isDisabled={!picked} onPress={() => { if (picked) onSelect(picked) }}>Select</Button>
                    </>}>
       <SearchBar size="md" appearance="filled" placeholder="Search" aria-label="Search templates" value={q} onChange={setQ} />
-      <span className={styles.groupTitle}>My templates</span>
+      {!browse.finding && browse.openAt ? <FolderCrumbs root="My templates" trail={browse.trail} onGo={browse.go} /> : <span className={styles.groupTitle}>My templates</span>}
+      {browse.hereFolders.map((f) => <FolderPickRow key={f.id} name={f.name} holds={browse.holds(f, 'template', 'templates')} onOpen={() => browse.go(f.id)} />)}
       {shown.map((t) => {
         const on = picked === t.id
         return (
@@ -95,7 +103,7 @@ export function ChooseTemplateDialog({
                   onClick={() => setPicked(t.id)}>
             <span className={styles.tplText}>
               <span className={styles.tplName}>{t.name}</span>
-              <span className={styles.tplCount}>Number of tasks: {t.tasks.length}</span>
+              <span className={styles.tplCount}>{browse.where(t) ? `${browse.where(t)} · ` : ''}Number of tasks: {t.tasks.length}</span>
             </span>
             {on
               ? <Icon name="radio_button_checked" size={24} weight={400} />

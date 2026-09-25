@@ -2,3 +2,17 @@
 .stage { display: block; }
 .total { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .total strong { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+/* (REG-626, parity Q-32) The optional works the client may add: a checkbox row each — the name, then its price with GST on the right. */
+.optional { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.optionalList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.optionalRow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--om-spacing-2); min-height: 40px; cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.optionalName { min-width: 0; }
+.optionalPrice { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--om-color-on-surface-secondary); }
+/* (REG-626, parity §8.2 · E-91) The files shared with the quote, under the card's own words. */
+.files { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.fileList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 32px; color: var(--om-color-on-surface-secondary); }
+.fileLink, .fileName { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileLink { color: var(--om-color-primary-default); text-decoration: none; }
+@media (hover: hover) { .fileLink:hover { text-decoration: underline; } }
+@media (hover: none) { .optionalRow { min-height: 44px; } .fileRow { min-height: 44px; } }

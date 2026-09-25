@@ -1,0 +1,25 @@
+/* (REG-666) The listing's scope pill (components/leads/toolbar.module.css .chip): h36, border ccc, r4, pl16 pr12, gap 8, 14/Semi Bold. */
+.pill {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0;
+  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: transparent; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
+  transition: background-color var(--motion-hover); position: relative; white-space: nowrap;
+}
+.pill:hover { background: var(--om-color-hover-04p); }
+.pill:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.label { white-space: nowrap; }
+.chev { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
+.pill[data-open] .chev { transform: rotate(180deg); }
+/* The to-do twin: the primary tint, as a selected row wears it (REG-449); pressed, it fills. */
+.pill[data-tone='attention'] { border-color: var(--om-color-primary-default); color: var(--om-color-primary-default); background: var(--om-color-primary-variant); padding-right: var(--om-spacing-4); }
+.pill[data-tone='attention']:hover { background: color-mix(in srgb, var(--om-color-primary-variant), var(--om-color-primary-default) 8%); }
+.pill[data-tone='attention'][data-selected] { background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); padding-right: var(--om-spacing-3); }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .pill { min-height: 44px; } }
+/* Where the bar is narrow (tablet and phone) the pill says only its value — the full words stay its accessible name. */
+.short { display: none; white-space: nowrap; }
+@media (max-width: 1024px) {
+  .pill[data-short] .label { display: none; }
+  .pill[data-short] .short { display: inline; }
+  .pill[data-short] { padding-left: var(--om-spacing-3); }
+}

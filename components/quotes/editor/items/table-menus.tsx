@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type RefObject } from 'react'
+import { BOOK_RULE, SECTION_RULE } from '@/lib/company/price-book-rules'
 import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
@@ -103,12 +104,15 @@ export function ThumbMenu({ open, anchor, icon, onClose, onUpload, onIcon, onLog
 
 /**
  * The hovered row's kebab (reference screenshot, owner 2026-09-11; Create Document(s) dropped — REG-410):
- * Save to Your Library · Duplicate · Copy Name · Section with n item(s) · ─ · Show Full Content · Mark as Optional · Print as › ·
+ * Save to My Items (REG-653: or, on a line from an item, Update the item from this line · Save as a new item) · Duplicate · Copy Name · Section with n item(s) · ─ · Show Full Content · Mark as Optional · Print as › ·
  * Highlight › · Skip the number · ─ · Add Item › · Move Item › · Move to section › · ─ · Remove. A section's row trades the line-only
- * rows for Save section to My Items · Label the sub-total… · Ungroup. Submenus drill down in place with a "‹" row back.
+ * rows for Save section to My Sections · Label the sub-total… · Ungroup. Submenus drill down in place with a "‹" row back.
  * (Round 1 of the testers' asks: Print as REG-555 · Highlight REG-556 · Skip the number / Ungroup / sub-sections REG-558 ·
  * Save section REG-566 · "Section" for the mock's "Group" REG-567.)
  */
+/** (REG-652, price book parity Q-03) Whether the viewer changes the price book — the row menu's saves read it. (REG-653, Q-09) And the
+    My Items entry a line came from, while it is still in the book. */
+export const BookRuleContext = createContext<{ runsBook: boolean; bookItem: (id: string | null) => { name: string } | null }>({ runsBook: true, bookItem: () => null })
 export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandColors, onClose, onAction, onChooseGroup, onPrintAs, onHighlight }: {
   open: boolean; anchor: Anchor; item: QuoteItem; groups: QuoteItem[]; all: QuoteItem[]; selectedCount: number
   /** The brand kit's colours by key — the Highlight swatches follow the kit (REG-556). */
@@ -116,11 +120,13 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
   onClose: () => void; onAction: (a: RowMenuAction) => void; onChooseGroup: (groupId: string | null) => void
   onPrintAs: (v: PrintAs | null) => void; onHighlight: (v: Highlight | null) => void
 }) {
+  const bookRule = useContext(BookRuleContext)
   const [sub, setSub] = useState<'add' | 'move' | 'group' | 'printAs' | 'highlight' | null>(null)
   const level = useLevelFocus(sub)
   const close = () => { setSub(null); onClose() }
   const act = (a: RowMenuAction) => { close(); onAction(a) }
   const isItem = item.kind === 'item'
+  const source = isItem ? bookRule.bookItem(item.priceBookItemId) : null
   const n = Math.max(1, selectedCount)
   const hasSubs = !isItem && all.some((x) => x.parentId === item.id && x.kind === 'group')
   /* Where the row may move: a line into any section (a sub-section shown under its parent); a section without sub-sections into a top section. */
@@ -137,6 +143,8 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
             {back('Add Item')}
             <DropdownItem onSelect={() => act('addAbove')}>Above</DropdownItem>
             <DropdownItem onSelect={() => act('addBelow')}>Below</DropdownItem>
+            <DropdownDivider />
+            <DropdownItem onSelect={() => act('addFromBook')}>{isItem ? 'From My Items, below…' : 'From My Items, inside…'}</DropdownItem>   {/* (REG-653, price book parity Q-12) the pick lands where this row asked */}
           </>
         ) : sub === 'move' ? (
           <>
@@ -184,17 +192,24 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
           </>
         ) : (
           <>
-            {isItem ? <DropdownItem onSelect={() => act('library')}>Save to Your Library</DropdownItem> : <DropdownItem onSelect={() => act('saveSection')}>Save section to My Items</DropdownItem>}
+            {/* (REG-653, price book parity Q-09 · Q-18) A line from My Items says so, and its save names what it does — update that item
+                (an Owner's or an Admin's) or add a new one; a Designer proposes. One name for the book: My Items, My Sections. */}
+            {source ? <div className={styles.menuHead} data-testid="line-source">From My Items · {source.name}</div> : null}
+            {source ? <DropdownItem onSelect={() => act('libraryUpdate')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : BOOK_RULE}>Update the item from this line</DropdownItem> : null}
+            {isItem ? <DropdownItem onSelect={() => act('library')}>{source ? (bookRule.runsBook ? 'Save as a new item' : 'Propose as a new item') : bookRule.runsBook ? 'Save to My Items' : 'Propose to My Items'}</DropdownItem>
+              : <DropdownItem onSelect={() => act('saveSection')} disabled={!bookRule.runsBook} title={bookRule.runsBook ? undefined : SECTION_RULE}>Save section to My Sections</DropdownItem>}
             <DropdownItem onSelect={() => act('duplicate')}>Duplicate</DropdownItem>
             <DropdownItem onSelect={() => act('copyName')}>Copy Name</DropdownItem>
             {isItem ? <DropdownItem onSelect={() => act('group')}>Section with {n} item{n === 1 ? '' : 's'}</DropdownItem> : null}
             <DropdownDivider />
             <DropdownItem onSelect={() => act('showFull')}>Show Full Content</DropdownItem>
+            {isItem ? <DropdownItem onSelect={() => act('comment')}>Comment</DropdownItem> : null}   {/* (REG-627, parity Q-30) the line's thread */}
             {isItem ? <DropdownItem onSelect={() => act('optional')}>{item.optional ? 'Clear Optional Mark' : 'Mark as Optional'}</DropdownItem> : null}   {/* (REG-492) prints in its own section, out of the totals */}
             {isItem ? <DropdownItem submenu onSelect={() => setSub('printAs')}>Print as{printAs ? `: ${printAsWord(item)}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem> : null}
             <DropdownItem submenu onSelect={() => setSub('highlight')}>Highlight{highlight ? `: ${HIGHLIGHT_LABEL[highlight]}` : ''}<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>
             {isItem ? <DropdownItem onSelect={() => act('noNumber')}>{item.noNumber ? 'Number this line' : 'Skip the number'}</DropdownItem> : null}
             {!isItem ? <DropdownItem onSelect={() => act('subtotalLabel')}>{item.printAsText ? `Sub-total label: ${item.printAsText}` : 'Label the sub-total…'}</DropdownItem> : null}
+            {!isItem && item.printAsText ? <DropdownItem onSelect={() => act('subtotalClear')}>Remove the sub-total label</DropdownItem> : null}   {/* (sweep S1) the name dialog can't save an empty word */}
             {!isItem ? <DropdownItem onSelect={() => act('oneLine')}>{item.printOneLine ? 'Print every line' : 'Print as one line'}</DropdownItem> : null}   {/* (REG-585) the client sees the section's name and its total; the lines stay the studio's */}
             <DropdownDivider />
             <DropdownItem submenu onSelect={() => setSub('add')}>Add Item<span className={styles.menuTrail}><Icon name="chevron_right" size={20} /></span></DropdownItem>

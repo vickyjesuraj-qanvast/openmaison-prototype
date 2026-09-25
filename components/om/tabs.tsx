@@ -15,11 +15,14 @@ export function Tabs({
   activeHref,
   'aria-label': ariaLabel,
   className,
+  onSoon,
 }: {
-  items: { label: string; href: string }[]
+  /** (REG-645) A tab marked `soon` is a module still to come: it stays in the row and answers with `onSoon` (the house "Coming soon"). */
+  items: { label: string; href: string; soon?: boolean }[]
   activeHref: string
   'aria-label'?: string
   className?: string
+  onSoon?: () => void
 }) {
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
@@ -55,6 +58,7 @@ export function Tabs({
     <div ref={listRef} role="tablist" aria-label={ariaLabel} className={className ? `${styles.tabs} ${className}` : styles.tabs} onKeyDown={onKeyDown}>
       {items.map((t, i) => {
         const selected = t.href === activeHref
+        if (t.soon) return <button key={t.href} type="button" role="tab" aria-selected={false} tabIndex={-1} className={styles.tab} onClick={onSoon}>{t.label}</button>
         return (
           <Link
             key={t.href}

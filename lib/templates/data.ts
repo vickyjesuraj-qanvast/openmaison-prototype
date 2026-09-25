@@ -34,7 +34,7 @@ export type DocData = {
   /** (REG-588) A second client (co-owners): printed with the first, named on the signing link. */
   client2: { name: string; nric: string } | null
   studio: StudioDetails
-  preparedBy: { name: string; phone: string; role: string; /** (REG-560) `{prepared_by_email}` */ email: string }
+  preparedBy: { name: string; phone: string; role: string; /** (REG-560) `{prepared_by_email}` */ email: string; /** (REG-618, parity Q-25) every member on the lead, for "Prepared by: every member" */ team?: string[] }
   items: DocItem[]
   payments: DocPayment[]
   memberSignature: { kind: 'draw' | 'type'; name: string; data: string | null } | null
@@ -52,11 +52,19 @@ export function docEntity(d: DocData): IssuingEntity | null {
   if (!list.length) return null
   return (d.quote.issuingEntity ? list.find((e) => e.name === d.quote.issuingEntity) : null) ?? list[0] ?? null
 }
+/** (REG-618, parity Q-26) The letterhead a document prints: the studio's own, or — for a quote raised under another entity — that entity's
+    name, logo and registration numbers, its address falling back to the studio's. A registration number never inherits (1.0's rule). */
+export function docLetterhead(d: DocData): { name: string; address: string; uen: string; gstReg: string; logo: string | null; own: boolean } {
+  const e = docEntity(d)
+  const own = !e || e === d.studio.entities[0]
+  if (own || !e) return { name: d.studio.name, address: d.studio.address, uen: d.studio.uen, gstReg: (e && !e.gstRegistered) || d.studio.gstRegistered === false ? '' : d.studio.gstReg, logo: null, own: true }   // (REG-645) the studio's own registration
+  return { name: e.name || d.studio.name, address: e.address || d.studio.address, uen: e.uen, gstReg: e.gstRegistered ? e.gstReg : '', logo: e.logo, own: false }
+}
 
 export const DEMO_STUDIO: StudioDetails = {
   name: 'Demo Studio Pte Ltd', address: '12 Jalan Besar #03-01, Singapore 208789', phone: '+65 6222 0188', fax: '+65 6222 0189', email: 'hello@demostudio.sg', website: 'www.demostudio.sg',
   uen: '201234567M', gstReg: 'M90371234', licence: 'HB-09-1234A',
-  tagline: '', social: '', entities: [EMPTY_ENTITY('Demo Studio Pte Ltd')],   // (REG-562) filled in Company › Profile; nothing invented here
+  tagline: '', social: '', socials: {}, entities: [EMPTY_ENTITY('Demo Studio Pte Ltd')],   // (REG-562) filled in Company › Profile; nothing invented here
 }
 
 const dueLabel = (kind: string, at: Date | null) => (kind === 'approval' ? 'On approval' : at ? (kind === 'estimate' ? `~ ${displayDate(at)}` : displayDate(at)) : '')
@@ -67,6 +75,8 @@ export const toDocItem = (i: QuoteItem): DocItem => ({ ...i, optional: !!i.optio
 /** The document's data from the records the quote editor and the preview load. */
 export function docDataFromRecords(r: {
   quote: Quote; lead: { name: string; phone?: string | null; email?: string | null }; studio: StudioDetails; members: Member[]; items: QuoteItem[]; payments: QuotePayment[]; totalMinor?: number
+  /** (REG-618, parity Q-25) the lead's members, for "Prepared by: every member on the lead" */ teamIds?: string[]
+  /** (REG-632, contracts parity Q-09) Who signed the contract this quote was signed through — the quote's print names them, not the lead. */ signer?: string | null
 }): DocData {
   const prepared = r.members.find((m) => m.id === r.quote.preparedBy) ?? r.members.find((m) => m.isYou) ?? null
   const items: DocItem[] = r.items.map(toDocItem)
@@ -83,11 +93,12 @@ export function docDataFromRecords(r: {
     client: { name: r.lead.name, salutation: '', phone: r.lead.phone ? (r.lead.phone.startsWith('+') ? r.lead.phone : `+65 ${r.lead.phone.replace(/^(\d{4})(\d{4})$/, '$1 $2')}`) : '', email: r.lead.email ?? '' },
     client2: r.quote.client2Name ? { name: r.quote.client2Name, nric: r.quote.client2Nric ?? '' } : null,   // (REG-588)
     studio: r.studio,
-    preparedBy: { name: prepared?.name ?? '', phone: r.studio.phone, role: prepared?.role === 'Owner' ? 'Principal Designer' : prepared ? 'Designer' : '', email: prepared?.email ?? '' },
+    preparedBy: { name: prepared?.name ?? '', phone: r.studio.phone, role: prepared?.role === 'Owner' ? 'Principal Designer' : prepared ? 'Designer' : '', email: prepared?.email ?? '',
+      team: (r.teamIds ?? []).map((id) => r.members.find((m) => m.id === id)?.name).filter((n): n is string => !!n) },
     items,
     payments: r.payments.map((p, i) => ({ name: p.name, description: p.description, pct: p.pct, amountMinor: amounts[i] ?? 0, due: dueLabel(p.dueKind, p.dueAt) })),
     memberSignature: prepared && (prepared.signatureKind === 'draw' || prepared.signatureKind === 'type') ? { kind: prepared.signatureKind, name: prepared.signatureName ?? prepared.name, data: prepared.signatureData } : null,
-    clientSignature: r.quote.status === 'Signed' ? { name: r.lead.name } : null,
+    clientSignature: r.quote.status === 'Signed' ? { name: r.signer?.trim() || r.lead.name } : null,
   }
 }
 
@@ -107,7 +118,7 @@ export const SAMPLE_DATA: DocData = {
   },
   client: { name: 'Mr & Mrs Tan', salutation: 'Mr & Mrs Tan', phone: '+65 9123 4567', email: 'tan.family@example.sg' },
   studio: DEMO_STUDIO,
-  preparedBy: { name: 'Dane', phone: '+65 9236 1929', role: 'Principal Designer', email: 'dane@demostudio.sg' },
+  preparedBy: { name: 'Dane', phone: '+65 9236 1929', role: 'Principal Designer', email: 'dane@demostudio.sg', team: ['Dane'] },
   items: [
     line('Hacking Works', 'Living & Dining', 'Supply labour and tools to dismantle and remove existing laminate flooring and skirting', 1, 'Lot', 0, 0, 'Subject to HDB approval'),
     line('Hacking Works', 'Kitchen', 'Hack and remove existing floor and wall tiles, top and bottom cabinets', 1, 'Lot', 0, 0),

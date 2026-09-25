@@ -11,6 +11,8 @@ import type { TextTemplateRow, TextTemplatesData } from '@/lib/company/text-temp
 import { createTextTemplate, deleteTextTemplate, deleteTextTemplatesForever, duplicateTextTemplate, emptyTextTemplateTrash, renameTextTemplate, restoreTextTemplates } from '@/app/quotes/text-actions'
 import { LibraryGallery, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
+import { templateChangeBlock } from '@/lib/company/template-rules'
+import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 
 type Row = TextTemplateRow & LibraryItem
 const toRow = (t: TextTemplateRow): Row => ({ ...t, updatedAt: t.updatedAt ?? t.createdAt })
@@ -21,7 +23,7 @@ const kindWord = (k: string) => (k === 'terms' ? 'Terms' : 'Notes')
  * one page, a Terms · Notes segment (the owner kept Notes off the tab strip, REG-508, but the quote template editor's
  * Defaults name notes templates, so they need a home). New template ▾ makes one of either kind and opens the editor.
  */
-export function TextTemplatesGallery({ data, from }: { data: TextTemplatesData; from?: string }) {
+export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextTemplatesData; from?: string; folders?: Folder[] }) {
   const { templates, deleted, now } = data
   const router = useRouter()
   const { fail } = useRun()
@@ -31,12 +33,12 @@ export function TextTemplatesGallery({ data, from }: { data: TextTemplatesData; 
   const create = async (k: TextKind) => { try { const row = await createTextTemplate(k, 'Untitled template', ''); open(row.id) } catch { fail('create the template') } }
 
   return (
-    <LibraryGallery<Row> kind={kind} from={from} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Terms and Notes templates" tableKey="text-templates"
+    <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'texts', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Terms and Notes templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="text-templates"
       newMenu={(close) => (<>
         <DropdownItem onSelect={() => { close(); void create('terms') }}>Terms and Conditions</DropdownItem>
         <DropdownItem onSelect={() => { close(); void create('notes') }}>Additional Notes</DropdownItem>
       </>)}
-      filters={[{ key: 'terms', label: 'Terms', test: (t) => t.kind === 'terms' }, { key: 'notes', label: 'Notes', test: (t) => t.kind === 'notes' }]}
+      filters={[{ key: 'terms', label: 'Terms', test: (t) => t.kind === 'terms' }, { key: 'notes', label: 'Notes', test: (t) => t.kind === 'notes' }]} filterLabel="Kind"
       searchText={(t) => textPreview(t.body, 600)}
       thumb={(t) => <span className={styles.sheet}><span className={styles.sheetKind}>{TEXT_LABEL[t.kind as TextKind] ?? t.kind}</span><span className={styles.sheetTitle}>{t.title}</span><span className={styles.sheetText}>{textPreview(t.body, 420)}</span></span>}
       glyph={() => <span className={styles.glyph}><span className={styles.glyphTitle} /><span className={styles.glyphLines} /></span>}

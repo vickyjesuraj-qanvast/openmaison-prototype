@@ -14,6 +14,8 @@ import type { TaskTemplateRow, TaskTemplatesData } from '@/lib/company/task-temp
 import { addTaskTemplateToLead, createTaskTemplate, deleteTaskTemplate, deleteTaskTemplatesForever, duplicateTaskTemplate, emptyTaskTemplateTrash, renameTaskTemplate, restoreTaskTemplates } from '@/app/company/task-templates-actions'
 import { LibraryGallery, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
+import { templateChangeBlock } from '@/lib/company/template-rules'
+import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 
 type Row = TaskTemplateRow & LibraryItem
 const toRow = (t: TaskTemplateRow): Row => ({ ...t, title: t.name, updatedAt: t.updatedAt ?? t.createdAt })
@@ -23,7 +25,7 @@ const toRow = (t: TaskTemplateRow): Row => ({ ...t, title: t.name, updatedAt: t.
  * first steps, "n steps · keeps members / description", "Added to n leads"; New template ▾ (Blank · From a lead's tasks…);
  * the kebab's "Add to a lead…". Open lands in the task template editor. Manage Templates in the Tasks tab comes here.
  */
-export function TaskTemplatesGallery({ data, from }: { data: TaskTemplatesData; from?: string }) {
+export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskTemplatesData; from?: string; folders?: Folder[] }) {
   const { templates, deleted, leads, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
@@ -37,7 +39,7 @@ export function TaskTemplatesGallery({ data, from }: { data: TaskTemplatesData; 
   const keeps = (t: TaskTemplateRow) => [t.keepMembers ? 'members' : null, t.keepDescription ? 'descriptions' : null].filter(Boolean).join(' · ')
 
   return (
-    <LibraryGallery<Row> kind={kind} from={from} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Task templates" tableKey="task-templates"
+    <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'tasks', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Task templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="task-templates"
       newMenu={(close) => (<>
         <DropdownItem onSelect={() => { close(); void create(() => createTaskTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank template</DropdownItem>
         <DropdownDivider />
@@ -58,7 +60,7 @@ export function TaskTemplatesGallery({ data, from }: { data: TaskTemplatesData; 
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} lead${t.usedBy === 1 ? '' : 's'}`)}
       chips={(t) => (t.tasks.some((s) => s.dueDays !== null) ? <MetaChip>Due dates</MetaChip> : null)}
       columns={[
-        { key: 'steps', label: 'Steps', track: '110px', sortable: true, cell: (t) => <span>{t.tasks.length}</span> },
+        { key: 'steps', label: 'Steps', track: '110px', sortable: (t) => t.tasks.length, cell: (t) => <span>{t.tasks.length}</span> },
         { key: 'keeps', label: 'Keeps', track: '220px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{keeps(t) || '—'}</span> },
         { key: 'used', label: 'Used by', track: '140px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} lead{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not used yet</span>) },
       ]}

@@ -1,0 +1,9 @@
+/* (REG-664) The Move dialog's folder row (move-dialog.module.css .folderRow) as a picker's folder row. */
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; min-height: 48px; padding: var(--om-spacing-2) var(--om-spacing-3); border: 0; background: var(--om-color-surface-default); border-radius: var(--om-radius-1); cursor: pointer; text-align: left; font: inherit; color: inherit; flex-shrink: 0; transition: background var(--motion-hover); }
+.row:hover { background: var(--om-color-surface-bg); }
+.row:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.icon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.name { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holds { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .row { min-height: 56px; } }

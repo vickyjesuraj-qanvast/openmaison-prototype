@@ -10,6 +10,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { anchoredSurface } from '@/lib/motion'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import type { Member } from '@/lib/db/schema'
+import { pickable } from '@/lib/leads/assign-policy'
 import type { Suggestion } from '@/lib/leads/suggest'
 import styles from './assign-popover.module.css'
 
@@ -70,7 +71,7 @@ export function AssignPopover({
 
   const locked = !!hint
   const mayPick = (id: string) => !locked && (assignable === null || assignable.includes(id))
-  const rows = team.map((m) => (
+  const rows = pickable(team, value).map((m) => (   // (REG-646) a deactivated member leaves the picker unless already on it
     <button key={m.id} type="button" className={styles.row} data-locked={mayPick(m.id) ? undefined : ''} onClick={() => { if (mayPick(m.id)) toggle(m.id) }}>
       <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
       <span className={styles.rowText}>

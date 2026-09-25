@@ -12,6 +12,8 @@ import type { PaymentTemplateRow, PaymentTemplatesData } from '@/lib/company/pay
 import { createPaymentTemplate, deletePaymentTemplate, deletePaymentTemplatesForever, duplicatePaymentTemplate, emptyPaymentTemplateTrash, renamePaymentTemplate, restorePaymentTemplates } from '@/app/company/payment-templates-actions'
 import { LibraryGallery, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
+import { templateChangeBlock } from '@/lib/company/template-rules'
+import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 
 type Row = PaymentTemplateRow & LibraryItem
 const toRow = (t: PaymentTemplateRow): Row => ({ ...t, title: t.name })
@@ -21,7 +23,7 @@ const toRow = (t: PaymentTemplateRow): Row => ({ ...t, title: t.name })
  * beside them (from the Payment Schedule's "Save this split as a template", or New template ▾ here). A card draws the split
  * as one bar; the editor sets names, shares and due rules. The studio default (10/30/30/30) cannot be deleted: every fallback lands on it.
  */
-export function PaymentTemplatesGallery({ data, from }: { data: PaymentTemplatesData; from?: string }) {
+export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: PaymentTemplatesData; from?: string; folders?: Folder[] }) {
   const { templates, deleted, now } = data
   const router = useRouter()
   const { fail } = useRun()
@@ -32,7 +34,7 @@ export function PaymentTemplatesGallery({ data, from }: { data: PaymentTemplates
   const balanced = (t: PaymentTemplateRow) => Math.abs(sumPct(t.rows) - 100) < 0.005
 
   return (
-    <LibraryGallery<Row> kind={kind} from={from} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Payment templates" tableKey="payment-templates"
+    <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'payments', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Payment templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="payment-templates"
       newMenu={(close) => (<>
         <DropdownItem onSelect={() => { close(); void create(() => createPaymentTemplate({ source: { kind: 'blank' } }), 'create the template') }}>Blank split</DropdownItem>
         <DropdownDivider />
@@ -53,7 +55,7 @@ export function PaymentTemplatesGallery({ data, from }: { data: PaymentTemplates
       chips={(t) => <>{t.id === DEFAULT_SPLIT_ID ? <MetaChip>Studio default</MetaChip> : null}{!balanced(t) ? <MetaChip>Not 100%</MetaChip> : null}</>}
       columns={[
         { key: 'split', label: 'Split', track: '200px', cell: (t) => <span className={styles.oneLine}>{splitWord(t.rows)}</span> },
-        { key: 'milestones', label: 'Milestones', track: '120px', sortable: true, cell: (t) => <span>{t.rows.length}</span> },
+        { key: 'milestones', label: 'Milestones', track: '120px', sortable: (t) => t.rows.length, cell: (t) => <span>{t.rows.length}</span> },
         { key: 'used', label: 'Default on', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote template{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>—</span>) },
       ]}
       onOpen={(t) => open(t.id)}

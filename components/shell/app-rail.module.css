@@ -95,7 +95,7 @@
   background: var(--om-color-hover-04p);
   color: var(--om-color-on-surface-secondary);
   white-space: nowrap; overflow: hidden;
-  transition: width var(--motion-modal, 0.2s) ease;
+  transition: width var(--motion-modal);
 }
 .panel[data-expanded] .searchTile { width: 200px; padding: var(--om-spacing-2); background: var(--om-color-surface-bg); }
 .searchLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); opacity: 0; transition: opacity var(--motion-toggle); }
@@ -121,7 +121,7 @@
   border-radius: var(--om-radius-2);
   color: var(--om-color-on-surface-default);
   white-space: nowrap; overflow: hidden;
-  transition: background-color var(--motion-hover), width var(--motion-modal, 0.2s) ease;
+  transition: background-color var(--motion-hover), width var(--motion-modal);
 }
 .panel[data-expanded] .item { width: 200px; }
 .item:hover { background: var(--om-color-hover-04p); }
@@ -166,8 +166,8 @@
 /* The width animates only for the viewer's OWN toggle. A remembered rail (REG-232) arrives on the first client
    render, and animating that would replay the expand on every page load — so the transition is gated on
    `data-animate`, set once the viewer has actually pressed the control this session. */
-.wrap[data-animate] { transition: width var(--motion-modal, 0.2s) ease; }
-.panel[data-animate] { transition: width var(--motion-modal, 0.2s) ease, box-shadow var(--motion-modal, 0.2s) ease; }
+.wrap[data-animate] { transition: width var(--motion-modal); }
+.panel[data-animate] { transition: width var(--motion-modal), box-shadow var(--motion-modal); }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    ≤767: the rail leaves the flow — MobileChrome's top bar, bottom dock and More sheet take over (REG-298 / REG-300).

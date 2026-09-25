@@ -20,7 +20,8 @@ export type Margins = { top: number; right: number; bottom: number; left: number
 /** (REG-592) How `{date}` and `{valid_until}` print: "17 Sep ’26" · "17 September 2026" · "Sunday, 17 September 2026". */
 export type DateFormat = 'short' | 'long' | 'weekday'
 export const isDateFormat = (v: unknown): v is DateFormat => v === 'short' || v === 'long' || v === 'weekday'
-export type PageSettings = { paper: Paper; margins: Margins; watermark: string; dateFormat: DateFormat }
+export type PageSettings = { paper: Paper; margins: Margins; watermark: string; dateFormat: DateFormat; /** (REG-618, parity Q-18) the watermark's strength in %, 3–40; unset = 7 */ watermarkOpacity?: number }
+export const WATERMARK_OPACITY = 7
 export const DEFAULT_PAGE: PageSettings = { paper: 'A4', margins: { top: 18, right: 18, bottom: 18, left: 18 }, watermark: '', dateFormat: 'short' }
 
 /* ── brand ── */
@@ -43,14 +44,44 @@ export const fontStack = (family: string) => FONT_STACK[family] ?? `${family}, s
 
 /** (REG-562) An issuing entity and where its money goes: the studio itself first, then any other company it quotes under. The
     PayNow QR is an uploaded image path; empty strings print nothing. */
-export type IssuingEntity = { name: string; bankName: string; accountName: string; accountNo: string; payNow: string; payNowQr: string | null; /** (REG-593) off = quotes raised under it carry no GST */ gstRegistered: boolean }
-export const EMPTY_ENTITY = (name: string): IssuingEntity => ({ name, bankName: '', accountName: '', accountNo: '', payNow: '', payNowQr: null, gstRegistered: true })
+export type IssuingEntity = {
+  name: string; bankName: string; accountName: string; accountNo: string; payNow: string; payNowQr: string | null; /** (REG-593) off = quotes raised under it carry no GST */ gstRegistered: boolean
+  /** (REG-618, parity Q-24) the bank's SWIFT / BIC code */ swift: string
+  /** (REG-618, parity Q-26) the entity's own letterhead: a logo, an address, its registration numbers. Blank address = the studio's;
+      a blank UEN or GST number stays blank — a registration number never inherits (1.0's rule for every entity but the studio itself). */
+  logo: string | null; address: string; uen: string; gstReg: string
+  /** (REG-647, settings parity Q-10) The entity's own key: a rename is carried to the quotes and contracts that name it; 'studio' for the first. */
+  id: string
+  /** (REG-647) Retired: kept for what already names it — it keeps printing there — and no longer offered for new quotes and contracts. */
+  retired?: boolean
+}
+export const EMPTY_ENTITY = (name: string, id = 'studio'): IssuingEntity => ({ id, name, bankName: '', accountName: '', accountNo: '', payNow: '', payNowQr: null, gstRegistered: true, swift: '', logo: null, address: '', uen: '', gstReg: '' })
+/** (REG-647) The entities a new quote or contract may be issued under: the live ones, plus the one it already names. */
+export const offeredEntities = (list: IssuingEntity[], current?: string | null) => list.filter((e) => !e.retired || (!!current && e.name === current))
+/** (REG-618, parity Q-20) The studio's social links, one per network, printed as typed by the Social links element and `{studio_social}`. */
+export const SOCIAL_KEYS = ['website', 'instagram', 'facebook', 'tiktok', 'whatsapp', 'linkedin'] as const
+export type SocialKey = (typeof SOCIAL_KEYS)[number]
+export const SOCIAL_LABEL: Record<SocialKey, string> = { website: 'Website', instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', whatsapp: 'WhatsApp', linkedin: 'LinkedIn' }
+export type SocialLinks = Partial<Record<SocialKey, string>>
+/** (REG-618, parity Q-25) What `{prepared_by}` prints: the member who prepared the quote, every member on the lead, or the studio's name. */
+export type PreparedByMode = 'member' | 'team' | 'studio'
 export type StudioDetails = {
   name: string; address: string; phone: string; fax: string; email: string; website: string; uen: string; gstReg: string; licence: string
-  /** (REG-562) A tagline and the studio's social handles, for footers and covers — `{studio_tagline}` · `{studio_social}`. */
+  /** (REG-562) A tagline and the studio's social handles, for footers and covers — `{studio_tagline}` · `{studio_social}`. `social` is the old
+      one-line field, printed only while no network below is filled (REG-618). */
   tagline: string; social: string
+  /** (REG-618, parity Q-20) One handle or link per network. */
+  socials: SocialLinks
   /** (REG-562) The issuing entities with their bank details; the quote's Issuing Entity picks one, the Bank details block prints it. */
   entities: IssuingEntity[]
+  /** (REG-617, parity Q-08) Settings › Quotes › Trades: a default note per trade, keyed by the trade's name in lower case. It prints
+      under a section of that name when the quote writes none of its own. Read in with the details (`fetchBrand`); never saved with them. */
+  tradeNotes?: Record<string, string>
+  /** (REG-618, parity Q-25) Settings › Quotes › Prepared by — read in with the details, like the trades' notes. */
+  preparedByMode?: PreparedByMode
+  /** (REG-645, settings parity Q-05) The studio's own GST registration (Settings › Quotes & pricing › GST) — read in with the details;
+      off, the studio's letterhead prints no GST number. Never saved with them. */
+  gstRegistered?: boolean
 }
 export type BrandKit = {
   logo: string | null
@@ -109,9 +140,11 @@ export type CanvasElement = ElementBase & (
   | { kind: 'signature'; columns: SignatureColumn[]; style: TextStyle; headingStyle: TextStyle; lineWeight: number; lineColor: string; preamble?: string }
   | { kind: 'badges'; items: string[]; gap: number; align: Align }
   | { kind: 'pageno'; format: string; style: TextStyle }
+  /** (REG-618, parity Q-20) The studio's social links from Company › Profile: an icon and the handle for each filled network, in a row or a column. */
+  | { kind: 'social'; networks: SocialKey[]; layout: 'row' | 'column'; gap: number; style: TextStyle }
 )
 export type ElementKind = CanvasElement['kind']
-export const ELEMENT_LABEL: Record<ElementKind, string> = { text: 'Text', image: 'Picture', kv: 'Details', rule: 'Line', box: 'Box', signature: 'Signature', badges: 'Badges', pageno: 'Page number' }
+export const ELEMENT_LABEL: Record<ElementKind, string> = { text: 'Text', image: 'Picture', kv: 'Details', rule: 'Line', box: 'Box', signature: 'Signature', badges: 'Badges', pageno: 'Page number', social: 'Social links' }
 
 /* ── blocks ── */
 export type Repeat = 'every' | 'first' | 'not-first'
@@ -120,16 +153,16 @@ export type CanvasKind = 'header' | 'footer' | 'cover'
 export type CanvasBlock = BlockBase & { kind: CanvasKind; height: number; repeat: Repeat; elements: CanvasElement[]; background?: string; rule?: { weight: number; color: string } | null }
 export type DetailsBlock = BlockBase & { kind: 'details'; layout: 'columns' | 'stacked' | 'form'; left: KVRow[]; right: KVRow[]; labelWidth: number; style: TextStyle; labelStyle: TextStyle }
 export type TitleBlock = BlockBase & { kind: 'title'; title: string; titleStyle: TextStyle; subject: string; subjectStyle: TextStyle; intro: string; introStyle: TextStyle }
-export const ITEM_COLUMN_KEYS = ['no', 'item', 'qty', 'unit', 'qtyUnit', 'unitPrice', 'discount', 'total'] as const
+export const ITEM_COLUMN_KEYS = ['no', 'item', 'qty', 'unit', 'qtyUnit', 'unitPrice', 'discount', 'optional', 'total'] as const   // (REG-617, parity Q-11) `optional` = the Optional price column
 export type ItemsColumnKey = (typeof ITEM_COLUMN_KEYS)[number]
-export const ITEM_COLUMN_LABEL: Record<ItemsColumnKey, string> = { no: '#', item: 'Item', qty: 'Qty', unit: 'Unit', qtyUnit: 'Qty · Unit', unitPrice: 'Unit price', discount: 'Discount', total: 'Total' }
+export const ITEM_COLUMN_LABEL: Record<ItemsColumnKey, string> = { no: '#', item: 'Item', qty: 'Qty', unit: 'Unit', qtyUnit: 'Qty · Unit', unitPrice: 'Unit price', discount: 'Discount', optional: 'Optional price', total: 'Total' }
 export type ItemsColumn = { key: ItemsColumnKey; label: string; on: boolean; width: number; align: Align; color?: string }
 export type ItemsBlock = BlockBase & {
   kind: 'items'
   groupBy: 'none' | 'category' | 'room' | 'section'
   subGroupBy: 'none' | 'room' | 'category'
   sectionLabel: 'letters' | 'numbers' | 'none'
-  numbering: 'group' | 'area' | 'continuous' | 'none' | 'nested'   // (REG-558) nested = 1 · 1.1 · a b c: the section's number, its lines, a sub-section's lines lettered
+  numbering: 'group' | 'area' | 'continuous' | 'none' | 'nested' | 'lettered'   // (REG-558) nested = 1 · 1.1 · a b c: the section's number, its lines, a sub-section's lines lettered; (REG-617, parity Q-10) lettered = A1 · A2 · B1, the section's letter before each number, restarting per section
   bandStyle: 'grey' | 'accent' | 'black' | 'underlined' | 'inline'
   groupNotes: boolean
   groupNoteStyle: TextStyle
@@ -142,6 +175,8 @@ export type ItemsBlock = BlockBase & {
   photos: boolean
   subtotals: boolean
   subtotalLabel: string
+  /** (REG-617, parity Q-21) Where a section's sub-total prints: a row after its items (the default), in its heading band, or both. */
+  subtotalAt?: 'row' | 'band' | 'both'
   lumpSum: boolean
   zeroAmount: 'FOC' | 'Inclusive' | '0.00' | 'blank'
   currency: 'S$' | '$ ' | 'none'
@@ -161,9 +196,13 @@ export type ItemsBlock = BlockBase & {
 }
 export type TotalsLineKey = 'pages' | 'subtotal' | 'discount' | 'additional' | 'gst' | 'total'
 export type TotalsBlock = BlockBase & { kind: 'totals'; lines: { key: TotalsLineKey; label: string; on: boolean }[]; layout: 'right' | 'full'; width: number; style: TextStyle; totalStyle: TextStyle; rules: 'none' | 'top' | 'double' | 'grid' }
-export type PaymentsBlock = BlockBase & { kind: 'payments'; title: string; layout: 'table' | 'list' | 'cards'; showAmounts: boolean; showDue: boolean; letters: boolean; style: TextStyle; titleStyle: TextStyle; band: boolean; /** (REG-560) a Total line under the milestones */ showTotal?: boolean }
+export type PaymentsBlock = BlockBase & { kind: 'payments'; title: string; layout: 'table' | 'list' | 'cards'; showAmounts: boolean; showDue: boolean; letters: boolean; style: TextStyle; titleStyle: TextStyle; band: boolean; /** (REG-560) a Total line under the milestones */ showTotal?: boolean
+  /** (REG-618, parity Q-16) the milestones marked 1st · 2nd · 3rd (over `letters`); a small-print footnote under the schedule */ ordinals?: boolean; footnote?: string }
 /** (REG-562) Bank details: the issuing entity's bank, account and PayNow, with its QR beside — from Company › Profile. */
-export type BankBlock = BlockBase & { kind: 'bank'; title: string; titleStyle: TextStyle; style: TextStyle; layout: 'row' | 'stacked'; qr: boolean; qrWidth: number; box: 'none' | 'tint' | 'outline' }
+export type BankBlock = BlockBase & { kind: 'bank'; title: string; titleStyle: TextStyle; style: TextStyle; layout: 'row' | 'stacked'; qr: boolean; qrWidth: number; box: 'none' | 'tint' | 'outline'; /** (REG-618, parity Q-24) the studio's own words for each row */ labels?: Partial<Record<BankRowKey, string>> }
+export const BANK_ROWS = ['bank', 'accountName', 'accountNo', 'swift', 'payNow'] as const
+export type BankRowKey = (typeof BANK_ROWS)[number]
+export const BANK_ROW_LABEL: Record<BankRowKey, string> = { bank: 'Bank', accountName: 'Account name', accountNo: 'Account number', swift: 'SWIFT', payNow: 'PayNow' }
 export type TextSourceBlock = BlockBase & { kind: 'terms' | 'notes'; title: string; titleStyle: TextStyle; style: TextStyle; numbered: boolean; grid: boolean }
 export type SignatureBlock = BlockBase & { kind: 'signature'; columns: SignatureColumn[]; lineWeight: number; lineColor: string; style: TextStyle; headingStyle: TextStyle; preamble?: string }
 export type TextBlock = BlockBase & { kind: 'text'; html: string; style: TextStyle; box: 'none' | 'tint' | 'outline' }
@@ -221,8 +260,20 @@ const DEFAULT_ITEM_COLUMNS: ItemsColumn[] = [
   { key: 'qtyUnit', label: 'Unit', on: true, width: 20, align: 'right' },
   { key: 'unitPrice', label: 'Rate', on: true, width: 22, align: 'right' },
   { key: 'discount', label: 'Disc.', on: false, width: 14, align: 'right' },
+  { key: 'optional', label: 'Optional', on: false, width: 24, align: 'right' },
   { key: 'total', label: 'Amount', on: true, width: 26, align: 'right' },
 ]
+/** (REG-617) A stored Items block from before a column existed gains it, off, where the defaults put it (the Optional price column sits before the Total). */
+export function withAllColumns(columns: ItemsColumn[]): ItemsColumn[] {
+  const have = new Set(columns.map((c) => c.key))
+  let out = columns.filter((c) => (ITEM_COLUMN_KEYS as readonly string[]).includes(c.key))
+  for (const d of DEFAULT_ITEM_COLUMNS) {
+    if (have.has(d.key)) continue
+    const at = d.key === 'optional' ? out.findIndex((c) => c.key === 'total') : -1
+    out = at >= 0 ? [...out.slice(0, at), { ...d }, ...out.slice(at)] : [...out, { ...d }]
+  }
+  return out
+}
 /** A fresh block of a kind, with the model's sensible defaults. */
 export function defaultBlock(kind: BlockKind): Block {
   const id = newId()
@@ -278,7 +329,9 @@ export function parseDesign(json: string | null | undefined, fallback: TemplateD
     const raw = JSON.parse(json) as Partial<TemplateDesign>
     if (!raw || !Array.isArray(raw.blocks)) return fallback
     const page = raw.page && isPaper(raw.page.paper) ? { ...DEFAULT_PAGE, ...raw.page, margins: { ...DEFAULT_PAGE.margins, ...(raw.page.margins ?? {}) }, dateFormat: isDateFormat(raw.page.dateFormat) ? raw.page.dateFormat : 'short' } : fallback.page
-    return { page, brand: raw.brand ?? {}, blocks: raw.blocks.filter((b): b is Block => !!b && typeof b === 'object' && (BLOCK_KINDS as readonly string[]).includes((b as Block).kind)) }
+    const blocks = raw.blocks.filter((b): b is Block => !!b && typeof b === 'object' && (BLOCK_KINDS as readonly string[]).includes((b as Block).kind))
+      .map((b) => (b.kind === 'items' && Array.isArray(b.columns) ? { ...b, columns: withAllColumns(b.columns) } : b))
+    return { page, brand: raw.brand ?? {}, blocks }
   } catch { return fallback }
 }
 export function parseDefaults(json: string | null | undefined): TemplateDefaults {
@@ -308,6 +361,10 @@ export type TemplateSummary = {
   deletedAt: number | null
   /** (REG-538) Who deleted it — the sheet's "Deleted by" (it used to show whoever last edited). */
   deletedBy: { name: string; color: string } | null
+  /** (REG-664) Its folder in Templates › Quotes (null = the top). */
+  folderId: string | null
+  /** When it was made — the gallery's sort by age. */
+  createdAt: number
   /** The published design (or the draft's, for a draft) — what the thumbnail draws. */
   design: TemplateDesign
 }

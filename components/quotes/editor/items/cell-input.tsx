@@ -2,6 +2,9 @@
 
 import { useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { money2 } from '@/lib/quotes/math'
+import { cleanLink, shortLink } from '@/lib/quotes/items-model'
+import { Icon } from '@/components/om/icon'
+import { Tooltip } from '@/components/om/tooltip'
 import { filterNumeric, readNumber } from '@/lib/quotes/arith'
 import styles from './items-table.module.css'
 
@@ -51,11 +54,11 @@ export function TextCell({ value, placeholder, onCommit, kind = 'text', ariaLabe
  * Money in cents: shows "S$1,000.00", edits as "1000.00" (junk filtered as typed, REG-150; no sign — a price is never
  * negative). `fit` sizes the box to its figure so a neighbour (the markup's "(x%)") never squeezes it into an ellipsis.
  */
-export function MoneyCell({ minor, onCommit, ariaLabel, fit }: { minor: number; onCommit: (minor: number) => void; ariaLabel: string; fit?: boolean }) {
+export function MoneyCell({ minor, onCommit, ariaLabel, fit, signed = false }: { minor: number; onCommit: (minor: number) => void; ariaLabel: string; fit?: boolean; /** (sweep S1) a markup may be below zero — a line sold under its cost keeps its minus while typed */ signed?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
   const { cancel, takeCancel } = useCancel()
   const commit = () => {
-    if (!takeCancel() && draft !== null) { const n = Math.round(readNumber(draft) * 100); if (Number.isFinite(n) && n >= 0 && n !== minor) onCommit(n) }
+    if (!takeCancel() && draft !== null) { const n = Math.round(readNumber(draft) * 100); if (Number.isFinite(n) && (signed || n >= 0) && n !== minor) onCommit(n) }
     setDraft(null)
   }
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
@@ -66,7 +69,7 @@ export function MoneyCell({ minor, onCommit, ariaLabel, fit }: { minor: number; 
            data-dirty={draft !== null && draft !== base ? '' : undefined}
            value={shown}
            onFocus={() => setDraft(base)}
-           onChange={(e) => setDraft(filterNumeric(e.target.value, ','))}
+           onChange={(e) => { const v = e.target.value; setDraft(signed && /^\s*[-−–]/.test(v) && !v.trimStart().startsWith('=') ? `-${filterNumeric(v, ',')}` : filterNumeric(v, ',')) }}
            onBlur={commit} onKeyDown={onKey} />
   )
 }
@@ -90,5 +93,36 @@ export function NumberCell({ value, onCommit, ariaLabel, suffix = '', max = 1_00
            onFocus={() => setDraft(shown)}
            onChange={(e) => setDraft(filterNumeric(e.target.value))}
            onBlur={commit} onKeyDown={onKey} />
+  )
+}
+
+/**
+ * (REG-623, parity Q-09) A product or spec link — 1.0's "Spec Sheet / Product Link", never printed. At rest the cell shows the short
+ * address ("ikea.com/sg/…") and an Open button; in the box it edits the whole link. A bare address takes https:// in front; text that
+ * is not a web address is refused on commit (`onInvalid` says why) and the stored link stays.
+ */
+export function LinkCell({ value, onCommit, onInvalid, ariaLabel, placeholder }: { value: string | null; onCommit: (v: string | null) => void; onInvalid: () => void; ariaLabel: string; placeholder: string }) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const { cancel, takeCancel } = useCancel()
+  const commit = () => {
+    if (!takeCancel() && draft !== null && draft.trim() !== (value ?? '')) {
+      const u = cleanLink(draft)
+      if (u === undefined) onInvalid()
+      else if (u !== value) onCommit(u)
+    }
+    setDraft(null)
+  }
+  const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Escape') cancel(e) }
+  return (
+    <span className={styles.linkCell}>
+      <input className={styles.input} data-edit="" data-link={value ? '' : undefined} data-dirty={draft !== null && draft !== (value ?? '') ? '' : undefined}
+             value={draft ?? shortLink(value)} placeholder={placeholder} aria-label={ariaLabel} inputMode="url" spellCheck={false}
+             onFocus={() => setDraft(value ?? '')} onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={onKey} />
+      {value && draft === null ? (
+        <Tooltip label="Open the link">
+          <a className={styles.linkOpen} href={value} target="_blank" rel="noopener noreferrer" aria-label={`Open ${shortLink(value)}`}><Icon name="open_in_new" size={16} /></a>
+        </Tooltip>
+      ) : null}
+    </span>
   )
 }

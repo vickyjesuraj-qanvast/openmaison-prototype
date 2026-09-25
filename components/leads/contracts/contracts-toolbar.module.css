@@ -67,3 +67,5 @@
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
+/* (sweep S2 #23) A greyed menu row says why beside its words. */
+.menuMeta { margin-left: auto; padding-left: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

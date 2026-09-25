@@ -188,7 +188,8 @@
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
-  .card { grid-template-columns: minmax(555px, 1fr) minmax(128px, max-content) 120px 142px 140px 157px 150px; }
+  /* (sweep S2 #11) the user's tracks — order, visibility and dragged widths (Tools' Lead column too) — plus the band; a fixed template put Updated under the actions */
+  .card { grid-template-columns: var(--tracks, minmax(555px, 1fr) minmax(128px, max-content) 120px 142px 140px 157px) 150px; }
 }
 
 /* ── ≤767: the table is the canvas' cards (REG-377, canvas 2n) ────────────────────────────────────────
@@ -259,4 +260,12 @@
 .leadLink { font: var(--om-type-body-m); color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }
 .leadLink:hover { color: var(--om-color-on-primary-variant); text-decoration: underline; }
 .leadLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .cell.colLead { display: none; } }
+/* (sweep S2 #11 · #12) The Lead column shows wherever the table does; on a phone's card it is the second line — Tools' cards read apart by lead. */
+@media (max-width: 767px) {
+  .card[data-lead] .row { grid-template-rows: auto auto auto; }
+  .card[data-lead] .cell.colLead { display: flex; grid-column: 2 / -1 !important; grid-row: 2 !important; }
+  .card[data-lead] .cell.colStatus, .card[data-lead] .cell.colCreated { grid-row: 3 !important; }
+}
+/* (REG-633, contracts parity Q-17) The Sent cell's second line: when the client first opened the link. */
+.sentCell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.viewed { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

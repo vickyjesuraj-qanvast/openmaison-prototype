@@ -17,6 +17,7 @@ import { ALL_STAGES, DISTRICTS, TASK_KINDS } from '@/lib/leads/enums'
 // of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
 import { digitsOnly, parseInputDate, phoneDigits, titleCaseName } from '@/lib/format'
 import { revalidateEveryLead, revalidateLead, revalidateLeadListings } from '@/lib/leads/queries'
+import { recordWonUpload } from '@/lib/contracts/won'
 
 const ME = SESSION_MEMBER_ID   // (REG-286) one stand-in for the signed-in member, shared by every module that stamps a write
 
@@ -147,6 +148,7 @@ export async function moveStage(input: {
       }
     }
   })
+  if (input.toStage === 'Won') await recordWonUpload(input.leadId, input.payload, now)   // (REG-632, contracts parity Q-14) the uploaded signed contract is a contract
   /* (REG-608, parity Q-23) The lead's stage changed — Owners, Admins and the lead's members hear it (never the actor); the reminder's members hear their new task. */
   await notifyStageChange(input.leadId, input.fromStage, input.toStage, input.payload)
   for (const a of assigned) await notify('task_assigned', a.memberIds, { title: `New task: ${a.title}`, body: `On ${await leadName(input.leadId)}`, href: `/leads/${input.leadId}/tasks?open=${a.id}`, leadId: input.leadId })
@@ -287,7 +289,8 @@ export async function findDuplicateLead(input: { phone: string; email: string; e
 async function writeCustomValues(tx: Tx, leadId: string, values: Record<string, string | string[]> | undefined): Promise<void> {
   if (!values) return
   const defs = await tx.select({ id: leadCustomFields.id, fieldType: leadCustomFields.fieldType }).from(leadCustomFields).where(eq(leadCustomFields.isActive, true))
-  await tx.delete(leadCustomFieldValues).where(eq(leadCustomFieldValues.leadId, leadId))
+  /* (REG-647, settings parity Q-13 · E-91) Only the active fields' values are rewritten — an inactive field keeps its value, as the card promises. */
+  if (defs.length) await tx.delete(leadCustomFieldValues).where(and(eq(leadCustomFieldValues.leadId, leadId), inArray(leadCustomFieldValues.fieldId, defs.map((d) => d.id))))
   const rows = defs.flatMap((d) => {
     const v = values[d.id]
     if (v === undefined) return []
@@ -301,9 +304,12 @@ async function writeCustomValues(tx: Tx, leadId: string, values: Record<string, 
 export async function createLead(input: LeadFormInput): Promise<string> {
   const now = new Date()
   const id = randomUUID()
-  /* (REG-609, parity C-07) A Designer's new lead is their own — the server twin of the form's locked Assign member field. */
-  const [me] = await db.select({ role: members.role }).from(members).where(eq(members.id, ME)).limit(1)
-  const assignees = me?.role === 'Designer' ? [ME] : input.assignees
+  /* (REG-609, parity C-07) A Designer's new lead is their own — the server twin of the form's locked Assign member field. (sweep S4 · U-11)
+     The signed-in member decides it (`fetchViewer`, the house way — the fixed session id checked everyone as Dane), and a Manager's pick
+     keeps to their reach, as the Assign popover's does (`assignableIds`). */
+  const [viewer, team] = await Promise.all([fetchViewer(), db.select({ id: members.id, isActive: members.isActive }).from(members)])
+  const reach = new Set(assignableIds(viewer, team))
+  const assignees = viewer.role === 'Designer' ? [viewer.id] : input.assignees.filter((m) => reach.has(m))
   const files = (input.files ?? []).map((n) => n.trim()).filter(Boolean).slice(0, 20)
   // One transaction: a lead is never visible without the owners it was created with, so a retry cannot leave two.
   await db.transaction(async (tx) => {
@@ -314,7 +320,7 @@ export async function createLead(input: LeadFormInput): Promise<string> {
     const bank = await tx.select().from(studioScopeQuestions).where(eq(studioScopeQuestions.isEnabled, true)).orderBy(asc(studioScopeQuestions.sortOrder))
     if (bank.length) {
       const { isBankType, leadOptions, parseBankOptions, toLeadType } = await import('@/lib/company/question-bank')
-      await tx.insert(questions).values(bank.map((q, i) => { const t = isBankType(q.questionType) ? q.questionType : 'text'; const opts = leadOptions(t, parseBankOptions(q.options)); return { id: randomUUID(), leadId: id, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: i, createdAt: now } }))
+      await tx.insert(questions).values(bank.map((q, i) => { const t = isBankType(q.questionType) ? q.questionType : 'text'; const opts = leadOptions(t, parseBankOptions(q.options)); return { id: randomUUID(), leadId: id, text: q.question, type: toLeadType(t), options: opts.length ? JSON.stringify(opts) : null, sortOrder: i, createdAt: now, required: q.isRequired } }))   // (REG-647) the bank's Required rides along
     }
     /* (REG-609, parity C-08) Documents attached at creation land in the Files tab — the row files-actions' uploadFile writes, in the same act. */
     if (files.length) await tx.insert(leadFiles).values(files.map((name) => {
@@ -331,6 +337,11 @@ export async function createLead(input: LeadFormInput): Promise<string> {
 
 export async function updateLead(leadId: string, input: LeadFormInput): Promise<void> {
   const [before] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1)
+  /* (sweep S4 · U-11) The form's members change under the same reach as the Assign popover (assignMembers): only who may be assigned by this member moves. */
+  const [viewer, team, current] = await Promise.all([fetchViewer(), db.select({ id: members.id, isActive: members.isActive }).from(members), db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId))])
+  const was = new Set(current.map((c) => c.memberId)), now = new Set(input.assignees)
+  const moved = [...new Set([...was, ...now])].filter((id) => was.has(id) !== now.has(id))
+  if (moved.length) { const reach = new Set(assignableIds(viewer, team)); if (assignHint(viewer) || moved.some((id) => !reach.has(id))) throw new Error('outside your team') }
   const cols = leadColumns(input)
   await db.transaction(async (tx) => {
     await tx.update(leads).set({ ...cols, updatedAt: new Date() }).where(eq(leads.id, leadId))
@@ -404,7 +415,7 @@ export async function restoreLeads(leadIds: string[]): Promise<number> {
 export async function deleteForever(leadIds: string[]): Promise<void> {
   await assertCanDelete()   // (REG-607)
   if (leadIds.length === 0) return
-  const { leadTasks, leadAssignees: la, stageLogs } = await import('@/lib/db/schema')
+  const { leadTasks, leadAssignees: la, stageLogs, quoteComparisons } = await import('@/lib/db/schema')
   await db.transaction(async (tx) => {
     const gone = await tx.select({ id: leads.id }).from(leads)
       .where(and(inArray(leads.id, leadIds), isNotNull(leads.deletedAt)))
@@ -413,6 +424,7 @@ export async function deleteForever(leadIds: string[]): Promise<void> {
     await tx.delete(leadTasks).where(inArray(leadTasks.leadId, ids))
     await tx.delete(la).where(inArray(la.leadId, ids))
     await tx.delete(stageLogs).where(inArray(stageLogs.leadId, ids))
+    await tx.delete(quoteComparisons).where(inArray(quoteComparisons.leadId, ids))   // (REG-641, X-Ray parity Q-21) a lead gone for good takes its readings
     await tx.delete(leads).where(inArray(leads.id, ids))
   })
   revalidateEveryLead()   // (REG-286)
@@ -683,6 +695,7 @@ export async function updateStageDetails(input: { leadId: string; stage: string;
   const [latest] = await db.select({ id: stageLogs.id }).from(stageLogs)
     .where(and(eq(stageLogs.leadId, input.leadId), eq(stageLogs.toStage, input.stage)))
     .orderBy(desc(stageLogs.createdAt)).limit(1)
+  if (input.stage === 'Won') await recordWonUpload(input.leadId, input.data, new Date())   // (REG-632, contracts parity Q-14)
   if (latest) {
     await db.update(stageLogs).set({ payload: input.data as object }).where(eq(stageLogs.id, latest.id))
   } else {

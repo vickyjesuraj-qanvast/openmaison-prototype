@@ -1,0 +1,2 @@
+/* (REG-646) The read-only line (app/settings/settings.module.css .readOnlyLine, shared). */
+.note { display: inline-flex; align-items: center; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

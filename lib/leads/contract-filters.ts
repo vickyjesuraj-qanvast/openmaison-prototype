@@ -29,7 +29,7 @@ export function activeContractGroups(f: ContractFilters): { sort: boolean; date:
 export const activeContractFilterCount = (f: ContractFilters) => Object.values(activeContractGroups(f)).filter(Boolean).length
 
 /** Filter + sort — the Date pane bounds Created (the first date column), presets are day-granular windows ending today. */
-export function applyContractFilters(rows: Contract[], f: ContractFilters, now: number): Contract[] {
+export function applyContractFilters<T extends Contract>(rows: T[], f: ContractFilters, now: number): T[] {
   let out = rows
   const day = 86_400_000
   const today = startOfDay(new Date(now))
@@ -58,9 +58,11 @@ export function applyContractFilters(rows: Contract[], f: ContractFilters, now: 
  * nothing. Title alone was searchable before, so a contract could not be found by its status, its dates or the
  * signed copy sitting in plain sight in its row.
  */
-export function searchContracts(rows: Contract[], query: string): Contract[] {
+/** (REG-634, contracts parity E-125) `extra` adds a row's own words — Tools › Contracts searches the lead's name too. */
+export function searchContracts<T extends Contract>(rows: T[], query: string, extra?: (c: T) => string | null): T[] {
   return filterByQuery(rows, query, (c) => ({
     fields: [
+      extra?.(c) ?? null,
       c.title,
       c.status,
       displayDate(c.createdAt),

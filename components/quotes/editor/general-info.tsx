@@ -9,6 +9,9 @@ import type { EditorLead } from '@/lib/quotes/editor'
 import styles from './general-info.module.css'
 import { useState } from 'react'
 import { Button } from '@/components/ds'
+import { pickable } from '@/lib/leads/assign-policy'
+import { isNric } from '@/lib/format'
+import { MSG } from '@/lib/forms'
 
 /** What General Info edits — the editor's local copy of the quote's fields (dates as the DateField's d/m/yyyy string). */
 export type GeneralState = {
@@ -41,9 +44,12 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra }: {
   /** (REG-489) A fourth row under the mock's three — the Template field and its actions. */
   extra?: ReactNode
 }) {
-  const names = members.map((m) => m.name)
+  const names = pickable(members, value.preparedBy ? [value.preparedBy] : []).map((m) => m.name)   // (REG-646) active members, and the one already named
   const preparedName = members.find((m) => m.id === value.preparedBy)?.name ?? ''
   const [second, setSecond] = useState(!!(value.client2Name || value.client2Nric))   /* (REG-588) */
+  /* (sweep S1 #33) An NRIC is checked like the lead form's (REG-607): the message shows once the box has been left, and clears as it is put right. */
+  const [left, setLeft] = useState<{ nric?: boolean; client2Nric?: boolean }>({})
+  const nricError = (k: 'nric' | 'client2Nric') => (left[k] && value[k].trim() && !isNric(value[k]) ? MSG.nric : undefined)
   return (
     <div className={styles.grid}>
       {/* Row 1 */}
@@ -65,14 +71,16 @@ export function GeneralInfo({ value, lead, members, today, onChange, extra }: {
         <DateField label="Quote Valid Until" value={value.validUntil} today={today} icon="calendar_month" onChange={(v) => onChange({ validUntil: v })} />
       </div>
       <div className={styles.pair}>
-        <TextField label="NRIC" value={value.nric} onChange={(v) => onChange({ nric: v })} maxLength={20} />
+        <TextField label="NRIC" value={value.nric} onChange={(v) => onChange({ nric: v })} maxLength={20}
+                   onBlur={() => setLeft((l) => ({ ...l, nric: true }))} error={nricError('nric')} />
         <TextField label="Customer ID" value={value.customerId} onChange={(v) => onChange({ customerId: v })} maxLength={60} />
       </div>
       {/* (REG-588) A second client — co-owners sign together: {client_name} prints "A & B", the NRICs print side by side, both are named on the signing link. */}
       {second ? (
         <div className={styles.pair}>
           <TextField label="Second client" value={value.client2Name} onChange={(v) => onChange({ client2Name: v })} maxLength={120} />
-          <TextField label="NRIC (second client)" value={value.client2Nric} onChange={(v) => onChange({ client2Nric: v })} maxLength={20} />
+          <TextField label="NRIC (second client)" value={value.client2Nric} onChange={(v) => onChange({ client2Nric: v })} maxLength={20}
+                     onBlur={() => setLeft((l) => ({ ...l, client2Nric: true }))} error={nricError('client2Nric')} />
         </div>
       ) : (
         <div className={styles.pair}><Button appearance="text" onPress={() => setSecond(true)}>Add a second client</Button></div>

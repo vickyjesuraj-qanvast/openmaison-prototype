@@ -147,7 +147,7 @@ export function CommentsPanel({
  * 36px avatar ("Avatar Generic 36 r4": photo for members whose colour is 'photo', otherwise the initial 14/Medium on the
  * member's tint). components/om/avatar only ships 24 and 40, so this is that component's markup + CSS at 36 (cannot edit om/*).
  */
-function CommentAvatar({ member }: { member: Member | null }) {
+export function CommentAvatar({ member }: { member: Member | null }) {
   const name = member?.name ?? ''
   if (member?.color === 'photo') {
     return (

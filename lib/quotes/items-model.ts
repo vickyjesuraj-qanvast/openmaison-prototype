@@ -53,7 +53,7 @@ export const COLUMN_LABEL: Record<ColumnKey, string> = {
   rebate: 'Rebate',   // (REG-596) Owners only — a vendor rebate on the line, counted in the owner's margin, never printed
 }
 /** Columns the table can actually render today (the rest are in the catalogue, off, and answer coming soon when switched on). */
-export const RENDERABLE_COLUMNS: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'type', 'margin', 'rebate']
+export const RENDERABLE_COLUMNS: readonly ColumnKey[] = ['qty', 'unit', 'cost', 'markup', 'unitPrice', 'discount', 'gst', 'room', 'category', 'section', 'type', 'margin', 'rebate', 'vendor', 'website']   // (REG-623, parity Q-08 · Q-09) Vendor/Sub and Website Link are drawn
 export type ColumnSettings = { details: { description: boolean; images: boolean; autonumber: boolean }; columns: { key: ColumnKey; on: boolean }[] }
 /** The table as mocked (1260:31209, updated 2026-09-15 — the STATUS column left the default set, REG-426, then the catalogue
     too, REG-435): Qty · Unit · Cost · Markup · Unit Price · Discount · GST (%). A stored 'status' entry is dropped on read. */
@@ -75,18 +75,45 @@ export function parseColumns(json: string | null | undefined): ColumnSettings {
   return { details: { description: d.description !== false, images: d.images !== false, autonumber: d.autonumber !== false }, columns }
 }
 
-export type ItemLabels = { categories: string[]; rooms: string[]; sections: string[] }
+/** The labels the studio added on this quote; (REG-623) `vendors` = the vendors typed here that My Items does not list. */
+export type ItemLabels = { categories: string[]; rooms: string[]; sections: string[]; vendors: string[] }
 export function parseLabels(json: string | null | undefined): ItemLabels {
   let raw: unknown = null
   if (json) { try { raw = JSON.parse(json) } catch { raw = null } }
   const r = (raw ?? {}) as Partial<Record<keyof ItemLabels, unknown>>
   const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').slice(0, 50) : [])
-  return { categories: list(r.categories), rooms: list(r.rooms), sections: list(r.sections) }
+  return { categories: list(r.categories), rooms: list(r.rooms), sections: list(r.sections), vendors: list(r.vendors) }
+}
+
+/**
+ * (REG-623, parity Q-09) A line's product or spec link — 1.0's "Spec Sheet / Product Link": http or https only, never printed.
+ * A bare address ("ikea.com/sg/…") gets https:// in front. Returns the cleaned link, null for an empty box, undefined when the
+ * text is not a web address (the cell refuses it and says why).
+ */
+export function cleanLink(v: string | null | undefined): string | null | undefined {
+  const t = (v ?? '').trim()
+  if (!t) return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(t) ? t : /^[^\s/]+\.[^\s]+$/.test(t) ? `https://${t}` : t
+  try {
+    const u = new URL(withScheme)
+    if ((u.protocol !== 'http:' && u.protocol !== 'https:') || !u.hostname.includes('.') || /\s/.test(withScheme)) return undefined
+    return withScheme.slice(0, 500)
+  } catch { return undefined }
+}
+/** "ikea.com/sg/…" — the link as a cell shows it at rest: the host without "www.", then the path's first step. */
+export function shortLink(v: string | null | undefined): string {
+  if (!v) return ''
+  try {
+    const u = new URL(v)
+    const host = u.hostname.replace(/^www\./, '')
+    const step = u.pathname.split('/').filter(Boolean)[0]
+    return step ? `${host}/${step}${u.pathname.split('/').filter(Boolean).length > 1 ? '/…' : ''}` : host
+  } catch { return v }
 }
 
 /** Reference row menu (owner 2026-09-11; "Create Document(s)" dropped — REG-410). Round 1 of the testers' asks added
     Skip the number (REG-558), Ungroup (REG-558), Save section to My Items (REG-566) and Label the sub-total (REG-555). */
-export type RowMenuAction = 'library' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove' | 'noNumber' | 'ungroup' | 'saveSection' | 'subtotalLabel' | 'description' | 'oneLine'
+export type RowMenuAction = 'library' | /** (REG-653) */ 'libraryUpdate' | 'addFromBook' | /** (sweep S1) */ 'subtotalClear' | 'duplicate' | 'copyName' | 'group' | 'showFull' | 'optional' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'remove' | 'noNumber' | 'ungroup' | 'saveSection' | 'subtotalLabel' | 'description' | 'oneLine' | 'comment'
 
 /**
  * (REG-555) Print as — what a line prints in place of its amount, and whether it counts (1.0's FOC / Inclusive / KIV words,
@@ -94,18 +121,20 @@ export type RowMenuAction = 'library' | 'duplicate' | 'copyName' | 'group' | 'sh
  *   foc        Free of charge — the word prints, the line leaves the totals; its cost still counts against the margin.
  *   inclusive  Included in another line's price — the word prints, the line leaves the totals; its cost counts against the margin.
  *   kiv        Keep in view — to be confirmed later; the word prints, nothing counts.
+ *   client     (REG-623, parity Q-07) By client — the client buys or supplies it; the word prints, nothing counts, the studio bears no cost.
  *   behalf     Paid on the client's behalf — the amount prints with the note, counts in the subtotal, carries no GST.
  *   packaged   Priced within a package line — the word prints, the line leaves the totals; its cost counts against the margin.
  *   custom     The studio's own word (`printAsText`, e.g. "Waived", "By owner") — prints in place of the amount, nothing counts.
  */
-export const PRINT_AS = ['foc', 'inclusive', 'kiv', 'behalf', 'packaged', 'custom'] as const
+export const PRINT_AS = ['foc', 'inclusive', 'kiv', 'client', 'behalf', 'packaged', 'custom'] as const
 export type PrintAs = (typeof PRINT_AS)[number]
 export const isPrintAs = (s: unknown): s is PrintAs => typeof s === 'string' && (PRINT_AS as readonly string[]).includes(s)
-export const PRINT_AS_LABEL: Record<PrintAs, string> = { foc: 'FOC', inclusive: 'Inclusive', kiv: 'KIV', behalf: 'On behalf', packaged: 'Packaged', custom: 'Custom word…' }
+export const PRINT_AS_LABEL: Record<PrintAs, string> = { foc: 'FOC', inclusive: 'Inclusive', kiv: 'KIV', client: 'By client', behalf: 'On behalf', packaged: 'Packaged', custom: 'Custom word…' }
 export const PRINT_AS_HELP: Record<PrintAs, string> = {
   foc: 'Free of charge — prints “FOC”, not counted',
   inclusive: 'Included in another line — prints “Inclusive”, not counted',
   kiv: 'To be confirmed — prints “KIV”, not counted',
+  client: 'The client supplies it — prints “By client”, not counted',   // (REG-623, parity Q-07) 1.0's by_client price type
   behalf: 'Paid on the client’s behalf — the amount prints and counts, no GST',
   packaged: 'Priced in a package line — prints “Packaged”, not counted',
   custom: 'Your own word in place of the amount, not counted',
@@ -133,8 +162,24 @@ export const HIGHLIGHT_KIND: Record<Highlight, 'text' | 'fill'> = { accent: 'tex
  * (REG-566) A section saved to My Items: the group's name and note, its lines and — one level down — its sub-sections with theirs.
  * Prices are the ones on the lines when it was saved; the studio edits them on the quote after inserting.
  */
-export type SavedLine = { name: string; description: string | null; descriptionHtml: string | null; qty: number; unit: string | null; costMinor: number; markupMinor: number; discountPct: number; gstPct: number; room: string | null; category: string | null; section: string | null; printAs: string | null; printAsText: string | null; highlight: string | null; icon: string | null }
-export type SavedSection = { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[]; subs: { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[] }[] }
+export type SavedLine = { name: string; description: string | null; descriptionHtml: string | null; qty: number; unit: string | null; costMinor: number; markupMinor: number; discountPct: number; gstPct: number; room: string | null; category: string | null; section: string | null; printAs: string | null; printAsText: string | null; highlight: string | null; icon: string | null; /** (REG-623) */ vendor?: string | null; link?: string | null
+  /** (REG-653, price book parity Q-10) What keeps a line safe on its way back into a quote: hidden or priced-off for the client, optional
+   *  (out of every sum), no number, the owner's rebate, its photo, and the My Items entry it came from. */
+  visibility?: Visibility; optional?: boolean; noNumber?: boolean; rebateMinor?: number; thumb?: string | null; thumbCount?: number; priceBookItemId?: string | null }
+/** (REG-653, Q-10) A saved section's own marks, and each sub-section's: printed as one line, the word beside its sub-total, its highlight, its visibility. */
+export type SavedGroupMarks = { printOneLine?: boolean; printAsText?: string | null; highlight?: string | null; visibility?: Visibility }
+export type SavedSection = SavedGroupMarks & { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[]; subs: (SavedGroupMarks & { name: string; description: string | null; descriptionHtml: string | null; lines: SavedLine[] })[] }
+const savedVisibility = (v: unknown): Visibility => (typeof v === 'string' && isVisibility(v) ? v : 'visible')
+function groupMarks(g: Partial<SavedGroupMarks> | undefined): SavedGroupMarks {
+  return { printOneLine: g?.printOneLine === true, printAsText: typeof g?.printAsText === 'string' ? g.printAsText : null, highlight: isHighlight(g?.highlight) ? g.highlight : null, visibility: savedVisibility(g?.visibility) }
+}
+/** (REG-619, parity Q-27) A saved section's tags: a stored JSON array of short words, trimmed, de-duplicated, at most 8. */
+export function parseSectionTags(json: string | null | undefined): string[] {
+  if (!json) return []
+  try { const r = JSON.parse(json) as unknown; return Array.isArray(r) ? cleanSectionTags(r.filter((t): t is string => typeof t === 'string')) : [] } catch { return [] }
+}
+export const cleanSectionTags = (tags: string[]): string[] => [...new Map(tags.map((t) => t.trim().slice(0, 30)).filter(Boolean).map((t) => [t.toLowerCase(), t] as const)).values()].slice(0, 8)
+
 export function parseSavedSection(json: string): SavedSection | null {
   try {
     const r = JSON.parse(json) as Partial<SavedSection>
@@ -143,16 +188,40 @@ export function parseSavedSection(json: string): SavedSection | null {
       qty: typeof l.qty === 'number' ? l.qty : 1, unit: typeof l.unit === 'string' ? l.unit : null, costMinor: typeof l.costMinor === 'number' ? l.costMinor : 0, markupMinor: typeof l.markupMinor === 'number' ? l.markupMinor : 0,
       discountPct: typeof l.discountPct === 'number' ? l.discountPct : 0, gstPct: typeof l.gstPct === 'number' ? l.gstPct : 9, room: typeof l.room === 'string' ? l.room : null, category: typeof l.category === 'string' ? l.category : null,
       section: typeof l.section === 'string' ? l.section : null, printAs: isPrintAs(l.printAs) ? l.printAs : null, printAsText: typeof l.printAsText === 'string' ? l.printAsText : null, highlight: isHighlight(l.highlight) ? l.highlight : null, icon: typeof l.icon === 'string' ? l.icon : null,
+      vendor: typeof l.vendor === 'string' ? l.vendor : null, link: typeof l.link === 'string' ? cleanLink(l.link) ?? null : null,   // (REG-623)
+      /* (REG-653, Q-10) older saved sections carry none of these: visible, counted, numbered, no rebate, no photo, no source */
+      visibility: savedVisibility(l.visibility), optional: l.optional === true, noNumber: l.noNumber === true,
+      rebateMinor: typeof l.rebateMinor === 'number' && l.rebateMinor > 0 ? Math.round(l.rebateMinor) : 0,
+      thumb: typeof l.thumb === 'string' ? l.thumb : null, thumbCount: typeof l.thumbCount === 'number' ? l.thumbCount : typeof l.thumb === 'string' ? 1 : 0,
+      priceBookItemId: typeof l.priceBookItemId === 'string' ? l.priceBookItemId : null,
     })
     return {
       name: typeof r.name === 'string' ? r.name : 'Section', description: typeof r.description === 'string' ? r.description : null, descriptionHtml: typeof r.descriptionHtml === 'string' ? r.descriptionHtml : null,
+      ...groupMarks(r),
       lines: Array.isArray(r.lines) ? r.lines.map((l) => line(l ?? {})) : [],
-      subs: Array.isArray(r.subs) ? r.subs.map((g) => ({ name: typeof g?.name === 'string' ? g.name : 'Section', description: typeof g?.description === 'string' ? g.description : null, descriptionHtml: typeof g?.descriptionHtml === 'string' ? g.descriptionHtml : null, lines: Array.isArray(g?.lines) ? g.lines.map((l) => line(l ?? {})) : [] })) : [],
+      subs: Array.isArray(r.subs) ? r.subs.map((g) => ({ name: typeof g?.name === 'string' ? g.name : 'Section', description: typeof g?.description === 'string' ? g.description : null, descriptionHtml: typeof g?.descriptionHtml === 'string' ? g.descriptionHtml : null, ...groupMarks(g), lines: Array.isArray(g?.lines) ? g.lines.map((l) => line(l ?? {})) : [] })) : [],
     }
   } catch { return null }
 }
 /** The lines a saved section holds, sub-sections included — the popover's "n items". */
 export const savedSectionCount = (s: SavedSection) => s.lines.length + s.subs.reduce((n, g) => n + g.lines.length, 0)
+
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+/** A plain description as the rich editor's paragraphs; a line that starts with "• " becomes a list item so old bullets keep their shape
+    (REG-557; shared by the Items grid's Description dialog and, REG-653, the price book's item and section editors). */
+export function plainToHtml(text: string): string {
+  const out: string[] = []
+  let list: string[] = []
+  const flush = () => { if (list.length) { out.push(`<ul>${list.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`); list = [] } }
+  for (const l of text.split('\n')) { const m = /^[•\-–*]\s+(.*)$/.exec(l); if (m) list.push(m[1]!); else { flush(); if (l.trim()) out.push(`<p>${escapeHtml(l)}</p>`) } }
+  flush()
+  return out.join('')
+}
+/** The rich editor's text as it is kept: its plain words, and the HTML only when it carries lists or emphasis (REG-557's rule). */
+export function keptText(html: string, blank: boolean): { text: string; html: string | null } {
+  if (blank) return { text: '', html: null }
+  return { text: htmlToPlain(html), html: /<(ul|ol|li|b|strong|i|em|u|s|strike|a)\b/i.test(html) ? html : null }
+}
 
 /** (REG-557) A formatted description's plain text: paragraphs and list items on their own lines, a bullet before each item. */
 export function htmlToPlain(html: string): string {

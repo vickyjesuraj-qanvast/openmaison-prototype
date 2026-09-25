@@ -2,12 +2,13 @@ import 'server-only'
 import { asc, desc, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadTasks, leads, members, tags, taskTemplates, templateTasks, type Member, type Tag, type TaskTemplate } from '@/lib/db/schema'
+import { fetchViewer } from '@/lib/leads/visibility'
 
 /* Company › Templates › Tasks (REG-538): the checklists the team adds to a lead in one go, as a library with an editor. */
 
 export type TaskTemplateStep = { id: string; title: string; description: string | null; kind: string; memberIds: string[]; tagIds: string[]; dueDays: number | null; sortOrder: number }
 export type TaskTemplateRow = TaskTemplate & { tasks: TaskTemplateStep[]; usedBy: number; author: string | null; authorColor: string | null }
-export type TaskTemplatesData = { templates: TaskTemplateRow[]; deleted: TaskTemplateRow[]; team: Member[]; tags: Tag[]; leads: { id: string; name: string }[]; now: number }
+export type TaskTemplatesData = { templates: TaskTemplateRow[]; deleted: TaskTemplateRow[]; team: Member[]; tags: Tag[]; leads: { id: string; name: string }[]; now: number; /** (REG-646) who is looking — the menus' rename / delete rule */ viewer: { id: string; role: string } }
 
 const ids = (json: string | null): string[] => { if (!json) return []; try { const v = JSON.parse(json) as unknown; return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [] } catch { return [] } }
 
@@ -29,7 +30,8 @@ export async function fetchTaskTemplatesData(): Promise<TaskTemplatesData> {
       tasks: steps.filter((s) => s.templateId === t.id).map((s) => ({ id: s.id, title: s.title, description: s.description, kind: s.kind, memberIds: ids(s.memberIds), tagIds: ids(s.tagIds), dueDays: s.dueDays, sortOrder: s.sortOrder })),
     }
   })
-  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), team, tags: allTags, leads: clients, now: Date.now() }
+  const v = await fetchViewer()
+  return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), team, tags: allTags, leads: clients, now: Date.now(), viewer: { id: v.id, role: v.role } }
 }
 export type TaskTemplateEditorData = { template: TaskTemplateRow; team: Member[]; tags: Tag[]; leads: { id: string; name: string }[]; now: number }
 export async function fetchTaskTemplateEditor(id: string): Promise<TaskTemplateEditorData | null> {

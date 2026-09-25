@@ -25,7 +25,7 @@
   position: fixed; bottom: 0; height: 16px; z-index: 39; pointer-events: none;
   left: calc(var(--rail-w, 52px) + 16px); right: var(--om-spacing-2);
   background: var(--om-color-surface-default);   /* the body continues below the fold — a white skirt, not a canvas cut */
-  transition: left var(--motion-modal, 0.2s) ease;
+  transition: left var(--motion-modal);
 }
 .strip[data-stuck] { display: block; }
 .sentinel { display: block; height: 1px; margin-top: -1px; pointer-events: none; }

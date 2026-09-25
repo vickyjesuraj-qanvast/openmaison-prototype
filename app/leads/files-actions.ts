@@ -8,6 +8,7 @@ import { db } from '@/lib/db'
 import { fileComments, leadFiles, type LeadFile } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
 import { descendantIds } from '@/lib/leads/file-model'
+import { folderNameProblem } from '@/lib/folders'
 import { revalidateLead } from '@/lib/leads/queries'
 
 /* Lead Details › Files (931-39056). Every action revalidates the lead's pages; the client calls router.refresh() as well. */
@@ -43,10 +44,15 @@ const withDescendants = async (ids: string[], follow: (f: LeadFile, folder: Lead
 /** Trashed in the same `trashFiles` call as the folder (one timestamp for the whole cascade). */
 const trashedTogether = (f: LeadFile, folder: LeadFile) => !!f.deletedAt && !!folder.deletedAt && f.deletedAt.getTime() === folder.deletedAt.getTime()
 
-/** Create Folder (931:39191) — at the root or inside `parentId`. Returns the new id. */
+/** (REG-664) The lead's live folders beside `parentId` — a new or renamed folder's name must differ from theirs (lib/folders.ts). */
+const siblingFolders = async (leadId: string, parentId: string | null) =>
+  (await allOf(leadId)).filter((f) => f.kind === 'folder' && !f.deletedAt && (f.parentId ?? null) === parentId).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null }))
+
+/** Create Folder (931:39191) — at the root or inside `parentId`. Returns the new id. (REG-664) The name is checked as the dialog checks it. */
 export async function createFolder(leadId: string, name: string, parentId: string | null = null): Promise<string> {
+  const problem = folderNameProblem(name, await siblingFolders(leadId, parentId)); if (problem) throw new Error(problem)
   const id = randomUUID(); const now = new Date()
-  await db.insert(leadFiles).values({ id, leadId, kind: 'folder', name, thumb: null, createdAt: now, parentId, ownerId: ME, updatedAt: now })
+  await db.insert(leadFiles).values({ id, leadId, kind: 'folder', name: name.trim(), thumb: null, createdAt: now, parentId, ownerId: ME, updatedAt: now })
   touch(leadId); return id
 }
 
@@ -66,7 +72,10 @@ export async function uploadFile(leadId: string, parentId: string | null = null,
 /** Rename File / Rename Folder (931:39434 / 931:39178). */
 export async function renameFile(fileId: string, name: string): Promise<void> {
   const leadId = await leadOf(fileId); if (!leadId) return
-  await db.update(leadFiles).set({ name, updatedAt: new Date() }).where(eq(leadFiles.id, fileId))
+  const [f] = await db.select().from(leadFiles).where(eq(leadFiles.id, fileId))
+  if (f?.kind === 'folder') { const problem = folderNameProblem(name, await siblingFolders(leadId, f.parentId ?? null), fileId); if (problem) throw new Error(problem) }   // (REG-664)
+  else if (!name.trim()) throw new Error('a name is required')
+  await db.update(leadFiles).set({ name: name.trim(), updatedAt: new Date() }).where(eq(leadFiles.id, fileId))
   touch(leadId, fileId)
 }
 
@@ -77,7 +86,13 @@ export async function moveFiles(fileIds: string[], parentId: string | null): Pro
   const all = await allOf(leadId)
   const blocked = new Set<string>()
   for (const id of fileIds) { const f = all.find((x) => x.id === id); if (f?.kind === 'folder') { blocked.add(id); for (const d of descendantIds(all, id)) blocked.add(d) } }
-  if (parentId && blocked.has(parentId)) return
+  /* (REG-664) A refused move says so: it returned quietly and the tab still announced "Moved to …". The destination must be one of the
+     lead's live folders, and never one being moved or inside one. */
+  if (parentId) {
+    const dest = all.find((x) => x.id === parentId)
+    if (!dest || dest.kind !== 'folder' || dest.deletedAt) throw new Error('folder not found')
+    if (blocked.has(parentId)) throw new Error('a folder can’t go inside itself')
+  }
   await db.update(leadFiles).set({ parentId, updatedAt: new Date() }).where(inArray(leadFiles.id, fileIds))
   touch(leadId, ...fileIds)
 }

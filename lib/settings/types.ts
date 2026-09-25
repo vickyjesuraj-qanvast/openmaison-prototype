@@ -1,3 +1,4 @@
+import type { PreparedByMode } from '@/lib/templates/model'
 /**
  * Stage movement — studio-level policy set under Settings › Leads (user brief 2026-08-29).
  *   linear   one stage at a time: changing stage opens the Move stage window for the next stage only;
@@ -42,12 +43,21 @@ export function parseQuoteApproval(v: unknown): QuoteApproval {
 }
 
 /** The studio itself (settings key `studio`, seeded by repair R23): what the quote's Issuing Entity and GST line read. */
-export type Studio = { name: string; gstRegistered: boolean; /** The studio's line, as the quote's "[Studio Phone Number]" token prints it (REG-420); '' until set. */ phone: string }
-export const DEFAULT_STUDIO: Studio = { name: 'Demo Studio Pte Ltd', gstRegistered: true, phone: '' }
+export type Studio = {
+  name: string; gstRegistered: boolean; /** The studio's line, as the quote's "[Studio Phone Number]" token prints it (REG-420); '' until set. */ phone: string
+  /** (REG-645, settings parity Q-05) The GST rate a new line starts with (Settings › Quotes & pricing › GST); 9 until set. */
+  gstPct: number
+}
+export const DEFAULT_GST_PCT = 9
+export const DEFAULT_STUDIO: Studio = { name: 'Demo Studio Pte Ltd', gstRegistered: true, phone: '', gstPct: DEFAULT_GST_PCT }
+/** A GST rate as the studio may set it: 0–30 %, one decimal. */
+export const cleanGstPct = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 30 ? Math.round(v * 10) / 10 : DEFAULT_GST_PCT)
 export function parseStudio(v: unknown): Studio {
   const r = (v ?? {}) as Partial<Record<keyof Studio, unknown>>
-  return { name: typeof r.name === 'string' && r.name.trim() ? r.name : DEFAULT_STUDIO.name, gstRegistered: r.gstRegistered !== false, phone: typeof r.phone === 'string' ? r.phone.trim() : '' }
+  return { name: typeof r.name === 'string' && r.name.trim() ? r.name : DEFAULT_STUDIO.name, gstRegistered: r.gstRegistered !== false, phone: typeof r.phone === 'string' ? r.phone.trim() : '', gstPct: cleanGstPct(r.gstPct) }
 }
+/** (REG-645, settings parity Q-15) The studio's name as a sentence says it — "Demo Studio", not "Demo Studio Pte Ltd". */
+export const shortStudioName = (name: string) => name.replace(/[\s,]+(pte\.?\s*ltd\.?|private limited|llp|ltd\.?)$/i, '').trim() || name
 
 /**
  * Template approval — studio-level policy (owner 2026-09-18, REG-501): whether a Designer's template needs an Owner's or
@@ -91,6 +101,22 @@ export function parseNumbering(v: unknown): Numbering {
 export const isDefaultNumbering = (n: Numbering) => n.prefix === DEFAULT_NUMBERING.prefix && !n.initials && !n.yearMonth && n.next === 0 && n.digits === 0 && !n.commercial.on
 /** "DT" from "Dane Tan" — the designer's initials the pattern prints. */
 export const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).map((w) => w[0]!.toUpperCase()).join('').slice(0, 3)
+/**
+ * (REG-645, settings parity Q-15) The next quote's running number, from every number already given — the quote-creation action and
+ * Settings' example read the same rule. Unset pattern: "OM-" + the highest number after "OM-" + 1 (OM-10001 on an empty studio).
+ * A pattern: the setting's `next`, never below the highest already given under that prefix.
+ */
+export function defaultNextNumber(numbers: string[]): string {
+  if (!numbers.length) return 'OM-10001'
+  const max = numbers.reduce((m, n) => { const v = Number.parseInt(n.slice(3), 10); return Math.max(m, Number.isFinite(v) ? v : 0) }, Number.NEGATIVE_INFINITY)
+  return `OM-${max + 1}`
+}
+export function nextSequence(numbers: string[], prefix: string, next: number): number {
+  const tail = (x: string) => { const m = /(\d+)$/.exec(x); return m ? Number(m[1]) : 0 }
+  const highest = numbers.filter((q) => q.startsWith(`${prefix}-`)).reduce((m, q) => Math.max(m, tail(q)), 0)
+  return Math.max(next || 1, highest + 1)
+}
+
 /** The number a pattern gives: "OM-DT-202609-0012". */
 export function formatQuoteNumber(n: Numbering, seq: number, o: { initials?: string; date?: Date; /** (REG-586) a commercial job takes the second sequence's prefix */ commercial?: boolean } = {}): string {
   const parts = [o.commercial && n.commercial.on ? n.commercial.prefix : n.prefix]
@@ -105,24 +131,49 @@ export function parseTrades(v: unknown): string[] {
   return Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean))].slice(0, 60) : []
 }
 
+/** (REG-617, parity Q-08) A default note per trade, keyed by the trade's name in lower case; empty notes are dropped. */
+export function parseTradeNotes(v: unknown): Record<string, string> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {}
+  const out: Record<string, string> = {}
+  for (const [k, n] of Object.entries(v as Record<string, unknown>)) { const key = k.trim().toLowerCase(); if (key && typeof n === 'string' && n.trim()) out[key] = n.trim().slice(0, 600) }
+  return out
+}
+export const tradeKey = (name: string) => name.trim().toLowerCase()
+
 /**
  * (REG-584 · REG-589 · REG-590) The studio's rules for quotes (Settings › Quotes): selling prices rounded to a step as they are
  * entered, the payment schedule kept to Owners and Admins, and a backup approver who may approve quotes and templates beside them.
  */
 export type RoundStep = 0 | 1 | 5 | 10
 export const ROUND_STEP_OPTIONS: { key: RoundStep; label: string }[] = [{ key: 0, label: 'Not rounded' }, { key: 1, label: 'The nearest S$1' }, { key: 5, label: 'The nearest S$5' }, { key: 10, label: 'The nearest S$10' }]
-export type QuoteRules = { roundStep: RoundStep; paymentLock: boolean; backupApproverId: string | null }
-export const DEFAULT_QUOTE_RULES: QuoteRules = { roundStep: 0, paymentLock: false, backupApproverId: null }
+export type QuoteRules = { roundStep: RoundStep; paymentLock: boolean; backupApproverId: string | null; /** (REG-618, parity Q-25) what `{prepared_by}` prints */ preparedBy: PreparedByMode }
+/** (REG-590) Who approves a quote or publishes a template under approval: an Owner, an Admin, or the backup approver. Pure — `isApprover` and Settings' roles table read it. */
+export const approves = (role: string | null | undefined, memberId: string | null | undefined, backupApproverId: string | null) =>
+  role === 'Owner' || role === 'Admin' || (!!memberId && backupApproverId !== null && backupApproverId === memberId)
+/** (REG-589) Who changes a quote's payment schedule: everyone, or only Owners and Admins while the studio locks it. */
+export const changesPayments = (role: string | null | undefined, paymentLock: boolean) => !paymentLock || role === 'Owner' || role === 'Admin'
+export const DEFAULT_QUOTE_RULES: QuoteRules = { roundStep: 0, paymentLock: false, backupApproverId: null, preparedBy: 'member' }
+export const PREPARED_BY_OPTIONS: { key: PreparedByMode; label: string }[] = [{ key: 'member', label: 'The member who prepared the quote' }, { key: 'team', label: 'Every member on the lead' }, { key: 'studio', label: 'The studio’s name' }]
 export function parseQuoteRules(v: unknown): QuoteRules {
   const r = (v ?? {}) as Partial<Record<keyof QuoteRules, unknown>>
-  return { roundStep: r.roundStep === 1 || r.roundStep === 5 || r.roundStep === 10 ? r.roundStep : 0, paymentLock: r.paymentLock === true, backupApproverId: typeof r.backupApproverId === 'string' && r.backupApproverId ? r.backupApproverId : null }
+  return { roundStep: r.roundStep === 1 || r.roundStep === 5 || r.roundStep === 10 ? r.roundStep : 0, paymentLock: r.paymentLock === true, backupApproverId: typeof r.backupApproverId === 'string' && r.backupApproverId ? r.backupApproverId : null,
+    preparedBy: r.preparedBy === 'team' || r.preparedBy === 'studio' ? r.preparedBy : 'member' }
 }
-/** The markup that puts a line's selling price on the studio's step (S$) — the cost never moves, the markup absorbs it, never below −cost. */
-export function roundToStep(costMinor: number, markupMinor: number, step: RoundStep): number {
+/** (REG-651, price book parity Q-02) A unit whose price is a rate per area or length — rounding it to a whole step moves every line priced by it. */
+export const isRateUnit = (unit: string | null | undefined): boolean => !!unit && /\b(sq\.?\s*ft|sqft|sq\.?\s*m|sqm|m2|m²|ft\s*run|m\s*run|ft|m|metres?|meters?|feet|foot)\b/i.test(unit.trim())
+/**
+ * The markup that puts a line's selling price on the studio's step (S$) — the cost never moves, the markup absorbs it.
+ * (REG-651, Q-02) A price under the step and a rate per area or length stay as typed (S$3.50 / sqft is not S$0 or S$5), and a
+ * rounding never lands below the cost — it rounds up instead.
+ */
+export function roundToStep(costMinor: number, markupMinor: number, step: RoundStep, unit?: string | null): number {
   if (!step) return markupMinor
   const s = step * 100
-  const rounded = Math.round((costMinor + markupMinor) / s) * s
-  return Math.max(-costMinor, rounded - costMinor)
+  const price = costMinor + markupMinor
+  if (price < s || isRateUnit(unit)) return markupMinor
+  let rounded = Math.round(price / s) * s
+  if (rounded < costMinor) rounded = Math.ceil(costMinor / s) * s
+  return rounded - costMinor
 }
 
 /* ── (REG-599) Lead sources the studio edits — Settings › Leads › Lead sources ─────────────────────────
@@ -186,6 +237,8 @@ export type LeadCapture = {
   webhookLog: WebhookLogEntry[]
   email: EmailSource
 }
+/** (sweep S4 #17) A webhook's token and signing key are secrets: a page for someone who may not manage them ships the capture without them. */
+export const withoutSecrets = (c: LeadCapture): LeadCapture => ({ ...c, webhooks: c.webhooks.map((w) => ({ ...w, token: '', key: null })) })
 export const DEFAULT_META_FORMS: MetaForm[] = [{ id: 'renovation-enquiry', name: 'Renovation enquiry', on: true }, { id: 'free-consultation', name: 'Free consultation', on: true }, { id: 'showroom-visit', name: 'Showroom visit', on: false }]
 export const DEFAULT_LEAD_CAPTURE: LeadCapture = { emailSlug: '', meta: { connected: false, page: '', forms: DEFAULT_META_FORMS }, webhooks: [], webhookLog: [], email: DEFAULT_EMAIL_SOURCE }
 export function parseLeadCapture(v: unknown): LeadCapture {
@@ -209,8 +262,9 @@ export function parseLeadCapture(v: unknown): LeadCapture {
   }
   return { emailSlug: typeof r.emailSlug === 'string' ? r.emailSlug.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40) : '', meta: { connected: !!r.meta?.connected, page: typeof r.meta?.page === 'string' ? r.meta.page.slice(0, 80) : '', forms: forms.length ? forms : DEFAULT_META_FORMS }, webhooks, webhookLog, email }
 }
-/** The address the website form sends to — the studio's slug on OpenMaison's intake domain. */
-export const intakeAddress = (studioName: string, slug: string) => `leads+${slug || studioName.toLowerCase().replace(/pte\.? ltd\.?/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}@in.openmaison.sg`
+/** The address the website form sends to — the studio's slug on OpenMaison's intake domain. (REG-647) The slug is kept once given. */
+export const intakeSlug = (studioName: string) => studioName.toLowerCase().replace(/pte\.? ltd\.?/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
+export const intakeAddress = (studioName: string, slug: string) => `leads+${slug || intakeSlug(studioName)}@in.openmaison.sg`
 
 /* ── (REG-607, parity Q-05 · Q-07 · Q-38) The reasons a lead is parked or lost — Settings › Leads › Reasons ────────
    1.0 lets a studio rename and add its close reasons and gate one behind logged contacts; the two lists live in one

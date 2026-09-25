@@ -19,7 +19,7 @@ export type PaymentRow = { name: string; description: string | null; pct: number
 /** One milestone of a split as a template stores it. */
 export type SplitRow = { name: string; description: string | null; pct: number }
 /** A payment template as every surface reads it (the DB row parsed, or a seeded preset). */
-export type PaymentSplit = { id: string; name: string; rows: SplitRow[]; isPreset: boolean }
+export type PaymentSplit = { id: string; name: string; rows: SplitRow[]; isPreset: boolean; /** (REG-664) its folder in Templates › Payments */ folderId?: string | null }
 type PresetRow = { name: string; description: string; pct: number }
 export type Preset = { key: string; label: string; rows: PresetRow[] }
 

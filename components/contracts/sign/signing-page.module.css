@@ -39,3 +39,31 @@
 .bundleDoc { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); width: 100%; }
 .bundleLabel { align-self: flex-start; width: 816px; max-width: 100%; margin: 0 auto; font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
 .bundleList { margin: 0; padding-left: 20px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+/* (REG-631, contracts parity Q-07) A link that does not sign — not sent yet, or no longer active: the letterhead bar and one notice, no document. */
+.notice { width: 560px; max-width: 100%; margin: var(--om-spacing-10, 40px) auto 0; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-8) var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }
+.noticeTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+/* (REG-633, contracts parity Q-15 · Q-20) The stage as a column (the paper, its end, the record); the gates and the quote link in the card. */
+.column { flex-direction: column; align-items: center; }
+.paperEnd { width: 1px; height: 1px; }
+.gate { margin: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.gate[data-done] { color: var(--om-color-tertiary-green-default); }
+.accept { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
+.accept[data-disabled] { color: var(--om-color-on-surface-disabled); cursor: default; }
+.quoteLink { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none; }
+.quoteLink:hover { text-decoration: underline; }
+.walk { width: 816px; max-width: 100%; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.walkHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); font: var(--om-type-subtitle-s); color: var(--om-color-on-surface-secondary); }
+.walkBar { display: flex; gap: var(--om-spacing-1); }
+.walkSeg { flex: 1; height: 4px; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-variant); }
+.walkSeg[data-on] { background: var(--om-color-primary-default); }
+@media print {
+  .walk, .paperEnd { display: none !important; }
+}
+.bundleList li[data-on] { font-weight: var(--om-font-weight-semibold, 600); }
+/* (sweep S2 #5) The bar at the paper's foot on a phone or a tablet — the next step, where the reading ends. None on a desktop (the card is beside the paper) or in print. */
+.nextBar { display: none; }
+@media (max-width: 1024px) {
+  .nextBar { position: sticky; bottom: 0; z-index: 9; display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 64px; padding: var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-surface-default); box-shadow: var(--om-shadow-modal-footer); }
+  .nextText { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+}
+@media print { .nextBar { display: none !important; } }
