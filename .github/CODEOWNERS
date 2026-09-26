@@ -1,0 +1,10 @@
+# OpenMaison 2.0 — code owners
+#
+# Vicky designed OpenMaison 2.0, and every change to it asks for her review: see DESIGN-PRINCIPLES.md ("nothing a user
+# can see changes without Vicky"). Either of her accounts can approve. With branch protection's "Require review from
+# Code Owners" on, a pull request can't merge without that approval.
+#
+# An owner must have write access to the repo to count. GitHub ignores an account that doesn't, and the other still
+# applies.
+
+*   @vickyjesuraj-qanvast @vickyjesuraj-livspace

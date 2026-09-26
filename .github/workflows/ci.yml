@@ -5,60 +5,29 @@ on:
     branches: [main]
   pull_request:
 
+# Every pull request must pass these before it can merge. The design system is vendored into vendor/, so a checkout
+# of this repo is all CI needs — no second repo, no token.
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # The prototype consumes the design system from a sibling checkout.
-      # It is a private repo, so CI needs a deploy key or PAT in DS_REPO_TOKEN.
-      # The owner is taken from this repo, so the same workflow works in every mirror of the prototype.
-      - name: Check out the design system
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/openmaison-design-system
-          path: openmaison-design-system
-          token: ${{ secrets.DS_REPO_TOKEN }}
-
-      - name: Move this repo alongside the design system
-        run: |
-          mkdir -p ../workspace
-          shopt -s dotglob
-          mv openmaison-design-system ../workspace/
-          mv * ../workspace/openmaison-prototype 2>/dev/null || {
-            mkdir -p ../workspace/openmaison-prototype
-            mv * ../workspace/openmaison-prototype/
-          }
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - run: corepack enable
-
-      - name: Build the design system
-        working-directory: ../workspace/openmaison-design-system
-        run: |
-          corepack pnpm install --frozen-lockfile
-          corepack pnpm --filter @openmaison/icons build
-          corepack pnpm --filter @openmaison/tokens build
-          corepack pnpm --filter @openmaison/react build
+          node-version-file: .nvmrc
+          cache: npm
 
       - name: Install
-        working-directory: ../workspace/openmaison-prototype
-        run: corepack pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Lint
-        working-directory: ../workspace/openmaison-prototype
-        run: corepack pnpm lint
+        run: npm run lint
 
       - name: Typecheck
-        working-directory: ../workspace/openmaison-prototype
-        run: corepack pnpm typecheck
+        run: npm run typecheck
 
+      # `npm run build` runs scripts/preflight.mjs first (writes .env.local, applies migrations, restores the demo data
+      # into a throwaway local.db), exactly as a developer's first build does.
       - name: Build
-        working-directory: ../workspace/openmaison-prototype
-        env:
-          AUTH_SECRET: ci-placeholder-secret-not-used-at-build-time
-        run: corepack pnpm build
+        run: npm run build

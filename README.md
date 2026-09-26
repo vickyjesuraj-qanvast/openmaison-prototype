@@ -1,10 +1,21 @@
 # openmaison-prototype
 
-Hi-fi, working prototype of the **OpenMaison 2.0** experience — a multi-tenant SaaS for
-interior design studios. Built to be demoed on desktop, tablet and mobile, and wired
-directly to the [OpenMaison Design System](https://github.com/vickyjesuraj-qanvast/openmaison-design-system).
+Hi-fi, working prototype of the **OpenMaison 2.0** experience — the studio app for interior-design studios in
+Singapore: leads, quotes, contracts, Quote X-Ray, the AI Visualizer, the price book and the studio's settings. Designed
+by Vicky, built to be demoed on desktop, tablet and phone, on the
+[OpenMaison Design System](https://github.com/vickyjesuraj-qanvast/openmaison-design-system).
 
 Not a mockup: real database, real server actions, real state.
+
+## Start here
+
+| Read | For |
+| --- | --- |
+| **[DESIGN-PRINCIPLES.md](DESIGN-PRINCIPLES.md)** | Vicky's design principles — and the one rule: **nothing a user can see changes without Vicky** |
+| **[CONTRIBUTING.md](CONTRIBUTING.md)** | The developer guide: running it, finding your way, the 1.0 → 2.0 migration maps, what production replaces, pull requests |
+| **[CLAUDE.md](CLAUDE.md)** › *Map* | Where every screen, action, table and rule lives, module by module |
+| [AGENTS.md](AGENTS.md) | The rules AI coding assistants follow in this repo |
+
 
 ---
 
@@ -39,25 +50,18 @@ puts everything back; nothing in your working tree is at risk.
 
 ## Responsive behaviour
 
-The prototype targets three form factors, driven by the design system's own shell
-components. Breakpoints live in `components/shell/app-shell.module.css` and are
-mirrored in `components/shell/use-media-query.ts`, because `SideNav`'s expanded state
-is a React prop rather than a CSS concern — **change both together**.
+Three designed form factors — never a squeezed desktop. The rules live in two media queries only:
+`@media (max-width: 767px)` (phone) and `@media (max-width: 1024px)` (tablet and down); touch-growth rules add
+`(hover: none) and (max-width: 1024px)` so a touch tablet gets them too.
 
-| Width                 | Navigation                   | Header                               |
-| --------------------- | ---------------------------- | ------------------------------------ |
-| `< 768px` — phone     | DS `BottomNav`, docked       | Avatar only; email + plan tag hidden |
-| `768–1119px` — tablet | DS `SideNav`, 48px icon rail | Plan tag + "Sign out" label appear   |
-| `>= 1120px` — desktop | DS `SideNav`, 200px expanded | Full identity block                  |
+| Width | Navigation | Surfaces |
+| --- | --- | --- |
+| `≤ 767px` — phone | `MobileChrome`: a 60px top bar, a 70px bottom dock and a More sheet | menus, pickers, panels and form dialogs are bottom sheets; tables are cards; toolbars are one row |
+| `768–1024px` — tablet | the app rail | touch targets grow to 44px under a finger; section toolbars stay one row |
+| `≥ 1025px` — desktop | the app rail (two states) | the mocks, pixel-identical at 1440 |
 
-Other responsive details worth knowing:
-
-- The icon-only sign-out button on mobile keeps its label in the a11y tree
-  (visually hidden, not `display: none`).
-- Tap targets are held at 44px minimum in list rows.
-- `env(safe-area-inset-bottom)` padding on the bottom nav for notched phones.
-- `prefers-reduced-motion` is respected globally.
-- Dark mode is automatic: the DS flips primitives on `[data-theme="dark"]`.
+The page never scrolls sideways — wide content scrolls inside its own box. `prefers-reduced-motion` is respected
+everywhere. There is **no dark mode**. The full system: `design-source/context/responsive.md`.
 
 ---
 
@@ -82,20 +86,22 @@ and a DS build before this app would install.
    touches token variables at all, and only to re-point the two font-family tokens at
    the `next/font` self-hosted faces.
 
-3. **Borders are inset `box-shadow`, not `border`** — Figma strokes are inside, and
-   this is the convention the DS itself follows.
+3. **Never hand-edit `vendor/`.** It is regenerated wholesale; see below.
 
-4. **Never hand-edit `vendor/`.** It is regenerated wholesale; see below.
+4. **Never hand-roll an input, menu, dialog, picker or sheet.** The house pieces in `components/om/*` wrap the DS and
+   fill its gaps; reuse them, or ask Vicky for a new one.
 
 ### Things the DS does not provide yet
 
-The prototype fills these gaps locally; replace them when the DS ships the real thing:
+The house pieces in `components/om/*` fill these gaps; replace them only when the DS ships the real thing, and with
+Vicky:
 
-| Gap                               | Local stand-in                                |
-| --------------------------------- | --------------------------------------------- |
-| No Card component (none in Figma) | `components/patterns/surface.tsx`             |
-| No Select component               | Native `<select>` styled with `--om-*` tokens |
-| No breakpoint tokens              | `--app-*` constants in `app/globals.css`      |
+| Gap | House piece |
+| --- | --- |
+| Text / number / date / select fields in the mock's states | `text-field.tsx`, `date-field.tsx` (with the Material picker) |
+| Menus, bottom sheets, dialogs, drawers, confirmations | `portal-menu.tsx`, `sheet.tsx`, `dialog.tsx`, `drawer.tsx`, `confirm-dialog.tsx` |
+| Chip groups, number tiles, tooltips, snackbars | `chips.tsx`, `stat-tile.tsx`, `tooltip.tsx`, `snackbar.tsx` |
+| Breakpoint and chrome sizes | `--app-*` variables in `app/globals.css` |
 
 ### After changing the design system
 
@@ -134,48 +140,33 @@ the built bundle, so a DS change that reaches for a new icon is picked up automa
 ## Architecture
 
 ```
-app/
-├── (marketing)/          public — landing, pricing
-├── (auth)/               login, signup
-├── (app)/                authenticated — dashboard, projects, settings, billing
-└── api/health/           DB reachability probe
+app/                      routes (App Router) — leads/ (the listing + Lead Details' tabs), tasks/, quotes/ (Tools › Quotes),
+                          contracts/, quote-x-ray/, visualizer/, company/, settings/, qanvast-ops/, the client's links
+                          (renders/, sign/, confirm/) and (editor)/ — the full-screen editors (quote, contract, template, visualizer)
 components/
 ├── ds/                   'use client' barrier over @openmaison/react
-├── shell/                app + marketing shells, responsive nav
-└── patterns/             Surface, StatTile, PageHeading, status tag
+├── om/                   the house pieces (fields, menus, sheets, dialogs, chips, tables' column model …)
+├── shell/                the app shell: rail, headers, ghosts, snackbar host, Maison AI, the phone chrome
+└── leads/ quotes/ contracts/ visualizer/ company/ …   each module's screens
 lib/
-├── auth/                 password (scrypt), session (HMAC), DAL, server actions
-├── db/                   drizzle schema + libSQL client
-├── actions/              project mutations
-├── config.ts             site config + plan catalogue
-└── validation.ts         zod schemas shared by actions and forms
-proxy.ts                  redirect-only route protection
+├── db/                   Drizzle schema, the libSQL client, the signed-in member (session.ts), the demo baseline
+└── leads/ quotes/ contracts/ visualizer/ company/ settings/ …   each module's rules and queries
+scripts/                  preflight, migrations, the demo baseline and its repair rules, the visualizer's harnesses
+design-source/            the design: DESIGN.md, REGISTER.md, specs, audits, migration maps, UAT, verified screenshots
 ```
 
-### Auth
+The module-by-module map — every screen, action, table and rule — is in [CLAUDE.md](CLAUDE.md) › *Map*.
 
-Self-contained so the prototype runs with no external auth service:
+### Sign-in
 
-- Passwords: `scrypt` (N=2^17, r=8, p=1) via `node:crypto`.
-- Sessions: HMAC-SHA256 signed cookie via **Web Crypto**, so the same code runs in
-  `proxy.ts` on the Edge runtime.
-- `proxy.ts` only checks the signature — it is a redirect optimisation, **not** the
-  authorisation boundary. Real authorisation is `lib/auth/dal.ts`, which re-checks the
-  membership on every request (so revoking access takes effect immediately).
-
-To swap in Auth.js / Clerk / WorkOS, replace `lib/auth/session.ts` and
-`lib/auth/actions.ts`; `getAuthContext()` is the only thing the rest of the app uses.
-
-### Multi-tenancy
-
-`users → memberships → organizations`, with `projects` and `rooms` scoped to an
-organisation. Tenant scope is part of every lookup, so a valid id from another studio
-404s rather than leaking.
+The prototype has **no sign-in**: the signed-in member is the `members` row marked `is_you` (Dane, the studio's owner, in
+the demo), and *Demo Studio › View as* moves it. `lib/db/session.ts` is the one place real authentication plugs in. The
+`users` / `organizations` / `memberships` tables are the original scaffold's; the app itself runs one studio.
 
 ### Money
 
-Stored in minor units (paise) as integers — never floats. Formatted with
-`Intl.NumberFormat('en-IN')`.
+Stored in minor units (Singapore cents) as integers — never floats — in `*_minor` columns. Shown as S$ with en-SG
+grouping (`lib/format.ts`).
 
 ---
 
@@ -198,21 +189,19 @@ Stored in minor units (paise) as integers — never floats. Formatted with
 
 ## Database
 
-**After every `git pull`, run `npm run db:migrate`.** `local.db` is yours and is not in
-git, so a schema change that arrives with new code has to be applied to your own file.
-Skipping it shows up as a runtime error naming a column the query wants and your
-database does not have. The command is safe to run any time and does nothing when
-there is nothing to apply. To take the freshly curated demo data as well, migrate
+**A `git pull` that brings a migration needs a restart of `npm run dev`** — it applies migrations every time it starts.
+`local.db` is yours and is not in git, so a schema change that arrives with new code has to be applied to your own file;
+a dev server that was already running when you pulled shows it as a runtime error naming a column the query wants and
+your database does not have. `npm run db:migrate` does the same without restarting — safe any time, a no-op when there
+is nothing to apply. Migrations are additive only. To take the freshly curated demo data as well, migrate
 first, then use Maison AI › **Reset prototype to base** (or `npm run db:repair` to bring
 your own rows in line without discarding them).
 
 libSQL — a local `local.db` file by default, zero setup. Point `DATABASE_URL` at a
 Turso URL (plus `DATABASE_AUTH_TOKEN`) to use the hosted variant; no code changes.
 
-## Not wired up yet
+## Not built yet
 
-- **Billing** — plan catalogue is real (`lib/config.ts`), Stripe is not. Keys are
-  stubbed in `.env.example`.
-- **Invitations** — table and schema exist, no UI.
-- **Profile / studio editing** — settings fields are read-only.
-- **Room CRUD** — rooms come from the seed only.
+Every affordance that isn't built answers **"Coming soon in OpenMaison 2.0"**. What the prototype stands in for — sign-in,
+lead capture from Gmail and webhooks, WhatsApp sending, object storage, the AI Visualizer's image model — and what
+production replaces, is listed in [CONTRIBUTING.md](CONTRIBUTING.md) § 4.

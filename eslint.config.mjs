@@ -5,7 +5,8 @@ import prettier from 'eslint-config-prettier'
 /** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = [
   {
-    ignores: ['.next/**', 'node_modules/**', 'drizzle/**', 'next-env.d.ts', 'design-source/**'],
+    // public/pdfjs/ is pdf.js's own worker bundle and vendor/ the design system's build output — both generated, never edited here
+    ignores: ['.next/**', 'node_modules/**', 'drizzle/**', 'next-env.d.ts', 'design-source/**', 'public/pdfjs/**', 'vendor/**'],
   },
   ...next,
   ...nextTypescript,
