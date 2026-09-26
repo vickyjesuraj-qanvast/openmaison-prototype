@@ -9,7 +9,7 @@ import { canDeleteQuote } from '@/lib/quotes/policy'
 import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
-import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
+import { revalidateLead } from '@/lib/leads/queries'
 import { presetRows, scheduleAnchors } from '@/lib/quotes/payments'
 import { projectRef, validUntil, propertyFamily } from '@/lib/quotes/refs'
 import { parseDefaults, parseDesign, type TemplateDefaults } from '@/lib/templates/model'
@@ -221,13 +221,11 @@ export async function createQuoteFromUpload(leadId: string, templateId: string |
   return id
 }
 
-/** Template tile kebab › Set as default (REG-412): one default at a time, studio-wide. */
-export async function setDefaultTemplate(templateId: string): Promise<void> {
-  const [t] = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(eq(quoteTemplates.id, templateId))
-  if (!t) throw new Error('template not found')
-  await db.update(quoteTemplates).set({ isDefault: false })
-  await db.update(quoteTemplates).set({ isDefault: true }).where(eq(quoteTemplates.id, templateId))
-  revalidateEveryLead()
+/** Template tile kebab › Set as default (REG-412): one default at a time, studio-wide. (audit 2026-09-26, E7) The Create Quote modal's tile
+    goes through Company › Templates' own action, so REG-646's rule holds here too: only an Owner or an Admin sets the studio's default. */
+export async function setDefaultTemplate(templateId: string) {
+  const { setDefaultTemplate: set } = await import('@/app/company/templates-actions')
+  return set(templateId)
 }
 
 async function leadOf(quoteId: string): Promise<string | null> {

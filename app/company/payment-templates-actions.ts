@@ -3,7 +3,8 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
-import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
+import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
+import { SPLIT_DEFAULT_DELETE_RULE, TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
 import { db } from '@/lib/db'
 import { paymentTemplates, quotePayments, quotes, quoteTemplates } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
@@ -18,6 +19,8 @@ function cleanRows(rows: SplitRow[]): SplitRow[] {
   return rows.slice(0, 12).map((r) => ({ name: clean(r.name, 60) || 'Payment', description: clean(r.description, 120) || null, pct: Math.max(0, Math.min(100, Math.round((Number.isFinite(r.pct) ? r.pct : 0) * 100) / 100)) }))
 }
 const row = async (id: string) => { const [r] = await db.select().from(paymentTemplates).where(eq(paymentTemplates.id, id)); if (!r) throw new Error('template not found'); return r }
+/** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the split gone from under a stale page — else null. */
+const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(eq(paymentTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
 
 export type CreatePaymentTemplateInput = { name?: string; source: { kind: 'blank' } | { kind: 'copy'; id: string } | { kind: 'quote'; quoteId: string } }
 /** Blank (a deposit and a completion), a copy of another split, or the schedule a quote has right now. Returns the id. */
@@ -50,12 +53,12 @@ export async function savePaymentTemplate(id: string, patch: { name?: string; ro
   touch(id)
   return now.getTime()
 }
-export async function renamePaymentTemplate(id: string, name: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await savePaymentTemplate(id, { name }) }   // (REG-646)
+export async function renamePaymentTemplate(id: string, name: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await savePaymentTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
 export async function duplicatePaymentTemplate(id: string): Promise<string> { return createPaymentTemplate({ source: { kind: 'copy', id } }) }
 /** Soft delete; the studio default (the seeded 10/30/30/30) stays — every fallback lands on it. */
-export async function deletePaymentTemplate(id: string): Promise<void> {
-  if (id === DEFAULT_SPLIT_ID) throw new Error('default')
-  await assertMayChangeTemplate((await row(id)).createdBy)
+export async function deletePaymentTemplate(id: string): Promise<void | Refusal> {
+  if (id === DEFAULT_SPLIT_ID) return refuse(SPLIT_DEFAULT_DELETE_RULE)
+  const block = await refusalFor(id); if (block) return refuse(block)
   await db.update(paymentTemplates).set({ deletedAt: new Date() }).where(eq(paymentTemplates.id, id))
   /* (REG-581) Every quote template that started quotes on it falls back to the studio default in writing, not silently. */
   const rows = await db.select({ id: quoteTemplates.id, defaultsJson: quoteTemplates.defaultsJson, draftJson: quoteTemplates.draftJson }).from(quoteTemplates)
@@ -67,10 +70,14 @@ export async function deletePaymentTemplate(id: string): Promise<void> {
   }
   touch(id)
 }
-export async function restorePaymentTemplates(ids: string[]): Promise<void> {
-  if (!ids.length) return
-  const mine = await changeableIds(await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)))
+/** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
+export async function restorePaymentTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  if (!ids.length) return { restored: 0, kept: 0 }
+  const rows = await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids))
+  const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
+  const mine = await changeableIds(rows)
   if (mine.length) await db.update(paymentTemplates).set({ deletedAt: null }).where(inArray(paymentTemplates.id, mine)); touch()
+  return { restored: mine.length, kept: ids.length - mine.length }
 }
 /** How many live quote templates start quotes on the split — the Deleted sheet's guard. */
 async function usedBy(id: string): Promise<number> {
@@ -82,9 +89,11 @@ async function usedBy(id: string): Promise<number> {
   }
   return n
 }
-export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
+export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
   let removed = 0, kept = 0
-  const mine = new Set(await changeableIds(ids.length ? await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)) : []))   // (REG-646)
+  const rows = ids.length ? await db.select({ id: paymentTemplates.id, createdBy: paymentTemplates.createdBy }).from(paymentTemplates).where(inArray(paymentTemplates.id, ids)) : []
+  const none = await nothingChangeable(rows, 'purge'); if (none) return refuse(none)   // (wave E, E7) none of them the viewer's: the rule, not "nothing was deleted"
+  const mine = new Set(await changeableIds(rows))   // (REG-646)
   for (const id of ids) {
     const [r] = await db.select({ deletedAt: paymentTemplates.deletedAt }).from(paymentTemplates).where(eq(paymentTemplates.id, id))
     if (!r?.deletedAt || id === DEFAULT_SPLIT_ID || !mine.has(id) || (await usedBy(id)) > 0) { kept++; continue }
@@ -93,7 +102,7 @@ export async function deletePaymentTemplatesForever(ids: string[]): Promise<{ re
   touch()
   return { removed, kept }
 }
-export async function emptyPaymentTemplateTrash(): Promise<{ removed: number; kept: number }> {
+export async function emptyPaymentTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
   const rows = await db.select({ id: paymentTemplates.id }).from(paymentTemplates).where(sql`${paymentTemplates.deletedAt} is not null`)
   return deletePaymentTemplatesForever(rows.map((r) => r.id))
 }

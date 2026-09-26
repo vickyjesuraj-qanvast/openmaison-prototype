@@ -34,6 +34,8 @@ export type FilesTableProps = {
   onReorder: (keys: string[]) => void
   /** (REG-664) While searching: where each hit lives — a line under its name (the cell is the mock's "Two line"). */
   placeOf?: (f: FileRow) => string
+  /** (F095) The file menu's AI Visualizer item for a picture (files-grid `visualizeLabel`). */
+  visualizeLabel?: (f: FileRow) => string | null
 }
 
 /* Column order + head copy — exactly as the mock types it (931:40168, spec 01-toolbar-empty-list.txt "List view"). Every head carries unfold_more 16. */
@@ -60,7 +62,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * No hover state is mocked: the row kebab (the tile's menu) sits at the row's right edge, visible on hover — the Quotes
  * hover pattern (.actions/.float) with the kebab only (build plan, logged). Sorting is inert (coming soon).
  */
-export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf }: FilesTableProps) {
+export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
@@ -130,13 +132,13 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
                toolbar and the tab strip, with half a screen free below them. The side is now measured off the
                trigger and this menu's real height (components/leads/menu-side.ts) — six items for a file, four for
                a folder. */
-            if (menuRow !== row.id) setMenuSide(menuSideFor(trigger, isFolder(row) ? 4 : 6))
+            if (menuRow !== row.id) setMenuSide(menuSideFor(trigger, isFolder(row) ? 4 : visualizeLabel?.(row) ? 7 : 6))
             setMenuRow((m) => (m === row.id ? null : row.id))
           }}
           onMenuClose={() => setMenuRow(null)}
           menuSide={menuSide}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
-          place={placeOf?.(row)}
+          place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null}
         />
       ))}
     </div>
@@ -148,7 +150,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 function FileRowView({
   row, isSelected, onToggle,
   menuOpen, onMenuToggle, onMenuClose, menuSide,
-  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place,
+  onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize,
 }: {
   row: FileRow
   isSelected: boolean
@@ -164,6 +166,7 @@ function FileRowView({
   onRowMenu: (row: FileRow, action: FileAction | FolderAction) => void
   L: ReturnType<typeof useColumnLayout>
   place?: string
+  visualize: string | null
 }) {
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
@@ -245,7 +248,7 @@ function FileRowView({
           </span>
           {folder
             ? <FolderMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} />
-            : <FileMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} />}
+            : <FileMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} visualize={visualize} />}
         </span>
         </span>
       </span>

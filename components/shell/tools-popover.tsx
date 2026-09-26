@@ -17,7 +17,7 @@ export const TOOLS: { key: string; icon: string; label: string; href?: string }[
   { key: 'quotes', icon: 'request_quote', label: 'Quotes', href: '/quotes' },
   { key: 'xray', icon: 'scan', label: 'Quote X-Ray', href: '/quote-x-ray' },
   { key: 'contracts', icon: 'contract', label: 'Contracts', href: '/contracts' },   /* (REG-534) Tools › Contracts — every contract in the studio */   /* (REG-529) */
-  { key: 'visualizer', icon: 'wand_shine', label: 'AI Visualizer' },
+  { key: 'visualizer', icon: 'wand_shine', label: 'AI Visualizer', href: '/visualizer' },   /* (REG-673) live — every design, a lead's or personal */
   { key: 'isometric', icon: 'view_in_ar', label: 'Floorplan to 3D Isometric' },
   { key: 'insights', icon: 'trending_up', label: 'Market Insights' },
   { key: 'compliance', icon: 'verified_user', label: 'Compliance Navigator' },

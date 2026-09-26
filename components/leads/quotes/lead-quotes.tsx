@@ -15,6 +15,7 @@ import type { QuoteApproval } from '@/lib/settings/types'
 import type { LeadQuotesData } from '@/lib/leads/quotes'
 import { archiveQuote, listArchivedQuotes, unarchiveQuotes, createQuote, createQuoteFromUpload, deleteQuotes, deleteQuotesForever, emptyQuoteTrash, listDeletedQuotes, restoreQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
 import { canDeleteQuote, deletedLine } from '@/lib/quotes/policy'
+import { templateDefaultBlock } from '@/lib/company/template-rules'
 import { ArchivedQuotesSheet } from './archived-quotes-sheet'
 import { DeletedQuotesSheet } from './deleted-quotes-sheet'
 import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
@@ -163,6 +164,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
         onClose={() => setCreateOpen(false)}
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
+        defaultBlock={viewer ? templateDefaultBlock(viewer) : null}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */
         onUpload={(read) => { void run('create the quote', async () => { const id = await createQuoteFromUpload(leadId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }}   /* (REG-627, parity Q-16) */
       />
       <DeleteQuotesDialog

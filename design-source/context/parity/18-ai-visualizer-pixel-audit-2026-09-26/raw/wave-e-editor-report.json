@@ -1,0 +1,147 @@
+{
+  "done": [
+    {
+      "ids": ["desktop-1", "surfaces-21", "versions-1", "tablet-8", "phone-3"],
+      "what": "E1: where the editor's snackbars rest, rewritten in the F014·F089·F140 effect. On desktops, tablets (rail layout and the portrait camera model) and phones on their side, a snackbar is centred on the versions strip, over its left end. It is never on the photo or on the canvas bar. With the camera model's tray up (strip folded away) it sits over the go line's left end instead of on the photo. The effect now observes [data-viz-strip] / [data-viz-go] (new markers on the strip slot and the go dock), and --bottom-dock may go negative so the bar can sit over a slim landscape strip, at least 2px from the edge. Upright phones keep today's place (so 375×667 still covers the photo foot, as E1 says). Open dialogs and sheets keep the old rules. On a phone on its side it also publishes --snackbar-right (see crossFileRequests).",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-10", "desktop-7"],
+      "what": "Snackbars can now be replaced by key. show() accepts an optional `key`: a snackbar with the same key replaces the one on screen in place (same slot, fresh 4 s), and unkeyed callers behave as before. The action button now dismisses first and then runs onAction, so an action can raise its own snackbar. In the editor, the room's Undo snackbars share 'viz-undo', so only the newest step's Undo shows. 'Vn deleted · Undo' uses 'viz-version-deleted' (older deletes stay restorable from 'n deleted'). 'Vn is ready · Compare' uses 'viz-ready', and its Compare first closes any dialog opened meanwhile (Present, Share, Moodboard, quote, Deleted versions, menus) instead of acting behind it.",
+      "files": ["components/om/snackbar.tsx", "components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["desktop-9"],
+      "what": "The Add-to-quote snackbar now fits on one line: 'n lines added · m to measure' with the action 'Open', the same word Save to Files' snackbar uses. The Price-book count is dropped because the dialog already said it. Measured 344×48 in the harness (was 344×52, two lines).",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["desktop-5"],
+      "what": "Editor side: a piece being customised now gives its marker the pick's colour (COLOUR_HEX, else the finish's FINISH_HEX) and a `pending` description, as surfaces do. In the harness, Grey Fabric Sofa › Customize › Navy puts --fill #233050 on the marker, and the stage's tint washes the sofa navy instead of purple (the working tree's stage.tsx already tints lit pieces).",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-9"],
+      "what": "E12: the room menu greys Rename and Change photo with the server's EditorRoom.mayChange, the same rule as Delete room. When mayChange and mayDelete are the same sentence, it is said once, under Delete room. Otherwise each greyed row carries it. The 'Its versions were made of this photo…' reason still shows when only the versions block Change photo.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-14"],
+      "what": "Editor side: a piece added with one click is read straight away, like a tapped surface (F023): once in its own box and once in a wider box. If the region is a speck (<0.05% of the photo), spills past its box (grows >15% and >0.2 pt in the wide read) or covers more than 25% of the photo, the add is undone and the studio draws round it instead. The snackbar says 'Couldn’t find its edges — draw round it instead' or 'This spread too far — draw round it instead', and the drawn outline becomes the piece's `region` (new addPieceDrawn). Thresholds were measured with the node engine on the sample rooms.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-19"],
+      "what": "A tap to add a surface that lands inside a surface already on the list (hit-tested on regionOf masks, as Generate reads them) no longer adds a duplicate. It selects the existing surface and says 'That’s {Surface} — already on the list', with the action 'Draw instead'. Harness: 'Feature wall' tapped on the back wall → 'That’s White Painted Back Wall — already on the list', and no new surface.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-22", "versions-2"],
+      "what": "With a strip tile focused, ← / → step from that tile, and keyboard focus moves to the tile now on screen (a roving list), so a ring is never left behind on the old tile. Harness: focus on V2, ← ← → focus and the chip go V1 → Original → V1…V3 together. The distinct focus-ring look is in versions-strip.module.css (see crossFileRequests).",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-23", "versions-3"],
+      "what": "After a version is deleted (menu, or the confirm when the client has seen it), keyboard focus goes to the neighbouring tile (next, else previous) instead of <body>. After the last restore closes Deleted versions, focus goes to the restored tile. Uses a tileFocus ref, applied after the next render. Harness: Delete V2 → 'V3, on screen'; last restore → 'Show V6'.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["surfaces-27", "versions-7"],
+      "what": "With the Original on screen, a version's ⋯ menu now offers 'Before and after' (shows that version compared with its parent) instead of a greyed 'Compare · Show a version first'.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["tablet-6", "tablet-18", "tablet-1"],
+      "what": "When pin, place or draw mode ends (Esc, Cancel, done) with focus on the photo region or nowhere, focus goes back to what started the mode: the pin toggle, the button that asked for the place or outline, else the panel's Add, else the mode tab. Harness: Esc from the photo in pin mode → 'Pin a note'. The new-pin thread's close now gives focus to the new pin even when the card handed it back to the photo (tablet-1 (2)); this is not exercised in the harness, see checkOnBuild.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["tablet-2"],
+      "what": "Tray motion on phones and portrait tablets. (1) When the tray closes, the rooms row and strip now unfold on the tray fold's own timing and curve. The canvas bar's row reopens hidden on the same timing (the new data-tray-leaving attribute plus a max-height, padding and border animation), so the stage makes room gradually and the photo moves once. Sampled every frame at 768×1024: y 112→168→196→216→217, width 473→536→704, with no overshoot (was 259→231→217). (2) When the tray opens, the bar fades out as its row closes over 180 ms instead of vanishing in one frame. Reduced motion: instant, as before.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx", "components/visualizer/editor/editor.module.css"]
+    },
+    {
+      "ids": ["tablet-10", "tablet-17"],
+      "what": "The editor's loading ghost now draws the rail foot at the page's own sizes: Describe (caption + box 60, or 40 on short laptops and ≤1024, or 36 at ≤800 tall), Generate 36, the idle hint (hidden at ≤800 tall), and the versions line (36 under a finger). It also picks up the page's tighter gaps and padding at ≤860 tall. Harness: the ghost foot matches the page exactly at 1440×1024 (y811 h213), 1280×800 (y655 h145), 1366×768 (y623 h145) and 1024×768 touch (y587 h181).",
+      "files": ["components/visualizer/skeletons.tsx", "components/visualizer/skeletons.module.css"]
+    },
+    {
+      "ids": ["tablet-15"],
+      "what": "(b) Add to a quote… on a version with nothing to quote now gives a reason that says what to do. A whole-room look: 'A whole-room look has no finishes to quote — pick finishes on the Original'. Otherwise: 'This version has no finishes to quote'. Part (a) is the engine's note caveat; see crossFileRequests.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["files-9"],
+      "what": "Editor side, using the server's new design.leadDeleted, leadDeletedNote and LEAD_DELETED_ROW. A deleted lead's design shows a note row: '{Lead} was deleted — restore the lead to share, file or quote from this design.' The version menu greys Save to Files, Add to a quote… and Share with the client…, each with 'Its lead was deleted'. The top bar's Share gives the same reason. A returned lead keeps LEAD_CLOSED_SHARE.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["files-13"],
+      "what": "Copy. A lead design's delete confirm now reads 'Delete {Lead}’s design?'. 'Deleted Designs' (the sheet's name) is used in the confirm and the deleted note. The deleted note names the maker ('only Sarah, an Owner or an Admin can restore it') from design.maker when the loader provides it; see crossFileRequests.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx"]
+    },
+    {
+      "ids": ["phone-2"],
+      "what": "The notch insets are now handed to the rows instead of padded around them. The rail sets --viz-inset-r and has no padding of its own, and its tablist pads itself. The strip slot sets --viz-inset-l and drops its padding (the strip already pads its tiles by it). The Describe box in the rail pads by the insets. Harness at 844×390 with CDP safe-area 47/47: the strip's top rule runs 0→497, the rail's tab rule and go-line rule run to 844, and the last tab ends at 797, clear of the notch.",
+      "files": ["components/visualizer/editor/editor.module.css"]
+    },
+    {
+      "ids": ["phone-5"],
+      "what": "Top bar part: a name made unique by a number ('Design · 26 Sep (2)') keeps its '(2)' when the bar cuts it, because the stem takes the ellipsis. At 320 it reads 'Design · 26… (2)'. The card-meta half of phone-5 is the gallery's.",
+      "files": ["components/visualizer/editor/topbar.tsx", "components/visualizer/editor/topbar.module.css"]
+    },
+    {
+      "ids": ["phone-13"],
+      "what": "E3 frame (editor side), for a phone on its side (≤500 tall): the top bar is 44 tall (was 56), with 36px room chips, a 16px name and tighter gaps (EditorTopbar `short`). The rail stays at 300. The strip reserves 76px at its end, and the Maison AI button sits there at the strip's foot, with its sheet 60 above. Snackbars rest over the slim strip. The ghost mirrors the landscape frame: 44 top bar, photo filling the canvas, upright bar at the side, slim strip with 54×36 tiles and no names, 48-tall tabs, and the go line as the page lays it (ghost go line y317 h73 = page). With the working tree's canvas and rail changes the harness shows the photo at 431×289 at 844×390 (432×290 with 47px notch insets) and 363×243 at 667×375.",
+      "files": ["components/visualizer/editor/visualizer-editor.tsx", "components/visualizer/editor/topbar.tsx", "components/visualizer/editor/topbar.module.css", "components/visualizer/editor/editor.module.css", "components/visualizer/skeletons.module.css"]
+    }
+  ],
+  "notDone": [
+    { "ids": ["surfaces-6"], "why": "E9: Download stays one JPEG per version. PNG, full resolution, a zip and a brand mark stay owner proposals (critic-11)." },
+    { "ids": ["desktop-7", "desktop-14"], "why": "Partly done. 'Link copied' moving into the Share dialog is E2 (canvas). On the editor side, the ready snackbar is now keyed and its Compare closes any dialog opened meanwhile. What remains: dismissing it when Present opens. That needs a dismiss API on the snackbar, which is beyond this wave's snackbar scope (replace-by-key only). Until then it can still sit over an xxl Present's bottom-left corner for its 4 s." },
+    { "ids": ["desktop-6"], "why": "The quote editor's Items summary ('Sum · 2 priced items') is the quotes package's code." },
+    { "ids": ["phone-12"], "why": "The version menu is a house PortalMenu. Making it a bottom sheet on a phone on its side is a change to components/om/sheet.tsx, which no package owns; the exact change is in crossFileRequests." }
+  ],
+  "crossFileRequests": [
+    { "file": "components/visualizer/editor/versions-strip.module.css", "ids": ["tablet-14", "surfaces-22", "versions-2"], "change": "Now that keyboard focus follows the on-screen tile, the on-screen tile needs a focus ring that differs from its selected ring. Add `.tile[data-on] .open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 4px; }` (or box-shadow: 0 0 0 2px var(--om-color-primary-default), 0 0 0 4px var(--om-color-surface-default), 0 0 0 6px var(--om-color-primary-default)) so the two rings never merge into one thick frame." },
+    { "file": "components/om/sheet.tsx", "ids": ["phone-12"], "change": "Make a phone on its side use the house bottom sheet, like ≤767: `const QUERY = '(max-width: 767px), (orientation: landscape) and (max-height: 500px) and (hover: none)'`. Every PortalMenu with a sheetTitle (the version ⋯ menu included) then opens as a scrolling sheet at 844×390, instead of a clipped 290px popover." },
+    { "file": "components/om/snackbar.module.css", "ids": ["desktop-1", "phone-13"], "change": "In the `@media (max-width: 767px)` block, change `.host { left: var(--om-spacing-4); right: var(--om-spacing-4); … }` to `right: var(--snackbar-right, var(--om-spacing-4))`. On a phone on its side (667×375) the editor already publishes --snackbar-right = the photo column's right edge + 16, so the phone's full-width snackbar stays over the strip instead of also covering the rail's Generate. Every other page keeps its 16px gutter because the variable is unset." },
+    { "file": "lib/visualizer/queries.ts", "ids": ["files-13"], "change": "Add the maker's name to the editor's data: VisualizerEditorData.design gets `maker: string | null` (team.find((m) => m.id === d.createdBy)?.name ?? null). The editor already reads it defensively ('maker' in data.design) and names them in the deleted note, as the Deleted Designs sheet does. Until then it says 'whoever made it'." },
+    { "file": "lib/visualizer/engine/run.ts", "ids": ["tablet-15"], "change": "(a) Note caveat copy (invented copy, flag it): replace \"Couldn’t find the floor, the wall on this version — the note’s colours weren’t laid\" with \"Couldn’t find the floor or the walls in this look, so the note’s colours weren’t applied — pick them on the Original instead\", with the surfaces joined by 'or' and plural where the note asked for walls." },
+    { "file": "components/visualizer/editor/panels/furniture-panel.tsx", "ids": ["surfaces-14"], "change": "When a piece has no finish row (a one-click or drawn piece with no traced parts), say 'Customize · choose a colour' instead of 'choose a colour or finish'." }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-nnn (wave E, E1 · desktop-1 · surfaces-21 · versions-1 · tablet-8) — AI Visualizer editor: snackbars rest centred over the versions strip's left end on desktops, tablets and phones on their side, or over the go line's left end while the tray is up. Never on the photo or the canvas bar. Upright phones keep their place. Source: user-directed (owner call E1).",
+    "REG-nnn (wave E, surfaces-10) — House snackbar: show() takes an optional `key`, and a keyed snackbar replaces the one on screen instead of stacking. The action dismisses before it runs. In the editor, the room's Undo snackbars, 'Vn deleted' and 'Vn is ready' each keep one snackbar, and 'Vn is ready · Compare' closes a dialog opened meanwhile. Source: bug fix.",
+    "REG-nnn (wave E, desktop-9) — Add to a quote's snackbar is one line: 'n lines added · m to measure · Open'. Source: bug fix (copy shortened; 'Open' as Save to Files').",
+    "REG-nnn (wave E, desktop-5) — A piece being customised previews its colour on the photo: its marker carries the pick's colour, and the lit piece is washed in it, not in purple. Source: bug fix.",
+    "REG-nnn (wave E, E12 · surfaces-9) — Room menu: Rename and Change photo follow the Delete-room rule and are greyed with the rule, said once under Delete room. Source: user-directed (owner call E12).",
+    "REG-nnn (wave E, surfaces-14) — A piece added with one click whose outline reads as a speck, or spills past it, is drawn round instead: 'Couldn’t find its edges — draw round it instead' / 'This spread too far — draw round it instead'. Source: bug fix, invented copy.",
+    "REG-nnn (wave E, surfaces-19) — Tapping to add a surface inside one already on the list selects that surface instead of adding a copy: 'That’s {Surface} — already on the list · Draw instead'. Source: bug fix, invented copy.",
+    "REG-nnn (wave E, surfaces-22 · surfaces-23) — Keyboard in the versions strip: ← / → move focus with the version shown. After a delete, focus goes to the neighbouring tile; after the last restore, to the restored tile. Source: bug fix.",
+    "REG-nnn (wave E, surfaces-27) — With the Original on screen, a version's ⋯ offers 'Before and after' (the version against its parent) instead of a dead Compare row. Source: bug fix.",
+    "REG-nnn (wave E, tablet-6 · tablet-1) — Pin, place and draw modes give keyboard focus back to what started them (the pin toggle, the add button) when they end. A new pin's thread gives it to the new pin. Source: bug fix.",
+    "REG-nnn (wave E, tablet-2) — Phone and portrait-tablet tray: closing unfolds the rooms and versions on the tray's beat, so the photo moves once, straight to its place. Opening fades the canvas bar out as its row closes. Source: bug fix.",
+    "REG-nnn (wave E, tablet-10) — The editor's loading ghost draws the rail foot as the page does on short windows (one-line Describe, no idle hint), so nothing jumps on reveal. Source: bug fix.",
+    "REG-nnn (wave E, tablet-15) — Add to a quote… waits with a reason that says what to do: 'A whole-room look has no finishes to quote — pick finishes on the Original' / 'This version has no finishes to quote'. Source: bug fix, invented copy.",
+    "REG-nnn (wave E, files-9) — A deleted lead's design says so ('{Lead} was deleted — restore the lead to share, file or quote from this design.') and greys Save to Files, Add to a quote… and Share with 'Its lead was deleted'. Source: bug fix, invented copy (server's words).",
+    "REG-nnn (wave E, files-13) — Copy: 'Delete {Lead}’s design?'. 'Deleted Designs' everywhere, and the deleted note names who may restore it. Source: bug fix (copy).",
+    "REG-nnn (wave E, phone-2) — On a notched phone held sideways, the versions strip's and the rail's rules run to the screen's edge, while their content stays clear of the notch. Source: bug fix.",
+    "REG-nnn (wave E, phone-5) — The editor's top bar keeps a name's '(2)' when it cuts the name. Source: bug fix.",
+    "REG-nnn (wave E, E3 · phone-13) — Phone on its side: the editor's top bar is 44 tall with 36px room chips, the Maison AI button sits at the slim strip's end, and the loading ghost mirrors the landscape frame. Source: user-directed (owner call E3), invented UI (no mock for phone landscape)."
+  ],
+  "verification": "npx tsc --noEmit -p . reports no errors in my files; the only errors are in others' in-progress files (app/quotes/items-actions.ts, components/contracts/editor/contract-template-editor.tsx, the quotes package's E7 work). npx eslint on visualizer-editor.tsx, topbar.tsx, skeletons.tsx, snackbar.tsx and app/(editor)/visualizer is clean. Visual and behaviour checks used a read-only esbuild harness (scratchpad waveE/editor/harness). It runs the working tree's VisualizerEditor on Kevin Ng's real editor data, dumped with fetchVisualizerEditor from a private copy of the :3024 scratch DB, served over the :3024 build's global CSS, with server actions stubbed; no server DB was written. Scripts: t-snack (placement at 1440×1024, 1280×800, 1025×700, 1024×768t, 768×1024t, 844×390t, 667×375t, 390×844t, 375×667t: over the strip everywhere except upright phones, clear of the photo and the bar), t-focus (arrows, delete, restore, pin Esc, Before and after), t-misc (E12 menu, lead-deleted note and rows, deleted note with maker, confirm title, keyed Undo, 320 title), t-quote (one-line snackbar 344×48), t-furn (navy sofa tint), t-add (duplicate surface refused, speck or spill piece goes to Draw), t-tray (frame-by-frame photo position, width and bar opacity at 768×1024 and 390×844), t-ghost with pair.cjs (ghost vs page boxes and side-by-sides), t-safe (CDP safe-area 47/47 at 844×390 and 44/44 at 667×375). One-click piece thresholds were measured with the node engine (waveE/editor/t-piece.mts) on the living room and the kitchen. Shots are in waveE/editor/harness/shots/. I looked at the snack-*, safe-844x390, pair-*, m-room-rule, m-title-320, q-snack, f-sofa-navy and a-piece-speck shots.",
+  "checkOnBuild": [
+    "E1 on the real build: generate a version at 1440×1024, 1280×800, 1025×700 and 1024×768 touch. 'Vn is ready · Compare' must rest centred over the strip's left end (x16–360), clear of the photo and the canvas bar. At 768×1024 touch it rests over the strip; with a mode's tray open it rests over the go line's left end. At 844×390 it covers the slim strip, 2px off the bottom. Upright 390×844 and 375×667 must be unchanged.",
+    "At 667×375, until snackbar.module.css reads --snackbar-right (crossFileRequests), the phone's full-width snackbar also covers the rail's go line for its 4 s.",
+    "Two take-offs in a row (× on two surfaces) leave one 'taken off the list · Undo' snackbar, and its Undo works. Two version deletes leave one 'Vn deleted · Undo'. Other pages' snackbars (Leads, Quotes) still stack and their actions still run.",
+    "tablet-1 (2): Pin it → the new pin's thread opens; Esc should put keyboard focus on the new pin's marker. This needs router.refresh() to bring the pin in, so the harness could not show it.",
+    "tablet-2 at 768×1024 and 390×844 touch: open and close a dock tab's tray. The photo should grow straight to its place with no drop-and-return, the canvas bar should fade out on open and in once the tray has gone, and nothing should move with Reduce motion on.",
+    "Phone on its side (844×390, 667×375, and with notch insets): the 44 top bar with 36px chips; the Maison AI button at the slim strip's right end must not cover the canvas bar or the last tile's ⋯. Then compare the loading ghost with the page (throttled). The ghost mirrors the working tree's canvas side fit and the rail's 48 tabs and go line; if those packages change them again, skeletons.module.css's landscape block needs the same numbers.",
+    "files-9: delete a lead that has a design and open the design. Check the note, the three greyed rows with 'Its lead was deleted', and Share's tooltip.",
+    "files-13: once the server adds design.maker, open a deleted design as a non-maker; the note should name the maker ('only Dane, …').",
+    "surfaces-14 thresholds depend on the one-click read, which engine-paint was changing during this wave (the basil read went from 0.013% to 0.24% mid-wave). On the final engine, add Kitchen › Furniture › + 'Basil plant in a pot' (Decor) on the basil: a good read should keep the piece; a speck or spill should go to Draw round it.",
+    "desktop-5: Sofa › Customize › Navy should wash the sofa navy, not purple, with the marker dot navy."
+  ]
+}

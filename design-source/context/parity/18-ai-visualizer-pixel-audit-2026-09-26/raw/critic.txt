@@ -1,0 +1,92 @@
+1. **Image routes have no access check.** Check `/visualizer/img/{room|v|m|d}/…` and `/files/img/[fileId]`. They never ask Who sees leads, whether the design is deleted, or whether a share link is stopped or expired. On top of that, `v/…` is served `public, max-age=31536000, immutable`. So once a link is stopped, or a version or design is deleted, anyone holding the address still gets the client's photo, and proxies may cache it. Check this with curl after a stop, a delete and a delete-forever, and as View as Sarah on a lead she can't see. The fix is to gate each read on the policy and use `private` caching for anything that isn't a public sample.
+
+2. **The WhatsApp link preview was never tested.** `generateMetadata` in `app/renders/[token]/page.tsx` only sets a title. The client's first touchpoint has no `og:image` (the first shared render), no `og:description` (studio, lead, how many renders) and no studio logo, so WhatsApp shows a bare URL. A world-class share should unfurl. Build an OG image route that follows the link's state, so a stopped link doesn't show the render.
+
+3. **The UAT story has no visualizer chapter.** `ch1.json` only reaches the Tools tile (step 1.06). `ch2`…`ch12` never open the visualizer. The 111 rows in `checklist-VIZ.json` are a parity checklist, not a walk. The story needs a chapter, or steps woven into Kevin Ng's lead chapters, that follows a real flow:
+   - open the lead's design, pick walls and floor, Generate
+   - compare, present, moodboard
+   - Save to Files, Add to a quote
+   - share to the client, then play the client: like, pin, call back
+   - see the bell entry, the Activity line and the task
+   - stop the link.
+
+   The xlsx then needs a rebuild, and the owner already flagged that step 1.06 is stale.
+
+4. **The lead's lifecycle and its design were not covered.** No lens checked what happens to the lead's design and a live `/renders` link when the lead:
+   - is Returned to Qanvast
+   - goes Lost or On Hold
+   - is deleted, then deleted forever (FK cascade on `lead_id` drops the design and its links, and the saved renders in Files may be orphaned)
+   - goes Won and becomes a project
+   - has its name edited (design title, share page greeting, file names)
+   - has its phone number changed after a link was made (the wa.me number).
+
+   `app/leads/actions.ts` and `return-actions.ts` have no visualizer hooks. A returned lead's client link staying open is the main concern.
+
+5. **Dark mode was checked nowhere** (every lens skipped it). The editor, landing and Materials use `--om-*` tokens, but the stage chrome, pin cards, markers, compare handle and moodboard print styles need a pass. The client page `/renders` sits outside AppShell, so decide whether it follows the system theme or stays light, and check the studio accent on dark.
+
+6. **The Hide markers toggle (`om.viz.markersHidden`) wasn't exercised.** Check that:
+   - it persists
+   - pin mode and the highlight still behave with markers hidden
+   - it applies on the phone
+   - "Reset prototype to base" clears all `om.viz.*` keys: hint, introHidden, recent, markersHidden.
+
+7. **Reset to base and baseline integrity for the visualizer.** All eight visualizer tables are in `BASELINE_TABLES`, but three things need running:
+   - Reset after renders were saved to Files, then confirm Files › Renders, `lead_file_images` and the Kevin Ng design come back consistent, with no orphan `render_jobs` or `renders` files.
+   - `npm run db:repair` has visualizer rules. Run it on a DB where a lens deleted Kevin's design forever and check it re-seeds cleanly (REG-343 trail: Activity lines, `lead_events`).
+   - The baseline JSON size, given base64 renders inside `variants_json`.
+
+8. **Maison AI inside the editor.** The editor mounts `MaisonFab` on its own, and only the landing calls `useMaisonAi`. Check what the sheet offers inside a design. It has no scripted suggestions such as "Suggest a palette for this lead's style", "Describe this render for the client" or "Draft the WhatsApp message". Also check that it works on the read-only or deleted state.
+
+9. **Two tabs and two members on one design.** Autosave writes `state_json` wholesale, so the last writer wins. No lens opened the same design in two tabs, or as Dane and Hui Min, to see picks overwrite each other, V-numbers collide, or one tab delete a room the other is rendering into. At minimum, detect a stale `updatedAt` and say "Changed elsewhere, reload".
+
+10. **The network failing mid-Generate.** `saveRender` catches errors, but check these by throttling or blocking the action:
+    - offline during the progress card
+    - a server 500 on `saveRender` (is the in-flight tile removed? are picks kept?)
+    - a very slow save while the user leaves (no `beforeunload` or `pagehide` guard exists)
+    - a retry that doesn't double-save.
+
+11. **Download quality and export options.** Every download is a 900×603 JPEG. A studio sending renders to clients or printing boards expects:
+    - full resolution, or at least the photo's native size
+    - PNG as an option
+    - "Download all versions" or a room as a zip
+    - an optional studio logo or watermark, taken from the brand kit.
+
+    Also check that the download from the client page (if offered) keeps the studio's naming.
+
+12. **Version provenance.** No lens checked whether a version can say exactly what made it: which picks, which materials with their Price book links, style, light knobs, notes, and parent. The moodboard reads it, but it breaks on derived versions (already reported). The studio has no Information pane on a version. Add one; it is the backbone for Add to a quote, the moodboard and client questions.
+
+13. **A material or swatch deleted, edited or renamed while a design uses it.** gallery-materials skipped this. Check:
+    - the picker's Recent and "Your studio"
+    - the change chip label
+    - a version's moodboard and quote lines after the material's name, colour or Price book link changes, or it is deleted or restored
+    - Deleted Materials' "Used by" count (reported odd) against real use.
+
+14. **Bulk selection on the landing.** Nobody checked the bulk bar's Move or Delete with lead and personal designs mixed. Lead designs can't be foldered, so the bar needs to refuse them per row with a reason, and delete needs to respect the maker / Owner / Admin rule and give one Undo.
+
+15. **Every role, not just Sarah and James.** Nobody ran Hui Min (Admin) or a second Designer against the policy. Check that she can delete others' rooms and designs and change materials. Check that a Designer can't, including the room delete that two lenses say is ungated. Check that server actions refuse and the UI says why in the row.
+
+16. **The Tools popover, the phone Tools sheet and More › Company › Materials entry points, with `?from=`.** Only the desktop tiles were clicked. Check the Back label and destination from each of these, and from a notification deep link on a phone.
+
+17. **Keyboard power use: no shortcut map.** ⌘Z, ←/→, Esc and C for the listing exist, but there is no "?" or help, and no G for Generate or P for pins. A world-class editor would at least show shortcuts in tooltips or a sheet (proposal, REG-logged).
+
+18. **Share-link expiry for the studio.** Links die after 7 days with nothing sent. Consider a "link expires tomorrow" notification or task and a Renew nudge. Check how the Shared-before list and the lead's Activity read once a link expires on its own, as opposed to being stopped.
+
+19. **Mic dictation and drag-and-drop uploads** were skipped by everyone. On a real browser, check:
+    - the dictation permission refused and granted
+    - the listening state
+    - drops onto the empty-state dropzone and onto Add room: multiple files, a non-image, a >10 MB file, HEIC from an iPhone (the only accept list is jpeg/png/webp, and phone users will hit this).
+
+20. **Tablet at 768/1025 for the client page and Present, and the 320 gate for Materials.** Named "not checked" by files-client, gallery-materials and motion-a11y.
+
+21. **A real `loading.tsx` handoff and PageReveal on the editor route.** They were judged only as a static fallback. Once the ghost is fixed, re-check on a throttled soft navigation from the landing, Files and the lead's quick link.
+
+22. **Performance at demo scale.** No lens measured the editor's first load, or the landing and Activity queries, with a design holding 50+ versions of base64 renders. The code-robustness lens reports every render read from `variants_json` on every load. Measure TTFB and the payload on Kevin's design after 20 Generates, and the memory after browsing 30 versions.
+
+23. **Nothing prints except the moodboard.** There is no print or PDF of a version with its finishes list, and no before/after sheet for a client meeting. A one-page "Design proposal" (cover, rooms, before/after, materials with Price book prices) fits the moodboard pattern and the brand kit. Proposal only.
+
+24. **Client page capabilities.** Checked as built, but some things are missing:
+    - the client can't compare two versions side by side, or ask for "this one but with X"
+    - no reply from the studio reaches the client, so pin threads are one-way unless the page refreshes
+    - no studio or designer identity (the designer's name and photo from members)
+
+    Decide which fit 1.0 parity versus proposal.

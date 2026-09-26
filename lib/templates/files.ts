@@ -1,7 +1,11 @@
 /** Browser-side file helpers for the brand kit and "Recreate from my current quote" (client-only). */
 
-/** A picked image as a data URL, downscaled to `max` px on its long side; SVGs and non-images are read as they are. */
-export function readFileAsDataUrl(file: File, max = 1600): Promise<string> {
+/**
+ * A picked image as a data URL, downscaled to `max` px on its long side; SVGs and non-images are read as they are. `jpeg` always
+ * redraws as a JPEG (room photos: one format, a known size); `web` redraws a picture a browser may not keep showing (HEIC, TIFF, BMP,
+ * GIF → its first frame as PNG) even at full size.
+ */
+export function readFileAsDataUrl(file: File, max = 1600, opts: { jpeg?: boolean; web?: boolean } = {}): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(reader.error)
@@ -11,13 +15,15 @@ export function readFileAsDataUrl(file: File, max = 1600): Promise<string> {
       const img = new Image()
       img.onload = () => {
         const scale = Math.min(1, max / Math.max(img.width, img.height))
-        if (scale >= 1) { resolve(url); return }
+        const webSafe = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+        if (scale >= 1 && !opts.jpeg && (!opts.web || webSafe)) { resolve(url); return }
         const c = document.createElement('canvas')
         c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale)
         const ctx = c.getContext('2d')
         if (!ctx) { resolve(url); return }
         ctx.drawImage(img, 0, 0, c.width, c.height)
-        resolve(c.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.9))
+        const png = !opts.jpeg && (file.type === 'image/png' || file.type === 'image/gif')
+        resolve(c.toDataURL(png ? 'image/png' : 'image/jpeg', 0.9))
       }
       img.onerror = () => resolve(url)
       img.src = url

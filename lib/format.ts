@@ -34,6 +34,12 @@ export function displayDayMonth(d: Date): string {
   return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 
+/** (audit 2026-09-26, F128) A day and a short month, "25 Sep" — a new design's default name, the same months as every other date (never the
+    server's locale data, which prints "25 Sept"). */
+export function displayDayShortMonth(d: Date): string {
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`
+}
+
 const LONG_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 /** Files grid group head (931:39123): "Friday, 17 Jul ’26". */
 export function displayDateWeekday(d: Date): string {
@@ -124,6 +130,21 @@ export function decimalTyped(raw: string, places = 3): string {
 }
 /** A money figure as typed: dollars and cents. */
 export const moneyTyped = (raw: string): string => decimalTyped(raw, 2)
+
+/**
+ * (audit 2026-09-26, F121) A colour as typed: an optional leading "#" and at most six hex digits — anything else is dropped as typed
+ * (REG-150's rule for number-like fields). `hexOf` reads it: three or six digits, with or without "#", as "#RRGGBB" — else null.
+ */
+export function hexTyped(raw: string): string {
+  const t = raw.trim()
+  return (t.startsWith('#') ? '#' : '') + t.replace(/[^0-9a-f]/gi, '').slice(0, 6)
+}
+export function hexOf(raw: string): string | null {
+  const d = raw.trim().replace(/^#/, '')
+  if (/^[0-9a-f]{6}$/i.test(d)) return `#${d.toUpperCase()}`
+  if (/^[0-9a-f]{3}$/i.test(d)) return `#${d.split('').map((c) => c + c).join('').toUpperCase()}`
+  return null
+}
 
 /** Digits grouped in thousands ("70500" → "70,500"); anything else is dropped. */
 export function groupDigits(raw: string): string {

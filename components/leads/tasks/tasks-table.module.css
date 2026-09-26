@@ -363,7 +363,9 @@
 /* (REG-310) On a touch pointer the hover actions are always on (REG-273) and would sit over the last column at the end of
    the scroll, so the row gains a 150px band past its last cell — the float lands on empty space. A mouse keeps the mock. */
 @media (hover: none) and (max-width: 1024px) {
-  .head::after, .row::after { content: ''; flex: 0 0 150px; }
+  /* (audit 2026-09-26, D8) `order: 9999`: the cells carry `order: var(--col-order)` (REG-454), and the band, at the default 0, was
+     laid out straight after the select cell — a 150px blank column between the checkbox and Title on every touch tablet. */
+  .head::after, .row::after { content: ''; flex: 0 0 150px; order: 9999; }
   .table { min-width: calc(var(--table-min, 1242px) + 150px); }   /* the band is part of the floor, so the title never absorbs it */
 }
 
@@ -375,6 +377,7 @@
    actions become permanent, because a finger has no hover and could never raise them. */
 @media (max-width: 767px) {
   .head { display: none; }
+  .row::after { content: none; }   /* (D8) the list places its own kebab — no end band on a phone */
   .card { border: 0; border-radius: 0; background: none; }
   .card::after { content: none; }
   /* The separator belongs to the row now: on the desktop table every cell draws it, which turned each wrapped
@@ -429,3 +432,10 @@
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
+
+/* (audit 2026-09-26, found checking D8) On a phone — a touch pointer — the title button takes its 44px target (`.titleBtn`, REG-273)
+   and the rail card's title line centres 35 down its row, while the ring and the checkbox stayed on the mouse's 22: 12px above the
+   title. They sit on the title line again (1 border + 12 padding + 22). */
+@media (max-width: 767px) and (hover: none) {
+  .row:has(.colLead) .cell.colSel, .row:has(.colLead) .colTitle .glyph { top: 34px; }
+}

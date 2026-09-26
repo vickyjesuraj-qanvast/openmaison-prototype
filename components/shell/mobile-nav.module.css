@@ -60,6 +60,8 @@
    leaves 14 clear above and below, so the bar's own height and its 12/16 padding are untouched. */
 .logo { width: 32px; height: 32px; display: block; flex-shrink: 0; }
 .wordmark { height: 16px; display: block; }
+/* (audit 2026-09-26) On a 320 screen the 16-tall wordmark ran under Search (16 + 32 + 8 + 99 + 12 + 156 + 16 = 339); at 12 tall (74 wide) the bar is 314. */
+@media (max-width: 359px) { .wordmark { height: 12px; } }
 
 /* The bar's right group: 24px Light glyphs 16 apart, then the 36px avatar (r8, 1px surface/variant stroke).
    Each glyph keeps its 24 and gets a 44px box through padding paid back as margin (REG-273). */

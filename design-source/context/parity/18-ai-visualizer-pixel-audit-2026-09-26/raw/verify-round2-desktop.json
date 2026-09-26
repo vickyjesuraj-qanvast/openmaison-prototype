@@ -1,0 +1,594 @@
+{
+ "results": [
+  {
+   "ref": "F004",
+   "status": "fixed",
+   "evidence": "I tested a design with six rooms. The active room was renamed 'Kitchen concept sketch for the Tampines flat'. At 1440 the chip sits at x703–903 inside the row (73–903). After resizing to 1025×800 the chip sits at x536–736, the row's right edge is 736, it ellipsizes, and the left pager is visible. After resizing to 1280 it sits at x791–991. A fresh touch load with ?room=<last>: at 768 the chip is at 480–680 (the row ends at 680), and at 390 it is at 102–302 (the row ends at 302).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/topbar.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/r04-long-1025.png"
+  },
+  {
+   "ref": "F005",
+   "status": "fixed",
+   "evidence": "Kevin Ng › Living room at 1440, 1280 and 1025: every tile is 128 wide. The ⋯ sits 4px in from the picture's top-right corner, e.g. at 1440 the V1 tile runs 246–374 and its ⋯ 346–370 at y912–936, with the image top at 908. A long caption ellipsizes ('V2 · Walls, Light Oak…'). At 768 and 390 touch every tile is 96 and the ⋯ is inside the image (768: image 197–293, ⋯ 265–289).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d01-kevin-1440-hovertile.png"
+  },
+  {
+   "ref": "F007",
+   "status": "fixed",
+   "evidence": "At 1440 there is no data-more with 1 chip (scrollHeight/clientHeight 28/28), 2 chips (64/64) or 3 chips (100/100), and the last chip reads cleanly. At 1280×800, 1366×768, 1025×768 and 1280×720 the list is capped at 50px, 3 chips give sh 100, and data-more is set. So the fade now appears only when a chip really is hidden.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.tsx",
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d04-quicker-reload.png"
+  },
+  {
+   "ref": "F014",
+   "status": "partly",
+   "evidence": "The snackbar is now one line: 'V2–V4 are ready · Compare' after a 3-version Japandi run from a relit V1, with no caveat. It still lands on the photo's bottom-left edge at every desktop width. At 1440×1024 it spans x16–360, y775–823, and the photo runs x32–1036 with its bottom at 802, so it overlaps by 27px. At 1025×800 it spans y551–599 against a photo bottom of 563 (12px). At 1280×800 the overlap is 4px. 'Changes cleared · Undo' and the Add-to-quote snackbar sit in the same place.",
+   "remaining": "The lift goes above the canvas bar because the 344px snackbar (right edge 360) crosses the bar's left edge (318 at 1440, 238 at 1280, 128 at 1025), which pushes it into the photo. Fix options: let it rest over the strip's left block (the 'Versions n' label area) when the stage is short; shift the canvas bar right while a snackbar shows; or accept the overlap and log it as the rule.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/om/snackbar.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d09-v-ready.png"
+  },
+  {
+   "ref": "F015",
+   "status": "fixed",
+   "evidence": "Style cards list one material per line with a chip, all named in full with no clamp, e.g. Modern 'Porcelain Grey / Pure White / Solid Surface White' and Minimalist 'Polished Concrete / Pure White / Solid Surface White' (wrapping) at 1440 and at 1025 on the 336 rail.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/panels.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d07-style-1025-mid.png"
+  },
+  {
+   "ref": "F019",
+   "status": "fixed",
+   "evidence": "A newly made Blank design with no rooms shows 'Saved just now' between Add room and Undo at 1440.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d02-blank-1440.png"
+  },
+  {
+   "ref": "critic-5",
+   "status": "cannot-check",
+   "evidence": "There is still no dark theme in the product (no prefers-color-scheme rule in app/ or components/). With colorScheme 'dark', the editor and the client link both render the light tokens consistently (body rgb(242,242,242)) with no half-dark controls. Whether /renders should follow the system theme is the owner's decision.",
+   "remaining": "",
+   "files": [],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/k01-dark-client.png"
+  },
+  {
+   "ref": "critic-17",
+   "status": "partly",
+   "evidence": "Hints now appear where a shortcut exists. The strip's 'Versions' head tooltip reads '← → step through the versions'. The stage banner's Cancel reads 'Cancel (Esc)' with aria-keyshortcuts=Escape. Undo and Redo carry ⌘Z and ⇧⌘Z.",
+   "remaining": "There are no keys and no hints for Generate, Compare (its tooltip is 'Before and after · V1' with no key), Pin or Hide markers, and no '?' sheet. This is still an owner proposal to be REG-logged before building.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s05-cancel-tip.png"
+  },
+  {
+   "ref": "F060",
+   "status": "partly",
+   "evidence": "I uploaded the bedroom photo as a client file (untraced). It now reads 2 surfaces, Walls and Floor (round 1 found only Walls). The notice 'Marked roughly on your photo — check the highlight, or draw a surface' shows, and the mask edges are smooth rather than torn. The Navy render is still a blob: a big cream wedge is left of and above the headboard, the paint stops short of the ceiling line and of the curtain and wardrobe edges, there are detached navy islands at the top (a pill at the top centre and a dot top-left), and the frame gets navy streaks.",
+   "remaining": "The walls region still does not fill the wall planes. On a client's own photo this reads as broken. Wave D's engine report also lists it as not solved. Either do a plane or edge-bounded flood, or, when coverage is low, refuse and send the studio to Draw a surface instead of painting.",
+   "files": [
+    "lib/visualizer/engine/fallback.ts",
+    "lib/visualizer/engine/segment.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/r02-navy.png"
+  },
+  {
+   "ref": "F062",
+   "status": "fixed",
+   "evidence": "With a focused 150-character note, Generate stays 36px tall at 1280×800, 1366×768, 1025×768 and 1280×720, and the foot scrolls instead (foot 306 tall). Picking Furnish the room at 1280×720 and 1366×768 scrolls its options into view (the Balanced chip at y353–385). So does Empty the room (Strip to shell at y331–363 at 1280×720).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d17-furnish-1280x720.png"
+  },
+  {
+   "ref": "F064",
+   "status": "fixed",
+   "evidence": "I ran Empty the room · Strip to shell with 'Anything else: the curtains and the TV'. Present's What changed reads 'Room · Strip to shell', 'Note · Also took out the wall-mounted TV', and the caveat 'Kept: the sheer curtains — this photo can’t take them out'. It never claims the curtains went.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d12-present-emptied.png"
+  },
+  {
+   "ref": "F069",
+   "status": "fixed",
+   "evidence": "Same fix as F015: all three materials are named on their own lines at 1440 and 1025, and cards in a row line up.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/panels.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d07-style-1440.png"
+  },
+  {
+   "ref": "Version tiles grow to their label's width, so the ⋯ floats off the thumbnail at ≤1024 and the tiles are unevenly spaced",
+   "status": "fixed",
+   "evidence": "Tiles are 96 at 768 and 390 touch and 128 on desktop, and the ⋯ is always inside the image (768: V1 image 197–293, ⋯ 265–289; 390: 1–97 and 69–93).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/t01-kevin-768.png"
+  },
+  {
+   "ref": "The changes list's 'more below' fade shows on every list, so the last chip always dissolves at its bottom edge",
+   "status": "fixed",
+   "evidence": "Same as F007: sh equals ch for 1–3 chips at 1440 with no data-more. The fade shows only on the 1.5-row cap on short screens.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d04-quicker-reload.png"
+  },
+  {
+   "ref": "The one-line 'Describe a change' box on short screens cuts its two-line placeholder in half",
+   "status": "fixed",
+   "evidence": "At 1280×800, 1366×768, 1025×768, 1280×720 and 1025×800 the resting box is 20px tall with the one-line placeholder 'e.g. walnut floor, sage green walls', uncut. At 1440×1024 the 40px box shows the full two-line sentence.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d05-1280x800-rest.png"
+  },
+  {
+   "ref": "The editor's Maison AI sheet opens at the house corner, away from its button, and covers the rail's panel",
+   "status": "fixed",
+   "evidence": "At 1440 the FAB is at x1000–1048, y940–988 and the sheet at x728–1048, y663–928 (right edges flush, 12px above). At 1025 the FAB is at 621–669 / 716–764 and the sheet at 349–669 / 439–704. A second press on the FAB closes it, and so does Esc.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d06-ai-1025.png"
+  },
+  {
+   "ref": "Dusk and night lights lay a hard-edged navy box over the windows that cuts through the sofa, curtains and sill decor",
+   "status": "fixed",
+   "evidence": "Living room · Blue Hour, preview and generated V1: only the glass goes navy. The sheer curtains, the sofa arm and the window frame keep their tone, and there is no box over the sill. Warm Cozy Home at 1280 and 1025 shows no box either.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/engine/grade.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d08-bluehour-v1-crop.png"
+  },
+  {
+   "ref": "Generate button collapses to 20px when the rail foot scrolls on a short laptop (regression from the F062 fix)",
+   "status": "fixed",
+   "evidence": "Generate measures 36px tall with a focused long note at 1366×768, 1280×800, 1280×720 and 1025×768.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d05-1280x800-focused.png"
+  },
+  {
+   "ref": "Describe a change: the one-line resting box cuts its placeholder's second line in half",
+   "status": "fixed",
+   "evidence": "It is fixed at every desktop width I checked (see the editor-visual twin). I did not check the 390/375 tray, which is outside my widths.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d05-1025x768-rest.png"
+  },
+  {
+   "ref": "A note the engine can't read still offers 'Generate from note', runs about 2s of progress, then fails",
+   "status": "fixed",
+   "evidence": "Kitchen · Original with 'make it feel calmer': Generate from note is disabled, and the foot reads 'We couldn’t turn that note into a change — try a surface and a finish, like “sage green walls”.' A forced click starts no progress card. 'sage green walls' enables it.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/model.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s04-unreadable-note.png"
+  },
+  {
+   "ref": "Un-ticking the style card, or tapping None, while references are on throws the references away",
+   "status": "fixed",
+   "evidence": "With a reference on (Reference · 1), tapping Bohemian shows 'Reference taken off · Undo'. Undo brings the reference back and leaves no card ticked (button 'Style transfer'). Tapping None with the reference on keeps it (still 1/3, Style transfer).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": ""
+  },
+  {
+   "ref": "The Maison AI button covers the Versions '2 / 3' segments and the top of 'High' when the phone knobs open",
+   "status": "fixed",
+   "evidence": "At 390×844 touch, opening Versions and quality hides the FAB (isVisible false), and the 1/2/3 and Fast/High controls are clear.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/t02-390-knobs.png"
+  },
+  {
+   "ref": "Reference photos' remove × is a bare grey 24px glyph on the photo, almost invisible",
+   "status": "fixed",
+   "evidence": "The × is now a white round chip with elevation-1 (box-shadow) in the photo's top-right corner, readable on the moodboard reference. Its visual box is 24px; I did not measure the hit area beyond that.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s01-ref-x.png"
+  },
+  {
+   "ref": "Furnish copy: the density hint runs two sentences together, and 'empty it first' shows on an already-emptied version",
+   "status": "fixed",
+   "evidence": "On the emptied V5 the card reads 'Furnish an empty room — the architecture, camera and framing stay put'. The density line reads 'Essentials plus a few extras — lived-in. For now it places the pieces the sample room holds.' 'Empty the room' reads 'This version is already empty'.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/tools-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d17-furnish-1280x720.png"
+  },
+  {
+   "ref": "Present lists a style transfer's finishes as hex codes ('Reference #1D1A13'), and a restyle plus a note lists the Ceiling twice",
+   "status": "partly",
+   "evidence": "There is no hex anywhere now, and Modern plus the note 'white ceiling' lists White Ceiling once. For a Kitchen style transfer, though, Present lists 'Countertops · Reference colour, close to Quartz Calacatta' and a second 'Countertops · Reference colour, close to Linen' (a paint name on a worktop). The moodboard also groups 'Countertops, Backsplash, Walls, Ceiling' under 'close to Quartz Calacatta' (a stone name for walls and ceiling), which contradicts Present (Walls ≈ Linen, Backsplash ≈ Basketweave Marble).",
+   "remaining": "Name each surface by its own label, not the group word twice. Name the nearest finish per surface kind, and on the moodboard group by the resolved name rather than the hex. See the new issue.",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "components/visualizer/editor/dialogs/version-facts.ts",
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s03-moodboard.png"
+  },
+  {
+   "ref": "On a sketch the versions strip still says 'pick a finish or a style, then Generate'",
+   "status": "fixed",
+   "evidence": "A Kitchen sketch room with no versions reads 'Your renders land here — pick a style, then Render from sketch.' at 1440 and 1025.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/r04-long-1025.png"
+  },
+  {
+   "ref": "'Your changes' sheet header: Clear all sits about 7px below the title and close line",
+   "status": "fixed",
+   "evidence": "In the changes sheet at 768×1024 touch, the title centre is at 915, Clear all at 917 and close at 917.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/t02-768-changes-sheet.png"
+  },
+  {
+   "ref": "The client's renders link sits in the left part of a desktop window: the letterhead stops mid-screen and the rest of the page is empty grey",
+   "status": "fixed",
+   "evidence": "The page and header span the full viewport at 1440, 1280 and 1025 (scrollWidth equals the viewport). The 928px column is centred at x256 at 1440, x176 at 1280 and x49 at 1025. An unknown or closed link's notice is 560 wide and centred (x440 at 1440, x233 at 1025).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c01-client-1440-full.png"
+  },
+  {
+   "ref": "The client is told 'Dane will call you back' and 'Dane will see it', but Dane gets no task and no notification. Everything goes to the lead's members",
+   "status": "fixed",
+   "evidence": "Dane (not one of Grace Lim's members) shared V1 and V2. The client picked a favourite, left a note, pinned a note and asked for a call back. render_feedback notifications went to dane, james and sarah, 4 each. The Follow-up task 'Call Grace Lim back about the renders' is assigned to james, sarah and dane. Dane's bell lists all four.",
+   "remaining": "",
+   "files": [
+    "app/renders/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c03-called.png"
+  },
+  {
+   "ref": "On the client link, 'Before' for a design built on another design is that earlier design, and its finish list leaves out the walls and floor the picture shows",
+   "status": "fixed",
+   "evidence": "Design 2 (V2, built on V1): Before and after shows /visualizer/samples/living-room/original.jpg as Before, which is the client's own room. The list reads Walls Sage Green · Floor Walnut vinyl plank · Oak Coffee Table Swapped for a Mid-Century coffee table · Upholstered Armchair Emerald · Jute Area Rug Taken out.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c02-ba-d2.png"
+  },
+  {
+   "ref": "Replace with a quick pick prints 'Swapped for kidney-shaped walnut coffee table with tapered l' (cut mid-word) to the client, and the table barely changes",
+   "status": "fixed",
+   "evidence": "Present, the moodboard and the client link all read 'Swapped for a Mid-Century coffee table'. The table renders visibly walnut against the oak console.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d15-v-crop.png"
+  },
+  {
+   "ref": "The studio's internal pin threads (replies, 'Resolved') go out on the client link without warning",
+   "status": "fixed",
+   "evidence": "Dane's resolved pin on V1, with two replies, does not appear on the client page. The Share dialog says 'Your team’s pins stay private — the client sees only their own notes.' The studio's pin box says 'Only your team sees it'.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts",
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/g05-share-open.png"
+  },
+  {
+   "ref": "Versions strip: a tile with a long label grows to the label's width, so the gaps are uneven and the tile's ⋯ floats in empty space",
+   "status": "fixed",
+   "evidence": "Tiles are 128 wide with even 12px gaps at 1440, 1280 and 1025. Long captions ellipsize and the ⋯ stays on the image.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d01-kevin-1280-hovertile.png"
+  },
+  {
+   "ref": "At 1280×800, 'Describe a change' collapses to 36px and the second placeholder line shows cut in half",
+   "status": "fixed",
+   "evidence": "At 1280×800 the one-line placeholder rests uncut in a 20px line box.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d05-1280x800-rest.png"
+  },
+  {
+   "ref": "Tapping a surface or a piece floods it in pulsing purple, and it stays purple after a finish is picked, so it reads as the new colour",
+   "status": "partly",
+   "evidence": "Surfaces are fixed. Walls show a 2px rim and a faint wash, and after Sage Whisper paint is picked the region is tinted sage. No element in the highlight has an animation. Furniture is not fixed. Grey Fabric Sofa › Customize floods the sofa in a strong lavender both before and after Navy is picked, so it still reads as a purple sofa.",
+   "remaining": "Pieces need the same treatment as surfaces: a lighter wash, and the pick's colour once one is chosen. stage.tsx sets the tint only when every lit marker has pending and fill, and the piece's Customize colour apparently doesn't give its marker a fill. The piece highlight image also looks much denser than the surfaces' 10% wash.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s08-sofa-navy-picked.png"
+  },
+  {
+   "ref": "'Add a surface' dialog: three footer buttons in a 400px modal, so the primary 'Trace its outline' wraps onto its own row",
+   "status": "fixed",
+   "evidence": "The dialog is 400 wide. The two ways are choice cards in the body (Trace its outline, and Click where it is, which is preselected), and the footer holds Cancel plus one primary ('Click where it is'). 'Click' is used for the mouse.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/small-dialogs.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s05-add-surface.png"
+  },
+  {
+   "ref": "Present's 'Everything in V3' table squeezes the names: 'Oak Coffee Table' breaks onto three lines while the value column is cut",
+   "status": "fixed",
+   "evidence": "At 1025 and 1280, Present's What changed and Everything in V2 put each name over its value (e.g. 'Oak Coffee Table' / 'Swapped for a Mid-Century coffee table'), with nothing squeezed.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s05-present-1025.png"
+  },
+  {
+   "ref": "A waiting 'Furnish the room' says 'Empty the room first' even though an emptied version (V4) already exists, and nothing leads to it",
+   "status": "fixed",
+   "evidence": "On V1 with the emptied V5 in the room, the card help reads 'Furnish works on an emptied version — V5 is one'. The options end with '… — open V5.' and the foot with 'Furnish works on an emptied version — open V5', both links. Pressing the foot link opens V5.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d13-furnish-on-v1.png"
+  },
+  {
+   "ref": "The Style panel badges Modern 'Grace’s pick', but Grace picked Contemporary",
+   "status": "fixed",
+   "evidence": "The badge now reads 'Closest match' on Modern, under a note: 'Grace’s style: Contemporary — Modern is the nearest, first below.'",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/g02-style-grace.png"
+  },
+  {
+   "ref": "Add to a quote puts the floor in at 1 sqft (S$7.00) and the quote reads 'Sum · 2 priced items' with a S$0 walls line",
+   "status": "partly",
+   "evidence": "The dialog now says 'Floor · Priced from the Price book · Measure on site — goes in with no quantity' and 'Lines priced by area or length go in with no quantity — type the measured one.' The snackbar reads '2 lines added · 1 priced from the Price book · 1 to measure'. In the DB the floor line has qty 0 and unit sqft.",
+   "remaining": "The quote's Items summary still reads 'Sum · 2 priced items' while the total is S$0.00. This is quote-editor code that wave D left out of scope.",
+   "files": [
+    "components/quotes/editor/items/*"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/g06-add-to-quote.png"
+  },
+  {
+   "ref": "Company › Materials can't be filtered: no Category or Finish pill and no Filters, in grid or list",
+   "status": "fixed",
+   "evidence": "Materials now has a Filters button that opens the house Filters dialog (Category · Finish · Price book, '4 materials shown', Clear All · Done). Wave D flags this as invented UI for the owner to accept.",
+   "remaining": "",
+   "files": [
+    "components/company/materials/*"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/m01-filters.png"
+  },
+  {
+   "ref": "The landing's bulk bar offers Move to Folder for a lead design, then refuses in a two-line snackbar",
+   "status": "fixed",
+   "evidence": "With only Kevin Ng ticked, the bulk bar shows '1 · Delete'. With Kevin Ng and a personal design ticked, it offers Move to Folder, and the dialog says '“Kevin Ng” stays where it is — a lead’s design stays with its lead, outside folders.'",
+   "remaining": "",
+   "files": [
+    "components/company/templates/library-gallery.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/m02-move-mix.png"
+  },
+  {
+   "ref": "An uploaded room photo is named 'Room 2', not after its file or its kind",
+   "status": "fixed",
+   "evidence": "Uploading sophia-living-room.jpg made a room named 'Living room 2' (the design already had a Living room). Uploading a bedroom photo made one named 'Bedroom'.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/outputs.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/r01-uploaded.png"
+  },
+  {
+   "ref": "Snackbars wrap to two lines at 344px ('Fresh desktop terrazzo added to Materials')",
+   "status": "fixed",
+   "evidence": "A new material with a 55-character name gets 'Material added' on one line (344×48).",
+   "remaining": "",
+   "files": [
+    "components/company/materials/*"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/m01-added.png"
+  },
+  {
+   "ref": "Client page mixes two time styles on one card: the note says '26 Sep ’26' while the pins beside it say 'just now' / '19 min ago'",
+   "status": "fixed",
+   "evidence": "On the same card the note reads 'Grace Lim · 1 min ago' and the pin 'Client · just now'.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c03-d2-answered.png"
+  },
+  {
+   "ref": "Rename the room stops typing at 60 characters with no counter or message",
+   "status": "fixed",
+   "evidence": "Typing 78 characters is accepted, the field shows the error 'Keep the room’s name to 60 characters', and Save is disabled. A 41-character name saves.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/small-dialogs.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/r03-rename-long.png"
+  }
+ ],
+ "newIssues": [
+  {
+   "title": "On 800px-tall desktops the Share dialog's 'Link copied' snackbar lands on the dialog's footer",
+   "severity": "minor",
+   "width": "1280×800, 1025×800 (clear at 1440×1024)",
+   "repro": "Grace Lim's design › Share with client › Shared before › Copy link.",
+   "evidence": "At 1025 the dialog spans x153–873, y36–764 and the snackbar x16–360, y728–776, which covers the footer's bottom-left and hides '1 of 6 picked'. At 1280 the dialog spans x280–1000 and the snackbar still covers '1 of 6 picked'. The same thing happens with 'Vn is ready · Compare' when Present opens while it is up (1440: snackbar y952–1000 over the xxl modal's bottom-left, and its Compare acts on the canvas behind the modal).",
+   "fix": "While an aria-modal dialog is open, place the snackbar below the dialog's bottom edge when there is room, else at bottom-centre above the scrim; or drop the snackbar when the row itself already says 'Copied'. Dismiss the 'Vn is ready · Compare' snackbar when a modal opens.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/om/snackbar.module.css",
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s09-share-copy-1280.png"
+  },
+  {
+   "title": "Style transfer's reference-colour names disagree between Present and the moodboard and use the wrong kind of finish",
+   "severity": "minor",
+   "width": "1440×1024",
+   "repro": "Kitchen (sample) › Style › Upload a reference photo (public/uat-files/kitchen-moodboard.jpg) › Style transfer › Present, then the version's ⋯ › Moodboard.",
+   "evidence": "Present lists 'Countertops · Reference colour, close to Quartz Calacatta' and a second 'Countertops · Reference colour, close to Linen' (a paint name on a worktop), 'White Painted Walls · close to Linen' and 'Marble Backsplash · close to Basketweave Marble'. The moodboard puts one swatch 'Reference colour, close to Quartz Calacatta' over 'Countertops, Backsplash, Walls, Ceiling · Matte', so it calls the walls and ceiling a quartz and contradicts Present. The floor is 'close to Teak Outdoor'.",
+   "fix": "Resolve the nearest finish per surface kind once (outputs.plainFinishName) and group moodboard swatches by that resolved name, not by the reference hex. In Present, label a surface that repeats a group word by its own name ('Island countertop' / 'Back countertop'). Worktops should snap to stones or countertops, never paints.",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "components/visualizer/editor/dialogs/version-facts.ts",
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/s03-present.png"
+  },
+  {
+   "title": "The Add-to-quote snackbar wraps to three lines and sits on the render",
+   "severity": "polish",
+   "width": "1440×1024",
+   "repro": "Grace Lim › V1 ⋯ › Add to a quote… › Add to quote.",
+   "evidence": "'2 lines added · 1 priced from the Price book · 1 to measure' plus Open quote is 72px tall (y751–823) in the 344px snackbar, over the photo's bottom-left corner.",
+   "fix": "Shorten it to fit one line, e.g. '2 lines added · 1 to measure' with Open quote, and leave the Price book detail to the quote.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/g06-added.png"
+  },
+  {
+   "title": "The Share dialog is 720px wide, off the house modal scale",
+   "severity": "polish",
+   "width": "1440, 1280, 1025",
+   "repro": "Share with client on any design.",
+   "evidence": "The dialog measures 720 wide (x360–1080 at 1440). share-dialog.tsx passes width={720}, but the house scale is s400 · m600 · l800 · xl1200.",
+   "fix": "Use the l size (800), or m (600) with the version tiles wrapping.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/g05-share-open.png"
+  },
+  {
+   "title": "The client's renders page keeps the app rail's 84px snackbar offset although it has no rail",
+   "severity": "polish",
+   "width": "1440×1024",
+   "repro": "Open a renders link and press 'I like this one', 'Leave a note' or pin a note.",
+   "evidence": "The snackbars ('Thanks — Dane will see it’s your favourite', 'Sent — Dane will see it', 'Pinned — Dane will see it') sit at x84–428 and line up with nothing on a centred page (column x256–1184). The editor got its own fix for this in wave D; the client page did not.",
+   "fix": "Set --rail-w on the share page as the editor does (so the snackbar sits at the 16px gutter), or centre it under the column.",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx",
+    "components/om/snackbar.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c03-called.png"
+  },
+  {
+   "title": "The client page says 'Tap' to a mouse user",
+   "severity": "polish",
+   "width": "1440, 1280, 1025 (mouse)",
+   "repro": "Open a renders link on a desktop and press Pin a note.",
+   "evidence": "The intro reads 'Tap I like this one on your favourite…' and the pin hint 'Tap the picture where you’d like a change'. The editor's banners switched to 'Click' for a mouse in wave D; the client page did not.",
+   "fix": "Use the same pointer check as the editor: 'Click' under (hover: hover) and (pointer: fine), 'Tap' otherwise.",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/c03-pin-mode.png"
+  },
+  {
+   "title": "'Furnish works on an emptied version' is said three times at once",
+   "severity": "polish",
+   "width": "1440×1024",
+   "repro": "V1 (not emptied) with an emptied V5 in the room › Tools › Furnish the room.",
+   "evidence": "The card help ('— V5 is one'), the end of the options ('— open V5.') and the Generate foot ('— open V5') all carry the same sentence on one screen.",
+   "fix": "Keep it on the card and the foot link; drop the duplicate at the end of the options.",
+   "files": [
+    "components/visualizer/editor/panels/tools-panel.tsx",
+    "components/visualizer/editor/rail.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/desktop/d13-furnish-on-v1.png"
+  }
+ ],
+ "checks": [
+  {
+   "what": "The Maison AI sheet at 1440 and 1025 (a second press on the button closes it)",
+   "ok": true,
+   "evidence": "The sheet opens against its button: 1440 x728–1048 / y663–928 for the FAB at 1000–1048 / 940–988, and 1025 x349–669 / y439–704. A second press on the FAB closes it at both widths, and so does Esc."
+  },
+  {
+   "what": "Snackbars while the Share dialog is open (they must not land over the dialog)",
+   "ok": false,
+   "evidence": "At 1440×1024 'Link copied' sits at x16–360, y952–1000, clear of the dialog (360–1080). Stop sharing puts Undo in its own row with no snackbar. At 1280×800 and 1025×800, though, 'Link copied' (y728–776) covers the dialog's footer and hides '1 of 6 picked' (s09-share-copy-1025.png, s09-share-copy-1280.png)."
+  },
+  {
+   "what": "A quick reload right after a pick: the pick survives, no 'Changed in another tab' bar (D9)",
+   "ok": true,
+   "evidence": "I picked Walnut vinyl plank and reloaded 120ms later, then picked a light and reloaded at 0ms: both picks were back and there was no conflict bar. A pick followed by Back (client-side navigation) within 300ms survived, and so did a pick followed by a real tab close (page.close with runBeforeUnload). Closing the tab 150ms after a Generate lands does not bring the spent picks back. Note: Playwright's browser.close() fires no pagehide, so changes made within about 2s of it were lost in my harness. That is expected, not a bug."
+  },
+  {
+   "what": "The Furnish card and the Generate foot on a non-emptied version while the room has an emptied one",
+   "ok": true,
+   "evidence": "On V1 with V5 emptied: the card reads 'Furnish works on an emptied version — V5 is one' and the foot 'Furnish works on an emptied version — open V5'. The link (viz-reason-link) opens V5, where the card becomes 'Furnish an empty room…'."
+  },
+  {
+   "what": "Add to a quote: area/length lines say 'Measure on site — goes in with no quantity', the hint, and the snackbar's '· n to measure'",
+   "ok": true,
+   "evidence": "The Floor line reads 'Priced from the Price book · Measure on site — goes in with no quantity'. The hint reads 'Lines priced by area or length go in with no quantity — type the measured one.' The snackbar reads '2 lines added · 1 priced from the Price book · 1 to measure'. The floor has qty 0 in quote_items. Still left: the quote editor's 'Sum · 2 priced items', and the snackbar wraps to 3 lines."
+  },
+  {
+   "what": "Present and the moodboard name a reference colour in words, never a hex or a wrong paint",
+   "ok": false,
+   "evidence": "No hex appears; every row reads 'Reference colour, close to …'. But the moodboard groups Countertops, Backsplash, Walls and Ceiling under 'close to Quartz Calacatta' (a stone name for walls and ceiling), contradicting Present (Walls ≈ Linen, Backsplash ≈ Basketweave Marble). Present also names one Countertops row 'close to Linen', a paint (s03-moodboard.png, s03-present.png)."
+  }
+ ]
+}

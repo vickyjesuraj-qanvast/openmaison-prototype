@@ -1,0 +1,47 @@
+/* Tools › AI Visualizer (REG-673): the house gallery with covers; the intro card is Quote X-Ray's; the sample picker's tiles are the
+   quick-links tiles' grammar at photo size. Every value is a token. */
+.intro { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); margin-bottom: var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.introText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.introTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.steps li { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.steps b { font-weight: 600; }
+.stepN { flex-shrink: 0; width: 22px; height: 22px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); margin-top: 1px; }
+.menuRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+.menuRow > :first-child { color: var(--om-color-on-surface-secondary); }
+/* The cover fills the card's thumb band, whatever the band's own padding. */
+.cover { position: absolute; inset: 0; display: grid; gap: 2px; background: var(--om-color-surface-variant); }
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; min-height: 0; }
+.cover[data-n='2'] { grid-template-columns: 1fr 1fr; }
+.cover[data-n='3'] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.cover[data-n='3'] img:first-child { grid-row: span 2; }
+.cover[data-n='4'] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.cover[data-empty] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-2); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); }
+.samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.sample { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: 0 0 var(--om-spacing-3); text-align: left; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); cursor: pointer; overflow: hidden; transition: border-color var(--motion-hover), box-shadow var(--motion-hover); }
+.sample img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; margin-bottom: var(--om-spacing-2); }
+.sample:hover { border-color: var(--om-color-primary-default); box-shadow: var(--om-elevation-level-2); }
+.sample:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.sampleName { padding: 0 var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.sampleHelp { padding: 0 var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+@media (max-width: 1024px) { .steps { grid-template-columns: 1fr; gap: var(--om-spacing-2); } }
+/* (F133) A design's own cover in the list's and the Deleted sheet's 26×36 glyph (Price book › My Items' box); the wand only without a photo. */
+.glyph { width: 26px; height: 36px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+.glyph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* (F155) A phone: the intro closes up (the house type one step down), and once the studio has a design its three steps rest — the title and
+   Dismiss stay — so the first designs show above the fold at 390. */
+@media (max-width: 767px) {
+  .intro { padding: var(--om-spacing-4); margin-bottom: var(--om-spacing-4); gap: var(--om-spacing-3); }
+  .introTitle { font: var(--om-type-subtitle-m); }
+  .steps { gap: var(--om-spacing-2); }
+  .steps li { font: var(--om-type-body-s); }
+  .intro[data-has-designs] .steps { display: none; }
+  .samples { grid-template-columns: 1fr; }
+}
+/* (verify round 1, F166) The ghost: the L1 header's plate, and the intro card with its words as text-shaped bones (the ink gone, the lines
+   kept) and its step numbers as bone dots — the same box as the page's at every width. */
+.gHead { display: flex; align-items: center; min-height: 68px; padding: 0 var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.gText { color: transparent; background: var(--om-color-surface-variant); border-radius: var(--om-radius-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.intro[data-ghost] .stepN { background: var(--om-color-surface-variant); color: transparent; }
+.gDismiss { width: 24px; height: 24px; flex-shrink: 0; }
+@media (max-width: 767px) { .gHead { min-height: 60px; padding: 0 var(--om-spacing-4); } }

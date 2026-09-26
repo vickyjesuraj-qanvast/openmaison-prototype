@@ -65,7 +65,9 @@ export function NotificationsPanel() {
       () => { setRows(prev); snackbar({ message: 'Couldn’t mark the notifications as read — please try again' }) })
   }
   return (
+    /* (F109) Notification settings sits in the Drawer's own footer, below the scrolling list — it was drawn over the rows of a long feed */
     <Drawer open={open} onClose={() => setOpen(false)} title="Notifications" label="Notifications" width={400}
+            footer={<div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button></div>}
             actions={unread > 0 && rows?.some((r) => !r.derived && r.readAt === null) ? (
               <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
             ) : undefined}>
@@ -100,9 +102,6 @@ export function NotificationsPanel() {
             })}
           </ul>
         )}
-      </div>
-      <div className={styles.foot}>
-        <Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button>
       </div>
     </Drawer>
   )

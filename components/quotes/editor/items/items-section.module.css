@@ -129,6 +129,8 @@
   .roundLink::after { content: ''; position: absolute; inset: -12px; }
   .mini { height: 44px; }   /* the 24px mini fields (unit select + amount) stand 44 tall under a finger — an input cannot carry an overlay */
   .share { height: 44px; }   /* (REG-532) a By-category row stands 44 under a finger; the two-column grid is already one column here */
+  /* (round 3) on a phone the name gives way before the bar — at 320 the bar was 8px */
+  .share { grid-template-columns: minmax(80px, 40%) minmax(48px, 1fr) auto; }
   .shares { row-gap: 0; }
 }
 
@@ -163,3 +165,26 @@
 .popList { max-height: min(360px, 50vh); overflow-y: auto; overscroll-behavior: contain; }
 .popPlace { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .popPlace > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* (wave E, phone-4) The totals card and By category on a phone: "Additional Discount" takes its own line over the % | S$ select and the
+   amount (at 50 % it ran under the select, "Additional I…t"); a named discount's word box does the same over its select · value · amount;
+   the By category head takes its line over the owner's Share · Margin chips (it wrapped beside them). */
+@media (max-width: 767px) {
+  .trowStack { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .trowStack > .tlabel, .trowStack > .tcontrols { flex-basis: 100%; }
+  .discRow { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .discRow > .discLabel { flex: 1 1 100%; }
+  .discRow > .discValue { flex: 1 1 96px; }
+  .bycatHead { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .bycatHead > :first-child { flex: 1 1 100%; }
+  /* the Total row: the amount keeps its width and "Round Prices" drops under "Total" when the two can't share the line (at 320 the link
+     ran into the amount) */
+  .trow:has(> .totalLabel) { column-gap: var(--om-spacing-1); }
+  .trow:has(> .totalLabel) > .tvalue { flex: 0 0 auto; }
+  .trow:has(> .totalLabel) > .totalLabel { flex: 1 1 0; flex-wrap: wrap; row-gap: 0; }
+}
+/* (wave E, phone-4) Under a finger the house 44px switch box (globals.css, −10 all round) pulled the track onto "GST 9%": the box keeps its
+   reach to the right, not over the words. */
+@media (hover: none) {
+  .switchLabel > label:has(input[role='switch']) { margin-left: 0; }
+}

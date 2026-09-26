@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Noto_Serif } from 'next/font/google'
 import { siteConfig } from '@/lib/config'
 import { TooltipLayer } from '@/components/om/tooltip'
+import { MotionRoot } from '@/components/shell/motion-root'
 
 import '@openmaison/react/styles.css'
 import './globals.css'
@@ -33,9 +34,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="/fonts/material-symbols-rounded.subset.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body>
-        {children}
-        {/* Generic shell: the single tooltip bubble every page shares. */}
-        <TooltipLayer />
+        {/* (F172) motion honours the viewer's reduced-motion setting on every page */}
+        <MotionRoot>
+          {children}
+          {/* Generic shell: the single tooltip bubble every page shares. */}
+          <TooltipLayer />
+        </MotionRoot>
       </body>
     </html>
   )

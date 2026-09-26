@@ -117,14 +117,22 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, role =
   /** The row opens a further level in place (aria-haspopup="menu"). */
   submenu?: boolean
 }) {
+  /* (audit 2026-09-26, fresh-phone 10) A radio / checkbox row whose label is plain text drew nothing for its checked state, so a scope
+     pill's sheet ("Kind: All ▾") could not say which choice was current. It now wears the DS menu item's Selected state (primary/variant
+     fill — `.item[data-selected]`, the one the "All Leads" pill's current stage wears, 780:93630). A row that draws its own mark (a radio
+     glyph, a "current" tag) passes elements, and is left as it is. */
+  const selected = role !== 'menuitem' && !!checked && plainText(children)
   return (
     <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
             aria-checked={role === 'menuitem' ? undefined : !!checked} aria-haspopup={submenu ? 'menu' : undefined}
+            data-selected={selected || undefined}
             onClick={disabled ? undefined : onSelect}>
       {children}
     </button>
   )
 }
+
+const plainText = (c: ReactNode): boolean => typeof c === 'string' || typeof c === 'number' || (Array.isArray(c) && c.every((x) => typeof x === 'string' || typeof x === 'number'))
 
 export function DropdownDivider() {
   return <div className={styles.divider} role="separator" />

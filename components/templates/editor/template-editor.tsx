@@ -18,6 +18,8 @@ import { ago } from '@/lib/templates/ago'
 import type { TemplateEditorData } from '@/lib/templates/queries'
 import { discardTemplateDraft, duplicateTemplate, loadQuoteDocData, publishTemplate, requestTemplateChanges, restoreTemplate, rollbackTemplate, saveTemplateDraft, setTemplateSource, setQuoteTemplate, updateQuoteTemplateVersion, submitTemplate } from '@/app/company/templates-actions'
 import { ReviewBar, NoteDialog } from './review-bar'
+import { isRefusal } from '@/lib/company/template-rules'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { createQuote } from '@/app/leads/quotes-actions'
 import { withFrom, withApply } from '@/lib/nav'
 import type { EditorOrigin } from '@/lib/templates/origin'
@@ -207,6 +209,8 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
     try {
       await flush()
       const r = await publishTemplate(template.id, opts)
+      /* (wave E, E7) a refusal is answered, not thrown — the rule reaches the snackbar ("only an Owner, an Admin or the backup approver …") */
+      if (isRefusal(r)) { snackbar({ message: couldnt('publish', refusalOf(r.error)) }); return }
       setMeta((m) => ({ ...m, status: 'published', version: r.version, isDefault: m.isDefault || opts.setDefault, versions: [{ version: r.version, note: opts.note || (r.version === 1 ? 'First published' : ''), publishedAt: Date.now(), publishedBy: data.me ? { name: data.me.name, color: '' } : null }, ...m.versions] }))
       setPublishedJson(JSON.stringify({ design, defaults }))
       setMeta((m) => ({ ...m, submitted: null, reviewNote: null }))
@@ -235,20 +239,20 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
   /* (REG-501) The designer's side: Publish becomes Submit for approval; the owner's side: Request changes sends it back with a note. */
   const submit = async (note: string) => {
     setBusy(true)
-    try { await flush(); await submitTemplate(template.id, note); setMeta((m) => ({ ...m, submitted: { by: data.me ? { name: data.me.name, color: '' } : null, at: Date.now(), note }, reviewNote: null })); setSubmitOpen(false); snackbar({ message: 'Submitted for approval' }); router.refresh() }
+    try { await flush(); const r = await submitTemplate(template.id, note); if (isRefusal(r)) { snackbar({ message: couldnt('submit', refusalOf(r.error)) }); return } setMeta((m) => ({ ...m, submitted: { by: data.me ? { name: data.me.name, color: '' } : null, at: Date.now(), note }, reviewNote: null })); setSubmitOpen(false); snackbar({ message: 'Submitted for approval' }); router.refresh() }
     catch { snackbar({ message: 'Couldn’t submit — please try again' }) }
     finally { setBusy(false) }
   }
   const requestChanges = async (note: string) => {
     setBusy(true)
-    try { await requestTemplateChanges(template.id, note); setMeta((m) => ({ ...m, submitted: null, reviewNote: note || 'Changes requested' })); setChangesOpen(false); snackbar({ message: `Changes requested${meta.submitted?.by ? ` from ${meta.submitted.by.name}` : ''}` }); router.refresh() }
+    try { const r = await requestTemplateChanges(template.id, note); if (isRefusal(r)) { snackbar({ message: couldnt('send the request', refusalOf(r.error)) }); return } setMeta((m) => ({ ...m, submitted: null, reviewNote: note || 'Changes requested' })); setChangesOpen(false); snackbar({ message: `Changes requested${meta.submitted?.by ? ` from ${meta.submitted.by.name}` : ''}` }); router.refresh() }
     catch { snackbar({ message: 'Couldn’t send the request — please try again' }) }
     finally { setBusy(false) }
   }
   const back = async () => { await flush(); router.push(origin?.from ?? '/company/templates/quotes') }   // the last edit is written before leaving
   const rollback = async (version: number) => {
     setBusy(true)
-    try { await rollbackTemplate(template.id, version); snackbar({ message: `Rolled back to v${version}` }); window.location.reload() }
+    try { const r = await rollbackTemplate(template.id, version); if (isRefusal(r)) { snackbar({ message: couldnt('roll back', refusalOf(r.error)) }); setBusy(false); return } snackbar({ message: `Rolled back to v${version}` }); window.location.reload() }
     catch { snackbar({ message: 'Couldn’t roll back — please try again' }); setBusy(false) }
   }
   const onMenu = async (a: TopbarMenuAction) => {
@@ -339,7 +343,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
       ) : null}
       {readOnly ? <div className={styles.readOnlyNote}><Icon name="info" size={16} weight={300} /> {awaitingLock && !phone ? 'Awaiting approval — the design is locked until it is published or changes are requested.' : 'Templates are edited on a tablet or computer. This is a view.'}</div> : null}
       {deleted ? (
-        <div className={styles.readOnlyNote} data-testid="deleted-bar"><Icon name="delete" size={16} weight={300} /> This template is deleted — the {meta.usedBy ? `${meta.usedBy} quote${meta.usedBy === 1 ? '' : 's'} on it keep` : 'quotes on it would keep'} printing v{meta.version}. <Button appearance="text" isDisabled={busy} onPress={() => { setBusy(true); void restoreTemplate(template.id).then(() => { setDeleted(false); snackbar({ message: `${name} restored` }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t restore — please try again' })).finally(() => setBusy(false)) }}>Restore</Button></div>
+        <div className={styles.readOnlyNote} data-testid="deleted-bar"><Icon name="delete" size={16} weight={300} /> This template is deleted — the {meta.usedBy ? `${meta.usedBy} quote${meta.usedBy === 1 ? '' : 's'} on it keep` : 'quotes on it would keep'} printing v{meta.version}. <Button appearance="text" isDisabled={busy} onPress={() => { setBusy(true); void restoreTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('restore', refusalOf(r.error)) }); return } setDeleted(false); snackbar({ message: `${name} restored` }); router.refresh() }).catch(() => snackbar({ message: 'Couldn’t restore — please try again' })).finally(() => setBusy(false)) }}>Restore</Button></div>
       ) : null}
       {!readOnly && !deleted && (meta.submitted || meta.reviewNote) ? (
         <ReviewBar submitted={meta.submitted} reviewNote={meta.reviewNote} canApprove={data.canApprove} now={now} busy={busy} onApprove={() => setPublishOpen(true)} onRequestChanges={() => setChangesOpen(true)} onDismissNote={() => setMeta((m) => ({ ...m, reviewNote: null }))} />

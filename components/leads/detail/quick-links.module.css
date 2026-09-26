@@ -117,3 +117,12 @@
   .glyph { position: relative; }
   .glyph::after { content: ''; position: absolute; inset: -10px; }
 }
+
+/* (wave E, tablet-11) A link whose work is running (AI Visualizer while the design opens): the glyph spins in its own 24 box, the press
+   rests (no hover tint, the default cursor) until the page moves on. Reduced motion keeps the glyph still. */
+.spin { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; color: var(--om-color-primary-default); animation: quickLinkSpin 1s linear infinite; }
+@keyframes quickLinkSpin { to { transform: rotate(360deg); } }
+.glyph[aria-busy='true'], .tile[aria-busy='true'] { cursor: progress; }
+.glyph[aria-busy='true']:hover { background: transparent; }
+.tile[aria-busy='true']:hover { background-image: none; }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

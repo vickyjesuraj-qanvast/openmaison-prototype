@@ -1,0 +1,365 @@
+[
+ {
+  "key": "editor",
+  "done": [
+   {
+    "id": "F080",
+    "what": "Markers go empty while pinning (`|| pinning`). Pin and Compare now switch each other off: turning Pin on closes Compare, and turning Compare on (the narrow IconButton, the wide Compare button, and the version menu's 'Compare with Vn' and 'Before and after') ends pinning and clears the draft and active pins. There is one `toggleCompare` in visualizer-editor.tsx."
+   },
+   {
+    "id": "F018/F151",
+    "what": "The pin stageMode already matched the request (onAdd clears activePin, onCancel clears the draft, drafting: !!draftPin). I checked it and changed nothing."
+   },
+   {
+    "id": "F164",
+    "what": "Added aria-pressed={pinning} on viz-pin-toggle and aria-pressed={compare.on} on the narrow viz-compare-toggle IconButton. IconButton's `selected` only sets data-selected, so the aria state was missing. The wide button already had it."
+   },
+   {
+    "id": "F012/F170",
+    "what": "Already in place: surface markers carry `now` and `pending`, the fill falls back to the version's finish, and furniture markers carry `now`. I checked it and changed nothing."
+   },
+   {
+    "id": "F177",
+    "what": "The highlight and light-preview results now store the picture they were made from (`img`). highlight = hlKey && hl && hl.img === imageUrl. The preview keeps the last grade while the next one renders, only on its own source: pv.img === lightUrl. I used lightUrl rather than the requested imageUrl because previewLight runs on lightUrl, the unlit picture."
+   },
+   {
+    "id": "F178",
+    "what": "Already met by the editor's measured `--bottom-dock` effect (a ResizeObserver over the [data-viz-bottom] strip, tray, go bar and dock, plus the Canvas toolbar; removed on unmount). editor.module.css's .fab rules don't read --bottom-dock, and the editor never passes `raised` to MaisonFab."
+   },
+   {
+    "id": "F077",
+    "what": "Already wired: deleted / onDeleted on the strip, DeletedVersionsDialog (restores through bringBack with a rollback), DeleteVersionDialog before deleting a version that carries client input (carriesClientInput), and the snackbar's Undo is kept. New: the deleted versions go through local[] for their picture. The hint now reads 'A deleted version comes back from the strip\u2019s Deleted versions.'"
+   },
+   {
+    "id": "F171",
+    "what": "Added a visually-hidden aria-live='polite' line: 'V{n} \u00b7 {descriptor} on screen' / 'Original photo on screen'. It is derived in render (testid viz-live)."
+   },
+   {
+    "id": "F075",
+    "what": "Already passes labels to MoodboardDialog and PresentDialog. It passes the room's stored reading (ed.detectionOf(room.id)) rather than `detection`, because `detection` is resolved against the finishes of the version on screen, and the board or the presentation may show another version."
+   },
+   {
+    "id": "F096/F100",
+    "what": "Already wired: QuoteDialog gets lines (quoteLines), quotable, groupName (quoteGroupName) and onAdd(q, again). addToQuote(quoteId, again) forwards `again` to addVersionToQuote. The menu's 'Add to a quote\u2026' is enabled by quoteLines(mv, \u2026).length, with a meta line."
+   },
+   {
+    "id": "F039",
+    "what": "Added `swatchCat` state. The surfaces panel's onUpload(c) stores the category, then opens the file input. SwatchDialog gets suggestedCategory={swatchCat}."
+   },
+   {
+    "id": "F042",
+    "what": "Already wired. The existing state is named `addPrefer`. The pen, the empty state's Draw and the Tools panel's Draw all go through addSurface('draw'), and the + goes through addSurface('place'). AddItemDialog gets prefer={addPrefer}."
+   },
+   {
+    "id": "critic-19",
+    "what": "Already wired. Both AddRoomOptions and AddRoomDialog get onFiles \u2192 addPhotoRooms, which adds one room per photo in order, lands on the first and reports any that couldn't be read."
+   },
+   {
+    "id": "F006/F037/F053/F192/F169",
+    "what": "Already in place, checked: changes come from changeList with the ids kept, intentFor gets `tools` from toolAvailability, FurniturePanel gets tools + customized, ToolsPanel gets tools, StylePanel gets baseEdited with looks as sample?.looks ?? null, and panelWrap has no extra role=tabpanel."
+   },
+   {
+    "id": "F060",
+    "what": "SurfacesPanel already got reshaped and rough. rough now also requires !sketch (!room.sampleKey && !sketch && source === 'fallback')."
+   },
+   {
+    "id": "F145",
+    "what": "The tray's DescribeBox now renders `compact` (describeBox(true)); the desktop footer's box stays full. editor.module.css: at max-width 767px and max-height 700px, .tray { max-height: 52dvh }."
+   },
+   {
+    "id": "F061",
+    "what": "keyRef: `textEntry` excludes range, checkbox, radio and button inputs, so \u2318Z / \u21e7\u2318Z undo the room from a focused slider. The later `if (typing) return` is kept, so the arrow keys still move the slider."
+   },
+   {
+    "id": "F071",
+    "what": "(1) A Generate that makes more than one version ends its steps on 'Keeping the versions'. (2) The hint banner shows 'This is a sketch \u2014 pick a style, then Render from sketch to turn it into a photo.' when the room reads as a sketch and no version is on screen."
+   },
+   {
+    "id": "F152",
+    "what": ".compareBtn's hover wash now sits inside @media (hover: hover)."
+   },
+   {
+    "id": "F134",
+    "what": "The top bar's chip now reads designKindLabel(data.design.kind, data.lead?.stage), e.g. 'Lead \u00b7 Met' or 'Personal', the same as the gallery card and list."
+   },
+   {
+    "id": "F064",
+    "what": "Already in place: the 'Vn is ready' snackbar appends out.variants[0].applied.caveat when it is set."
+   },
+   {
+    "id": "F095/F098",
+    "what": "Already in place in app/(editor)/visualizer/[designId]/page.tsx: ?v= (or ?version=) is checked against the live versions and passed as initialVersion. The editor seeds viewKeys with it in a lazy useState. A stale key falls back to the room with 'That version is no longer in the design'."
+   },
+   {
+    "id": "F172",
+    "what": "New components/shell/motion-root.tsx (client, MotionConfig reducedMotion='user'), wrapped around {children} and TooltipLayer in app/layout.tsx, which stays a server component with its metadata untouched. Only viewers who ask for reduced motion see a change. The editor route's own ReducedMotion wrapper is now redundant but harmless; I left it."
+   }
+  ],
+  "notDone": [
+   {
+    "id": "F164 (tune toggle)",
+    "why": "The narrow tune toggle is in rail.tsx (GenerateFooter), which I don't own. It already carries aria-expanded={opts}, the right state for a button that opens the options. Adding aria-pressed next to it would give one button two conflicting states, so I left it as is."
+   }
+  ],
+  "crossFileRequests": [],
+  "iconsNeeded": [],
+  "registerLines": [
+   "F080 \u00b7 F164 \u2014 AI Visualizer editor: Pin and Compare take turns (turning one on turns the other off, including Compare from a version's menu). The photo's markers hide while pinning. The Pin and narrow Compare toggles announce their pressed state. (bug fix)",
+   "F177 \u2014 AI Visualizer editor: the surface highlight and the lighting preview stay on screen until the next one is ready, so the stage crossfades instead of blinking. Neither is ever carried onto a different photo. (bug fix)",
+   "F077 \u2014 AI Visualizer editor: the first-visit tip now says 'A deleted version comes back from the strip\u2019s Deleted versions.' (invented copy, replaces 'Every version stays in the strip; nothing is lost.'). Deleted versions made this session show their own picture in the Deleted versions dialog. (bug fix)",
+   "F071 \u2014 AI Visualizer editor: a Generate that makes several versions ends its progress steps on 'Keeping the versions' (invented copy). On a sketch with no version yet, the tip reads 'This is a sketch \u2014 pick a style, then Render from sketch to turn it into a photo.' (invented copy)",
+   "F171 \u2014 AI Visualizer editor: screen readers hear which version is on screen ('V3 \u00b7 \u2026 on screen' / 'Original photo on screen', invented copy). (bug fix)",
+   "F039 \u2014 AI Visualizer editor: uploading a swatch from a material picker opens the swatch dialog on that picker's category. (bug fix)",
+   "F060 \u2014 AI Visualizer editor: the 'Marked roughly' line never shows on a sketch. (bug fix)",
+   "F145 \u2014 AI Visualizer editor \u22641024: the tray's Describe box is the compact one-line box, and on a short phone (\u2264700px tall) the tray may take 52% of the screen. (bug fix)",
+   "F061 \u2014 AI Visualizer editor: \u2318Z / \u21e7\u2318Z undo the room's picks while a lighting slider, switch or button has focus; text boxes keep their own undo. (bug fix)",
+   "F152 \u2014 AI Visualizer editor: the Compare button's hover wash only shows where there is a pointer, so it no longer sticks after a tap. (bug fix)",
+   "F134 \u2014 AI Visualizer editor: the top bar's kind chip reads 'Lead \u00b7 {stage}' / 'Personal', the same as the gallery. (bug fix)",
+   "F172 \u2014 App-wide: motion follows the viewer's reduced-motion setting on every page (MotionConfig reducedMotion='user' at the root, components/shell/motion-root.tsx). (bug fix)"
+  ],
+  "verification": "Ran `npx tsc --noEmit -p .` on the whole project twice, the second time after the last edit: 0 errors. Ran `npx eslint` on components/visualizer/editor/visualizer-editor.tsx, use-editor-state.ts, topbar.tsx, app/(editor)/visualizer, app/layout.tsx and components/shell/motion-root.tsx: clean. No build, dev server or port was touched, and local.db was not touched. Files changed: /Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/editor/visualizer-editor.tsx, /Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/editor/editor.module.css, /Users/vicky/Documents/GitHub/openmaison-prototype/app/layout.tsx, /Users/vicky/Documents/GitHub/openmaison-prototype/components/shell/motion-root.tsx (new). No visual Playwright pass was run: the task forbade next build / start."
+ },
+ {
+  "key": "canvas",
+  "done": [
+   {
+    "id": "F042",
+    "what": "stage.tsx: traceArea() (shoelace on the 0\u20131 coordinates) in onFrameUp; a trace under MIN_TRACE_AREA 0.002 (or fewer than 3 points) no longer calls mode.onDone. Draw mode stays on, and the banner reads 'Keep pressing and trace all the way round' for 2.4 s (short-lived `slip` state with a timeout that is cleared on unmount, and reset in the render phase when the mode leaves draw)."
+   },
+   {
+    "id": "F211",
+    "what": "stage.tsx: Running is now { title; step; steps; saving?: boolean } | null. The running card leaves out its Cancel button while running.saving is true. When saving starts and focus has dropped to <body>, focus moves to the run card (tabIndex -1, and .runCard:focus draws no outline)."
+   },
+   {
+    "id": "F162 (stage)",
+    "what": "stage.tsx: a useEffect keyed on !!running focuses the running card's Cancel when a run starts. It only does this when document.activeElement is body, a disabled button or an aria-disabled element."
+   },
+   {
+    "id": "F162 (pin-card)",
+    "what": "pin-card.tsx: FloatCard, the desktop/tablet card behind both PinThread and DraftPin, calls useDialogFocus(true, card, { trap: false }). Focus moves in on open (DraftPin's autofocused note box keeps it) and goes back to the opener on Close, Esc, Cancel or Save. .card:focus has no outline. On a phone, the Sheet already runs useDialogFocus. The DraftPin and PinThread props are unchanged, per client F091."
+   },
+   {
+    "id": "F152",
+    "what": "stage.module.css: .dot:hover and .zoomLabel:hover now sit inside @media (hover: hover), each in its original place in the cascade, so the selected, action and target sizes still win. .dot:focus-visible stays outside the media query."
+   },
+   {
+    "id": "F071",
+    "what": "versions-strip.tsx: new optional prop originalSub (default 'the photo'), used on the Original tile's label and accessible name."
+   },
+   {
+    "id": "F139 F174",
+    "what": "versions-strip.module.css: the \u22641024 .strip padding keeps the right end at var(--viz-strip-end, var(--om-spacing-3)). .row has scroll-padding-inline-end: var(--om-spacing-2)."
+   },
+   {
+    "id": "critic-19",
+    "what": "dialogs/add-room.tsx: photoProblem() lets HEIC through (isHeic from ../editor-model) and allows files up to UPLOAD_MAX_BYTES (40 MB), with the message '{name} is over 40 MB \u2014 export a smaller copy and try again'. The unreadable-type lines now read 'JPG, PNG, WebP or HEIC'. The Dropzone accepts `${PHOTO_ACCEPT},image/heic,image/heif,.heic,.heif`. Its helper reads 'JPG, PNG, WebP or HEIC \u00b7 large photos are resized \u00b7 straight-on shots and clean 3D views work best'."
+   },
+   {
+    "id": "F082",
+    "what": "dialogs/present-dialog.tsx: Before is now beforeKeyOf(cur.v, lineage ?? versions), the same rule the canvas uses, and falls back to an explicit ORIGINAL entry instead of `?? list[0]`. New optional prop `lineage` (every version, deleted ones included) lets a deleted parent resolve to the nearest live ancestor."
+   },
+   {
+    "id": "F154 / F091 (check)",
+    "what": "compare-slider.* already had the fix (touch-action pan-y, drag only once the move is horizontal, a tap places the divider), so nothing needed changing. pin-card already shows the thread and the draft as the house Sheet on a phone, and its props are kept."
+   }
+  ],
+  "notDone": [
+   {
+    "id": "F152 optional (furniture glyph on markers)",
+    "why": "Skipped. Marker has no category field, so the editor would have to add one. A 16 px furniture circle has no room for a glyph without an unmocked visual change. The action glyphs (close / palette / swap_horiz) already fill that space when a piece has an action."
+   },
+   {
+    "id": "critic-19 maxLength={80}",
+    "why": "Add room has no naming field (the dialog is the photo, lead files and sample options only), so there is nothing to cap. Renaming happens in the editor's Rename dialog."
+   },
+   {
+    "id": "critic-19 camera input accept",
+    "why": "The 'Take a photo' input keeps accept=\"image/*\", which already covers HEIC and is what capture=\"environment\" needs. Only the Dropzone took the widened accept list."
+   }
+  ],
+  "crossFileRequests": [
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "On <VersionsStrip \u2026> pass originalSub={detection?.kind === 'sketch' ? 'the sketch' : 'the photo'} (use the room's effective detection the rest of the editor reads). The prop is optional and defaults to 'the photo'.",
+    "forFinding": "F071"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "On <PresentDialog \u2026> (line ~1044) add lineage={all}, the room's full version list including deleted ones and the same list beforeKeyOf reads for the canvas, so Present's Before matches the canvas when a parent was deleted. Without it, Present falls back to the Original.",
+    "forFinding": "F082"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "Set running.saving = true on the Running object passed to <Stage running> once the version is being kept. Stage then hides the card's Cancel, and the editor already ignores cancelRun at that point.",
+    "forFinding": "F211"
+   }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+   "AI Visualizer canvas: a traced outline smaller than 0.2% of the photo no longer becomes a surface. Draw mode stays on and the banner says 'Keep pressing and trace all the way round' for a moment (F042; invented copy).",
+   "AI Visualizer canvas: the Generate progress card drops its Cancel once the version is being kept, and its Cancel takes focus when a run starts if nothing else holds focus (F211 \u00b7 F162).",
+   "AI Visualizer pins: a pin's thread and a new pin's box take focus when they open and hand it back to the opener on Close, Esc, Cancel or Save, with no trap (F162).",
+   "AI Visualizer canvas: marker growth and the zoom label's hover wash apply only on devices that hover, so a tap leaves no stuck state on touch screens (F152).",
+   "AI Visualizer versions strip: the Original tile reads 'Original \u00b7 the sketch' for a sketch room (F071), and at \u22641024 the strip keeps its end clear of the Maison AI button (F139 \u00b7 F174).",
+   "AI Visualizer Add room: HEIC photos and files up to 40 MB are accepted (the editor resizes them to 1600 px). New helper 'JPG, PNG, WebP or HEIC \u00b7 large photos are resized \u00b7 straight-on shots and clean 3D views work best' and the 40 MB message (critic-19; invented copy).",
+   "AI Visualizer Present: Before and after compares with the same version the canvas uses, the nearest live ancestor or else the Original, when a version's parent was deleted (F082)."
+  ],
+  "verification": "npx eslint on stage.tsx, pin-card.tsx, versions-strip.tsx, dialogs/add-room.tsx, dialogs/present-dialog.tsx and om/compare-slider.tsx is clean. A final whole-project npx tsc --noEmit -p . reports 0 errors. There was no build and no browser run (not allowed in this task)."
+ },
+ {
+  "key": "rail",
+  "done": [
+   {
+    "id": "F039",
+    "what": "material-picker.tsx: `onUpload: (category: string | null) => void`; both upload buttons (viz-upload-line, viz-upload-swatch) call `onUpload(categories[0] ?? null)`. surfaces-panel.tsx widens the prop the same way and passes `onUpload={() => onUpload(cats[0] ?? null)}` to MaterialPicker (cats = the open group's or surface's categories). The editor's current `onUpload={() => \u2026}` still type-checks; its swatchCat state + suggestedCategory are the editor agent's side."
+   },
+   {
+    "id": "F045",
+    "what": "catalogue.ts: `Trim: ['Paints', 'Metals', 'Laminates']` in SURFACE_CATEGORY_MAP; resolveSurfaceCategories returns Trim for frame/trim/sill/mullion/skirting/baseboard/cornice/architrave/moulding/molding before the door and window checks. surfaces.ts: surfaceCategoriesFor tests /frame|trim|sill|mullion|skirting|baseboard|cornice|architrave|mould|mold/ \u2192 'Trim' before the door/window branches; groupMaterialCategories maps 'Trim & Moulding' \u2192 'Trim'. Checked with tsx: 'Window frame', 'door frame', 'window sill', 'skirting' \u2192 Paints \u00b7 Metals \u00b7 Laminates; 'Window' keeps Glass \u00b7 Fabrics; 'wooden door' keeps Laminates \u00b7 Paints \u00b7 Glass."
+   },
+   {
+    "id": "F048",
+    "what": "surfaces.ts titleCaseLabel keeps a, an, the, and, or, of, in, on, at, to, by, for, with, above, below, under, over, near, beside, behind lower-case unless first: 'white wall above the window' \u2192 'White Wall above the Window', 'tv console by a sofa' \u2192 'TV Console by a Sofa', 'the wall' \u2192 'The Wall'."
+   },
+   {
+    "id": "F068",
+    "what": "tools.ts REFERENCE_ROLES labels are now Overall \u00b7 Palette \u00b7 Materials \u00b7 Furniture \u00b7 Lighting (keys unchanged). The only reader is style-panel's 'Use it for' select, which maps label \u2194 key through the list."
+   },
+   {
+    "id": "F016",
+    "what": "Height side. rail.module.css, under @media (min-width: 768px) and (max-height: 800px): the idle hint is visually hidden but still read aloud. rail.tsx marks it `data-idle` when intent.total is 0 ('Pick a finish, a style or a light first.' / 'Add a room photo first.'). Actionable reasons, such as an unready Replace or a Remove this photo can't do, stay visible. describe-box.module.css, same query: the box rests at one 36px line and opens on focus or while listening. Once it holds words it rests at two lines (56px), using the existing data-filled. The mic sits flush on the one line. Specificity is set to beat the existing 860px and data-compact rules."
+   },
+   {
+    "id": "F064",
+    "what": "furniture-panel.tsx imports pieceRemoveBlock. For each row group it takes the first line pieceRemoveBlock returns across the group's pieces, so both sheer curtains (inPlate) count. That line disables the Remove chip (the onChange guard too) unless Remove is already the pick, and shows the line as-is in the house hint tone under the chips. It uses the same data-testid 'viz-remove-why' slot where tools.removeWhy shows. A photo-wide removeWhy still takes precedence."
+   }
+  ],
+  "notDone": [
+   {
+    "id": "F012",
+    "why": "Nothing is left on the rail side. Wave B already made furniture-panel's caption read 'Now: <finish> \u00b7 Keep' from the `customized` prop. The rest (Marker.now, pending, the fill fallback) is in visualizer-editor.tsx."
+   },
+   {
+    "id": "F016-rail-width",
+    "why": "The optional --viz-rail 336px between 1025 and 1279 is in editor.module.css, which isn't mine and wasn't requested of me."
+   }
+  ],
+  "crossFileRequests": [],
+  "iconsNeeded": [],
+  "registerLines": [
+   "AI Visualizer (F039, bug fix): Upload a swatch from the Surfaces picker now passes the open surface's lead category (e.g. Flooring for Floor) to the editor, so the Add a material dialog can open on it once the editor wires suggestedCategory. Source: bug fix.",
+   "AI Visualizer (F045, bug fix): a window or door frame, sill, mullion, skirting, cornice, architrave or moulding now suggests Paints \u00b7 Metals \u00b7 Laminates, and the Trim & Moulding group leads with them. A bare Window keeps Glass \u00b7 Fabrics. Source: bug fix.",
+   "AI Visualizer (F048, bug fix): surface and piece names keep small words lower-case after the first word, e.g. 'White Wall above the Window'. Source: bug fix.",
+   "AI Visualizer (F068, copy): the reference's 'Use it for' choices read Overall \u00b7 Palette \u00b7 Materials \u00b7 Furniture \u00b7 Lighting (were 'Overall vibe' and '\u2026 only'). Source: invented copy (shortened).",
+   "AI Visualizer (F016, polish): on screens 800px tall or less (\u2265768 wide), Describe a change rests on one 36px line. It opens while focused and keeps two lines once it holds words. The idle 'Pick a finish, a style or a light first.' hint is hidden from view but still read aloud, which gives the panel body back its room. Source: bug fix.",
+   "AI Visualizer (F064, bug fix): a piece the photo can't take out (the living room's two sheer curtains) has Remove disabled, with the line 'This photo can\u2019t take it out \u2014 Replace or Customize it instead' under the chips. Source: bug fix (copy from the engine's refusal)."
+  ],
+  "verification": "Whole-project `npx tsc --noEmit -p .` is clean (run last, after every edit). `npx eslint` on rail.tsx, describe-box.tsx, panels/, lib/visualizer/{catalogue,surfaces,tools}.ts is clean. A tsx smoke script (scratchpad/fix/c/rail/t.ts) checked titleCaseLabel, resolveSurfaceCategories, surfaceCategoriesFor and groupMaterialCategories('Trim & Moulding') on ten labels; the results are listed under done. No build or server was run, as instructed. The F016 CSS and the F064 hint were not checked visually."
+ },
+ {
+  "key": "data",
+  "done": [
+   {
+    "id": "F211",
+    "what": "app/visualizer/actions.ts: saveRender / keepRender now return { jobId, keys, ns } (ns = the V numbers given); the return types are widened."
+   },
+   {
+    "id": "F128",
+    "what": "app/visualizer/actions.ts createDesign: the default name uses displayDayShortMonth(at), giving 'Design \u00b7 25 Sep'. input.folderId is kept only when it is a live library_folders row with library 'visualizer', otherwise null."
+   },
+   {
+    "id": "F214",
+    "what": "app/visualizer/actions.ts: createDesign accepts sample?: { key, asSketch }. The key is checked with sampleByKey ('That sample room is gone.' otherwise), and the design and its first room are inserted in one db.transaction. addRoom's insert body moved into a shared roomRow() helper that both paths use. createDesign now returns { id } | Err. components/visualizer/home/visualizer-home.tsx: 'From a sample room' makes the single call, and the client-side delete-the-empty-design fallback is gone. Blank design shows the server's error when there is one."
+   },
+   {
+    "id": "F122",
+    "what": "duplicateDesign cuts the base name to 80 - ' (copy)'.length before adding ' (copy)'. duplicateStudioMaterial (app/company/materials-actions.ts) does the same against its 60-character limit."
+   },
+   {
+    "id": "F166",
+    "what": "visualizer-home.tsx: page.skeleton is now <VisualizerHomeSkeleton intro={!introHidden} folders={data.folders.length > 0} />."
+   },
+   {
+    "id": "F084",
+    "what": "visualizer-home.tsx: open, forLead and the sample flow already passed the gallery's own address as `from` (`here` / place.here, which carry ?folder= and the search). `here` now also drops the one-off ?deleted= mark."
+   },
+   {
+    "id": "F085",
+    "what": "visualizer-home.tsx: on arrival with ?deleted=<id>, the gallery router.replaces the URL without it (scroll: false), finds the design in data.deleted and shows the snackbar '{name} deleted \u00b7 Undo'. Undo runs restoreDesigns([id]) through useRun, which shows 'Couldn\u2019t restore the design \u2014 please try again' on failure, then router.refresh(). This follows the contract-templates-gallery pattern."
+   },
+   {
+    "id": "F058",
+    "what": "lib/visualizer/queries.ts parseDetection: when a room's originalImageUrl is its sample's sketch and the stored reading's source is 'fallback', it now returns sampleDetection(sample, true) and keeps the stored manual surfaces and furniture and `hidden`. The room therefore offers Render from sketch again. The room parameter's type is widened with an optional originalImageUrl; every caller already passes the full row."
+   },
+   {
+    "id": "F131",
+    "what": "lib/visualizer/queries.ts card(): lastBy starts as d.createdBy and becomes the latest version's createdBy when that version is newer than `latest`. author / authorColor come from lastBy, while createdBy and mayChange stay keyed to d.createdBy."
+   },
+   {
+    "id": "F120",
+    "what": "fetchStudioMaterials now selects priceBookItems.vendor into bookItems, and MaterialsData.bookItems is typed { id; name; category; vendor: string | null }. material-dialog.tsx already reads it."
+   },
+   {
+    "id": "F113",
+    "what": "RenderOrigin gains roomName: string | null, taken from project_rooms.name (added to the select in renderOrigins). renderFromLine in render-origin.ts already reads it."
+   },
+   {
+    "id": "F121",
+    "what": "brand-kit-view.tsx: the local hex() is gone. The colour fields filter input with hexTyped and read it with hexOf: a six-digit value applies at once, and a three-digit one applies on blur. An invalid draft stays in the box on blur and shows 'Six hex digits, like #5500FF' until it becomes valid. Save refuses while a colour box is invalid and shows that box's error. Discard clears the drafts, and the swatch picker clears its field's draft."
+   }
+  ],
+  "notDone": [],
+  "crossFileRequests": [],
+  "iconsNeeded": [],
+  "registerLines": [
+   "F128 \u00b7 AI Visualizer: a new blank design is named 'Design \u00b7 25 Sep' using the house's months (the server locale printed '25 Sept'). A new design lands only in a live AI Visualizer folder; any other folder id is ignored.",
+   "F214 \u00b7 AI Visualizer: 'From a sample room' creates the design and its first room in one server step, so both land or neither does and no empty design is left behind (bug fix).",
+   "F122 \u00b7 AI Visualizer / Company \u203a Materials: a duplicated design or material with a long name keeps its ' (copy)' suffix, because the base name is shortened to fit the 80- or 60-character limit (bug fix).",
+   "F166 \u00b7 AI Visualizer: the landing's ghost draws the intro card only while the intro is shown, and the folder row only when the studio has folders (bug fix).",
+   "F085 \u00b7 AI Visualizer: a design deleted from its editor is announced on the landing as '{name} deleted' with Undo, and the URL loses its ?deleted= mark (the contract templates' pattern; copy follows the house's '\u2026 deleted \u00b7 Undo').",
+   "F058 \u00b7 AI Visualizer: a sample sketch room that was once kept 'as it is' reads as a sketch again and offers Render from sketch; the surfaces drawn on it and the ones taken off the list are kept (bug fix).",
+   "F131 \u00b7 AI Visualizer: 'edited \u2026 by' and the Updated by column name whoever made the design's latest version, not always its creator (bug fix).",
+   "F120 \u00b7 Company \u203a Materials: price book items with the same name are told apart by their vendor in the material dialog's link picker (bug fix).",
+   "F113 \u00b7 Files \u203a Information: a filed render's From row names its room, e.g. 'AI Visualizer \u00b7 Living room \u00b7 V2' (bug fix).",
+   "F121 \u00b7 Company \u203a Templates \u203a Brand kit: colour boxes drop anything that isn't hex as it is typed, accept #RGB or #RRGGBB, keep a half-typed colour with its error instead of jumping back, and Save waits until every colour box is valid, the same as the Materials colour field (bug fix; the error copy 'Six hex digits, like #5500FF' is unchanged).",
+   "F211 \u00b7 AI Visualizer: saving a render returns the version numbers it gave, so the editor can name them (bug fix)."
+  ],
+  "verification": "npx tsc --noEmit -p . on the whole project: clean (exit 0) at the end. npx eslint on app/visualizer/actions.ts, app/company/materials-actions.ts, lib/visualizer/queries.ts, components/visualizer/home, components/company/materials, components/company/templates/brand-kit-view.tsx and lib/format.ts: clean. No build, dev server or DB was run or touched. lib/format.ts needed no change: displayDayShortMonth, hexOf and hexTyped already exist. Two behaviour notes for the orchestrator: createDesign now returns { id } | Err, and its only caller (visualizer-home.tsx) is updated. addRoom behaves as before and now goes through the shared roomRow() helper."
+ },
+ {
+  "key": "links",
+  "done": [
+   {
+    "id": "F167",
+    "what": "app/renders/[token]/page.tsx: every outcome (open page, closed/ended link, gone link) now renders inside <PageReveal skeleton={<RenderShareSkeleton />}>. That way the loading.tsx ghost holds its beat and crossfades to the page. loading.tsx is unchanged and already streams RenderShareSkeleton."
+   },
+   {
+    "id": "F105",
+    "what": "components/leads/files/file-viewer.tsx: the Back tooltip and aria-label now come from lib/nav backLabel(from, { leadName: lead.name, fallback: 'Back to Files' }) (imported as backLabelFor so the local const keeps its name). A from inside this lead's Files, including its folders, still reads 'Back to Files'. A visualizer origin reads 'Back to AI Visualizer', a quote 'Back to the quote', and another tab of the lead 'Back to {lead name}'. The unused fromLabel import is gone."
+   },
+   {
+    "id": "F110",
+    "what": "app/leads/[id]/overview.tsx: the Quote X-Ray quick link (onOther) now builds from=encodeURIComponent(window.location.pathname + window.location.search), read inside the press handler, so a Files ?folder= survives Back. This matches openVisualizer."
+   },
+   {
+    "id": "F111",
+    "what": "app/sign/[id]/page.tsx and app/sign/bundle/[id]/page.tsx: removed the id regex and notFound(), so any unknown or malformed id renders LinkGone. app/confirm/[quoteId]/page.tsx: a missing quote or extras now renders LinkGone with the studio's brand (fetchBrand) instead of notFound(). No client link shows Next's bare 404 any more. The fetchers are parameterised drizzle queries, so a garbage id simply returns null."
+   }
+  ],
+  "notDone": [
+   {
+    "id": "wave-b partials",
+    "why": "None of the other listed wave-B partials (F178, F177, F012, F080, F164, F077, F171, F075, F096, F100, F039, F042, F087, F061, F071, F045, F048, F139, F174, F162, F211, F084, F085, F016, F166, F058, F131, F154, F091, critic-16, F180, F181) land in my files. They belong to the visualizer editor, strip, stage, rail, gallery or lib owners."
+   }
+  ],
+  "crossFileRequests": [],
+  "iconsNeeded": [],
+  "registerLines": [
+   "F167 (bug fix): the client's render link (/renders/[token]) now holds its loading ghost for the house beat and crossfades to the page through PageReveal, like every page in the shell. No new copy.",
+   "F105 (bug fix): the file viewer's Back names where it goes. 'Back to Files' within the lead's Files, 'Back to AI Visualizer' from the visualizer, 'Back to the quote' from a quote, 'Back to {lead}' from another tab of the lead. These labels come from the shared lib/nav backLabel and were already logged as invented copy by the nav owner.",
+   "F110 (bug fix): the lead's Quote X-Ray quick link carries the page's URL as it stood at the press, so Back from X-Ray returns to the open Files folder (or any other tab state), as the AI Visualizer link does.",
+   "F111 (bug fix): a signing link, a bundle signing link or a quote confirmation link that is unknown or malformed now shows the studio's letterhead and the house 'This link is no longer active' notice (LinkGone), never Next's bare 404. The /confirm page adopts the signing links' existing copy; there are no new words."
+  ],
+  "verification": "npx eslint on all seven of my files (renders page + loading, sign, sign/bundle, confirm, overview.tsx, file-viewer.tsx): 0 problems. First npx tsc --noEmit -p . for the whole project, right after my edits: clean. Final whole-project run: 5 errors, all in components/visualizer/home/visualizer-home.tsx lines 72\u201397 ('id' does not exist on 'Err | { id: string }'). That file belongs to another agent who is mid-edit; none of my files have errors. No build, dev server or DB was touched."
+ }
+]

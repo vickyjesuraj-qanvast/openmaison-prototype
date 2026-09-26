@@ -1,0 +1,551 @@
+{
+ "results": [
+  {
+   "ref": "F142",
+   "status": "partly",
+   "evidence": "320×640 touch: the canvas bar drops zoom −/+ and the rule, 6 buttons 45–275, bar 240 wide, clientWidth = scrollWidth 238, nothing clipped. Landscape: the photo is never 0×0 any more (844×390 fit=low, frame 222×149; 667×375 frame 212×142). But at 667×375 touch the bar (full 8 buttons incl. the 'Compare' text button, 105px) sits in a 367px stage column: toolbar clientWidth 349 / scrollWidth 390, Download at x 359–395 is cut off at the column edge (screenshot shows the bar ending on the fullscreen icon).",
+   "remaining": "The ≤359px compaction keys off the viewport width, not the stage column. At 667×375 (stage column 367px) the bar overflows and Download is clipped. Key the compact bar to the stage's own width (container query on .area, or a JS width from the stage box): below ~400px of stage drop zoom −/+ and the rule, and use the Compare icon without its word.",
+   "files": [
+    "components/visualizer/editor/stage.module.css",
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/ed-l667.png"
+  },
+  {
+   "ref": "F145",
+   "status": "fixed",
+   "evidence": "Tray at 390/375/320: Describe box 40px tall, textarea clientHeight 20 = scrollHeight 20, placeholder on one line ('Describe a change, e.g. sage walls' at 390/375, 'Describe a change…' at 320), no half line. The caption is visually hidden (absolute, 1px). The tray is one height, 40dvh on ≤700-tall phones: at 375×667 the photo is 307×206 with the tray open (was 122×82), 284×190 at 320×640. 1280×800 desktop box also one clean line ('e.g. walnut floor, sage green walls').",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.module.css",
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/tray-p375-Furniture.png"
+  },
+  {
+   "ref": "F147",
+   "status": "fixed",
+   "evidence": "Present at 390/375/320: the versions row is 85px tall (tiles 96×79), flex-shrink 0, scrolls sideways (scrollWidth 412 in a 358/343/288 row), the facts scroll beneath it. No 6px sliver.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/present-p390.png"
+  },
+  {
+   "ref": "F150",
+   "status": "fixed",
+   "evidence": "Stage pins: .pin::before { inset:-8px } present. elementFromPoint from the 26px pin's centre hits the pin out to 16px right (miss at 19px), i.e. a ~38px round target (the ::before hangs off the padding box inside the 2px border, so 38 rather than the 42 wave D quoted). A real touch 17px right of centre opened the thread.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/pin-p390-thread.png"
+  },
+  {
+   "ref": "F156",
+   "status": "partly",
+   "evidence": "844×390 touch with CDP safe-area override left/right 47: env() resolves to 47; the top bar pads 59 (12+47) and is white edge to edge; the strip band and the rail are white into the insets; no grey frame beside the rows. 390×844 with top 47: the top bar grows to 103 and pads 47 on top.",
+   "remaining": "The rows' 1px rules stop at the inset: the strip's top rule starts at x=47 (the stage grey meets white with no rule for 0–47), and the rail's rules under the tabs and above the go line end 47px short of the right edge. Run the rules full width (put the border on the row that carries the inset padding). Not checked on a real notched iPhone.",
+   "files": [
+    "components/visualizer/editor/editor.module.css",
+    "components/visualizer/editor/versions-strip.module.css",
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/safe-844x390.png"
+  },
+  {
+   "ref": "critic-20",
+   "status": "fixed",
+   "evidence": "Phone part: Present's stacked layout keeps an 85px versions row at 390/375/320 (three whole thumbnails and a peek at 390). The share page's 1024-touch part is outside my widths.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/present-p390.png"
+  },
+  {
+   "ref": "Phone landscape: the editor's photo disappears (frame 0×0) and the zoom bar sits on the versions strip",
+   "status": "fixed",
+   "evidence": "844×390 and 667×375 touch now use the rail model (data-short, 300px rail): photo 222×149 / 212×142 (fit=low, chip visibility:hidden), the zoom bar has its own row under the photo, the strip's tiles stay in their own row (96×60). The layout is usable but small; see checks and F142 for the 667 bar clip.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/ed-l844.png"
+  },
+  {
+   "ref": "On short phones an open tray shrinks the photo to a thumbnail (122×82 at 375×667, 103×69 at 320×640) and the markers pile up",
+   "status": "fixed",
+   "evidence": "375×667 with any tray open: tray 267 (40dvh), photo 307×206; 320×640: tray 256, photo 284×190; 11 furniture markers are 16px dots and read clearly. Same tray height for all five modes.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/editor.module.css",
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/tray-p375-Furniture.png"
+  },
+  {
+   "ref": "Present on phones and portrait tablets: the versions thumb row is squashed to a 6px sliver",
+   "status": "fixed",
+   "evidence": "Thumb row 85px at 390/375/320 (was a 6px sliver).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/present-p375.png"
+  },
+  {
+   "ref": "The Describe box's one-line resting state cuts its two-line placeholder in half",
+   "status": "fixed",
+   "evidence": "Resting box one line at 390/375/320 (tray) and 1280×800: textarea 20/20, no half line; the placeholder is picked to fit.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx",
+    "components/visualizer/editor/describe-box.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/tray-p320-Surfaces.png"
+  },
+  {
+   "ref": "The stage banner (pin, place, draw) wraps to four lines in a narrow pill and covers the stage chip on phones",
+   "status": "fixed",
+   "evidence": "Pin banner at 390/375: one line, 322×44, radius 8, below the chip (chip 133–161, banner 169). At 320: 288×48, two lines, radius 8, still clear of the chip. Trace banner ('Draw around feature panel — press and trace its outline'): 358×48 at 390 and 288×48 at 320, two lines, card not blob. Landscape 844/667: one line over the photo's top.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/pin-p320-mode.png"
+  },
+  {
+   "ref": "The version tile's ⋯ floats outside the thumbnail when the caption is wider than the 96px thumb",
+   "status": "fixed",
+   "evidence": "Every tile 96 wide at 390/375/320 and in landscape; each ⋯ sits inside its thumbnail (e.g. V3 tile 217–313, ⋯ 285–309 at 390). Long captions ellipsize ('V3 · Relit · Gol…').",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/ed-p390.png"
+  },
+  {
+   "ref": "At 320 the phone top bar's OpenMaison wordmark runs under the Search button",
+   "status": "fixed",
+   "evidence": "320×640 on /visualizer, /company/materials and /leads: wordmark 56–130 (12px tall), Search 138–182: 8px clear.",
+   "remaining": "",
+   "files": [
+    "components/shell/mobile-nav.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/top-p320-visualizer.png"
+  },
+  {
+   "ref": "Client link: the four card actions wrap unevenly by width (2×2 at 390, 1/2/1 at 375, 1/1/2 at 320)",
+   "status": "fixed",
+   "evidence": "/renders/17fe84ab2eca47: 2×2 grid at 390 (162px) and 375 (155px) for every card; one column (262px) at 320.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/client-p375-card0.png"
+  },
+  {
+   "ref": "The tablet tray's height follows each mode's content, so the photo jumps size on every dock tab",
+   "status": "fixed",
+   "evidence": "768×1024 touch: tray 451 tall and photo 470×315 for Surfaces, Furniture, Style, Lighting and Tools alike.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/t768-tray-Tools.png"
+  },
+  {
+   "ref": "The 'Your changes' sheet's Clear all sits about 7px below the title's centre line",
+   "status": "fixed",
+   "evidence": "390: 'Your changes · 1' title, Clear all and close all centre on y=737.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.module.css",
+    "components/om/sheet.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/chg-p390-sheet.png"
+  },
+  {
+   "ref": "File viewer ⋯ sheet on a phone: the Download row is indented 12px while the other rows use 16px",
+   "status": "fixed",
+   "evidence": "390: file viewer ⋯ sheet rows (Download, Open in AI Visualizer / Open this version in AI Visualizer, Move, Duplicate, Rename, Delete) all 390×44 with 16px padding; text starts at x=16 on every row.",
+   "remaining": "",
+   "files": [
+    "components/leads/files/file-viewer.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/file-p390-3d93-menu.png"
+  },
+  {
+   "ref": "In the rail-less editor the snackbar keeps the app rail's 84px left offset",
+   "status": "fixed",
+   "evidence": "'Changes cleared · Undo' at 768×1024 touch: left 16 (344 wide); at 390 left 16 (358 wide). No 84px offset.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/snack-t768.png"
+  },
+  {
+   "ref": "The first-visit tip is five lines at 320 and ends with an off-topic sentence",
+   "status": "fixed",
+   "evidence": "Tip = first sentence only: 'Tap a square on the photo to pick its finish, or a mode below — then Generate.' 3 lines (64px) at 320, 2 lines (52px) at 375/390; not shown at 844×390.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/hint-p320.png"
+  },
+  {
+   "ref": "A new design's empty-strip hint wraps into a five-line column beside the FAB on phones",
+   "status": "fixed",
+   "evidence": "New › From a sample room… › Living room at 390: the strip shows Original + a dashed 96×60 slot tile 'Your renders land here'.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/new-p390-design.png"
+  },
+  {
+   "ref": "The client's ended-link page is 560px wide on every phone: the notice card is clipped and the page scrolls sideways",
+   "status": "fixed",
+   "evidence": "/renders/<unknown> at 390/375/320: notice card 358/343/288 wide at x=16, scrollWidth = viewport, lock icon, 'This link is no longer active', studio phone.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/client-p320-unknown.png"
+  },
+  {
+   "ref": "Pin and trace instructions on the canvas wrap into a tall round blob that covers the top of the photo",
+   "status": "fixed",
+   "evidence": "Pin banner one line at 390/375, two at 320; trace banner two lines at 390 and 320; radius 8 card, never a round blob; the chip stays visible.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/trace-p320-2.png"
+  },
+  {
+   "ref": "On a phone a lead has no way into its AI Visualizer design",
+   "status": "fixed",
+   "evidence": "390: the lead's ⋯ sheet (Overview and Files) reads Edit · AI Visualizer · Invite to Portal · Copy Link · Delete. AI Visualizer opened /visualizer/b46000d1…?from=/leads/1f12… in ~70ms; the editor's Back returned to the lead.",
+   "remaining": "",
+   "files": [
+    "app/leads/[id]/overview.tsx",
+    "components/leads/detail/quick-links.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/lead-p390-overview-kebab.png"
+  },
+  {
+   "ref": "A pick or un-pick made less than a second before a reload or tab close is still lost",
+   "status": "fixed",
+   "evidence": "390, Kitchen room: pick Scandinavian then reload after 120ms → '1 change' survives; wait for autosave, un-pick, reload after 120ms → no change pending (un-pick kept); pick then close the tab after 100ms (runBeforeUnload) and reopen → '1 change'. Cleared afterwards.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/use-editor-state.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/reload-p390-A.png"
+  },
+  {
+   "ref": "Snackbars inside the Share sheet land in the middle of the sheet, over the note box",
+   "status": "partly",
+   "evidence": "Share sheet: Stop sharing turns the row into 'Stopped · … · Undo' in place, no snackbar over the note box; Undo restores the live link (DB revoked_at null again). 'V2 is ready · Compare' at 390×844 sits at y 513–561, below the photo (ends 485), above the canvas bar. But at 375×667 a snackbar ('Changes cleared · Undo', same host) sits at y 336–384 over the photo (frame 169–384): it hides the bottom 48px of the picture and half a surface marker.",
+   "remaining": "On short phones (≤700 tall) the snackbar still lands on the photo's foot — wave D kept this on purpose (it must cover either the photo or the canvas bar). Owner call: lift it over the canvas bar/strip instead (the bar is re-reachable in 4s), or shorten the auto-hide for 'Vn is ready' on short phones.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/om/snackbar.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/snack-p375.png"
+  },
+  {
+   "ref": "Describe a change: at rest the one-line box shows half of the placeholder's second line",
+   "status": "fixed",
+   "evidence": "Same as the Describe-box item: one clean line at 390/375/320.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/tray-p375-Furniture.png"
+  },
+  {
+   "ref": "Tools › Furnish: run-on hint with developer copy, and 'empty it first' shown on an already-emptied room",
+   "status": "fixed",
+   "evidence": "Generated Empty the room (Strip to shell) on a new sample design, then Tools on V1 (emptied): Empty reads 'This version is already empty'; Furnish reads 'Furnish an empty room — the architecture, camera and framing stay put' and its options end 'Essentials plus a few extras — lived-in. For now it places the pieces the sample room holds.' (full stop, no release sentence). On the Original: 'Furnish works on an emptied version — V2 is one' and the footer 'Furnish works on an emptied version — open V2' (link).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/tools-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/gen-p390-furnish.png"
+  },
+  {
+   "ref": "The Tools tab shows a 'has changes' dot when the only change is a typed note",
+   "status": "fixed",
+   "evidence": "390, Master bedroom with no picks: typing 'a darker rug' in Describe (Lighting tab) leaves every dock tab without a dot; the note shows as '1 change' in the footer.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/chg-p390-note.png"
+  },
+  {
+   "ref": "Adding the same version to a quote again silently makes a second new quote",
+   "status": "fixed",
+   "evidence": "V2 ⋯ › Add to a quote… › Add to quote made OM-10010. Reopened: chip 'OM-10010 · Kevin Ng · has V2' preselected, line 'V2 is already in OM-10010 — adding again makes a second section.', button 'Add again'. Picking 'A new quote' says 'V2 is already in OM-10010 — a new quote holds it again.'",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/small-dialogs.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/quote-p390-again.png"
+  },
+  {
+   "ref": "The quote editor at 390 (reached by 'Open quote'): stray '2', clipped Additional Discount, cramped GST and By category rows",
+   "status": "not-fixed",
+   "evidence": "/quotes/ac98c69a…(OM-10010) at 390: a stray '2' still sits at the left under the last item card, 'Additional D[iscount]' is cut to 'Additional I' with a stray 't' between the % select and the amount box, the GST 9% switch touches its label, and the By category head wraps beside Share/Margin chips. Wave D left the quote editor unowned.",
+   "remaining": "All four points as round 1 proposed: hide .addNum ≤767, stack the Additional discount row, gap on the GST row, let the By category head take its own line above the chips.",
+   "files": [
+    "components/quotes/editor/items/items-summary.tsx",
+    "components/quotes/editor/items/item-cards.tsx",
+    "components/quotes/editor/items/items-section.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/qe-p390-items.png"
+  },
+  {
+   "ref": "The Kind sheet on the landing doesn't show which choice is current",
+   "status": "fixed",
+   "evidence": "Kind sheet at 390: the current row ('All · 2', then 'Personal · 1' after picking it) has aria-checked=true, data-selected and the primary-variant fill (rgb 238,229,255) with primary text; the pill reads 'Personal ▴' with the applied dot.",
+   "remaining": "",
+   "files": [
+    "components/leads/dropdown.tsx",
+    "components/leads/menus.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/kind-p390-2.png"
+  },
+  {
+   "ref": "At 320 the canvas toolbar clips its last button (Download)",
+   "status": "fixed",
+   "evidence": "320: the bar is 100% · Hide markers · Compare · Pin · Present · Download (45–275), all inside the 240px bar.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/ed-p320.png"
+  },
+  {
+   "ref": "Company › Materials has no filter by category or finish",
+   "status": "fixed",
+   "evidence": "Company › Materials at 390/320: a Filters button in the toolbar opens the house Filters sheet with Category · Finish · Price book selects, '4 materials shown', Clear All · Done.",
+   "remaining": "",
+   "files": [
+    "components/company/materials/materials-view.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/mat-p390-filters.png"
+  },
+  {
+   "ref": "The changes sheet's 'Clear all' sits 8px below its title",
+   "status": "fixed",
+   "evidence": "Duplicate of the Clear all item: centred on the title line at 390.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/chg-p390-sheet.png"
+  },
+  {
+   "ref": "Moodboard: the 'Look and light' line is indented off the column",
+   "status": "fixed",
+   "evidence": "Moodboard at 390: Finishes, Pieces, Look and light, The colours it reads as, and their lines ('Grey Fabric Sofa — Emerald Velvet', 'Lighting — Golden Hour') all start at x=16.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/moodboard.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/mood-p390-1.png"
+  },
+  {
+   "ref": "An uploaded room photo is named 'Room 2', not after its file",
+   "status": "fixed",
+   "evidence": "Add room › browse › sophia-living-room.jpg on a design that already had 'Living room': the new room is 'Living room 2' (room-type name from the file, not 'Room 2'). Wave D chose the room type rather than the file stem the round-1 fix proposed.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/add-room.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/upload-p390-2.png"
+  },
+  {
+   "ref": "Landing cards at 390 truncate every line; two new designs read the same",
+   "status": "partly",
+   "evidence": "Landing at 390: card name and second line take up to two lines (Kevin Ng 'Lead · Met · 3 rooms · 5 renders' reads whole; 'Showroom — kitchen concept' whole). Two blank designs made the same day: 'Design · 26 Sep' and 'Design · 26 Sep (2)'.",
+   "remaining": "Under Kind: Personal the card meta still says 'Showroom ideas · Personal · 1 room · 1…' — the kind word repeats what the pill says and pushes the render count off the second line. At 320 the editor's top bar cuts the new name to 'Design · 26 Sep …', losing the '(2)' that tells the two apart.",
+   "files": [
+    "components/visualizer/home/visualizer-home.tsx",
+    "components/visualizer/editor/topbar.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/kind-p390-2.png"
+  },
+  {
+   "ref": "Client page: the 'Dane will call you back' card centres its icon over left-aligned text",
+   "status": "fixed",
+   "evidence": "Client link › Ask for a call back at 390: the check sits at the card's left above 'Dane will call you back' (text-align start).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/client-p390-called.png"
+  },
+  {
+   "ref": "The bell names an unknown client two ways: 'Your client…' and 'Client…'",
+   "status": "fixed",
+   "evidence": "Shared the personal Showroom design, answered as the client (favourite + pin): the bell reads 'Your client picked a favourite' and 'Your client pinned a note on a render'; the studio's pin thread is headed 'Your client'.",
+   "remaining": "",
+   "files": [
+    "app/renders/actions.ts",
+    "components/visualizer/editor/pin-card.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/bell-p390-panel2.png"
+  },
+  {
+   "ref": "At 320 the top bar's OpenMaison wordmark runs under the Search icon",
+   "status": "fixed",
+   "evidence": "Duplicate of the 320 wordmark item: 8px clear of Search.",
+   "remaining": "",
+   "files": [
+    "components/shell/mobile-nav.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/top-p320-visualizer.png"
+  }
+ ],
+ "newIssues": [
+  {
+   "title": "Present on a phone held sideways: the picture collapses (0×0 at 667×375) or shrinks to 169×113 with the facts cut to a sliver (844×390)",
+   "severity": "major",
+   "width": "667×375 and 844×390 touch",
+   "repro": "Open Kevin Ng's design, turn the phone on its side, tap the canvas bar's Present (fullscreen) icon.",
+   "evidence": "667×375: the ≤767 stacked rule applies, the side keeps max-height 240, so the stage gets nothing — the render img measures 0×0; the sheet shows only the header, the four thumbnails and 'WHAT CHANGED · FROM V2' with its card cut off. 844×390: the 768–1024 landscape-tablet rule applies — render 169×113 in a 928px-wide grey stage, the facts scroller shows half of the word 'Lighting', the thumbnails' tops are cut.",
+   "fix": "Add a short-landscape block to dialogs.module.css, `@media (orientation: landscape) and (max-height: 500px)`: open Present as the xxl fullscreen frame (no sheet), stage takes the full height beside a 200px side that holds only the versions (one column), facts behind a 'What changed' toggle or hidden; keep the prev/next arrows on the picture.",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css",
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/land-l667-present.png"
+  },
+  {
+   "title": "Present on short portrait phones shows the render smaller than the editor does (182×122 at 375×667, 147×98 at 320×640)",
+   "severity": "major",
+   "width": "375×667, 320×640 touch",
+   "repro": "375×667: open Kevin Ng's design, tap Present in the canvas bar.",
+   "evidence": "The stacked side keeps a fixed 240px block (85px versions row + facts) under the stage, so the stage is left ~130px tall: render 182×122 at 375 (the editor shows it at 321×215), 147×98 at 320. At 390×844 it is fine (358×240).",
+   "fix": "On ≤700-tall phones let the sheet body scroll as one column with the picture at full width (stage min-height = width/aspect, capped at 50dvh) and the versions + facts under it, or cap .side at ~120px (versions row only) with the facts reachable by scrolling.",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/present-p320.png"
+  },
+  {
+   "title": "Phone landscape: the new-pin card covers the spot being pinned and clips its own field",
+   "severity": "minor",
+   "width": "844×390 touch",
+   "repro": "844×390 touch: tap Pin a note in the canvas bar, tap the photo around its middle.",
+   "evidence": "The draft card opens at x 8–288, y 64–224 while the tapped spot is at (272,153) on a 222×149 photo — the pin glyph is hidden under the card, and the card's body scrolls (96 in 77px) so the 'Pin a note here' field loses its bottom border.",
+   "fix": "On short stages (data-short) use the bottom-sheet DraftPin with the PinSpot copy (as 667×375 already does), or place the card on the side of the photo away from the pin (right of the photo there is 160px of grey).",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx",
+    "components/visualizer/editor/pin-card.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/land-l844-pindraft.png"
+  },
+  {
+   "title": "Present's phone sheet: the disabled Next arrow sits as a pale ghost over the render, and the title wraps the header to two lines",
+   "severity": "polish",
+   "width": "390, 375, 320",
+   "repro": "390: open Present on the newest version (V3).",
+   "evidence": "At the last version the Next button stays on the picture at reduced opacity over the plant (right edge, 44×44). The title 'Living room · V3 · Relit · Golden Hour' wraps to two lines at 390/375/320, so the header is ~96px instead of the 64px house header.",
+   "fix": "Hide the arrow at either end (visibility:hidden, keep its slot) instead of greying it on the photo. Truncate the title to one line on phones (the room + version, e.g. 'Living room · V3') and keep the full name in the facts header.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/present-p390.png"
+  },
+  {
+   "title": "Add a room on a phone says 'Drop room photos or browse' and its line runs ~5px from the dashed border",
+   "severity": "polish",
+   "width": "390, 320 touch",
+   "repro": "390: editor › add-room icon (top bar), or a blank design's empty state.",
+   "evidence": "On a touch phone there is nothing to drop and 'browse' is plain bold text; the 'JPG, PNG, WebP or HEIC · large photos are resized · straight-on shots…' line starts ~5px inside the dashed box at 390 (~9px at 320).",
+   "fix": "On (hover:none) say 'Choose room photos' (the whole box stays the picker) and give the dropzone 16px side padding. Log the copy change.",
+   "files": [
+    "components/visualizer/editor/dialogs/add-room.tsx",
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/upload-p390-sheet.png"
+  },
+  {
+   "title": "Phone landscape: the go line clips 'Pick a finish, a style or a light first.' to '…a light...'",
+   "severity": "polish",
+   "width": "844×390, 667×375 touch",
+   "repro": "Open any design with nothing picked on a phone held sideways.",
+   "evidence": "The 300px rail's compact go line shows 'Pick a finish, a / style or a light...' (two-line clamp) beside the settings icon and Generate; the sentence never ends.",
+   "fix": "In the short rail shorten the waiting line ('Pick something first') or let it take a third line; the full reason is already in the Generate tooltip.",
+   "files": [
+    "components/visualizer/editor/rail.module.css",
+    "lib/visualizer/model.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/ed-l667.png"
+  },
+  {
+   "title": "Phone landscape: the version ⋯ menu is a 290px popover that cuts 'Share with the client…' in half and hides Delete below a scroll with no cue",
+   "severity": "polish",
+   "width": "844×390 touch",
+   "repro": "844×390 touch: tap V3's ⋯ in the strip.",
+   "evidence": "The menu opens upward (8–298), max-height 290, scrollHeight 362: 'Share with the client…' is sliced at the bottom edge and Delete is only reachable by scrolling the menu. At 667×375 the same menu is a bottom sheet that scrolls.",
+   "fix": "On short landscape (max-height 500px) use the bottom-sheet menu as ≤767 does, or open the popover beside the tile with the full viewport height available.",
+   "files": [
+    "components/om/portal-menu.tsx",
+    "components/visualizer/editor/versions-strip.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/phone/land-l844-vmenu.png"
+  }
+ ],
+ "checks": [
+  {
+   "what": "Phone landscape 844×390 and 667×375: is the photo usable with the canvas bar beside it ('side' fit)?",
+   "ok": false,
+   "evidence": "The stage did not pick 'side' at either size: both render fit=low — chip hidden, bar in its own row under the photo. The photo is 222×149 at 844×390 (≈10% of the screen) and 212×142 at 667×375 (≈12%), beside a 300px rail and above a 100px versions strip; at 667 the bar is also wider than its 367px column and clips Download. Usable for picking finishes, too small to judge a render or show a client (Present in landscape is broken, see new issues). Needs a real landscape layout: e.g. the rail as a slide-over panel opened from the dock tabs, the canvas bar vertical on the photo's right edge, the strip folded to a 48px row — that frees roughly 480×320 for the photo at 844×390. Owner decision: invest in phone landscape, or show a 'turn to portrait' hint there."
+  },
+  {
+   "what": "375×667 with a mode tray open: photo size, 40dvh vs 44dvh",
+   "ok": true,
+   "evidence": "Measured on this build (40dvh on ≤700-tall phones): tray 267px, photo 307×206 (fit=low, chip hidden) at 375×667; tray 256, photo 284×190 at 320×640. Forcing 44dvh: tray 293 / photo 269×180 at 375×667, tray 282 / photo 245×164 at 320×640 — the extra 26px of panel buys half a list row and costs 26px (13%) of photo height. Keep 40dvh on short phones; 44dvh is right only above 700px tall (390×844: tray 371, photo 351×235)."
+  },
+  {
+   "what": "320 top bar: the 12px wordmark no longer runs under Search",
+   "ok": true,
+   "evidence": "/visualizer, /company/materials, /leads at 320: wordmark 56–130, Search button 138–182 (8px clear), no page overflow."
+  },
+  {
+   "what": "The lead's ⋯ sheet on a phone offers 'AI Visualizer' and opens the lead's design",
+   "ok": true,
+   "evidence": "390, Kevin Ng Overview and Files tab: Edit · AI Visualizer · Invite to Portal · Copy Link · Delete; tap → /visualizer/b46000d1…?from=/leads/1f12… (Kevin Ng's design), Back returns to the lead."
+  },
+  {
+   "what": "The empty strip's 'Your renders land here' slot tile",
+   "ok": true,
+   "evidence": "New sample design at 390 and an uploaded room: Original tile + dashed 96×60 slot reading 'Your renders land here', no wrapped column."
+  },
+  {
+   "what": "Pin sheets show the pin's spot on a small copy of the picture",
+   "ok": true,
+   "evidence": "Editor thread and draft sheets at 390/375/320: a 131×88 copy with the numbered pin (thread) or the pin glyph (draft). Client link thread at 390/375/320: the same 131×88 copy."
+  },
+  {
+   "what": "Present's phone sheet fits 390 (three thumbnails across)",
+   "ok": true,
+   "evidence": "390×844: sheet 390 wide, no overflow, render 358×240, versions row 85px with three whole 96px thumbnails and the Original peeking (scrolled to keep V3 in view), facts under it. Caveat: on 375×667 and 320×640 the render shrinks to 182×122 / 147×98 (new issue)."
+  }
+ ]
+}

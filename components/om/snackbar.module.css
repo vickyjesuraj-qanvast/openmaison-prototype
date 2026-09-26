@@ -54,6 +54,6 @@
     width: max(100%, 44px); height: max(100%, 44px);
   }
   /* (REG-298) …and rises above the bottom dock, 16 clear of it, keeping the bulk-bar offset on top. */
-  .host { left: var(--om-spacing-4); right: var(--om-spacing-4); bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px)); }
+  .host { left: var(--om-spacing-4); right: var(--snackbar-right, var(--om-spacing-4)); bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px)); }   /* (audit 2026-09-26) the AI Visualizer narrows it off its rail's Generate on a phone held sideways */
   .bar { width: auto; min-width: 0; max-width: 100%; }
 }

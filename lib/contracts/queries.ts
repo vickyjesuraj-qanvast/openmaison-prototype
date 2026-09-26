@@ -172,7 +172,7 @@ export async function fetchDeletedContracts(leadId: string | null): Promise<Dele
 }
 
 /* ── Company › Templates › Contracts ── */
-export type ContractTemplateRow = ContractTemplate & { usedBy: number; author: string | null; authorColor: string | null }
+export type ContractTemplateRow = ContractTemplate & { usedBy: number; author: string | null; authorColor: string | null; /** (verify round 3) whoever wrote it — the Deleted sheet's rule names them (`author` is whoever saved it last) */ maker: string | null }
 export type ContractTemplatesData = { templates: ContractTemplateRow[]; deleted: ContractTemplateRow[]; leads: { id: string; name: string }[]; viewer: ContractViewer; now: number }
 export async function fetchContractTemplates(): Promise<ContractTemplatesData> {
   const [all, uses, team, clients] = await Promise.all([
@@ -185,7 +185,7 @@ export async function fetchContractTemplates(): Promise<ContractTemplatesData> {
   for (const u of uses) if (u.templateId) n.set(u.templateId, (n.get(u.templateId) ?? 0) + 1)
   const by = new Map(team.map((m) => [m.id, m]))
   /* (REG-634, parity §8.2 · E-126) "Updated by" is whoever saved it last (older rows: whoever made it). */
-  const rows = all.map((t) => { const m = by.get(t.updatedBy ?? t.createdBy ?? ''); return { ...t, usedBy: n.get(t.id) ?? 0, author: m?.name ?? null, authorColor: m?.color ?? null } })
+  const rows = all.map((t) => { const m = by.get(t.updatedBy ?? t.createdBy ?? ''); return { ...t, usedBy: n.get(t.id) ?? 0, author: m?.name ?? null, authorColor: m?.color ?? null, maker: t.createdBy ? by.get(t.createdBy)?.name ?? null : null } })
   const viewer = await fetchViewer(); const visible = await visibleLeadIds(viewer)
   return { templates: rows.filter((t) => !t.deletedAt), deleted: rows.filter((t) => !!t.deletedAt), leads: clients.filter((l) => !visible || visible.has(l.id)), viewer: { id: viewer.id, role: viewer.role }, now: Date.now() }
 }

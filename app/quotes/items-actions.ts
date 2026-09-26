@@ -11,6 +11,7 @@ import { descendantIds, parseDiscounts, quoteTotals, type NamedDiscount } from '
 import { fetchQuoteRules, fetchStudio } from '@/lib/settings/queries'
 import { roundToStep } from '@/lib/settings/types'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'   // (REG-619) a saved section remembers the quote's property type
+import { refuse, type Refusal } from '@/lib/company/template-rules'   // (audit 2026-09-26, E7) a refusal answers with its rule
 
 /* Items section (1260:31209, REG-415). Every write ends in `sync`: the quote's amount is DERIVED from its lines (REG-343 / REG-403)
    — the Quotes tab, the Overview card and the Move stage window read `quotes.amount_minor`, so it is recomputed here, never typed.
@@ -349,7 +350,7 @@ const fromLine = (i: QuoteItem, cur?: PriceBookItem) => ({
 /** Row menu › Save to My Items: the line becomes a price-book entry (name, description, kind, unit, cost, markup, category, vendor, link,
     photo). (REG-653, price book parity Q-09) On a line that came from an item, `update` writes the line back into that item instead —
     an Owner's or an Admin's — so nothing is duplicated unasked; a new entry is the other, named choice. */
-export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update' = 'new'): Promise<SavedToBook> {
+export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update' = 'new'): Promise<SavedToBook | Refusal> {
   const i = await itemOf(itemId)
   if (i.kind !== 'item') throw new Error('sections are saved with Save section to My Sections')
   /* (REG-652, price book parity Q-04) An Owner's or an Admin's save joins the book; a Designer's is proposed — on their quotes at once, offered to no one else until approved. */
@@ -357,12 +358,13 @@ export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update'
   const { newItemStatus, runsBook, BOOK_RULE } = await import('@/lib/company/price-book-rules')
   const v = await fetchViewer()
   if (mode === 'update') {
-    if (!runsBook(v)) throw new Error(BOOK_RULE)
+    if (!runsBook(v)) return refuse(BOOK_RULE)
     const [cur] = i.priceBookItemId ? await db.select().from(priceBookItems).where(eq(priceBookItems.id, i.priceBookItemId)) : []
-    if (!cur || cur.deletedAt) throw new Error('item not in the book')
+    if (!cur || cur.deletedAt) return refuse('That item is gone from the price book')
     const q = await quoteOf(i.quoteId)
     const { updatePriceBookItem } = await import('@/app/company/price-book-actions')
     const item = await updatePriceBookItem(cur.id, fromLine(i, cur), `Updated from ${q.number}`)
+    if ('error' in item) return item
     touch(q.leadId, q.id)
     return { mode, item, prevLink: cur.id, previous: cur }
   }
@@ -384,7 +386,7 @@ export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update'
 }
 /** (REG-653, Q-09) Undo on the save's snackbar: a new entry leaves the book again (nothing else used it yet) and the line points where
     it did; an update writes the item's figures back — History keeps both steps. */
-export async function undoSaveToPriceBook(lineId: string, saved: { mode: 'new' | 'update'; itemId: string; prevLink: string | null; previous: PriceBookItem | null }): Promise<void> {
+export async function undoSaveToPriceBook(lineId: string, saved: { mode: 'new' | 'update'; itemId: string; prevLink: string | null; previous: PriceBookItem | null }): Promise<void | Refusal> {
   const i = await itemOf(lineId)
   const { fetchViewer } = await import('@/lib/leads/visibility')
   const { itemChangeBlock } = await import('@/lib/company/price-book-rules')
@@ -392,14 +394,15 @@ export async function undoSaveToPriceBook(lineId: string, saved: { mode: 'new' |
   const [cur] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, saved.itemId))
   if (!cur) return
   const block = itemChangeBlock(v, cur)
-  if (block) throw new Error(block)
+  if (block) return refuse(block)
   if (saved.mode === 'update' && saved.previous) {
     const p = saved.previous
     const { updatePriceBookItem } = await import('@/app/company/price-book-actions')
-    await updatePriceBookItem(cur.id, { name: p.name, description: p.description, descriptionHtml: p.descriptionHtml, kind: p.kind, unit: p.unit, costMinor: p.costMinor, markupMinor: p.markupMinor, category: p.category, vendor: p.vendor, link: p.link, thumb: p.thumb }, 'Undone')
+    const u = await updatePriceBookItem(cur.id, { name: p.name, description: p.description, descriptionHtml: p.descriptionHtml, kind: p.kind, unit: p.unit, costMinor: p.costMinor, markupMinor: p.markupMinor, category: p.category, vendor: p.vendor, link: p.link, thumb: p.thumb }, 'Undone')
+    if ('error' in u) return u
   } else if (saved.mode === 'new') {
     const others = await db.select({ id: quoteItems.id }).from(quoteItems).where(and(eq(quoteItems.priceBookItemId, cur.id)))
-    if (others.some((o) => o.id !== i.id)) throw new Error('already used on another line')
+    if (others.some((o) => o.id !== i.id)) return refuse('Another quote line uses it now — it stays in My Items')
     const { priceBookChanges } = await import('@/lib/db/schema')
     await db.delete(priceBookItems).where(eq(priceBookItems.id, cur.id))
     await db.delete(priceBookChanges).where(eq(priceBookChanges.itemId, cur.id))
@@ -422,12 +425,12 @@ const savedLine = (i: QuoteItem): SavedLine => ({
 /** (REG-653, Q-10) A section's own marks: one-line print, the sub-total's word, its highlight, its visibility. */
 const savedMarks = (g: QuoteItem) => ({ printOneLine: g.printOneLine, printAsText: g.printAsText, highlight: g.highlight, visibility: isVisibility(g.visibility) ? g.visibility : 'visible' as const })
 /** Row menu on a section › Save section to My Sections: the section, its lines and its sub-sections, as one reusable block. */
-export async function saveSectionToPriceBook(groupId: string, name?: string): Promise<PriceBookSection> {
+export async function saveSectionToPriceBook(groupId: string, name?: string): Promise<PriceBookSection | Refusal> {
   /* (REG-652, price book parity Q-03) My Sections are the Owners' and Admins'. */
   const { fetchViewer } = await import('@/lib/leads/visibility')
   const { runsBook, SECTION_RULE } = await import('@/lib/company/price-book-rules')
   const v = await fetchViewer()
-  if (!runsBook(v)) throw new Error(SECTION_RULE)
+  if (!runsBook(v)) return refuse(SECTION_RULE)
   const g = await itemOf(groupId)
   if (g.kind !== 'group') throw new Error('not a section')
   const all = await linesOf(g.quoteId)

@@ -7,11 +7,21 @@ import { Tooltip } from './tooltip'
 import { snackbarRise } from '@/lib/motion'
 import styles from './snackbar.module.css'
 
-type Snack = { id: number; message: string; actionLabel?: string; onAction?: () => void }
+type Snack = {
+  id: number; message: string; actionLabel?: string; onAction?: () => void
+  /** (wave E, surfaces-10) A snackbar with a key replaces the one on screen with the same key — its words, its action and its four
+      seconds — in place, instead of stacking a second one whose action is out of date. Without a key, snackbars stack as before. */
+  key?: string
+}
 const SnackbarContext = createContext<(s: Omit<Snack, 'id'>) => void>(() => {})
+const DismissContext = createContext<(key: string) => void>(() => {})
 
 export function useSnackbar() {
   return useContext(SnackbarContext)
+}
+/** (audit 2026-09-26, round 3) Withdraw the keyed snackbar on screen, if any — e.g. "V3 is ready" when Present opens over it; `'*'` withdraws them all. */
+export function useSnackbarDismiss() {
+  return useContext(DismissContext)
 }
 
 /** Convenience for decision N2: every inert affordance answers with this. */
@@ -24,18 +34,32 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
   const [snacks, setSnacks] = useState<Snack[]>([])
   const nextId = useRef(1)
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>())
+  /** A keyed snackbar's id while it is on screen (surfaces-10). */
+  const keyed = useRef(new Map<string, number>())
 
   const dismiss = useCallback((id: number) => {
     const t = timers.current.get(id)
     if (t) clearTimeout(t)
     timers.current.delete(id)
+    for (const [k, v] of keyed.current) if (v === id) keyed.current.delete(k)
     setSnacks((s) => s.filter((x) => x.id !== id))
   }, [])
 
   const show = useCallback((s: Omit<Snack, 'id'>) => {
-    const id = nextId.current++
-    setSnacks((prev) => [...prev.slice(-2), { ...s, id }])
+    const was = s.key !== undefined ? keyed.current.get(s.key) : undefined
+    const id = was ?? nextId.current++
+    if (s.key !== undefined) keyed.current.set(s.key, id)
+    const t = timers.current.get(id)
+    if (t) clearTimeout(t)
+    /* the same id keeps its place (and its motion) — only its words and action change; one dropped off the stack comes back as new */
+    setSnacks((prev) => (prev.some((x) => x.id === id) ? prev.map((x) => (x.id === id ? { ...s, id } : x)) : [...prev.slice(-2), { ...s, id }]))
     timers.current.set(id, setTimeout(() => dismiss(id), 4000))
+  }, [dismiss])
+
+  /* '*' withdraws every snackbar on screen — a page's snackbars when a dialog or a sheet opens over the page (the editor) */
+  const dismissKey = useCallback((k: string) => {
+    if (k === '*') { for (const t of timers.current.values()) clearTimeout(t); timers.current.clear(); keyed.current.clear(); setSnacks([]); return }
+    const id = keyed.current.get(k); if (id !== undefined) dismiss(id)
   }, [dismiss])
 
   const pause = useCallback((id: number) => {
@@ -48,7 +72,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SnackbarContext.Provider value={show}>
-      {children}
+      <DismissContext.Provider value={dismissKey}>{children}</DismissContext.Provider>
       <div className={styles.host} role="status" aria-live="polite">
         <AnimatePresence>
           {snacks.map((s) => (
@@ -65,7 +89,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
               <span>{s.message}</span>
               {s.actionLabel ? (
                 <button type="button" className={styles.action}
-                        onClick={() => { s.onAction?.(); dismiss(s.id) }}>
+                        onClick={() => { dismiss(s.id); s.onAction?.() }}>
                   {s.actionLabel}
                 </button>
               ) : null}

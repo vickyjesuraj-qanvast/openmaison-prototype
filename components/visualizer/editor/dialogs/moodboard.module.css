@@ -1,0 +1,48 @@
+/* A version's moodboard (REG-683): the picture large, the finishes as swatches beside it — a page that prints as it looks. */
+.board { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--om-spacing-6); height: 100%; min-height: 0; background: var(--om-color-surface-default); }
+.picture { min-height: 0; display: flex; align-items: center; justify-content: center; border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); overflow: hidden; }
+.picture img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-5); min-height: 0; overflow-y: auto; }
+.titleBlock { display: flex; flex-direction: column; gap: 2px; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.title { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.sub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.head { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.swatches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.swatch { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.chip { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 160px; border-radius: var(--om-radius-2); box-shadow: inset 0 0 0 1px var(--om-color-overlay-20p); margin-bottom: var(--om-spacing-1); }
+/* a long name ("Reference colour, close to Linen") takes two lines rather than an ellipsis */
+.swName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow-wrap: break-word; }   /* (round 3) three lines: "Reference colour, close to Walnut Engineered" reads whole */
+.swSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.list { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.palette { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--om-spacing-2); }   /* (round 3) the five colours on one row at any side width (48px chips wrapped four and one at 260) */
+.colour { display: flex; flex-direction: column; gap: 4px; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+.colour span { width: 100%; max-width: 48px; aspect-ratio: 1; border-radius: var(--om-radius-1); box-shadow: inset 0 0 0 1px var(--om-color-overlay-20p); }
+.colour b { font: var(--om-type-caption-xs); white-space: nowrap; }   /* (round 3) the five codes read whole in a 260 side column ("#E8D…" at caption-s) */
+.colour { min-width: 0; }
+/* (round 3) an edge with more beyond it fades (use-edge-fade.ts sets the switches), as Present's side does */
+.side:is([data-more-up], [data-more-down]) { --fade-t: 0px; --fade-b: 0px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); }
+.side[data-more-up] { --fade-t: 20px; }
+.side[data-more-down] { --fade-b: 32px; }
+/* (verify round 1) A landscape tablet keeps the render beside the side column, as Present does; a phone and a portrait tablet stack them,
+   the render the hero and the swatches three across, never a pair of colour blocks larger than the picture. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) { .board { grid-template-columns: minmax(0, 1fr) 260px; gap: var(--om-spacing-5); } .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  /* the render the full width at its own shape (at most 60% of the screen's height), the board scrolling under it */
+  .board { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; height: auto; } .side { overflow: visible; }
+  .picture img { width: 100%; height: auto; max-height: 60dvh; }
+  .swatches { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .chip { max-height: 120px; }
+}
+/* Printing prints the board alone, as it looks (Print or save as PDF). */
+@media print {
+  :global(body[data-print-board]) * { visibility: hidden !important; }
+  :global(body[data-print-board]) .board, :global(body[data-print-board]) .board * { visibility: visible !important; }
+  :global(body[data-print-board]) .board { position: fixed; inset: 0; height: auto; grid-template-columns: 1.6fr 1fr; padding: 12mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :global(body[data-print-board]) .side { overflow: visible; -webkit-mask-image: none; mask-image: none; }   /* (round 3) a screen's edge fade never prints */
+  /* (F088) the render at its own height, top-aligned with the title — no grey panel above and below it */
+  :global(body[data-print-board]) .board { align-items: start; }
+  :global(body[data-print-board]) .picture { background: none; align-self: start; }
+  :global(body[data-print-board]) .picture img { width: 100%; height: auto; max-height: calc(100vh - 24mm); }
+  :global(body[data-print-board]) .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

@@ -1,0 +1,101 @@
+/* The AI Visualizer editor (REG-673): an app frame pinned to the viewport (the template editor's, REG-542) — the top bar, then
+   [canvas + versions | rail 372]. ≤1024 portrait and phones: the camera-app model (Q-25) — the rooms, the photo, the versions, the tray,
+   the go bar, the dock. A tablet held landscape with room keeps the rail (F146, the orchestrator's ROOMY_LANDSCAPE).
+   (F156) The frame keeps clear of a notch: the top bar takes the top inset, the frame the sides, the dock the bottom — and every white
+   row (the top bar, a note, the rooms, the versions, the tray, the go bar and the dock, the rail) reaches under the side insets in its own
+   colour (`.bleed`'s rule), so a notch never shows the grey frame beside them. */
+.editor { --viz-rail: 372px; --viz-strip-end: 96px; position: fixed; inset: 0; display: flex; flex-direction: column; padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); background: var(--om-color-surface-bg); }
+/* (F016) Between the tablet and 1280 the rail gives the photo room — 336 keeps the style cards two-up with readable captions. */
+@media (max-width: 1279px) { .editor:not([data-narrow]) { --viz-rail: 336px; } }
+.body { flex: 1; min-height: 0; display: flex; }
+.main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.stripSlot { flex-shrink: 0; display: flex; flex-direction: column; }
+.rail { flex: 0 0 calc(var(--viz-rail) + env(safe-area-inset-right, 0px)); width: calc(var(--viz-rail) + env(safe-area-inset-right, 0px)); min-height: 0; display: flex; flex-direction: column; margin-right: calc(-1 * env(safe-area-inset-right, 0px)); --viz-inset-r: env(safe-area-inset-right, 0px); background: var(--om-color-surface-default); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (F156 · phone-2) The rail reaches under the right inset and hands it to its rows (`--viz-inset-r`): each row pads itself clear of the
+   notch, so the rules under the tabs and over the go line run to the screen's edge. The tabs are the rail's own first row. */
+.rail > [role='tablist'] { padding-right: var(--viz-inset-r, 0px); }
+/* (F156 · phone-2) beside the rail the versions reach under the left inset the same way — the strip pads its tiles by `--viz-inset-l`
+   and its top rule starts at the screen's edge */
+.editor:not([data-narrow]) .stripSlot { margin-left: calc(-1 * env(safe-area-inset-left, 0px)); --viz-inset-l: env(safe-area-inset-left, 0px); background: var(--om-color-surface-default); }
+.panelWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* The first-visit tip, the deleted note, the changed-elsewhere note (the template editor's `.hint` / `.readOnlyNote`). */
+.note { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; margin: 0 calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px)); padding: var(--om-spacing-1) calc(var(--om-spacing-4) + env(safe-area-inset-right, 0px)) var(--om-spacing-1) calc(var(--om-spacing-4) + env(safe-area-inset-left, 0px)); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-m); }
+.note[data-tone='warn'] { background: var(--om-color-tertiary-yellow-variant); color: var(--om-color-on-surface-default); }
+.noteText { flex: 1; min-width: 0; }
+/* What the canvas shows, top-left (1.0's version badge). */
+.stageChip { display: inline-flex; align-items: center; gap: 4px; max-width: 360px; height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stageChip b { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* No room yet: the add-room choices on the canvas itself. */
+.empty { width: min(760px, calc(100% - 48px)); max-height: calc(100% - 48px); overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-6); border-radius: var(--om-radius-3); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); text-align: center; }
+.emptyGlyph { width: 64px; height: 64px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.emptyTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.emptyText { margin: 0; max-width: 520px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.emptyOptions { align-self: stretch; text-align: left; margin-top: var(--om-spacing-2); }
+.compareBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* (F152) the wash only where there is a pointer to hover — a tap never leaves it stuck */
+@media (hover: hover) { .compareBtn:hover:not(:disabled) { background: var(--om-color-hover-08p); } }
+.compareBtn[aria-pressed='true'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.compareBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }
+.compareBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+/* A menu row that says why it waits (sweep S1: the reason sits in the row, not in a native title). */
+.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
+/* The FAB keeps clear of the rail and the versions (the house FAB sits bottom-right, which the rail's Generate owns here). With no rail
+   (no room yet, a deleted design) it keeps the house corner (F008). */
+.editor[data-rail] .fab { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: 36px; }
+/* (editor-visual 3) …and its Maison AI sheet opens against it — flush with its right edge, 12 above it — wherever the editor parks it,
+   never at the house corner over the rail. The sheet renders inside the frame, so these win over its own offsets; the snackbar's lift
+   (`--bottom-dock`) is not the sheet's. */
+.editor [aria-label='Maison AI suggestions'] { --bottom-dock: 0px; }
+.editor[data-rail] [aria-label='Maison AI suggestions'] { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: calc(36px + 48px + 12px); }
+/* (style-light 5) the Versions and quality knobs open over the FAB's seat on a phone — it steps aside until they close */
+.editor:has([aria-label='Versions and quality'][aria-expanded='true']) .fab { display: none; }
+/* (phone-tablet 0 · wave E, E3) A phone on its side keeps the rail model — the photo is the hero: the top bar at 44 (topbar.module.css),
+   the versions a slim row (versions-strip.module.css), the rail at 300 with the Describe box on top and the compact go line at its foot.
+   The Maison AI button rides at the slim strip's end (its reserved end, `--viz-strip-end`), clear of the photo; its sheet opens above it. */
+.editor[data-short] { --viz-rail: 300px; --viz-strip-end: 76px; }
+.editor[data-short][data-rail] .fab { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: 0; }
+.editor[data-short][data-rail] [aria-label='Maison AI suggestions'] { bottom: calc(48px + 12px); }
+
+/* ≤1024 portrait and phones: the camera-app model. */
+.fold { flex-shrink: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* (F156) the camera model's white rows reach under the side insets */
+.editor[data-narrow] .fold, .goDock { margin: 0 calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px)); padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); background: var(--om-color-surface-default); }
+.roomsRow { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-4); background: var(--om-color-surface-default); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.roomRailWrap { flex: 1; min-width: 0; display: flex; }
+.roomRail { flex: 1; min-width: 0; }
+.roomChips { flex-wrap: nowrap; gap: var(--om-spacing-2); }
+/* (F013) a long room name stops at 200 px; the room's ⋯ sheet names it whole */
+.roomChips > [role='radio'] { display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 30px; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .roomChips > [role='radio'] { line-height: 42px; } }
+.tray { height: 44dvh; min-height: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06); }
+.tray:focus { outline: none; }
+/* (phone-tablet 8) one height while the tray is open, whatever the mode — the photo doesn't jump between dock tabs (the panel scrolls
+   inside it); (phone-tablet 1 · surfaces-furniture 6) a short phone keeps more of the photo, now the panel scrolls */
+@media (max-width: 767px) and (max-height: 700px) { .tray { height: 40dvh; } }
+.goDock { flex-shrink: 0; display: flex; flex-direction: column; }
+.editor[data-narrow] { --viz-strip-end: 72px; }
+/* (tablet-2) the tray rising: the bar fades as its row closes on the rise's beat, so the photo gives it back smoothly — never gone in one
+   frame (its padding and rule close too, so no sliver of a row stays reserved) */
+.editor[data-tray] [role='toolbar'][aria-label='Canvas'] { pointer-events: none; animation: vizBarOut 180ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes vizBarOut { from { max-height: 46px; opacity: 1; } to { max-height: 0; padding-block: 0; border-width: 0; opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .editor[data-tray] [role='toolbar'][aria-label='Canvas'] { animation: none; display: none; } }
+/* (tablet-2) while the tray folds away the bar's row opens on the fold's own beat (lib/motion's sheetExit on the standard curve — the
+   rooms and the versions unfold on it too), out of sight, so the canvas makes room for it as the photo grows: the photo travels once,
+   straight to its place; the bar fades in once the tray has gone */
+.editor[data-tray-leaving] [role='toolbar'][aria-label='Canvas'] { visibility: hidden; animation: vizBarRow 180ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes vizBarRow { from { max-height: 0; padding-block: 0; border-width: 0; } to { max-height: 46px; } }
+@media (prefers-reduced-motion: reduce) { .editor[data-tray-leaving] [role='toolbar'][aria-label='Canvas'] { animation: none; } }
+/* (F173) …and it fades back in once the tray has folded away, not in one jump */
+.editor[data-narrow]:not([data-tray]):not([data-tray-leaving]) [role='toolbar'][aria-label='Canvas'] { animation: vizBarIn var(--motion-modal) both; }
+@keyframes vizBarIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .editor[data-narrow]:not([data-tray]):not([data-tray-leaving]) [role='toolbar'][aria-label='Canvas'] { animation: none; } }
+.trayDescribe { flex-shrink: 0; padding: var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) 0 calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); }
+/* (F139 · F174) the FAB rides in the versions band, over the strip's reserved end (`--viz-strip-end`), clear of the go bar and the dock */
+.editor[data-narrow] .fab { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(60px + 68px + 12px + env(safe-area-inset-bottom, 0px)); }
+.editor[data-narrow] [aria-label='Maison AI suggestions'] { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(60px + 68px + 12px + 48px + 12px + env(safe-area-inset-bottom, 0px)); }
+.editor[data-tray] .fab, .editor[data-tray-leaving] .fab { display: none; }
+@media (max-width: 767px) { .note { align-items: flex-start; padding: var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-right, 0px)) var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-left, 0px)); font: var(--om-type-body-s); } .empty { width: calc(100% - 24px); padding: var(--om-spacing-5) var(--om-spacing-4); } .stageChip { max-width: calc(100vw - 48px); } }
+
+/* (audit 2026-09-26, round 3) a snackbar resting after the versions' tiles over the Maison AI button's place — the button steps aside while it shows */
+.editor[data-snack-fab] .fab { visibility: hidden; }

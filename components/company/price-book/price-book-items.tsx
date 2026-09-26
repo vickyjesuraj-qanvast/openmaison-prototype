@@ -16,7 +16,7 @@ import type { PriceBookData, PriceBookItemRow } from '@/lib/company/price-book'
 import { approvePriceBookItem, bulkUpdatePriceBookItems, undoBulkPriceBook, createPriceBookItem, deletePriceBookItems, deletePriceBookItemsForever, duplicatePriceBookItem, emptyPriceBookItemTrash, importPriceBookItems, renamePriceBookItem, restorePriceBookItems, sendBackPriceBookItem, updatePriceBookItem, type PriceBookItemInput } from '@/app/company/price-book-actions'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { BulkEditDialog, type BulkEdit } from './bulk-edit-dialog'
-import { LibraryGallery, type LibraryItem } from '@/components/company/templates/library-gallery'
+import { LibraryGallery, settle, type LibraryItem } from '@/components/company/templates/library-gallery'
 import { ItemDialog } from './item-dialog'
 import { ImportItemsDialog } from './import-items-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
@@ -74,12 +74,12 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
      are saved before it is approved (Approve threw them away). */
   const save = async (input: PriceBookItemInput) => {
     const cur = edit.item
-    const ok = await run(cur ? 'save the item' : runsBook ? 'add the item' : 'propose the item', async () => { if (cur) await updatePriceBookItem(cur.id, input); else await createPriceBookItem(input); router.refresh() },
+    const ok = await run(cur ? 'save the item' : runsBook ? 'add the item' : 'propose the item', async () => { if (cur) await settle(updatePriceBookItem(cur.id, input)); else await settle(createPriceBookItem(input)); router.refresh() },   /* (wave E, E7) a refusal is said, the dialog stays */
       cur ? 'Item saved' : runsBook ? `${input.name} added to My Items` : `${input.name} proposed — it’s on your quotes now; an Owner or an Admin approves it for the studio`)
     if (ok) setEdit({ open: false, item: null })
   }
   const approve = async (t: PriceBookItemRow, edited: PriceBookItemInput | null = null) => {
-    const ok = await run('approve the item', async () => { if (edited) await updatePriceBookItem(t.id, edited); await approvePriceBookItem(t.id); router.refresh() }, `${edited?.name ?? t.name} ${edited ? 'saved and approved' : 'approved'} — it’s in My Items for the studio`)
+    const ok = await run('approve the item', async () => { if (edited) await settle(updatePriceBookItem(t.id, edited)); await settle(approvePriceBookItem(t.id)); router.refresh() }, `${edited?.name ?? t.name} ${edited ? 'saved and approved' : 'approved'} — it’s in My Items for the studio`)
     if (ok) setEdit({ open: false, item: null })
   }
   const askSendBack = (t: PriceBookItemRow) => { setEdit({ open: false, item: null }); setSendBack(t) }
@@ -133,7 +133,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
         { key: 'used', label: 'Used by', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span className={styles.oneLine}>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</span> : <span className={`${styles.oneLine} ${styles.muted}`}>Not on a quote yet</span>) },   /* (sweep S5 #9) one line, never cut */
       ]}
       onOpen={(t) => setEdit({ open: true, item: t })}
-      onDuplicate={async (t) => { await duplicatePriceBookItem(t.id); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}
+      onDuplicate={async (t) => { await settle(duplicatePriceBookItem(t.id)); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}   /* (wave E, E7) a refusal throws its rule for the gallery to say */
       onRename={(t, name) => renamePriceBookItem(t.id, name)}
       onDelete={(t) => deletePriceBookItems([t.id])}
       deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the line. You can restore the item from Deleted Items.` : 'You can restore it from Deleted Items.')}
@@ -146,13 +146,13 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       {/* (REG-652, price book parity Q-04) Sending a proposal back needs its reason — it reaches the proposer in the bell and stays in the item's History. */}
       <NoteDialog open={!!sendBack} title="Send back" label="What should change?" action="Send back" busy={false} required maxLength={300}
                   help={`Goes to ${sendBack?.proposer ?? 'whoever proposed it'} in the bell. The item leaves My Items; lines already on their quotes keep their figures.`}
-                  onClose={() => setSendBack(null)} onSubmit={(note) => { const t = sendBack; setSendBack(null); if (t) void run('send the item back', async () => { await sendBackPriceBookItem(t.id, note); router.refresh() }, `${t.name} sent back to ${t.proposer ?? 'its proposer'}`) }} />
+                  onClose={() => setSendBack(null)} onSubmit={(note) => { const t = sendBack; setSendBack(null); if (t) void run('send the item back', async () => { await settle(sendBackPriceBookItem(t.id, note)); router.refresh() }, `${t.name} sent back to ${t.proposer ?? 'its proposer'}`) }} />
       {/* (REG-627, parity Q-18) Export My Items — 1.0's CSV export, on the house Export dialog: every live item with the columns the list shows. */}
       <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: items.length, shown: exportShown.length, noun: 'items' } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items.filter((i) => i.status === 'live')} trades={data.trades}
                          onImport={(lines, vendor, match) => { setImportOpen(false); void run('import the items', async () => {
-                           const r = await importPriceBookItems(lines, vendor, match); router.refresh()
+                           const r = (await settle(importPriceBookItems(lines, vendor, match))) as { added: number; updated: number; skipped: number }; router.refresh()
                            snackbar({ message: [r.added ? `${r.added} ${r.added === 1 ? 'item' : 'items'} added` : null, r.updated ? `${r.updated} updated` : null, r.skipped ? `${r.skipped} skipped` : null].filter(Boolean).join(' · ') || 'Nothing imported' })
                          }) }} />
       <BulkEditDialog open={!!bulkEdit} kind={bulkEdit?.kind ?? 'category'} count={bulkEdit?.ids.length ?? 0} categories={data.trades} vendors={data.vendors} onClose={() => setBulkEdit(null)}
@@ -160,12 +160,12 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
                         const b = bulkEdit; setBulkEdit(null); if (!b) return
                         /* (sweep S5 #11) the page's Undo: the one field changed, put back on each item as it was */
                         const prev = items.filter((i) => b.ids.includes(i.id)).map((i) => ({ id: i.id, ...(change.category !== undefined ? { category: i.category ?? null } : {}), ...(change.vendor !== undefined ? { vendor: i.vendor ?? null } : {}), ...(change.markupPct !== undefined ? { markupMinor: i.markupMinor } : {}) }))
-                        void run('change the items', async () => { const n = await bulkUpdatePriceBookItems(b.ids, change); b.clear(); router.refresh()
-                          snackbar({ message: `${n} ${n === 1 ? 'item' : 'items'} changed`, actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await undoBulkPriceBook(prev); router.refresh() }, 'Change undone') } }) })
+                        void run('change the items', async () => { const v = await settle(bulkUpdatePriceBookItems(b.ids, change)); const n = typeof v === 'number' ? v : b.ids.length; b.clear(); router.refresh()
+                          snackbar({ message: `${n} ${n === 1 ? 'item' : 'items'} changed`, actionLabel: 'Undo', onAction: () => { void run('undo the change', async () => { await settle(undoBulkPriceBook(prev)); router.refresh() }, 'Change undone') } }) })
                       }} />
       <ConfirmDialog open={!!bulkDelete} title={`Delete ${bulkDelete?.ids.length ?? 0} ${bulkDelete?.ids.length === 1 ? 'item' : 'items'}?`} confirmLabel="Delete"
                      message="Quotes already carrying them keep their lines. You can restore them from Deleted Items."
-                     onCancel={() => setBulkDelete(null)} onConfirm={() => { const b = bulkDelete; setBulkDelete(null); if (b) void run('delete the items', async () => { await deletePriceBookItems(b.ids); b.clear(); router.refresh() }, { message: `${b.ids.length} ${b.ids.length === 1 ? 'item' : 'items'} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the items', async () => { await restorePriceBookItems(b.ids); router.refresh() }, 'Items restored') } }) }} />
+                     onCancel={() => setBulkDelete(null)} onConfirm={() => { const b = bulkDelete; setBulkDelete(null); if (b) void run('delete the items', async () => { await settle(deletePriceBookItems(b.ids)); b.clear(); router.refresh() }, { message: `${b.ids.length} ${b.ids.length === 1 ? 'item' : 'items'} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the items', async () => { await settle(restorePriceBookItems(b.ids)); router.refresh() }, 'Items restored') } }) }} />
     </LibraryGallery>
   )
 }

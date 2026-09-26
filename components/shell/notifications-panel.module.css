@@ -1,5 +1,5 @@
 /* (REG-604) The bell's feed inside the Drawer. */
-.body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.body { display: flex; flex-direction: column; }   /* (F109) the Drawer's body scrolls the list; nothing here shrinks it */
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .row { border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .rowBtn { display: grid; grid-template-columns: 36px minmax(0, 1fr) 12px; align-items: flex-start; gap: var(--om-spacing-3); width: 100%; padding: var(--om-spacing-3) var(--om-spacing-2); border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: var(--om-radius-1); }
@@ -19,9 +19,9 @@
 .emptyGlyph { display: inline-flex; width: 64px; height: 64px; align-items: center; justify-content: center; border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
 .emptyTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .emptyHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 34ch; }
-.foot { display: flex; justify-content: flex-end; padding: var(--om-spacing-2) 0 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); margin-top: var(--om-spacing-2); }
+.foot { display: flex; justify-content: flex-end; }   /* (F109) inside the Drawer's footer, which draws the rule and the padding */
 /* (REG-608) The parity round's events: stage changes and assignments read primary; the two reminders yellow; a client's answer green. */
 .glyph[data-kind='stage_changed'], .glyph[data-kind='task_assigned'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
 .glyph[data-kind='task_due_soon'], .glyph[data-kind='hold_due'] { background: var(--om-color-tertiary-yellow-variant2, #fdf1dc); color: var(--om-color-tertiary-yellow-default); }
-.glyph[data-kind='question_answered'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
+.glyph[data-kind='question_answered'], .glyph[data-kind='render_feedback'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
 .retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }   /* (sweep S4 #10) */

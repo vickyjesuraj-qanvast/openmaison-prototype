@@ -1,0 +1,247 @@
+{
+ "done": [
+  {
+   "ref": "F204 · critic-15 · new:gallery-materials:Deleted sheets offer refused actions",
+   "what": "Deleted Designs and Deleted Materials offer only what the server allows. New LibraryGallery/LibraryDeletedSheet props: purgeRule (a per-row reason for Delete Forever) and foreverNote. A refused row says why under its name, or once above the table when every row says the same (pluralised: \"Only Dane, an Owner or an Admin can restore these designs or delete them for good\", with a lock). A row that can be neither restored nor purged takes no tick. Empty Trash counts only what the viewer may remove, and it waits with the reason when that is nothing. The confirms name what stays and why. Designs pass restoreBlock + purgeRule from t.d.mayChange. Materials swap purgeBlock={null} for a per-row restore + purge rule that names the person who added the material.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-deleted-sheet.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "F129 · code-robustness-5 · new:code-robustness:Empty Trash says Trash emptied",
+   "what": "The gallery runs every action through act() + settle(). A `{ error }` answer, or a thrown Refused, reads \"Couldn’t <what> — <the server's rule>\"; a sentence that already starts with Nothing/Couldn’t is shown as is. The Restore / Delete forever / Empty Trash lines read the action's answer (deleted|removed|done|restored + kept): \"1 material deleted forever — 1 stays\", \"Nothing was deleted — it stays\", \"2 designs restored — 1 stays\". \"Trash emptied\" is used only when nothing stayed. This covers every Company library (a template library's Empty Trash now says the in-use ones stay). The bulk delete reads the server's count. The landing's Undo for a design deleted from its editor also says the rule.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Refused menu rows repeat one reason",
+   "what": "A rule that greys several card or row menu rows is said once, under the last row it greys. The folder menu says it once, under Delete. The design rule's wording (\"can move, rename or delete this\") comes from policy.ts (server package).",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Bulk delete snackbar says 2 deleted",
+   "what": "The bulk delete snackbar and its Undo name what went: \"2 designs deleted\" / \"2 designs restored\", or \"3 items\" when folders went too.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Bulk bar offers Move to Folder for a lead design",
+   "what": "When every tick is a lead's design (fixed), Move to Folder leaves the bulk bar. With a mix, the rest moves and the dialog names what stays and why.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx"
+   ]
+  },
+  {
+   "ref": "F117 · new:fresh-phone:Landing cards at 390 truncate every line",
+   "what": "Phone cards (≤767, every library): the kebab moves to a white chip in the thumb's top-right corner, matching the tick chip on the left. The name and the second line each take up to two lines, so render counts show and 'Showroom — kitchen concept' reads whole. A ribbon on a selectable card drops to the thumb's foot. A desktop card's cut name has a hover title. The blank-design naming ('Design · 26 Sep (2)') is the server package's dayName, already in the tree.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:Library list head grows to 76 on touch",
+   "what": "The list's sortable heads keep their 44px touch box but give 10px back on each side (margin-block:-10px on touch ≤1024 and phones), so the head stays 56 and the frozen name head keeps its rule. Measured 56 at 1024 and 768 touch in the harness. Applies to every LibraryGallery list.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:Portrait landing search truncates the title",
+   "what": "At ≤1024, while the search is open (data-om-search-open), the library's name steps aside and the tools take the row. Inside a folder the crumb takes its own line.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Deleted sheet on a phone",
+   "what": "Deleted sheet on a phone: the title stays whole beside the close, and Empty Trash takes the next line. On the card layout (phone and touch tablet) the hidden columns' facts ride one labelled line, e.g. \"Tiles · Price book: Linked · Deleted 25 Sep ’26 · Added by Dane\", never a bare 'Linked'. Also fixed a regression from the interrupted run: its new classes (sheetTitle…) collided with the T&Cs thumb's .sheetTitle (uppercase caption), so they are renamed del*.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-deleted-sheet.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css"
+   ]
+  },
+  {
+   "ref": "F166 · critic-21 (gallery part) · new:fresh-tablet:Landing ghost doesn't match on tablets",
+   "what": "Tools › AI Visualizer's ghost is the page's own layout. There is a shared LibraryGalleryGhost on the gallery's real classes: toolbar controls in their boxes per width, the Folders head + folder cards at real size, and the card grid with its 220/160 thumbs. The intro card is shared by the page and the ghost (words as text-shaped bones), so its height tracks the width. loading.tsx honours the intro's Dismiss on soft navigation (useFlagPref in a small client piece), and the page's PageReveal draws its real folder and card counts. In the harness the ghost matches the live page box for box at 1440, 1280, 1024t, 768t, 390t and 320t (intro, bar, Folders head, folder, cards).",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.skeleton.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/home-skeleton.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/intro.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/intro-ghost.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.module.css",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/app/visualizer/loading.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Materials loading ghost does not match",
+   "what": "Company › Materials has its own ghost (MaterialsGhost): the L1 header plate, or the L2 header when opened with ?from=, then the toolbar with Filters, the Folders row and swatch cards. It is used by app/company/materials/loading.tsx and as CompanyShell's reveal skeleton (shell.skeleton, with real counts). It matches the live page box for box at every width in the harness.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-skeleton.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials.module.css",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/app/company/materials/loading.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.tsx"
+   ]
+  },
+  {
+   "ref": "F093",
+   "what": "Delete Forever and Empty Trash on Deleted Designs say what going for good takes and leaves: \"Renders saved to the lead’s Files stay there. Its client links, and the client’s notes and replies on them, go with it.\"",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-deleted-sheet.tsx"
+   ]
+  },
+  {
+   "ref": "F131 (client part)",
+   "what": "Deleted Designs' Made by is the design's maker (maker/makerColor from the server's DesignCard). A live card's 'edited … by' is the newest version's maker; that part is the server's card(), already in the tree.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx"
+   ]
+  },
+  {
+   "ref": "F084",
+   "what": "The card kebab's Open the lead pushes withFrom(`/leads/{id}`, here), with the gallery's ?folder= and search, so the lead's Back returns to that place.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:New material lands at the root",
+   "what": "newMenu reads place.folderId, and a new material is created in the folder that was open (createStudioMaterial({ ...input, folderId })). Checked in the harness: the create call carried 'lf-floors'.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Price book item without its vendor",
+   "what": "bookLabels() moved to a shared helper (book-labels.ts) and is used by the dialog, the card's 'Quoted as …', the list's Price book item column and the search. A repeated item name now leads with its vendor ('Hafary · Homogeneous tiles…'), so the part that tells two apart survives a card's cut line.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/book-labels.ts",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/material-dialog.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:Two controls named Colour",
+   "what": "The swatch's native colour input is named 'Pick the colour'. The text field stays 'Colour'.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/material-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "D6 · critic-13 (Materials part)",
+   "what": "A material the studio's designs carry says so before it goes. The Delete confirm reads \"Used in 2 designs — their renders keep it. You can restore it from Deleted Materials.\" Deleted Materials' Delete Forever reads \"Used in 3 designs — their renders keep it, but no one can pick it again.\", and Empty Trash names the one in use or counts them. Uses MaterialRow.usedIn (server).",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Materials can't be filtered · new:fresh-tablet:Materials has no way to filter · new:fresh-phone:Materials has no filter",
+   "what": "Company › Materials gets the house Filters dialog, the same facets the Price book uses: Category (the categories present, in the picker's order), Finish, and Price book (Linked / Not linked). No new component. This is flagged as invented UI because fresh-tablet asked to propose it first; the three reports and the sister library settled it here, and the integrator can drop the facets prop to undo it.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Snackbars wrap to two lines",
+   "what": "Materials' lines fit one line at 344 whatever the name: 'Material added', 'Material saved', 'Material duplicated'. A design's duplicate reads 'Duplicated as a personal copy' with Open.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/materials/materials-view.tsx",
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/visualizer/home/visualizer-home.tsx"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:FAB covers the second card's ⋮ (partly)",
+   "what": "With the phone kebab on the thumb's corner, the reported case (Materials at 375×667: FAB at y533–581, kebab now at y397) is clear. See notDone for what remains.",
+   "files": [
+    "/Users/vicky/Documents/GitHub/openmaison-prototype/components/company/templates/library-gallery.module.css"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "new:gallery-materials:FAB covers the second card's ⋮ (remainder)",
+   "why": "Which card sits under the FAB on first paint depends on the data above the grid. On the landing at 375×667 (intro + one folder), the right card's corner chip now lands under the FAB, where before it was below the fold. The page end already clears the FAB (--fab-clearance), so every card can be scrolled clear. A general fix belongs to the FAB, for example stepping aside while the page scrolls as the phone chrome does. That is components/shell/maison-fab.* (not in any package) and a behaviour call for the owner."
+  },
+  {
+   "ref": "new:gallery-materials:Brand kit unfinished colour",
+   "why": "brand-kit-view.tsx is not in my package. The exact change is in crossFileRequests."
+  },
+  {
+   "ref": "new:gallery-materials:320 wordmark under Search (also phone-tablet, fresh-phone)",
+   "why": "components/shell/mobile-nav.* is not in my package. The change is in crossFileRequests."
+  },
+  {
+   "ref": "new:fresh-phone:Kind sheet doesn't show the current choice",
+   "why": "The fix lives in components/leads/dropdown.tsx (leads package). It is already in the tree: plain-text radio rows get data-selected. The gallery's Kind/Status rows ('All · 8') are plain text, so they pick it up with no change here."
+  },
+  {
+   "ref": "critic-13 (picker part) · D6 'renamed since'",
+   "why": "The material picker's 'Now' line is components/visualizer/editor/panels/** (rail package)."
+  },
+  {
+   "ref": "F129 / F131 server halves · fresh-phone:two new designs read the same (naming)",
+   "why": "These are the server package's changes: emptyDesignTrash / emptyMaterialTrash return { deleted, kept, reason }, card() reads the newest version with >=, maker / makerColor / usedIn / vendor are added, and dayName numbers repeats. All are already in the tree, and the gallery reads them."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/company/templates/brand-kit-view.tsx",
+   "change": "Move `const dirty = …` (line ~37) below the `colorDraft` / `colorShown` useState lines (~61–62); it must follow them, not precede them. Make it `const dirty = JSON.stringify(kit) !== JSON.stringify(saved) || Object.keys(colorDraft).length > 0`. An unfinished colour then enables Discard (which clears the drafts) and Save (which shows the field's error). The beforeunload effect keeps working off `dirty`.",
+   "ref": "new:gallery-materials:Brand kit unfinished colour"
+  },
+  {
+   "file": "components/company/profile-view.module.css",
+   "change": "`.colour { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }` (was align-items: center). A colour field that shows its error no longer lifts 10px against its neighbour. The swatch and the field's outlined box are both 48 tall, so their tops line up.",
+   "ref": "new:gallery-materials:Brand kit unfinished colour"
+  },
+  {
+   "file": "components/shell/mobile-nav.module.css",
+   "change": "Add `@media (max-width: 359px) { .wordmark { display: none; } }`. At 320 the bar keeps the 32px mark and its four 44px actions, and 'OpenMaison' no longer runs under Search.",
+   "ref": "new:gallery-materials:320 wordmark (dupes: phone-tablet 6, fresh-phone 19)"
+  },
+  {
+   "file": "lib/company/folder-libraries.ts + lib/visualizer/queries.ts",
+   "change": "Optional (gallery-materials 5 asked to name the maker). Give folderChangeBlockFor(library, viewer, createdBy, makerName?) a maker name for the 'visualizer' library: `Only ${makerName ?? 'whoever made the folder'}, an Owner or an Admin can rename, move or delete it`. fetchVisualizerHome would pass byMember.get(f.createdBy)?.name. The gallery already says the rule once, under Delete.",
+   "ref": "new:gallery-materials:Refused menu rows repeat one reason"
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "F204 · critic-15 · gallery-materials 0 — Deleted Designs and Deleted Materials offer only what the viewer may do. Restore and Delete Forever are greyed per row, with the rule said in the row, or once above the table when every row shares it (\"Only Dane, an Owner or an Admin can restore these designs or delete them for good\"). Empty Trash counts only the viewer's own and waits with the reason when there are none. The confirms name what stays and why. New LibraryGallery props purgeRule / foreverNote. (bug fix; invented copy)",
+  "F129 · code-robustness 5 — every Company library's refusals say the server's rule (\"Couldn’t restore the design — only Dane, an Owner or an Admin can restore this design\"). Restore, Delete forever and Empty Trash say what happened (\"1 material deleted forever — 1 stays\", \"Nothing was deleted — it stays\"), and \"Trash emptied\" only when nothing stayed. A template library's Empty Trash now says the in-use ones stay. (bug fix; invented copy)",
+  "gallery-materials 5 — a rule that greys several menu rows is said once, under the last row it greys (every library's card and row menu, and the folder menu). (bug fix)",
+  "gallery-materials 9 — the bulk delete snackbar and its Undo name what went: \"2 designs deleted\" / \"2 designs restored\", or \"3 items\" with folders. (bug fix; invented copy)",
+  "fresh-desktop 14 — the bulk bar drops Move to Folder when every tick is a lead's design. (bug fix)",
+  "F117 · fresh-phone 16 — phone gallery cards: the ⋮ is a chip in the thumb's top-right corner, and the name and second line take up to two lines. A cut name on a desktop card has a hover title. (bug fix)",
+  "fresh-tablet 4 — library list heads stay 56 on touch tablets, and the frozen name head keeps its rule (sortable heads give back their 44px touch box). (bug fix)",
+  "fresh-tablet 19 — at ≤1024 an open search takes the gallery bar's row; the library's name steps aside, and inside a folder the crumb takes its own line. (bug fix)",
+  "gallery-materials 6 — Deleted sheet on a phone: the title stays whole beside the close, and Empty Trash moves to the next line. On a phone or touch tablet each card's facts ride one labelled line (\"Tiles · Price book: Linked · Deleted 25 Sep ’26 · Added by Dane\"). (bug fix)",
+  "F166 · fresh-tablet 10 · critic-21 — the AI Visualizer landing's ghost is the page's own layout at every width: the intro card with its words as bones (honouring Dismiss on soft navigation), the toolbar's controls in their boxes, the Folders row, and the cards two-up on a phone. Both loading.tsx and the reveal use it (LibraryGalleryGhost). (bug fix)",
+  "gallery-materials 3 — Company › Materials has its own ghost: header, toolbar, Folders row and swatch cards, with the L2 header when opened from somewhere. It replaces Company's four card bones. (bug fix)",
+  "F093 — Delete Forever and Empty Trash on Deleted Designs say what goes and what stays: \"Renders saved to the lead’s Files stay there. Its client links, and the client’s notes and replies on them, go with it.\" (invented copy)",
+  "F131 — Deleted Designs' Made by names the design's maker. (bug fix)",
+  "F084 — a design card's Open the lead carries ?from=, so the lead's Back returns to the gallery's folder and search. (bug fix)",
+  "gallery-materials 1 — a new material lands in the Materials folder that was open. (bug fix)",
+  "gallery-materials 2 — a Price book item whose name repeats reads vendor first wherever Materials names it (\"Hafary · Homogeneous tiles…\"): the dialog, the card's Quoted as, the list column and the search. (bug fix)",
+  "gallery-materials 10 — the material dialog's swatch input is named \"Pick the colour\". (bug fix, a11y)",
+  "D6 · critic-13 — a material in use says \"Used in n designs\" in its Delete confirm and in Deleted Materials' Delete Forever and Empty Trash confirms. (owner call D6; invented copy)",
+  "fresh-desktop 13 · fresh-tablet 21 · fresh-phone 12 — Company › Materials gets the house Filters dialog: Category, Finish, and Price book (Linked / Not linked), as the Price book has. (invented UI on house pieces; fresh-tablet asked to propose first, so it is flagged for the owner)",
+  "fresh-desktop 16 — Materials' and the landing's snackbars fit one line: \"Material added\", \"Material duplicated\", \"Duplicated as a personal copy\" (with Open). (invented copy)"
+ ],
+ "verification": "npx tsc --noEmit -p . is clean. npx eslint is clean on every package file (components/visualizer/home, app/visualizer/{page,loading,layout}.tsx, components/company/materials, app/company/materials, library-gallery.tsx / .skeleton.tsx / library-deleted-sheet.tsx, components/om/folders). No next build/dev/start was run. (1) Ghosts: esbuild rendered VisualizerHomeGhost and MaterialsGhost to static HTML with their CSS modules. Playwright swapped each ghost for the live page body on the pre-wave-D :3023 build (read-only), at 1440, 1280, 1024 touch, 768 touch, 390 touch and 320 touch. The intro, toolbar row, Folders head, folder card and first three cards match the real page to the pixel at every width (phone offsets measured relative to the body). The Materials toolbar differs only by the new Filters button, which the ghost already draws. (2) The phone card CSS was replayed on the :3023 DOM (classes added, compiled CSS injected) at 390×844, 375×667 and 320×640 on /visualizer and /company/materials: no name or meta line cut; the kebab chip sits at the thumb corner; the Materials 375×667 FAB overlap is gone. (3) A browser harness (scratchpad resume/gallery/harness/web: esbuild bundle of MaterialsView and VisualizerHome with next/navigation and server actions stubbed, served on 127.0.0.1:3197, since stopped) ran these flows. New material inside ?folder=lf-floors sends folderId lf-floors and says 'Material added'. Filters lists Category · Finish · Price book. Sarah's menu on Dane's material states the rule once, under Delete. Sarah's Deleted Materials and Deleted Designs show one pluralised note with Empty Trash disabled. Dane's Delete Forever confirm says 'Used in 3 designs…'. Empty Trash with {deleted:1, kept:1} says '1 material deleted forever — 1 stays'. A lead design alone takes no Move to Folder. Bulk delete says '2 designs deleted'. A refused restore says 'Couldn’t restore the design — only Dane…'. The phone Deleted sheet at 390 and 320 keeps the title whole with a labelled facts line. At 768 touch the open search hides the bar title. At 1024 and 768 touch the list head measures 56. Screenshots are in scratchpad resume/gallery/harness/*.png (ghost-*/real-*, cards-after-*, f-*, v-*, list-*). Not checked live on a wave-D build: the integrator should re-run the gallery-materials and motion-a11y probes after the build."
+}

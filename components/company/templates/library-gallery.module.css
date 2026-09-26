@@ -59,11 +59,141 @@
 .place { display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; }
 .place > :first-child { vertical-align: -2px; }
 .folderGlyph.folderGlyph { display: inline-flex; align-items: center; justify-content: center; }
+/* (wave E, gallery-9) The bar's two groups — the scope (to-do chips + the pill) and the tools. From 768 up they melt into the one cluster,
+   exactly as before; so do a to-do chip's and New Folder's own wrappers. */
+.scopes, .tools, .todo, .folderSlot { display: contents; }
 /* (REG-666) A phone: at the top the tab above names the library, so the bar is all tools; inside a folder the crumb takes its own line
-   (the Files tab's phone rule) and the tools sit under it. The tools close up to 8. */
+   (the Files tab's phone rule) and the tools sit under it. The tools close up to 8.
+   (wave E, gallery-9) The bar is the listing's phone toolbar (REG-298): the scope at its left, the tools at its right; New Folder rides
+   New ▾; when the two groups can't share the width (the 320 gate with a to-do waiting) the tools take the next line whole, right-aligned —
+   never off the screen. The open search takes its own full line under them, as the listing's does, rather than a 30px sliver. */
 @media (max-width: 767px) {
   .bar .where:has(> h2) { display: none; }
   .bar:has(.where [data-testid="folder-crumbs"]) { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .bar .where:has([data-testid="folder-crumbs"]) { flex-basis: 100%; }
-  .bar .end { gap: var(--om-spacing-2); margin-left: auto; }
+  .bar .end { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; gap: var(--om-spacing-3) var(--om-spacing-2); margin-left: 0; }
+  .scopes { display: flex; align-items: center; gap: var(--om-spacing-2); margin-right: auto; }
+  .tools { display: flex; align-items: center; gap: var(--om-spacing-2); margin-left: auto; }
+  .folderSlot:not([data-keep]) { display: none; }
+  .end:has([data-om-search-open]) .tools { display: contents; }
+  .bar .end [data-om-search-open] { order: 1; flex: 1 0 100%; }
 }
+/* (audit 2026-09-26, F119) A menu row that waits says why under its label (the sweep's rule, REG-656 — the editor's .menuRow · .menuMeta). */
+.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
+/* (wave E, gallery-9) A New ▾ row with its glyph (the AI Visualizer's rows — visualizer-home .menuRow), for the phone's New Folder row. */
+.menuIcon { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+.menuIcon > :first-child { color: var(--om-color-on-surface-secondary); }
+/* (F155) The narrowest phones (the 320 gate): one card a row — two would cut every name to a few letters. */
+@media (max-width: 359px) { .cards.cards { grid-template-columns: minmax(0, 1fr); } }
+/* (verify round 1, F117) A phone's card gives its words the card's width: the kebab rides the thumb's top-right corner (the cardSel's chip,
+   as the folder card's sits at its corner), the name takes up to two lines and the second line two — "Showroom — kitchen concept" and the
+   render count read whole at 390. A ribbon on a card that takes a tick drops to the thumb's foot, out of the kebab's corner. */
+@media (max-width: 767px) {
+  .cardKebab.cardKebab { top: var(--om-spacing-2); right: var(--om-spacing-2); height: auto; z-index: 2; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+  .cardBody.cardBody { padding-right: var(--om-spacing-4); }
+  /* (wave E, gallery-4) A chip beside the name (Default · Studio default · Terms) wraps under it when the two don't fit — the name keeps
+     the card's width, never "Def / au…"; words break only when one alone is wider than the card (break-word, not anywhere). */
+  .cardNameRow.cardNameRow { height: auto; align-items: flex-start; flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+  .cardName.cardName, .cardMeta.cardMeta { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .cards.cards > [data-selectable] [class*='ribbon'] { top: auto; bottom: var(--om-spacing-2); left: var(--om-spacing-2); right: auto; }
+}
+/* (verify round 1) The list's sortable heads keep their 44px touch box inside the 56 head — the 10 either side given back (the tasks table's
+   REG-273 pattern) — so the head stays 56 on a touch tablet and the frozen name cell keeps its rule. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .hSort.hSort { margin-block: -10px; }
+}
+/* (verify round 1) ≤1024 the open search shares the bar's one row: the library's name steps aside for it (the tab toolbars' rule, REG-375)
+   rather than shrinking to "All d…"; inside a folder the crumb takes its own line above the tools. */
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .where:has(> h2) { display: none; }
+  .bar:has([data-om-search-open]) .end { flex: 1 1 auto; min-width: 0; justify-content: flex-end; }
+  /* (wave E, gallery-11) Inside a folder the crumb takes its own line at every width to 1024, search open or not — sharing the row with
+     the scope and six tools cut it to "All de… / Showroo…"; the tools sit under it at the right. */
+  .bar:has(.where [data-testid="folder-crumbs"]) { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .bar .where:has([data-testid="folder-crumbs"]) { flex-basis: 100%; }
+  .bar:has(.where [data-testid="folder-crumbs"]) .end { margin-left: auto; }
+}
+/* (wave E) A narrow desk (1025 up to ~1280): where a to-do chip, the pill, New Folder, New, the 280 search, Filters and the view toggle
+   can't share the row with the library's name, the tools take the next line at the right — the name ("My Items", the crumb) is never
+   squeezed to a few pixels (7px at 1025 in the Price book), and a wrapped cluster never hugs the left edge. */
+@media (min-width: 1025px) {
+  .where { min-width: max-content; }
+  .bar .end { margin-left: auto; }
+  .bar:has(.where + .end) { row-gap: var(--om-spacing-3); }
+}
+/* (verify round 3) …and the tools line itself never runs past the frame. List view adds Column settings, and at 1025–1060 the cluster (a
+   to-do chip, the pill, New Folder, New, the 280 search, Filters, Column settings, the view toggle, ⋮) came to ~947px in a 901px line —
+   ⋮, the only way into Deleted / Archived, showed a 15px sliver. The search gives first: it lines up as 200 and takes back up to its 280
+   from whatever room is left (235 at 1025 in Quotes, 255 in My Items); only past that does the cluster wrap inside itself, from the
+   right. At 1080 and up, and in grid view, nothing moves. Below 1025 the slot is no box: the tablet and phone rules reach the search
+   through it. */
+.searchSlot { display: contents; }
+@media (min-width: 1025px) {
+  .bar .end { flex-wrap: wrap; justify-content: flex-end; }
+  .searchSlot { display: flex; flex: 1 1 200px; width: 280px; min-width: 200px; max-width: 280px; }
+  .searchSlot > span { flex: 1 1 auto; min-width: 0; }
+  .searchSlot > span > * { width: 100%; }
+}
+/* (verify round 3) A tablet: in list view Column settings squeezed the library's name ("My It…" in the Price book at 768), so from 768 to
+   1024 it rides the page kebab (⋮ › Column settings, library-gallery.tsx `foldColumns`) and the list's bar is the grid's — one row
+   (REG-384), the name whole. Letting the tools drop under the name instead made the bar two rows that the folded search collapsed to one
+   as it opened: a 36px jump, and a tap on a row just after it was lost. The name keeps its width; should a state still not
+   fit (a long filter word on the pill at 768), the tools take the next line at the right — the desk's rule — rather than cut it. */
+.columnsTool { display: contents; }
+@media (min-width: 768px) and (max-width: 1024px) {
+  .columnsTool { display: none; }
+  .bar:has(> .where > h2) { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .where:has(> h2) { min-width: max-content; }
+  .bar .end { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+}
+/* (wave E, gallery-12) A tablet: while the search is open, a to-do chip steps aside for it, as the library's name does — its narrowing
+   stays on the pill ("Proposed ▾") and in the pill's menu — so the box keeps a usable width (89px in the Price book before). */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .todo { display: none; }
+}
+/* (verify round 1, F204) The Deleted sheet (the shared deleted-templates-sheet stylesheet does the table): a refused row says why under its
+   name — one line, cut with the rest in the action's tooltip — or once above the table when every row says the same. */
+.delNameStack { display: flex; flex-direction: column; min-width: 0; }
+.delWhy { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; overflow-wrap: break-word; }   /* (wave E, gallery-7) wraps whole — the row grows (deleted-templates-sheet .row[data-why]) */
+.delNote { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.delNote > :first-child { flex-shrink: 0; margin-top: 2px; }
+.delLine { display: none; }
+.delEmpty { display: inline-flex; flex-shrink: 0; }
+/* As cards (a phone, a touch tablet — the sheet's REG-378 / REG-386 layout) the row's facts ride one line under the name, and the reason wraps. */
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .delWide.delWide { display: none; }
+  .delLine { display: block; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+  .delWhy { white-space: normal; }
+}
+/* A phone: the title and the close share the first line (the title whole — "Deleted Materials", never "Deleted …"); Empty Trash takes the next. */
+@media (max-width: 767px) {
+  .delTitle.delTitle { flex: 1 1 0; order: 0; }
+  .delClose.delClose { order: 1; }
+  .delEmpty { order: 2; flex-basis: 100%; }
+}
+/* (verify round 1, F166) The gallery's ghost (library-gallery.skeleton.tsx): bones in the controls' own boxes, per width — the scope pill
+   114 × 36 at a desk and 72 wide ≤1024 ("All ▾"), 44 tall with a finger (the pill's REG-273 box); New 86, a 36 glyph on a phone; the search
+   field 280, a glyph ≤1024; the view toggle 72, gone on a phone. Text bones sit on the line's middle; the thumb band is the bone. */
+.gBox { display: inline-flex; flex-shrink: 0; width: 36px; height: 36px; }
+.gIcon { width: 36px; }
+.gPill { width: 114px; }
+.gNew { width: 86px; }
+.gSearch { width: 280px; }
+.gView { width: 72px; }
+.gLine { vertical-align: middle; }
+.gThumb.gThumb { background: var(--om-color-surface-variant); }
+.gFolder.gFolder { background: var(--om-color-surface-bg); }
+.gFolderText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+@media (max-width: 1024px) { .gPill { width: 72px; } .gSearch { width: 36px; } }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .gPill { height: 44px; } }
+@media (max-width: 767px) {
+  .gNew { width: 36px; }
+  .gView { display: none; }
+  .bar .where:has(> h2) { display: none; }
+}
+.gPick { display: none; }
+@media (hover: none) and (max-width: 1024px) { .gPick { display: inline-flex; flex-shrink: 0; } }
+
+/* (audit 2026-09-26) a ghost card's second foot line (Materials: quoted as · edited by) */
+.gFoot2 { display: block; margin: 4px 0; }   /* 4 + 12 + 4 = the 20px line the real foot takes */

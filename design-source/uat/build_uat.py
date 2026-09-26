@@ -10,7 +10,7 @@ from openpyxl.formatting.rule import FormulaRule
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
 
-HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'story')   # the chapters (ch1…ch12.json), their files and the seven checklists
+HERE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'story')   # the chapters (ch1…ch13.json), their files and the eight checklists
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(HERE), 'OpenMaison-2.0-UAT.xlsx')
 
 TESTERS = ['Dane', 'Oliva', 'Swati']
@@ -27,13 +27,14 @@ CHAPTERS = {
     10: ('A designer’s day', 'View as Sarah, James and Hui Min — what each role sees and may do.'),
     11: ('The owner’s week', 'Tasks, the bell, Insights and the studio-wide lists.'),
     12: ('On your phone', 'The key tasks again, on a phone.'),
+    13: ('Design her room', 'AI Visualizer: Sophia’s living room, from her photo to the look she picks.'),
 }
 RESULTS = ['✅ Works', '🟡 Works, but…', '❌ Doesn’t work', '🔍 Couldn’t find it', '⏭️ Skipped']
 STATUSES = ['New', 'Fixing', 'Fixed – please re-test', 'Won’t change', 'Talk to Dane']
 RETESTS = ['✅ Fixed now', '❌ Still not right']
 TYPES = ['I did this in 1.0 and can’t find it', 'Confusing', 'Bug (not in the story)', 'Idea']
-MODULES = ['Shell', 'Company', 'Settings', 'Price book', 'Templates', 'Leads', 'Lead details', 'Tasks', 'Quotes', 'Quote X-Ray', 'Contracts', 'Notifications', 'Insights', 'Phone']
-AUDITS = {'LEADS': 'Leads', 'QTPL': 'Quote templates', 'QED': 'Quote editor', 'CTR': 'Contracts', 'XRAY': 'Quote X-Ray', 'SET': 'Accounts Setup → Settings', 'PB': 'Price book'}
+MODULES = ['Shell', 'Company', 'Settings', 'Price book', 'Templates', 'Leads', 'Lead details', 'Tasks', 'Quotes', 'Quote X-Ray', 'Contracts', 'Notifications', 'Insights', 'AI Visualizer', 'Phone']
+AUDITS = {'LEADS': 'Leads', 'QTPL': 'Quote templates', 'QED': 'Quote editor', 'CTR': 'Contracts', 'XRAY': 'Quote X-Ray', 'SET': 'Accounts Setup → Settings', 'PB': 'Price book', 'VIZ': 'AI Visualizer'}
 
 FONT = 'Arial'
 PRIMARY, PRIMARY_TINT = '5500FF', 'EEE5FF'
@@ -51,7 +52,7 @@ CENTER = Alignment(horizontal='center', vertical='top', wrap_text=True)
 
 # ── data ──────────────────────────────────────────────────────────────────────────────────────────
 steps = []
-for n in range(1, 13):
+for n in range(1, 14):
     p = os.path.join(HERE, f'ch{n}.json')
     if not os.path.exists(p):
         print(f'!! missing ch{n}.json'); continue
@@ -233,7 +234,7 @@ def block(top, label, key_col, keys, key_label):
         c = S.cell(row=tot, column=cc, value=f'=SUM({L_}{hdr + 2}:{L_}{tot - 1})'); c.font = f(bold=True); c.alignment = Alignment(horizontal='center')
         c.border = Border(top=Side(style='thin', color=INK))
     return tot + 2
-nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 13)], 'Chapter')
+nxt = block(4, 'By chapter', ch_c, [(n, f'{n} · {CHAPTERS[n][0]}') for n in range(1, 14)], 'Chapter')
 used_modules = [m for m in MODULES if any(r.get('module') == m for r in steps)]
 block(nxt, 'By module', mod_c, [(m, m) for m in used_modules], 'Module')
 S.column_dimensions['A'].width = 26; S.column_dimensions['B'].width = 8
@@ -244,7 +245,7 @@ S.freeze_panes = 'C6'
 C = wb.create_sheet('UAT · 1.0 checklist')
 C.sheet_properties.tabColor = '6B6B7B'
 C['A1'] = 'Every 1.0 feature, and where the story tests it'; C['A1'].font = f(bold=True, size=14)
-C['A2'] = ('From the seven 1.0 → 2.0 parity audits (design-source/context/parity/). “Now in 2.0” says what happened to the feature; '
+C['A2'] = ('From the eight 1.0 → 2.0 parity audits (design-source/context/parity/). “Now in 2.0” says what happened to the feature; '
            '“Tested in steps” lists the story steps that prove it. Rows marked “Team check” are built but not in the story — Vicky and Dane check those here (Team result). Testers do not need this tab.')
 C['A2'].font = f(color=MUTED); C.merge_cells('A2:J2'); C['A2'].alignment = Alignment(wrap_text=True, vertical='top'); C.row_dimensions[2].height = 30
 CCOLS = [('Module', 16), ('ID', 9), ('Area', 20), ('1.0 feature', 44), ('Now in 2.0', 22), ('Why (when not built)', 40), ('Tested in steps', 18), ('Check', 12), ('Team result', 18), ('Team notes', 30)]
@@ -297,9 +298,9 @@ put('Walk through 2.0 the way a studio would on its first day, and tell us what 
 gap()
 put('The story', size=13, bold=True)
 put('Demo Studio has just moved from OpenMaison 1.0 to 2.0. Its team, leads and quotes came across with it. You are Dane, the studio owner, '
-    'logging in for the first time. Over twelve chapters you set up the studio, receive leads, and take one new client — Sophia Wong, '
+    'logging in for the first time. Over thirteen chapters you set up the studio, receive leads, and take one new client — Sophia Wong, '
     '9765 4321, a 4-room HDB in Tampines — from first call to signed contract. Then you look at the studio as a designer would, '
-    'review the week, and do it all again on your phone.', height=58)
+    'review the week, do it all again on your phone, and finally design Sophia’s living room in the AI Visualizer.', height=58)
 gap()
 put('Before you start', size=13, bold=True)
 pair('1. Open the prototype', 'In Terminal, in the openmaison-prototype folder: git pull, then npm run dev. Open http://localhost:3000 in Chrome, window at full width.', 30)
@@ -341,6 +342,6 @@ if files:
 wb.move_sheet('UAT · Lists', offset=len(wb.sheetnames))
 wb.save(OUT)
 print(f'saved {OUT}')
-print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 13)))
+print(f'steps: {len(steps)} · by chapter: ' + ', '.join(f"{n}:{sum(1 for s in steps if s['chapter']==n)}" for n in range(1, 14)))
 print(f'checklist rows: {len(checklist)} · built-like without a step (Team check): {len(gap_rows)}')
 

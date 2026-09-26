@@ -19,6 +19,7 @@ import { displayDate, parseInputDateTime } from '@/lib/format'
 import type { ReturnInput } from '@/app/leads/return-actions'
 import { REASON_LABELS, REFUSED_SUB_REASONS, RETURN_RULES, RETURN_RULES_TEXT, WRONG_FIELDS, asks, reasonByLabel, returnWindow } from '@/lib/leads/return-model'
 import { uploadFile } from '@/app/leads/files-actions'
+import { renderLinksLine, useLiveRenderLinks } from '@/components/leads/use-render-links'
 import type { LeadFile } from '@/lib/db/schema'
 import styles from './return-lead-wizard.module.css'
 
@@ -132,6 +133,8 @@ export function ReturnLeadWizard({
   const valid = !Object.values(errors).some(Boolean)
   /* (REG-609, parity Q-44) Where the lead stands against Qanvast's rules — shown, never enforced. */
   const win = returnWindow(lead.createdAt, returnsCount, now)
+  /* (wave E, E8 · files-8) A returned lead's client render links close with it, as a deleted lead's do — the Terms step says so. */
+  const renderLine = renderLinksLine(useLiveRenderLinks(open ? [lead.id] : null))
 
   const goTo = (s: Step) => { setDir(STEP_INDEX[s] > STEP_INDEX[step] ? 1 : -1); setStep(s) }
   const next = () => {
@@ -144,7 +147,7 @@ export function ReturnLeadWizard({
     try {
       // A tile the attach modal "uploaded" (REG-149, `local-*` id) has no lead_files row yet: it joins the lead's library here
       // (files-actions uploadFile — the plan's upload path) so return_attachments only ever links real files. Cancel leaves no orphan.
-      const fileIds = await Promise.all(tiles.map((f) => (f.id.startsWith('local-') ? uploadFile(lead.id, null, f.name) : f.id)))
+      const fileIds = await Promise.all(tiles.map((f) => (f.id.startsWith('local-') ? uploadFile(lead.id, { name: f.name }) : f.id)))
       await onConfirm({ reason, subReasons, detail: asks(r, 'search') ? search : asks(r, 'project') ? project : asks(r, 'wrongField') ? wrongField : '', firstOutreach: asks(r, 'outreach') ? outreach : '', attempts: asks(r, 'attempts') ? attempts : null, comments, fileIds })
       onClose()
     } catch {
@@ -344,6 +347,7 @@ export function ReturnLeadWizard({
                     <div className={styles.termsInner}>
                       <span className={styles.termsTitle}>Term of service</span>
                       <p className={styles.termsText}>{TERMS}</p>
+                      {renderLine ? <p className={styles.termsNote} role="alert" data-testid="live-render-links">{renderLine}</p> : null}
                     </div>
                   </div>
                 </motion.div>

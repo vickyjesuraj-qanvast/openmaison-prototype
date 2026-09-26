@@ -1,0 +1,52 @@
+{
+ "done": [
+  {
+   "ids": [
+    "surfaces-2 (rug Customize tan line)",
+    "engine-remove request 1"
+   ],
+   "what": "The jute rug's front and right edges now run down its lit binding to the dark line of its side (the traced line was 1–4 px inside it): front (0.654,0.9338)…(0.70,0.949)…(0.75,0.9657)…(0.80,0.9805)…corner (0.8438,0.992); right edge through (0.8622,0.80)·(0.858,0.85)·(0.8535,0.90)·(0.8468,0.95). The same polygon replaces the light oak floor's rug cutout, and the rug's `plane` front corners move with it (FR 0.848,0.989 → 0.8438,0.992; FL 0.39,0.855 → 0.39,0.8568). A rug Customize, alone or after a sofa Remove, now paints to the edge — no tan line on the front or right edge.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-7 (pale block at the armchair's left arm)",
+    "engine-remove request 2"
+   ],
+   "what": "The armchair's left-arm cutout is now the thin rail only (a sloped band y≈0.5932–0.6005, measured on the photo — the dark line under the lit arm top; not y 0.5865–0.589 as suggested, which is upholstery), so the arm's lit upholstered top takes an upholstery Customize or Replace; the left post's cutout starts at the post's top (0.5872) instead of 3 px above it.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "rug tone under the sofa after Remove"
+   ],
+   "why": "With a sofa Remove + rug Customize the laid rug under the sofa reads a little lighter than the shaded rug beside the throw — the laid rug's light is engine-remove's."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "public/visualizer/demo/living-room-edit.jpg (+ -golden-hour)",
+   "change": "Optional (engine-remove): if the demo was re-rendered before this change, re-run scripts/viz/demo-renders.mts to pick up the rug-edge floor line (152 px, not visible at 1×).",
+   "ids": [
+    "surfaces-2"
+   ]
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn (wave F, surfaces-2) A rug Customize paints to the rug's edge — no tan line along its front or right edge, with or without a Remove — bug fix",
+  "REG-nnn (wave F, surfaces-7) The armchair's left arm top takes an upholstery Customize or Replace; only its thin wooden rail and post stay wood — bug fix"
+ ],
+ "verification": "npx tsc --noEmit -p . clean; npx eslint on samples.ts, engine/, furniture.ts, model.ts clean; scripts/viz/remove-test.mts all 9 checks pass before and after (the sofa-out rug checks unchanged: laid rug L47 vs L45, seam ΔL 2.1, one tone at the table's leg); scripts/viz/render-test.mts all checks pass. Looked at full size and 4–14×: rug Navy wool alone (/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/engine-paint/out/h1-navy-front.png, h1-navy-right.png, h1-navy-farright.png), rug Terracotta after a sofa Remove (h1-rm-front.png), walnut floor against the rug (h1-floor-front.png), remove-test before/after pairs (out/cmp-rm-rug.png, cmp-rm-sofa-rug.png, cmp-rm-sofa+floor-rug.png, cmp-rm-sofa+rug-customize.png, cmp-rugfront.png, cmp-rugright.png — the tan line on the left is gone on the right), armchair Mustard velvet and sofa Remove + armchair Replace at the left arm (h1-arm.png, h1-v25.png).",
+ "checkOnBuild": [
+  "Demo V2: this does touch it slightly — V2 lays a walnut floor, and the floor's rug cutout moved with the rug's edge, so 152 pixels along the rug's front and right edge change (max ΔRGB 27; the rug's dark side now stays the rug's own dark edge instead of taking a walnut tint). Not visible at 1× (compared at 4×: out/h2-v2-rugfront.png). If engine-remove re-renders the demo after this change it is included; if their re-render already ran, a second one is optional.",
+  "Living room › Jute Area Rug › Customize › any colour: no tan line on the front or right edge (also with the sofa Removed in the same Generate).",
+  "Living room › Upholstered Armchair › Replace › Mid-Century armchair (after a sofa Remove too): no pale block at the left arm's top."
+ ]
+}

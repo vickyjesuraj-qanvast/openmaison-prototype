@@ -4,15 +4,15 @@ import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { withFrom } from '@/lib/nav'
 import { templateKind } from '@/lib/company/sections'
 import { TEXT_LABEL, textPreview, type TextKind } from '@/lib/quotes/text'
 import type { TextTemplateRow, TextTemplatesData } from '@/lib/company/text-templates'
 import { createTextTemplate, deleteTextTemplate, deleteTextTemplatesForever, duplicateTextTemplate, emptyTextTemplateTrash, renameTextTemplate, restoreTextTemplates } from '@/app/quotes/text-actions'
-import { LibraryGallery, type LibraryItem } from './library-gallery'
+import { LibraryGallery, newIdOf, reasonOf, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
-import { templateChangeBlock } from '@/lib/company/template-rules'
+import { templateChangeBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { useHere } from '@/components/om/use-here'
 
 type Row = TextTemplateRow & LibraryItem
 const toRow = (t: TextTemplateRow): Row => ({ ...t, updatedAt: t.updatedAt ?? t.createdAt })
@@ -28,9 +28,10 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
   const router = useRouter()
   const { fail } = useRun()
   const kind = templateKind('terms')!
-  const here = '/company/templates/terms'
-  const open = useCallback((id: string) => router.push(`/templates/terms/${id}?from=${encodeURIComponent(withFrom(here, from))}`), [router, from])
-  const create = async (k: TextKind) => { try { const row = await createTextTemplate(k, 'Untitled template', ''); open(row.id) } catch { fail('create the template') } }
+  const here = useHere('/company/templates/terms')   // (round 3) the open folder and search ride along
+  const open = useCallback((id: string) => router.push(`/templates/terms/${id}?from=${encodeURIComponent(here)}`), [router, here])
+  /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …" */
+  const create = async (k: TextKind) => { try { open(await newIdOf(createTextTemplate(k, { title: 'Untitled template', body: '' }))) } catch (e) { fail('create the template', reasonOf(e)) } }
 
   return (
     <LibraryGallery<Row> kind={kind} from={from} folders={{ library: 'texts', list: folders, block: folderBlock(data.viewer) }} items={templates.map(toRow)} deleted={deleted.map(toRow)} now={now} ariaLabel="Terms and Notes templates" mayChange={(t) => templateChangeBlock(data.viewer, t.createdBy)} tableKey="text-templates"
@@ -52,11 +53,14 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
         { key: 'used', label: 'Default on', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote template{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>—</span>) },
       ]}
       onOpen={(t) => open(t.id)}
-      onDuplicate={async (t) => { try { open(await duplicateTextTemplate(t.id)) } catch { fail('duplicate the template') } }}
+      onDuplicate={async (t) => { try { open(await newIdOf(duplicateTextTemplate(t.id))) } catch (e) { fail('duplicate the template', reasonOf(e)) } }}
       onRename={(t, name) => renameTextTemplate(t.id, name)}
       onDelete={(t) => deleteTextTemplate(t.id)}
       deleteMessage={(t) => (t.usedBy ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults — new quotes from them start without it until you pick another. Quotes that already carry the text keep it. You can restore it from Deleted Templates.` : 'Quotes that already carry the text keep it. You can restore it from Deleted Templates.')}
       onRestore={(ids) => restoreTextTemplates(ids)} onDeleteForever={(ids) => deleteTextTemplatesForever(ids)} onEmptyTrash={() => emptyTextTemplateTrash()}
+      /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a template the viewer wrote (or
+         any, for an Owner or an Admin), the rule said in the row with its author's name; Empty Trash counts only those */
+      restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       keepReason={(t) => (t.usedBy > 0 ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults — restore it instead` : null)}
       deletedMeta={{ label: 'Kind', value: (t) => kindWord(t.kind) }}
       empty={{ title: 'No text templates yet', help: 'Write Terms and Conditions or Additional Notes once, then add them to any quote from its editor’s My Templates.' }} />

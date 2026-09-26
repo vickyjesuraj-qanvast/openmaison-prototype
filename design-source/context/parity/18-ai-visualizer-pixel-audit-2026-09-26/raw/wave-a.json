@@ -1,0 +1,846 @@
+[
+ {
+  "key": "server",
+  "fixed": [
+   {
+    "id": "F076",
+    "what": "deleteRoom now checks roomDeleteBlock (the room's maker, the design's maker, an Owner or an Admin) and refuses with ROOM_RULE. Each EditorRoom carries mayDelete (the reason, or null) plus createdBy, so the menu can say why.",
+    "files": [
+     "lib/visualizer/policy.ts",
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F202",
+    "what": "restoreRoom goes through roomFor(deleted:true) with the same room rule and returns { ok } | Err. Before, it was a bare update with no visibility check.",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F077",
+    "what": "Server side: a deleted version, or one in a deleted room, is dropped from the client link and counted in PublicShare.gone. Every client action refuses it. If nothing is left, the link ends (ended 'versions'). restoreVersion returns { ok } | Err, and version_deleted/restored events are logged. The Deleted-versions sheet can list versions[roomId].filter(v => v.deleted). The confirm dialog and hint copy are UI (wave B).",
+    "files": [
+     "lib/visualizer/queries.ts",
+     "app/renders/actions.ts",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F083",
+    "what": "renameRoom refuses a name another live room already has, ignoring case ('There\u2019s already a room called X.'). Past 60 characters it refuses instead of cutting. An unchanged name is a no-op. renameDesign refuses past 80. addRoom now also de-duplicates ignoring case. The TextField maxLength is UI.",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F090",
+    "what": "setRoomPhoto keeps the room as it was (photo, sampleKey, sourceFileId, detection, picks) in project_rooms.prior_photo_json. New undoRoomPhoto(roomId) puts it all back and returns imageUrl, detection, pending and stateRev. It refuses once renders of the new photo exist. saveRender clears the saved copy.",
+    "files": [
+     "lib/db/schema.ts",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F092",
+    "what": "readShareLink/fetchShare treat a deleted design as a stopped link: state 'stopped', ended 'design', with no versions, pins or notes in the payload. openLink refuses every client write with the stopped wording, and stampShareView skips it. Restore reopens the link.",
+    "files": [
+     "lib/visualizer/queries.ts",
+     "app/renders/actions.ts"
+    ]
+   },
+   {
+    "id": "F195",
+    "what": "Same fix as F092. Also, a lead that is returned to Qanvast (return processing or approved) or deleted ends its links (ended 'lead'). A rejected return or Undo reopens them. Links are judged when read, so no hooks were needed in app/leads/actions.ts or return-actions.ts.",
+    "files": [
+     "lib/visualizer/queries.ts",
+     "app/renders/actions.ts"
+    ]
+   },
+   {
+    "id": "F093",
+    "what": "fileVersion copies a stored picture into lead_file_images and points thumb at /files/img/<file>. deleteDesignsForever first gives any render filed from those designs its own copy (adoptFiledRenders), then logs a design_purged lead event. The file survives and Activity keeps a line.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/leads/events.ts",
+     "lib/leads/activity.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F095",
+    "what": "New lead_file_renders table records which version each filed render is (file_id, render_key, design_id, room_id, n). fileVersion writes it, duplicateFiles copies it, and repair R62 backfills it. lib/leads/files.ts exposes renders: Record<fileId, RenderOrigin> (and render for the viewer), and queries.ts has renderOrigin(s). leadImages no longer offers filed renders as room photos. A column on lead_files was avoided because it would break `satisfies LeadFile` literals in files nobody owns.",
+    "files": [
+     "lib/db/schema.ts",
+     "app/visualizer/actions.ts",
+     "app/leads/files-actions.ts",
+     "lib/visualizer/queries.ts",
+     "lib/leads/files.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F096",
+    "what": "One line per surface group and finish, with a count (quoteLines). Each line is priced from the Price book item its studio material names (lib:<id>, shaded variants included), otherwise from an item with the same name, otherwise S$0. There is no category fallback. editorData.quotable plus isPriced let the dialog say 'n of m priced'.",
+    "files": [
+     "lib/visualizer/outputs.ts",
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F097",
+    "what": "addVersionToQuote builds its lines from the version's cumulative finishes (quoteLines over finishes.surfaces and customised pieces not taken out), so a relit version quotes its walls, floor and sofa. A version with no finishes gets 'This version has no finishes to quote yet.'",
+    "files": [
+     "lib/visualizer/outputs.ts",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F100",
+    "what": "addVersionToQuote(\u2026, again = false) refuses a version already in that draft ('V{n} is already in that quote.'). editorData.quotes[].versions lists the visualizer sections each draft already holds.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts",
+     "lib/visualizer/outputs.ts"
+    ]
+   },
+   {
+    "id": "F101",
+    "what": "Line names use the dialog's words ('Grey Fabric Sofa \u2014 Emerald Velvet', 'Walls \u2014 Sage Green'). The description is now the Price book item's own description or empty. The 'From the AI Visualizer: <detection label>' wording no longer prints.",
+    "files": [
+     "lib/visualizer/outputs.ts",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F098",
+    "what": "The bell's href for a favourite, note, pin or reply is /visualizer/<design>?room=&v=[&pin=]&from=\u2026. Activity's viz() links carry room, version and pin for render, favourite, note, pin and reply lines. Repair R62 rewrites the demo's nine bell entries.",
+    "files": [
+     "app/renders/actions.ts",
+     "lib/leads/activity.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F099",
+    "what": "askCallBack requires a valid number only when the link has no lead (PublicShare.hasLead). On a lead's link the task reads 'Call on the lead\u2019s number, 9688 2109.' and the phone never reaches the page. The due time comes from callBackDue: within the hour on weekdays 09:00\u201317:00 SGT, 10:00 that day before nine, otherwise 10:00 the next weekday.",
+    "files": [
+     "app/renders/actions.ts",
+     "lib/visualizer/policy.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F102",
+    "what": "createShareLink sorts the snapshot by room position, then version order. fetchShare also sorts older links. joinWords (Intl.ListFormat) is provided for the h1 and the draft.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts",
+     "lib/visualizer/outputs.ts"
+    ]
+   },
+   {
+    "id": "F103",
+    "what": "The snapshot freezes clientLabel ('Design 2 \u00b7 Golden Hour') and clientRoom (' sketch' removed). PublicShare versions always carry both, derived for older links. The bell keeps the studio's own label.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts",
+     "lib/visualizer/outputs.ts"
+    ]
+   },
+   {
+    "id": "F104",
+    "what": "PublicShare.now is the server clock at render.",
+    "files": [
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F209",
+    "what": "Same as F104: PublicShare.now.",
+    "files": [
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F106",
+    "what": "lead_events gets new kinds share_stopped, share_renewed and share_reopened, stamped with who acted. The hard-coded 'You stopped sharing' line stays only as a fallback, worded passively, for stops made before events existed. Each pin reply gets its own line. A render saved to Files reads 'saved \u2026 from the AI Visualizer to Files', and the folder it started reads accordingly.",
+    "files": [
+     "lib/leads/events.ts",
+     "app/visualizer/actions.ts",
+     "lib/leads/activity.ts"
+    ]
+   },
+   {
+    "id": "F207",
+    "what": "Pins that were removed drop out of Activity. Deleting or restoring a design, room or version, and a Delete forever, now log events. A restore within 2 minutes (Undo) deletes the delete's line instead. The repair's unknown-event-kind check now lists every kind.",
+    "files": [
+     "lib/leads/events.ts",
+     "app/visualizer/actions.ts",
+     "lib/leads/activity.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F107",
+    "what": "Server side: recordShareSent never replaces 'whatsapp' with 'copy', and is guarded by linkFor. ShareRow.ended lets the dialog show links that ended without a Stop. Copy/Open and the 'not sent yet' wording are UI.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F108",
+    "what": "New unstopShareLink(id) clears only revoked_at, so the original expiry stands, and removes the stop's Activity line. renewShareLink stays for Renew and returns expiresAt.",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F208",
+    "what": "Same as F108: unstopShareLink.",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F113",
+    "what": "A filed render gets its real size: the data URL's bytes, or the public file's size via fs.stat; the made-up 140 000 is gone. One naming helper, renderFileName/originalFileName, keeps 1.0's 'Render - {Room} - V{n}.jpg'. The render origin data feeds the Information panel. Repair sizes the demo files.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/outputs.ts",
+     "lib/visualizer/images.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F115",
+    "what": "New visualizer_designs.source_lead_id. duplicateDesign sets it (copies of copies keep it). The gallery, designFor, the editor, the title and the image route all check Who sees leads against leadId ?? sourceLeadId.",
+    "files": [
+     "lib/db/schema.ts",
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts",
+     "app/visualizer/img/[...key]/route.ts"
+    ]
+   },
+   {
+    "id": "F116",
+    "what": "duplicateDesign copies, in one transaction, every job with new ids: parents remapped, stored pictures and deleted versions kept so the V-numbers hold. It also copies the rooms' picks with their picture store and the live own swatches. Links, pins and client answers are not copied. It returns { id, rooms, renders } for the snackbar.",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F124",
+    "what": "folderChangeBlockFor: an AI Visualizer folder can be renamed, moved or deleted (and a delete undone) only by its maker, an Owner or an Admin; anyone can still create one. Other libraries keep their rule. Enforced in folder-actions; a move keeps refused folders where they are and counts them as kept. Folders now carry createdBy and mayChange.",
+    "files": [
+     "lib/company/folder-libraries.ts",
+     "app/company/folder-actions.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "F125",
+    "what": "restoreDesigns, restoreStudioMaterials, restoreRoom and opening a deleted lead design no longer touch updatedAt, so Undo puts the card back where it was.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "app/company/materials-actions.ts"
+    ]
+   },
+   {
+    "id": "F129",
+    "what": "restoreDesigns checks Who sees leads, that the design is deleted, and designChangeBlock. restoreStudioMaterials checks materialChangeBlock and that the material is deleted. Both return { restored } | Err, and a single refused id returns the rule. deleteStudioMaterialsForever and emptyMaterialTrash return results too.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "app/company/materials-actions.ts"
+    ]
+   },
+   {
+    "id": "F204",
+    "what": "Guards added: restoreRoom (roomFor plus the rule), restorePin (pinFor, studio pins only), recordShareSent, renewShareLink and stopShareLink (linkFor \u2192 designFor: visible and not deleted), restoreStudioMaterials, and deleteDesignsForever (now also checks canOpenLead). Every one returns an { error } a person can read.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "app/company/materials-actions.ts"
+    ]
+   },
+   {
+    "id": "F194",
+    "what": "fileVersion finds a filed render by identity (lead_file_renders.render_key), never by name. A render filed before the record existed is recognised by its address, or by its picture plus name, and then linked. Renaming a room to a name another room has is refused (F083).",
+    "files": [
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "F198",
+    "what": "Removing an own swatch is now soft: it is marked removedAt and kept for a day. restoreOwnSwatch(designId, id) brings it back, and the old Undo path (saveOwnSwatch with the page's copy) also restores it with its picture instead of failing. parseOwn hides removed swatches, and the image route still serves them.",
+    "files": [
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts",
+     "app/visualizer/img/[...key]/route.ts"
+    ]
+   },
+   {
+    "id": "F200",
+    "what": "New project_rooms.assets_json store and saveRoomAsset(roomId, dataUrl) \u2192 { id, url: /visualizer/img/a/<room>/<id> }, content-hashed so the same picture gets the same address. saveRoomState moves any data URL in refs[].url or refImage into the store and returns their addresses, so state_json only ever holds addresses. The route gained kind 'a'. Repair lifts existing rows.",
+    "files": [
+     "lib/db/schema.ts",
+     "lib/visualizer/picture-store.ts",
+     "app/visualizer/actions.ts",
+     "app/visualizer/img/[...key]/route.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F206",
+    "what": "Guarded readers: parseJson, parseVariants (well-formed rows only, filled out), parseDetection (surfaces and furniture always arrays), parseComments, parseSnapshot, parseOwnStored and parseAssets. They are used in the queries, both action files, the image route and Activity. saveRoomState and addRoom check the detection's shape.",
+    "files": [
+     "lib/visualizer/queries.ts",
+     "app/visualizer/actions.ts",
+     "app/renders/actions.ts",
+     "lib/leads/activity.ts",
+     "app/visualizer/img/[...key]/route.ts"
+    ]
+   },
+   {
+    "id": "F213",
+    "what": "New render_images table (job_id + variant_id \u2192 data URL). saveRender stores pictures there and variants_json keeps only the address. Migration 0055 moves existing pictures in SQL; on the auditor DB it went from 2.6 MB to 20 KB. Repair R62 catches stragglers. fetchVisualizerEditor is wrapped in React cache() so metadata and page share one load, and visualizerTitle(designId) is a light title read.",
+    "files": [
+     "lib/db/schema.ts",
+     "drizzle/0055_visualizer_audit.sql",
+     "app/visualizer/actions.ts",
+     "lib/visualizer/images.ts",
+     "lib/visualizer/queries.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   },
+   {
+    "id": "F215",
+    "what": "Partial unique index visualizer_designs_lead_one_idx on (lead_id) where kind = 'lead'. The migration first folds any duplicates into the oldest, moving their rooms and links. openLeadDesign inserts with onConflictDoNothing and then re-selects, so three simultaneous first opens make one design.",
+    "files": [
+     "lib/db/schema.ts",
+     "drizzle/0055_visualizer_audit.sql",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "critic-1",
+    "what": "Image routes gate every read. A studio read of /visualizer/img/* follows Who sees leads, including personal copies. A client read needs ?t=<token> of an open link that shows that picture (a live version or its before image), and is refused after Stop, design delete, lead return or delete, version delete, or expiry. fetchShare appends the token to every stored-picture address. /files/img is gated by lead visibility. All caching is private: 1 year immutable for the studio, 300 s for links. Public samples still redirect.",
+    "files": [
+     "app/visualizer/img/[...key]/route.ts",
+     "app/files/img/[fileId]/route.ts",
+     "lib/visualizer/picture-store.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "critic-2",
+    "what": "shareMeta(token) \u2192 { title, description, image, open } for WhatsApp previews. The image is the first live version's picture on the token and is null once the link is closed.",
+    "files": [
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "critic-4",
+    "what": "Lead lifecycle: links end while a lead is returned (return processing or approved) or deleted, judged at read time and reversible by Undo. Lost and On Hold keep their links. Filed renders keep their own picture after a design's Delete forever. A lead deleted for good leaves its personal copies visible only to Owners and Admins, because the source lead is gone.",
+    "files": [
+     "lib/visualizer/queries.ts",
+     "app/visualizer/actions.ts"
+    ]
+   },
+   {
+    "id": "critic-9",
+    "what": "Two tabs: project_rooms.state_rev. saveRoomState({ \u2026, baseRev }) writes only on that revision, atomically, and otherwise returns { conflict: true, stateRev }. setRoomPhoto and undoRoomPhoto bump and return it. Two members: saveRender runs one Generate per room at a time through an in-process queue, so V-numbers can't collide. A retrying transaction was tried and dropped because it leaves a libsql lock behind.",
+    "files": [
+     "lib/db/schema.ts",
+     "app/visualizer/actions.ts",
+     "lib/visualizer/queries.ts"
+    ]
+   },
+   {
+    "id": "critic-22",
+    "what": "Render pictures moved out of variants_json (see F213). R61 needs no picture rows because its renders are public paths. render_images and lead_file_renders were added to both baseline table lists.",
+    "files": [
+     "lib/db/baseline.ts",
+     "scripts/snapshot-baseline.ts",
+     "scripts/repair-demo-data.ts"
+    ]
+   }
+  ],
+  "partial": [
+   {
+    "id": "F203",
+    "left": "Nothing is needed server-side. REG-149's stand-in stays for undecodable files, as the verifier said. The fix is to re-encode small GIF/BMP files in the browser: readFileAsDataUrl in lib/templates/files.ts (owned by nobody, see crossFileRequests), called by lead-files.tsx (wave B) with { web: true }."
+   },
+   {
+    "id": "F205",
+    "left": "Server side done: the Files picture cap is now 12,000,000, under the 12 MB body limit, and cleanImage's 11,000,000 already fit. Still to do: always re-encode room photos to JPEG q0.9 at up to 1600 px (lib/templates/files.ts, see crossFileRequests), and in visualizer-editor.tsx (wave B) map a thrown body-limit error to 'That photo is over 10 MB \u2014 try a smaller one'."
+   }
+  ],
+  "skipped": [
+   {
+    "id": "F114",
+    "why": "UI only. createShareLink filing each shared version into Files \u203a Renders is intended (Q-13) and unchanged. The missing piece is the dialog's line saying so, in share-dialog.tsx (wave B)."
+   }
+  ],
+  "crossFileRequests": [
+   {
+    "file": "components/company/templates/library-gallery.tsx",
+    "change": "Use each folder's own rule. In the folder menu (around lines 472\u2013475: Move, Rename, Delete), replace `F.block` with `const fb = menuFolder.mayChange !== undefined ? menuFolder.mayChange : F.block` for both `disabled` and the reason; per the sweep rule the reason should show as the row's meta, not a native title. In bulk delete/move (around line 308, `const folders = F && !F.block ? pick.folders : []`), keep only folders where `(f.mayChange ?? F.block) == null`. Folder already carries optional createdBy and mayChange from fetchVisualizerHome and fetchStudioMaterials. Materials and template libraries set mayChange = folderBlock, so nothing changes for them.",
+    "forFinding": "F124"
+   },
+   {
+    "file": "lib/templates/files.ts",
+    "change": "Give readFileAsDataUrl(file, max, opts?: { jpeg?: boolean; web?: boolean }) an optional third parameter. With `jpeg`, always draw through a canvas at scale min(1, max / long side) and return toDataURL('image/jpeg', 0.9), even when the scale is already 1; room photos (addPhotoRoom and changePhoto in visualizer-editor.tsx) should pass it. With `web` and a file.type other than jpeg, png or webp, go through the canvas even at scale 1: PNG for gif (keeps the first frame and transparency), JPEG 0.9 otherwise. On img.onerror keep today's resolve. lead-files.tsx should call it with { web: true } at 2000 px. Other callers (logos, brand kit) are unchanged.",
+    "forFinding": "F203, F205"
+   },
+   {
+    "file": "lib/settings/permissions.ts",
+    "change": "Add Who-may-do-what rows computed from the rules the actions now enforce. Import designChangeBlock, materialChangeBlock and roomDeleteBlock from '@/lib/visualizer/policy' and folderChangeBlockFor from '@/lib/company/folder-libraries', then add: row('viz-design', 'Rename or delete an AI Visualizer design', (r) => own(designChangeBlock({ id: ME, role: r }, OTHER) === null, designChangeBlock({ id: ME, role: r }, ME) === null)); row('viz-room', 'Delete a room in an AI Visualizer design', (r) => own(roomDeleteBlock({ id: ME, role: r }, OTHER, OTHER) === null, roomDeleteBlock({ id: ME, role: r }, ME, OTHER) === null)); row('viz-folder', 'Rename, move or delete an AI Visualizer folder', (r) => own(folderChangeBlockFor('visualizer', { id: ME, role: r }, OTHER) === null, folderChangeBlockFor('visualizer', { id: ME, role: r }, ME) === null)); row('materials', 'Change or delete a studio material', (r) => own(materialChangeBlock({ id: ME, role: r }, OTHER) === null, materialChangeBlock({ id: ME, role: r }, ME) === null)).",
+    "forFinding": "F076, F124"
+   },
+   {
+    "file": "CLAUDE.md",
+    "change": "In the Map, add to the AI Visualizer entry: lib/visualizer/picture-store.ts (addresses and rules, server-side with node:crypto; never import it from a client component) and lib/visualizer/images.ts (server-only DB reads); lib/visualizer/outputs.ts (pure: renderFileName, quoteLines, isPriced, client words, joinWords); tables render_images and lead_file_renders; columns visualizer_designs.source_lead_id and project_rooms.assets_json \u00b7 state_rev \u00b7 prior_photo_json; migration 0055_visualizer_audit (moves pictures out of variants_json, folds duplicate lead designs, one lead design per lead); repair R62; image routes gated by Who sees leads or a link token (?t=).",
+    "forFinding": "critic-1, critic-22, F200, F215"
+   }
+  ],
+  "apiChanges": "All additive or widened; `tsc --noEmit` is clean across the whole project, other agents' current files included.\n\nNEW MODULES\n- lib/visualizer/outputs.ts (pure, client-safe):\n  - renderFileName(room, n) \u2192 'Render - {Room} - V{n}.jpg'; originalFileName(room) \u2192 '{Room} - Original.jpg'. The editor's download should use these (F113).\n  - quoteLines({ finishes, applied }, detection) \u2192 QuoteLine[] { what, to, materialId, count }. Use it for the version menu's Add to a quote enabled state and the QuoteDialog lines (F096, F097, F101).\n  - studioMaterialOf; type Quotable; isPriced(line, quotable).\n  - quoteGroupName(room, n) \u2192 '{room} \u00b7 V{n} finishes'.\n  - clientRoomName, clientVersionLabel(i, applied) \u2192 'Design i \u00b7 Style'.\n  - joinWords(words) via Intl.ListFormat en-SG.\n- lib/visualizer/picture-store.ts (server-side, node:crypto \u2014 NOT for client components):\n  - isDataImage, renderAddress(job, vid), isAddress, dataUrlBytes.\n  - parseAssets, assetIdOf, assetAddress, liftPictures.\n  - withToken, addressPath, STUDIO_CACHE, LINK_CACHE, sendPicture.\n- lib/visualizer/images.ts (server-only): re-exports picture-store, plus renderPicture(jobId, variantId) and publicFileSize(url).\n\nlib/visualizer/policy.ts\n- ROOM_RULE; roomDeleteBlock(viewer, roomCreatedBy, designCreatedBy).\n- callBackDue(at) (SGT working hours).\n\nlib/company/folder-libraries.ts\n- Folder gains optional createdBy and mayChange.\n- OWN_FOLDER_RULE; folderChangeBlockFor(library, viewer{id?, role}, createdBy).\n\nlib/visualizer/queries.ts\n- Readers: parseJson, parseVariants (tightened), parseOwnStored with type StoredSwatch (removedAt), parseOwn (now omits removed swatches), parseDetection (exported), parseComments, parseSnapshot.\n- Helpers: gateLead(d) = leadId ?? sourceLeadId; leadClosed(leadId).\n- fetchVisualizerEditor is now React cache()'d.\n- EditorRoom: + mayDelete (string | null), createdBy, stateRev.\n- ShareRow: + ended (LinkEnd | null, where LinkEnd = 'stopped' | 'design' | 'lead' | 'versions').\n- VisualizerEditorData:\n  - quotes[] + versions (string[] of section names already in that quote).\n  - + quotable { bookNames, linkedMaterials }.\n  - leadImages no longer lists filed renders.\n- New reads:\n  - visualizerTitle(designId) \u2192 string | null.\n  - renderOrigins(fileIds) / renderOrigin(fileId) \u2192 RenderOrigin { fileId, designId, roomId, versionKey, n, live, roomLive }. The editor page resolves ?file= with this and lands on roomId, plus versionKey when live (F095).\n- ShareSnapshot versions: + optional clientLabel, clientRoom.\n- PublicShare:\n  - + ended, now (use it for PinThread instead of createdAt), hasLead (a call back needs a number only when false), gone (count of versions deleted since sharing).\n  - versions[] always carry clientLabel and clientRoom (print these; group by clientRoom; join the h1 rooms with joinWords).\n  - Images already carry ?t=token.\n  - A link that isn't open returns empty versions, pins and notes.\n- New link reads: readShareLink(token) with type ShareLinkRead; closedLinkError(read).\n- shareMeta(token) \u2192 { title, description, image, open } for generateMetadata / og:image. Make the image absolute via metadataBase.\n\nlib/leads/files.ts\n- LeadFilesData + renders: Record<fileId, RenderOrigin>.\n- FileViewData + render (RenderOrigin | null) and renders.\n- Use these for 'Open this version in AI Visualizer' and the Information origin row.\n\nlib/leads/events.ts\n- LeadEventKind + design_deleted | design_restored | design_purged | room_deleted | room_restored | version_deleted | version_restored | share_stopped | share_renewed | share_reopened.\n- + LEAD_EVENT_KINDS.\n- LeadEventDetail + id, room, n, designId, roomId.\n\napp/visualizer/actions.ts\n- openLeadDesign:\n  - race-safe;\n  - restores a deleted lead design only for its maker, an Owner or an Admin; anyone else gets the id of the deleted design, which opens read-only.\n- renameDesign: refuses more than 80 characters; an unchanged name is a no-op.\n- duplicateDesign \u2192 { id, rooms, renders }. Snackbar can say 'with its n renders'.\n- restoreDesigns \u2192 { restored } | Err (was void).\n- deleteDesignsForever and emptyDesignTrash \u2192 { deleted } | Err (were void).\n- renameRoom: refuses duplicate names (ignoring case) and names over 60 characters.\n- deleteRoom: refuses with ROOM_RULE.\n- restoreRoom \u2192 { ok } | Err (was void).\n- setRoomPhoto \u2192 { ok, stateRev }.\n- NEW undoRoomPhoto(roomId) \u2192 { ok, imageUrl, detection, pending, stateRev } | Err. Use it for Change photo's snackbar Undo (F090).\n- saveRoomState(roomId, { pending?, detection?, baseRev? }) \u2192 { savedAt, stateRev, addresses? } | { conflict: true, stateRev } | Err.\n  - addresses = { refs: {refId: url}, pieces: {furnitureId: url} }.\n  - Pass baseRev = EditorRoom.stateRev, then each save's stateRev.\n  - Don't re-seed baseRev from refreshed props.\n  - Serialise autosaves per room.\n  - On conflict, tell the user the room was changed elsewhere and to reload.\n- NEW saveRoomAsset(roomId, dataUrl) \u2192 { id, url } | Err. Upload references and piece photos first; keep only the url in pending (F200).\n- saveRender: same API; serialised per room.\n- restoreVersion \u2192 { ok } | Err (was void).\n- removeOwnSwatch \u2192 { ok } | Err (was void; now a soft remove).\n- NEW restoreOwnSwatch(designId, id) \u2192 { ok } | Err. The old Undo path (saveOwnSwatch with the page's copy) also works.\n- addVersionToQuote(jobId, variantId, quoteId, again = false):\n  - quotes the cumulative finishes;\n  - refuses a repeat add ('V{n} is already in that quote.') unless again;\n  - with no finishes: 'This version has no finishes to quote yet.'\n- createShareLink: sorts the versions; adds clientLabel and clientRoom.\n- recordShareSent \u2192 { ok } | Err; 'copy' never overwrites 'whatsapp'.\n- renewShareLink \u2192 { ok, expiresAt } | Err.\n- stopShareLink \u2192 { ok } | Err.\n- NEW unstopShareLink(id) \u2192 { ok } | Err. Stop sharing's snackbar Undo must use this, not renewShareLink (F108, F208).\n- setPinStatus and restorePin \u2192 { ok } | Err (were void).\n\napp/renders/actions.ts\n- Client writes refuse closed links: 'This link is no longer active \u2014 ask your designer for an updated one.'\n- Deleted versions are refused: 'That design is no longer on this link.'\n- The bell href now carries room, v and pin. The editor page should read ?v= and ?pin= (validate against data.versions and data.pins) and seed viewKeys and activePin with lazy useState (F098).\n\napp/company/materials-actions.ts\n- restoreStudioMaterials \u2192 { restored } | Err.\n- deleteStudioMaterialsForever and emptyMaterialTrash \u2192 { deleted } | Err.\n- materials-view.tsx and visualizer-home.tsx should throw on { error } so run() shows 'Couldn\u2019t \u2026' (F129).\n\napp/company/folder-actions.ts\n- rename, delete and undo-delete throw OWN_FOLDER_RULE for others' visualizer folders.\n- move keeps them and counts them in `kept`.\n\nSCHEMA AND MIGRATION\n- visualizer_designs.source_lead_id, plus a partial unique index on (lead_id) where kind = 'lead'.\n- project_rooms.assets_json, state_rev (not null, default 0), prior_photo_json.\n- New tables render_images and lead_file_renders.\n- drizzle/0055_visualizer_audit.sql with the journal tag renamed to match. It moves pictures and folds duplicate lead designs.\n- Both baseline lists updated. The integrator must run the migration, restore, repair and snapshot.",
+  "registerLines": [
+   "AI Visualizer \u00b7 a room's delete follows its rule (F076, F202). A room is deleted or restored only by whoever made it, whoever made its design, an Owner or an Admin. The server refuses with 'Only whoever made it or its design, an Owner or an Admin can delete this room' (invented copy), and each room tells the menu why. Why: policy.ts already stated the rule but deleteRoom never applied it. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 every restore goes through its delete's door, and Undo puts things back where they were (F129, F204, F125). This covers restoring designs, rooms, pins and studio materials, and stopping, renewing or recording a share link. Each checks Who sees leads and the maker/Owner/Admin rule and returns a readable { error }. Restores leave updatedAt alone. Delete forever checks lead visibility too. Why: the server skipped the checks the UI implied. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 a client link ends when it should (F092, F195, F077, critic \u00a74). A link stops when its design is deleted (Restore reopens it), when its lead is returned to Qanvast while the return is pending or approved, or when the lead is deleted. Lost and On Hold keep links open. It also stops when every version on it was deleted. A deleted version leaves the link, and the client can't answer on it. Every client write is refused with 'This link is no longer active \u2014 ask your designer for an updated one.' (invented copy). Why: the delete dialog promised 'Shared links stop working'. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 pictures are served only to who may see them (critic \u00a71). /visualizer/img follows Who sees leads, including copies of a lead's design. A client's picture loads only through its open link's token (?t=), and never after a Stop, delete, return or expiry. /files/img follows the lead. Caching is private only. Why: the addresses were public and cached for a year. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 pictures live beside their records (F213, F200, critic \u00a722). Render pictures moved into render_images, and variants_json keeps only addresses; migration 0055 moved existing ones (2.6 MB \u2192 20 KB on a test DB). Reference and piece photos go into the room's own store (/visualizer/img/a/\u2026), so autosaves and pages carry addresses only. The editor's page and title share one load per request. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 a render saved to Files is itself (F093, F095, F194, F113). New lead_file_renders records which version each filed render is, found by identity and never by name. Files can offer 'Open this version' and name its origin, and renders are no longer offered as room photos. The file keeps its own copy of the picture, so it survives the design's Delete forever, and the lead's Activity keeps a line. Real sizes replace the made-up 137 KB. One file name is used for Files and downloads, 1.0's 'Render - {Room} - V{n}.jpg'. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 Add to a quote quotes what the version shows (F096, F097, F100, F101). Lines come from the version's cumulative finishes, so a relit version quotes its walls, floor and sofa. There is one line per surface group and finish. Each is priced from the Price book item its studio material names, else an item of the same name, else S$0; no category rates. No internal wording prints. The same version in the same draft twice is refused ('V2 is already in that quote.', invented copy) unless the studio adds it again. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 the bell and Activity open what they are about (F098). A client's favourite, note, pin or reply opens the design on its room and version, and on the pin itself. The demo's bell entries were updated by repair R62. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 Ask for a call back (F099). A number is required only on a link with no lead behind it. On a lead's link the Follow-up task says 'Call on the lead\u2019s number, 9688 2109.' (invented copy) without the number reaching the page. The task is due within the hour in working hours (weekdays 09:00\u201317:00 SGT), otherwise at 10:00 the next working morning, never at 3 a.m. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 the client's link reads as the client's (F102, F103, F104, F209). Versions appear in the design's order, not the order they were ticked. Each has a client title, 'Design 2 \u00b7 Golden Hour' (invented copy); the studio's shorthand stays in the bell. Rooms lose ' sketch'. Pin times count from the server's clock. WhatsApp preview data comes from shareMeta: title, a line on what's inside, and the first design's picture, only while the link is open (critic \u00a72, invented copy). Source: audit 2026-09-26 (bug fix / invented copy).",
+   "AI Visualizer \u00b7 Activity tells the visualizer's story truly (F106, F207). Stopping, renewing and reopening a link are logged and name who did it. Deleting and restoring a design, room or version are logged, as is Delete forever. An Undo within two minutes removes the delete's line instead. Pin replies get their own line. Removed pins drop out. A render saved to Files reads 'saved \u2026 from the AI Visualizer to Files', not 'uploaded'. All sentences are invented copy. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 Stop sharing's Undo puts the link back as it was (F108, F208, F107). New unstopShareLink clears the stop and keeps the original expiry; Renew stays for 7 more days. Recording 'copied' never hides that a link went on WhatsApp. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 Duplicate copies the work and follows the client's privacy (F115, F116). A copy brings every version with its pictures, parents and numbers, plus the rooms' picks and the design's own swatches. It never copies links, pins or answers. A copy of a lead's design keeps that lead as its source, so only members who may see the lead see the copy. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 folders (F124, refines REG-673). Anyone makes an AI Visualizer folder. Only its maker, an Owner or an Admin renames, moves or deletes it: 'Only whoever made the folder, an Owner or an Admin can rename, move or delete it' (invented copy). Source: audit 2026-09-26 (user-directed rule refinement per the verifier).",
+   "AI Visualizer \u00b7 room rename, Change photo and swatch Undo (F083, F090, F198). A room can't take another room's name, and names past 60 characters (designs: 80) are refused, not cut. Change photo keeps the room as it was, so its Undo brings back the photo, a sample's own reading and the picks. Removing a design's swatch is soft, so Undo returns it with its picture. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 one lead design, two tabs, two members (F215, critic \u00a79). A unique index keeps one design per lead; the migration folds any duplicates, and simultaneous first opens land on one design. An autosave writes only on the revision its tab last saw, and another tab's change comes back as a conflict instead of being overwritten. Generates for a room run one at a time, so V-numbers never collide. Source: audit 2026-09-26 (bug fix).",
+   "AI Visualizer \u00b7 stored JSON is read through guards (F206). One malformed row no longer takes down the editor, the client link or Activity. The Files picture cap now sits under the 12 MB request limit (F205). Source: audit 2026-09-26 (bug fix)."
+  ],
+  "verification": "Static checks\n- `npx tsc --noEmit -p .` exits 0 across the whole project, including other agents' current files and scripts/.\n- `npx eslint app components lib scripts/repair-demo-data.ts scripts/snapshot-baseline.ts`: 0 errors. The 9 warnings are all pre-existing, in quote and template files I didn't touch.\n\nMigration\n- Generated with `npm run db:generate -- --name=visualizer_audit`, giving drizzle/0055_visualizer_audit.sql with a matching journal tag. I then added the data statements.\n- Tested on scratch copies of the auditors' DBs (db-3011, 3017, 3019, which hold real engine renders):\n  - variants_json fell from 2.6 MB to 20 KB, with 16 pictures moved into render_images and addresses resolving.\n  - A lead design I duplicated on purpose was folded into the oldest, its room moved.\n  - Both unique indexes were created.\n\nData path on scratch/fix/server/t.db, with DATABASE_URL set on each command\n- migrate \u2192 restore-baseline (61 tables, 590 rows) \u2192 repair-demo-data twice.\n- Run 1: 131 checks ok, 0 FAIL. R62 linked 3 filed renders, sized 3 and pointed 9 bell entries at their version.\n- Run 2: all zeros, so the repair is idempotent. All checks pass.\n- I also purged Kevin's design on a copy and re-ran the repair: R61 re-seeded it cleanly and all checks passed (critic \u00a77).\n- R62 on the migrated auditor DBs: m17's render filed by address was linked and given its own picture. 0 FAIL on all three.\n\nBehavioural probe\n- scratch/fix/server/h/probe.mts runs the real server actions, routes and queries against a scratch copy. It uses tsx with --conditions=react-server and a next/cache stub; the harness setup is in scratch.\n- Result: 97 passed, 0 failed. It covers every finding above, including:\n  - role checks run as Sarah, Michelle and James;\n  - link states after delete, restore, return, rejected return and lead delete;\n  - image-route status codes and cache headers, with and without a token, and after Stop;\n  - Undo keeping the expiry, and event lines;\n  - quote lines and pricing, and duplicates with remapped parents;\n  - Delete forever keeping the Files picture;\n  - three concurrent first opens making one design;\n  - baseRev conflict, reference-photo lifting, Change photo Undo and swatch Undo;\n  - material and folder rules;\n  - three simultaneous Generates getting distinct V-numbers.\n- I also printed Kevin Ng's Activity and checked the wording and deep links by eye.\n\nSafety\n- local.db, :3000, next build/start and the fixtures snapshot were never touched.\n\nObservation for the integrator (pre-existing, in lib/db, not mine)\n- libsql here runs with busy_timeout 0 and journal_mode delete. Two overlapping db.transaction calls: the second fails at once with SQLITE_BUSY.\n- Retrying a failed BEGIN IMMEDIATE on the same client leaves a lock behind, and every later write then fails with 'database is locked'. I reproduced this in scratch/fix/server/h/busy.mts.\n- So I used no retry wrappers and serialise Generates in-process instead. Setting a busy timeout or WAL in lib/db/index.ts is worth considering separately.\n\nNot done\n- The optional demo pricing: linking the demo's catalogue paint and floor to Price book items through a studio material. It would change what the pre-painted demo version says it applied (REG-343 risk).\n- F207's optional '?preview=1' view-count skip, which belongs to the page (wave B)."
+ },
+ {
+  "key": "engine-pass",
+  "fixed": [
+   {
+    "id": "F179",
+    "what": "Empty the room and Remove on an edited version no longer leave white furniture ghosts or oak cut-outs. The empty plate is re-finished whole: regionOf has a plate mode that grows without exclude/cutout, with its own cache key. The plate also takes this Generate's own picks, so a floor changed in the same pass continues under a removed piece. Harness, V2 (sage + walnut) \u2192 Empty: the old TV/art boxes now read as sage [152,184,144]/[156,189,148] against the wall [141,171,135]. V2 \u2192 remove TV + coffee table: TV box [146,175,138], sofa pixels unchanged (diff 0).",
+    "files": [
+     "lib/visualizer/engine/run.ts"
+    ]
+   },
+   {
+    "id": "F028",
+    "what": "Every recolour region in the Generate (surfaces, Replace/Customize, note paints) is now worked out on the untouched photo before anything is pasted, then clamped by where the plate went. The mask cache only ever holds masks grown on the picture its key names. paste() takes a `keep` mask (kept pieces' outlines), so the rug and table no longer feed the plate's light, and it falls back to the ring's median gain when the hue gate rejects nearly everything. Result: no throw/arm ghost, and Replace-after-Remove paints only the chair's visible part.",
+    "files": [
+     "lib/visualizer/engine/run.ts",
+     "lib/visualizer/engine/recolor.ts"
+    ]
+   },
+   {
+    "id": "F057",
+    "what": "afterRender treats references as spent, like a style card. A leftover reference can no longer turn a later style pick into a transfer; the next style card reads 'Restyle as \u2026'.",
+    "files": [
+     "lib/visualizer/model.ts"
+    ]
+   },
+   {
+    "id": "F190",
+    "what": "With references spent after their transfer, a typed note after a transfer runs as a note. Engine check: 'terracotta walls, walnut floor, warmer evening light' \u2192 kind note, terracotta walls, walnut floor, warm light.",
+    "files": [
+     "lib/visualizer/model.ts"
+    ]
+   },
+   {
+    "id": "F056",
+    "what": "Keep unchanged now matches by head noun, dropping articles and possessives: 'the floor' keeps Light Oak Floor, 'the client\u2019s green sofa' keeps the sofa, and 'walls' no longer protects the wall-mounted TV. Uses keepTargets/keepMatch in note.ts. `keep` now survives afterRender. The transfer version names what it kept in applied.caveat.",
+    "files": [
+     "lib/visualizer/note.ts",
+     "lib/visualizer/engine/run.ts",
+     "lib/visualizer/model.ts"
+    ]
+   },
+   {
+    "id": "F059",
+    "what": "Restyles without a finished look no longer blow walls out. recolor rolls highlights off on a filmic shoulder above L*80 instead of clipping: Modern restyle clips 0 % vs 0.15 % in the original. The light is a masked blur, so an adjacent TV doesn't darken the paint. The hard floor rectangles came from the sample's exclude boxes, which engine-seg is replacing with traced cutouts.",
+    "files": [
+     "lib/visualizer/engine/recolor.ts",
+     "lib/visualizer/engine/run.ts"
+    ]
+   },
+   {
+    "id": "F187",
+    "what": "Floors, tiles and stone keep or replace their texture by material family:\n- The photo's light is split into low-frequency light and fine detail. Detail is kept by family: oak\u2192walnut keeps the boards; tile\u2192walnut drops the old grout to 25 % and lays planks.\n- New procedural tiles: plank, woodgrain, herringbone (true interlocking 1\u00d72), chevron, subway, grid, hex, fish-scale, penny, basketweave, mosaic, zellige, marble, terrazzo, granite, slate, travertine, cement, wood-look. Each is keyed by catalogue id or subcategory, with a matching chip CSS.\n- A studio material with a photo in Flooring/Laminates/Tiles/Stone/Countertops/Wallpapers is laid as its photo.\n- Subway wall near-white share: 0.16 % (was 10.5 %).",
+    "files": [
+     "lib/visualizer/engine/recolor.ts",
+     "lib/visualizer/engine/run.ts",
+     "lib/visualizer/engine/texture.ts",
+     "lib/visualizer/patterns.ts",
+     "lib/visualizer/materials.ts"
+    ]
+   },
+   {
+    "id": "F047",
+    "what": "Patterns now lie in perspective (new engine/texture.ts). Floors and ceilings use a ground-plane frame: horizon and vanishing points read off the traced walls, with two walls giving both vanishing points and the focal length in a corner shot. Worktops use the same frame at 0.9 m. Upright outlines use a homography from the largest quad inside their hull. Sampling uses trilinear mips. Tiles are at real scale, e.g. herringbone boards \u224810 cm, planks 0.2\u00d70.8 m. Checked on the Japanese Wave ceiling, herringbone floors, and the kitchen's walnut planks and white herringbone.",
+    "files": [
+     "lib/visualizer/engine/texture.ts",
+     "lib/visualizer/engine/run.ts",
+     "lib/visualizer/patterns.ts"
+    ]
+   },
+   {
+    "id": "F029",
+    "what": "Customize's finish rows take plurals (a words() matcher). A bedding row (Linen, Cotton, Knit, Velvet, Boucl\u00e9, Wool) sits ahead of the bed row. Sheer curtains now get fabrics, the bedspread gets bedding fabrics, and a TV gets appliance finishes. Knit added to FINISH_HEX/finishSheen. The Decor 'Terracotta' finish is left as is (the verifier's call).",
+    "files": [
+     "lib/visualizer/furniture.ts"
+    ]
+   },
+   {
+    "id": "F044",
+    "what": "suggestReplacements ranks by kind: two-word types plus family synonyms (wingback/accent chair\u2192armchair, sideboard/credenza\u2192tv console, fig\u2192plant, bedspread\u2192throw). A bare preset takes its kind from its description. Every sample label now gets the right kind, e.g. coffee table \u2192 coffee tables only, armchair \u2192 armchairs.",
+    "files": [
+     "lib/visualizer/furniture.ts"
+    ]
+   },
+   {
+    "id": "F189",
+    "what": "The transfer re-reads each reference with referencePalette. That drops the mood board's page (a border-dominant cluster) and re-clusters the rest with farthest-point seeds, so walnut and sage keep separate clusters. Colours are mapped by role (pickRoles): floor takes the wood hue, walls the lightest neutral, joinery the deepest saturated colour, worktops the lightest, soft pieces a saturated mid-tone. Variants step within each role. On kitchen-moodboard.jpg the floor takes #8B7056 (target #8B6F55) and the cabinets navy; the palette has no paper-white.",
+    "files": [
+     "lib/visualizer/engine/palette.ts",
+     "lib/visualizer/engine/run.ts"
+    ]
+   },
+   {
+    "id": "F029/F044-adjacent F040 (run.ts part)",
+    "what": "Replace now lets a colour named in its words win over the photo's dominant colour, which in turn wins over the style's.",
+    "files": [
+     "lib/visualizer/engine/run.ts"
+    ]
+   },
+   {
+    "id": "F212 (run.ts part, not assigned)",
+    "what": "The image cache is a 16-entry LRU keyed by an FNV hash of the address. The mask cache is a quantised 60-entry LRU. regionOverlay reads without cloning.",
+    "files": [
+     "lib/visualizer/engine/run.ts"
+    ]
+   },
+   {
+    "id": "F033 (run.ts call site, engine-seg's finding)",
+    "what": "regionOf calls engine-seg's outlineRegion for drawn surfaces. It passes the outlines of the pieces in front as `avoid`, the curated seeds for a redrawn surface, and no growing for glass. FurnitureDef.cutout and SurfaceDef.grow are passed through to growRegion.",
+    "files": [
+     "lib/visualizer/engine/run.ts",
+     "lib/visualizer/model.ts"
+    ]
+   }
+  ],
+  "partial": [
+   {
+    "id": "F181",
+    "left": "Engine side done: occlusion (all of a piece in front, only the visible part of one behind), the cast shadow taken with the piece, the seam moved outside the piece, and the keep/median-gain paste. Removing the TV, sofa, armchair or rug is now clean, and the coffee table no longer holes the sofa. Still left: removing the coffee table or console leaves the bowl, books, candle and vase floating, because their cuts don't include what sits on them. That is sample data (crossFileRequest to engine-seg), plus the optional `front` lists."
+   },
+   {
+    "id": "F024",
+    "left": "Engine side done:\n- Traced neighbours in front are cut out.\n- Boxed pieces weigh lightness fully (so pillows stay white).\n- Untraced pieces are kept off the room's surfaces.\n- Decor and Lighting pieces without a traced outline grow tighter.\nKitchen stools and pendants and the living-room pieces now paint only the piece. Still left: the bedroom bedspread's traced outline includes the cream throw, so the throw is painted too. That needs sample data (engine-seg)."
+   },
+   {
+    "id": "F023",
+    "left": "Engine side done: a tapped (manual) surface grows only within \u00b10.2 of the tap, at local \u2264 4 and global \u2264 10, and off the known surfaces and pieces. A tap that used to flood 69 % now covers 0.2 %. A tap that grows nothing fails honestly ('We couldn\u2019t find the window frame where it was marked \u2014 trace its outline instead'). model.tappedSurface() and run.regionShare() are exported. Still left for wave B: addSurfaceAt should use tappedSurface() and open Draw when regionShare is above 0.25 or below 0.0005; 'another like this' on a drawn surface should start a trace."
+   },
+   {
+    "id": "F030",
+    "left": "Engine side done: the mask cache key includes the full geometry via the exported defKey(def), so a redraw is a new mask. Still left for wave B: build hlKey from defKey and pass { reading } to regionOverlay."
+   },
+   {
+    "id": "F022",
+    "left": "Model and engine done: readingFor drops non-manual surfaces on a whole-room look. A surface pick there fails with 'This version is a whole-room look \u2014 its surfaces aren\u2019t marked. Draw one, or edit from the Original.' Still left for wave B: the SurfacesPanel empty state for reshaped versions."
+   },
+   {
+    "id": "F032",
+    "left": "Model and engine done: pickReady and pickNeeds; intentFor waits with 'Pick or describe what replaces the oak coffee table first.'; the engine keeps the same guard as a backstop. A finish without a colour of its own (e.g. Velvet) now keeps the piece's colour and changes its sheen instead of refusing. Still left for wave B: the furniture-panel caption for an unready pick."
+   },
+   {
+    "id": "F053",
+    "left": "Model and engine done: toolAvailability() gives canRemove/canEmpty/canFurnish, each with its reason, plus builtIns. intentFor turns empty, furnish, remove and transfer-without-aspects into disabled Generates that say why. Engine messages no longer mention 'the sample living room'. Still left for wave B: disable the Empty ChoiceCard, show the why lines in tools-panel, and pass `tools` to intentFor and FurniturePanel."
+   },
+   {
+    "id": "F052",
+    "left": "Model and engine done:\n- Light and note ride along on restyle, transfer, sketch and relight.\n- Empty and Furnish take the light only.\n- A note whose colours can't land waits, with a caveat.\n- Each pass returns `consumed`.\n- intentFor returns `ignored`, `ignoredNote` and `consumes`.\n- afterRender(p, { used, consumed }) clears only what was spent.\nStill left for wave B: call afterRender with used/consumed, and mute the ignored chips with ignoredNote in the rail."
+   },
+   {
+    "id": "F055",
+    "left": "Engine done:\n- Furnish and sketch use pending.style || PassInput.leadStyle.\n- With no finished look: the furnished room wears the emptied version's finishes, plus the style's materials and light.\n- Leave out lifts the named pieces with the plate: 'no TV, no rug' takes both out.\n- On a finished look, a caveat says Leave out can't apply.\n- tools.leavesOut() is shared by the panel and the engine.\nStill left for wave B: pass leadStyle to runPass, use leavesOut() in tools-panel, and add the density hint line."
+   },
+   {
+    "id": "F063",
+    "left": "Engine and model done: PassInput.unlit plus model.unlitSource() walk back through consecutive relights. Blue Hour on the bedroom's Golden Hour version is a true blue hour when unlit is passed. Still left for wave B: pass `unlit` in generate(), and use the unlit picture for the preview and the relit shortcut."
+   },
+   {
+    "id": "F064",
+    "left": "Engine done:\n- finishes.removed lists only pieces really gone from the plate (photo and plate are compared inside each outline, or the optional inPlate flag), so the curtains stay listed.\n- 'Anything else to take out' is matched against the pieces: 'Kept: the sheer curtains \u2014 this photo can\u2019t take them out \u00b7 Couldn\u2019t find \u201cthe ceiling fan\u201d on this photo' goes to applied.caveat.\nStill left for wave B: the 'no built-ins' hint from toolAvailability().builtIns, and showing applied.caveat."
+   },
+   {
+    "id": "F188",
+    "left": "Renders done (grade.ts): linear light, Reinhard shoulder at the gain (Daylight clips 0 % in all rooms, was 18.2 %/32.5 %), and a blackbody white balance with warm split-toning. Dusk, night and evening scale exposure by \u00d70.40, \u00d70.24 and \u00d70.42. Windows go to a dark sky, and lamps and downlights glow where they really hang (SAMPLE_LIGHT plus the reading's lighting pieces). Neutral is an exact identity. Still left for wave B: pass lightSceneFor(...) as previewLight's third argument, so the live preview matches the render."
+   },
+   {
+    "id": "F191",
+    "left": "Engine done: stripes and all motifs follow each wall's perspective at real scale, and soften is worked out per texel. Still left: the kitchen's floating shelves need cutouts on the wall hull, which is sample data (engine-seg)."
+   },
+   {
+    "id": "F192",
+    "left": "Engine done: a stock-look restyle of an edited version records applied.caveat = 'Whole-room look \u2014 earlier changes replaced'. Still left for wave B: the StylePanel baseEdited hint, and showing the caveat."
+   },
+   {
+    "id": "F197",
+    "left": "Model and engine done: changeList and intentFor skip unresolvable picks, danglingPicks() names them, and editPass fails with 'Nothing changed \u2014 pick a finish, a style or a light first.' instead of saving a copy. Still left for wave B: pass reading/resolve to intentFor, and drop dangling picks in removeOwn."
+   },
+   {
+    "id": "F036",
+    "left": "Model done: changeList labels chips 'Walls \u2192 X' when a group is covered in full, the leaf's name when only one surface is, and 'Cabinets (2 of 3) \u2192 X' for part. Still left for wave B: build the rail's chips from changeList."
+   },
+   {
+    "id": "F006",
+    "left": "Model done: changeList is the one count, and intentFor counts the chips it uses; the rail shows 5 and the button says 'Generate \u00b7 5 changes'. Still left for wave B: call intentFor with { reading, resolve, tools } and render changeList."
+   },
+   {
+    "id": "F035",
+    "left": "Same fix as F006. Still left: wave B adopts changeList/intentFor({ reading, resolve })."
+   },
+   {
+    "id": "F175",
+    "left": "Same fix as F006: intent.changes and intent.total now come from changeList. Still left: the compact footer should read intent.total."
+   }
+  ],
+  "skipped": [
+   {
+    "id": "F012",
+    "why": "This is UI copy only, in wave B files (visualizer-editor.tsx markers, stage.tsx tooltip, furniture-panel.tsx caption). The data is already on the version (finishes.surfaces[id].name, finishes.customized[id]), so no model or engine change is needed. The exact change is in crossFileRequests."
+   },
+   {
+    "id": "F158",
+    "why": "Only rail.tsx (wave B) changes. The model keeps 'Generate \u00b7 n changes' for the desktop footer. The compact label change is in crossFileRequests."
+   }
+  ],
+  "crossFileRequests": [
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "Replace line ~121 with:\n```\nconst tools = toolAvailability(room ? { sampleKey: room.sampleKey, detection } : null, finishes, reading)\nconst changeItems = changeList(pending, { reading, resolve })\nconst intent = intentFor(pending, { hasImage: !!imageUrl, sketch, reading, resolve, tools })\n```\nBuild `changes` (lines ~272-293) from changeItems:\n```\nchangeItems.map((c) => ({ id: c.id, label: c.label, onRemove: () => patch((p) => c.slot === 'materials' ? { ...p, materials: omit(p.materials, c.ids) } : c.slot === 'furniture' ? { ...p, furniture: omit(p.furniture, c.ids) } : c.slot === 'style' ? { ...p, style: '' } : c.slot === 'refs' ? { ...p, transfer: { ...p.transfer, refs: [] } } : c.slot === 'lighting' ? { ...p, lighting: { presetId: null, knobs: neutralKnobs(), instruction: '' } } : c.slot === 'note' ? { ...p, note: '' } : { ...p, tool: null }) }))\n```\nIn removeOwn(), also drop the picks that pointed at the swatch (`danglingPicks(p, resolve)` after refresh, or omit the ids whose value is `own:${id}`) so Undo restores both.",
+    "forFinding": "F006 F035 F175 F036 F197"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "In generate():\n- Add `const used = pending` at the top.\n- Call `runPass({ kind, base: {...}, room: {...}, pending: used, resolve, leadStyle: styleForLead(data.lead?.style)?.name ?? null, unlit: unlitArg })`.\n- After a successful save, replace `patch((p) => afterRender(p))` with `patch((p) => afterRender(p, { used, consumed: out.consumed ?? intent.consumes }))`.\n- Append `out.variants[0].applied.caveat` to the 'V{n} is ready' snackbar when it is set.",
+    "forFinding": "F052 F003 F055 F064 F192 F056"
+   },
+   {
+    "file": "components/visualizer/editor/rail.tsx",
+    "change": "- Header: 'Your changes \u00b7 {intent.total ?? changes.length}'.\n- Chips whose id is in `intent.ignored` get data-muted (a muted house chip).\n- Show `intent.ignoredNote` as the hint line under the chip list.\n- Compact footer (line ~76/78): button text is `busy ? intent.busy : intent.kind === 'edit' ? 'Generate' : intent.label`, and the count text uses intent.total.",
+    "forFinding": "F052 F158 F175"
+   },
+   {
+    "file": "components/visualizer/editor/panels/tools-panel.tsx",
+    "change": "Add a `tools: ToolAvailability` prop, passed as `tools` from the editor.\n- Empty the room: `<ChoiceCard \u2026 disabled={!tools.canEmpty} help={tools.emptyWhy ?? 'Take the furniture out and keep the room\u2019s finishes, camera and light'} />`.\n- Furnish: help = `tools.furnishWhy ?? \u2026`.\n- Under How far, when `!tools.builtIns`: 'This photo has no panelling or fitted cabinetry, so both give the same room.' (invented copy \u2192 REG).\n- Line 30: replace `.filter((x) => !pending.furnish.leaveOut.toLowerCase().includes(x.toLowerCase()))` with `.filter((x) => !leavesOut(pending.furnish.leaveOut, x))`, importing leavesOut from lib/visualizer/tools.\n- Add to the density hint: 'Places what the sample room holds; how much furniture follows in the full release' (invented copy \u2192 REG).",
+    "forFinding": "F053 F064 F055"
+   },
+   {
+    "file": "components/visualizer/editor/panels/furniture-panel.tsx",
+    "change": "- canRemove comes from `tools.canRemove`; the hint uses `tools.removeWhy`.\n- For a Replace or Customize pick, when `pickNeeds(p, f.label)` is set, the caption reads 'Replace \u00b7 choose what' or 'Customize \u00b7 choose a colour or finish' in the hint tone.\n- (F012) Take a new prop `customized: Finishes['customized']`. When p.action === 'keep' and customized[ids[0]] is set, the caption reads `Now ${customized[id]} \u00b7 ${f.category}`, without data-new.",
+    "forFinding": "F032 F053 F012"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "Relight on the unlit picture (F063):\n- `const unlit = unlitSource(view, all)`.\n- `const lightUrl = unlit ? (unlit.key === ORIGINAL ? room?.imageUrl ?? null : (() => { const v = all.find((x) => x.key === unlit.key); return v ? urlOf(v) : imageUrl })()) : imageUrl`.\n- The preview effect reads lightUrl.\n- The `relit` shortcut tests `(unlit?.key ?? viewKey) === ORIGINAL`.\n- generate() passes `unlit: unlit && lightUrl ? { key: unlit.key, url: lightUrl } : null`. Base and parentKey stay the view.\n\nPreview scene (F188): call `previewLight(url, knobsRef.current, lightSceneFor(room.sampleKey, reading, { fixtures: finishes.reshaped ? 'none' : finishes.emptied ? 'fitted' : 'all' }))`.",
+    "forFinding": "F063 F188"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "- addReference: `const palette = referencePalette(await loadImg(url)).map((x) => x.hex)` instead of extractPalette, so the chip shows the board's swatches without its page.\n- StylePanel onStyle: when picking a style with refs present, clear transfer.refs and show the 'References taken off' snackbar with Undo.\n- addReference clears `style` the same way.",
+    "forFinding": "F189 F057"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "addSurfaceAt: build the def with `tappedSurface(label, p)` from lib/visualizer/model instead of the inline `{ seeds:[p], local:6, global:16, manual:true }`. After patchDetection, `const share = await regionShare(imageUrl, def, readingWithDef)`:\n- If share > 0.25 or share < 0.0005: undo the add, `startDraw(null, label)`, and snackbar 'This spread too far \u2014 trace its outline instead' or 'Nothing to mark there \u2014 trace its outline instead' (invented copy \u2192 REG).\n- onAddLike on a surface that has `region`: call `startDraw(null, label)` instead of a tap.",
+    "forFinding": "F023"
+   },
+   {
+    "file": "components/visualizer/editor/visualizer-editor.tsx",
+    "change": "- hlKey: ``${imageUrl.slice(-80)}|${scope.map((s) => `${s.id}:${defKey(s)}`).join(',')}`` (defKey from lib/visualizer/engine/run).\n- Call `regionOverlay(url, defs, undefined, { reading })` so the highlight is what Generate paints.",
+    "forFinding": "F030 F024"
+   },
+   {
+    "file": "components/visualizer/editor/panels/surfaces-panel.tsx",
+    "change": "Add a `reshaped` prop, from finishes.reshaped. When reshaped and no surfaces, the empty state reads 'This version is a whole-room look \u2014 its surfaces aren\u2019t marked. Draw one, or edit from the Original.' Keep the existing Draw button.",
+    "forFinding": "F022"
+   },
+   {
+    "file": "components/visualizer/editor/panels/style-panel.tsx",
+    "change": "Add a `baseEdited` prop. The editor passes `view !== null && (Object.keys(finishes.surfaces).length > 0 || finishes.removed.length > 0 || Object.keys(finishes.customized).length > 0 || finishes.emptied)`. When a style card is picked and baseEdited, show the styles.hint line 'A style restyles the whole room from the photo \u2014 this version\u2019s finishes and furniture changes don\u2019t carry over.' (verifier's copy \u2192 REG).",
+    "forFinding": "F192"
+   },
+   {
+    "file": "components/visualizer/editor/stage.tsx",
+    "change": "Give Marker an optional `now?: string | null`. The editor sets it to finishes.surfaces[s.id]?.name for surfaces and finishes.customized[f.id] for pieces; the surface fill falls back to finishes.surfaces[s.id]?.hex. The tooltip and aria-label read `titleCaseLabel(m.label) + (m.now ? ` \u00b7 now ${m.now}` : '')`.",
+    "forFinding": "F012"
+   },
+   {
+    "file": "lib/visualizer/samples.ts",
+    "change": "Living room:\n- The oak coffee table's cut/plate should include what sits on it (bowl, books, candle).\n- The oak TV console's cut should include the pampas vase, candle and speaker; Remove now leaves these floating.\n- Widen the wall-mounted TV plate to x 0.768 / y 0.606 so its right-hand shadow and stand feet go with it.\n- Optional: `front: string[]` per piece (the engine reads FurnitureDef.front and falls back to a layer and foot-line heuristic).\n- Optional: `inPlate: true` on the two sheer curtains; the engine detects this by comparing photo and plate, but the flag makes it explicit.",
+    "forFinding": "F181 F064"
+   },
+   {
+    "file": "lib/visualizer/samples.ts",
+    "change": "Bedroom:\n- Trace the upholstered headboard's panel with the pillows cut out. Its current cut is a near-box, which the engine now treats as a box with full lightness weight; that works, but a trace is exact.\n- Trace the grey knit bedspread without the cream throw across its top, or add the throw as a `cutout`. Today the throw is painted with the bedspread.",
+    "forFinding": "F024"
+   },
+   {
+    "file": "lib/visualizer/samples.ts",
+    "change": "Kitchen 'white painted walls': add `cutout` polygons for the two floating shelf boards and the objects on them (about 0.69\u20130.93 \u00d7 0.33\u20130.41), so wallpaper stripes stay behind the shelves.",
+    "forFinding": "F191"
+   },
+   {
+    "file": "scripts/viz/demo-renders.mts",
+    "change": "The engine's recolour and grade changed, so re-render the demo V2 (living-room-edit.jpg) and its golden-hour relight (REG-343). Prefer driving the real `runPass` through `setImageIO`, as in scratch/fix/engine-pass/h/env.mts (decode: sharp from public/ or data:/mem:; encode: keep the raw Img). The demo picture then equals what the browser makes. The integrator runs db:baseline afterwards if the images change.",
+    "forFinding": "F179 F187"
+   },
+   {
+    "file": "scripts/viz/render-test.mts",
+    "change": "Add the verifier's F179 checks, all runnable through runPass + setImageIO (see scratch h/remove.mts):\n- On V2 (sage walls, walnut floor), Empty the room.\n- Assert the old TV and art boxes on the wall are near sage.\n- Assert the old sofa and rug areas on the floor are walnut.\n- Assert V2 minus the TV and coffee table leaves the sofa pixels unchanged.",
+    "forFinding": "F179"
+   }
+  ],
+  "apiChanges": "All changes are additive or backwards compatible, and tsc is clean across the repo.\n\n**model.ts**\n- New types: `GrowOptions`, `Slot`, `ChangeItem`, `ToolAvailability`, `IntentOptions`.\n- New fields:\n  - `SurfaceDef.grow?`\n  - `FurnitureDef.cutout? / front? / inPlate? / grow?`\n  - `FinishedSurface.label?`\n  - `Applied.caveat?` \u2014 the engine's studio-facing honest line. `changeLines` does not print it.\n- New functions:\n  - `tappedSurface(label, p)`\n  - `pickReady(f)`, `pickNeeds(f, label)`, `finishHasColour(finish)`\n  - `toolAvailability(room, finishes, reading?)`\n  - `changeList(p, { reading, resolve })`\n  - `danglingPicks(p, resolve)`\n  - `unlitSource(view, versions)`\n- `afterRender(p, { used?, consumed? })`:\n  - Behaviour change: it now clears `transfer.refs` and keeps `transfer.keep`.\n  - With `consumed` it clears only those slots.\n  - With `used` it keeps picks changed during the render.\n- `intentFor(p, o)`:\n  - `o` gains `reading`, `resolve` and `tools`; the old `visibleSurfaces` / `visibleFurniture` Sets still work.\n  - It counts the chips it uses.\n  - `Intent` gains optional `ignored`, `ignoredNote`, `consumes` and `total`.\n  - Tools, transfer and unready picks return `kind: null` with a reason.\n- `readingFor` drops non-manual surfaces on reshaped versions.\n\n**engine/run.ts**\n- New: `ImageIO`, `setImageIO(io)`, `urlKey`, `defKey`, `RegionCtx`, `isTraced`, `inFront`, `regionShare(url, def, reading?)`, `lightSceneFor(sampleKey, reading, { fixtures })`.\n- `regionOf(img, url, def, size, ctx?)` gains the `{ plate, reading }` argument and returns a fresh copy.\n- `PassInput` gains optional `leadStyle` and `unlit`.\n- `PassOutput` success gains `consumed?`.\n- `previewLight(url, knobs, scene?)`.\n- `regionOverlay(url, defs, rgb?, { reading }?)`.\n- `loadImg` and `toDataUrl` keep their signatures and now sit behind an LRU.\n\n**engine/recolor.ts**\n- `recolor(\u2026, texture: Img | Texture | null, { detail }?)`.\n- `paste(dst, src, mask, keep?, { feathered }?)`.\n- New exports: `castShadow`, `featherMask`.\n\n**engine/grade.ts**\n- `grade(img, knobs, amount, scene?: LightScene)`.\n- New `LightScene` type.\n\n**engine/palette.ts**\n- `extractPalette(img, k, { dropPage }?)`.\n- New: `referencePalette`, `hsl`, `pickRoles`, `Role`.\n\n**engine/texture.ts** (new file)\n- `Texture`, `TexMap`, `Frame`, `frameFor`, `planeAt`, `planeMap`, `quadCorners`, `quadMap`, `screenMap`, `makeTexture`, `sampleTexture`, `tileLab`, `CAMERA_M`, `CEILING_M`.\n\n**patterns.ts**\n- `PatternKind` gains 19 kinds.\n- `Pattern` gains optional `role` and `size`.\n- New: `TILE_PATTERNS`, `surfacePatternOf`, `patternFromWords`, `PATTERN_SIZE`, `patternSize`, `accentOf`.\n- `patternOf` also returns tile patterns.\n- `patternTile(p, base, t)` keeps its signature; a hex tile is t wide \u00d7 t\u00b7\u221a3/2 tall.\n\n**materials.ts**\n- `fromCatalogue` attaches surface patterns, so chips show planks, veins and grout.\n- `resolveMaterial` attaches a pattern for laid categories.\n- New: `LAID_CATEGORIES`, `Family`, `surfaceFamily`, `materialFamily`.\n\n**note.ts**\n- New: `nounOf`, `headOfLabel`, `keepTargets`, `keepMatch`.\n\n**tools.ts**\n- New: `namedPieces`, `leavesOut`.\n\n**furniture.ts**\n- Plural-tolerant finish rows and a bedding row.\n- `FINISH_HEX.Knit` (null).\n- `finishSheen` knows knit.\n- `suggestReplacements` is kind-aware, same signature.\n\n**lighting.ts**\n- New: `LightFixture`, `RoomLight`, `SAMPLE_LIGHT` (windows and fixtures of the three samples), `fixtureOfPiece`.",
+  "registerLines": [
+   "AI Visualizer engine \u2014 Remove and Empty the room (F179 \u00b7 F181 \u00b7 F028). What changed:\n- The empty plate is re-finished whole (no furniture-shaped holes on new walls and floors).\n- Every change in a Generate is read on the untouched photo first.\n- Remove keeps the pieces in front and the visible part of those behind, takes the piece's cast shadow, moves the seam outside the piece, and reads the plate's light only off the room's own surfaces.\nWhy: ghosts, holes and slabs on the headline demo move. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer engine \u2014 pieces and marks paint only themselves (F024 \u00b7 F023 \u00b7 F030 \u00b7 F033). What changed:\n- Customize/Replace grow inside the piece's outline, never on a traced neighbour in front, and boxed pieces weigh lightness fully.\n- A tapped surface grows only near the tap, with tight limits, off known regions, and says so when it finds nothing.\n- Mask caching keys on the full geometry (defKey), so a redraw is a new region.\n- A drawn surface keeps off the pieces in front.\nWhy: rectangles and floods on the three samples. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer engine \u2014 materials look like materials (F187 \u00b7 F047 \u00b7 F191 \u00b7 F059). What changed:\n- The photo's light and fine detail are split, and detail is kept by material family (oak\u2192walnut keeps the boards; tile\u2192wood drops the grout).\n- Highlights roll off on a filmic shoulder instead of clipping.\n- 19 procedural tile and floor patterns at real scale, with matching chips.\n- A studio material's photo is laid as its tile.\n- Patterns lie in the room's perspective: ground plane from the walls' vanishing points, homography on upright outlines, trilinear mips.\nWhy: flat colour, old grout printing through, and burn-out. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer engine \u2014 relight delivers its card (F188 \u00b7 F063). What changed:\n- Linear-light grade with a Reinhard shoulder at the gain; Daylight clips 0 % (was 18\u201333 %).\n- Blackbody white balance with a warm-sun split tone.\n- Dusk, night and evening scale exposure by \u00d70.40, \u00d70.24 and \u00d70.42, and the windows go to the sky.\n- Fixtures glow where the room's own lamps, pendants and downlights hang (SAMPLE_LIGHT plus the reading's lighting pieces).\n- A relight of a relit version relights the picture under it (unlitSource).\nWhy: presets looked alike or burned out. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer engine \u2014 style transfer by role (F189 \u00b7 F056 \u00b7 F057 \u00b7 F190). What changed:\n- A mood board's page is dropped and each swatch clustered on its own.\n- Colours map by role: floor the wood, walls the lightest neutral, joinery the deepest colour, worktops the lightest.\n- Keep unchanged matches head nouns ('the floor', 'the client\u2019s green sofa').\n- References are spent after their Generate, like a style card; Keep unchanged stays as a habit.\nWhy: paper-white walls, slate floors, inert Keep, a hijacking reference. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer model \u2014 one list, one count, honest waits (F006 \u00b7 F035 \u00b7 F175 \u00b7 F036 \u00b7 F032 \u00b7 F053 \u00b7 F052 \u00b7 F197 \u00b7 F022). What changed:\n- changeList() is the rail's chips and the button's count; a chip reads 'Walls', the surface's own name, or 'Cabinets (2 of 3)'.\n- intentFor waits with a reason for unready Replace/Customize, for Empty/Furnish/Remove where toolAvailability says they can't run, and for a transfer with nothing to carry.\n- intentFor reports the chips a pass won't use (ignored, 'kept for your next Generate'); passes report `consumed` and afterRender clears only that.\n- A removed swatch is not a change, and a Generate that changes nothing fails instead of saving a copy.\n- A whole-room look keeps none of the photo's outlines.\nWhy: mismatched counts, silent drops, fake progress runs. Source: bug fix, audit 2026-09-26 (UI adoption follows in wave B).",
+   "AI Visualizer engine \u2014 Furnish, Empty and Restyle say what they did (F055 \u00b7 F064 \u00b7 F192). What changed:\n- Furnish and Render from sketch follow the picked or lead style: its look, or the room in its materials and light.\n- Furnish's Leave out lifts the named pieces.\n- Empty lists only pieces really gone and says plainly what this photo can't take out or can't find.\n- A look restyle of an edited version records 'Whole-room look \u2014 earlier changes replaced'.\n- Light rides along with all three.\nThe engine's honest line lives in Applied.caveat; its wording is invented copy. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer \u2014 furniture finishes and Replace picks (F029 \u00b7 F044). What changed: Customize's finish rows take plurals, and bedding has its own Fabric row (Linen, Cotton, Knit, Velvet, Boucl\u00e9, Wool). Replace's quick picks match the piece's kind (coffee tables for a coffee table, armchairs for an armchair) before '{Style} {kind}' alternatives. Source: bug fix, audit 2026-09-26.",
+   "AI Visualizer engine \u2014 housekeeping (F212 \u00b7 F040, in run.ts). What changed: the picture cache is a 16-entry LRU and the mask cache a quantised 60-entry LRU. A colour named in Replace's words wins over its photo. The image IO is injectable (setImageIO), so Node checks run the exact browser passes. Source: bug fix, audit 2026-09-26."
+  ],
+  "verification": "**Static checks.** `npx tsc --noEmit -p .` is clean across the whole repo (0 lines), re-run after engine-seg's latest segment.ts. `npx eslint` is clean on all 16 of my files: run, recolor, grade, palette, pixels, texture, model, materials, note, patterns, furniture, tools, lighting, styles, catalogue, surfaces.\n\n**How the engine was exercised.** I added an injectable image IO to run.ts (`setImageIO`). Harnesses in scratch/fix/engine-pass/h/*.mts drive the real `runPass` on the three sample photos in Node through sharp. Output sheets are in scratch/fix/engine-pass/out, and I looked at each one before and after.\n\n**Model checks (h/model.mts): 21/21 pass.**\n- One count: 3 cabinets make 1 chip; rail 5 matches 'Generate \u00b7 5 changes'.\n- Chip labels: 'Cabinets (2 of 3)' and leaf names.\n- Unready Replace waits.\n- Empty/Furnish/transfer refuse with the real cause, never 'the sample living room'.\n- Empty with a note, style and floor pick keeps those for later.\n- A spent reference no longer hijacks: the next note runs as a note, and a style card reads 'Restyle as Bohemian'.\n- Picks made during a render survive.\n- A dangling swatch doesn't count.\n- A reshaped reading keeps only manual marks.\n\n**Visual and metric checks.**\n\n| Finding | Result |\n|---|---|\n| F179 | V2 \u2192 Empty: walls sage and floor walnut, no ghosts (out/ba-0.jpg, before on top, after below). TV/art boxes [152,184,144]/[156,189,148] vs wall [141,171,135]. V2 \u2212 TV \u2212 coffee table: sofa diff 0, TV box [146,175,138]. |\n| F181 / F028 | Six single removes (out/ba-1.jpg): no sofa hole, no TV slab, no throw ghost. Remove sofa + Replace armchair: brown only on the chair (final-f28.jpg). |\n| F024 | Kitchen brass shades and tan seats only; living-room pieces inside their outlines; bedroom pillows stay white (final-custom.jpg, after3-bd.png). |\n| F188 | Six presets \u00d7 three rooms against the cards (last-light-*.jpg). Daylight clip 0 % in all rooms, was 18.2 % / 32.5 %. Neutral knobs give an exact identity: max \u0394 0; sRGB round trip lossless. |\n| F187 / F047 / F191 | 12 materials (after3-mats.jpg, z-mats.jpg): herringbone, marble veins, subway, Japanese Wave ceiling in perspective, kitchen walnut planks, white herringbone, stripes following each wall, studio walnut photo tile. Near-white share stays at the original's level (subway wall 0.16 %). |\n| F059 | Modern restyle clips 0 %. |\n| F189 | Kitchen mood board: floor #8B7056 (target #8B6F55), cabinets navy, no paper chip. |\n| F056 | 'the floor, the client\u2019s green sofa' keeps both. |\n| F055 / F064 / F192 | Furnish Modern with 'no TV, no rug' removes both. Japandi look carries a caveat. Kitchen refuses Empty; an un-emptied room refuses Furnish. Empty names the kept curtains and the unfound ceiling fan. V2 \u2192 Industrial carries 'Whole-room look \u2014 earlier changes replaced'. |\n| F063 | Blue Hour on unlit is a true blue hour; stacked is not (final-tools.jpg). |\n| F023 | A tap that used to flood 69 % now covers 0.2 %; an empty tap fails honestly. |\n| Note targeting | 'terracotta walls' no longer paints the wall-mounted TV (z-kt.jpg). |\n\n**Timing.** Warm edits take 60\u2013200 ms; region grow is about 100\u2013200 ms each.\n\n**Not done in this wave.** I did not run next build/dev/start and did not touch local.db or port 3000. Verification shots were not banked into design-source/verify (not my area); they are in the scratch out/ folder for the integrator."
+ },
+ {
+  "key": "engine-seg",
+  "fixed": [
+   {
+    "id": "F026",
+    "what": "growRegion no longer ends a region on the small grid at an outline: polygon-blocked cells (hull/cutout) are kept apart from box-blocked ones, the region reaches 2 cells past an outline, and the mask is clipped at full size by the anti-aliased polygonMask of the hull (union) and cutouts (clipToOutlines). within/exclude boxes are clipped at full size too. Traced lines (the wall/ceiling line, the floor under the curtains, the worktops) are now clean anti-aliased edges.",
+    "files": [
+     "lib/visualizer/engine/segment.ts"
+    ]
+   },
+   {
+    "id": "F185",
+    "what": "Same full-size outline clip as F026. The hull clip is generous (coverage \u00d72) and the cutout clip is mirrored, so two outlines that share a line both cover its pixels. Beside an outline the outline draws the edge: the colour matte there never undercuts the region, so the shadow line at a traced corner is painted, not left as a pale line. The upscale also tent-blurs the small mask before the bilinear smoothstep, so colour edges don't staircase.",
+    "files": [
+     "lib/visualizer/engine/segment.ts"
+    ]
+   },
+   {
+    "id": "F186",
+    "what": "Edge matting at full size: in the band one small pixel either side of a colour-decided edge, each pixel is unmixed between the region's local colour and the local colour of what borders it, but only when the pixel really lies on that line (a third thing such as the pot is judged by distance). Brighter sharpening halos count as the surface. Enclosed pockets (wall between leaves) are filled in three short hops, gated by both the local colour and the seed colour, so the fill can't creep into a pot. Traced cutouts replace boxes for the pot, armchair (right edge at the post), floor lamp shade and pole, art, TV and speaker (living room), and for the lamp, nightstand + books, bed and print (bedroom). Checked by eye: fig leaves have no white fringe, no box around the pot, pampas edges blend, the bedroom lamp's box is gone.",
+    "files": [
+     "lib/visualizer/engine/segment.ts",
+     "lib/visualizer/samples.ts"
+    ]
+   },
+   {
+    "id": "F025",
+    "what": "Removed every rectangular exclude box from the living-room wall and floor, the bedroom wall and floor, and the kitchen floor, and replaced each with a traced cutout: rug quad, throw, coffee-table top and leg, console body and legs, pot and saucer, sofa (floor); the bed footprint and rug (bedroom floor). The bedroom wall's nightstand shadow is taken in by seeds at (0.36,0.72) and (0.42,0.72); the verifier found that shadow was the cause there, not a box.",
+    "files": [
+     "lib/visualizer/samples.ts"
+    ]
+   },
+   {
+    "id": "F183",
+    "what": "Living-room 'light oak floor': the hull now follows the skirting (0.4,0.651)\u2192(1,0.729), follows the curtain hems exactly (no flat pink patch under the curtains), and follows the window frame bottom. Cutouts now cover the rug quad, the throw, the table and console outlines and the pot. The sofa's cut leaves the throw out. After re-running demo-renders.mts, living-room-edit.jpg and its golden-hour version show no vertical seam at x\u22480.868, no oak strips, no mauve throw and no box behind the pot. Both swatch hexes are unchanged (#604337 / #81623E), so DEMO_EDIT needs no edit.",
+    "files": [
+     "lib/visualizer/samples.ts",
+     "public/visualizer/demo/living-room-edit.jpg",
+     "public/visualizer/demo/living-room-edit-golden-hour.jpg",
+     "public/visualizer/demo/swatch-walnut.jpg",
+     "public/visualizer/demo/swatch-oak.jpg"
+    ]
+   },
+   {
+    "id": "F184",
+    "what": "Kitchen: the stool box is dropped. The floor is one hull running from the plinth line (moved onto the cabinets) under the waterfall end and along the island base line (raised onto the base), up to the dining area, with a cutout for the table and chair seats. Stool legs stay unpainted: the close is gated by colour, a lightness knee at 20 L* sits in the colour distance, a full-size far-colour check applies inside the region, and a seed that sat on a leg was moved. Worktops are keyed, and their hulls now include the front edges (left run and island), so the counters are no longer two-tone. Walls: the window frame, sill and traced vases are cut out, a seed covers the shaded left strip, and a new hull piece covers the band above the uppers. The ceiling line was re-traced (it curves to 0.207) and the right wall's hull reaches the tall cabinet. Bedroom: the rug and bed are floor cutouts in place of boxes, and the lamp, nightstand and bed are traced wall cutouts. The wardrobe cutout follows the throw's real edge, and the same edge is used for the bedspread cut and the floor's bed polygon. The ceiling now has the traced line (0.0696\u21920.0713) and keeps off the curtain top.",
+    "files": [
+     "lib/visualizer/samples.ts",
+     "lib/visualizer/engine/segment.ts"
+    ]
+   },
+   {
+    "id": "F182",
+    "what": "Every sample piece's cut is now its traced visible outline, with what stands in front left out. Living room: the armchair excludes the sofa and cushions, the coffee table excludes the sofa and throw, and the rug excludes the throw and table leg. The fig is leaves, stem and pot, and its wall seed was replaced by leaf seeds. The TV, console (with speaker and vase), art and both curtains are traced to their folds and hems. Bedroom: new cuts for the headboard, bedspread, both nightstands, lamp, rug, print and curtains. Kitchen: each stool's upholstered shell only, each pendant's shade only, and the dining table's top and leg. Coffee-table seeds are now on the table, and several boxes were widened so the cut, not the box, bounds the piece. The engine-pass run.ts already passes cutout and front, and it treats a traced cut as the piece.",
+    "files": [
+     "lib/visualizer/samples.ts"
+    ]
+   },
+   {
+    "id": "F033",
+    "what": "segment.ts now exports outlineRegion(img, poly, {seeds, avoid, grow, ...GrowOpts}). It takes the drawn outline as the hull. A redrawn curated surface grows from its own seeds that fall inside the outline, keeping its cutouts and exclude. A manual surface is keyed on the outline's main colour (interiorSeeds: the fullest coarse Lab bin), and the grown result is kept only when it covers at least 60% of the outline (30% with own seeds); otherwise the plain polygon is used. `avoid` masks (the pieces in front) are always taken out, and grow:false (glass) keeps the outline as drawn. Checked on the living room with a panel drawn around the fig: the leaves and pot stay unpainted. engine-pass's regionOf already calls it.",
+    "files": [
+     "lib/visualizer/engine/segment.ts"
+    ]
+   }
+  ],
+  "partial": [
+   {
+    "id": "F180",
+    "left": "Done on my side: fallback.ts has a new fallbackReading(img). It places seeds and sets no band. Walls get several calm seeds spread across the middle band, with lightWeight 1, global 14 and edgeStop 4. The ceiling is read only from the top 6% of rows, and only when it is at least \u0394E 8 from the walls. Floor comes from the last rows of a 48 px copy, above any flat caption bar; the pick is weighted toward the bottom, and wall-coloured or black-shadow clusters are rejected. If nothing qualifies, floor is null. Every surface carries rivals (the other surfaces' seeds). segment.ts supports lightWeight, edgeStop (Sobel on L*), rivals and the lightness knee. On all four test photos there is no straight seam anywhere, and nothing floods bedding, curtains or the kitchen island. Left: model.ts fallbackDetection still builds the old `within`-boxed defs, so the wiring change listed in crossFileRequests is needed. Also left: two known limits of an uncurated reading. On the living-room upload the walls still take a ceiling of the same white. On the bedroom upload, Floor is left unmarked (the bottom rows are the rug and the shadow under the bed)."
+   },
+   {
+    "id": "F060",
+    "left": "Engine side done (the same fallback reading as F180): a full lightness weight, an edge stop, no `within` cut, and white bedding is no longer read as wall. Left: model.ts wiring (crossFileRequests). The style-panel ANY_LOOK change and the 'Marked roughly on your photo' caption belong to wave B (components/visualizer/**)."
+   },
+   {
+    "id": "F193",
+    "left": "Segment side done: outlines that share a line now both cover its pixels (hull clip \u00d72, mirrored cutout), and the outline decides edge pixels, not the colour matte. Left: one-pass compositing in recolor.ts/run.ts (verifier's shadeTarget + composite), which only engine-pass can do. Until then, two surfaces painted in the same pass leave a faint dark dashed line along their shared edge, because the second recolor reads the first one's paint as shade (visible at 400% on the living-room wall/ceiling line)."
+   }
+  ],
+  "skipped": [],
+  "crossFileRequests": [
+   {
+    "file": "lib/visualizer/model.ts",
+    "change": "fallbackDetection: accept the extra `reading` that fallbackDots now returns. Import type { FallbackReading } from './engine/fallback'. Widen the parameter to `dots?: { walls: Pt; floor: Pt; ceiling: Pt | null; reading?: FallbackReading }`. When `dots?.reading` is present, build the surfaces as `dots.reading.surfaces.map((s) => ({ id: newId('s'), label: s.label, x: s.x, y: s.y, seeds: s.seeds, local: s.local, global: s.global, grow: s.grow }))` with no `within`. Floor is already omitted when the reading has none. Keep the existing no-argument / dots-only path for the sketch 'Use as-is' case. The editor calls `fallbackDetection(fallbackDots(img))` (visualizer-editor.tsx:349/367), so it picks this up with no UI change. GrowOptions already matches GrowExtras (lightWeight, edgeStop, rivals, pockets, matte).",
+    "forFinding": "F180"
+   },
+   {
+    "file": "lib/visualizer/engine/recolor.ts + lib/visualizer/engine/run.ts",
+    "change": "Verifier's F193 compositing. Split recolor into shadeTarget(img, mask, hex, sheen, strength, texture, acc), which reads the untouched pixel and accumulates w and w\u00b7C, and composite(img, acc), which computes a = min(1, \u03a3w) and d += (\u03a3wC/\u03a3w \u2212 d)\u00b7a. Keep recolor as a wrapper so single-surface calls stay byte-identical. Use one accumulator per variant for the surfaces of one pass: editPass's materials loop and note paints, restylePass, refinish. segment.ts now gives both sides of a shared outline full coverage on the edge pixels, so the composite comes out seamless.",
+    "forFinding": "F193"
+   },
+   {
+    "file": "scripts/viz/demo-renders.mts (integrator step, no edit needed)",
+    "change": "After engine-pass's recolor changes land (detail / shoulder / Texture), re-run `npx tsx scripts/viz/demo-renders.mts` and then `npm run db:baseline`, because the demo pictures are painted with recolor. I re-rendered them with today's recolor. The swatch hexes are unchanged (#604337 / #81623E); keep DEMO_EDIT in step if the script prints different ones. The script mirrors regionOf's surface branch and the furniture branch for a traced cut (the sofa has no pieces in front). If run.ts gains a Node ImageIO, the script could call runPass directly instead.",
+    "forFinding": "F183"
+   },
+   {
+    "file": "lib/visualizer/samples.ts (FYI for engine-pass)",
+    "change": "No change requested. All sample `cut`s are now traced polygons, so run.ts isTraced() is true for every sample piece. outlineOf therefore returns polygonMask(cut) as the piece's visible pixels, and the `front` pieces' cuts become cutouts. The cuts already leave out what stands in front, so this is consistent. If engine-pass wants `inPlate: true` on the living-room curtains (F064) or explicit `front` lists, send them to the samples.ts owner.",
+    "forFinding": "F182"
+   }
+  ],
+  "apiChanges": "lib/visualizer/engine/segment.ts\n- GrowOpts is now `{...} & GrowExtras`. The new exported type GrowExtras is { lightWeight?: number (default 0.5); edgeStop?: number; rivals?: Pt[]; pockets?: boolean (default on when a hull is given); matte?: boolean (default on) }.\n- New exports: clipToOutlines(mask, W, H, {hull, cutout, within, exclude}); outlineRegion(img, poly, GrowOpts & {avoid?, grow?, seeds?, minShare?}); interiorSeeds(img, poly).\n- growRegion's signature is unchanged, but its output changed in six ways:\n  - It is clipped at full size, anti-aliased, to hull, cutouts, within and exclude.\n  - Colour-decided edges are matted per full-size pixel.\n  - Enclosed pockets are filled.\n  - The close only fills pixels near the seed colour.\n  - The colour distance has a lightness knee: lightness counts at lightWeight up to 20 L*, then fully.\n  - Pixels far from the surface's local colour are dropped inside keyed regions.\n- Coverage on the sample surfaces moves by at most \u00b11\u20132 pts, except where the old boxes cut real surface.\n- polygonMask, maskCoverage and maskCentre are unchanged.\n\nlib/visualizer/engine/fallback.ts\n- New fallbackReading(img): FallbackReading = { walls, floor | null, ceiling | null, surfaces }.\n- Each FallbackSurface is { label, x, y, seeds, local, global, grow: GrowExtras }.\n- fallbackDots(img) keeps its old fields (floor is still always a Pt) and adds `reading: FallbackReading`.\n\nlib/visualizer/samples.ts\n- The types are unchanged; the data changed:\n  - Traced cutouts replace the exclude boxes.\n  - Traced cuts are added for every piece.\n  - Seeds moved.\n  - Boxes widened: coffee table, both rugs, bedroom curtains, dining table.\n  - Kitchen worktops are now key: true.\n  - Kitchen walls get a third hull piece; the kitchen ceiling and right-wall hulls were re-traced.\n- currentSampleReading picks all of this up for existing sample rooms.\n\nOther changes\n- New dev aid: scripts/viz/fallback-test.mts.\n- public/visualizer/demo/* were regenerated.",
+  "registerLines": [
+   "REG-audit-seg-1 \u00b7 bug fix \u00b7 audit 2026-09-26 (F026, F185, F186, F193 segment side): the engine's region edges are now decided at full size. Traced outlines (hull, cutout) and within/exclude boxes are clipped anti-aliased at the photo's resolution, and outlines that share a line both cover it. Colour edges are matted pixel by pixel: unmixed between the surface and what borders it, with a brighter sharpening rim counted as the surface. Pockets of wall between leaves are filled, and the close never fills a thin dark leg. Result: no staircase on the wall/ceiling line, floors or worktops, and no white halos or boxes around plants, pampas, the pot or lamps (lib/visualizer/engine/segment.ts).",
+   "REG-audit-seg-2 \u00b7 bug fix \u00b7 audit 2026-09-26 (F025, F182, F183, F184, F186): the three sample rooms' readings were re-traced against the photos, with the rectangular exclude boxes replaced by traced cutouts. Living room: rug, throw, table, console, pot, armchair, lamp, art and TV; floor hull on the skirting and curtain hems; the sofa's outline leaves the throw out. Bedroom: bed, rug, lamp, nightstands, print; wardrobe cutout on the throw's real edge; the traced ceiling line. Kitchen: the floor runs one hull under the waterfall end and along the island base with stool legs left alone; full-depth keyed worktops; window, sill and vases cut out of the walls; the band above the cabinets and the curved ceiling line. Every piece's Customize outline is its visible outline, with seeds on the piece (lib/visualizer/samples.ts). The demo design's pre-rendered edit and its golden-hour relight were regenerated with no rug seam or mauve throw (public/visualizer/demo/*, scripts/viz/demo-renders.mts; swatch hexes unchanged).",
+   "REG-audit-seg-3 \u00b7 bug fix \u00b7 audit 2026-09-26 (F060, F180 engine side): an uploaded photo is read with seeds, never bands. Walls take several calm seeds and grow with full lightness weight and an edge stop. Floor is read from the photo's last rows above any caption bar, on a very small copy, weighted toward the bottom, and never the walls' own colour or a black shadow; with no clear floor it is left unmarked. The ceiling is read from the top rows only when it is a different colour. Each surface keeps off colours nearer another's seeds. Result: no straight seam across the photo, and no walls on bedding, curtains or a white island (lib/visualizer/engine/fallback.ts; wiring into fallbackDetection pending in model.ts; dev check scripts/viz/fallback-test.mts).",
+   "REG-audit-seg-4 \u00b7 bug fix \u00b7 audit 2026-09-26 (F033 engine side): outlineRegion in engine/segment.ts. A drawn or redrawn outline is grown on its own colour inside it (a redrawn curated surface from its own seeds and cutouts), with the pieces standing in front taken out; the plain outline is used only when the colour reading covers too little of it, and glass or windows keep the outline as drawn."
+  ],
+  "verification": "- **Type check:** `npx tsc --noEmit -p .` reports 0 errors for the whole project.\n- **Lint:** `npx eslint` is clean on segment.ts, fallback.ts, samples.ts, demo.ts and scripts/viz/fallback-test.mts.\n- **Visual checks** (all in Node on the real photos; no next build/start; local.db untouched):\n  - **Harnesses:** paint.mts paints surfaces and pieces exactly as regionOf does; trace.mts gives grid crops for tracing; probe.mts reads mask values.\n  - **Sample rooms:** I looked at every result. Living room: navy walls (plant, pampas, pot, armchair, lamp, TV) and a walnut floor (rug, throw, curtains, console). Bedroom: navy walls (lamp, nightstand, ceiling line), walnut floor and wardrobe (bed edge, rug). Kitchen: charcoal floor (stool legs, waterfall, plinth, dining area), black worktops (front edges) and navy walls (window, sill, vases, band above the cabinets, the corner). Also Customize on the armchair, coffee table, rug, fig and right curtain.\n  - **Region sheets:** `npx tsx scripts/viz/regions.mts` for all three rooms.\n  - **Other scripts:** render-test.mts and wallpaper-test.mts both run, and the wallpapers are clean.\n  - **Demo renders:** `npx tsx scripts/viz/demo-renders.mts` rerun, with before/after crops of the rug side.\n  - **F033:** outlineRegion on a panel drawn around the fig; the pot and leaves come back at mask 0.\n  - **Fallback:** tested on bedroom, kitchen and living-room originals plus sophia-living-room.jpg, each resized to 1600 as the editor does: no straight seams, and no flooding of bedding, curtains or the island.\n  - **Edge cases:** 1\u00d71, 4\u00d74, 1600\u00d71, 1\u00d7900 and uniform photos don't crash.\n  - **Timing:** about 100\u2013200 ms per region at 480.\n- **Shots:** in /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/e7709660-e174-4773-a5ee-c291461f3e72/scratchpad/fix/engine-seg/.\n  - out/: lr-wall*, lr-floor*, bd-*, kt-*, lr-cust*, outline-*, demo-right(-before).png\n  - after/: regions-*.jpg\n  - fb/: sheet.jpg, fallback.jpg, per-photo PNGs\n  - before/ and demo-before/: the original files, for diffing\n- **Not banked:** none of these shots are under design-source/verify/, because that folder isn't mine; the integrator can copy them."
+ }
+]

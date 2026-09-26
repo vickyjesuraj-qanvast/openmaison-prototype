@@ -4,6 +4,7 @@ import { cache } from 'react'
 import { db } from '@/lib/db'
 import { fileComments, leadFiles, leads, members, noteAttachments, returnAttachments, taskAttachments, type FileComment, type Member } from '@/lib/db/schema'
 import type { FileRow } from './file-model'
+import { renderOrigins, type RenderOrigin } from '@/lib/visualizer/queries'
 
 /* Lead Details › Files (931-39056) — loaders for the tab and the viewer. */
 
@@ -14,7 +15,11 @@ export type LeadFilesData = {
   trashed: FileRow[]
   team: Member[]
   now: number
+  /** (audit 2026-09-26, F095 · F113) Renders filed from the AI Visualizer, by file id: the design, room and version each one is — Files offers
+      "Open this version" (`live`) and Information says where it came from. A file not listed here is an upload. */
+  renders: Record<string, RenderOrigin>
 }
+const byFile = (list: RenderOrigin[]) => Object.fromEntries(list.map((r) => [r.fileId, r])) as Record<string, RenderOrigin>
 
 async function loadRows(leadId: string): Promise<{ rows: FileRow[]; team: Member[] }> {
   const [all, team] = await Promise.all([
@@ -53,7 +58,8 @@ async function loadRows(leadId: string): Promise<{ rows: FileRow[]; team: Member
 
 export async function fetchLeadFiles(leadId: string): Promise<LeadFilesData> {
   const { rows, team } = await loadRows(leadId)
-  return { files: rows.filter((f) => !f.deletedAt), trashed: rows.filter((f) => !!f.deletedAt), team, now: Date.now() }
+  const renders = byFile(await renderOrigins(rows.filter((f) => f.kind === 'image').map((f) => f.id)))
+  return { files: rows.filter((f) => !f.deletedAt), trashed: rows.filter((f) => !!f.deletedAt), team, now: Date.now(), renders }
 }
 
 export type FileViewData = {
@@ -69,6 +75,10 @@ export type FileViewData = {
   team: Member[]
   me: Member
   now: number
+  /** (F095 · F113) The file's AI Visualizer origin when it is a filed render — its menu opens that version, Information names it. */
+  render: RenderOrigin | null
+  /** The same for its siblings in the folder — the Files grid's menus. */
+  renders: Record<string, RenderOrigin>
 }
 
 async function fetchFileViewUncached(leadId: string, fileId: string): Promise<FileViewData | null> {
@@ -82,7 +92,8 @@ async function fetchFileViewUncached(leadId: string, fileId: string): Promise<Fi
   const cs = await db.select().from(fileComments).where(eq(fileComments.fileId, fileId)).orderBy(asc(fileComments.createdAt))
   const byMember = new Map(team.map((m) => [m.id, m]))
   const me = team.find((m) => m.isYou) ?? team[0]!
-  return { lead, file, folder, siblings, files: rows.filter((f) => !f.deletedAt), comments: cs.map((c) => ({ ...c, author: byMember.get(c.authorId) ?? null })), team, me, now: Date.now() }
+  const renders = byFile(await renderOrigins(rows.filter((f) => f.kind === 'image' && !f.deletedAt).map((f) => f.id)))
+  return { lead, file, folder, siblings, files: rows.filter((f) => !f.deletedAt), comments: cs.map((c) => ({ ...c, author: byMember.get(c.authorId) ?? null })), team, me, now: Date.now(), render: renders[file.id] ?? null, renders }
 }
 
 /** Per-request memo (audit 2026-08-30): `generateMetadata` and the page both call this, which ran every query twice. */

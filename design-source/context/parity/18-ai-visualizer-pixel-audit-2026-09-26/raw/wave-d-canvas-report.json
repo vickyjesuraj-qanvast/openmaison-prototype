@@ -1,0 +1,376 @@
+{
+ "done": [
+  {
+   "ref": "F005 · new:editor-visual:tiles grow to label · new:phone-tablet:⋯ floats off thumb · new:motion-a11y:stray 'to' · new:versions-menus:tiles stretch · new:fresh-desktop:tile widens · new:fresh-tablet:tiles widen",
+   "what": "Versions strip: every tile is exactly its thumbnail's width (128 / 96 ≤1024, min-width 0); the ⋯ lives inside a .thumb wrapper so it sits 4px in from the picture's top-right whatever the caption; long captions ellipsize and say themselves in a house Tooltip (no native title). Measured: tiles 128/128/128 at 1440, 96 at 768/390/320, ⋯ always inside the image.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ref": "critic-17 (D5)",
+   "what": "Shortcut hints only where the shortcut exists: the strip head's 'Versions' tooltip reads '← → step through the versions'; the stage banner's Cancel reads 'Cancel (Esc)' with aria-keyshortcuts=Escape (Esc already leaves place / draw / pin).",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/stage.tsx"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:sketch strip hint · new:phone-tablet:empty-strip hint wraps",
+   "what": "Empty strip: on a sketch it says '— pick a style, then Render from sketch.'; on a phone the hint is a dashed 96×60 slot tile beside the Original reading 'Your renders land here' (the rest of the sentence hidden), never a five-line column or a clipped line.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ref": "critic-12 (remaining: provenance in the editor)",
+   "what": "A version built on another says so in the editor: its caption tooltip and its tile's name add 'made from V2'.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:'1 deleted' sticky underline",
+   "what": "'n deleted' underline, the tile hover ring, Present's thumb hover ring and the share tiles' hover border only on hover-capable pointers (no state left behind by a tap).",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ref": "F142 · new:phone-tablet:phone landscape photo 0×0 · new:phone-tablet:short phones thumbnail photo · new:surfaces-furniture:nine markers bury photo",
+   "what": "Stage fit on short stages (type Fit): 'roomy' (chip and bar keep their rows) while the photo is ≥180px tall (phone) / 200 (else); otherwise the bigger of 'side' (short + wide: bar moves to the bottom-right beside the photo, photo centred between chip and bar, chip kept only where it clears the photo) and 'low' (short + narrow: chip steps aside with visibility:hidden, bar keeps its row), or 'over' (photo would be under 100px: bar lies over its bottom edge). The bar is measured by size, not place, so moving it never feeds back into the fit. Markers shrink to 10px dots (hit areas kept) on a photo under 240px wide. Harness: 844×390 stage 130px → photo 170×114 with the bar beside it (was 0×0); 375×190 → 173×116 fully visible, chip hidden.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ref": "F164 · new:phone-tablet:banner wraps / covers chip · new:motion-a11y:banner narrow pill · new:versions-menus:'Tap' to mouse · new:fresh-tablet:banner 2 lines at 1024 · new:fresh-phone:banner blob",
+   "what": "Stage mode banner (pin / place / draw / remove): centred across the whole stage (left/right 16 + margin auto + max-content, not left:50%), one line wherever it fits; where it would meet the version chip it moves right of the chip, and only when that doesn't fit it drops under the chip; wraps as a radius-8 body-s card on phones; on a short wide stage it sits over the bar's column; presses pass through it (pointer-events none) except Cancel; says 'Click' to a mouse and 'Tap' to a finger. Reduced motion: no slide, 80ms fade.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ref": "F142 (320) · new:motion-a11y:320 Download cut · new:versions-menus:320 bar clips · new:fresh-phone:320 toolbar clips",
+   "what": "≤359px the canvas bar drops the zoom − / + (pinch zooms, the % button fits) and its divider: 204px, no overflow at 320.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:pulsing purple flood reads as the colour",
+   "what": "The lit region is drawn from its own soft mask by an inline SVG filter: a 2px brand-colour rim just outside it and a still 10% wash — no pulsing, no flood. Once a finish is picked for the lit surfaces (markers' pending + fill), a tint layer paints the region in the pick's colour (two stacked masked layers, ~2/3 at the heart), crossfading between picks, so the photo previews the choice.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ref": "F150",
+   "what": "Stage pins get a 42px hit area (::before inset −8px) around the 26px disc.",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ref": "F172",
+   "what": "Reduced motion in the stage and Present: photo crossfade, preview/highlight fades and the banner at 80ms with no slide; the running card uses overlayFade (80ms when reduced); the pin card's rise uses var(--motion-toggle); the zoom transition and the progress fill stop easing. Literals replaced by lib/motion tokens.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css",
+    "components/visualizer/editor/pin-card.module.css",
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "F162",
+   "what": "Focus: when a Generate's card has faded (onExitComplete), a run that landed focuses the new version's tile and a cancelled one returns focus to what started it (Generate), else the tile; focus left on the fading card counts as idle for the next run. Pin cards remember their opener before autofocus and give focus back on Cancel / Esc / Close (fallback: the pin's marker, then the pin tool); a removed pin hands focus to the pin tool (only when that pin went on the same picture, never on a version switch). Works alongside the editor's own pinBack.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:pin card covers the canvas bar",
+   "what": "A pin card over the canvas bar ends above it and rises above the pin to fit (harness 768×1024 draft at 85%/85%: card bottom 626, bar top 634).",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ref": "new:files-client:phone sheet hides the pin",
+   "what": "PinThread / DraftPin take `image`: on a phone the sheet shows the spot on an 88px copy of the picture with the pin's number (or the new pin's glyph). Needs the editor to pass image (crossFileRequests).",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx",
+    "components/visualizer/editor/pin-card.module.css"
+   ]
+  },
+  {
+   "ref": "new:files-client:'Client / Client · 9 min ago'",
+   "what": "A client pin whose author is already 'Client' / 'Your client' drops the 'Client · ' meta prefix.",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ref": "D1",
+   "what": "Team pins are private: Share dialog line under the versions 'Your team’s pins stay private — the client sees only their own notes.' (lock icon); the studio's new-pin box says 'Only your team sees it' (was 'The client sees it on the shared link'); in the studio's view a reply on a client's pin has the placeholder 'Reply — the client sees it'.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx",
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ref": "F102 · F103",
+   "what": "The WhatsApp draft names the shared rooms in the design's order, as the client's page names them (clientRoomNames: 'Kitchen sketch' → kitchen, a lone 'Living room 2' → living room), joined as a sentence (joinWords: 'living room, master bedroom and kitchen'). Harness: '…2 design ideas for your living room and kitchen'.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "new:files-client:studio's Open the link counts as a view",
+   "what": "Shared before › open_in_new opens `/renders/<token>?preview=1` (the share page already skips counting on preview=1).",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:snackbars over dialogs (Stop sharing)",
+   "what": "A link stopped from the Share dialog offers Undo in its own row (onUnstop) instead of relying on a snackbar over the dialog. Needs the editor to pass onUnstop (crossFileRequests).",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "F078 · F147 · critic-20 · new:phone-tablet:Present thumbs 6px · new:motion-a11y:Present thumbs sliver · new:versions-menus:facts scrolled · new:fresh-tablet:facts scrolled",
+   "what": "Present's side is two blocks: the facts (own scroller, always open at 'What changed') and the versions below in their own block (≤45%, three across on desktop, two on a landscape tablet) that scrolls itself to keep the one on screen in view; stacked (phones / portrait tablets) the versions are one 85px row that never shrinks, facts scrolling under it. Harness: facts scrollTop 0 at 1440/1280/1024/768/390; thumbs row 85px at 768 and 390.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ref": "bug fix (found here)",
+   "what": "Present on a phone: the grid column is minmax(0,1fr) and the side min-width 0, so the versions row scrolls inside the sheet instead of widening it to 516px (the Next arrow and the facts were off-screen at 390).",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:Before and after on the letterbox",
+   "what": "Present reads each picture's shape; Before and after and the single picture share one box sized min(100cqw, 100cqh×shape), so the labels and the divider sit on the photo and nothing jumps between the two modes.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:'What changed' after a deleted in-between",
+   "what": "When the version it was made from is deleted, 'What changed · From V2' lists everything V4 shows that V2 doesn't (factsSince), not just its own pass.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/version-facts.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Present table squeezes names",
+   "what": "Present's fact lines read name over value (name subtitle-m, value body-s wrapping), never two squeezed columns.",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css",
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "F064 (studio side)",
+   "what": "Present shows the pass's caveat (e.g. 'Kept: the sheer curtains — this photo can’t take them out') under What changed.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:hex names + ceiling twice · new:code-robustness:hex names (display side)",
+   "what": "Present and the moodboard read a style transfer's 'Reference #D5D3CB' as 'Reference colour, close to <nearest catalogue paint>'; a surface laid twice in one pass reads once (the later finish wins); a group is named as a group only when the finish covers the whole group in the room's reading ('Floor · Walnut vinyl plank', never 'Walls' for one wall of two) — else each surface by name; the moodboard's 'where' follows the same rule.",
+   "files": [
+    "components/visualizer/editor/dialogs/version-facts.ts",
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:moodboard repeats the room / list indent · new:fresh-phone:Look and light indented",
+   "what": "Moodboard heading drops the room when the design is already named after it ('Sample · Living room'); Pieces and Look-and-light lines align with their headings (no 18px indent).",
+   "files": [
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx",
+    "components/visualizer/editor/dialogs/moodboard.module.css"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:moodboard postage stamp",
+   "what": "Moodboard: a landscape tablet keeps the render beside a 260px side; phones and portrait tablets show the render full width at its own shape (≤60dvh) with the board scrolling under it, swatches auto-fill ≥120px capped at 120px tall; long swatch names wrap to two lines.",
+   "files": [
+    "components/visualizer/editor/dialogs/moodboard.module.css"
+   ]
+  },
+  {
+   "ref": "F087 (print half)",
+   "what": "The moodboard's wallpaper swatch is one pre-tiled 480×360 bitmap at the chip's scale (finishBoard), so PDF viewers can't seam or blow up a repeating background.",
+   "files": [
+    "components/visualizer/editor/dialogs/version-facts.ts",
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Add a surface three footer buttons",
+   "what": "Add a surface: the two ways are ChoiceCards in the body (the way the studio came in preselected); the footer is Cancel + the one primary that does the picked way; 'Click'/'Tap where it is' by pointer.",
+   "files": [
+    "components/visualizer/editor/dialogs/small-dialogs.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-phone:add to a quote again makes a second quote · new:fresh-desktop:1 sqft quantities (dialog side)",
+   "what": "Add to a quote: a draft that already holds the version says 'has V1' on its chip and is preselected when every draft holds it (button 'Add again'); picking 'A new quote' then warns it holds the version again; the pick is right on first open too; a line 'Quantities start at 1 — measure the room before you send the quote.'",
+   "files": [
+    "components/visualizer/editor/dialogs/small-dialogs.tsx"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:Deleted versions stays open and empty",
+   "what": "Deleted versions: a restore while others remain says 'V3 is back in the strip.' in the dialog; the last one is closed by the host with its snackbar (the editor's restoreFromDialog already does that; the dialog no longer duplicates it).",
+   "files": [
+    "components/visualizer/editor/dialogs/deleted-versions.tsx"
+   ]
+  },
+  {
+   "ref": "F156 (canvas side)",
+   "what": "The stage area pads itself by --viz-inset-l/r (grey edge to edge, content clear of the notch), the chip and the side-fit bar and banner add them, and the strip's padding adds them so its white band runs edge to edge. Needs the editor to set the variables (crossFileRequests).",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css",
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "critic-11 (partly)",
+   "why": "PNG / zip-all / brand-kit watermark on Download is a proposal needing the owner, and the download lives in the editor's toolbar handler, not in this package."
+  },
+  {
+   "ref": "critic-18 (cannot-check)",
+   "why": "Nothing to change: share-dialog.tsx already shows 'Open — closes in N h' with Renew under a day; it needs a link near expiry to see live."
+  },
+  {
+   "ref": "F087 (picker half)",
+   "why": "The surface picker / rail row chip draws the CSS-gradient lattice from lib/visualizer/materials.ts chipCss (engine) used by panels (rail) — outside this package; request filed."
+  },
+  {
+   "ref": "new:fresh-desktop:client link Before is the parent · new:fresh-desktop:studio pins go out on the link (server side) · new:files-client:'Client' fallback name",
+   "why": "Server / share-page fixes (actions.ts, queries.ts, render-share-page.tsx); the canvas side is done and requests are filed."
+  },
+  {
+   "ref": "new:fresh-tablet:snackbar over the quote dialog after Save to Files · snackbar over the phone thread sheet",
+   "why": "Snackbar placement lives in components/om/snackbar.tsx / the editor / the share page, not in this package."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ref": "new:files-client:phone sheet hides the pin",
+   "change": "Pass the picture to the pin cards: <PinThread … image={imageUrl} /> and <DraftPin … image={imageUrl} /> (the phone sheet then shows the pin's spot on a small copy)."
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ref": "new:fresh-tablet:snackbars over dialogs",
+   "change": "ShareDialog: add onUnstop={(id) => { void act(unstopShareLink(id), 'open the link again') }} and drop the snackbar from onStop: onStop={(id) => { void act(stopShareLink(id), 'stop sharing') }} — the stopped row offers Undo itself (onStop is only ever called from the open dialog)."
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ref": "new:versions-menus:Deleted versions stays open",
+   "change": "restoreFromDialog: snack only for the last one — `if (ok && last) { setDeletedOpen(false); snack({ message: `V${v.n} restored` }) }` — while others remain the dialog says 'V3 is back in the strip.' in place (a snackbar would land over the dialog)."
+  },
+  {
+   "file": "components/visualizer/editor/editor.module.css",
+   "ref": "F156",
+   "change": "On .editor set `--viz-inset-l: env(safe-area-inset-left, 0px); --viz-inset-r: env(safe-area-inset-right, 0px);` and drop its `padding: 0 env(right) 0 env(left)`; drop the `.editor:not([data-narrow]) .stripSlot { margin-left/padding-left env }` hack; give the editor's own rows (top bar, rooms row, notes, go bar) `padding-inline: calc(<own pad> + var(--viz-inset-l)) calc(<own pad> + var(--viz-inset-r))`. The stage area, the strip and the rail/dock (rail agent) already read the variables; keeping the old padding too would double the inset."
+  },
+  {
+   "file": "components/visualizer/editor/editor.module.css",
+   "ref": "new:phone-tablet:short phones thumbnail photo",
+   "change": "Take the short-phone tray cap back to 44dvh (`@media (max-width:767px) and (max-height:700px) { .tray { max-height: 44dvh } }`); the stage now switches to its 'low' fit (chip steps aside) below 180px, so 375×667 lands near a 259×173 photo instead of 173×116."
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx + editor.module.css",
+   "ref": "new:phone-tablet:phone landscape",
+   "change": "A layout for short landscape screens (max-height ~500px, landscape): hide the rooms row / collapse the strip or use the rail model. The stage no longer collapses (its 'side' fit puts the bar beside the photo: 170×114 at a 130px stage) but more height is the real fix."
+  },
+  {
+   "file": "components/visualizer/share/render-share-page.tsx (+ .module.css)",
+   "ref": "new:files-client:phone sheet hides the pin · new:motion-a11y:client pinHint narrow pill",
+   "change": "Optional: pass image={the design's picture} to PinThread / DraftPin so the phone sheet shows the spot. Centre `.pinHint` without the half-width cap: `left: 16px; right: 16px; margin-inline: auto; width: max-content; max-width: calc(100% - 32px); translate: none`, radius 8 when it wraps, pointer-events none."
+  },
+  {
+   "file": "app/renders/actions.ts",
+   "ref": "new:files-client:'Client / Client · 9 min ago'",
+   "change": "clientPin / clientReply fallback author name 'Your client' (the bell and the call-back rows already say 'Your client'); pin-card.tsx drops the 'Client · ' prefix for either name."
+  },
+  {
+   "file": "lib/visualizer/queries.ts (fetchShare) + app/visualizer/actions.ts",
+   "ref": "D1 · new:fresh-desktop:studio pins go out on the link",
+   "change": "On the client's link return only pins with authorRole 'client' (with every reply, the studio's included); the Share dialog already promises this."
+  },
+  {
+   "file": "app/visualizer/actions.ts (share snapshot)",
+   "ref": "new:fresh-desktop:client Before is the parent design",
+   "change": "beforeUrl: roomImage(room) for every design, and materials from carriedFacts(v, reading) — components/visualizer/editor/dialogs/version-facts.ts has no 'use client' and guards its DOM use, so the server can import carriedFacts / finishName."
+  },
+  {
+   "file": "lib/visualizer/outputs.ts + app/visualizer/actions.ts",
+   "ref": "new:fresh-desktop:1 sqft quantities",
+   "change": "Count only lines with a price as 'priced' in the summary / 'n of m priced'; the dialog now says 'Quantities start at 1 — measure the room before you send the quote.' — if area quantities are left empty instead, tell the canvas owner so the line changes."
+  },
+  {
+   "file": "lib/visualizer/engine/run.ts",
+   "ref": "new:code-robustness:hex names · new:style-light-tools:hex names",
+   "change": "Name a style transfer's role colours in words at the source (nearest catalogue paint, as version-facts.ts finishName does: 'Reference colour, close to Linen'), keeping the hex in `hex`, so the client link and quote lines read words too."
+  },
+  {
+   "file": "lib/visualizer/model.ts (changeLines / surfaceWords)",
+   "ref": "consistency with Present's 'Everything in'",
+   "change": "Name a group as a group only when the pass covers the whole group in the room (needs the reading) — a single floor reads 'Floor · Walnut vinyl plank', not 'Light Oak Floor · Walnut vinyl plank'; one wall of two reads by its own name. version-facts.ts surfaceFacts / finishGroups follow that rule now."
+  },
+  {
+   "file": "lib/visualizer/materials.ts (chipCss) + lib/visualizer/patterns.ts",
+   "ref": "F087 (picker half)",
+   "change": "Draw a pattern chip from the engine's own tile (patternTile → canvas → data URL, memoised; version-facts.ts patternUrl is the reference implementation) instead of the CSS-gradient lattice, so the picker, the rail row and the moodboard show one motif. Then version-facts can import it."
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn · Versions strip: every tile is its thumbnail's width, the ⋯ sits on the picture's corner, long captions end in an ellipsis with a house tooltip (F005 · new:editor-visual/phone-tablet/versions-menus/fresh-desktop/fresh-tablet strip tiles) — bug fix",
+  "REG-nnn · Versions strip: the Versions head's tooltip '← → step through the versions'; the canvas banner's Cancel says 'Cancel (Esc)' (critic-17, owner call D5) — invented copy",
+  "REG-nnn · Versions strip: on a sketch the empty hint says '— pick a style, then Render from sketch.'; on a phone the hint is a dashed slot tile 'Your renders land here' (new:style-light-tools, new:phone-tablet) — invented copy",
+  "REG-nnn · Versions strip: a version built on another says 'made from V2' in its caption tooltip and its name (critic-12) — invented copy",
+  "REG-nnn · Canvas: short stages fit the photo first — a wide one puts the bar beside the photo, a narrow one hides the version chip, the shortest lays the bar over the photo's edge; markers shrink to small dots on a photo under 240px (F142, new:phone-tablet landscape + short phones, new:surfaces-furniture) — user-directed (verify round 1)",
+  "REG-nnn · Canvas: the pin / place / draw banner is centred on one line, moves right of the version chip or under it, wraps as a card on phones, lets taps through except Cancel, says Click to a mouse and Tap to a finger (F164, five new banner issues) — bug fix",
+  "REG-nnn · Canvas: at ≤359px the bar drops − / + and its divider so every tool fits (F142, three 320 issues) — bug fix",
+  "REG-nnn · Canvas: the picked region is a still 2px rim with a 10% wash; once a finish is picked it previews in the finish's colour (new:fresh-desktop:purple flood) — user-directed (verify round 1)",
+  "REG-nnn · Canvas: pins have a 42px target (F150); Reduce motion cuts the canvas and Present fades to 80ms with no slide, lib/motion tokens throughout (F172); focus lands on the new version after a run, on Generate after a cancel, back on the opener after a pin card, on the pin tool after a removed pin (F162) — bug fix",
+  "REG-nnn · Pin card: a card near the photo's bottom stays above the canvas bar; on a phone the sheet shows the pin's spot on a small copy of the picture; a 'Your client' pin isn't also labelled 'Client ·' (new:fresh-tablet, new:files-client ×2) — bug fix",
+  "REG-nnn · Team pins stay private (owner call D1): Share dialog line 'Your team’s pins stay private — the client sees only their own notes.'; the new-pin box says 'Only your team sees it'; a reply on a client's pin says 'Reply — the client sees it' — invented copy",
+  "REG-nnn · Share dialog: the WhatsApp draft names the rooms in the design's order as the client's page does, joined as a sentence (F102 · F103); the studio's own Open the link no longer counts as the client opening it (?preview=1); a link stopped from the dialog offers Undo in its row (new:files-client, new:fresh-tablet) — bug fix",
+  "REG-nnn · Present: the facts open at 'What changed', the versions sit in their own block (three across) and never squash to a sliver on phones and portrait tablets; the phone sheet no longer widens past the screen (F078 · F147 · critic-20, four new Present issues) — bug fix",
+  "REG-nnn · Present: Before and after and the picture share one box, so labels and divider sit on the photo; 'What changed' after a deleted in-between version lists the whole difference; facts read name over value; the pass's caveat shows under What changed (new:versions-menus ×2, new:fresh-desktop, F064) — bug fix",
+  "REG-nnn · Present and moodboard: a style transfer's reference colours read 'Reference colour, close to <paint>'; a surface laid twice reads once; a group reads as a group only when the finish covers it whole (new:style-light-tools, new:code-robustness) — invented copy",
+  "REG-nnn · Moodboard: the heading doesn't repeat the room, lists align with their headings, the render stays beside the side on a landscape tablet and full width at its own shape on phones and portrait tablets, long swatch names wrap, a wallpaper swatch prints as one pre-tiled picture (new:versions-menus, new:fresh-phone, new:fresh-tablet, F087) — bug fix",
+  "REG-nnn · Add a surface: the two ways are choice cards, the footer is Cancel + one primary (new:fresh-desktop) — bug fix",
+  "REG-nnn · Add to a quote: a draft that already holds the version says 'has V1' and is picked with 'Add again'; a new quote warns it holds it again; 'Quantities start at 1 — measure the room before you send the quote.' (new:fresh-phone, new:fresh-desktop) — invented copy",
+  "REG-nnn · Deleted versions: a restore says 'V3 is back in the strip.' in the dialog while others remain (new:versions-menus) — invented copy"
+ ],
+ "verification": "npx tsc --noEmit -p . exits 0 for the whole project (a deliberate error in compare-slider.tsx was reported, so the incremental check is live); npx eslint on stage.tsx, pin-card.tsx, versions-strip.tsx, dialogs/**, compare-slider.tsx: clean. No next build/dev/start. Instead a read-only visual harness (scratchpad resume/canvas/harness: entry.tsx bundled with esbuild from the WORKING TREE, served on a fake origin by Playwright route with the :3025 build's global CSS/fonts/sample images proxied by GET only — no DB, no POST) rendered the real components with made-up data: strip at 1440/768t/390t/320t (tile = image width, ⋯ inside the image, empty slot, sketch hint, tooltips 'V3 · … — made from V2' and '← → step through the versions'); stage at 1440, 1025, 1024t, 768t, 390t, 375×667t (tray-height stage → 'low' 173×116, chip hidden), 320t (bar 204px, no overflow), 844×390t (130px stage → 'side' 170×114, bar and banner beside the photo), pin/draw banners (one line at 1440, right of the chip at 1025, card under the chip at 390), highlight rim + 10% wash and the Sage Green tint, draft card above the bar at 768t, phone thread sheet with the pin spot, 'Your client' meta; Present at 1440/1280/1024t/768t/390t (facts scrollTop 0 everywhere, thumbs row 85px stacked, compare box = picture box, the 390 sheet now 358px wide — it was 516 before this fix), the deleted-in-between case (What changed from V2 lists V3's changes); moodboard at 1440/1024t/768t/390t; Add a surface 1440/390; Add to a quote; Deleted versions restore line; Share dialog + its WhatsApp draft ('…for your living room and kitchen'). Screenshots: scratchpad resume/canvas/harness/shots/*.png. Not seen live: the editor's own wiring (image on pin cards, onUnstop, the inset variables) — those are crossFileRequests."
+}

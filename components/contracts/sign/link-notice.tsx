@@ -12,7 +12,7 @@ export function LinkNotice({ state, studio }: { state: Extract<LinkState, 'not-s
     <div className={styles.notice} role="status" data-testid="link-notice" data-state={state}>
       <span className={styles.uploadedGlyph}><Icon name={state === 'inactive' ? 'lock' : 'hourglass_top'} size={32} /></span>
       <h1 className={styles.noticeTitle}>{state === 'inactive' ? 'This link is no longer active' : 'Not ready yet'}</h1>
-      <p className={styles.uploadedHelp}>{state === 'inactive' ? 'Please contact your designer for an updated link.' : `${studio} hasn’t sent this for signing yet. You’ll get the link on WhatsApp when it’s ready.`}</p>
+      <p className={styles.uploadedHelp}>{state === 'inactive' ? `Please ask ${studio} for an updated link.` : `${studio} hasn’t sent this for signing yet. You’ll get the link on WhatsApp when it’s ready.`}</p>
     </div>
   )
 }

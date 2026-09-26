@@ -260,7 +260,7 @@
     "module": "Lead details",
     "try": "Upload a photo into the folder",
     "how": "1. Click the Site photos folder to open it\n2. Click \"New File\", then \"From Local Files\"\n3. Pick sophia-living-room.jpg",
-    "expect": "\"Uploading 1 file\", then \"File uploaded\"; a tile named sophia-living-room.jpg appears (the prototype shows a sample preview).",
+    "expect": "\"Uploading 1 file\", then \"File uploaded\"; a tile named sophia-living-room.jpg appears, showing her living-room photo.",
     "in10": "Same as 1.0",
     "as": "Dane",
     "covers": [

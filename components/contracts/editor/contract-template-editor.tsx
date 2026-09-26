@@ -18,6 +18,8 @@ import { savedLabel } from '@/lib/contracts/model'
 import { outlineOf } from '@/lib/contracts/tokens'
 import type { ContractTemplateEditorData } from '@/lib/contracts/queries'
 import { deleteContractTemplate, duplicateContractTemplate, saveContractTemplate } from '@/app/company/contract-templates-actions'
+import { isRefusal } from '@/lib/company/template-rules'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { ContractHeader } from './contract-header'
 import { DocEditor, IDLE_STATE, type DocEditorHandle, type DocState } from './doc-editor'
 import { DocToolbar } from './doc-toolbar'
@@ -61,7 +63,8 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
     const patch = dirty.current
     if (!Object.keys(patch).length) return
     dirty.current = {}
-    try { setUpdatedAt(await saveContractTemplate(template.id, patch)) } catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
+    /* (audit 2026-09-26, E7) a refusal answers with its rule — say it whole */
+    try { const r = await saveContractTemplate(template.id, patch); if (isRefusal(r)) snackbar({ message: couldnt('save the template', refusalOf(r.error)) }); else setUpdatedAt(r) } catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
   }, [template.id, snackbar])
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
   const queue = useCallback((patch: Patch) => {
@@ -90,8 +93,8 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
                         menu={<>
                           <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateContractTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/contracts/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                           <DropdownDivider />
-                          {/* (sweep S2 #16) Delete is Rename's rule: its author, an Owner or an Admin — offered to everyone and refused after, before */}
-                          <DropdownItem tone="danger" disabled={!!changeBlock} onSelect={() => setDeleteOpen(true)}>Delete{changeBlock ? <span className={styles.menuMeta} title={changeBlock}>author, Owner or Admin</span> : null}</DropdownItem>
+                          {/* (sweep S2 #16) Delete is Rename's rule: its author, an Owner or an Admin — (round 3) the whole rule under the row, not a fragment with a native tooltip */}
+                          <DropdownItem tone="danger" disabled={!!changeBlock} onSelect={() => setDeleteOpen(true)}><span className={styles.menuStack}>Delete{changeBlock ? <span className={styles.menuRule}>{changeBlock}</span> : null}</span></DropdownItem>
                         </>}
                         onClose={close} />
         <div className={styles.meta} data-testid="contract-meta">
@@ -117,7 +120,8 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
                     gates={gates} onGates={(p) => { setGates((g) => ({ ...g, ...p })); queue(p) }} />
         <ConfirmDialog open={deleteOpen} title={`Delete ${title.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
                        message={usedBy ? `${usedBy} ${usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.'}
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void flushRef.current().then(() => deleteContractTemplate(template.id)).then(() => {
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void flushRef.current().then(() => deleteContractTemplate(template.id)).then((r) => {
+                         if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return }
                          /* (REG-634, E-132) the gallery's Undo, and back where the editor was opened from */
                          /* the gallery says it, with Undo — a snackbar here would go with the editor's layout — and its Back keeps `from` */
                          router.push(`/company/templates/contracts?deleted=${encodeURIComponent(template.id)}${from ? `&from=${encodeURIComponent(from)}` : ''}`)

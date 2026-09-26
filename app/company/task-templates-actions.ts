@@ -3,7 +3,8 @@
 import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
-import { assertMayChangeTemplate, changeableIds } from '@/lib/company/template-guard'
+import { changeBlock, changeableIds, nothingChangeable } from '@/lib/company/template-guard'
+import { TEMPLATE_GONE_LINE, refuse, type Refusal } from '@/lib/company/template-rules'
 import { db } from '@/lib/db'
 import { leadTasks, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
@@ -15,6 +16,8 @@ import { applyTemplate } from '@/app/leads/tasks-actions'
 const touch = (id?: string) => { revalidatePath('/company/templates/tasks'); revalidatePath('/company', 'layout'); revalidateEveryLead(); if (id) revalidatePath(`/templates/tasks/${id}`) }
 const clean = (s: string | null | undefined, max = 120) => (s ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max)
 const row = async (id: string) => { const [r] = await db.select().from(taskTemplates).where(eq(taskTemplates.id, id)); if (!r) throw new Error('template not found'); return r }
+/** (wave E, E7) Why the viewer may not rename or delete this one — its rule, or the template gone from under a stale page — else null. */
+const refusalFor = async (id: string) => { const [r] = await db.select({ createdBy: taskTemplates.createdBy }).from(taskTemplates).where(eq(taskTemplates.id, id)); return r ? changeBlock(r.createdBy) : TEMPLATE_GONE_LINE }
 
 export type TaskStepInput = { id?: string; title: string; description?: string | null; kind?: string; memberIds?: string[]; tagIds?: string[]; dueDays?: number | null }
 const cleanStep = (s: TaskStepInput, i: number, templateId: string) => ({
@@ -67,18 +70,24 @@ export async function saveTaskTemplate(id: string, patch: { name?: string; keepM
   touch(id)
   return now.getTime()
 }
-export async function renameTaskTemplate(id: string, name: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await saveTaskTemplate(id, { name }) }   // (REG-646)
+export async function renameTaskTemplate(id: string, name: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await saveTaskTemplate(id, { name }) }   // (REG-646) · (wave E, E7) the rule answered, never thrown
 export async function duplicateTaskTemplate(id: string): Promise<string> { return createTaskTemplate({ source: { kind: 'copy', id } }) }
-export async function deleteTaskTemplate(id: string): Promise<void> { await assertMayChangeTemplate((await row(id)).createdBy); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
-export async function restoreTaskTemplates(ids: string[]): Promise<void> {
-  if (!ids.length) return
-  const mine = await changeableIds(await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)))
+export async function deleteTaskTemplate(id: string): Promise<void | Refusal> { const block = await refusalFor(id); if (block) return refuse(block); await db.update(taskTemplates).set({ deletedAt: new Date() }).where(eq(taskTemplates.id, id)); touch(id) }
+/** (wave E, E7) What came back and what stayed (someone else's) — or, when none may come back, the rule. */
+export async function restoreTaskTemplates(ids: string[]): Promise<{ restored: number; kept: number } | Refusal> {
+  if (!ids.length) return { restored: 0, kept: 0 }
+  const rows = await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids))
+  const none = await nothingChangeable(rows, 'restore'); if (none) return refuse(none)
+  const mine = await changeableIds(rows)
   if (mine.length) await db.update(taskTemplates).set({ deletedAt: null }).where(inArray(taskTemplates.id, mine)); touch()
+  return { restored: mine.length, kept: ids.length - mine.length }
 }
 /** Delete forever: the tasks it already added to leads keep their own rows (only their `template_id` link goes). */
-export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
+export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
   let removed = 0, kept = 0
-  const mine = new Set(await changeableIds(ids.length ? await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)) : []))   // (REG-646)
+  const rows = ids.length ? await db.select({ id: taskTemplates.id, createdBy: taskTemplates.createdBy }).from(taskTemplates).where(inArray(taskTemplates.id, ids)) : []
+  const none = await nothingChangeable(rows, 'purge'); if (none) return refuse(none)   // (wave E, E7) none of them the viewer's: the rule, not "nothing was deleted"
+  const mine = new Set(await changeableIds(rows))   // (REG-646)
   for (const id of ids) {
     const [r] = await db.select({ deletedAt: taskTemplates.deletedAt }).from(taskTemplates).where(eq(taskTemplates.id, id))
     if (!r?.deletedAt || !mine.has(id)) { kept++; continue }
@@ -88,7 +97,7 @@ export async function deleteTaskTemplatesForever(ids: string[]): Promise<{ remov
   touch()
   return { removed, kept }
 }
-export async function emptyTaskTemplateTrash(): Promise<{ removed: number; kept: number }> {
+export async function emptyTaskTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
   const rows = await db.select({ id: taskTemplates.id }).from(taskTemplates).where(sql`${taskTemplates.deletedAt} is not null`)
   return deleteTaskTemplatesForever(rows.map((r) => r.id))
 }

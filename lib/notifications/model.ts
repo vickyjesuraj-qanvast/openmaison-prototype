@@ -10,7 +10,7 @@
 export type Channel = 'in_app' | 'email' | 'whatsapp'
 export const CHANNELS: { key: Channel; label: string }[] = [{ key: 'in_app', label: 'In app' }, { key: 'email', label: 'Email' }, { key: 'whatsapp', label: 'WhatsApp' }]
 
-export type EventKey = 'new_lead' | 'assigned' | 'untouched' | 'quote_approval' | 'quote_approved' | 'quote_changes' | 'quote_confirmed' | 'contract_sent' | 'quote_signed' | 'task_due' | 'stage_changed' | 'task_assigned' | 'task_due_soon' | 'hold_due' | 'question_answered' | 'price_book_proposed' | 'price_book_answered'
+export type EventKey = 'new_lead' | 'assigned' | 'untouched' | 'quote_approval' | 'quote_approved' | 'quote_changes' | 'quote_confirmed' | 'contract_sent' | 'quote_signed' | 'task_due' | 'stage_changed' | 'task_assigned' | 'task_due_soon' | 'hold_due' | 'question_answered' | 'price_book_proposed' | 'price_book_answered' | 'render_feedback'
 export type EventDef = { key: EventKey; label: string; help: string; who: string; icon: string }
 export const EVENTS: EventDef[] = [
   { key: 'new_lead', label: 'A new lead arrives', help: 'From the form, an import, the website or Meta.', who: 'Owners and Admins', icon: 'person_add' },
@@ -34,6 +34,8 @@ export const EVENTS: EventDef[] = [
   /* (REG-652, price book parity Q-04) A Designer proposes an item for My Items; the answer goes back to them. */
   { key: 'price_book_proposed', label: 'An item is proposed for My Items', help: 'A Designer’s new item, waiting to be approved or sent back.', who: 'Owners and Admins', icon: 'list_alt' },
   { key: 'price_book_answered', label: 'Your proposed item is answered', help: 'Approved into My Items, or sent back with a note.', who: 'Whoever proposed it', icon: 'verified' },
+  /* (REG-676, AI Visualizer Q-34) The client answers on a render link: a favourite, a note, a pin, a call back. */
+  { key: 'render_feedback', label: 'A client responds to shared renders', help: 'A favourite, a note, a pin or a call back on the renders link.', who: 'The lead’s members and whoever shared the link', icon: 'wand_shine' },
 ]
 export const eventDef = (key: string): EventDef | undefined => EVENTS.find((e) => e.key === key)
 
@@ -47,7 +49,7 @@ export type NotificationRules = {
 export const UNTOUCHED_OPTIONS: { minutes: number; label: string }[] = [{ minutes: 15, label: '15 minutes' }, { minutes: 30, label: '30 minutes' }, { minutes: 60, label: '1 hour' }, { minutes: 240, label: '4 hours' }, { minutes: 1440, label: '1 day' }]
 const on = (in_app: boolean, email: boolean, whatsapp: boolean): Record<Channel, boolean> => ({ in_app, email, whatsapp })
 export const DEFAULT_RULES: NotificationRules = {
-  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false) },
+  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false), render_feedback: on(true, false, true) },
   untouchedMinutes: 30,
   stopWhenClosed: true,
 }
@@ -110,6 +112,8 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('price_book_proposed', 'whatsapp', '', '{actor} proposed “{item}” for My Items at {studio}: {link}'),
   T('price_book_answered', 'email', 'Your proposed item: {item}', 'Hi {member},\n\n{actor} answered your proposal “{item}”. Open My Items to see it: {link}\n\n{studio}'),
   T('price_book_answered', 'whatsapp', '', '{actor} answered your proposal “{item}”: {link}'),
+  T('render_feedback', 'whatsapp', '', '{lead_name} responded to the renders you shared from {studio}: {link}'),
+  T('render_feedback', 'email', '{lead_name} responded to your renders', 'Hi {member},\n\n{lead_name} responded to the renders you shared. Open the design to see what they said: {link}\n\n{studio}'),
 ]
 export function parseTemplates(v: unknown): MessageTemplate[] {
   const list = Array.isArray(v) ? v : []

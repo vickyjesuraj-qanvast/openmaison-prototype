@@ -1,0 +1,124 @@
+{
+ "done": [
+  {
+   "ids": [
+    "files-1",
+    "files-4",
+    "files-18"
+   ],
+   "what": "Lead › Files uploads of any picture up to the 8M-character cap now decode on the server: the integrator's uploadFile(leadId, { parentId, name, image }) signature is kept and every caller passes the object (lead-files.tsx send(), return-lead-wizard.tsx confirm()). Proved against Next 16.3.4's own react-server-dom-turbopack encodeReply/decodeReply: the old 4-argument form throws 'Maximum array nesting exceeded' with a 2,000,023-char picture, the object form decodes 2,000,023 and 7,999,023 chars. upload-picture.ts's note now says why the cap only works inside an object. No other action in the package takes a long string as a bare argument.",
+   "files": [
+    "app/leads/files-actions.ts",
+    "components/leads/files/lead-files.tsx",
+    "components/leads/files/upload-picture.ts",
+    "components/leads/return/return-lead-wizard.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "files-5"
+   ],
+   "what": "File viewer: the ⋯ menu opens through PortalMenu (anchored to the kebab, z 130, align right, 200 wide, role=menu, sheetTitle = the file's name so ≤767 it is still the bottom sheet with Download first). With Information or Comments open every row is on top and reachable; Esc closes and returns focus to More options; pressing the kebab again closes it.",
+   "files": [
+    "components/leads/files/file-viewer.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "files-8"
+   ],
+   "what": "E8: the lead Delete dialog says 'Its n client render links stop working.' (one link: 'Its client render link stops working.'; a bulk delete: 'Their n client render links stop working.' / 'A client render link stops working.') under the signing-link line, same helper style, role=alert. The dialog counts on open itself through the new action countLeadRenderLinks(leadIds) (app/leads/actions.ts, wraps lib/visualizer/queries.ts countLiveRenderLinks) and the hook useLiveRenderLinks (components/leads/use-render-links.ts) — so the listing's Delete (single + bulk, app/leads/workspace.tsx) gets the line with no host change. The Return Lead wizard's Terms step says the same line (returned leads close their links too — leadClosed), per files-8's proposed fix.",
+   "files": [
+    "app/leads/actions.ts",
+    "components/leads/use-render-links.ts",
+    "components/leads/delete-dialog.tsx",
+    "components/leads/return/return-lead-wizard.tsx",
+    "components/leads/return/return-lead-wizard.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "files-12"
+   ],
+   "what": "Upload toast head reads 'Upload failed' while its row reads Failed (was 'Uploading 1 file'). Uploading and done keep the mock's 'Uploading 1 file' (902:28261 draws that head over a completed row).",
+   "files": [
+    "components/leads/files/upload-toast.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-11"
+   ],
+   "what": "The lead's AI Visualizer quick link shows it is working: overview.tsx runs openLeadDesign + the router.push in one useTransition (the push wrapped again after the await so the pending state lasts until the editor's ghost commits); QuickLinks takes busy='AI Visualizer' and that link's glyph (collapsed strip and expanded tile) becomes the spinning progress_activity in primary, aria-busy + aria-disabled, cursor progress, no hover plate, and a second press does nothing. Reduced motion keeps the spinner still. The phone kebab's AI Visualizer row uses the same guarded opener.",
+   "files": [
+    "app/leads/[id]/overview.tsx",
+    "components/leads/detail/quick-links.tsx",
+    "components/leads/detail/quick-links.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-16"
+   ],
+   "what": "House menu rows (components/leads/menus.module.css .item — every Dropdown, PortalMenu and the Items row menu's Print as › submenu) tint on hover only under @media (hover: hover); a tap on a touch tablet leaves no 4% tint. Mouse hover at 1440 unchanged (rgba(0,0,0,0.04)).",
+   "files": [
+    "components/leads/menus.module.css"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "files-10"
+   ],
+   "why": "The duplicate 'Render - Kitchen - V1.jpg' names are chosen where a version is filed, in app/visualizer/actions.ts (server's package) — see crossFileRequests. Nothing to change in files-actions.ts: the tab's own uploads keep the picked name (REG-149) and Duplicate keeps the same name by the decided tasks rule."
+  },
+  {
+   "ids": [
+    "files-19"
+   ],
+   "why": "Nothing left on this package's side: useRun (components/leads/tasks/use-run.ts) already shows an action's { error } rule. The failing half is E7 — the Company template actions throwing (quotes owns them). A lead's Tasks delete has no rule to surface (deleteTasks is unguarded by design)."
+  },
+  {
+   "ids": [
+    "files-12 (done state)"
+   ],
+   "why": "The head over a completed row stays the mock's 'Uploading 1 file' (902:28261 draws exactly that); only the failure, which no mock draws, got new words. Say if the owner wants 'Uploaded' too."
+  },
+  {
+   "ids": [
+    "files-9",
+    "files-13"
+   ],
+   "why": "Editor files (components/visualizer/editor/visualizer-editor.tsx, lib/visualizer/queries.ts) — not this package."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "app/visualizer/actions.ts",
+   "ids": [
+    "files-10"
+   ],
+   "change": "Where a version is filed into the lead's Files › Renders (the insert at ~line 564, `name` for the new lead_files row): if a live file (deletedAt null) with the same name already sits in that folder (parentId = the Renders folder), add ' (2)', ' (3)', … before the extension until the name is free — e.g. 'Render - Kitchen - V1 (2).jpg'. Compare case-insensitively; leave an existing filed render's name alone."
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "files-1 · files-4 · files-18 (bug fix): Lead › Files uploads pictures over ~730 KB again — uploadFile takes { parentId, name, image } in one object so React's action decoder no longer counts the picture against its 1,000,000 array limit; PICTURE_CAP (8M characters) now decides.",
+  "files-5 (bug fix): the file viewer's ⋯ menu opens through PortalMenu, so it sits above an open Information / Comments panel instead of under it.",
+  "files-8 · E8 (invented copy): the Delete lead dialog warns 'Its n client render links stop working.' ('Its client render link stops working.'; bulk: 'Their n client render links stop working.' / 'A client render link stops working.') — counted when the dialog opens (countLeadRenderLinks → countLiveRenderLinks), on the lead's page and the listing alike.",
+  "files-8 (invented copy, extends E8): the Return Lead wizard's Terms step carries the same line, since a returned lead's client render links close as well.",
+  "files-12 (invented copy): the upload toast's head reads 'Upload failed' while its row reads Failed; uploading / done keep the mock's 'Uploading 1 file'.",
+  "tablet-11 (bug fix; invented UI — the spinner in the link): the lead's AI Visualizer quick link spins (progress_activity, aria-busy, inert) from the press until the editor's ghost takes over — the design is found / made first (~1 s on a slow line).",
+  "tablet-16 (bug fix): house menu rows tint on hover only on a hover-capable pointer — a tap on a touch tablet no longer leaves the row tinted."
+ ],
+ "verification": "npx tsc --noEmit -p . — no errors in components/leads/** or app/leads/** (the only errors are other packages' mid-edit files: app/company/*-templates-actions.ts, app/quotes/text-actions.ts, components/templates/editor/template-editor.tsx). npx eslint on every file I touched — clean. F205 proof: /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/leads/decode-test.cjs runs Next 16.3.4's compiled react-server-dom-turbopack encodeReply → decodeReply: [leadId, null, name, 2,000,023-char data URL] throws 'Maximum array nesting exceeded'; [leadId, { parentId, name, image }] decodes 2,000,023 and 7,999,023 chars. Visual: an esbuild harness (/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/leads/harness, real working-tree components, server actions / next/navigation stubbed, over :3025's pre-wave global CSS; no server data touched): 1440 viewer with Information open → ⋯ menu x1216 y52 200×190 above the panel (x1040), elementFromPoint on each row hits the menu, Esc closes with focus back on More options, the kebab toggles it shut, Rename opens its dialog; with Comments open all five rows reachable; 1024×768 touch rows 44 tall and reachable; 390 phone = bottom sheet 'Download · Open in AI Visualizer · Move · Duplicate · Rename · Delete'. Toast: failed → 'Upload failed' (1440 and 390), uploading / done → 'Uploading 1 file'. Delete dialog: one lead 2 links → 'Its 2 client render links stop working.', 1 → 'Its client render link stops working.', two leads → 'Their 2 …' / 'A client render link stops working.', 0 → no line, with a signing link both lines stack (400×333, 390 phone fine); the count is asked once with the lead ids. Return wizard (junk reason → Next) at 1440 and 390: the Terms card shows the line under the terms sentence. Quick links: after a press at 1024 touch (collapsed) and 1440 (collapsed / expanded) the AI Visualizer glyph is the spinning primary progress_activity, aria-busy / aria-disabled true. Menu rows: tap at 1024 touch → background transparent; mouse hover at 1440 → rgba(0,0,0,0.04). Shots: /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/leads/harness/shots/.",
+ "checkOnBuild": [
+  "Lead › Files › New File: upload verify2/files/photo-1m.jpg (1.05 MB) and noise.png (9.9 MB) — both land (200, a lead_files row + lead_file_images), the toast turns to the check and 'File uploaded'; a refused upload's toast head reads 'Upload failed' with Retry.",
+  "Kevin Ng › Overview at 1024×768 touch with a throttled network: tap the AI Visualizer quick link — the wand turns into a spinner at once and stays until the editor's ghost shows (confirms the nested-transition hold on the real Next router); a second tap does nothing; on an error the snackbar shows and the wand comes back.",
+  "File viewer at 1440 and 1024 touch: Information (and Comments) open → ⋯ → the menu is on top and every row works; at 390 the kebab is still the bottom sheet.",
+  "Delete a lead with a live /renders link from its ⋯ and from the listing (single and bulk): the dialog shows the render-links line a beat after it opens; a lead with no live links shows none. Return Lead on a Qanvast lead with a shared design: the Terms step shows the line.",
+  "Quote Items › a line's ⋯ › Print as › at 1024×768 touch: no tint on the tapped row; 1440 mouse hover still tints.",
+  "Residual, not in the worklist: the phone's ⋯ › AI Visualizer and Files' 'Open in AI Visualizer' rows close their menu first, so the ~1 s before the editor's ghost has no spinner there — say if it should get one."
+ ]
+}

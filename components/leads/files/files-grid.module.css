@@ -66,7 +66,9 @@
 }
 .nameGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }   /* H g8, 199 wide */
 .kindIcon { color: var(--om-color-tertiary-red-default); flex-shrink: 0; }   /* image / picture_as_pdf 20/Regular #db382a */
-.tileName { min-width: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Semi Bold */
+.tileName { min-width: 0; display: flex; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 14/Semi Bold */
+.nameStart { min-width: 0; overflow: hidden; text-overflow: ellipsis; }   /* (round 3) the name gives way in the middle */
+.nameSep, .nameEnd { flex-shrink: 0; white-space: pre; }   /* the spaces round " - " keep their width inside the flex row */
 /* Comment chip 36×26: H g4 p4, fill #f2f2f2, stroke #e5e5e5 w1, r4 → comment 16/Light + count 12/Medium.
    A real button since REG-253 (opens the viewer's comments panel), and a SIBLING of the tile button —
    buttons cannot nest — anchored beside the kebab where the mock draws it: right 12 + 24 + 8 = 44, on the
@@ -112,6 +114,11 @@
 /* Mobile (REG-269): tracks bottom out at 160 so two tiles ride a 390 screen. */
 @media (max-width: 767px) {
   .row { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  /* (round 3) a render's name on a phone's narrow card: the room on the first line, the version on the second */
+  .caption:has(.tileName[data-two]) { height: auto; min-height: 54px; }
+  .tileName[data-two] { flex-wrap: wrap; font: var(--om-type-subheading-s); }   /* 12/16 semibold: "Living room 2" fits the 87px name box */
+  .tileName[data-two] .nameStart { flex-basis: 100%; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: break-word; }   /* the room on up to two lines */
+  .tileName[data-two] .nameSep { display: none; }
 }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────

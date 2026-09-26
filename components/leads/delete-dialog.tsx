@@ -5,6 +5,7 @@ import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
 import { TextField } from '@/components/om/text-field'
 import styles from '@/components/leads/move-stage/wizard.module.css'
 import type { LeadRow } from '@/lib/leads/queries'
+import { renderLinksLine, useLiveRenderLinks } from './use-render-links'
 
 /** "Delete this lead?" — copy verbatim from frame 779:24663; bulk variant (B1) pluralises. */
 export function DeleteLeadDialog({
@@ -20,6 +21,9 @@ export function DeleteLeadDialog({
 }) {
   const lead = leads && leads.length === 1 ? leads[0] : null
   const many = leads && leads.length > 1 ? leads.length : 0
+  /* (wave E, E8) Deleting a lead closes the client render links shared from its designs (the client's page then says the link ended) —
+     the dialog says so first, as it does for signing links. Counted here, so the listing and the lead's page both warn. */
+  const renderLine = renderLinksLine(useLiveRenderLinks(leads ? leads.map((l) => l.id) : null), many > 0)
   return (
     <Dialog open={!!leads && leads.length > 0} onClose={onClose}
             title={many ? `Delete ${many} leads?` : 'Delete this lead?'} width={400}
@@ -41,6 +45,7 @@ export function DeleteLeadDialog({
           {liveLinks === 1 ? 'A signing link is still live with the client — deleting voids it.' : `${liveLinks} signing links are still live with clients — deleting voids them.`}
         </span>
       ) : null}
+      {renderLine ? <span className={styles.helper} role="alert" data-testid="live-render-links">{renderLine}</span> : null}
       {lead ? (
         <span className={styles.helper}>
           “{lead.name}” will be permanently deleted in 30 days. Until then, collaborators can view it in the deleted folder.

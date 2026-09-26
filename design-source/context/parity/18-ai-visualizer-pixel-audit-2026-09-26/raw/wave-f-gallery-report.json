@@ -1,0 +1,91 @@
+{
+ "done": [
+  {
+   "what": "(1) Narrow desk, 1025–1060, list view: the toolbar no longer pushes the page kebab ⋮ (the way into Deleted / Archived) out of the frame. The search sits in a new slot that starts at 200 and grows back to its 280 when there is room, so it gives way first (235 at 1025 in Quotes, 255 in My Items). If that is still not enough, the tools wrap within their own group from the right. Grid view and every width from 1080 up are unchanged.",
+   "files": [
+    "components/company/templates/library-gallery.tsx",
+    "components/company/templates/library-gallery.module.css"
+   ]
+  },
+  {
+   "what": "(1) Tablet, 768–1024, list view: the Column settings button moves into ⋮ (a 'Column settings' row above Deleted …; `foldColumns`, hidden in CSS as `.columnsTool`). The list-view bar is now exactly the grid-view bar: one row (REG-384), and 'My Items' reads in full at 768. The name also keeps max-content; any state that still does not fit (for example a long filter word on the pill at 768) drops the tools to the next line at the right instead of cutting the name. I rejected the plain wrap at tablet: at 768 it made the bar two rows, and the folded search collapsed it to one on opening. That is a 36px jump, and a tap on a folder row just after it was lost (measured: no navigation).",
+   "files": [
+    "components/company/templates/library-gallery.tsx",
+    "components/company/templates/library-gallery.module.css"
+   ]
+  },
+  {
+   "what": "(2) The Deleted sheets for Tasks, T&Cs & Notes, Payments and Contracts templates now get restoreBlock and purgeRule, as Materials and Designs do. A Designer sees the rule in the row: 'Only Dane, an Owner or an Admin can restore this template or delete it for good'. Presets read 'Only an Owner or an Admin can restore this template or delete it for good'. Restore and Delete Forever are greyed with the reason (tooltip 'Only Dane, an Owner or an Admin can delete this template for good'), the row takes no tick, and Empty Trash counts only what the viewer may remove. When every row shares the rule it is said once above the table, in the plural. Contracts' keepReason is back to usage only. Its Deleted sheet's person column is now 'Updated by', because that loader's `author` is whoever saved it last.",
+   "files": [
+    "lib/company/template-rules.ts",
+    "components/company/templates/task-templates-gallery.tsx",
+    "components/company/templates/text-templates-gallery.tsx",
+    "components/company/templates/payment-templates-gallery.tsx",
+    "components/company/templates/contract-templates-gallery.tsx",
+    "lib/contracts/queries.ts"
+   ]
+  },
+  {
+   "what": "(2) Server refusals now match the action. `nothingChangeable(rows, 'restore' | 'purge')` looks up the maker's name, and `templateTrashRefusal` gives 'Only Dane, an Owner or an Admin can restore this template' or '…can delete this template for good'. Several rows with one maker get '…these templates'. Mixed makers get 'Only a template’s author, an Owner or an Admin can restore it / delete it for good'. Presets get 'Only an Owner or an Admin …'. All four action files pass the action. Every check is unchanged (still templateChangeBlock / canDeleteTemplateForever).",
+   "files": [
+    "lib/company/template-guard.ts",
+    "lib/company/template-rules.ts",
+    "app/company/task-templates-actions.ts",
+    "app/quotes/text-actions.ts",
+    "app/company/payment-templates-actions.ts",
+    "app/company/contract-templates-actions.ts"
+   ]
+  },
+  {
+   "what": "(2) Presets' menu wording: templateChangeBlock now says 'Only an Owner or an Admin renames or deletes it' when created_by is null, instead of 'only its author'. Same check; only the words changed. This also reaches the rename / delete / move refusals for presets.",
+   "files": [
+    "lib/company/template-rules.ts"
+   ]
+  },
+  {
+   "what": "(2) Deleted sheet, Empty Trash tooltip: when rows are kept for different reasons (a preset beside Dane's split) it no longer claims 'Every deleted template is still in use'. It now says 'None of these templates can be deleted for good — each row says why'. A single shared rule is shown in the plural when there are several rows.",
+   "files": [
+    "components/company/templates/library-deleted-sheet.tsx"
+   ]
+  },
+  {
+   "what": "(3) Create Quote modal: new prop `defaultBlock` (= templateDefaultBlock(viewer)), passed from the lead's Quotes tab and Tools › Quotes. The tile ⋮ › Set as default is disabled for a Designer, with 'Only an Owner or an Admin sets the studio’s default' as its meta line. The default tile's row reads 'Already the default' as a meta line, where it used to be a native title. Styles are the gallery's .menuRow / .menuMeta.",
+   "files": [
+    "components/quotes/create-quote-modal.tsx",
+    "components/quotes/create-quote-modal.module.css",
+    "components/leads/quotes/lead-quotes.tsx",
+    "components/quotes/list/quotes-workspace.tsx"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "what": "Visual check of fixes 2 and 3 as Sarah",
+   "why": "View as writes the members.is_you flag. Your rules only allow driving the scratch servers read-only, and they also run an older build without my code. I checked by type check, lint and a pure run of the rule sentences (scratchpad waveF/gallery/rules-check.ts). The sheet mechanics these props drive are the ones the verifier already saw working for Materials and Designs."
+  },
+  {
+   "what": "Contract template editor's Delete row fragment ('author, Owner or Admin' with a native title, components/contracts/editor/contract-template-editor.tsx:97)",
+   "why": "Out of the three issues' scope and not in the verifier's list. It is the same kind of fragment and could take templateChangeBlock's sentence in the row in a later pass."
+  },
+  {
+   "what": "Safari / WebKit check of the desk rule",
+   "why": "Playwright's WebKit is not installed here. The tablet widths an iPad uses do not use the new desk rule: there the slot is display: contents."
+  }
+ ],
+ "registerLines": [
+  "bug fix · Company libraries' toolbar on a narrow desk (1025–1060, list view): the search gives first (280 → 200, then the tools wrap inside their group from the right), so ⋮, the only way into Deleted / Archived, stays in the frame. Grid view and ≥1080 unchanged. Source: verify round 3, tablet newIssues #1.",
+  "user-directed (the verifier's suggested fix) · invented UI placement · 768–1024, list view: Column settings rides the page kebab (⋮ › Column settings, above Deleted …) instead of the toolbar, so the list's bar is the grid's one row (REG-384) and the library's name reads whole ('My It…' at 768). Rejected alternative: letting the tools wrap under the name, which made the folded search jump the bar 36px and lose the next tap. Fallback: the name keeps its width; a state that still doesn't fit wraps the tools to the next line. Words are existing ones.",
+  "bug fix + invented copy · the Deleted sheets of Tasks, T&Cs & Notes, Payments and Contracts templates follow the rule in the row, as Materials and Designs do. Invented copy: 'Only Dane, an Owner or an Admin can restore this template or delete it for good' (a preset: 'Only an Owner or an Admin can restore this template or delete it for good'); Delete Forever's 'Only Dane, an Owner or an Admin can delete this template for good'; the server's 'Only Dane, an Owner or an Admin can restore this template', '…these templates' and, for mixed makers, 'Only a template’s author, an Owner or an Admin can restore it / delete it for good'; presets' menu rule 'Only an Owner or an Admin renames or deletes it'; Empty Trash's mixed-reason tooltip 'None of these templates can be deleted for good — each row says why'. Contracts' Deleted sheet person column reads 'Updated by' (existing word). Source: verify round 3, tablet newIssues #2.",
+  "bug fix · Create Quote modal: a template tile's ⋮ › Set as default waits for a Designer with 'Only an Owner or an Admin sets the studio’s default' under it (the default tile: 'Already the default', formerly a native title), as Company › Templates says it. No press-then-refuse. Source: verify round 3, tablet newIssues #3 (REG-646 · REG-656)."
+ ],
+ "verification": "npx tsc --noEmit -p . clean; I confirmed it catches a planted error. npx eslint on the 16 changed TS/TSX files clean (18 files changed, 2 of them CSS). Layout: a Playwright probe on :3021 (old build, read-only; the only writes were each browser's own grid/list localStorage) measured every library's toolbar: Quotes, Contracts, Tasks, T&Cs, Payments, My Items, My Sections, Materials, AI Visualizer. It ran at 1025/1040/1060/1080/1100/1180/1280/1440 mouse, 768/1024 touch, 768/900 mouse, and 390/375/320 touch, in grid and list view, before and after injecting the final CSS translated to the hashed classes. One run also rebuilt the new search slot in the DOM. Before: 7 broken layouts (kebab 10–45px past the bar at 1025–1060 list view; 'My It…' at 768). After: 0 problems. Every grid view, every width ≥1080 and all 54 phone layouts are unchanged. At 768–1024 each list bar equals its grid bar. Typed-search and open-folder states are clean at 1025 / 768t / 1024t. At 768t the search opens and closes with no height change, and a folder tap right after works. Rule sentences checked with tsx (waveF/gallery/rules-check.ts). Shots: /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveF/gallery/fix1-desk-pair.png, /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveF/gallery/fix1-tablet-pair.png (before/after), measurements in /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveF/gallery/shots, runb, rund, states.",
+ "checkOnBuild": [
+  "1025–1060, list view, Quotes and My Items (as Dane, with the to-do chip): ⋮ fully inside the frame; search about 235 / 255; one tools line under the name. 1080, 1100, 1440 and grid view are byte-identical to before.",
+  "768 and 1024 touch, list view: no tune button in the bar. ⋮ opens with 'Column settings' first, then a rule, then Deleted … (for the Price book: Column settings, its page rows, a rule, Deleted Items). The row opens the Column settings drawer. Check where focus lands when the drawer closes. Opening and closing the search causes no jump.",
+  "As Sarah (View as), after Dane deletes 'Leads Template', 'What This Quote Excludes', the '50/50' preset and 'Variation Order': each Deleted sheet row says the sentence under the name, Restore and Delete Forever are greyed (aria-disabled) with tooltips, there is no tick, and Empty Trash is disabled. Sarah's own deleted template restores and deletes normally. Contracts' sheet person column reads 'Updated by'.",
+  "A stale page (sheet open as Dane, then View as Sarah in another tab, press Restore) should read: 'Couldn’t restore the template — only Dane, an Owner or an Admin can restore this template'.",
+  "Payments as Sarah: a preset's card menu greys Rename / Delete with 'Only an Owner or an Admin renames or deletes it'.",
+  "Create Quote (the lead's Quotes tab and Tools › Quotes) as Sarah: ⋮ › Set as default greyed with the rule under it, fitting the 200px menu on two lines. As Dane: live, and the default tile reads 'Already the default'.",
+  "Safari ≥1025: the search slot (flex 1 1 200px, width 280, capped 200–280) inside the wrapping tools group. Only checked in Chromium."
+ ]
+}

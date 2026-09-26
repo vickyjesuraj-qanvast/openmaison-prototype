@@ -16,7 +16,12 @@ export const SWEEP_MS = 1800
 /** Set on the first ghost mount of a load; consumed (read + cleared) by `PageReveal` on mount for its minimum hold. */
 export const ghostClock = { shownAt: null as number | null }
 
-export function GhostSheet({ children, label = 'Loading' }: { children: ReactNode; label?: string }) {
+/**
+ * (wave E, gallery-5) `l1` marks a level-1 page's ghost as the page's header does (`data-om-l1-header`, REG-362): the ≤767 top bar and the
+ * bottom dock read that marker, so a soft navigation's `loading.tsx` kept neither for ~300ms and the page then dropped 60px when it came.
+ * A level-2 ghost (a lead, an editor, Insights) leaves it off — those pages have neither.
+ */
+export function GhostSheet({ children, label = 'Loading', l1 = false }: { children: ReactNode; label?: string; l1?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     // Before paint, so the loading.tsx → page swap keeps the sweep in phase.
@@ -24,7 +29,7 @@ export function GhostSheet({ children, label = 'Loading' }: { children: ReactNod
     ref.current?.style.setProperty('--sweep-delay', `-${Math.round(performance.now() % SWEEP_MS)}ms`)
   }, [])
   return (
-    <div ref={ref} className={`${pageStyles.body} ${styles.sheet}`} role="status" aria-label={label} aria-busy>
+    <div ref={ref} className={`${pageStyles.body} ${styles.sheet}`} role="status" aria-label={label} aria-busy data-om-l1-header={l1 || undefined}>
       {children}
     </div>
   )
@@ -89,11 +94,11 @@ const useCardCount = () => useSyncExternalStore(subscribeViewport, viewportCards
  * server-rendered, so no JS can know the width when the bones first paint, and a ghost that fades into a
  * differently-shaped page is the REG-74 failure. ≥768 nothing here differs from the table-only ghost.
  */
-export function LeadsSkeleton({ label = 'Loading leads' }: { label?: string } = {}) {   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
+export function LeadsSkeleton({ label = 'Loading leads', l1 = true }: { label?: string; /** (wave E, gallery-5) the listing, Tasks, Tools › Quotes and Contracts are level-1; Insights (level 2) passes false */ l1?: boolean } = {}) {   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
   const rows = useRowCount()
   const cards = useCardCount()
   return (
-    <GhostSheet label={label}>
+    <GhostSheet label={label} l1={l1}>
       <div className={`${styles.header} ${styles.headerPlate}`}>
         <Bone w={72} h={28} />
         {/* ≥768 the mock's Add Lead · Insights · kebab; ≤767 the three 36 squares of 1082:25131 (workspace.tsx). */}
@@ -194,7 +199,7 @@ const QV_TAG_W = [[74], [118], [112, 118], [62], [62], [50], [118]]
  */
 export function QanvastSkeleton() {
   return (
-    <GhostSheet label="Loading Qanvast leads">
+    <GhostSheet label="Loading Qanvast leads" l1>
       <div className={styles.header}>
         <Bone w={120} h={28} />
         <div className={styles.headerActions}>
@@ -294,17 +299,17 @@ export function ImportsSkeleton() {
 /** Settings (Account setup): header · section rail · one setting card with two option rows. */
 export function SettingsSkeleton() {
   return (
-    <GhostSheet label="Loading settings">
+    <GhostSheet label="Loading settings" l1>
       <div className={styles.header}>
         <Bone w={96} h={28} />
       </div>
       {/* (REG-645) Settings on Company's frame: the modules' tab strip, then the module's cards at full width. */}
       <div className={styles.tabs} aria-hidden>{[48, 112, 108, 88, 56, 52].map((w, i) => <Bone key={i} w={w} h={14} />)}</div>
       <div className={styles.settingsBody}>
-        <div className={styles.settingsHead}><Bone w={96} h={20} /><Bone w={420} h={14} /></div>
+        <div className={styles.settingsHead}><Bone w={96} h={20} /><Bone w={420} h={14} style={{ maxWidth: '100%' }} /></div>
         {[0, 1].map((i) => (
           <div key={i} className={styles.settingsCard}>
-            <div className={styles.settingsHead}><Bone w={128} h={16} /><Bone w={360} h={12} /></div>
+            <div className={styles.settingsHead}><Bone w={128} h={16} /><Bone w={360} h={12} style={{ maxWidth: '100%' }} /></div>   {/* (round 3) a phone's card is narrower than the line */}
             <Bone w="100%" h={72} r="var(--om-radius-1)" />
             <Bone w="100%" h={72} r="var(--om-radius-1)" />
           </div>

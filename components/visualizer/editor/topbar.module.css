@@ -1,0 +1,40 @@
+/* The editor's top bar (REG-673): the template editor's 56 px white bar (REG-542) — back, the title, the rooms, the actions.
+   (F156) The frame's top inset (a notch, a standalone app) is the bar's: it grows by it and keeps its white under it — and it reaches
+   under the side insets too, in its own white. */
+.bar { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-3); height: calc(56px + env(safe-area-inset-top, 0px)); margin: 0 calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px)); padding: env(safe-area-inset-top, 0px) calc(var(--om-spacing-3) + env(safe-area-inset-right, 0px)) 0 calc(var(--om-spacing-3) + env(safe-area-inset-left, 0px)); background: var(--om-color-surface-default); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (F013) the name gets the room it needs, up to a quarter of the bar; the tooltip reads it in full */
+.titles { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; max-width: min(360px, 26vw); flex-shrink: 1; }
+.title { margin: 0; min-width: 0; font: var(--om-type-subheading-m); font-size: 18px; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (phone-5) a numbered name ("Design · 26 Sep (2)"): the stem takes the ellipsis, the number stays whole */
+.title[data-split] { display: flex; }
+.titleStem { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.titleTail { flex-shrink: 0; white-space: pre; }
+.rooms { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); padding-left: var(--om-spacing-3); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
+.railWrap { display: contents; }
+.rail { min-width: 0; flex: 0 1 auto; }
+.roomChips { flex-wrap: nowrap; gap: var(--om-spacing-2); }
+/* (F013) a long room name stops at 200 px — the Rename dialog and the room's ⋯ sheet show it whole */
+.roomChips > [role='radio'] { display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 30px; }
+.end { display: flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; }
+.saved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); margin-right: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.savedIcon { color: var(--om-color-tertiary-green-default); }
+.warnIcon { color: var(--om-color-tertiary-red-default); }
+.rule { width: 1px; height: 24px; margin: 0 var(--om-spacing-2); background: var(--om-color-surface-variant); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+/* The stamp gives way first at 1280 — unless it says the work isn't saved. */
+@media (max-width: 1280px) { .saved[data-tone='ok'] { display: none; } }
+/* Compact (the camera model, ≤1024 portrait and phones): the title owns the free width (F148); the rooms live in their own row. */
+.bar[data-compact] .titles { max-width: none; flex: 1; }
+.bar[data-compact] .saved[data-tone='warn'] { display: none; }
+.whose { display: contents; }
+@media (max-width: 767px) { .whose { display: none; } }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .roomChips > [role='radio'] { line-height: 42px; } }
+/* (wave E, E3) A phone on its side: the same bar at 44 — the photo is the hero. The room chips drop to the 36 px touch floor (REG-307)
+   so they sit inside it, the name to 16 px. */
+.bar[data-short] { height: calc(44px + env(safe-area-inset-top, 0px)); gap: var(--om-spacing-2); }
+.bar[data-short] .title { font-size: 16px; }
+.bar[data-short] .rooms { gap: var(--om-spacing-1); padding-left: var(--om-spacing-2); }
+.bar[data-short] .roomChips > [role='radio'] { line-height: 34px; }
+.bar[data-short] .rule { margin: 0 var(--om-spacing-1); }

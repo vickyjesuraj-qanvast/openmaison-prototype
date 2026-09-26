@@ -200,6 +200,15 @@ export async function countLiveSigningLinks(leadIds: string[]): Promise<number> 
   return Number(cs[0]?.n ?? 0) + Number(bs[0]?.n ?? 0)
 }
 
+/** (wave E, E8) What Delete — and Return Lead — also stop: these leads' client render links that open today (the AI Visualizer's
+    `/renders` links close with their lead; lib/visualizer/queries.ts `countLiveRenderLinks`). Read by the two dialogs when they open. */
+export async function countLeadRenderLinks(leadIds: string[]): Promise<number> {
+  const ids = leadIds.filter((id) => typeof id === 'string' && id)
+  if (!ids.length) return 0
+  const { countLiveRenderLinks } = await import('@/lib/visualizer/queries')
+  return countLiveRenderLinks(ids)
+}
+
 export async function deleteLead(leadId: string, reason: string): Promise<void> {
   await assertCanDelete()   // (REG-607)
   const { leads } = await import('@/lib/db/schema')

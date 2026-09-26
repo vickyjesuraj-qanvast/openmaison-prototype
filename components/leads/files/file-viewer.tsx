@@ -1,20 +1,24 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { readFrom, withFrom } from '@/lib/nav'
+import { backLabel as backLabelFor, readFrom, withFrom } from '@/lib/nav'
+import { openLeadDesign } from '@/app/visualizer/actions'
 import { Icon } from '@/components/om/icon'
 import { useEscapeLayer } from '@/components/om/surface'
+import { useSheetLayout } from '@/components/om/sheet'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { FileCommentsPanel } from './file-comments-panel'
 import { ViewerSkeleton } from './viewer-skeleton'
 import { FileInfoPanel } from './file-info-panel'
+import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
 import { NameDialog } from './name-dialog'
 import { TrashDialog } from './trash-dialog'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
@@ -43,7 +47,7 @@ type Panel = 'comments' | 'info' | null
  * (arrow + name on one 56px line), so the row is copied from page-header-l2.module.css at 56 with the spec's p16/24.
  */
 export function FileViewer({ data }: { data: FileViewData }) {
-  const { lead, file, folder, siblings, files, comments, me, now } = data
+  const { lead, file, folder, siblings, files, comments, me, now, render } = data
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -54,6 +58,11 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const landing = useSearchParams().get('panel')
   const [panel, setPanel] = useState<Panel>(landing === 'comments' ? 'comments' : null)
   const [kebabOpen, setKebabOpen] = useState(false)
+  /* (wave E, files-5) The kebab's menu opens through the portal (the house rule for every row / toolbar menu): anchored inside the z-20
+     header, it opened UNDER an open Information / Comments panel (z 91) — pressed, but invisible and out of reach. */
+  const kebabRef = useRef<HTMLSpanElement>(null)
+  const closeKebab = useCallback(() => setKebabOpen(false), [])
+  const sheet = useSheetLayout()   // ≤767: the kebab is a bottom sheet and the header's Download folds into it
   /* (REG-348) The side panels are full-screen sheets at ≤767 and every other sheet in the app closes on Escape;
      these two closed only from their own X. One ref for whichever is open — they are never open together. */
   const panelRef = useRef<HTMLElement>(null)
@@ -67,6 +76,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
   /* Back to the Files tab — inside the open folder when the file sits in one (the tab reads `?folder=`). */
   const from = readFrom(useSearchParams().get('from'))   // (REG-465) the tab URL the file was opened from, folder and origin included
   const backHref = from ?? (folder ? `/leads/${lead.id}/files?folder=${folder.id}` : `/leads/${lead.id}/files`)
+  /* (F105) Back names where it goes: the lead's Files (any folder of it) reads "Back to Files"; the AI Visualizer, a quote, … their own name */
+  const backLabel = from?.startsWith(`/leads/${lead.id}/files`) ? 'Back to Files' : backLabelFor(from, { leadName: lead.name, fallback: 'Back to Files' })
   const idx = siblings.findIndex((s) => s.id === file.id)
   const prev = idx > 0 ? siblings[idx - 1] : undefined
   const next = idx >= 0 ? siblings[idx + 1] : undefined
@@ -77,6 +88,19 @@ export function FileViewer({ data }: { data: FileViewData }) {
   /* files-actions revalidates the lead, the Files / Tasks tabs and the listing — not this viewer route — so file actions
      refresh the page from here; the comment actions do revalidate `/leads/<id>/files/<fileId>` and need no refresh (PERF-04). */
   const REFRESH = { refresh: true } as const
+
+  /* (REG-675, AI Visualizer Q-31) The photo opens as a room of the lead's design; Back there returns to this file. */
+  const params = useSearchParams()
+  const here = () => { const q = params.toString(); return `/leads/${lead.id}/files/${file.id}${q ? `?${q}` : ''}` }
+  const visualize = visualizeLabel(file, render ? { [file.id]: render } : {})
+  const openInVisualizer = async () => {
+    /* (F095) a filed render opens its own version — the room, the version selected — never a new room made of the render */
+    const o = liveOrigin(render)   // (files-client) a render whose design was deleted forever opens as a plain picture
+    if (o) { router.push(withFrom(renderHref(o), here())); return }
+    const r = await openLeadDesign(lead.id).catch(() => ({ error: 'Couldn’t open the AI Visualizer — please try again' }))
+    if ('error' in r) { snackbar({ message: r.error }); return }
+    router.push(withFrom(`/visualizer/${r.id}?file=${file.id}`, here()))
+  }
 
   /* Download: image files download their thumbnail as a real file (the demo has no originals); anything else is coming soon. */
   const download = async () => {
@@ -93,8 +117,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
       <div className={styles.body} data-testid="file-viewer">
         {/* Page Header / Leads - L2 (931:39835) 1424×56, p16/24, bottom rule — arrow_back 24/Light · name 20/Bold · actions H g24 */}
         <header className={styles.header}>
-          <Tooltip label="Back to Files">
-            <Link href={backHref} className={styles.back} aria-label="Back to Files">
+          <Tooltip label={backLabel}>
+            <Link href={backHref} className={styles.back} aria-label={backLabel}>
               <Icon name="arrow_back" size={24} weight={300} />
             </Link>
           </Tooltip>
@@ -116,25 +140,25 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 <Icon name="info" size={24} />
               </button>
             </Tooltip>
-            <span className={styles.anchor}>
+            <span className={styles.anchor} ref={kebabRef}>
               <Tooltip label="More options" disabled={kebabOpen}>
                 <button type="button" className={styles.iconBtn} aria-label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)}>
                   <Icon name="more_vert" size={24} />
                 </button>
               </Tooltip>
               {/* Frame 95 (931:39889): Move · Duplicate · Rename · Delete, 200 wide under the kebab */}
-              <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle={file.name}>
-                {/* (REG-269) Mobile only: the header's Download folds in here — `display: contents` ≤767, nothing at all above. */}
-                <span className={styles.mobileItem}>
-                  <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem>
-                </span>
+              <PortalMenu open={kebabOpen} anchor={kebabRef} onClose={closeKebab} align="right" width={200} role="menu" sheetTitle={file.name}>
+                {/* (REG-269) Mobile only: the header's Download folds in here. (audit 2026-09-26) A row of the sheet itself, not one wrapped
+                    in a `display: contents` span — the sheet's 16px row gutter is `.menuBody > button`, and the wrapper left it at 12. */}
+                {sheet ? <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem> : null}
+                {visualize ? <DropdownItem onSelect={() => { setKebabOpen(false); void openInVisualizer() }}>{visualize}</DropdownItem> : null}   {/* (REG-675, AI Visualizer Q-31; F095 a render opens its version) */}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); void run('duplicate the file', () => duplicateFiles([file.id]), 'File duplicated', REFRESH) }}>Duplicate</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setRenaming(true) }}>Rename</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setTrashing(true) }}>
                   <span className={styles.danger}>Delete</span>
                 </DropdownItem>
-              </Dropdown>
+              </PortalMenu>
             </span>
           </div>
         </header>
@@ -200,7 +224,8 @@ export function FileViewer({ data }: { data: FileViewData }) {
             </aside>
           ) : panel === 'info' ? (
             <aside ref={panelRef} className={styles.panel} aria-label="Information" tabIndex={-1}>
-              <FileInfoPanel file={file} folder={folder} me={me} onClose={() => setPanel(null)} />
+              <FileInfoPanel file={file} folder={folder} me={me} onClose={() => setPanel(null)}
+                             origin={render ? { render, href: liveOrigin(render) ? withFrom(renderHref(render), here()) : null } : null} />
             </aside>
           ) : null}
         </div>

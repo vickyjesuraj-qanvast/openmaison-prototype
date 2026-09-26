@@ -23,12 +23,18 @@
   color: var(--om-color-on-surface-default);
   transition: background-color var(--motion-hover);
 }
-.item:hover { background: var(--om-color-hover-04p); }
+/* (wave E, tablet-16) Hover tints only where there is a hover: on a touch tablet the row under the finger kept the 4% tint after the tap
+   (a Print as › submenu opened with its first row tinted), as the visualizer's own hover rules already avoid. */
+@media (hover: hover) {
+  .item:hover { background: var(--om-color-hover-04p); }
+  .item[aria-disabled='true']:hover { background: none; }
+}
 .item[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
-.item[aria-disabled='true']:hover { background: none; }
 .item[data-tone='danger'] { color: var(--om-color-tertiary-red-default); }
 .item[data-tone='danger'][aria-disabled='true'] { color: var(--om-color-on-surface-disabled); }   /* a locked Delete reads disabled, not dangerous (REG-265) */
 .divider { height: 1px; background: var(--om-color-surface-variant); }
+/* The DS menu item's Selected state: the current stage of the "All Leads" pill (780:93630) and (audit 2026-09-26) every plain radio /
+   checkbox DropdownItem that is checked — a scope pill's current value, the Tasks scope, a unit. */
 .item[data-selected] { background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
 .count { margin-left: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .link { color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }

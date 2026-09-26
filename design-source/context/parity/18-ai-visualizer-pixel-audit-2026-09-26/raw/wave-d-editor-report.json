@@ -1,0 +1,325 @@
+{
+ "done": [
+  {
+   "ref": "D9 · F041 · F073 · F201 · new:versions-menus:False Changed in another tab after a quick reload · new:fresh-phone:A pick made <1s before a reload is lost",
+   "what": "Editor side of the D9 contract. On visibilitychange→hidden and on pagehide every dirty room is sent with fetch('/visualizer/state', {method:'POST', keepalive:true, JSON {roomId, pending, detection, baseRev}}) (bodies ≤ 60 KB, 64 KB budget across rooms; a bigger one falls back to the server action on hidden). A draft om.viz.draft.<roomId> = {baseRev, pending, detection, at} is written to sessionStorage at the same time. On load, a draft younger than 2 minutes whose baseRev equals the loaded stateRev (and differs from what was loaded) becomes the room's picks and is saved as usual; every other draft is dropped. A keepalive reply is handled like the action's (same JSON); a late reply never walks a revision back. An in-flight map stops pagehide re-sending a room that the hidden flush already sent. The unmount/Back flush and leave() are kept.",
+   "files": [
+    "components/visualizer/editor/use-editor-state.ts"
+   ]
+  },
+  {
+   "ref": "new:surfaces-furniture:The snackbar's Undo does nothing once another step lands",
+   "what": "undoStep now returns whether the step was still the latest. A stale snackbar Undo (Changes cleared, … taken off the list, Reference taken off, Treated as a photo) says 'Newer changes came after that — use Undo to step back' instead of doing nothing. The house snackbar has no dismiss handle, so older snackbars can't be withdrawn (see notDone).",
+   "files": [
+    "components/visualizer/editor/use-editor-state.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:Un-ticking the style card or None throws the references away",
+   "what": "pickStyle takes the references off only when a card is picked, never when it is un-ticked or on None. The card and its references change in one history step, so the snackbar's Undo brings both back.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F197 · critic-13 (code-robustness) · new:fresh-phone:Tools tab dot for a typed note",
+   "what": "The mode tabs' dots now come from the changes list itself. Surfaces counts only picks that resolve and sit on a surface this picture has; Furniture counts only real piece changes. Tools lights only for pending.tool; a typed note is counted in 'n changes' only. (The panel's empty '→' line is in surfaces-panel.tsx, owned by rail.)",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F014",
+   "what": "The 'Vn is ready' snackbar is one line. The whole-room caveat stays in the rail's hint. The lift now counts only what the snackbar would cover sideways: beside a narrow centred canvas bar (wide windows), it rests above the strip and off the photo.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F162",
+   "what": "After a run, focus on the fading progress card counts as nowhere, so the keyboard lands on the new tile (after a cancel or an error, on Generate). This is compatible with stage.tsx's own afterRun. Pin cards return focus when they close: to their opener (a marker, or the photo → the Pin toggle), to the new pin's marker after 'Pin it', and to the Pin toggle after Remove. Focus is only moved when nothing holds it.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:Deleted versions stays open and empty after the last restore",
+   "what": "Restoring from Deleted versions snacks 'Vn restored'. The dialog closes once nothing is left in it.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F083 · new:fresh-desktop:Rename the room stops typing at 60 characters",
+   "what": "Rename has no silent maxLength any more. The field shows its rules as you type: a counter 'n / 60' (80 for a design) within 10 of the limit, 'Keep the room’s name to 60 characters' past it, and 'There’s already a room called {name as spelled}' for a taken room name. Save stays disabled while there is an error. The server's refusal is the backstop.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "critic-4 · new:code-robustness:A closed lead's design still offers Share",
+   "what": "The editor reads data.design.leadClosed (from the loader). Share with client is disabled with LEAD_CLOSED_SHARE ('This lead was returned or deleted — its links stay off') in its tooltip. The version menu's 'Share with the client…' row is disabled with the same words as its meta line. The moodboard's Share says it in a snackbar instead of closing quietly.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F019",
+   "what": "A design with no rooms or renders reads 'Saved …' from its own updatedAt/createdAt.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F022",
+   "what": "A surface or piece marked by hand now carries markedOn (the version key it was marked on, or ORIGINAL): on tap, draw, redraw and add piece. The new pure helpers pictureOf / onPicture in editor-model.ts work out which picture a version shows. A new picture starts at a restyle, a furnished look or a rendered sketch; everything else inherits its parent's. A hand mark from another picture is left out of the reading, the markers, the tab dots and Generate, so a whole-room look shows its empty state. Older marks without markedOn read as before. Unit-checked with tsx (10 cases).",
+   "files": [
+    "components/visualizer/editor/editor-model.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "F023",
+   "what": "A tapped surface is read twice: with its own ±0.2 box and with a ±0.35 box. If the region grows past the tap's box (wide > 1.15× tight and more than 0.2% of the photo), the box's straight edges were cutting it off, so the tap goes to tracing ('This spread too far — trace its outline instead'). A tap can no longer save a rectangle. Simulated on the three sample rooms with growRegion: on a 9×9 tap grid, 40–57 of the ~70 old 'keeps' per room were box-clipped and now trace; 16–34 stay.",
+   "files": [
+    "components/visualizer/editor/editor-model.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:phone-tablet:The first-visit tip is five lines at 320 · new:versions-menus:The first-visit tip grew and names an entry the strip doesn't show",
+   "what": "The first-visit tip is its first sentence only; the Deleted versions sentence is gone. It is also hidden on a phone held on its side.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:phone-tablet:Phone landscape: the photo disappears",
+   "what": "New SHORT_LANDSCAPE (landscape, ≤ 500 tall) at ≤1024 keeps the rail model instead of the camera model: the rooms in the top bar, the photo and versions on the left, a 300 px rail with the compact Describe box at the panel's top and the compact go line at its foot (data-short). The stage's reserves when short are canvas's side (stage.tsx).",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/editor.module.css"
+   ]
+  },
+  {
+   "ref": "F173",
+   "what": "When the tray closes, it folds away first; then the rooms row and the strip unfold (trayLeaving waits for AnimatePresence's onExitComplete), and the canvas bar fades back in (vizBarIn) instead of jumping. Under reduced motion both folds are instant.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/editor.module.css"
+   ]
+  },
+  {
+   "ref": "F204 (3)",
+   "what": "The deleted design's note offers Restore only to whoever may restore it. Anyone else reads 'only whoever made it, an Owner or an Admin can restore it.'",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:editor-visual:The Maison AI sheet opens at the house corner, away from its button",
+   "what": "The sheet now opens against its button, flush with its right edge and 12 px above it. Beside the rail that means right = rail + 20, bottom = 96. In the camera model it sits over the FAB's seat in the versions band. The snackbar's --bottom-dock no longer moves it. This is done with CSS in editor.module.css on the sheet, which renders inside the frame. The earlier transformed-anchor wrapper is gone, because it would have trapped the sheet's 'Reset the prototype?' confirm dialog inside a 0×0 box. anchorRef now points at the FAB's button, so pressing the FAB toggles the sheet instead of closing and reopening it (REG-153).",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/editor.module.css"
+   ]
+  },
+  {
+   "ref": "new:code-robustness:Editor snackbars cover the Share dialog · new:fresh-tablet:Snackbars land on open dialogs · new:fresh-phone:Snackbars inside the Share sheet land mid-sheet",
+   "what": "While an aria-modal dialog or sheet is open, the editor's rows don't count for the snackbar lift. Under a centred dialog the snackbar sits at the house place. Over a bottom sheet with a footer, it sits just above that footer, never on its buttons. The measure is taken again when a dialog opens or closes and when a snackbar arrives (MutationObserver).",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:phone-tablet:The snackbar keeps the app rail's 84px offset",
+   "what": "While the editor is mounted, --rail-w is set to -16px (its own mount effect), so the house snackbar lines up with the canvas' 16 px gutter. It is given back on unmount.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:The Maison AI button covers the Versions and quality knobs",
+   "what": "The FAB steps aside (display none) while the phone's 'Versions and quality' knobs are open.",
+   "files": [
+    "components/visualizer/editor/editor.module.css"
+   ]
+  },
+  {
+   "ref": "F156",
+   "what": "Every white row reaches under the side safe-area insets in its own colour: the top bar, the notes, the rail, the versions beside the rail, and the camera model's folds, go bar and dock. The frame's grey no longer shows beside them at a notch. Not checked on a real notched iPhone.",
+   "files": [
+    "components/visualizer/editor/editor.module.css",
+    "components/visualizer/editor/topbar.module.css"
+   ]
+  },
+  {
+   "ref": "new:phone-tablet:Short phones: an open tray shrinks the photo to a thumbnail · new:phone-tablet:The tablet tray's height jumps per mode · new:surfaces-furniture:At 375×667 with a tray open the photo is ~123 px (tray part)",
+   "what": "The tray has one height while open, 44dvh (40dvh on phones ≤ 700 tall), whatever the mode; the panel scrolls inside it. By arithmetic this leaves the photo about 180 px tall at 375×667. The markers' size on a small stage is canvas's side.",
+   "files": [
+    "components/visualizer/editor/editor.module.css"
+   ]
+  },
+  {
+   "ref": "F004 · F149",
+   "what": "useRoomInView is now a callback ref with a ResizeObserver. The active room chip is scrolled into view (sideways only, clear of the 44 px pagers) when a row mounts later (the camera model's rooms row, a fresh load with ?room=) and whenever the row changes width (resize, rotation).",
+   "files": [
+    "components/visualizer/editor/topbar.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:The editor loses the open room from its address after a refresh",
+   "what": "The room is written to the address through Next's patched history (state null, so the router's URL follows). The write runs again whenever useSearchParams loses the room. here() builds every `from` from the room on screen and, when a version was picked, ?v=<key> or ?v=original, never from whatever the address says. Close from a quote or a file now comes back to the same room and version.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "app/(editor)/visualizer/[designId]/page.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:'Open in AI Visualizer' on a lead's site photo lands on the newest render",
+   "what": "page.tsx: a ?file= that is a room's own source photo opens that room on its Original. ?v=original is read as the Original.",
+   "files": [
+    "app/(editor)/visualizer/[designId]/page.tsx"
+   ]
+  },
+  {
+   "ref": "D4 · new:fresh-desktop:An uploaded room photo is named 'Room 2' · new:fresh-phone:An uploaded room photo is named 'Room 2'",
+   "what": "Every room made from a file is named with roomNameFromFile(): an upload, several photos dropped at once, a lead's photo and a lead's photo matching a sample. The server's 'Room n' is the fallback.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:The editor ghost at 1024 landscape draws desktop tiles and pill room chips",
+   "what": "The editor ghost now matches the page. Room chips are the house chips: r4, 32 tall, 44 under a finger or on a phone. At ≤1024 the strip uses 96 × 60 tiles in every layout. The camera-model rule is now the editor's own: portrait, or landscape that is neither roomy nor short. A phone on its side gets a 300 px rail with the Describe bone at the top and the go line at its foot.",
+   "files": [
+    "components/visualizer/skeletons.tsx",
+    "components/visualizer/skeletons.module.css"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:On a sketch the versions strip still says 'pick a finish or a style' (editor side)",
+   "what": "The strip's originalSub follows the effective reading: a sketch taken as a photo reads 'the photo', so canvas's strip hint says 'Generate', not 'Render from sketch'.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ]
+  },
+  {
+   "ref": "critic-17 · D5 (editor part)",
+   "what": "No change needed: Undo / Redo in the top bar already carry 'Undo (⌘Z)' / 'Redo (⇧⌘Z)' in their tooltips. The strip's '← →' tooltip is in versions-strip.tsx (canvas, already done). No '?' sheet.",
+   "files": [
+    "components/visualizer/editor/topbar.tsx"
+   ]
+  },
+  {
+   "ref": "housekeeping",
+   "what": "Removed the now-unused VisualizerHomeSkeleton and its CSS. The landing's ghost is gallery's components/visualizer/home/home-skeleton.tsx, which both app/visualizer/loading.tsx and the page use now.",
+   "files": [
+    "components/visualizer/skeletons.tsx",
+    "components/visualizer/skeletons.module.css"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "F166 · new:fresh-tablet:The landing ghost doesn't match the page on tablets · critic-21 (landing part)",
+   "why": "The gallery package moved the landing ghost into components/visualizer/home/home-skeleton.tsx, used by app/visualizer/loading.tsx and the page, so the fix lives there. The old ghost in skeletons.tsx was dead code and is removed. critic-21's share-page part (F167) belongs to share."
+  },
+  {
+   "ref": "new:versions-menus:A Designer can Rename and Change photo on another member's room · critic-15 (versions-menus)",
+   "why": "This needs the owner. The verifier itself calls it 'the owner's call; propose it first', and it is not among D1–D9. The proposal: apply the room rule (the room's maker, the design's maker, Owner or Admin) to Change photo and maybe Rename, give the menu row a meta line as Delete room has, and add a row to Who may do what."
+  },
+  {
+   "ref": "critic-11 (versions-menus / engine)",
+   "why": "This is a proposal for the owner: PNG, full resolution, 'Download all versions' as a zip, and a brand-kit mark."
+  },
+  {
+   "ref": "new:surfaces-furniture:Stacked Undo snackbars (withdrawing the stale ones)",
+   "why": "The house snackbar (components/om/snackbar.tsx, no package owns it) exposes only show(): no id, no dismiss, no replace. The editor now answers a stale Undo instead of doing nothing. Withdrawing older Undo snackbars would need a snackbar API change (see crossFileRequests)."
+  },
+  {
+   "ref": "new:fresh-phone:'Vn is ready' covers the bottom of the render on phones",
+   "why": "This was a deliberate call. On a phone the snackbar spans the width, so it must cover either the photo's foot or the canvas bar. The F089 / F140 rule, and Material's (a snackbar never covers controls), keep it above the bar, so it sits over the photo for 4 s. On wide windows it now rests beside the bar, off the photo."
+  },
+  {
+   "ref": "new:surfaces-furniture:Chips and version captions call a one-surface group by its group word",
+   "why": "Both names come from lib/visualizer/model.ts (changeList's `what`, descriptor), which is engine's. The editor only shows them."
+  },
+  {
+   "ref": "F189",
+   "why": "The palette merge lives in lib/visualizer/engine/palette.ts (engine). The editor already hands addReference the same 900 px JPEG it keeps."
+  },
+  {
+   "ref": "F145 (placeholder clipping, hidden caption) · F062 · F007",
+   "why": "These live in describe-box.* and rail.* (rail package). Only the tray height (44/40dvh) was the editor's, and it is done."
+  },
+  {
+   "ref": "new:motion-a11y:320 canvas bar · new:versions-menus:320 canvas bar · new:fresh-phone:320 toolbar clips Download · F142",
+   "why": "The fix is in stage.module.css (canvas), which already hides the zoom step and rule at ≤359. The editor's toolbar content is unchanged."
+  },
+  {
+   "ref": "new:fresh-tablet:The pin card covers the canvas toolbar · new:surfaces-furniture:markers pile up on a small stage · phone-tablet 0 (stage reserves)",
+   "why": "These are stage.tsx and pin-card.* (canvas)."
+  },
+  {
+   "ref": "F204 (1)(2)(4)(5) · critic-15 (gallery) · F129",
+   "why": "These are the gallery (landing and Materials Deleted sheets), useRun (leads), and server (restorePin copy) packages."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "lib/visualizer/model.ts",
+   "change": "Optional, for typing end to end: add `markedOn?: string` to SurfaceDef and FurnitureDef, documented as 'the version key (or ORIGINAL) a hand mark was made on — the editor's onPicture keeps it only on versions of that picture'. The editor already writes it through its own MarkedOn type, and the server stores detection JSON as given, so it works without this.",
+   "ref": "F022"
+  },
+  {
+   "file": "lib/visualizer/model.ts",
+   "change": "In changeList, when a group word covers exactly one surface in the reading (total === 1), label the chip with titleCaseLabel(surface.label), e.g. 'Feature Wall', not 'Feature Walls'. Do the same in the version descriptor. The editor shows these as is.",
+   "ref": "new:surfaces-furniture:Chips and version captions call a one-surface group by its group word"
+  },
+  {
+   "file": "components/om/snackbar.tsx (unowned, house piece)",
+   "change": "If the integrator wants stale Undo snackbars withdrawn: let show() return a dismiss handle (or take a `key` that replaces an earlier snackbar with the same key). The editor would then give every Undo snackbar key 'viz-undo', so only the newest stays.",
+   "ref": "new:surfaces-furniture:Stacked Undo snackbars"
+  },
+  {
+   "file": "components/leads/ai-sheet.tsx",
+   "change": "None needed. Note: the editor now positions the sheet from editor.module.css with `.editor[data-rail|data-narrow] [aria-label='Maison AI suggestions']` and passes anchorRef. If leads renames the sheet's aria-label 'Maison AI suggestions', update that selector.",
+   "ref": "new:editor-visual:The Maison AI sheet opens away from its button"
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-? (D9 · F041 · F073 · F201 · versions-menus 0 · fresh-phone 3) The AI Visualizer's autosave survives a reload or a closed tab. When the tab hides or the page goes away, the room's waiting picks go to POST /visualizer/state as a keepalive request. A sessionStorage draft (om.viz.draft.<roomId>) is kept too; if the reload read the room before that save landed, the draft becomes the room's picks. No more false 'Changed in another tab'. [bug fix]",
+  "REG-? (surfaces-furniture 5) A snackbar's Undo pressed after newer changes says 'Newer changes came after that — use Undo to step back' instead of doing nothing. [bug fix · invented copy]",
+  "REG-? (style-light-tools 4) Un-ticking a style card, or None, keeps the references. Picking a card that takes them off is one step, so its Undo puts back both. [bug fix]",
+  "REG-? (F197 · critic-13 · fresh-phone 7) The mode tabs' 'has changes' dots count what the changes list counts: no dot for a typed note on Tools, a material that is gone, or a surface this picture doesn't have. [bug fix]",
+  "REG-? (F014) 'Vn is ready' is one line; the whole-room caveat stays in the rail's hint. Beside a narrow canvas bar the snackbar rests above the versions, off the photo. [bug fix]",
+  "REG-? (F162) Keyboard focus after a run lands on the new version (Generate after a cancel). A pin's card gives focus back to its opener, the new pin or the Pin toggle. [bug fix]",
+  "REG-? (versions-menus 10) Restoring from Deleted versions says 'Vn restored', and the dialog closes when it is empty. [bug fix · invented copy: 'Vn restored']",
+  "REG-? (F083 · fresh-desktop 18) Rename checks as you type: a counter near the limit, 'Keep the room’s name to 60 characters' and 'There’s already a room called {name}'. Nothing is cut quietly. [bug fix · invented copy]",
+  "REG-? (critic-4 · code-robustness 2) On a returned or deleted lead's design, Share with client (top bar, version menu, moodboard) is off and says 'This lead was returned or deleted — its links stay off'. [bug fix]",
+  "REG-? (F019) A design with no rooms yet shows 'Saved …' from its own time. [bug fix]",
+  "REG-? (F022) A surface or piece marked by hand belongs to the picture it was marked on. A whole-room look (or the photo under one) leaves it out and shows its own empty state. [bug fix]",
+  "REG-? (F023) A tapped surface that its tap box cut short goes to tracing ('This spread too far — trace its outline instead'), so a tap never saves a rectangle. [bug fix]",
+  "REG-? (phone-tablet 12 · versions-menus 5) The first-visit tip is one sentence; the Deleted versions line is gone. It hides on a phone held sideways. [bug fix · copy removed]",
+  "REG-? (phone-tablet 0) A phone held sideways (≤ 500 tall) keeps the rail model: the rooms in the top bar, the photo and versions on the left, a 300 px rail with Describe and the compact go line. Its ghost matches. [bug fix · user-directed layout from the verifier's proposal]",
+  "REG-? (F173) Closing the tray folds it away first, then the rooms and versions unfold and the canvas bar fades back. Reduced motion is instant. [bug fix]",
+  "REG-? (F204) A deleted design's note offers Restore only to who may restore it; anyone else reads the rule. [bug fix]",
+  "REG-? (editor-visual 3) The editor's Maison AI sheet opens against its own button (beside the rail, or in the versions band on a phone), and the button toggles it. [bug fix]",
+  "REG-? (code-robustness 3 · fresh-tablet 11 · fresh-phone 4) Editor snackbars no longer land on an open dialog. Under a centred dialog they sit at the house place; over a phone sheet, just above its footer. [bug fix]",
+  "REG-? (phone-tablet 11) Editor snackbars line up with the canvas' 16 px gutter; the editor has no app rail. [bug fix]",
+  "REG-? (style-light-tools 5) The Maison AI button steps aside while the phone's Versions and quality knobs are open. [bug fix]",
+  "REG-? (F156) The editor's white rows reach under a notch's side insets in their own colour. [bug fix]",
+  "REG-? (phone-tablet 1 · 8 · surfaces-furniture 6) The phone/tablet tray keeps one height while open: 44dvh, or 40dvh on short phones. The photo no longer jumps between dock tabs or shrinks to a thumbnail. [bug fix]",
+  "REG-? (F004 · F149) The room on screen stays in view in its chip rail after a resize or rotation, and in the phone's rooms row on a fresh load. [bug fix]",
+  "REG-? (fresh-tablet 3) The editor's address keeps the room after every action. Links out (Files, a quote, the lead) come back to the same room and version (?v=original for the Original). [bug fix]",
+  "REG-? (fresh-tablet 20) 'Open in AI Visualizer' on a lead's site photo opens its room on the Original. [bug fix]",
+  "REG-? (D4 · fresh-desktop 15 · fresh-phone 15) Rooms made from an uploaded, dropped or lead photo are named after the file (roomNameFromFile); 'Room n' is the fallback. [owner call D4]",
+  "REG-? (fresh-tablet 16) The editor's ghost matches the page: house room chips (r4, 32/44), 96 × 60 tiles at ≤1024, and the sideways-phone rail. [bug fix]",
+  "REG-? (style-light-tools 9, editor side) A sketch taken as a photo reads 'the photo' in the versions strip, so its hint says Generate. [bug fix]"
+ ],
+ "verification": "Ran npx tsc --noEmit -p . (clean for the whole repo at the end; an engine mid-edit error in run.ts came and went and was not mine) and npx eslint on every package file (visualizer-editor.tsx, use-editor-state.ts, editor-model.ts, topbar.tsx, skeletons.tsx, app/(editor)/visualizer, lib/nav.ts): clean. Unit-checked the new pure helpers with tsx (scratch t-picture.mts): pictureOf and onPicture across edit, restyle, relight-of-a-look, restyle-of-a-look and a missing parent, plus the filtered copy — 10/10 pass; boxAround's only diff was float noise. Simulated the F023 tap probe with the engine's growRegion on the three sample photos (t-tap.mts, t-grid.mts). Wall, ceiling and art taps that used to save ±0.2 rectangles (13–14% of the photo, growing to 28–33% with room) now route to tracing. Contained regions stay; on a 9×9 grid, 16–34 taps per room still keep. Checked that Next 16's patched history.replaceState skips the router sync when the state carries __NA. That is why the old replaceState(window.history.state) lost the room on router.refresh(); passing null syncs it. Checked the CSS files' brace balance and that the new selectors are CSS-module pure. Not done, per the rules: no build, no dev server, no Playwright against my edits. Ports 3021–3025 run the pre-wave-D build, so nothing here was checked on screen. The integrator's build should look at: 844×390 and 667×375 touch (short landscape), 375×667 tray, the Maison AI sheet at 1440/1025/390, a snackbar with the Share dialog open at 1440/1024 and the Share sheet at 390, a quick reload after a pick (no conflict bar, the pick survives), and the editor ghost at 1024×768 touch."
+}

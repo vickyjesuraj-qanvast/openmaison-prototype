@@ -35,10 +35,11 @@
 .badgeAdd { width: 56px; height: 56px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: transparent; color: var(--om-color-primary-default); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .badgeAdd:hover { background: var(--om-color-hover-04p); }
 
-/* Colours: swatch 56 r4 with the native picker behind it, hex field beside. */
+/* Colours: swatch 48 r4 with the native picker behind it, hex field beside. (wave E, gallery-13) 48 = the outlined field's own box, so the
+   pair reads as one control — at 56 each swatch hung 8px below its field. */
 .colours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-4) var(--om-spacing-6); }
-.colour { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.swatch { width: 56px; height: 56px; flex-shrink: 0; border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; overflow: hidden; cursor: pointer; }
+.colour { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
+.swatch { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; overflow: hidden; cursor: pointer; }
 .swatch input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); opacity: 0; cursor: pointer; }
 .colourField { flex: 1; min-width: 0; }
 

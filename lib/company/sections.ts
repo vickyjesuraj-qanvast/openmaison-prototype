@@ -13,6 +13,7 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'questionnaire', icon: 'quiz', label: 'Questionnaire', help: 'The questions every lead starts with', href: '/company/questionnaire' },   /* (REG-612) live */
     { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
     { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
+    { key: 'materials', icon: 'texture', label: 'Materials', help: 'Your own finishes for the AI Visualizer', href: '/company/materials' },   /* (REG-677, AI Visualizer Q-18) 1.0's studio library, now managed */
   ] },
   { title: 'Operations', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },

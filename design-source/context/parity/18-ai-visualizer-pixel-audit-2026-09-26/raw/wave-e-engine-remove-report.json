@@ -1,0 +1,82 @@
+{
+  "done": [
+    {
+      "ids": ["surfaces-2", "surfaces-29", "tablet-9"],
+      "what": "Remove the sofa: the rug under it is no longer a pale tiled patch with a seam and a step. New engine/mend.ts `weaveFill`: the rug is unwarped onto its plane (samples `plane`, its four corners), its weave (photo over its own colour close by) is quilted into the hidden part (Efros–Freeman blocks, best match of what shows, cheapest-path seams, rows processed from the side the rug shows on), laid back through the plane from the photo's own pixels at full sharpness, in the rug's colour at the same depth (each row's lighter half where it shows clear). The rug next to the throw is lifted out of the sofa's shade (sofa `casts`) and eased into the laid part; a 10 px band is quilted and faded so no straight join remains; the rug's front and left edges get the thin dark line its visible edges have. A sliver (a fig's saucer brushing the rug's corner) is left as photographed.",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-7", "surfaces-29"],
+      "what": "Remove the sofa: the armchair is rebuilt part by part instead of mirrored (new generic `rebuild` steps on a sample piece: rows / columns / along / copy / shade): the shade under its seat, its seat top and front on from the end that shows, its left arm post down to the floor, its side beside the post, its back leg copied from the post — no white arm block, seat blob, white wedges, leg stub, or seat wider than its back. The sofa's cut was retraced round the pillows (the post and the seat top are the chair's again). A step can be `frame`: after a sofa Remove, a Replace/Customize of the chair paints the rebuilt upholstery but never the wooden post and leg.",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29"],
+      "what": "Remove the sofa: the coffee table stands on four legs (front and back left legs copied from the right front leg), the space under its top in shade, its top's front edge and the rail under it continued along the edge where the throw hid them (the `along` step averages the first stretch that shows at the pixel's exact offset across the line — straight and crisp, no streaks or steps); the table's cut now stops where the sofa's back starts (no light sofa rim left under the top).",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29"],
+      "what": "Remove the coffee table: the TV console's hidden base is rebuilt — drawer fronts down their columns (a couple of pixels past the bowl's rim, so no pale lines), the light edge / shadow gap / dark under it along its length, and its missing left leg copied from the right one — no torn stair-stepped rail, no white gap line, no floating end; the rug where the table and its leg stood is laid by the weave (no slab).",
+      "files": ["lib/visualizer/samples.ts", "lib/visualizer/engine/mend.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29"],
+      "what": "Remove the rug: no dark rug wedge by the throw — the sofa's cut follows the throw and its fringe, and a new `wisps` zone keys the fringe against what is behind it (only the light strands stay; the floor shows between them).",
+      "files": ["lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29"],
+      "what": "Remove the armchair: it takes its soft shade on the wall and the floor (a traced `plate`), so no grey ghost stays on the wall; the floor lamp's pole runs on from below its shade (no pale stub); the right curtain's folds run on down to the hem behind the chair and the sofa's cushions (never the plate's differently-lit curtain in blocks).",
+      "files": ["lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2"],
+      "what": "Remove the sofa: no dark smudge of its shade on the floor in front of it (its plate now reaches the picture's foot, so the light match reads the floor clear of the shade); every Remove takes the piece's rim (2 px past its outline) even where a traced plate runs along the cut; rebuilt edge pixels count in full (two areas traced edge to edge leave no half-done pixel).",
+      "files": ["lib/visualizer/engine/run.ts", "lib/visualizer/engine/mend.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-12"],
+      "what": "Demo re-rendered last, after engine-paint's report (scripts/viz/demo-renders.mts): public/visualizer/demo/living-room-edit.jpg and -golden-hour.jpg now carry engine-paint's whole-sofa Emerald Velvet (arm end, base rail and creases no longer grey); swatches re-cut and still in step with DEMO_EDIT (#604337, #81623E), so demo.ts and repair R61 need no change. Deterministic (a second render is byte-identical).",
+      "files": ["public/visualizer/demo/living-room-edit.jpg", "public/visualizer/demo/living-room-edit-golden-hour.jpg", "public/visualizer/demo/swatch-walnut.jpg", "public/visualizer/demo/swatch-oak.jpg"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29", "tablet-9"],
+      "what": "Engine: a Generate with a Remove lifts the pieces once and starts every variant from that picture (3 variants no longer pay the lift three times); rugs are mended before the pieces standing on them. New harness scripts/viz/remove-test.mts: every living-room Remove (9 pieces + sofa with walnut floor, sofa+table, sofa+armchair, sofa + armchair Replace, sofa + rug Customize) saved full size (PNG) with photo/render crops at 2–4×, plus 7 measured PASS/FAIL checks of the old ghosts.",
+      "files": ["lib/visualizer/engine/run.ts", "scripts/viz/remove-test.mts"]
+    }
+  ],
+  "notDone": [
+    {
+      "ids": ["surfaces-7"],
+      "why": "Its second half (a Replace painting the wall seen under the armchair's right arm) is engine-paint's — done there with the armchair's cutouts; my rebuilt parts respect it (frame steps are never painted)."
+    }
+  ],
+  "crossFileRequests": [
+    {
+      "file": "lib/visualizer/model.ts",
+      "change": "Optional, type-only: add to FurnitureDef `plane?: [Pt, Pt, Pt, Pt]; rebuild?: import('./engine/mend').RebuildStep[]; wisps?: Pt[][]; casts?: Pt[][]` (sampleDetection already spreads them from the sample). run.ts reads them today through narrow casts (`planeOf`, `rebuildOf`, `castsOf`, and `strands`), which can then be dropped.",
+      "ids": ["surfaces-2"]
+    },
+    {
+      "file": "design-source/verify/ai-visualizer/remove-wave-e/",
+      "change": "Bank the before/after sheet and the full-size Removes from /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/engine-remove/shots/ (remove-before-after.jpg = r0 engine left, now right, for sofa · coffee table · rug · armchair · sofa+walnut · sofa+table · sofa+armchair).",
+      "ids": ["surfaces-29"]
+    }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-nnn (wave E, surfaces-2 · surfaces-29 · tablet-9) AI Visualizer › Remove on the living room sample: the rug runs on under a sofa taken out in its own perspective and weave — no tiled patch, seam or step, and the sofa's shade on the rug goes with the sofa (engine/mend weaveFill, samples `plane` · `casts`). Source: bug fix.",
+    "REG-nnn (wave E, surfaces-2 · surfaces-7 · surfaces-29) AI Visualizer › Remove: what a piece taken out had hidden comes back part by part — the armchair's seat, post, side and back leg; the coffee table's four legs and front edge over its own shade; the TV console's base and left leg; the curtain's folds; a Replace or Customize in the same Generate paints the rebuilt upholstery, never the wood (samples `rebuild`). Source: bug fix.",
+    "REG-nnn (wave E, surfaces-2 · surfaces-29) AI Visualizer › Remove: the armchair takes its shade on the wall; the floor lamp's pole runs on clean; taking out the rug leaves only the throw's fringe strands over the floor (samples `wisps`); the sofa's floor shade goes with it. Source: bug fix.",
+    "REG-nnn (wave E, surfaces-12) Demo design (Kevin Ng › Living room) V2 and its golden-hour relight re-rendered with the whole-sofa Emerald Velvet. Source: bug fix."
+  ],
+  "verification": "npx tsc --noEmit -p . clean; npx eslint on lib/visualizer/engine/mend.ts, run.ts, samples.ts, demo.ts, scripts/viz/remove-test.mts, demo-renders.mts clean. scripts/viz/remove-test.mts (Node, the browser's runPass with sharp IO) rendered all 14 cases repeatedly while tuning; every final render was looked at full size and the problem spots at 2×–14× against the photo and against the pre-wave renders (r0): sofa (rug continuous, table on four legs, chair whole, curtain folds, no floor smudge), coffee table (console fronts/base/left leg clean, rug laid), rug (fringe strands over floor), armchair (clean wall, pole clean), console/lamp/fig/TV/art unchanged or cleaner (fig: the rug corner no longer gets a laid sliver), sofa+walnut floor, sofa+table, sofa+armchair, sofa+armchair Replace (tan seat rebuilt, post stays wood), sofa+rug Customize navy (rug navy end to end, no seam). The 7 measured checks all PASS (they fail on the pre-wave engine except the rug-colour one). scripts/viz/render-test.mts: all checks passed (F179/F181/F193/D3). scripts/viz/regions.mts living-room: every region reads as before. scripts/viz/demo-renders.mts re-run after engine-paint's report: swatches in step, output byte-identical on a second run. Timing in Node: sofa Remove ~0.3–0.6 s for the lift itself warm; a 3-variant sofa Remove 0.87 s warm.",
+  "checkOnBuild": [
+    "Living room › Furniture › Remove, one at a time, at 1440 and zoomed: Grey Fabric Sofa (rug one piece under it, coffee table on four legs, armchair whole with its seat, post and legs, curtain folds to the floor, no dark smudge in front), Oak Coffee Table (console's drawer fronts, base and left leg; rug where the table stood), Jute Area Rug (only fringe strands by the throw), Upholstered Armchair (no shade ghost on the wall, lamp pole even). Also sofa + Floor → Walnut in one Generate, sofa + table, sofa + armchair.",
+    "Browser timing of a sofa Remove on a phone/tablet: the rug quilting adds work to the first Generate (Node: well under a second warm); variants now share one lift.",
+    "Sofa Remove + Armchair › Replace › Mid-Century armchair (or Customize Mustard): the rebuilt seat takes the finish, the wooden post and legs and the wall under the right arm don't. Sofa Remove + Rug › Customize Navy: the whole rug navy with no seam where the throw stood.",
+    "Kevin Ng › Living room › V2 and the golden-hour version, and the client link /renders/…: the pictures were re-rendered at the same paths — hard-reload to beat the browser cache; no db:baseline needed (versions reference the files by path, swatch hexes unchanged).",
+    "Known small leftovers seen at 6–14× only: a 1-px wood rim along the throw's top edge after Remove the coffee table (the throw's anti-aliased edge over the table); a faint repeat of the arm rail on the armchair's rebuilt left side; the bowl's faint shade copied down the console's first drawer front; no lamp base when sofa and armchair are both taken out (the pole ends at the floor line)."
+  ]
+}

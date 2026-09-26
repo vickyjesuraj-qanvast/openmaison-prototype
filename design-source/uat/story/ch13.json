@@ -1,0 +1,594 @@
+[
+  {
+    "step": "13.01",
+    "chapter": 13,
+    "scene": "Her photo, in the AI Visualizer",
+    "module": "AI Visualizer",
+    "try": "Open Sophia’s site photo in the AI Visualizer",
+    "how": "1. Open Sophia Wong › \"Files\", open the Site photos folder and double-click sophia-living-room.jpg\n2. Click \"More options\" (⋮, top right), then \"Open in AI Visualizer\"\n3. Read the tip, press \"Got it\"; look at the squares on the photo\n4. Click the eye icon (\"Hide markers\"), then again (\"Show markers\")",
+    "expect": "Full screen: \"Sophia Wong\", chip \"LEAD · WON\", a room named \"Living room\" from the file; squares on walls and floor; \"Marked roughly on your photo — …\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VE-08",
+      "VIZ:DEF-01",
+      "VIZ:DEF-02",
+      "VIZ:VE-07",
+      "VIZ:VE-05",
+      "VIZ:VD-02",
+      "VIZ:VD-03",
+      "VIZ:MM-11"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.02",
+    "chapter": 13,
+    "scene": "Her photo, in the AI Visualizer",
+    "module": "AI Visualizer",
+    "try": "Check the room’s menu and mark the lamp it missed",
+    "how": "1. Click \"Room options\" (⋯ by the room chip), read the menu, press Esc\n2. Open \"Furniture\", press \"Add furniture\": \"Piece\" Floor lamp, then the chip \"Lighting\"\n3. Press \"Click where it is\", then click the lamp’s yellow shade on the photo\n4. On the \"Floor Lamp\" row press ✕ (\"Take off the list …\"), then \"Undo\" in the message",
+    "expect": "The menu offers \"Rename\", \"Change photo\", \"Delete room\"; \"Floor Lamp\" joins the furniture list; Undo restores it after \"… taken off the list\".",
+    "in10": "Different from 1.0: taking a mark off has Undo",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VR-02",
+      "VIZ:VR-05",
+      "VIZ:VF-04",
+      "VIZ:VD-04",
+      "VIZ:VD-06",
+      "VIZ:VN-10"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.03",
+    "chapter": 13,
+    "scene": "New finishes",
+    "module": "AI Visualizer",
+    "try": "Pick a sage paint for the walls and a walnut floor",
+    "how": "1. Open \"Surfaces\", click the \"Walls\" row (or the square on a wall) — it starts on \"As in the photo\"\n2. Search sage and click \"Sage Green\"\n3. Press \"All surfaces\", click \"Floor\", chip \"Flooring\" › \"Walnut Engineered\"\n4. Read the foot of the panel",
+    "expect": "The picked wall lights up on the photo; \"Recent\" holds Sage Green; the foot lists both changes; the button reads \"Generate · 2 changes\".",
+    "in10": "Different from 1.0: the picked surface lights up on the photo",
+    "as": "Dane",
+    "covers": [
+      "VIZ:DEF-06",
+      "VIZ:DEF-07",
+      "VIZ:VS-01",
+      "VIZ:VS-02",
+      "VIZ:VS-03",
+      "VIZ:VS-05",
+      "VIZ:VS-07",
+      "VIZ:VN-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.04",
+    "chapter": 13,
+    "scene": "New finishes",
+    "module": "AI Visualizer",
+    "try": "Generate, stop one midway, then compare before and after",
+    "how": "1. Beside \"Makes 1 version · Fast\" press \"Change\", pick Quality \"High\", press \"Done\"\n2. Press \"Generate · 2 changes\", then \"Cancel\" on the card at once\n3. Press \"Generate · 2 changes\" again and wait\n4. Press \"Compare\" under the photo and drag the line across",
+    "expect": "\"Stopped — nothing was kept\"; then \"Reading the photo\"…, \"V1 is ready\", a \"V1 · Walls, Floor\" tile, and a slider \"Original\" | \"V1\".",
+    "in10": "Different from 1.0: compare right on the photo, one press",
+    "as": "Dane",
+    "covers": [
+      "VIZ:DEF-04",
+      "VIZ:DEF-08",
+      "VIZ:VN-03",
+      "VIZ:VN-05",
+      "VIZ:VN-07",
+      "VIZ:MM-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.05",
+    "chapter": 13,
+    "scene": "New finishes",
+    "module": "AI Visualizer",
+    "try": "Describe a change in your own words",
+    "how": "1. In \"DESCRIBE A CHANGE\" type make it nice and read the line under the button\n2. Replace the words with warmer evening light, press \"Generate from note\"",
+    "expect": "First \"Generate from note\" stays greyed: \"We couldn’t turn that note into a change — …\"; then \"V2 · From a note\": evening light, walls still sage.",
+    "in10": "Different from 1.0: the words box is always in view",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VO-04",
+      "VIZ:VN-04",
+      "VIZ:VN-01",
+      "VIZ:DEF-05",
+      "VIZ:MM-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.06",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Add the sample living room to her design",
+    "how": "1. Press \"Add room\" in the top bar\n2. Read the ways in\n3. Under \"SAMPLE ROOMS\" click \"Living room\" (\"Furnished photo\")\n4. Open \"Furniture\"",
+    "expect": "The upload box (\"Drop room photos or browse\" · \"JPG, PNG, WebP or HEIC · …\"), \"FROM SOPHIA WONG’S FILES\", \"SAMPLE ROOMS\"; a \"Living room 2\" chip opens, its 10 pieces listed.",
+    "in10": "Different from 1.0: sample rooms and the lead’s files too",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VR-01",
+      "VIZ:VR-03",
+      "VIZ:DEF-03",
+      "VIZ:VL-09"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.07",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Recolour the sofa, swap the table, take out the TV",
+    "how": "1. \"Grey Fabric Sofa\" › \"Customize\" › \"Velvet\", then under \"COLOUR\" \"Emerald\"\n2. \"Oak Coffee Table\" › \"Replace\", pick any \"Quick pick\"\n3. \"Wall-Mounted TV\" › \"Remove\"; press ⌘Z (Ctrl+Z), then ⇧⌘Z (Ctrl+Shift+Z)\n4. Press \"Generate · 3 changes\"",
+    "expect": "Rows read \"Customize · Emerald velvet\", \"Replace · …\", \"Taken out\"; ⌘Z/⇧⌘Z flip the TV; \"V1 is ready\": green sofa, new table, no TV.",
+    "in10": "Different from 1.0: ⌘Z takes back a pick",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VF-01",
+      "VIZ:VF-02",
+      "VIZ:VF-03",
+      "VIZ:VN-10",
+      "VIZ:VN-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.08",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Restyle the room, then try a light live",
+    "how": "1. Open \"Style\", click \"Japandi\", read the line under the title, press \"Restyle as Japandi\"\n2. Open \"Lighting\", click \"Golden Hour\"\n3. Open \"Fine-tune it by hand\", drag \"Colour temperature\"\n4. Press \"Relight\"",
+    "expect": "A line warns \"A style restyles the whole room from the photo — …\"; \"V2 is ready\" (\"V2 · Japandi\"); Style is back on \"None\"; the light previews live; \"V3 · Relit · Custom\" lands.",
+    "in10": "Different from 1.0: light previews live, kept in one step",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VT-01",
+      "VIZ:VT-02",
+      "VIZ:VG-01",
+      "VIZ:VG-02",
+      "VIZ:VG-03",
+      "VIZ:MM-10"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.09",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Hang a patterned wallpaper, two takes at once",
+    "how": "1. Under \"VERSIONS\" click \"Original\"\n2. \"Surfaces\": click a wall square, keep \"All walls · 2\"\n3. Chip \"Wallpapers\" › \"Tropical Botanical\"\n4. \"Change\" › \"Versions\" 2, press \"Generate\"",
+    "expect": "The swatch wears a leaf pattern; \"V4–V5 are ready\" — two takes from one press: V4’s two walls in the leaf paper, V5 tries another paper.",
+    "in10": "Different from 1.0: 2–3 versions on a desktop too",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VN-02",
+      "VIZ:MM-02",
+      "VIZ:VS-01",
+      "VIZ:DEF-05"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.10",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Empty the room, then furnish it again",
+    "how": "1. Click \"V4\", open \"Tools\", pick \"Empty the room\", then \"Keep built-ins\"\n2. Press \"Empty the room\"\n3. In \"Tools\" pick \"Furnish the room\", read \"Will place:\"\n4. Press \"Furnish the room\"",
+    "expect": "A version \"Emptied · Keep built-ins\" shows the room bare; then a \"Furnished\" version puts furniture back.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VO-01",
+      "VIZ:VO-02",
+      "VIZ:VN-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.11",
+    "chapter": 13,
+    "scene": "The whole look on a sample room",
+    "module": "AI Visualizer",
+    "try": "Borrow a look from a photo",
+    "how": "1. Click \"Original\", open \"Style\"\n2. Under \"OR BORROW A LOOK FROM A PHOTO\" press \"Upload a reference photo\", pick kitchen-moodboard.jpg\n3. Read \"HOW FAR\" and \"WHAT CARRIES OVER\"; beside \"Makes 2 versions · Fast\" press \"Change\", pick \"Versions\" 1, press \"Done\"\n4. Press \"Style transfer\"",
+    "expect": "The reference shows with its colours under it; \"V8 is ready\": a \"V8 · Style transfer\" version wears the photo’s colours.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VT-04",
+      "VIZ:VN-01"
+    ],
+    "files": [
+      "uat-files/kitchen-moodboard.jpg"
+    ]
+  },
+  {
+    "step": "13.12",
+    "chapter": 13,
+    "scene": "Her versions",
+    "module": "AI Visualizer",
+    "try": "Delete a version, undo it, and restore it later",
+    "how": "1. On \"V5\" open ⋮ (\"More options for V5\") › \"Delete\", then \"Undo\"\n2. Delete V5 again, then reload the page\n3. Beside \"VERSIONS\" click \"1 deleted\", press \"Restore\"",
+    "expect": "\"V5 deleted\" with Undo; after the reload every room, version and the \"Saved …\" stamp are as you left them; Restore brings V5 back (\"V5 restored\").",
+    "in10": "Different from 1.0: Undo, a Deleted list, nothing lost on reload",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VN-06",
+      "VIZ:MM-05",
+      "VIZ:VL-13",
+      "VIZ:VR-06",
+      "VIZ:MM-12"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.13",
+    "chapter": 13,
+    "scene": "Her versions",
+    "module": "AI Visualizer",
+    "try": "Pin a note on a version and resolve it",
+    "how": "1. Click the \"Living room\" chip, then the \"V1\" tile\n2. Press the pin icon (\"Pin a note\"), click a wall\n3. Write Sage on this wall only?, press \"Pin it\"\n4. Write a reply, press \"Reply\", then the tick (\"Resolve\")",
+    "expect": "Pin 1 sits on the photo (the box said \"Only your team sees it\"); its card shows your note and reply, then \"Resolved\".",
+    "in10": "Different from 1.0: pins on any version, not only portal shares",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-05",
+      "VIZ:DEF-10"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.14",
+    "chapter": 13,
+    "scene": "Her versions",
+    "module": "AI Visualizer",
+    "try": "Present a version, open its moodboard, download it",
+    "how": "1. Press \"Present\" (full-screen icon under the photo); press \"Next version\", then \"Before and after · V1\"; \"Done\"\n2. On V1 open ⋮ › \"Moodboard\", read it, press \"Done\"\n3. On V1 open ⋮ › \"Download\"",
+    "expect": "A large view lists \"WHAT CHANGED\"; the moodboard shows \"FINISHES\" and \"THE COLOURS IT READS AS\"; \"Render - Living room - V1.jpg\" downloads.",
+    "in10": "Different from 1.0: Present and a moodboard replace the view",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VN-07",
+      "VIZ:VN-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.15",
+    "chapter": 13,
+    "scene": "Out to her lead",
+    "module": "AI Visualizer",
+    "try": "Save a render to her Files and come back to it",
+    "how": "1. On V1 open ⋮ › \"Save to Files\"\n2. Press \"Open\" in the message\n3. Click \"Information\" (ⓘ) and read \"From\"\n4. Open \"More options\" (⋮) › \"Open this version in AI Visualizer\"",
+    "expect": "\"V1 saved to Files › Renders\"; \"Render - Living room - V1.jpg\" reads From \"AI Visualizer · Living room · V1\"; its menu reopens V1.",
+    "in10": "Different from 1.0: 1.0 promised this, never saved",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-08",
+      "VIZ:DEF-11",
+      "VIZ:MM-01",
+      "VIZ:VE-03",
+      "VIZ:VE-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.16",
+    "chapter": 13,
+    "scene": "Out to her lead",
+    "module": "AI Visualizer",
+    "try": "Turn a version’s finishes into quote lines",
+    "how": "1. On V1 open ⋮ › \"Add to a quote…\"\n2. Read \"THE LINES\"; under \"INTO\" \"A new quote\" is already picked\n3. Press \"Add to quote\", then \"Open\" in the message\n4. Close the quote (✕) to come back",
+    "expect": "Two lines, each \"In at S$0 — yours to price\" (\"0 OF 2 PRICED\"); \"2 lines added\"; the quote holds a section \"Living room · V1 finishes\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-09",
+      "VIZ:MM-09"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.17",
+    "chapter": 13,
+    "scene": "Out to her lead",
+    "module": "AI Visualizer",
+    "try": "Share two versions with Sophia",
+    "how": "1. Press \"Share with client\" (top right)\n2. Under \"LIVING ROOM\" V1 is already ticked — tick V2 too; write a line in \"A note on the page (optional)\"\n3. Press \"Create link\", then \"Copy link\"\n4. Press \"Open WhatsApp\" — a WhatsApp tab opens: close it, do not send",
+    "expect": "Shared versions also go to Files › Renders; \"Link copied\"; the draft starts \"Hi Sophia, here are 2 design ideas for your living room\".",
+    "in10": "Different from 1.0: pick up to six; WhatsApp, no chat",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-01",
+      "VIZ:DEF-09",
+      "VIZ:MM-07"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.18",
+    "chapter": 13,
+    "scene": "Sophia’s side",
+    "module": "AI Visualizer",
+    "try": "Open the link as Sophia and compare",
+    "how": "1. Open a private window and paste the link\n2. Read the page\n3. On \"Design 1\" press \"Before and after\" and drag the line",
+    "expect": "The studio’s letterhead, \"FOR SOPHIA\", \"2 design ideas for your living room\", your note; each design lists what changed; the slider shows \"Before\" and \"After\".",
+    "in10": "Different from 1.0: several designs on one branded page",
+    "as": "Sophia Wong (client)",
+    "covers": [
+      "VIZ:VX-02",
+      "VIZ:MM-06"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.19",
+    "chapter": 13,
+    "scene": "Sophia’s side",
+    "module": "AI Visualizer",
+    "try": "Pick a favourite, leave a note, pin a change",
+    "how": "1. On \"Design 1\" press \"I like this one\"\n2. \"Leave a note\": write Could the floor be a shade lighter?, press \"Send\"\n3. \"Pin a note\", click the sofa, write Keep this sofa?, press \"Pin it\"",
+    "expect": "\"Your favourite\" and \"Thanks — Dane will see it’s your favourite\"; \"Sent — Dane will see it\"; \"Pinned — Dane will see it\".",
+    "in10": "Different from 1.0: the client answers on the link",
+    "as": "Sophia Wong (client)",
+    "covers": [
+      "VIZ:VX-04",
+      "VIZ:DEF-10"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.20",
+    "chapter": 13,
+    "scene": "Sophia’s side",
+    "module": "AI Visualizer",
+    "try": "Ask the studio to call you back",
+    "how": "1. Scroll to \"Want to talk it through?\"\n2. Leave the number box empty; in \"Anything to mention? (optional)\" write Evenings are best\n3. Press \"Ask for a call back\"",
+    "expect": "It said \"Dane will call you back on the number they have for you.\"; now it reads \"Dane will call you back\".",
+    "in10": "Different from 1.0: the request becomes a task",
+    "as": "Sophia Wong (client)",
+    "covers": [
+      "VIZ:VX-03",
+      "VIZ:MM-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.21",
+    "chapter": 13,
+    "scene": "Back in the studio",
+    "module": "Notifications",
+    "try": "See Sophia’s answers reach Sarah, who owns her",
+    "how": "1. Leave the design with the back arrow; \"Demo Studio\" block › \"View as\" › \"Sarah\"\n2. Click \"Notifications\" (the bell), then \"Sophia Wong pinned a note on a render\"\n3. Press the back arrow and open the \"Tasks\" tab",
+    "expect": "Four entries from Sophia; the design opens on V1 with her pin open; Tasks lists \"Call Sophia Wong back about the renders\" for Sarah and Dane.",
+    "in10": "New in 2.0",
+    "as": "Sarah",
+    "covers": [
+      "VIZ:VX-10",
+      "VIZ:VX-03",
+      "VIZ:VE-03",
+      "VIZ:VX-04",
+      "VIZ:VW-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.22",
+    "chapter": 13,
+    "scene": "Back in the studio",
+    "module": "AI Visualizer",
+    "try": "Check who may rename or delete a design",
+    "how": "1. Side navigation \"Tools\" › \"AI Visualizer\", open the \"Showroom ideas\" folder\n2. Open ⋮ on \"Showroom — kitchen concept\"\n3. Close it; \"Demo Studio\" block › \"View as\" › \"Dane\"",
+    "expect": "\"Move to Folder\", \"Rename\" and \"Delete\" are greyed: \"Only Dane, an Owner or an Admin can move, rename or delete this\".",
+    "in10": "Different from 1.0: the maker’s rule, not an admin-only page",
+    "as": "Sarah",
+    "covers": [
+      "VIZ:VW-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.23",
+    "chapter": 13,
+    "scene": "Back in the studio",
+    "module": "Lead details",
+    "try": "Read the design’s trail on Sophia’s lead",
+    "how": "1. Open Sophia Wong › \"Activity\"\n2. Read today’s AI Visualizer lines\n3. On \"Overview\" press the quick link \"AI Visualizer\", then the back arrow",
+    "expect": "Lines \"You rendered V1 of “Living room” — Walls, Floor.\" and \"Sophia Wong asked for a call back about the renders.\"; the link opens it.",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-10",
+      "VIZ:VE-02"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.24",
+    "chapter": 13,
+    "scene": "Back in the studio",
+    "module": "AI Visualizer",
+    "try": "Stop sharing the link, then renew it",
+    "how": "1. Open her design again (the \"AI Visualizer\" quick link), press \"Share with client\" and read \"SHARED BEFORE\"\n2. On the link’s row press the broken-link icon (\"Stop sharing\"), then \"Stop sharing\" in the question\n3. Reload the private window\n4. Close it (✕), press \"Share with client\" again, then \"Renew\" on the row; reload the private window again",
+    "expect": "The row lists the opening, favourite, note and call back; then it reads \"Stopped\" and Sophia sees \"This link is no longer active\"; after \"Renew\" her page is back.",
+    "in10": "Different from 1.0: links can be stopped and renewed",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VX-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.25",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "Find your way round the AI Visualizer page",
+    "how": "1. Side navigation \"Tools\" › \"AI Visualizer\"; read the intro and the cards\n2. Open \"New\" and read its three ways in; press Esc\n3. Click \"Kind: All\" › \"Personal\", then back to \"All\"\n4. Type kitchen in the search box",
+    "expect": "Sophia Wong reads \"Lead · Won · 2 rooms · …\"; cards say when last \"edited\"; searching leaves Kevin Ng and \"Showroom — kitchen concept\".",
+    "in10": "Different from 1.0: a Kind pill instead of view chips",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VE-01",
+      "VIZ:VL-01",
+      "VIZ:VL-02",
+      "VIZ:VL-03",
+      "VIZ:VL-04",
+      "VIZ:VL-05",
+      "VIZ:VL-07",
+      "VIZ:VL-12"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.26",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "Start a design in a folder and render a sketch",
+    "how": "1. Clear the search, open the \"Showroom ideas\" folder, \"New\" › \"Blank design\"\n2. Under \"Add the first room\" › \"SAMPLE ROOMS\" click \"Kitchen sketch\"\n3. Press \"Render from sketch\" and wait\n4. Press the back arrow",
+    "expect": "An empty design opens with the chip \"PERSONAL\"; \"This photo reads as a sketch. …\"; \"V1 · From sketch\" is a kitchen photo; the folder holds your design.",
+    "in10": "Different from 1.0: sketch to photo at every width",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VL-06",
+      "VIZ:VR-01",
+      "VIZ:VD-07",
+      "VIZ:VO-03"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.27",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "Duplicate a design, delete the copy, find it again",
+    "how": "1. On your new design’s card open ⋮ › \"Duplicate\"\n2. On the copy open ⋮ › \"Delete\", press \"Delete\", then \"Undo\"\n3. Tick the copy’s box, press \"Delete\" in the bar and confirm\n4. Open \"More options\" (⋮, top right) › \"Deleted Designs\"",
+    "expect": "\"Duplicated as a personal copy\"; Undo brings the copy back (\"… restored\"); the bar offers \"Move to Folder\"; Deleted Designs lists the copy.",
+    "in10": "Different from 1.0: delete has Undo and a Deleted list",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VL-08",
+      "VIZ:VL-10",
+      "VIZ:VL-11"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.28",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "Company",
+    "try": "Add the fluted panel to the studio’s materials",
+    "how": "1. Side navigation \"Company\" › \"Materials\", then \"New\" › \"New material\"\n2. Press \"Upload a photo\", pick fluted-panel.jpg\n3. \"Name\" (replace what is there) Fluted feature wall panel · \"Category\" Laminates · \"Finish\" Textured · \"Price book item\" Fluted feature wall panel\n4. Press \"Add material\"",
+    "expect": "\"Material added\"; its card shows the photo, \"Laminates · Textured\" and \"Quoted as Fluted feature wall panel\".",
+    "in10": "Different from 1.0: a Company page, linked to the Price book",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VM-01",
+      "VIZ:DEF-07"
+    ],
+    "files": [
+      "uat-files/fluted-panel.jpg"
+    ]
+  },
+  {
+    "step": "13.29",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "Try a sample swatch in this design only",
+    "how": "1. \"Tools\" › \"AI Visualizer\" › \"Sophia Wong\"; click the \"Living room\" chip, then \"Walls\"\n2. Press \"Upload a swatch\" and pick fluted-panel.jpg\n3. In \"Add a material\" turn off \"Save to the studio’s materials\", press \"Use in this design\"",
+    "expect": "The dialog shows the photo and \"Renders as #…\"; the change reads \"Walls → fluted panel\"; \"YOUR STUDIO\" lists it for this design.",
+    "in10": "Same as 1.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VS-06",
+      "VIZ:VS-03"
+    ],
+    "files": [
+      "uat-files/fluted-panel.jpg"
+    ]
+  },
+  {
+    "step": "13.30",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "Use the studio’s material and see it priced",
+    "how": "1. In the same picker search Fluted; click \"Fluted feature wall panel\" under \"YOUR STUDIO\"\n2. Press \"Generate\"\n3. On the new version open ⋮ › \"Add to a quote…\", read the lines, press \"Cancel\"",
+    "expect": "The change reads \"Walls → Fluted feature wall panel\"; in the quote dialog that line says \"Priced from the Price book\" (\"1 OF 2 PRICED\").",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VM-01",
+      "VIZ:VX-09",
+      "VIZ:VS-03",
+      "VIZ:DEF-07"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.31",
+    "chapter": 13,
+    "scene": "The studio’s library",
+    "module": "AI Visualizer",
+    "try": "See what Kevin Ng’s client already said",
+    "how": "1. Back on the AI Visualizer page open \"Kevin Ng\", click the \"Living room\" chip\n2. Click the version tile with the star, then the blue pin on the photo\n3. Open \"Style\"; then \"Surfaces\" › \"Walls\"",
+    "expect": "A starred favourite; his pin \"Is the velvet easy to keep clean? We have a dog.\" has Dane’s reply; \"Kevin’s style: Contemporary — Modern is the nearest …\"; \"SUGGESTED · MODERN\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VT-03",
+      "VIZ:VS-04",
+      "VIZ:VX-04",
+      "VIZ:VX-05",
+      "VIZ:VN-05"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.32",
+    "chapter": 13,
+    "scene": "On a phone",
+    "module": "Phone",
+    "try": "Change a finish on the phone",
+    "how": "1. On the phone (the \"Network\" address, as in chapter 12): bottom bar \"Tools\" › \"AI Visualizer\" › \"Sophia Wong\"\n2. Tap \"Surfaces\" in the dock, tap \"Walls\", tap any paint (e.g. \"Warm Greige\")\n3. Tap \"Generate\" above the dock\n4. Tap \"Tools\" in the dock and look",
+    "expect": "Room chips, photo, \"VERSIONS\", a five-mode dock; the panel rises; the bar counts \"1 change\"; a version lands; \"Furnish the room\" is greyed, saying why.",
+    "in10": "Different from 1.0: every tool on a phone, furnish too",
+    "as": "Dane",
+    "covers": [
+      "VIZ:VP-01",
+      "VIZ:VP-02",
+      "VIZ:MM-03"
+    ],
+    "files": []
+  },
+  {
+    "step": "13.33",
+    "chapter": 13,
+    "scene": "On a phone",
+    "module": "Phone",
+    "try": "Open Sophia’s link on the phone and compare",
+    "how": "1. In the design tap \"Share with client\" (the send icon)\n2. Under \"SHARED BEFORE\" tap \"Open the link\" (↗)\n3. On \"Design 1\" tap \"Before and after\" and drag the line with a finger",
+    "expect": "Sophia’s page fits the phone; the line follows your finger; \"Your favourite\" still marks Design 1.",
+    "in10": "Same as 1.0",
+    "as": "Sophia Wong (client)",
+    "covers": [
+      "VIZ:VP-02",
+      "VIZ:VX-02"
+    ],
+    "files": []
+  }
+]

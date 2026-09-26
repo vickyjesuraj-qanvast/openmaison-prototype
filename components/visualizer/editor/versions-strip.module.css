@@ -1,0 +1,87 @@
+/* The versions strip (REG-673): a white band under the canvas, tiles 128 wide — the gallery strip of 1.0 in 2.0's card grammar. */
+/* (F156) `--viz-inset-l` / `--viz-inset-r` are the notch's insets when the editor hands them to its rows (0 otherwise), so the band is
+   white edge to edge on a landscape iPhone and its tiles stay clear of the notch. */
+.strip { position: relative; flex-shrink: 0; display: flex; align-items: stretch; gap: var(--om-spacing-4); padding: var(--om-spacing-3) calc(var(--viz-strip-end, var(--om-spacing-4)) + var(--viz-inset-r, 0px)) var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); background: var(--om-color-surface-default); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (phone-2) the band's top rule runs on into the notch's inset beside it (the slot pads the inset; 0 wide everywhere else) */
+.strip::before { content: ''; position: absolute; top: calc(-1 * var(--om-border-1)); left: calc(-1 * env(safe-area-inset-left, 0px)); width: env(safe-area-inset-left, 0px); height: var(--om-border-1); background: var(--om-color-surface-variant); pointer-events: none; }
+.head { flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; width: 72px; }
+.title { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.count { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+/* (tablet-14) 6px of room round the tiles (the -4px margin keeps the row where it was), so a focus ring 4px off the on-screen tile's own
+   ring is never clipped by the scroller */
+.row { flex: 1; min-width: 0; display: flex; gap: var(--om-spacing-3); overflow-x: auto; scrollbar-width: thin; padding: 6px 6px var(--om-spacing-2); margin: -4px; scroll-snap-type: x proximity; scroll-padding-inline: 4px var(--om-spacing-2); }
+/* (tablet-3) an edge with more tiles beyond it fades (versions-strip.tsx sets the switches) — a cut tile reads as more to scroll */
+.row[data-more-l], .row[data-more-r] { --fade-l: 0px; --fade-r: 0px; -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent); mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent); }
+.row[data-more-l] { --fade-l: 24px; }
+.row[data-more-r] { --fade-r: 24px; }
+/* (verify round 1) every tile is its thumbnail's width — `min-width: 0` stops a long caption widening it (the flex default), so the
+   gaps stay even and the caption ends in an ellipsis. */
+.tile { position: relative; flex: 0 0 128px; width: 128px; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); scroll-snap-align: start; }
+.thumb { position: relative; display: block; flex-shrink: 0; }
+.open { position: relative; display: block; width: 128px; height: 80px; padding: 0; border: 0; border-radius: var(--om-radius-1); overflow: hidden; cursor: pointer; background: var(--om-color-surface-variant); box-shadow: 0 0 0 1px var(--om-color-surface-variant); transition: box-shadow var(--motion-hover); }
+.open img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (hover: hover) { .open:hover { box-shadow: 0 0 0 2px var(--om-color-on-surface-border); } }   /* no ring left behind by a tap (F152) */
+.open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tile[data-on] .open { box-shadow: 0 0 0 2px var(--om-color-primary-default); }
+/* (tablet-14 · surfaces-22) focus on the tile on screen stands off its selected ring with a gap — two rings, never one thick frame */
+.tile[data-on] .open:focus-visible { outline-offset: 4px; }
+.tile[data-before] .open { box-shadow: 0 0 0 2px var(--om-color-on-surface-secondary); }
+.beforeTag { position: absolute; left: var(--om-spacing-1); top: var(--om-spacing-1); padding: 0 6px; border-radius: var(--om-radius-1); background: var(--om-color-overlay-60p); color: var(--om-color-surface-default); font: var(--om-type-caption-s); }
+.label { display: block; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.label b { color: var(--om-color-on-surface-default); font-weight: 600; }
+.badges { position: absolute; bottom: var(--om-spacing-1); right: var(--om-spacing-1); max-width: calc(100% - 2 * var(--om-spacing-1)); display: inline-flex; justify-content: flex-end; gap: 2px; }
+.mark { display: inline-flex; }
+.badge, .fav, .more { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 5px; border-radius: var(--om-radius-full); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); box-shadow: var(--om-elevation-level-1); }
+.fav { color: var(--om-color-tertiary-red-default); }
+.more { font-weight: 600; }
+.more[data-at='narrow'] { display: none; }
+/* (F005 · F074 · F150) The ⋯ top-right, clear of *Before* (top-left) and the marks (bottom-right). The Tooltip's anchor is display:contents,
+   so the surface goes on the button itself — a white disc with a lift that reads on a dark render as on a pale one; a 36px target around
+   the 24px disc, so the thumbnail stays visible under it. */
+.kebab { position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); z-index: 1; line-height: 0; opacity: 0; transition: opacity var(--motion-hover); }
+.kebab button { position: relative; background: var(--om-color-surface-default); border-radius: var(--om-radius-full); box-shadow: var(--om-elevation-level-2); color: var(--om-color-on-surface-default); }
+.kebab button[data-variant]:hover { background: var(--om-color-surface-bg); }   /* above the bare variant's wash, which would turn the disc see-through */
+.kebab button::before { content: ''; position: absolute; inset: -6px; }
+.tile:hover .kebab, .tile:focus-within .kebab, .kebab:has([aria-expanded='true']) { opacity: 1; }
+@media (hover: none) { .kebab { opacity: 1; } }
+.tile[data-running] .open { cursor: default; display: flex; align-items: center; justify-content: center; color: var(--om-color-primary-default); }
+.shimmer { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.5) 50%, transparent 80%) var(--om-color-surface-variant); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+.spin { position: relative; animation: spin 1s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.deleted { align-self: flex-start; padding: 0; border: 0; background: none; font: var(--om-type-body-s); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; }
+@media (hover: hover) { .deleted:hover { text-decoration: underline; } }   /* no stuck underline after a tap (F152's rule) */
+.deleted:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.none { align-self: center; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-2); }
+/* (verify round 1) A phone has no room for the sentence beside the Original: the hint is the empty slot where V1 will land — a dashed
+   tile the thumbnails' size, its first words inside — and the rest of the sentence steps aside. */
+@media (max-width: 767px) {
+  .none { flex: 0 0 96px; align-self: flex-start; box-sizing: border-box; height: 60px; display: flex; align-items: center; justify-content: center; padding: var(--om-spacing-1) var(--om-spacing-2); border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); font: var(--om-type-caption-s); text-align: center; scroll-snap-align: start; }
+  .noneMore { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .shimmer, .spin { animation: none; } }
+@media (max-width: 1024px) {
+  /* (F139 · F174) the end stays reserved for the Maison AI button — the editor sets --viz-strip-end (72px narrow, 96px otherwise). */
+  .strip { padding: var(--om-spacing-2) calc(var(--viz-strip-end, var(--om-spacing-3)) + var(--viz-inset-r, 0px)) var(--om-spacing-2) calc(var(--om-spacing-3) + var(--viz-inset-l, 0px)); gap: var(--om-spacing-3); } .head { width: auto; } .count { font: var(--om-type-subtitle-m); } .tile { flex-basis: 96px; width: 96px; } .open { width: 96px; height: 60px; }
+  /* one mark and "+n" on a 96px tile */
+  .mark[data-rank='1'] { display: none; } .more[data-at='wide'] { display: none; } .more[data-at='narrow'] { display: inline-flex; }
+}
+
+/* (wave E · E3) A phone held sideways: the versions are a slim row of small tiles — the picture keeps the height. The captions step aside
+   (each tile's name and tooltip still say it); the head is two short lines beside them. */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .strip { align-items: center; padding-top: var(--om-spacing-1); padding-bottom: var(--om-spacing-1); gap: var(--om-spacing-3); }
+  .head { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: var(--om-spacing-1); row-gap: 0; }
+  .deleted { grid-column: 1 / -1; }
+  .count { font: var(--om-type-subtitle-m); }
+  .row { padding: 4px; margin: -4px; gap: var(--om-spacing-2); }
+  .tile { flex-basis: 64px; width: 64px; }
+  .open { width: 64px; height: 40px; }
+  .label { display: none; }
+  .kebab { top: 2px; right: 2px; scale: 0.8; transform-origin: top right; }   /* a 20px disc on a 40px tile — its ~36px target stays */
+  .kebab button::before { inset: -10px; }
+  .badges { bottom: 2px; right: 2px; }
+  .badge, .fav, .more { height: 16px; padding: 0 4px; }
+  .none { flex: 1 1 auto; align-self: center; justify-content: flex-start; height: auto; border: 0; padding: 0 0 0 var(--om-spacing-2); font: var(--om-type-body-s); text-align: left; }
+  .noneMore { display: none; }
+}

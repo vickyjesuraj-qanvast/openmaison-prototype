@@ -24,7 +24,7 @@ export function KanbanSkeleton() {
     { tone: 'yellow', stages: INACTIVE_STAGES },
   ]
   return (
-    <GhostSheet label="Loading leads">
+    <GhostSheet label="Loading leads" l1>
       <div className={shell.header}>
         <Bone w={72} h={28} />
         <div className={shell.headerActions}>

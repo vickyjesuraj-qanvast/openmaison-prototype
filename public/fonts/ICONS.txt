@@ -28,6 +28,8 @@ badge
 ballot
 bar_chart
 bar_chart_4_bars
+bed
+blinds
 browse
 brush
 business_center
@@ -38,6 +40,7 @@ call_log
 cancel
 cards
 category
+chair
 chat
 check
 check_box
@@ -53,6 +56,7 @@ code
 collapse_all
 collapse_content
 comment
+compare
 content_copy
 contract
 create
@@ -62,6 +66,7 @@ crop_free
 crop_portrait
 crop_square
 csv
+curtains
 dashboard
 data_object
 database
@@ -78,6 +83,7 @@ download
 draft
 drag_indicator
 draw
+dresser
 drive_file_move
 east
 edit
@@ -97,6 +103,7 @@ fit_screen
 flag
 flip_to_back
 flip_to_front
+floor_lamp
 folder
 folder_open
 format_align_center
@@ -111,6 +118,7 @@ format_paint
 format_size
 format_strikethrough
 format_underlined
+fullscreen
 function
 functions
 gavel
@@ -135,11 +143,15 @@ keyboard_arrow_down
 keyboard_arrow_left
 keyboard_arrow_right
 keyboard_arrow_up
+kitchen
 layers
 left_panel_close
 left_panel_open
 library_add
+light
+lightbulb
 link
+link_off
 list
 list_alt
 local_shipping
@@ -148,6 +160,7 @@ lock_open
 mail
 menu
 menu_book
+mic
 mode
 money_bag
 more
@@ -172,6 +185,8 @@ phone
 photo
 photo_camera
 picture_as_pdf
+plumbing
+potted_plant
 print
 progress_activity
 publish
@@ -198,6 +213,7 @@ sell
 send
 settings
 share
+shelves
 shopping_cart
 short_text
 signature
@@ -209,6 +225,7 @@ space_dashboard
 star
 step
 sticky_note_2
+stop
 storage
 store
 storefront
@@ -221,10 +238,13 @@ switch
 tab
 table
 table_chart
+table_lamp
+table_restaurant
 task
 task_alt
 text_fields
 text_format
+texture
 timelapse
 title
 today
@@ -232,6 +252,7 @@ toolbar
 tooltip
 trending_up
 tune
+tv
 undo
 unfold_less
 unfold_more
@@ -250,8 +271,10 @@ view_kanban
 view_list
 visibility
 visibility_off
+wall_art
 wand_shine
 warning
+weekend
 west
 workspace_premium
 wrap_text

@@ -1,0 +1,172 @@
+{
+  "done": [
+    {
+      "ids": ["gallery-6", "E5"],
+      "what": "Materials keep who changed them last. FIRST THING: `studio_materials.updated_by` in lib/db/schema.ts plus the additive migration drizzle/0056_materials_updated_by.sql (`ALTER TABLE studio_materials ADD updated_by text`, made with drizzle-kit generate, nothing else in it). updateStudioMaterial and renameStudioMaterial now stamp it through actingMember(). A rename to the same name is no change and returns early, so it doesn't stamp. A restore keeps both updated_at and updated_by (F125). A new material or a duplicate has none, so the card names whoever added it. MaterialRow carries `editedBy: string | null`, the member's name. Repair check added: 'studio material last changed by someone not on the team (wave E, E5)'.",
+      "files": ["lib/db/schema.ts", "drizzle/0056_materials_updated_by.sql", "drizzle/meta/0056_snapshot.json", "drizzle/meta/_journal.json", "app/company/materials-actions.ts", "lib/visualizer/queries.ts", "scripts/repair-demo-data.ts"]
+    },
+    {
+      "ids": ["files-8", "E8"],
+      "what": "FIRST THING: `export async function countLiveRenderLinks(leadId: string | readonly string[]): Promise<number>` in lib/visualizer/queries.ts (server-only). It counts the lead's client render links a client can open today: not stopped, not expired, the design not in the trash, something still on the link, the lead still with the studio. It goes through readShareLink, so it answers exactly as the /renders page would. Each link counts once, and an array works for a bulk delete. Checked: Kevin Ng = 1; [kevin, kevin, 'nope'] = 1; [] = 0; lead deleted = 0; lead restored = 1; link stopped = 0. The dialog line itself is the leads package's (see crossFileRequests).",
+      "files": ["lib/visualizer/queries.ts"]
+    },
+    {
+      "ids": ["files-6", "E10"],
+      "what": "The client link names members in full. `senderFirst` (data.sender.split(' ')[0]) is replaced by the whole stored name (`data.sender.trim() || studio name`) everywhere on the page: the how-to line, the 'n designs … shared earlier' note, the favourite, note and pin snackbars, the pin draft's hint, the refusal snackbars ('ask Hui Min for an updated one'), the call-back ask line and its done card ('Hui Min will call you back'). RenderLinkClosed now reads 'Please ask Hui Min at Demo Studio Pte Ltd for an updated link.' closedLinkError / closedLinkMessage and shareMeta already used the full name.",
+      "files": ["components/visualizer/share/render-share-page.tsx"]
+    },
+    {
+      "ids": ["desktop-11"],
+      "what": "The client's renders page no longer uses the app rail's 84 px snackbar offset. app/renders/layout.tsx wraps the SnackbarProvider in `.snackFrame` (display: contents; `--rail-w: calc(max(0px, (100% - 928px) / 2) - 8px)`). The house host's `left: calc(var(--rail-w) + 32px)` then lands on the column's content edge, where the cards start. The 100% resolves in the fixed host's own `left`, so it is the window without its scrollbar. At ≤767 the house's 16 px gutters still apply. Measured on a static replica with Playwright: card and snackbar both start at 280 (1440), 200 (1280), 72.5 (1025), 24 (900 and 768), with no sideways scroll.",
+      "files": ["app/renders/layout.tsx", "components/visualizer/share/render-share-page.module.css"]
+    },
+    {
+      "ids": ["desktop-12"],
+      "what": "The client page says 'Click' to a mouse and 'Tap' to a finger, using the editor's check (useMediaQuery('(hover: none)')). This covers the intro line ('Click I like this one on your favourite…') and the pin hint ('Click the picture where you’d like a change'). The server snapshot renders 'Click' and a touch device switches after hydration, as in the editor.",
+      "files": ["components/visualizer/share/render-share-page.tsx"]
+    },
+    {
+      "ids": ["files-2"],
+      "what": "/sign/[id]/quote for a contract that is gone or was never made now returns the house notice <LinkGone studio brand> (fetchBrand), as /sign/[id] does, instead of Next's bare 404.",
+      "files": ["app/sign/[id]/quote/page.tsx"]
+    },
+    {
+      "ids": ["surfaces-9", "surfaces-11", "E12"],
+      "what": "Server half of E12: Rename and Change photo follow the Delete-room rule (the room's maker, the design's maker, an Owner or an Admin). renameRoom, setRoomPhoto and undoRoomPhoto refuse with the rule before doing anything. The rule now names all three actions, so the menu can say it once: ROOM_RULE = 'Only whoever made it or its design, an Owner or an Admin can rename this room, change its photo or delete it'. roomChangeBlock is exported as an alias of roomDeleteBlock. EditorRoom carries `mayChange: string | null`, the same value as mayDelete. Checked as Sarah (Designer): rename Dane's room, rename Michelle's room, set photo and undo photo each come back with the rule. As Michelle, renaming her own room works.",
+      "files": ["lib/visualizer/policy.ts", "app/visualizer/actions.ts", "lib/visualizer/queries.ts"]
+    },
+    {
+      "ids": ["gallery-2"],
+      "what": "(a) The AI Visualizer folder rule names its maker: new ownFolderRule(maker) = 'Only Dane, an Owner or an Admin can rename, move or delete this folder'. folderChangeBlockFor takes an optional 4th `maker` argument, and fetchVisualizerHome passes the folder maker's name. OWN_FOLDER_RULE is kept as the nameless fallback. (b) A lead's design never offers Move or Rename, so its rule says only Delete: designRule(maker, fixed) / designChangeBlock(v, createdBy, maker, fixed). The gallery card, the editor's design.mayChange and deleteDesigns' refusal all pass kind === 'lead', giving 'Only Dane, an Owner or an Admin can delete this'. A personal design keeps 'can move, rename or delete this'. Checked as Sarah in fetchVisualizerHome and deleteDesigns.",
+      "files": ["lib/company/folder-libraries.ts", "lib/visualizer/policy.ts", "lib/visualizer/queries.ts", "app/visualizer/actions.ts"]
+    },
+    {
+      "ids": ["files-9"],
+      "what": "Server half for a deleted lead's design. VisualizerEditorData carries `leadDeleted` at the top level and in `design.leadDeleted`: true when the lead is in the leads' trash or its row is gone. `lead` still carries the name for the top bar. saveVersionToFiles, addVersionToQuote and createShareLink refuse with the new policy words `leadDeletedNote(name)` = 'Kevin Ng was deleted — restore the lead to share, file or quote from this design.'. `LEAD_DELETED_ROW` = 'Its lead was deleted' is exported for the editor's greyed rows. Checked: editor leadDeleted true (leadClosed true too), and all three actions refuse with the note.",
+      "files": ["lib/visualizer/policy.ts", "lib/visualizer/queries.ts", "app/visualizer/actions.ts"]
+    },
+    {
+      "ids": ["files-10"],
+      "what": "A render filed in Files › Renders gets a free name when its name is taken: 'Render - Kitchen - V1 (2).jpg' (new pure freeFileName(name, taken) in lib/visualizer/outputs.ts, case-insensitive against the folder's live files). This applies to Save to Files and to the filing that Share with client does. The legacy match by name is untouched, so a render already filed is still found as before ('again' → existed: true, same file). Downloads keep the plain name. Checked with a same-named foreign file in Kevin's Renders.",
+      "files": ["lib/visualizer/outputs.ts", "app/visualizer/actions.ts"]
+    },
+    {
+      "ids": ["files-14"],
+      "what": "Material usage is split into two counts on MaterialRow. `renderedIn` = designs where a version was made with the material, so their renders keep it. `waitingIn` = designs where it is only picked and waiting for Generate, with no render of it in that design. `usedIn` = renderedIn + waitingIn, the same total as before. Checked: a pick of Sage Whisper in the bedroom's picks, never generated, gives usedIn 1 · renderedIn 0 · waitingIn 1. The wording belongs to the gallery package.",
+      "files": ["lib/visualizer/queries.ts"]
+    },
+    {
+      "ids": ["desktop-4", "desktop-8", "desktop-15"],
+      "what": "Server/shared half: plainFinishName names a reference colour among the surface's own kind of finish. The kind comes through the surface group, as the Surfaces list and the version lines group it (groupMaterialCategories(surfaceGroupFor(label))), then the label's own words (resolveSurfaceCategories), then Paints. Wallpapers never name a flat colour. A painted surface (walls, ceiling, trim) stays with the paints. A hard surface looks on through its other kinds before giving up: worktops → Countertops then Stone, splashbacks → Tiles, Glass, Stone, floors → Flooring, Tiles, Stone. 'Quartz Island Waterfall End' was 'close to Linen' (a paint) and now names a quartz or stone. Checked with a tsx table over six colours and the kitchen's labels, e.g. #E8E6E2 gives worktops and island → Quartz Calacatta, backsplash → Hexagon Marble, walls and ceiling → Off-White Matte, floor → Marble White Polished. Moodboard grouping by the resolved name is the canvas package's (crossFileRequest).",
+      "files": ["lib/visualizer/outputs.ts"]
+    },
+    {
+      "ids": ["tablet-15"],
+      "what": "Part (b), server and shared half: new noQuoteReason(v, lines) in lib/visualizer/outputs.ts. A whole-room look (restyle, or a version wearing a style) reads 'A whole-room look has no finishes to quote — pick finishes on the Original'. Anything else reads 'This version has no finishes to quote — pick finishes, then Generate'. addVersionToQuote refuses with it (plus a full stop) instead of '…to quote yet.' Checked on the Kitchen's Scandinavian V1. Part (a), the note caveat, is the engine package's; the menu row is the editor package's.",
+      "files": ["lib/visualizer/outputs.ts", "app/visualizer/actions.ts"]
+    },
+    {
+      "ids": ["files-16"],
+      "what": "db:repair no longer fails its own checks after the studio deletes demo records. 'AI Visualizer demo design missing' now looks for any design of Kevin Ng's, including one in the trash. A design deleted for good is written again by R61's fixed ids, so only 'no design at all' counts as missing. 'demo folder with nothing filed in it' now counts entries in the trash as filed, in every library, because they keep their folder and a Restore puts them back. Reproduced on a private copy (Showroom concept, Kevin's design and Walnut vinyl moved to the trash): FAIL ×2 before, 'all checks pass' after. On a fresh baseline copy the repair passes and a second run is byte-identical (sqlite .dump md5 equal).",
+      "files": ["scripts/repair-demo-data.ts"]
+    },
+    {
+      "ids": ["files-3"],
+      "what": "Parity map 17 already says (line 18, 'The studio's picture routes need a signed-in session … a request with no session must get a 401'), but without the word 'authenticated' the verifier's grep for 'authenticat' missed it. Both picture routes now also carry a PRODUCTION comment ('needs an authenticated session — no session, a 401 before these checks run'), so a grep in the code finds it too. No behaviour change.",
+      "files": ["app/visualizer/img/[...key]/route.ts", "app/files/img/[fileId]/route.ts"]
+    }
+  ],
+  "notDone": [
+    {
+      "ids": ["surfaces-6"],
+      "why": "E9 decides it: Download stays one JPEG per version. PNG, full resolution, Download all as a zip and a brand-kit mark remain proposals for the owner."
+    },
+    {
+      "ids": ["files-16 (edge)"],
+      "why": "Not fixed: if the studio deletes one of R59's seeded templates for good, or moves every seeded entry out of a demo folder, the REG-664 check can still flag that folder. R61's own folders don't have this problem, because R61 re-seeds by fixed ids. The case reported (soft delete) is fixed."
+    }
+  ],
+  "crossFileRequests": [
+    {
+      "file": "components/company/templates/library-gallery.tsx or components/company/materials/materials-view.tsx (gallery)",
+      "change": "Materials card foot: 'edited {when} by {t.editedBy ?? t.author}' (MaterialRow.editedBy is the name of whoever changed it last, or null until someone edits it after adding).",
+      "ids": ["gallery-6", "E5"]
+    },
+    {
+      "file": "components/company/materials/materials-view.tsx (gallery)",
+      "change": "Word the delete confirm and the Deleted sheet from the split counts. renderedIn > 0 → 'Used in {renderedIn} design(s) — its renders keep it.'. Only waitingIn > 0 → 'Picked in {waitingIn} design(s), not rendered yet — the pick comes back if you restore it.'. Both → the two sentences one after the other. usedIn is still the total. This is invented copy (the verifier's proposal).",
+      "ids": ["files-14"]
+    },
+    {
+      "file": "app/leads/[id]/overview.tsx, components/leads/delete-dialog.tsx, the listing's bulk delete, the Return Lead wizard (leads)",
+      "change": "import { countLiveRenderLinks } from '@/lib/visualizer/queries' (server-only: call it in the page loader or a server action beside countLiveSigningLinks). Pass one lead id or an array. When n > 0, the dialog says 'Its {n} client render link(s) stop(s) working.' (invented copy, E8). A return closes the links too: leadClosed treats a waiting or approved return as closed, so the wizard can say the same line.",
+      "ids": ["files-8", "E8"]
+    },
+    {
+      "file": "components/visualizer/editor/visualizer-editor.tsx (editor)",
+      "change": "Room options: when room.mayChange is non-null, grey Rename and Change photo (and Delete, which already reads room.mayDelete, the same string). Say the rule once as the meta under the greyed rows; the new ROOM_RULE text already names all three. When mayChange is null and the room has renders, Change photo keeps 'Its versions were made of this photo'.",
+      "ids": ["surfaces-9", "surfaces-11", "E12"]
+    },
+    {
+      "file": "components/visualizer/editor/visualizer-editor.tsx (editor)",
+      "change": "When data.leadDeleted: show leadDeletedNote(data.lead?.name ?? '') (from '@/lib/visualizer/policy') where the deleted-design note sits. Grey Save to Files, Add to a quote… and Share with client with the meta LEAD_DELETED_ROW ('Its lead was deleted'); leadDeleted wins over the LEAD_CLOSED_SHARE wording. The server refuses all three with the same note.",
+      "ids": ["files-9"]
+    },
+    {
+      "file": "components/visualizer/editor/visualizer-editor.tsx (editor)",
+      "change": "In the 'Add to a quote…' row meta, replace 'No finishes to quote yet' with noQuoteReason(mv, mvLines.length) from '@/lib/visualizer/outputs'. Either keep its full sentence or cut at the dash for the short meta.",
+      "ids": ["tablet-15"]
+    },
+    {
+      "file": "components/visualizer/editor/dialogs/version-facts.ts + moodboard-dialog.tsx (canvas)",
+      "change": "finishGroups: resolve each finish's name with its own surface label (const name = finishName(f.name, label)) and group by material and name: out.find((x) => x.finish.materialId === f.materialId && x.name === name). Return { finish, name, where }. The moodboard then prints {name} (not finishName(s.name) with no label, which fell back to paints) and keys rows by `${s.materialId}|${name}`, because one style-transfer colour (materialId `ref:#hex`) laid on worktops, splashback, walls and ceiling now resolves to different names per surface kind.",
+      "ids": ["desktop-4", "desktop-8", "desktop-15"]
+    },
+    {
+      "file": "app/company/folder-actions.ts (quotes)",
+      "change": "changer(): folderChangeBlockFor(f.library, viewer, f.createdBy, await makerName(f.createdBy)), so the server's refusal names the folder's maker as the menu does; the 4th argument is optional. entryBlock(): for 'materials' use materialChangeBlock(viewer, e.createdBy) (the material's own rule), not designChangeBlock; 'visualizer' keeps designChangeBlock. With E7, organiser() and changer() answer { error } instead of throwing.",
+      "ids": ["gallery-2", "E7"]
+    },
+    {
+      "file": "lib/settings/permissions.ts (integrator: no package owns it)",
+      "change": "Row 'viz-room': relabel 'Delete a room in an AI Visualizer design' → 'Rename, change the photo of or delete a room in an AI Visualizer design'. It keeps reading roomDeleteBlock, the same rule as roomChangeBlock.",
+      "ids": ["E12", "surfaces-9"]
+    },
+    {
+      "file": "design-source/context/parity/17-ai-visualizer-migration-map-2026-09-25.md (integrator)",
+      "change": "Line 42 (studio_materials): add '`updated_by` (migration 0056, wave E) is whoever changed it last — the card's \"edited … by\"; a restore keeps it.' Optionally add the word 'authenticated' to line 18's sentence so a grep finds it.",
+      "ids": ["E5", "files-3"]
+    }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-? (wave E · gallery-6 · E5) Company › Materials remembers who changed a material last: studio_materials.updated_by (migration 0056) is stamped by Save and Rename, and the card reads 'edited … by {that member}' (the member who added it until anyone edits). Source: bug fix + user-directed (integrator's E5).",
+    "REG-? (wave E · files-8 · E8) Deleting a lead warns when its client render links stop working. The server counts the lead's open links (countLiveRenderLinks) and the delete dialog says 'Its n client render links stop working.' Source: user-directed (E8), invented copy (dialog by leads).",
+    "REG-? (wave E · files-6 · E10) The client's renders link names the member as the studio keeps them: 'Hui Min will call you back', 'ask Hui Min at Demo Studio Pte Ltd for an updated link', never the first word alone. Source: bug fix (E10).",
+    "REG-? (wave E · desktop-11) On the client's renders link, snackbars start at the page column's left edge, not the app rail's 84 px, which that page doesn't have. Source: bug fix.",
+    "REG-? (wave E · desktop-12) The client's renders link says 'Click' to a mouse and 'Tap' to a finger (the intro line and the pin hint), as the editor does. Source: bug fix.",
+    "REG-? (wave E · files-2) /sign/{id}/quote for a contract that is gone shows the house 'This link is no longer active' notice instead of a bare 404. Source: bug fix (F111).",
+    "REG-? (wave E · surfaces-9 · surfaces-11 · E12) In the AI Visualizer, Rename and Change photo on a room follow the Delete-room rule, with one sentence for all three: 'Only whoever made it or its design, an Owner or an Admin can rename this room, change its photo or delete it'. Source: user-directed (E12), invented copy (the rule's wider wording).",
+    "REG-? (wave E · gallery-2) The AI Visualizer folder rule names the folder's maker: 'Only Dane, an Owner or an Admin can rename, move or delete this folder'. A lead's design, which never moves or renames, reads 'Only Dane, an Owner or an Admin can delete this'. Source: bug fix, invented copy.",
+    "REG-? (wave E · files-9) A deleted lead's design says so, and Save to Files, Add to a quote and Share with client are refused with 'Kevin Ng was deleted — restore the lead to share, file or quote from this design.' (greyed rows 'Its lead was deleted'). Source: bug fix, invented copy.",
+    "REG-? (wave E · files-10) A render filed in Files › Renders under a name the folder already has is filed as '… V1 (2).jpg'. Source: bug fix, invented copy.",
+    "REG-? (wave E · files-14) Company › Materials tells a material rendered in a design apart from one only picked and waiting for Generate (renderedIn · waitingIn; wording by gallery). Source: bug fix.",
+    "REG-? (wave E · desktop-4 · desktop-8 · desktop-15) A style transfer's reference colours are named among the finishes each surface takes: worktops among countertops and stones, splashbacks among tiles, floors among floorings; walls, ceilings and trim among paints. A worktop is never 'close to Linen'. Source: bug fix.",
+    "REG-? (wave E · tablet-15) Add to a quote on a version with nothing to price says why: 'A whole-room look has no finishes to quote — pick finishes on the Original' / 'This version has no finishes to quote — pick finishes, then Generate' (no 'yet'). Source: invented copy (the verifier's proposal).",
+    "REG-? (wave E · files-16) db:repair's checks accept a studio's own deletes: a demo design or folder entry in the trash no longer fails 'demo design missing' or 'demo folder with nothing filed in it'. Source: bug fix (no UI)."
+  ],
+  "verification": "npx tsc --noEmit -p . reports no errors in any of my files. Mid-run, only the quotes package's files failed (template-guard exports, template-editor.tsx), because that package was in the middle of E7. npx eslint on every file I touched is clean after renaming one inner helper that the hooks rule read as a Hook. Migration 0056 was generated with drizzle-kit (a scratch DATABASE_URL on the command; generate touches no database) and holds the one ALTER. On a private baseline copy in the scratchpad (migrate, then restore-baseline; local.db and fixtures untouched) the migration applies and db:repair passes; a second run is byte-identical (sqlite .dump md5). With the Showroom concept, Kevin's design and Walnut vinyl in the trash it FAILED twice before the fix and passes after. Server functions were driven with tsx --conditions=react-server and a next/cache stub (t-server.mts, on a copy): countLiveRenderLinks 1 / 1 / 0 / 0 after the lead's delete / 1 after restore / 0 after Stop. As Sarah, renameRoom ×2, setRoomPhoto and undoRoomPhoto each refused with the new ROOM_RULE, and the editor rooms' mayChange equals mayDelete. The editor design mayChange and deleteDesigns on Kevin read 'Only Dane, an Owner or an Admin can delete this'; Showroom reads '…move, rename or delete this'; the folder reads 'Only Dane, … rename, move or delete this folder'. As Michelle, renaming her own room works. As Dane, update and rename of Sarah's materials give editedBy 'Dane', author 'Sarah'; a waiting pick gives usedIn 1 · renderedIn 0 · waitingIn 1. A same-named file in Renders leads to 'Render - Kitchen - V1 (2).jpg', and a re-save gives existed: true. The Kitchen's Scandinavian V1 → 'A whole-room look has no finishes to quote — pick finishes on the Original.' With the lead deleted, editor leadDeleted is true and Files, quote and share all refuse with 'Kevin Ng was deleted — restore the lead to share, file or quote from this design.' plainFinishName was checked in a tsx table (six colours × eleven labels): worktops and island stay among countertops and stones, backsplash among tiles, walls and ceiling among paints. The /renders snackbar rule was measured on a static replica with Playwright at 1440 / 1280 / 1025 / 900 / 768 / 390: the snackbar's left equals the card's left (280 / 200 / 72.5 / 24 / 24), and 16 at 390 by the house phone rule. No build was run, and no port or local.db was touched.",
+  "checkOnBuild": [
+    "Run the migrations (0056 adds studio_materials.updated_by), then npm run db:baseline, so the snapshot carries the column (null on all four demo materials).",
+    "/renders/{Kevin's token} at 1440 and 1280: the 'Thanks — Dane will see it’s your favourite' snackbar starts at the cards' left edge (x280 at 1440), not x84. At 390 it keeps the house's 16 px gutters. Note: the house phone rule also adds --app-mobile-dock-height, which this dockless page doesn't need; check that the snackbar isn't floating high.",
+    "/renders/{token} with a mouse reads 'Click I like this one…' and 'Click the picture where you’d like a change'. At 390 touch it reads 'Tap…'.",
+    "View as Hui Min, share, then open the link: 'Hui Min will call you back', and the expired or stopped notice reads 'Please ask Hui Min at Demo Studio Pte Ltd for an updated link.'",
+    "/sign/nope/quote and /sign/x!/quote show the LinkGone notice at 1440 and 390, not Next's 404.",
+    "As Sarah (View as) in Kevin's design: Room options greys Rename, Change photo and Delete, with the rule said once (needs the editor's side). The Who may do what row wording is an integrator edit in lib/settings/permissions.ts.",
+    "Gallery as Sarah: Kevin Ng's card menu reads 'Only Dane, an Owner or an Admin can delete this'; the Showroom ideas folder reads 'Only Dane, an Owner or an Admin can rename, move or delete this folder'.",
+    "Delete Gavin See (a lead with a design), then open its design: the note and the greyed rows come from the editor's side, and pressing through (stale page) refuses with the note.",
+    "Kitchen › Style › reference photo › Style transfer: Present and the moodboard name worktops and island by a stone or quartz and the backsplash by a tile, never 'Linen'. The moodboard's grouping needs the canvas side.",
+    "Company › Materials: as Dane, edit Sarah's Calacatta and the foot reads 'edited just now by Dane' (gallery side).",
+    "Save a render to Files where Renders already holds that name: the new file is '… V1 (2).jpg'."
+  ]
+}

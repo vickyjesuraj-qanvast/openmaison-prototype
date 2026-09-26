@@ -1,0 +1,140 @@
+/* The editor's dialogs (REG-673 · 675): tiles are the sample picker's; the share steps are X-Ray's send dialog. */
+.stack { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.head { display: flex; align-items: center; justify-content: space-between; font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--om-spacing-3); }
+.tile { position: relative; display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: 0 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); overflow: hidden; cursor: pointer; text-align: left; transition: border-color var(--motion-hover), box-shadow var(--motion-hover); }
+.tile img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+@media (hover: hover) { .tile:hover { border-color: var(--om-color-primary-default); } }
+.tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.tile[data-on] { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.tile:disabled { cursor: not-allowed; opacity: 0.5; }
+.tileName { padding: 0 var(--om-spacing-2); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tileSub { padding: 0 var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tick { position: absolute; top: var(--om-spacing-2); left: var(--om-spacing-2); width: 24px; height: 24px; border-radius: var(--om-radius-1); border: 2px solid var(--om-color-surface-default); background: var(--om-color-overlay-40p); display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-surface-default); }
+.tile[data-on] .tick { background: var(--om-color-primary-default); }
+.camera { display: none; }
+@media (hover: none) { .camera { display: inline-flex; } }
+.swatchRow { display: flex; align-items: center; gap: var(--om-spacing-4); }
+.swatchPic { width: 96px; height: 96px; border-radius: var(--om-radius-2); object-fit: cover; box-shadow: inset 0 0 0 1px var(--om-color-overlay-20p); flex-shrink: 0; }
+.swatchColour { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.dot { width: 20px; height: 20px; border-radius: var(--om-radius-1); box-shadow: inset 0 0 0 1px var(--om-color-overlay-20p); }
+.switchRow { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); }
+.switchText { display: flex; flex-direction: column; gap: 2px; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.switchText span { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.link { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); }
+.linkUrl { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.box :global(textarea) { min-height: 180px; }
+.under { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.count { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.footCount { margin-right: auto; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.shared { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.sharedRow { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.sharedRow:first-child { border-top: 0; }
+.sharedText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.sharedText span { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.said { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.lines { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.line { display: flex; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.line:first-child { border-top: 0; }
+.line span:last-child { color: var(--om-color-on-surface-secondary); text-align: right; }
+.lineWhat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lineWhat small { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.hint { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-1); }
+.hint[data-tone='warn'] { color: var(--om-color-on-surface-default); }
+.hint[data-tone='error'] { color: var(--om-color-tertiary-red-default); }
+/* Present (xxl): the picture as large as the dialog allows; the changes beside it; the versions under them. */
+.present { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: var(--om-spacing-5); height: 100%; min-height: 0; }
+/* one grid cell, so the leaving and the arriving picture crossfade in place (F176); pan-y leaves a sideways swipe to the dialog (F147) */
+.presentStage { position: relative; min-height: 0; container-type: size; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); overflow: hidden; touch-action: pan-y; }
+.presentStage > img { grid-area: 1 / 1; max-width: 100%; max-height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; }
+.presentCompare { grid-area: 1 / 1; width: 100%; height: 100%; }
+/* (verify round 1) once the picture's shape is known, the picture and Before and after are the same box — as large as the stage allows,
+   so the labels and the divider sit on the picture and nothing jumps when the studio switches between the two */
+.presentStage[data-shaped] .presentCompare, .presentStage[data-shaped] > img { width: min(100cqw, 100cqh * var(--shape)); height: auto; max-width: none; max-height: none; aspect-ratio: var(--shape); }
+.nav { position: absolute; top: 50%; translate: 0 -50%; z-index: 1; }
+.nav[data-side='prev'] { left: var(--om-spacing-3); }
+.nav[data-side='next'] { right: var(--om-spacing-3); }
+/* (F074 · F147) the Tooltip's anchor is display:contents — the surface and the lift go on the button, so the arrows read on any photo */
+.nav button { background: var(--om-color-surface-default); border-color: var(--om-color-surface-variant); box-shadow: var(--om-elevation-level-3); color: var(--om-color-on-surface-default); }
+.nav button:not([aria-disabled='true']):hover { background: var(--om-color-surface-bg); }
+.nav button[aria-disabled='true'], .nav button[aria-disabled='true']:hover { opacity: 0.5; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+/* (phone-9) an arrow with nowhere to go steps aside rather than hang as a pale ghost on the picture — its slot stays, so nothing moves */
+.nav[data-end] { visibility: hidden; }
+@media (hover: none) { .nav button[data-size] { width: 44px; height: 44px; } }
+/* (verify round 1) The side is two blocks: the facts, which scroll and always open at their top ('What changed' first), and the versions
+   under them in a block of their own that never squashes — it scrolls itself to keep the one on screen in view (F078). */
+.side { display: flex; flex-direction: column; gap: var(--om-spacing-4); min-height: 0; min-width: 0; }
+.facts { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.facts:empty { display: none; }
+/* (phone-9) the version's whole name, where a phone's one-line head leaves it out */
+.presentName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* (surfaces-25 · tablet-13) the versions' block lands on whole rows (snap; present-dialog.tsx `keepInView` aligns to a row too) */
+.thumbs { flex: 0 0 auto; max-height: 45%; overflow-y: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-2); padding: var(--om-spacing-3) 2px 2px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); scroll-snap-type: y mandatory; scroll-padding-top: var(--om-spacing-3); }
+.thumb { scroll-snap-align: start; }
+/* (surfaces-25 · tablet-13) an edge with more beyond it fades (present-dialog.tsx `useEdgeFade` sets the switches) */
+.facts:is([data-more-up], [data-more-down]), .thumbs:is([data-more-up], [data-more-down]) { --fade-t: 0px; --fade-b: 0px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); }
+.facts[data-more-up] { --fade-t: 20px; }   /* the versions' block opens and rests on whole rows — its top keeps its rule unfaded */
+.facts[data-more-down], .thumbs[data-more-down] { --fade-b: 32px; }
+/* (verify round 1) a narrow side column reads name over value — "Oak Coffee Table" on one line, its change under it — never two squeezed columns */
+.factLines .line { flex-direction: column; align-items: stretch; gap: 2px; }
+.factLines .line span:first-child { font: var(--om-type-subtitle-m); }
+.factLines .line span:last-child { text-align: left; font: var(--om-type-body-s); overflow-wrap: anywhere; }
+.thumb { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: left; border-radius: var(--om-radius-1); }
+.thumb img { width: 100%; height: auto; aspect-ratio: 104 / 66; object-fit: cover; border-radius: var(--om-radius-1); box-shadow: 0 0 0 1px var(--om-color-surface-variant); }
+@media (hover: hover) { .thumb:hover img { box-shadow: 0 0 0 2px var(--om-color-on-surface-border); } }
+.thumb[data-on] img { box-shadow: 0 0 0 2px var(--om-color-primary-default); }
+.thumb[data-on] { color: var(--om-color-on-surface-default); font-weight: 600; }
+/* A landscape tablet keeps the column beside the photo, narrower, so the photo takes the dialog's height (F147 · critic 20). */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .present { grid-template-columns: minmax(0, 1fr) 220px; gap: var(--om-spacing-4); }
+  .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* A phone, a portrait tablet: the photo on top, the versions as one row under it (kept in view), what changed below. */
+@media (max-width: 767px), (max-width: 1024px) and (orientation: portrait) {
+  /* minmax(0, …): the versions row scrolls sideways inside the column — its width never widens the sheet past the screen */
+  .present { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: var(--om-spacing-3); }
+  .side { max-height: 240px; gap: var(--om-spacing-3); }
+  /* the versions as one row over the facts — a row that keeps its height (F078 · F147), the facts scrolling under it */
+  .thumbs { order: -1; flex-shrink: 0; max-height: none; overflow-x: auto; overflow-y: hidden; display: flex; padding: 2px 2px var(--om-spacing-1); border-top: 0; scrollbar-width: thin; scroll-snap-type: x proximity; }
+  .thumb { flex: 0 0 96px; }
+}
+/* (phone-7) A short portrait phone (≤700 tall): the sheet's body scrolls as one column — the picture the full width (up to half the
+   screen's height), then the versions and what changed under it — rather than a fixed block under a picture left 120px tall. */
+@media (max-width: 767px) and (orientation: portrait) and (max-height: 700px) {
+  .present { height: auto; grid-template-rows: auto auto; }
+  .presentStage { height: min(calc((100vw - 32px) / var(--shape, 1.5)), 50dvh); }
+  .side { max-height: none; }
+  .facts { flex: none; overflow: visible; }
+}
+/* (wave E · E3 · phone-6) A phone held sideways: Present takes the screen less 8px, with a compact head, body and foot (the house dialog's
+   own parts, reached only from inside Present), the picture left and the facts right — a 200px side with what changed over the versions,
+   two to a row. Never the stacked phone layout, which left the picture 0×0 on a 375px-tall screen. */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) { --om-modal-xxl-margin: 8px; max-width: 100vw; height: calc(100dvh - 16px); max-height: none; }
+  :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) > span[aria-hidden]:first-child { display: none; }
+  /* the dialog's head, body and foot are its first three divs (the grabber is a span) */
+  :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) > div:first-of-type,
+  :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) > div:nth-of-type(2) { padding: var(--om-spacing-2) var(--om-spacing-4); }
+  :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) > div:nth-of-type(3) { padding: var(--om-spacing-2) var(--om-spacing-4) calc(var(--om-spacing-2) + env(safe-area-inset-bottom, 0px)); }
+  .present { grid-template-columns: minmax(0, 1fr) 200px; grid-template-rows: minmax(0, 1fr); gap: var(--om-spacing-3); }
+  .side { max-height: none; gap: var(--om-spacing-2); }
+  .facts { gap: var(--om-spacing-3); }
+  .thumbs { order: 0; flex: 0 1 auto; max-height: 50%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow-x: hidden; overflow-y: auto; padding: var(--om-spacing-2) 2px 2px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); scroll-snap-type: y mandatory; scroll-padding-top: var(--om-spacing-2); }
+  .thumb { flex: none; }
+  .nav[data-side='prev'] { left: var(--om-spacing-2); }
+  .nav[data-side='next'] { right: var(--om-spacing-2); }
+}
+
+/* (phone-10) the room photo's box keeps its lines 16px off its dashed edge (the house dropzone runs them edge to edge) */
+.roomDrop > [role='button'], .roomDrop > [role='status'] { box-sizing: border-box; padding-inline: var(--om-spacing-4); }
+
+/* Deleted versions (F077) and the footers that wrap rather than run off a narrow sheet (F141). */
+.footRow { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--om-spacing-3); }
+.rowThumb { width: 72px; height: 45px; flex-shrink: 0; border-radius: var(--om-radius-1); object-fit: cover; box-shadow: 0 0 0 1px var(--om-color-surface-variant); }
+.rowActions { display: flex; align-items: center; gap: var(--om-spacing-1); margin-left: auto; flex-shrink: 0; }
+@media (max-width: 767px) {
+  .sharedRow { flex-wrap: wrap; }
+  .sharedText { flex: 1 1 180px; }
+}

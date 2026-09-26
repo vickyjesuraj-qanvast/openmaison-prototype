@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { fetchBundleSigning } from '@/lib/contracts/queries'
 import { BundleSigningPage } from '@/components/contracts/sign/bundle-signing-page'
 import { stampBundleViewed } from '@/lib/contracts/status'
@@ -19,9 +18,8 @@ export default async function SignBundlePage({ params }: { params: Promise<{ id:
   const { id } = await params
   const data = await fetchBundleSigning(id)
   if (!data) {
-    if (!/^[0-9a-f-]{8,64}$/i.test(id)) notFound()
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14) */
+    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14 · F111) deleted for good, or never made: never a 404 */
   }
   if (data.state === 'open' && !data.bundle.viewedAt) await stampBundleViewed(id)   // (REG-633, parity Q-17)
   return <BundleSigningPage data={data} />

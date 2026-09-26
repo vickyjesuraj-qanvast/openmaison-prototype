@@ -57,6 +57,12 @@
 @media (max-width: 767px) {
   .top { padding: var(--om-spacing-4); }
 }
+/* (audit 2026-09-26, round 3) at 320 the controls took the row and cut "Items" to "Ite…" — the title keeps its own line above them */
+@media (max-width: 359px) {
+  .top { flex-wrap: wrap; row-gap: var(--om-spacing-2); }
+  .label { flex: 1 1 100%; }
+  .actions { margin-left: auto; }
+}
 
 /* (REG-570) A card whose top holds while its body scrolls (the Items section, `sticky`): sticky under the editor's header + tab strip,
    above the rows it covers; while held it squares its corners and casts the held rule + shadow. Its measured height feeds

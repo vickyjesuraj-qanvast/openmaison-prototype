@@ -1,0 +1,248 @@
+{
+ "done": [
+  {
+   "ref": "F131",
+   "what": "Cards' \"edited … by\" names whoever made the newest version, read from the versions alone (the maker only when there is none); DesignCard gains maker / makerColor for Deleted Designs' Made by (the gallery already reads them).",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "F019",
+   "what": "The editor's data carries design.createdAt / updatedAt, so \"Saved …\" reads the design's own time before it has a room or a render (the editor already falls back to them).",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "critic-4 · new:code-robustness:closed lead still offers Share with client",
+   "what": "fetchVisualizerEditor returns leadClosed (top level, where the editor reads it, and on design); createShareLink refuses a returned or deleted lead's design with LEAD_CLOSED_SHARE ('This lead was returned or deleted — its links stay off.').",
+   "files": [
+    "lib/visualizer/queries.ts",
+    "app/visualizer/actions.ts",
+    "lib/visualizer/policy.ts"
+   ]
+  },
+  {
+   "ref": "F204 · F129 · critic-15 (server) · new:code-robustness:Empty Trash says Trash emptied",
+   "what": "deleteDesigns / restoreDesigns / deleteDesignsForever / emptyDesignTrash and the four materials twins: when the rule refuses every one the answer is an Err worded as the rule itself (for one entry naming its maker — 'Only Dane, an Owner or an Admin can restore this design'), so the house 'Couldn’t … — only …' reads once; a partial one returns { kept, reason }. Restore and delete-for-good have their own words; restorePin says 'bring back'.",
+   "files": [
+    "app/visualizer/actions.ts",
+    "app/company/materials-actions.ts",
+    "lib/visualizer/policy.ts"
+   ]
+  },
+  {
+   "ref": "new:gallery-materials:refused rows repeat one reason · Move to Folder talks about renaming",
+   "what": "designRule(maker) = 'Only {maker}, an Owner or an Admin can move, rename or delete this' (materialRule: '…can move, change or delete this material'); mayChange names the maker on cards, the editor and materials; exported per-maker designRestoreRule · designPurgeRule · materialRestoreRule · materialPurgeRule and many-at-once DESIGNS_/MATERIALS_ DELETE / RESTORE rules for the Deleted sheets.",
+   "files": [
+    "lib/visualizer/policy.ts",
+    "lib/visualizer/queries.ts",
+    "app/company/materials-actions.ts"
+   ]
+  },
+  {
+   "ref": "D6 · critic-13 (server)",
+   "what": "MaterialRow.usedIn = live designs whose versions or waiting picks name the material (lib:{id} or a shade of it), for the delete confirm and Delete forever. (The picker's 'renamed since' needs no server data — the rail did it.)",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "D1 · new:fresh-desktop:studio pin threads go out on the client link",
+   "what": "fetchShare serves only client-started threads (with the studio's replies inside); the team's own pins never reach the link.",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Before is another design · new:fresh-tablet:parent compare and Note line",
+   "what": "createShareLink freezes each design against the client's own room (beforeUrl = roomImage(room)) and lists everything it shows (clientLines: each surface group's finish, pieces restyled or taken out, emptied, style, light — never the studio's note); fetchShare re-derives both for older links; the picture route lets an open link read its rooms' photos.",
+   "files": [
+    "app/visualizer/actions.ts",
+    "lib/visualizer/queries.ts",
+    "lib/visualizer/outputs.ts",
+    "app/visualizer/img/[...key]/route.ts"
+   ]
+  },
+  {
+   "ref": "new:files-client:client's Design n unknown to the studio",
+   "what": "The client's label is numbered by the version's own V-number (V2 = 'Design 2' on every link), on new links and when an older link derives its words.",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "app/visualizer/actions.ts",
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:room names on the client link (lower-cased 'living room 2')",
+   "what": "clientRoomNames drops the number the editor added ('Living room 2' made while the design had a 'Living room') when nothing else on the link shares the name; a typed 'Bedroom 2' stays; alike rooms keep what tells them apart ('Kitchen' / 'Kitchen sketch'). roomsInSentence lower-cases only room words ('your living room and master bedroom', 'Sophia's loft' kept) in the WhatsApp preview line.",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "app/visualizer/actions.ts",
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "new:code-robustness:style transfer names finishes by hex",
+   "what": "plainFinishName(name, surfaceLabel): 'Reference #E8E6E2' → 'Reference colour, close to Off-White Matte' — the nearest catalogue finish of the surface's kind (walls → paints, floor → flooring, cabinets → laminates) by Lab ΔE, only within ΔE 20, else 'Reference colour'. Used by quote lines and the client's list.",
+   "files": [
+    "lib/visualizer/outputs.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Add to a quote puts the floor in at 1 sqft",
+   "what": "A line the Price book prices by area or length goes in with qty 0 for the studio to measure; addVersionToQuote returns quantityless; Quotable gains measuredNames / measuredMaterials and outputs exports isMeasured(line, quotable) for the dialog.",
+   "files": [
+    "app/visualizer/actions.ts",
+    "lib/visualizer/outputs.ts",
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "D4 · new:fresh-desktop / fresh-tablet:uploaded room named Room 2",
+   "what": "addRoom names a room made from one of the lead's files, sent without a name, with roomNameFromFile (e.g. sophia-dining-area.jpg → 'Dining room'); 'Room n' takes the first number no room has.",
+   "files": [
+    "app/visualizer/actions.ts"
+   ]
+  },
+  {
+   "ref": "F083 (server)",
+   "what": "Rename's duplicate refusal names the existing room as it is spelled ('There’s already a room called Kitchen.').",
+   "files": [
+    "app/visualizer/actions.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-phone:two new designs read the same",
+   "what": "A blank design made on a day that already has one is 'Design · 26 Sep (2)', then (3)…",
+   "files": [
+    "app/visualizer/actions.ts"
+   ]
+  },
+  {
+   "ref": "new:versions-menus:Undo on Change photo within the same second",
+   "what": "A room photo's and a studio material's address carry a tag of the picture itself, not the row's updatedAt — Undo's photo gets its own address, and an autosave no longer makes the browser fetch the photo again.",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "D9 · F073 · F041 · F201 · new:versions-menus:false Changed in another tab · new:fresh-phone:pick lost on reload",
+   "what": "POST /visualizer/state (same-origin only, JSON or text body ≤ 2 MB, { roomId, pending?, detection?, baseRev? }) runs saveRoomState itself and answers its JSON (200; 403 cross-site, 415/400/413 bad bodies). saveRoomState answers a save on an older revision whose lifted picks and reading already equal the room's (key-order-proof compare) as saved on the current revision, writing nothing; a different one is still { conflict }. The editor's keepalive flush and drafts (editor package) already call it.",
+   "files": [
+    "app/visualizer/state/route.ts",
+    "app/visualizer/actions.ts"
+   ]
+  },
+  {
+   "ref": "new:files-client:after Delete forever, From and Open in AI Visualizer 404",
+   "what": "renderOrigins reports designLive (Files' From line becomes text); renderOrigin — the editor's ?file= landing — is null once the design is gone, and the editor's leadImages include those renders, so 'Open in AI Visualizer' opens the render as a room of the lead's design instead of a dead end.",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "D2 · new:fresh-desktop:client told Dane will call, Dane hears nothing",
+   "what": "renderFeedbackIds(link) = the lead's members + the link's sharer while active, once each (Owners/Admins when nobody) — app/renders/actions.ts (share) now uses it for every render_feedback and the call-back task's assignees; Settings › Notifications' row reads 'The lead’s members and whoever shared the link'.",
+   "files": [
+    "lib/notifications/queries.ts",
+    "lib/notifications/model.ts"
+   ]
+  },
+  {
+   "ref": "new:files-client:closed-link snackbar says 'your designer' while the page says Dane",
+   "what": "closedLinkMessage(r) names the sharer ('This link has ended — ask Dane for an updated one.' / 'This link has expired — ask Dane for a new one.'); app/renders/actions.ts (share) uses it.",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ]
+  },
+  {
+   "ref": "critic-7",
+   "what": "Ran the repair (R61 · R62) twice and the baseline round trip on a private copy: every check passes, the second run changes nothing in any AI Visualizer table (only quote_templates.last_used_at, an older rule), and snapshot → restore → compare is identical table by table.",
+   "files": []
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "critic-11 (engine · versions-menus)",
+   "why": "Proposal-level (PNG, native resolution, Download all as a zip, a brand-kit mark) — the owner's call, not a defect."
+  },
+  {
+   "ref": "critic-1 (files-client)",
+   "why": "A limit of the prototype, which has no login: the picture routes already gate on Who sees leads / the link's token. The devs' map (17-ai-visualizer-migration-map) should state that the studio's /visualizer/img and /files/img paths require an authenticated session — not my file."
+  },
+  {
+   "ref": "critic-15 (versions-menus) · new:versions-menus:A Designer can Rename and Change photo on another member's room",
+   "why": "The verifier marks it the owner's call ('propose it first'), and no D-call settles it. Proposal: apply ROOM_RULE (room's maker, design's maker, Owner, Admin) to Change photo — and Rename if wanted — with the rule as the menu row's meta line, plus a Settings › Studio › Who may do what row; roomDeleteBlock is ready to reuse."
+  },
+  {
+   "ref": "new:fresh-tablet:quote section cut to 'L' at 1024 touch",
+   "why": "The fix is the Items table's name-cell floor (components/quotes/editor/items/*, owned by no package in this wave). quoteGroupName kept as 'Living room · V2 finishes': renaming it would stop sections already on quotes being recognised by the F100 duplicate check and the editor's quotes[].versions."
+  },
+  {
+   "ref": "new:fresh-desktop:quote summary 'Sum · 2 priced items' counts a S$0 line",
+   "why": "The quote editor's summary (components/quotes/**) — unowned this wave. My half is done: measured lines now go in at qty 0 rather than a made-up 1 sqft."
+  },
+  {
+   "ref": "F102 (files-client)",
+   "why": "share-dialog.tsx draft() — the canvas package's file and item; joinWords / roomsInSentence in lib/visualizer/outputs are there to use."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "change": "Add to a quote snackbar (line ~775): append `${r.quantityless ? ` · ${r.quantityless} to measure` : ''}` — e.g. '2 lines added · 1 priced from the Price book · 1 to measure' (invented copy). addVersionToQuote now returns quantityless.",
+   "ref": "new:fresh-desktop:Add to a quote puts the floor in at 1 sqft"
+  },
+  {
+   "file": "components/visualizer/editor/dialogs/small-dialogs.tsx",
+   "change": "Import isMeasured from '@/lib/visualizer/outputs'; mark each line where isMeasured(full(l), quotable) (meta 'Measure on site — goes in with no quantity') and, when any, add the hint 'Lines priced by area or length go in with no quantity — type the measured one.' (invented copy). quotable now carries measuredNames / measuredMaterials.",
+   "ref": "new:fresh-desktop:Add to a quote puts the floor in at 1 sqft"
+  },
+  {
+   "file": "components/visualizer/editor/dialogs/version-facts.ts",
+   "change": "Replace the local finishName/nearestPaint with plainFinishName(name, surfaceLabel) from '@/lib/visualizer/outputs' (pass the surface's label). It picks the nearest finish of the surface's kind by Lab ΔE and says just 'Reference colour' when nothing is close — the weighted-RGB paint match names #E8E6E2 'Blush Pink' and a brown floor 'Olive Green'. Present, the moodboard, the quote and the client's link then read the same words.",
+   "ref": "new:code-robustness:style transfer names finishes by hex"
+  },
+  {
+   "file": "components/company/materials/materials-view.tsx",
+   "change": "Deleted sheet: restoreBlock={(t) => (t.mayChange ? materialRestoreRule(t.author) : null)} and keepReason / purge rule {(t) => (t.mayChange ? materialPurgeRule(t.author) : null)} from '@/lib/visualizer/policy' (author = whoever added it); the delete confirm and Delete forever say 'Used in n designs' from t.usedIn when > 0.",
+   "ref": "F204 · critic-15 · D6"
+  },
+  {
+   "file": "components/visualizer/home/visualizer-home.tsx",
+   "change": "Per-row purge reason can name the maker: purgeRule={(t) => (t.d.mayChange ? designPurgeRule(t.d.maker) : null)} instead of the generic DESIGN_PURGE_RULE. Optional: when a result carries kept > 0, add '— n stayed: {reason}' to the snackbar.",
+   "ref": "F204 · F129"
+  },
+  {
+   "file": "components/leads/files/render-origin.ts",
+   "change": "Optional: designGone = (o) => o.designLive === false (renderOrigins reports it now) instead of inferring it from roomLive / roomName.",
+   "ref": "new:files-client:after Delete forever, From and Open in AI Visualizer 404"
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "(verify round 1, F131) AI Visualizer cards' “edited … by” names whoever made the newest version; Deleted Designs’ Made by names the design’s maker — bug fix.",
+  "(verify round 1, F204 · F129 · critic-15) A refused delete, restore, delete-for-good or Empty Trash of designs or studio materials answers with the rule — naming the maker for one (“Only Dane, an Owner or an Admin can restore this design”) — and a partial one counts what stayed; never “Trash emptied” when nothing went — bug fix, invented copy.",
+  "(verify round 1, gallery-materials) The design rule reads “Only {maker}, an Owner or an Admin can move, rename or delete this”; the material rule “…can move, change or delete this material” — invented copy.",
+  "(verify round 1, critic-4) A design whose lead was returned or deleted makes no new client link: “This lead was returned or deleted — its links stay off.” — invented copy.",
+  "(verify round 1, D1) The client’s renders link shows only the threads the client started, with the studio’s replies; the team’s own pins stay private — user-directed.",
+  "(verify round 1, fresh-desktop · fresh-tablet) On the client’s link every design is compared with their own room photo and lists everything it shows (walls, floor, pieces, look, light), never the studio’s note to the engine — bug fix.",
+  "(verify round 1, files-client) The client’s “Design n” is the studio’s V-number — V2 is Design 2 on every link — bug fix.",
+  "(verify round 1, fresh-tablet) The client’s room names drop the number the editor added when the link has one room of that name (“your living room”, not “your living room 2”); rooms keep their casing except room words inside a sentence — bug fix.",
+  "(verify round 1, code-robustness) A style transfer’s colours read “Reference colour, close to Off-White Matte” (the nearest catalogue finish of the surface’s kind), or “Reference colour”, in quote lines and on the client’s link — invented copy.",
+  "(verify round 1, fresh-desktop) Add to a quote puts a line the Price book prices by area or length (S$ / sqft) in with no quantity for the studio to measure — bug fix.",
+  "(verify round 1, D4) A room made from one of the lead’s photos without a name is named from the file (“Dining room”); “Room n” takes the first free number — user-directed.",
+  "(verify round 1, fresh-phone) A second blank design made the same day is “Design · 26 Sep (2)” — invented copy.",
+  "(verify round 1, F083) Rename room’s duplicate refusal names the existing room as it is spelled — bug fix.",
+  "(verify round 1, versions-menus) A room photo’s and a material swatch’s address follow the picture itself, so Change photo’s Undo shows the old photo at once — bug fix.",
+  "(verify round 1, D9 · F073 · F041 · F201) POST /visualizer/state takes the leaving page’s keepalive save (same rules as the autosave); a late save whose picks the room already holds counts as saved — no false “Changed in another tab” — user-directed.",
+  "(verify round 1, files-client) A render filed from a design deleted for good opens in the AI Visualizer as one of the lead’s photos (a room of the lead’s design), never a 404 — bug fix.",
+  "(verify round 1, D2) Settings › Notifications: “A client responds to shared renders” goes to the lead’s members and whoever shared the link (the call-back task too) — user-directed.",
+  "(verify round 1, files-client) A client’s write on a closed link answers with the sharer’s name: “This link has ended — ask Dane for an updated one.” — invented copy.",
+  "(verify round 1, D6) Studio materials carry how many designs use them (“Used in n designs” on delete) — user-directed.",
+  "(verify round 1, F204) Undo of a client pin refuses in its own words: “You can only bring back the studio’s own pins.” — invented copy."
+ ],
+ "verification": "npx tsc --noEmit -p . — clean (mid-run only another package's library-gallery.tsx briefly failed); npx eslint on every file of the package — clean. On private copies of the baseline (migrate + restore into the scratchpad; local.db and fixtures/baseline.json untouched), with a next/cache stub hook and --conditions=react-server: fetchShare on Kevin’s link → Living room ‘Design 2’ / ‘Design 3 · Golden Hour’, Master bedroom ‘Design 1 · Golden Hour’, before = each room’s own photo, full finish lists, 1 pin (the client’s, with the studio reply; the studio pin kept off); shareMeta ‘3 design ideas for your living room and master bedroom — from Dane…’. saveRoomState: fresh save rev 0→1; stale same picks → saved on rev 1, no bump; stale different → conflict. The route: 200 saved, 200 saved again (same picks, no bump), 200 {conflict}, 403 cross-site, 415 text/html, 400 bad JSON. A render with a studio material priced by the sqft → Add to a quote: floor qty 0 sqft, walls ‘Reference colour, close to Off-White Matte’ at 1 Lot, quantityless 1; isMeasured true/false as expected. createShareLink froze ‘Design 2’ / ‘Design 4’ with the room photo as before. Two blank designs → ‘Design · 26 Sep’, ‘Design · 26 Sep (2)’. addRoom from a file named sophia-dining-area.jpg → ‘Dining room’; blank → ‘Room 5’; rename twin → ‘There’s already a room called Kitchen.’ Lead returned → createShareLink refuses, editor leadClosed true. As Sarah (Designer): every refusal names Dane or the rule; her own + Dane’s materials → deleted 1, kept 1 with the reason; Empty Trash of only Dane’s → Err. Dane purges Kevin’s design → renderOrigins designLive false, renderOrigin null, filed renders keep their pictures and appear in the reopened lead design’s photos. critic-7: repair run twice on a private copy (all checks pass; second run changes nothing in AI Visualizer tables), baseline snapshot → restore round trip identical table by table."
+}

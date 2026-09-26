@@ -1,0 +1,97 @@
+{
+  "done": [
+    {
+      "ids": ["surfaces-13"],
+      "what": "One shared helper, panels/reveal.ts revealInPanel(from, to, tight?), scrolls the panel's own scroller ([data-viz-panel-body], in the rail and in the tray) so the stretch from `from` to `to` is in view. When it doesn't fit, `from` goes to the top and never past it. Reduced motion jumps instead of scrolling smoothly. The Tools panel now uses it for the picked tool's options, with the same behaviour as before. Furniture: when a piece is picked (a marker on the photo, a row, or a panel that opens on a piece already picked, e.g. a marker tapped with the tray closed), its row and open body scroll into view. When an action opens options, the first options group (Quick pick / the finish row / Colour, marked data-viz-opts) comes into view, and the start falls back to the action chips when the row and the group don't fit together. Surfaces: a group opened by its chevron brings its rows into view. Harness numbers: at 1280×800 the Floor Lamp picked from a scrolled list lands at 330–440 in a 456px body. Fig › Customize puts the row at 8 and Planter at 198–342 in 356. At 1440 everything fits (row 182, Planter 372–516 of 532). At 390 in the tray the fig row sits at 114–236 of 252, and Customize puts the chips at the top with Planter starting at 108.",
+      "files": ["components/visualizer/editor/panels/reveal.ts", "components/visualizer/editor/panels/furniture-panel.tsx", "components/visualizer/editor/panels/tools-panel.tsx", "components/visualizer/editor/panels/surfaces-panel.tsx"]
+    },
+    {
+      "ids": ["surfaces-18"],
+      "what": "Style: when a reference is added (the count goes up), the references and their settings scroll into view: the reference grid through What carries over, with the references kept at the top when they don't all fit. A panel that opens on references already there stays where it is. Harness: at 1280×800 the refs sit at 8–132 and What carries over at 184–264 of 310. At 1440 they sit at 24 / 200–280 of 472.",
+      "files": ["components/visualizer/editor/panels/style-panel.tsx"]
+    },
+    {
+      "ids": ["desktop-13"],
+      "what": "The Furnish options no longer end with a third copy of why Furnish waits ('Furnish works on an emptied version — open V5.' / 'Furnishing works on an emptied room: empty it first.'). The reason is said on the card and once, with the link, under Generate. Harness at 1440: with an emptied V5 the page says it twice ('— V5 is one', '— open V5'); without one, twice ('Empty the room first — then furnish'). The testid viz-open-emptied is gone; the foot's viz-reason-link carries the link.",
+      "files": ["components/visualizer/editor/panels/tools-panel.tsx"]
+    },
+    {
+      "ids": ["phone-11", "E3 (rail part: the go line fits)"],
+      "what": "The compact foot is now an inline-size container. Below 280px of content (the 300px rail of a phone on its side), a waiting reason takes its own full-width line under the button and is never clamped: 'Pick a finish, a style or a light first.' is one whole line of 267px. Generate fills the row beside Versions and quality. With changes waiting, the word 'waiting' drops out and the row stays one line. A long button label shows its verb alone ('Furnish the room' → 'Furnish', 'Empty the room' → 'Empty', 'Style transfer' → 'Transfer', 'Render from sketch' → 'Render', 'Generate from note' → 'Generate'); aria-label keeps the full words. In that layout (landscape, ≤500 tall) the rail's tabs are 48 tall instead of 60 and a panel's head is 8px tighter, so the panel keeps the room the reason's line takes: the body is 79px at 667×375, the same as before. The 320 / 375 / 390 / 768 portrait dock is unchanged (measured: at 320 the reason still sits beside the button on 2 lines, not clamped).",
+      "files": ["components/visualizer/editor/rail.tsx", "components/visualizer/editor/rail.module.css"]
+    },
+    {
+      "ids": ["phone-2 (rail part)"],
+      "what": "The rail's rule under the tabs and the rule over the compact go line now run under a notch's right inset to the screen edge. Each is continued by a 1px ::before that is env(safe-area-inset-right) wide (0 without a notch), placed at left:100%. The rail-variant tabs also pad var(--viz-inset-r), so the fix holds if the editor ever moves the inset onto that variable. Harness 844×390 with the CDP safe-area override set to 47: both rules reach x=844. The strip's rule on the left is the canvas package's.",
+      "files": ["components/visualizer/editor/rail.module.css"]
+    },
+    {
+      "ids": ["surfaces-20"],
+      "what": "The Customize row caption and the helper line under the colours drop a finish's own colour word when a colour is picked: 'Customize · Navy matte pot' (was 'Navy matte black pot'), 'Tan frame', 'Off-white gloss', 'Navy wool'. A finish alone reads as before ('matte black pot'). This is the panel's wording only. The version's 'Now:' line comes from the engine's composeCustomizeDesc; see crossFileRequests.",
+      "files": ["components/visualizer/editor/panels/furniture-panel.tsx"]
+    },
+    {
+      "ids": ["surfaces-14 (panel wording)"],
+      "what": "A piece that has no finish row (e.g. a one-click basil, whose Planter row needs a traced pot) now reads 'Customize · choose a colour', and its hint reads 'Pick a colour for the {piece} first.', not '…a colour or a finish…'. The foot's reason comes from model.pickNeeds; see crossFileRequests.",
+      "files": ["components/visualizer/editor/panels/furniture-panel.tsx"]
+    },
+    {
+      "ids": ["gallery-1 (parts 1 and 2)"],
+      "what": "(2) The picker header says both changes when there are two: 'Now: Sage Whisper paint (renamed and recoloured since)'. (1) The kept finish is now tagged. 'As in the photo' wears the chip of the finish the version laid (its kept colour and motif) and names it: 'Sage Whisper paint — leave this surface as it is'. A recoloured studio material's own swatch is tagged 'Edited' instead of 'Now', with the tooltip '{name} · Paints · studio · recoloured since this version — picking it lays the new colour' ('renamed and recoloured' when both). A material that was only renamed keeps 'Now', and its tooltip says 'renamed since this version'. Checked in the harness for both / recolour / rename / unchanged / Original. Part (3), 'Used in n designs' on the card or the Edit dialog, belongs to the gallery / server packages.",
+      "files": ["components/visualizer/editor/panels/surfaces-panel.tsx", "components/visualizer/editor/panels/material-picker.tsx"]
+    },
+    {
+      "ids": ["(found while fixing surfaces-13)"],
+      "what": "The Surfaces list and the material picker were the same Panel instance, so the picker opened at whatever scroll the list had left, with the search and 'As in the photo' hidden, and back came to the picker's scroll. The Panel is now keyed ('list' / 'pick:{group}'), so each view opens at its top. Scope chips inside one group keep the picker and its search as they are.",
+      "files": ["components/visualizer/editor/panels/surfaces-panel.tsx"]
+    }
+  ],
+  "notDone": [
+    { "ids": ["desktop-5"], "why": "The piece's highlight and tint come from the stage (stage.tsx) and from the editor's markers (visualizer-editor.tsx fill / pending for a Customize colour). Neither is in the rail package." },
+    { "ids": ["surfaces-14 (outline part)"], "why": "Showing a click-to-place piece's outline, and sending it to trace when the outline is tiny or unsure, lives in the editor's addPieceAt and the engine's segment.ts (editor and engine-paint packages). The panel's wording part is done." },
+    { "ids": ["gallery-1 (part 3)"], "why": "'Used in n designs' on the material card and in the Edit dialog is components/company/materials/** plus a server count (gallery and server packages)." },
+    { "ids": ["tablet-10", "tablet-17"], "why": "The editor's ghost (skeletons.*) belongs to the editor package. The rail's rest values it must match are unchanged at ≤800 tall: Describe 36px, one hint line. See crossFileRequests for the new landscape values." },
+    { "ids": ["phone-13", "E3 (frame, stage fit, Present, strip)"], "why": "The landscape frame, the stage's 'side' fit, the canvas bar, Present and the strip tiles belong to the editor and canvas packages. The rail's part (the go line fits) is done." }
+  ],
+  "crossFileRequests": [
+    {
+      "file": "lib/visualizer/model.ts",
+      "ids": ["surfaces-14"],
+      "change": "pickNeeds should know whether the piece has a finish row. Change its signature to `pickNeeds(f: FurniturePick, piece: { label: string; category: string; parts?: PieceParts })`. For a customize pick that isn't ready, return `finishRowFor(piece) ? `Pick a colour or a finish for the ${labelInText(piece.label)} first.` : `Pick a colour for the ${labelInText(piece.label)} first.``, and keep the Replace wording as it is. Callers: model.ts changeList (lines ~323/324) pass `d` instead of `d.label`; engine/run.ts ~649 passes `pieces.get(id)!`. Then the foot's reason matches the panel's hint (the panel already overrides its own hint with the same words, so both stay consistent)."
+    },
+    {
+      "file": "lib/visualizer/furniture.ts",
+      "ids": ["surfaces-20"],
+      "change": "Export `customizeWords(colour: string | null, finish: string | null): string` = colour + finish lower-cased, where a finish picked WITH a colour loses its own colour word: `finish.replace(/\\b(?:black|white|cream)\\b/gi, '').replace(/\\s{2,}/g, ' ').trim()` ('Navy' + 'Matte black pot' → 'Navy matte pot'; 'Tan' + 'Black frame' → 'Tan frame'). Use the same rule in composeCustomizeDesc (`[p.customizeColor, finishWithoutItsColourWord]`), so the version's 'Now: …' line, Present and the moodboard stop saying 'Navy Matte black pot'. The panel has a local copy of the rule (furniture-panel.tsx customizeWords) and can import the export later. This changes the words recorded for a new Customize only; the demo's V2 (Emerald + Velvet) is unaffected."
+    },
+    {
+      "file": "components/visualizer/skeletons.module.css",
+      "ids": ["tablet-17", "E3"],
+      "change": "Short landscape (@media (orientation: landscape) and (max-height: 500px)) for the rail ghost: tab bones 48 tall (was 60). The idle compact foot is now 73 tall: 8 + 36 (button row, Generate filling beside the 36 tune) + 4 + 16 (the reason line, full width) + 8, plus 1 rule. With changes waiting it stays one 36px row (53). A panel head there has 12 top / 8 bottom padding."
+    }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-(rail) surfaces-13 · surfaces-18 — Picking a piece (on the photo or in the list) scrolls its row and options into view in the Furniture panel; an action that opens options brings its first options group in; a style reference just added brings the reference and How far / What carries over into view; a surface group opened by its chevron brings its rows in (one helper, panels/reveal.ts; reduced motion jumps). Source: bug fix.",
+    "REG-(rail) desktop-13 — Why Furnish waits is said on its card and once under Generate (with the link to the emptied version), no longer a third time at the end of the Furnish options. Source: bug fix.",
+    "REG-(rail) phone-11 · E3 — On a phone held sideways (the 300px rail), why Generate waits takes its own full line under a full-width Generate, never cut; with changes waiting the compact button says its verb alone ('Furnish', 'Empty', 'Transfer', 'Render') and keeps its full words as its name; the rail's tabs are 48px tall and panel heads 8px tighter there. Source: user-directed (E3) — the short verbs are invented copy.",
+    "REG-(rail) phone-2 — On a notched phone held sideways, the rules under the rail's tabs and above its go line run to the screen's edge under the inset. Source: bug fix.",
+    "REG-(rail) surfaces-20 — The Customize summary drops a finish's own colour word when a colour is picked: 'Navy matte pot', 'Tan frame' (was 'Navy matte black pot'). Source: bug fix (invented copy).",
+    "REG-(rail) surfaces-14 — A piece with no finish row asks for a colour only: 'Customize · choose a colour', 'Pick a colour for the {piece} first.' Source: bug fix (invented copy).",
+    "REG-(rail) gallery-1 — The material picker tags the kept finish: 'As in the photo' wears the chip of the finish the version laid and names it ('{name} — leave this surface as it is'); a studio material recoloured since is tagged 'Edited' (not 'Now') with the tooltip '… recoloured since this version — picking it lays the new colour'; the header says '(renamed and recoloured since)' when both changed. Source: user-directed (critic-13 follow-up) — invented copy and a small invented UI tag.",
+    "REG-(rail) (found with surfaces-13) — The Surfaces list and the material picker each open at their top instead of at the scroll the other view left. Source: bug fix."
+  ],
+  "verification": "npx tsc --noEmit -p . reports no errors in my files; the 18 remaining error lines are in the quotes package's files mid-edit (template-guard exports). npx eslint on rail.tsx, describe-box.tsx and panels/ is clean. I built a read-only esbuild harness (scratchpad/waveE/rail/harness: entry.tsx, lib.cjs, t-*.cjs, shots/). It renders the working tree's ModeTabs, panels, DescribeBox and GenerateFooter inside the working tree's editor.module.css frame classes (.editor[data-short] / .rail / .goDock / .tray), over the :3026 build's global CSS, GET-only, with no server writes and no DB. Checked with numbers and screenshots: the go line at 667×375 and 844×390 touch (idle: reason on one whole line under a 223px Generate; with a change: one row; Furnish shows 'Furnish' at 107px), the 844×390 notch (CDP safe-area 47: both rules reach the edge), the portrait dock at 320 / 390 / 768 (unchanged, the reason unclamped); the reveals at 1280×800, 1440×1024 and 390×844 tray (numbers in done); the Tools reason count (twice, not three times); the picker's kept-finish states (both / recolour / rename / same / Original: header, keep row, tag, tooltip); the Customize captions for fig / art / TV / rug / none; the Surfaces list and picker opening at scroll 0. Not seen on a real build: the editor's own frame (its fake top bar in the harness), the real tray fold animation and marker taps.",
+  "checkOnBuild": [
+    "667×375 and 844×390 touch (short landscape): with nothing picked, 'Pick a finish, a style or a light first.' reads whole on its own line under a full-width Generate. Pick one change: '1 change ▴', tune and Generate sit on one row. Tools › Furnish the room shows 'Furnish' on the button, and its full words are still its accessible name.",
+    "844×390 with the safe-area override (47 left/right): the rules under the rail's tabs and above the go line reach the right screen edge. With E3's new frame in, check nothing now double-pads the inset. If the editor starts defining --viz-inset-r on .rail, drop the rail's env() padding-right in the same change.",
+    "Short landscape: the rail tabs are 48 tall and the Describe box plus panel head still fit. Look at the panel's usable height once the editor's compact top bar lands.",
+    "1280×800: click the Floor Lamp marker with the Furniture list at the top. Its row and Remove / Replace / Customize should come into view. Fiddle Leaf Fig › Customize: the Planter chips are in view. 390×844 touch: tap the fig marker and its row shows in the tray.",
+    "Style › Upload a reference photo (kitchen-moodboard.jpg): once it reads, the reference thumbnail and How far scroll into view.",
+    "V1 with an emptied V5 › Tools › Furnish the room: the sentence shows only on the card ('— V5 is one') and under Generate ('— open V5' link). The testid viz-open-emptied is gone; use viz-reason-link.",
+    "Kevin Ng's walls: rename and recolour 'Sage Whisper paint' in Materials, then reopen Walls. Expect 'Now: … (renamed and recoloured since)', 'As in the photo' with a sage chip and 'Sage Whisper paint — leave this surface as it is', and the red swatch tagged 'Edited' with its tooltip.",
+    "Surfaces: scroll the list (phone tray), open a group, and the picker starts at its search. Back returns to the list at its top.",
+    "Fig › Customize › Matte black pot + Navy: the row reads 'Customize · Navy matte pot'. A one-click basil › Customize: 'Customize · choose a colour' and 'Pick a colour for the basil … first.' The foot's reason matches only after the model.ts request is applied.",
+    "Scripts that read viz-generate's textContent on the compact foot now see both label spans (e.g. 'Furnish the roomFurnish'). Use innerText or the accessible name instead."
+  ]
+}

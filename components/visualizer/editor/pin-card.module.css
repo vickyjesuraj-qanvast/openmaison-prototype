@@ -1,0 +1,56 @@
+/* A pin's thread and a new pin's box (REG-675): a 280 px card beside its pin — the file viewer's comment card. It floats in screen space
+   (a <body> portal placed by pin-card.tsx's useFloat), so no photo frame ever clips it; on a phone the same content sits in the house
+   bottom sheet (REG-353). The pin's dot (and the new pin's) stays on the photo and keeps its size at any zoom. */
+.card { position: fixed; left: 0; top: 0; z-index: 95; width: 280px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); box-sizing: border-box; display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-4); color: var(--om-color-on-surface-default); cursor: auto; animation: rise var(--motion-toggle); }   /* (F172) the house toggle timing */
+/* The card takes focus when it opens (so Tab walks into it); the card itself draws no ring, its controls do. */
+.card:focus { outline: none; }
+@keyframes rise { from { opacity: 0; translate: 0 4px; } }
+.head { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-3); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.num { flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 5px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-default); color: var(--om-color-surface-default); font: var(--om-type-caption-s); font-weight: 700; }
+.num[data-role='client'] { background: var(--om-color-tertiary-blue-default); }
+.num[data-resolved] { background: var(--om-color-tertiary-green-default); }
+.who { flex: 1; min-width: 0; display: flex; flex-direction: column; margin-left: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.who b { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The note and the replies scroll; the head and the reply box stay put, and the body never shrinks below a readable few lines. */
+.body { flex: 1 1 auto; min-height: 72px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-3); }
+.text { margin: 0; font: var(--om-type-body-m); white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply { display: flex; flex-direction: column; gap: 2px; padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-m); white-space: pre-wrap; overflow-wrap: anywhere; }
+.replyWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.replyWho b { color: var(--om-color-on-surface-default); font-weight: 600; }
+.resolved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-tertiary-green-default); }
+/* Foot: the box (or the hint) on its own line, the buttons right-aligned under it. */
+.foot { flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.card :global(textarea), .sheetBody :global(textarea), .sheetFoot :global(textarea) { min-height: 56px; max-height: 160px; resize: none; field-sizing: content; }
+.actions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }
+.count { min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* The phone's sheet: the thread (or the new note's box) in the body on the sheet's 16 px gutter; the reply box / hint + buttons in its foot. */
+.contents { display: contents; }
+.sheetBody { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding: var(--om-spacing-4); }
+.sheetThread { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
+.sheetFoot { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+/* The pin's own spot on the photo, which the floating card follows. */
+.anchor { position: absolute; width: 1px; height: 1px; translate: -50% -50%; pointer-events: none; }
+.draftDot { position: absolute; z-index: 6; translate: -50% -50%; scale: calc(1 / var(--z, 1)); width: 26px; height: 26px; border: 2px solid var(--om-color-surface-default); border-radius: var(--om-radius-full); background: var(--om-color-primary-default); color: var(--om-color-surface-default); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(85, 0, 255, 0.28), var(--om-elevation-level-3); pointer-events: none; }
+/* The phone sheet's picture of the spot: the photo at 88px tall, the pin's number where it sits. */
+.spot { position: relative; align-self: flex-start; display: inline-block; flex-shrink: 0; border-radius: var(--om-radius-1); overflow: hidden; box-shadow: 0 0 0 1px var(--om-color-surface-variant); }
+.spot img { display: block; height: 88px; width: auto; max-width: 100%; object-fit: contain; }
+.spotPin { position: absolute; translate: -50% -50%; min-width: 20px; height: 20px; padding: 0 4px; box-sizing: border-box; border: 2px solid var(--om-color-surface-default); border-radius: var(--om-radius-full); background: var(--om-color-primary-default); color: var(--om-color-surface-default); font: var(--om-type-caption-s); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--om-elevation-level-2); }
+.spotPin[data-role='client'] { background: var(--om-color-tertiary-blue-default); }
+@media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+/* (wave E · phone-8) A phone held sideways gets the sheet too (pin-card.tsx `usePinSheet`): a new pin's spot sits beside its note box
+   rather than over it, so the box keeps its whole field above the keyboard's half of a 375px-tall screen. */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .sheetBody[data-draft] { flex-direction: row; align-items: flex-start; gap: var(--om-spacing-4); }
+  .sheetBody[data-draft] > :not(.spot) { flex: 1; min-width: 0; }
+  .sheetBody[data-draft] .spot img { height: 72px; }
+  /* (round 3) a pin's thread too: the note beside its spot — stacked, the spot took the short sheet's whole body and hid the note */
+  .sheetBody[data-thread] { flex-direction: row; align-items: flex-start; gap: var(--om-spacing-4); }
+  .sheetBody[data-thread] > .sheetThread { flex: 1; }
+  .sheetBody[data-thread] .spot img { height: 72px; }
+}
+
+/* (audit 2026-09-26, round 3) the sheet's body fades at an edge with more beyond it (use-edge-fade.ts sets the switches) — a reply under the
+   note, cut at the reply box on a phone held sideways, now reads as more to scroll */
+.fadeBody:is([data-more-up], [data-more-down]) { --fade-t: 0px; --fade-b: 0px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent); }
+.fadeBody[data-more-up] { --fade-t: 16px; }
+.fadeBody[data-more-down] { --fade-b: 24px; }

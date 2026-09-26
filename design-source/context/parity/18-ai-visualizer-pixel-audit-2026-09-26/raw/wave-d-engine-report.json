@@ -1,0 +1,264 @@
+{
+ "done": [
+  {
+   "ref": "new:fresh-tablet:remove + new floor in one Generate",
+   "what": "(earlier agent, kept) Remove and a new floor in the same Generate lay the floor across the photo and the empty plate together (`across` in run.ts): the sofa's footprint is the walnut around it, not a photo-oak rectangle. (This round) whatever still stands where the plate went on (the rug now going on under the sofa) keeps off the plate-side surface, so a new floor never paints the rug. render-test has the two checks (footprint = walnut ΔE 1.5; rug under the sofa = rug).",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "scripts/viz/render-test.mts"
+   ]
+  },
+  {
+   "ref": "F188 · new:engine:night relight navy quad · new:style-light-tools:dusk navy box",
+   "what": "(earlier agent, kept and checked) After dark the sky is keyed onto the glass only: windows retraced to the glass, weighted by the pane's daylight, feathered; the reading's pieces in front (the sofa's arm) and the sill's pot, vases and pampas keep their tone; the kitchen's stray second quad is gone; a whole-room look goes to lamp-light without a photo window. (This round) the floor lamp is a piece of the living room's reading, so its accent light comes with it (the fixed accent was dropped; fixtureOfPiece sets a floor lamp's shade at the top of its box). Looked at Blue Hour, Warm Cozy and Spotlight on all three rooms.",
+   "files": [
+    "lib/visualizer/lighting.ts",
+    "lib/visualizer/engine/grade.ts",
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ref": "D3 · new:engine:Customize paints the whole piece · new:surfaces-furniture:part finishes recolour the whole piece",
+   "what": "Pieces carry traced `parts`: the fig's pot (soil left out), both artworks' frame rings (outer outline minus the canvas), the TV's frame and stand (screen left out), the bedroom lamp's and the new floor lamp's shade and base. Finish rows name their part (Planter → pot, Frame → frame, a TV's Finish → body); `finishRowFor(piece)` offers a part row only where the part is traced; `customizePart` sends the finish and its colour to that part (a lamp: shade for a shade/glass finish, base for a metal) and the engine paints only it — or refuses when a row names a part the photo doesn't mark. render-test: fig pot |Δ| 49.7 with leaves |Δ| 0.0; TV screen |Δ| 0.0.",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/model.ts",
+    "lib/visualizer/engine/run.ts",
+    "scripts/viz/render-test.mts"
+   ]
+  },
+  {
+   "ref": "F181",
+   "what": "Remove, piece by piece, redone and looked at. Sofa: the armchair's hidden side comes back mirrored from its own visible side (`mend: 'mirror'`, axis), its hidden front leg too; the rug goes on under the sofa with its own weave, laid from a clean patch on the rug's own light (`mend: 'texture'`, no chevrons, no straight seam); the coffee table stands over its own shade (`mend: 'shade'`) with its hidden front edge mended along its rows; the sofa arm's shadow on the rug goes with it; the throw's top retraced. Console: the TV's two feet go with it (`restsOn`) and the TV hangs on the wall; the plate takes the pampas' soft edge (no smudge). Coffee table: the console's bottom rail is continued along its slope (`rails`, alongFill) — no stair steps; the bowl's rim goes with it. Armchair: the floor lamp is its own piece now and stays standing, its pole continued behind the chair. Fig: the plate takes its shadow (no pale blotches). Every mend lays over the picture as it was before the plate went on (no half-plate ghosts at a mend's soft edge), and never over a piece standing in front.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "F028",
+   "what": "Sofa Remove + armchair Replace: the chair is whole (its mended side takes the Replace's colour too — `paintMask` joins what was mended of a piece), the coffee table's front is no longer sliced, the rug's left edge continues instead of a straight seam.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ref": "F182 · F024",
+   "what": "Coffee table: its bowl, books, cup and candle are cut out by their own outlines (no padded island), the lit and shaded top seeded, its front edge included — one tone. Right sheer curtain is painted as its whole traced outline (`whole`: shaded folds by the wall, no torn edge); the left curtain's header is in its cut. The rug is its whole outline (no beige rims), running on under the sofa.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "F183",
+   "what": "The floor's sofa cutout follows the sofa's real top edge and the armchair's feet (the strip between the sofa back and the skirting is painted); the sofa's left edge and leg cutout tightened — no white halo on walnut. The demo's pre-rendered edit and its golden-hour relight re-rendered with the final engine (scripts/viz/demo-renders.mts; swatches still in step).",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "public/visualizer/demo/living-room-edit.jpg",
+    "public/visualizer/demo/living-room-edit-golden-hour.jpg",
+    "public/visualizer/demo/swatch-walnut.jpg",
+    "public/visualizer/demo/swatch-oak.jpg"
+   ]
+  },
+  {
+   "ref": "F184",
+   "what": "Kitchen worktops: the back run's front edge and the island's back edge traced from the photo — Granite Black no longer steps down the drawer fronts by the hob, no white fleck at the island's corner. Bedroom back wall reaches the wardrobe's diagonal top; the wedge between the left nightstand and the bed is seeded and the nightstand's side face cut out; the headboard cutout's left edge follows the duvet; the glasses on the nightstand are glass (`glass`: the paint shows through, their glints stay).",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "F186",
+   "what": "See-through things in front of a surface are `soft` outlines, keyed pixel by pixel against the wall's own colour around (shade-tolerant, edge pixels unmixed): the pampas plumes, the gap under the armchair's arm, the fig's leaves — navy fills between the fronds with no blocky silhouette; the vase, its handle side and the cup are cut exactly (no white box on the console top); the pot rim is clean.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "F025",
+   "what": "Kitchen floor: the stools' legs and footrest rails are keyed out of the floor (soft outlines over the stools' bases, darker-in-shade counting little, hue counting fully) — herringbone runs between the rails, the legs keep their walnut.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/segment.ts"
+   ]
+  },
+  {
+   "ref": "F033",
+   "what": "A drawn surface behind a see-through piece (the fig) takes the piece's outline out and keys the wall back between its leaves — no octagon of unpainted wall.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/segment.ts"
+   ]
+  },
+  {
+   "ref": "F191",
+   "what": "Each traced plane lays a pattern in its own perspective by containment (the band under the dropped ceiling is in phase, no stray block by the tall unit; slivers take their neighbour's); a wallpaper stops at the kitchen window's reveals (`reveals`: paint covers them, paper doesn't — no hairlines, no stepped joins).",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "new:surfaces-furniture:ceiling wallpaper over the diffuser",
+   "what": "The living room ceiling cuts out its round diffuser and four downlights — a wallpaper or a paint leaves the fixtures as they are.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ref": "F189",
+   "what": "referencePalette reads with room to spare (k+3 clusters, merged back where two are one colour, ΔE<9), so walnut and sage stay apart at every size the editor keeps a reference at (512–1600 px tested): floor #8A6F54 (≈ #8B6F55), walls #DEDAD3, joinery #2F3C45. Browser and Node use the same function with the same k.",
+   "files": [
+    "lib/visualizer/engine/palette.ts"
+   ]
+  },
+  {
+   "ref": "new:code-robustness:transfer names finishes by hex · new:style-light-tools:Present lists hex + Ceiling twice",
+   "what": "A style transfer names each finish in words at the source, through outputs' own plainFinishName (\"Reference colour, close to Off-White Matte\"), the hex kept in `hex`; a note that re-lays a surface the style or a pick already set replaces that line (one row per surface).",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ref": "F064",
+   "what": "Empty the room's version keeps in applied.note only what it did with \"anything else\" (\"Also took out the …\"), never the request echoed; the caveat says what it kept and why.",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Replace quick pick cut mid-word and barely changes",
+   "what": "A Replace names what it swapped for: a Quick pick by its preset name (\"Swapped for a Mid-Century coffee table\"), the studio's own words cut at a word with \"…\" (replacementName); its colour is read from the words' main clause (\"walnut\" → walnut), so the table visibly turns walnut.",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/note.ts"
+   ]
+  },
+  {
+   "ref": "new:surfaces-furniture:one-surface group named by its group word",
+   "what": "changeList, changeLines and descriptor name a group the version changed on one surface by that surface (\"Feature Wall → Navy Accent\", \"V1 · Window Frame, Feature Wall\"), the group word only for two or more.",
+   "files": [
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "new:surfaces-furniture:note on a whole-room look makes an identical version · new:style-light-tools:unreadable note runs 2s then fails",
+   "what": "intentFor refuses a note before any progress card: one the rules can't read (the engine's own words), one whose colours have nothing to land on (a whole-room look: the empty-state words; else \"We couldn’t find the {target} on this photo — add it in Surfaces first.\"). editPass also fails rather than saving a copy, and a note whose colours missed on a mixed Generate is caveated.",
+   "files": [
+    "lib/visualizer/model.ts",
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ref": "new:surfaces-furniture:quick picks mixed case · messages lose acronyms · TV console offers table tops",
+   "what": "Generated Replace picks in the presets' sentence case (\"Scandinavian coffee table\", \"Modern TV console\"); labelInText keeps TV/LED/HDB/BTO in every sentence (pickNeeds, the engine's refusals and caveats); a TV console / media unit offers Front / finish (veneers, lacquers), a console table stays a table.",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/surfaces.ts",
+    "lib/visualizer/model.ts",
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Furnish says Empty the room first when an emptied version exists",
+   "what": "toolAvailability takes the room's emptied version (`{ emptied: 'V4' }`) and says \"Furnish works on an emptied version — open V4\"; the editor must pass it (cross-file request).",
+   "files": [
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ref": "new:fresh-tablet:Floor square on the caption strip · F180 (part) · F060 (part)",
+   "what": "The fallback reading finds a caption bar or border at the photo's foot or head (a flat band, words allowed, unlike the room beside it) and keeps every surface off it (the reading's `frame` → `within`); each dot sits inside its own grown region near its middle; wall seeds come only from the upper band (never a worktop or island top); walls and floor outlines are smoothed (new `smooth` grow option) and fill pockets; the floor is read by hue across the photo's foot (lit and shaded boards together, a group reaching the sides preferred) with a tighter limit so it no longer floods the bedspread. Sophia's photo: floor on the floor, caption untouched.",
+   "files": [
+    "lib/visualizer/engine/fallback.ts",
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/model.ts",
+    "scripts/viz/fallback-test.mts"
+   ]
+  },
+  {
+   "ref": "tooling",
+   "what": "scripts/viz/regions.mts now reads every region through the engine's regionOf with the room's reading (soft/glass/whole/front all shown as Generate paints them); fallback-test draws the editor's dots and honours the caption frame; render-test gained the D3 and rug-under-sofa checks; zoom.mts (earlier agent) for tracing.",
+   "files": [
+    "scripts/viz/regions.mts",
+    "scripts/viz/fallback-test.mts",
+    "scripts/viz/render-test.mts",
+    "scripts/viz/zoom.mts"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "F180 · F060 (remaining)",
+   "why": "Improved but not solved: a photo nobody traced still reads roughly on busy rooms — the walls' edges follow colour, not the wall planes (blob-shaped round the headboard and furniture), the kitchen's walls still take part of the backsplash and the lower-left cabinets, the floor misses sunlit boards that read as the walls' white and may take a rug. A plane-following segmentation needs a model (1.0 asked one); the editor's 'Marked roughly on your photo — check the highlight, or draw a surface' note stays the honest answer. No 'low coverage' message was added (that copy would be the editor's)."
+  },
+  {
+   "ref": "F087",
+   "why": "No engine change needed: the rail/canvas packages already draw the picker's and the moodboard's chips from the engine's own tile (material-picker useSwatchCss → version-facts finishChip / pre-tiled finishBoard). materials.chipCss stays only as the first-paint / server fallback."
+  },
+  {
+   "ref": "F022 · F023",
+   "why": "Handled in the editor package (onPicture/markedOn; the WIDE_TAP re-read that refuses a box-clipped tap). The engine reads whatever reading it is handed, so nothing was needed here."
+  },
+  {
+   "ref": "new:engine:restyle look under a dusk light",
+   "why": "Known limit kept from the earlier agent's choice: a whole-room look goes down to lamp-light without a sky, so its windows keep their daylight scenery (the look's windows aren't traced). Tracing each finished look's windows would be curation work for 15 pictures."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/panels/furniture-panel.tsx",
+   "change": "D3: replace `const fin = customizeFinishes(f.label, f.category)` with `const fin = finishRowFor(f)` (import from '@/lib/visualizer/furniture'; `f` is the FurnitureDef, which now carries `parts`) and render the finish Chips block (the `{fin.heading}` field) only when `fin` is non-null — on a piece whose part isn't traced (a plant or a TV added by hand) only Colour and 'Or describe it' show. Also the Replace caption: use `replacementName(p.replacementDesc)` (same module) instead of `p.replacementDesc.slice(0, 40)`, so a Quick pick reads 'Replace · a Mid-Century coffee table'.",
+   "ref": "D3 · new:fresh-desktop:Replace quick pick cut mid-word"
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "change": "Pass the room's emptied version to toolAvailability: `const emptiedV = [...all].reverse().find((v) => v.finishes.emptied && !v.deleted)` (the room's versions), then `toolAvailability(room ? { sampleKey: room.sampleKey, detection } : null, finishes, reading, { emptied: emptiedV && emptiedV.key !== viewKey ? `V${emptiedV.n}` : null })`. The reason then reads 'Furnish works on an emptied version — open V4'; the rail foot / Tools panel may render 'open V4' as a text button that selects that version.",
+   "ref": "new:fresh-desktop:Furnish says Empty the room first"
+  },
+  {
+   "file": "components/visualizer/editor/dialogs/version-facts.ts",
+   "change": "Optional (F064): Present and the moodboard may show a version's `applied.caveat` under What changed (e.g. 'Kept: the sheer curtains — this photo can’t take them out'). The engine no longer puts the Empty request into applied.note.",
+   "ref": "F064"
+  },
+  {
+   "file": "(integrator)",
+   "change": "The demo's pre-rendered pictures were re-rendered in place with the final engine (public/visualizer/demo/living-room-edit.jpg and living-room-edit-golden-hour.jpg; same paths, swatches in step). The baseline stores their paths, so a `npm run db:baseline` is only needed if you want the fixture's stamps refreshed; re-run scripts/viz/demo-renders.mts again if any other package changes the living-room sample.",
+   "ref": "F183"
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn (F181 · F028) Remove on the living-room sample: the armchair behind the sofa is whole (its hidden side from its own visible side), the rug goes on under the sofa in its own weave, the coffee table stands over its own shade, the console takes the TV's feet (the TV hangs on the wall), the floor lamp is its own piece and stays standing, the fig takes its shadow — bug fix.",
+  "REG-nnn (D3 · new:engine/surfaces-furniture part finishes) Customize finishes that name a part paint only that part: the fig's pot, an artwork's frame ring, the TV's frame and stand, a lamp's shade or base (traced `parts` on the sample pieces); a part the photo doesn't mark is not offered and the engine refuses it: 'This photo doesn’t mark the {part} of the {piece} — pick a colour for the whole piece instead.' — owner call D3; the refusal line is invented copy.",
+  "REG-nnn (F182 · F024 · F183 · F184 · F186 · F025) Sample outlines retraced: the coffee table's objects, the whole right sheer curtain and the left curtain's header, the whole rug, the floor behind the sofa and round its leg, the kitchen worktop edges by the hob and the island, the bedroom wall up to the wardrobe and beside the nightstand, see-through pampas / fig leaves / chair-arm gap / stool rails keyed, nightstand glasses shown through, ceiling diffuser and downlights kept — bug fix.",
+  "REG-nnn (F033) A drawn surface behind a plant keys the wall between its leaves instead of leaving an unpainted shape round it — bug fix.",
+  "REG-nnn (F191) A pattern lays each wall plane in its own perspective; a wallpaper stops at a window's reveals (paint still covers them) — bug fix.",
+  "REG-nnn (F188, earlier agent) After dark the sky shows only on the window glass, feathered; what stands in front of the glass keeps its tone; whole-room looks go to lamp-light — bug fix.",
+  "REG-nnn (F189) A style reference's palette keeps walnut and sage apart at every size, so the floor takes the reference's wood — bug fix.",
+  "REG-nnn (new:code-robustness · new:style-light-tools) A style transfer names its finishes in words at the source ('Reference colour, close to Off-White Matte', outputs' rule); a note re-laying a surface the style set is one line — bug fix.",
+  "REG-nnn (F064) An emptied version never claims the pieces it kept: its note reads 'Also took out the {pieces}' only for what it took (invented copy); the caveat says what stayed — bug fix.",
+  "REG-nnn (new:fresh-desktop) Replace names what it swapped for: 'Swapped for a Mid-Century coffee table' for a Quick pick, the studio's words cut at a word with '…'; the colour comes from the words (walnut → walnut) — bug fix.",
+  "REG-nnn (new:surfaces-furniture) A group changed on one surface is named by that surface in the chips and the version line ('Feature Wall', not 'Feature Walls'); Quick picks in sentence case; sentences keep 'TV'; a TV console offers Front / finish — bug fix / polish.",
+  "REG-nnn (new:surfaces-furniture · new:style-light-tools) Generate from note refuses up front: an unreadable note (existing words), a whole-room look (existing empty-state words), or 'We couldn’t find the {target} on this photo — add it in Surfaces first.' (invented copy); it never saves an unchanged copy — bug fix.",
+  "REG-nnn (new:fresh-desktop) Furnish on a version that isn't emptied, when the room has an emptied one: 'Furnish works on an emptied version — open V{n}' (invented copy, the verifier's wording; needs the editor to pass the version) — bug fix.",
+  "REG-nnn (new:fresh-tablet · F180 · F060) Uploaded photos: a caption bar or border is never read or painted, each surface's dot sits in its own region, walls are seeded above worktops, outlines are smoothed and the floor is read by hue — improved, still rough on busy photos — bug fix.",
+  "REG-nnn (F183) The demo design's pre-rendered edit and golden-hour relight re-rendered with the corrected engine (same files) — bug fix."
+ ],
+ "verification": "npx tsc --noEmit -p . (no errors in lib/visualizer or scripts/viz) and npx eslint lib/visualizer scripts/viz (clean). scripts/viz/render-test.mts: 12/12 PASS (F179 ×6, F181 sofa untouched, remove+walnut footprint ΔE 1.5, rug under sofa stays rug, D3 pot changes/leaves 0.0, TV screen 0.0, F193 seam 1.0). Rendered through the real runPass in Node (scratch harness, 25 scenarios) and LOOKED at crops against the original: every Remove on the living room (sofa, console, armchair, fig, table, TV, rug), Customize of table/curtains/rug/fig/art/TV, walnut floor, navy walls, Japanese Wave ceiling, kitchen granite/herringbone/stripes, bedroom navy, Blue Hour/Warm Cozy/Spotlight on all rooms, sofa-remove + armchair-replace, Quick-pick Replace, a drawn panel behind the fig. regions.mts for all three rooms (through regionOf), fallback-test on the three samples + Sophia's UAT photo, wallpaper-test, referencePalette at 512/800/1200/1600 px, intentFor/changeList/pickNeeds/toolAvailability unit runs. demo-renders.mts re-run (swatches in step). Did not run next build/dev/start or touch any port or local.db."
+}

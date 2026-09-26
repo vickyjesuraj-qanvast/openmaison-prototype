@@ -84,7 +84,7 @@
   "module": "Shell",
   "try": "See the tools the studio can use",
   "how": "1. Click \"Tools\" in the side navigation\n2. Read the tiles\n3. Click \"AI Visualizer\"",
-  "expect": "Nine tiles, starting with Quotes, Quote X-Ray and Contracts; \"AI Visualizer\" answers \"Coming soon in OpenMaison 2.0\".",
+  "expect": "Nine tiles, starting with Quotes, Quote X-Ray and Contracts; \"AI Visualizer\" opens the AI Visualizer — Kevin Ng's design and the \"Showroom ideas\" folder (REG-673).",
   "in10": "Same as 1.0",
   "as": "Dane",
   "covers": [

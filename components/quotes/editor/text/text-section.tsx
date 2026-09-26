@@ -73,7 +73,7 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
     pending.current = null
     if (timer.current) { clearTimeout(timer.current); timer.current = null }
     if (v === null) return
-    try { const r = await saveQuoteText(quoteId, kind, v); onSaved(r.updatedAt) } catch { fail(`save the ${label.toLowerCase()}`) }
+    try { const r = await saveQuoteText(quoteId, kind, { html: v }); onSaved(r.updatedAt) } catch { fail(`save the ${label.toLowerCase()}`) }
   }
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
   useEffect(() => () => { void flushRef.current() }, [])

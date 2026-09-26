@@ -1,0 +1,230 @@
+{
+ "done": [
+  {
+   "ids": [
+    "surfaces-12"
+   ],
+   "what": "Sofa Customize paints the whole sofa: the living room's sofa is now `whole` (its traced outline is all of it) with two new Customize-only cutouts (the throw's folded end on the arm, the floor in shade under the arm's corner). New engine pieces: `edgeMatte` (segment.ts) finishes a whole piece's traced line by colour ±3 px (a trace a hair short of the lit base rail still takes it; inside the line a pixel leaves only when plainly the background, outside it joins only when plainly the piece; what a cutout took out never joins back; the band is evened 3×3); every other traced piece fills its outline's firm middle (`insideOf`, grow still decides the edge) so creases, shaded arm ends and sunlit corners never stay in the old colour; recolour decontaminates edge pixels (a mixed pixel takes the new finish in place of the region's own colour and keeps the rest — no grey/pale fringe); Customize and Replace read their light from the untouched photo (`RecolorOpts.light`) so a floor laid in the same Generate that ran onto the sofa's rail never darkens it. Arm end, base rail and cushion creases now emerald in V2.",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-15",
+    "surfaces-7"
+   ],
+   "what": "Armchair: walnut arm rails, posts and legs and the wall seen under the right arm are Customize-only cutouts, and the chair is `whole` — an upholstery colour or a Replace paints the upholstery (seat's lit top edge included), never the wood or the wall. (The mirrored hidden side after a sofa Remove stays engine-remove's.)",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-14"
+   ],
+   "what": "One-click pieces: the grow starts from the click plus the main colour on a small disc around it when that is the click's own colour in another light (`tapSeeds`) — a click in the shade between basil leaves takes the plant (share 0.0001 → 0.0024), the chopping board and the lemons read whole; on a coloured click shade counts at 0.5 with pockets, on a white/grey click the old tight limits stay (a cream vase no longer floods the sill); a piece the click lies inside is never treated as standing in front (a cushion on the sofa); what shows of known pieces (outline minus what stands in front of them) is kept off. pickNeeds now takes the piece and says 'Pick a colour for the … first.' when it has no finish row (model.ts changeList, run.ts and the panel's call updated).",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/model.ts",
+    "components/visualizer/editor/panels/furniture-panel.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-3"
+   ],
+   "what": "Kitchen island: the worktop hull starts at the island's very corner, runs to the overhang lip's underside and stops at the waterfall's top edge; the waterfall end is keyed inside a hull that starts on that edge and takes the lit inner edge — no white corner fleck, no lip or inner-edge sliver under Granite Black.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-16"
+   ],
+   "what": "Charcoal lower cabinets: the drawer run behind the island (under the hob, to the oven column) is in the outline with its own seed; the plinth recess under the back run is a cutout — Sage Laminate no longer leaves charcoal drawers or a pale slab.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-17"
+   ],
+   "what": "Kitchen floor: the hull's line under the island is raised to the island's base (the floor is keyed, so the dark panel stays out) — the herringbone reaches the base, no grey tile strip under the overhang.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-4"
+   ],
+   "what": "Fringes and flecks on dark paint: keyed see-through areas get a rim pass (a pixel beside the keyed wall that is lighter than the leaf toward the wall's light takes that share of the paint) plus the new edge decontamination — fig leaf rims drop from ~+10 L* to ~+4 L* over navy; the vase handle is traced out (kept), the cup retraced to where it stands, and the wall's warm shaded foot along the console top (beside the vase, between the cup and the TV's foot) is keyed by hue against the oak.",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-8"
+   ],
+   "what": "Drawn surfaces: what a see-through piece's outline took out is keyed back additively (no light dashed octagon seam round the fig), and a drawn outline without seeds is keyed with its shading counting little (the speaker's shadow inside a drawn panel is painted, no ragged patch).",
+   "files": [
+    "lib/visualizer/engine/segment.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-5"
+   ],
+   "what": "Style transfer: a sheer curtain takes only a tint (strength ×0.4) so the garden still shows through; soft pieces read light from the untouched photo. Checked in Node with the verifier's board (palette #DDDBD3 · #B7BEB5 · #C7A26B · #6F8C6D · #8B7156 · #2F3C45): variant 1 already lays #8B7156 (the walnut) on the floor — the 'close to Teak Outdoor' in Present is the NAME outputs.ts gives that hex (Teak Outdoor #A0764A is its nearest flooring), not the brass swatch; see crossFileRequests.",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-3",
+    "surfaces-1"
+   ],
+   "what": "(E11) Uploaded photos keep their rough reading and the 'Marked roughly…' note; the reading drops scraps the smoothing cut off from a surface (only parts holding a seed or ≥¼ of the largest part stay) — the detached navy pills along the bedroom's ceiling line and the dots are gone. A looser wall reading (shading at 0.7) was tried and reverted: it reached the headboard wedge but painted the headboard.",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/fallback.ts"
+   ]
+  },
+  {
+   "ids": [
+    "files-17"
+   ],
+   "what": "A whole-room restyle on a photo nobody traced (fallback reading) lays its finishes as a soft wash — regions feathered ~0.8% of the width and laid at 0.7 — so a region that stops short or runs over reads as light, never as torn-paper white blotches on the floor, beams or splashback. Drawn or tapped surfaces keep their edge.",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-20"
+   ],
+   "what": "furniture.ts exports customizeWords(colour, finish) ('Navy' + 'Matte black pot' → 'Navy matte pot'; 'Tan' + 'Black frame' → 'Tan frame'); composeCustomizeDesc drops the finish's own colour word when a colour was picked with it ('Navy Matte pot'); 'Emerald Velvet' (the demo V2, repair R61) is unchanged.",
+   "files": [
+    "lib/visualizer/furniture.ts"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-26",
+    "versions-6"
+   ],
+   "what": "Strip captions / stage chip / change lines (model.ts surfaceWords) name a lone changed Floor, Ceiling or Backsplash by the group word ('V1 · Floor', 'Walls, Ceiling') — never by the label carrying the finish it replaced; other lone surfaces keep their label ('Feature Wall').",
+   "files": [
+    "lib/visualizer/model.ts"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-15"
+   ],
+   "what": "(a) The note caveat: 'Couldn’t find the floor or the walls in this look, so the note’s colours weren’t applied — pick them on the Original instead' (surfaces joined by 'or', 'wall' → 'the walls'); on a plain photo: '… on this photo, so the note’s colours weren’t applied — add it/them in Surfaces first'. (b) is the editor's.",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "desktop-3",
+    "surfaces-1"
+   ],
+   "why": "A plane-following wall/floor reader for untraced busy photos (the lamp-lit wedge above a headboard, the kitchen's backsplash read as Walls, the floor missing the dining area) needs a real segmentation model; colour growing cannot tell a beige headboard from a lamp-lit beige wall. Per E11 the rough reading and its note stay; scraps are gone and a restyle no longer blotches."
+  },
+  {
+   "ids": [
+    "surfaces-7",
+    "surfaces-2",
+    "tablet-9",
+    "surfaces-29"
+   ],
+   "why": "The mirrored armchair's seat patch / arm block / leg stub, the rug seam and the other Remove artefacts are engine-remove's package (mend, mirror, plate). My part of surfaces-7 (the Replace painting the wall under the arm) is done via the armchair cutouts."
+  },
+  {
+   "ids": [
+    "desktop-4",
+    "desktop-8",
+    "desktop-15"
+   ],
+   "why": "Reference-colour names ('close to Linen' on a worktop, the moodboard grouping) are decided in lib/visualizer/outputs.ts (server) and dialogs (canvas); the engine records one hex per surface by role (worktops, waterfall and splashback all take roles.stone). See crossFileRequests."
+  },
+  {
+   "ids": [
+    "phone-11"
+   ],
+   "why": "Already handled by the rail package in rail.module.css (the waiting line takes its own line, whole); no model.ts change needed."
+  },
+  {
+   "ids": [
+    "surfaces-14"
+   ],
+   "why": "Partly: two similar-coloured pieces side by side (a beige cushion against a grey one on the sofa) still bleed into each other on a one-click read — colour alone can't part them; the editor's found-outline check / 'draw round it' is the fallback."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "lib/visualizer/outputs.ts",
+   "change": "nearestFinish: when naming a reference colour for an indoor surface, skip catalogue items whose tags include 'outdoor' (the transfer's walnut floor #8B7156 currently reads 'close to Teak Outdoor' — decking); and make a surface whose surfaceGroupFor is Countertops / Backsplash (e.g. 'quartz island waterfall end', 'marble backsplash') look through the countertop and stone kinds before paints, so one worktop hex never reads 'close to Linen'.",
+   "ids": [
+    "surfaces-5",
+    "desktop-8",
+    "desktop-4",
+    "desktop-15"
+   ]
+  },
+  {
+   "file": "components/visualizer/editor/panels/furniture-panel.tsx",
+   "change": "Optional: import `customizeWords` from '@/lib/visualizer/furniture' in place of the panel's local copy (same rule). I already changed the panel's pickNeeds call to `pickNeeds(p, f)` (new signature takes the piece).",
+   "ids": [
+    "surfaces-20",
+    "surfaces-14"
+   ]
+  },
+  {
+   "file": "public/visualizer/demo/living-room-edit.jpg (+ -golden-hour, swatches)",
+   "change": "engine-remove: re-render the demo after this report (scripts/viz/demo-renders.mts) — V2's sofa Customize changes (whole sofa emerald, arm end / base rail / creases no longer grey) and every recolour edge is now decontaminated; then npm run db:baseline per the brief's owner.",
+   "ids": [
+    "surfaces-12"
+   ]
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn (wave E, surfaces-12) Customize paints a traced piece's whole outline: the sofa is `whole` (arm end, base rail and cushion creases take the colour — Kevin Ng's V2 re-rendered), the line is finished by colour a few pixels either side, edge pixels take the new finish in place of the old colour (no grey or pale fringe), and a piece reads its light from the untouched photo — bug fix",
+  "REG-nnn (wave E, surfaces-15 · surfaces-7) The armchair's walnut arms and legs and the wall under its arm stay as they are under an upholstery Customize or a Replace; its seat's lit edge is painted — bug fix",
+  "REG-nnn (wave E, surfaces-14) A piece marked with one click grows from the click and its own colour around it (a plant's leaves, a chopping board, a bowl of lemons) instead of a speck; a white or grey click keeps tight limits; the rail says 'Pick a colour for the … first.' when the piece has no finish row — bug fix",
+  "REG-nnn (wave E, surfaces-3 · surfaces-16 · surfaces-17) Kitchen outlines retraced: island top to its corner and lip, waterfall inner edge, the drawer run behind the island, the plinth left out, the floor up to the island's base — bug fix",
+  "REG-nnn (wave E, surfaces-4 · surfaces-8) Fringes: fig leaf rims, the console-top flecks and the drawn panel's octagon seam are gone; the vase handle is kept; a drawn panel paints the shade a speaker casts — bug fix",
+  "REG-nnn (wave E, surfaces-5) Style transfer leaves a sheer curtain sheer (a tint, the garden shows through) — bug fix",
+  "REG-nnn (wave E, desktop-3 · surfaces-1 · files-17) Uploaded photos keep their rough reading (E11) without detached scraps; a whole-room restyle on one lays a soft wash instead of blotches — bug fix",
+  "REG-nnn (wave E, surfaces-20) Customize words drop a finish's own colour word beside a picked colour ('Navy matte pot', never 'Navy matte black pot') — bug fix",
+  "REG-nnn (wave E, surfaces-26 · versions-6) Version captions name a changed floor, ceiling or splashback by its word ('V1 · Floor'), never by the finish it replaced — bug fix",
+  "REG-nnn (wave E, tablet-15) Note caveat reads 'Couldn’t find the floor or the walls in this look, so the note’s colours weren’t applied — pick them on the Original instead' (and '… on this photo … — add it in Surfaces first') — invented copy"
+ ],
+ "verification": "npx tsc --noEmit -p . clean; npx eslint on lib/visualizer/engine, samples.ts, furniture.ts, model.ts, panels/furniture-panel.tsx clean; scripts/viz/render-test.mts all checks pass (F179 · F181 · D3 fig pot/TV screen · F193 seam 1.1). Scratch harnesses (waveE/engine-paint/*.mts, Node IO as demo-renders) rendered and I looked at every output at full size and zoomed 2–40×: sofa Customize Emerald alone and in V2 (before/after out/final-v2-vs-demo.png), every piece of all three rooms customized navy (out/p2-sheet-*.png, p3-sheet-bedroom.png), armchair Mustard + Replace + sofa-Remove/armchair-Replace (a4-arm.png, arm-replace-z.png, v25-z.png), one-click basil / vases / board / lemons / cushion (basil2-*, vase3-*, st-taps.png, cush6-*), kitchen worktops Granite Black (zk-top7.png), lower cabinets Sage Laminate (k-cab2-z.png), floor Oak Herringbone (zk-floor6.png), living-room back wall Navy (fig rims zl-leaf3.png, console top zl-cup5.png, 2× zl-console2x.png), drawn Fig Wall Panel (drawn1-z.png), bedroom/kitchen walls navy (bd-navy-z.png, kt-navy.jpg), transfer with the UAT mood board on living room and kitchen (tr1-v1.jpg), uploads (bedroom, filed kitchen render, busy kitchen, Sophia) regions / navy / Scandinavian restyle (g-u2.jpg, fb-*.jpg), and regions.mts for all rooms (reg/regions-*.jpg). Pictures in /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/engine-paint/out.",
+ "checkOnBuild": [
+  "The demo V2 CHANGES (Kevin Ng's favourite, the sofa Customize): engine-remove must re-render public/visualizer/demo/living-room-edit.jpg (+ golden-hour) and the baseline after this; on the build check V2's sofa is emerald end to end (arm end under the throw, the base rail, the cushion creases) with no emerald on the throw, the pillows or the floor under the arm.",
+  "Living room › Grey Fabric Sofa / Upholstered Armchair › Customize: the highlight (regionOverlay) now covers the whole sofa and the armchair without its walnut arms; Mustard on the armchair leaves arms, legs and the wall under the right arm alone.",
+  "Kitchen › Furniture › + › a plant/board by one click › Customize › Navy: the whole plant (not a blotch); the rail's reason for a piece with no finish row reads 'Pick a colour for the … first.'",
+  "Kitchen: Granite Black worktops (no corner fleck, no lip/inner-edge sliver), Sage Laminate lower cabinets (drawers behind the island sage, plinth dark), Oak Herringbone floor (reaches the island base).",
+  "Living room › Walls → Navy at 4×: fig leaf rims, the vase handle kept, the cup and the console-top line; Draw a surface round the fig → Navy: no octagon seam, no patch by the speaker.",
+  "Upload a photo (e.g. a filed render) › Style › Scandinavian: a soft wash, no white blotches; Walls → Navy on an uploaded bedroom: no detached pills at the ceiling line (the rough reading and its note stay — E11).",
+  "Strip / chip captions after Floor → Walnut read 'V1 · Floor'; a note naming the floor on a whole-room look shows the new caveat wording."
+ ]
+}

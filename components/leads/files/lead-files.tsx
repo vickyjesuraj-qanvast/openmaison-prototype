@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { readFrom, withFrom } from '@/lib/nav'
+import { openLeadDesign } from '@/app/visualizer/actions'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
@@ -10,6 +11,7 @@ import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { childrenOf, folderPath, groupByDay, isFolder, searchFiles, type FileRow } from '@/lib/leads/file-model'
 import type { LeadFilesData } from '@/lib/leads/files'
 import { downloadBlob } from '@/lib/leads/export'
+import { uploadablePicture } from './upload-picture'
 import {
   createFolder, deleteFilesForever, duplicateFiles, emptyFileTrash, moveFiles, renameFile, restoreFiles, trashFiles, uploadFile,
 } from '@/app/leads/files-actions'
@@ -25,6 +27,7 @@ import { Button } from '@/components/ds'
 import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
 import { UploadToast } from './upload-toast'
+import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -34,7 +37,7 @@ import styles from './lead-files.module.css'
 /** Folder card kebab (931:40130): Open · Move · Rename · Delete. */
 type FolderMenuAction = 'open' | 'move' | 'rename' | 'delete'
 /** File tile kebab (931:40131): Open · Move · Duplicate · Download · Rename · Delete. */
-type FileMenuAction = FolderMenuAction | 'duplicate' | 'download'
+type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize'
 
 type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
 /**
@@ -43,7 +46,7 @@ type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
  * (the quotes twin guards the same beat with `count={deleting?.length ?? 1}`).
  */
 type Shown<T> = { payload: T; open: boolean }
-type UploadToastState = { name: string; state: 'uploading' | 'done' }
+type UploadToastState = { name: string; state: 'uploading' | 'done' | 'failed'; thumb: string | null }
 
 /** How long the simulated upload takes before the toast row shows the green check (= tasks attach-files modal). */
 const UPLOAD_MS = 1400
@@ -58,8 +61,13 @@ const UPLOAD_MS = 1400
  * attach-files modal's toast timer. Actions run through the tabs' shared `useRun` (files-actions revalidates this route).
  * Plan: design-source/context/lead-files/00-build-plan.md · specs 01–04.
  */
+/** (audit 2026-09-26, round 3) A picture redrawn as a JPEG (too big, or a GIF / BMP) lands under a .jpg name — its Information, Download and the
+    grid's Download then agree ("sofa.png" held JPEG bytes and downloaded as "sofa.png.jpg"). */
+const landedName = (name: string, img: string | null) =>
+  img?.startsWith('data:image/jpeg') && !/\.jpe?g$/i.test(name) ? `${name.replace(/\.[a-z0-9]{2,5}$/i, '')}.jpg` : name
+
 export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesData }) {
-  const { files, trashed } = data
+  const { files, trashed, renders } = data
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -84,6 +92,16 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   /* The comment chip (grid tile + list row) opens the viewer with its comments panel already open —
      the Tasks title-cell chip's interaction (REG-253, user 2026-09-01). */
   const openComments = (f: FileRow) => router.push(withFrom(`${rootHref}/${f.id}?panel=comments`, here))
+  /* (REG-675, AI Visualizer Q-31) A photo of the room opens in the lead's design as a room of its own (the editor adds it once).
+     (F095) A render filed from the Visualizer opens its own version instead — never a new room made of the render. */
+  const labelFor = (f: FileRow) => visualizeLabel(f, renders)
+  const openInVisualizer = async (f: FileRow) => {
+    const o = liveOrigin(renders[f.id])   // a render whose design was deleted forever opens as a plain picture
+    if (o) { router.push(withFrom(renderHref(o), here)); return }
+    const r = await openLeadDesign(leadId).catch(() => ({ error: 'Couldn’t open the AI Visualizer — please try again' }))
+    if ('error' in r) { snackbar({ message: r.error }); return }
+    router.push(withFrom(`/visualizer/${r.id}?file=${f.id}`, here))
+  }
 
   /* ── list state ── */
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -129,28 +147,44 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const [toast, setToast] = useState<UploadToastState | null>(null)
   const [toastCollapsed, setToastCollapsed] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  /* (F113) The toast shows the picked picture itself (an object URL, released when the toast goes or the next file replaces it). */
+  const thumbUrl = useRef<string | null>(null)
+  const releaseThumb = () => { if (thumbUrl.current) URL.revokeObjectURL(thumbUrl.current); thumbUrl.current = null }
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); if (thumbUrl.current) URL.revokeObjectURL(thumbUrl.current) }, [])
 
   const nameOf = (id: string) => files.find((f) => f.id === id)?.name ?? trashed.find((f) => f.id === id)?.name ?? ''
   const rowsOf = (ids: string[]) => ids.map((id) => files.find((f) => f.id === id)).filter((f): f is FileRow => !!f)
 
   const pickFiles = () => picker.current?.click()
-  const onPicked = (file: File | undefined) => {
-    if (!file) return
+  /* (audit 2026-09-26, F205) The file being uploaded stays at hand, so a failed row's Retry sends it again. */
+  const uploading = useRef<{ file: File; parentId: string | null } | null>(null)
+  const send = (file: File, parentId: string | null) => {
     if (timer.current) clearTimeout(timer.current)
-    setToast({ name: file.name, state: 'uploading' })
-    setToastCollapsed(false)
-    const parentId = currentId
+    setToast((t) => (t ? { ...t, state: 'uploading' } : t))
+    /* (REG-684) the picture itself — (F203) a GIF / BMP the browser can draw arrives as PNG / JPEG, so its real picture is kept;
+       (F205) one past the request's limit is redrawn smaller as a JPEG rather than failing on the server */
+    const picture = file.type.startsWith('image/') ? uploadablePicture(file) : Promise.resolve(null)
     timer.current = setTimeout(() => {
       timer.current = null
       // The name the toast just showed is the name that lands (= the Return Lead wizard's call); dropping it left every
       // upload named "Living Room" — the action's default — a beat after the real name was on screen.
-      void uploadFile(leadId, parentId, file.name).then(
-        () => { setToast((t) => (t ? { ...t, state: 'done' } : t)); snackbar({ message: 'File uploaded' }) },
-        () => fail('upload the file'),
+      void picture.then((img) => uploadFile(leadId, { parentId, name: landedName(file.name, img), image: img })).then(
+        () => { if (uploading.current?.file !== file) return; setToast((t) => (t ? { ...t, state: 'done' } : t)); snackbar({ message: 'File uploaded' }) },
+        /* (F205) A refused upload no longer leaves the row spinning "Uploading…" for good: it reads Failed, with Retry. */
+        () => { if (uploading.current?.file !== file) return; setToast((t) => (t ? { ...t, state: 'failed' } : t)); fail(`upload ${file.name}`) },
       )
     }, UPLOAD_MS)
   }
+  const onPicked = (file: File | undefined) => {
+    if (!file) return
+    releaseThumb()
+    if (file.type.startsWith('image/')) { try { thumbUrl.current = URL.createObjectURL(file) } catch { thumbUrl.current = null } }
+    setToast({ name: file.name, state: 'uploading', thumb: thumbUrl.current })
+    setToastCollapsed(false)
+    uploading.current = { file, parentId: currentId }
+    send(file, currentId)
+  }
+  const retryUpload = () => { const u = uploading.current; if (u) send(u.file, u.parentId) }
   // Parity with the other tabs' window events (om:tasks:add / om:quotes:new): a future quick link raises `om:files:upload` here.
   useCreateIntent({ event: CREATE_EVENTS.files, onIntent: pickFiles })
 
@@ -184,6 +218,7 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
     else if (action === 'rename') openName({ mode: 'rename', target: f })
     else if (action === 'delete') openTrash([f.id])
     else if (action === 'duplicate') duplicate([f.id])
+    else if (action === 'visualize') void openInVisualizer(f)
     else download(f)
   }
 
@@ -218,14 +253,14 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
           folders={folders} groups={groups}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace}
+          onFolderMenu={itemMenu} onFileMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor}
         />
       ) : (
         <FilesTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder}
           rows={visible}
           selected={selected} onSelect={setSelected}
           onOpenFolder={openFolder} onOpenFile={openFile} onOpenComments={openComments}
-          onRowMenu={itemMenu} placeOf={hitPlace}
+          onRowMenu={itemMenu} placeOf={hitPlace} visualizeLabel={labelFor}
         />
       )}
       {/* Hidden picker behind New File › From Local Files and the empty state's Upload Files (REG-149: any file works). */}
@@ -293,7 +328,8 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
       <UploadToast
         toast={toast} collapsed={toastCollapsed}
         onToggle={() => setToastCollapsed((c) => !c)}
-        onClose={() => setToast(null)}
+        onClose={() => { setToast(null); releaseThumb() }}
+        onRetry={retryUpload}
       />
     </div>
   )

@@ -1,0 +1,73 @@
+{
+  "done": [
+    {
+      "ref": "F205 (Files half) · new:code-robustness:failed upload leaves the toast spinning",
+      "what": "Lead › Files upload: a picture whose data URL runs past 8M characters (~6 MB, under the 12 MB action body) is redrawn as a JPEG over white at 2000 / 1600 / 1200 px before it is sent (uploadablePicture), so a 9.9 MB PNG no longer gets a server 500. A refused upload no longer spins 'Uploading…' for good: the row reads 'Failed' with a red refresh Retry (the attach-files twin's row), which sends the same file again, and the snackbar says 'Couldn’t upload <name> — please try again'. [interrupted agent; checked]",
+      "files": ["components/leads/files/upload-picture.ts", "components/leads/files/lead-files.tsx", "components/leads/files/upload-toast.tsx", "components/leads/files/upload-toast.module.css"]
+    },
+    {
+      "ref": "F129 · F204 (2)",
+      "what": "useRun reports refusals with their reason. An action that answers { error: '…' } used to show the success snackbar. Now it fails as 'Couldn’t <what> — <reason>' and run() resolves false. A reason that already names the failure ('Couldn’t …', 'Nothing was deleted — …') is shown as the whole line. A thrown client-side rule passes through. A redacted production server throw, a network error or a code such as 'too-large' still reads '— please try again'. refusalOf / couldnt are exported. Node check on 8 cases. [interrupted agent; I refined couldnt]",
+      "files": ["components/leads/tasks/use-run.ts"]
+    },
+    {
+      "ref": "D8 · new:fresh-tablet:Tasks table 150px empty column on touch tablets",
+      "what": "The REG-310 end band now has order: 9999, so it sits at the row's end, not between the checkbox and Title. At ≤767 it is dropped, because the phone list places its own kebab. Only the Tasks table (lead tab and /tasks) lays out with flex order. The leads listing's cells follow DOM order, and Quotes and Contracts put the band as their last grid track, so neither is affected. [interrupted agent; verified]",
+      "files": ["components/leads/tasks/tasks-table.module.css"]
+    },
+    {
+      "ref": "new:leads:studio Tasks phone card ring above the title (found checking D8)",
+      "what": "On a touch phone the /tasks card's title button takes its 44px target (REG-273), which puts the title line 35px down the row. The ring and checkbox were still pinned at the mouse's 22px, 12px above the title. They now sit at 34px, on the title line. The lead tab's two-line card, where the ring is centred on the pair, is unchanged.",
+      "files": ["components/leads/tasks/tasks-table.module.css"]
+    },
+    {
+      "ref": "new:fresh-phone:Kind sheet doesn't show the current choice",
+      "what": "A checked radio or checkbox DropdownItem whose label is plain text now shows the DS menu item's Selected state: the primary/variant fill in `.item[data-selected]`, the same look as the current stage in the mocked All Leads pill (780:93630). The interrupted agent had added an invented check glyph with primary text; I replaced it with the DS state. Rows that draw their own mark (radio glyph, 'current' tag) are unchanged. Where it shows: every LibraryGallery scope pill, the Tasks scope chip, the Tasks lead picker, the Items unit and option menus, and the discount % / S$ menus.",
+      "files": ["components/leads/dropdown.tsx", "components/leads/menus.module.css"]
+    },
+    {
+      "ref": "new:phone-tablet:File viewer ⋯ sheet Download row indented 12px",
+      "what": "At ≤767 (useSheetLayout) Download is now a direct row of the sheet, so it gets the sheet's 16px gutter. Before, it was wrapped in a display: contents span that missed `.menuBody > button`. The `.mobileItem` rules are gone. [interrupted agent]",
+      "files": ["components/leads/files/file-viewer.tsx", "components/leads/files/file-viewer.module.css"]
+    },
+    {
+      "ref": "D7 · new:fresh-phone:a lead has no way into its AI Visualizer design on a phone",
+      "what": "At ≤767 the lead's kebab sheet (on Overview and every tab frame) offers 'AI Visualizer' after Edit. It uses the same openVisualizer as the quick link: it opens or makes the lead's design, and ?from= returns to the tab as it stood. The Create quick links strip is hidden at that width. [interrupted agent]",
+      "files": ["app/leads/[id]/overview.tsx"]
+    },
+    {
+      "ref": "new:files-client:Delete forever leaves the render's From link and Open in AI Visualizer on a 404",
+      "what": "A filed render whose design was deleted for good (the server's RenderOrigin.designLive false) is treated as a plain picture again. Its menu reads 'Open in AI Visualizer' and opens it as a room of the lead's current design through ?file=. Information › From is plain text, 'AI Visualizer · V1 · design deleted', not a link. designGone now reads the server's designLive; the interrupted agent's version guessed from the room row. [interrupted agent; I switched it to designLive]",
+      "files": ["components/leads/files/render-origin.ts", "components/leads/files/lead-files.tsx", "components/leads/files/file-viewer.tsx", "components/leads/files/file-info-panel.tsx"]
+    }
+  ],
+  "notDone": [
+    { "ref": "new:editor-visual:Maison AI sheet opens at the house corner", "why": "Fixed in the editor package: .aiAnchor in editor.module.css plus the wrapper in visualizer-editor.tsx. The interrupted agent had added an `anchored` option to AiSheet that nothing used, so I removed it; ai-sheet.* now match HEAD. One small editor-side gap remains (see crossFileRequests): a second press on the FAB doesn't close the sheet." },
+    { "ref": "new:phone-tablet:320 wordmark under Search · new:gallery-materials:same · new:fresh-phone:same", "why": "The fix belongs in components/shell/mobile-nav.module.css. My brief allows mobile-nav.* only for a lead's way into its design, so the exact change is in crossFileRequests." },
+    { "ref": "F204 (1)(3)(4)(5)", "why": "Not in my files: visualizer-home restoreBlock / purgeBlock, the editor's deleted note, the Materials Deleted sheet and restorePin's words. My part, (2) useRun dropping the reason, is done. Surfacing the reason needs the server to answer { error } rather than throw, because production redacts thrown messages." },
+    { "ref": "F129 (Empty Trash / many-id Delete Forever report success)", "why": "Server and gallery: emptyDesignTrash and emptyMaterialTrash have to return { error } or the refused count. Once they answer { error }, run() already reports it as a failure with the reason." },
+    { "ref": "critic-21", "why": "The remaining work is F166 / F167, in the skeletons and the share page, plus a re-run. For the throttled re-run: the lead's quick link and phone kebab item wait for the openLeadDesign round trip before router.push, with no feedback in between. Making it navigate at once needs the lead's design id on LeadDetail (lib/leads/detail.ts, not my package)." },
+    { "ref": "new:fresh-desktop:Dane promised but never told · D2", "why": "Server side (app/renders/actions.ts). The bell renders whatever notification rows exist, so notifications-panel needs no change." },
+    { "ref": "new:files-client:'Client / Client' pin · new:fresh-phone:'Your client' vs 'Client'", "why": "app/renders/actions.ts and pin-card.tsx belong to the share and canvas packages." },
+    { "ref": "new:files-client:'Design n' names", "why": "Server and share packages (lib/visualizer/outputs.ts, lib/leads/activity.ts)." },
+    { "ref": "F156 · new:fresh-tablet:editor ghost at 1024", "why": "Editor package files." },
+    { "ref": "D4", "why": "Nothing in my package names a room from a file. Files hands ?file= to the editor, and the editor names the room." }
+  ],
+  "crossFileRequests": [
+    { "file": "components/shell/mobile-nav.module.css", "ref": "new:phone-tablet:320 wordmark · new:gallery-materials:320 wordmark · new:fresh-phone:320 wordmark", "change": "After `.wordmark { height: 16px; display: block; }` add: `/* (audit 2026-09-26) A 320 screen: 16 + 32 + 8 + 99 + 12 + 156 + 16 = 339 ran the wordmark under Search; at 12 tall (74 wide) the bar is 314. */ @media (max-width: 359px) { .wordmark { height: 12px; } }`. The SVG is 109.572×17.758, so it is ~74px wide at 12 tall. The bar's 44px touch boxes and the 16px icon gap are unchanged." },
+    { "file": "components/visualizer/editor/visualizer-editor.tsx", "ref": "new:editor-visual:Maison AI sheet (REG-153 toggle)", "change": "Pass the FAB as the sheet's anchor, as quote-editor.tsx:608 does (sweep S2 #30): `const fabRef = useRef<HTMLSpanElement>(null)`, wrap `<MaisonFab className={styles.fab} …/>` in `<span ref={fabRef} style={{ display: 'contents' }}>…</span>` and add `anchorRef={fabRef}` to `<AiSheet …>`. Checked on :3021: the sheet is still open after a second press on the FAB, because the sheet's outside-press closes it and the FAB's toggle reopens it at once." },
+    { "file": "lib/visualizer/queries.ts", "ref": "new:files-client:Delete forever 404", "change": "Keep `RenderOrigin.designLive` (added this wave): components/leads/files/render-origin.ts `designGone` reads it now. Nothing to change, only don't remove or rename it." }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "Lead › Files · upload (F205, new:code-robustness:failed upload toast): a picture too large for the request is redrawn smaller as a JPEG on white before it is sent; a refused upload's row reads Failed with a Retry (the attach-files twin's row) instead of spinning 'Uploading…' for good. — bug fix",
+    "House action runner useRun (F129 · F204): an action that refuses with { error } no longer shows its success line. The snackbar now reads 'Couldn’t <what> — <the rule>', built from the server's own words, and falls back to '— please try again' when there is no readable reason. This applies on every Lead Details tab, the Company galleries, the quote editor sections and the AI Visualizer landing. — bug fix",
+    "Tasks table on touch tablets (D8, new:fresh-tablet:150px band): the always-on actions' 150px end band sits at the row's end, not between the checkbox and Title (lead tab and /tasks); the leads listing, Quotes and Contracts tables were not affected. — bug fix",
+    "Tasks in the rail on a phone (found checking D8): the card's ring and checkbox sit on the title line again (they were 12px above it on a touch phone). — bug fix",
+    "Menus (new:fresh-phone:Kind sheet): a plain radio / checkbox row's current value wears the DS menu item's Selected state (primary/variant fill, as the All Leads pill's current stage, 780:93630) — every library scope pill, the Tasks scope chip and lead picker, the Items unit / option menus, the discount % / S$ menus. — bug fix (DS state)",
+    "File viewer on a phone (new:phone-tablet:Download row): Download is a row of the ⋯ sheet on the sheet's 16px gutter (was 12). — bug fix",
+    "Lead Details on a phone (D7, new:fresh-phone:no way into the design): the lead's ⋯ sheet offers 'AI Visualizer' (the quick link's label and action; Back returns to the tab), shown ≤767 where the quick links are hidden. — user-directed (owner call D7)",
+    "Lead › Files (new:files-client:Delete forever 404): a render whose design was deleted for good is a plain picture again — Information's From reads 'AI Visualizer · V1 · design deleted' as text, and Open in AI Visualizer opens it as a room of the lead's design. — bug fix; invented copy 'design deleted'"
+  ],
+  "verification": "npx tsc --noEmit -p . exit 0 (whole project). npx eslint on dropdown.tsx, use-run.ts, components/leads/files/, quick-links.tsx, ai-sheet.tsx, app/leads/[id]/overview.tsx, notifications-panel.tsx and tasks-table.tsx: clean. Icons used (refresh, progress_activity, check_circle) are all in ICONS.txt. Playwright, read-only, against the pre-wave-D build on :3021, with my CSS injected or the attribute set in the DOM: (1) Tasks band at 1024×768 and 768×1024 touch: the head's Title cell moved from x299 to x149, so the gap is gone. 1440 mouse unchanged, 390 unchanged, /leads listing unaffected. (2) /tasks card at 390 touch: checkbox and ring centre went 23→35, the title line's 35. (3) data-selected on the checked row: the Kind sheet at 390 and the Tasks scope menu at 1440 both show the primary/variant fill (screenshots in resume/leads/kind-*.png, band-*.png, ring-fixed.png). (4) Editor FAB: the sheet is still open after a second press, confirming the crossFileRequest. The couldnt / refusalOf lines were checked in node on 8 cases. Not exercised live, because they are React changes and the running builds predate wave D: the upload's Failed / Retry row and big-PNG redraw, the phone kebab's AI Visualizer item, the file viewer's sheet Download row, and the deleted-design From line. Recheck these on the next build."
+}

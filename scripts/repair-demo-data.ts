@@ -20,6 +20,17 @@ import { DEFAULT_BRAND_SETTING, parseBrandSetting } from '../lib/templates/brand
 import { snapshotColumns, type ContractLead, type ContractQuote } from '../lib/contracts/snapshot'
 import type { Contract } from '../lib/db/schema'
 import { DEMO_BADGES } from '../lib/templates/assets'
+import { sampleByKey } from '../lib/visualizer/samples'
+import { changeLines, descriptor, NO_FINISHES, ORIGINAL, readPending, sampleDetection, versionKey, type Applied, type Finishes, type Variant } from '../lib/visualizer/model'
+import { catalogueItem } from '../lib/visualizer/catalogue'
+import { fromCatalogue } from '../lib/visualizer/materials'
+import { composeCustomizeDesc } from '../lib/visualizer/furniture'
+import { presetById } from '../lib/visualizer/lighting'
+import { titleCaseLabel } from '../lib/visualizer/surfaces'
+import { DEMO_EDIT } from '../lib/visualizer/demo'
+import { dataUrlBytes, isDataImage, liftPictures, parseAssets, renderAddress } from '../lib/visualizer/picture-store'
+import { statSync } from 'node:fs'
+import path from 'node:path'
 
 /**
  * Makes the demo data say what the UI shows (REG-343). Idempotent: every inserted row carries a deterministic id
@@ -1384,14 +1395,272 @@ async function main() {
     console.log(r.rowsAffected ? '  Hui Min added as Admin' : '  already there')
   }
 
+  /* ── R61 · the AI Visualizer's demo (REG-673…677, owner 2026-09-25: build 1.0's AI Visualizer in 2.0) ──────────────────────────────
+     Kevin Ng (Met, a landed semi-D) gets the studio's design: his three site photos filed in Files › Site photos become its rooms; the
+     living room carries a Japandi restyle, the edit the demo's pictures were painted from (DEMO_EDIT: sage walls, walnut floor, the sofa in
+     emerald velvet) and its golden-hour relight; the bedroom a golden-hour relight, the kitchen a Scandinavian restyle — each version with
+     what it applied and what the room now shows, by the members on the lead. A studio pin on the edit. Two days before the run the edit,
+     its relight and the bedroom went to Kevin on WhatsApp — the link open for seven days, filed in his Files › Renders as sharing does;
+     a day later he opened it three times, picked the edit as his favourite, left a note and pinned a question the studio answered, and
+     the lead's members were notified. A personal "Showroom — kitchen concept" (the kitchen sketch rendered Japandi) sits in the AI
+     Visualizer's "Showroom ideas" folder; four studio materials (two with swatch photos, two quoted from the Price book) in Company ›
+     Materials, one filed in "Floors". Written once, by fixed ids; a studio's own later work on them stands. */
+  console.log('\nR61 the AI Visualizer demo')
+  {
+    const kevin = byName.get('Kevin Ng')
+    const met = kevin ? rows<{ created_at: number }>(await client.execute({ sql: `SELECT created_at FROM stage_logs WHERE lead_id = ? AND to_stage = 'Met' ORDER BY created_at DESC LIMIT 1`, args: [kevin.id] }))[0]?.created_at : undefined
+    const leadMembers = kevin ? rows<{ member_id: string }>(await client.execute({ sql: `SELECT member_id FROM lead_assignees WHERE lead_id = ?`, args: [kevin.id] })).map((r) => r.member_id) : []
+    if (!kevin || kevin.deleted_at !== null || met === undefined) console.log('  Kevin Ng or his Met log missing — skipped')
+    else {
+      const leadId = kevin.id, M = Number(met)
+      const designId = sid(leadId, 'viz-design')
+      const t0 = M + 26 * H   // the day after the meeting
+      const made = await client.execute({ sql: `INSERT OR IGNORE INTO visualizer_designs (id, kind, lead_id, name, folder_id, custom_json, created_by, created_at, updated_at, deleted_at, deleted_by) VALUES (?, 'lead', ?, ?, NULL, NULL, 'dane', ?, ?, NULL, NULL)`, args: [designId, leadId, kevin.name, t0, t0 + 70 * 60] })
+      if (!made.rowsAffected) console.log('  Kevin Ng’s design already there')
+      else {
+        /* his site photos, filed where a studio keeps them */
+        const photosFolder = sid(leadId, 'files-site-photos')
+        await client.execute({ sql: `INSERT OR IGNORE INTO lead_files (id, lead_id, kind, name, thumb, created_at, parent_id, owner_id, size_bytes, mime, updated_at) VALUES (?, ?, 'folder', 'Site photos', NULL, ?, NULL, 'dane', NULL, NULL, ?)`, args: [photosFolder, leadId, M + 20 * H, M + 20 * H] })
+        const plan = [
+          { key: 'living-room', name: 'Living room', by: 'dane' },
+          { key: 'bedroom', name: 'Master bedroom', by: 'michelle' },
+          { key: 'kitchen', name: 'Kitchen', by: 'michelle' },
+        ]
+        const roomId: Record<string, string> = {}
+        for (const [i, r] of plan.entries()) {
+          const sample = sampleByKey(r.key)!
+          const fileId = sid(leadId, `files-site-${r.key}`)
+          await client.execute({ sql: `INSERT OR IGNORE INTO lead_files (id, lead_id, kind, name, thumb, created_at, parent_id, owner_id, size_bytes, mime, updated_at) VALUES (?, ?, 'image', ?, ?, ?, ?, 'dane', ?, 'image/jpeg', ?)`, args: [fileId, leadId, `${r.name}.jpg`, sample.original, M + 20 * H + (i + 1) * 60, photosFolder, 180_000 + i * 12_000, M + 20 * H + (i + 1) * 60] })
+          roomId[r.key] = sid(leadId, `viz-room-${r.key}`)
+          await client.execute({ sql: `INSERT OR IGNORE INTO project_rooms (id, design_id, lead_id, project_id, name, original_image_url, sample_key, source_file_id, detection_json, state_json, position, created_by, created_at, updated_at) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+            args: [roomId[r.key]!, designId, leadId, r.name, sample.original, sample.key, fileId, JSON.stringify(sampleDetection(sample)), i, r.by, t0 + i * 120, t0 + i * 120] })
+        }
+        /* the versions: each what it applied, what the room shows after it, and where it came from */
+        const blank = (kind: Applied['kind']): Applied => ({ kind, surfaces: [], furniture: [], style: null, lighting: null, note: null, palette: null, scope: null })
+        const restyled = (style: string): Finishes => ({ ...NO_FINISHES, surfaces: {}, removed: [], customized: {}, reshaped: true, style })
+        const lr = sampleByKey('living-room')!
+        const sIdx = (label: string) => `living-room-s${lr.surfaces.findIndex((x) => x.label === label)}`
+        const fIdx = (label: string) => `living-room-f${lr.furniture.findIndex((x) => x.label === label)}`
+        const edit: Applied = { ...blank('edit'), surfaces: DEMO_EDIT.surfaces.map((x) => { const c = catalogueItem(x.material)!; return { id: sIdx(x.label), label: x.label, materialId: c.id, name: c.name } }), furniture: DEMO_EDIT.furniture.map((x) => ({ id: fIdx(x.label), label: x.label, action: 'customize' as const, desc: composeCustomizeDesc(x.pick) || 'Customized' })) }
+        const editFin: Finishes = { ...NO_FINISHES, surfaces: Object.fromEntries(DEMO_EDIT.surfaces.map((x) => { const m = fromCatalogue(catalogueItem(x.material)!); return [sIdx(x.label), { materialId: m.id, name: m.name, hex: m.hex, finish: m.finish }] })), removed: [], customized: Object.fromEntries(edit.furniture.map((f) => [f.id, f.desc])) }
+        const golden = presetById(DEMO_EDIT.relit.preset)!.label
+        type Job = { id: string; room: string; kind: Applied['kind']; by: string; at: number; image: string; parent: string; applied: Applied; finishes: Finishes; n: number }
+        const J = (room: string, tag: string) => sid(leadId, `viz-job-${room}-${tag}`)
+        const jobs: Job[] = [
+          { id: J('living-room', 'japandi'), room: 'living-room', kind: 'restyle', by: 'dane', at: t0 + 10 * 60, image: lr.looks.Japandi!, parent: ORIGINAL, applied: { ...blank('restyle'), style: 'Japandi' }, finishes: restyled('Japandi'), n: 1 },
+          { id: J('living-room', 'edit'), room: 'living-room', kind: 'edit', by: 'dane', at: t0 + 25 * 60, image: DEMO_EDIT.image, parent: ORIGINAL, applied: edit, finishes: editFin, n: 2 },
+          { id: J('living-room', 'golden'), room: 'living-room', kind: 'relight', by: 'dane', at: t0 + 40 * 60, image: DEMO_EDIT.relit.image, parent: versionKey(J('living-room', 'edit'), 1), applied: { ...blank('relight'), lighting: golden }, finishes: { ...editFin, lighting: golden }, n: 3 },
+          { id: J('bedroom', 'golden'), room: 'bedroom', kind: 'relight', by: 'michelle', at: t0 + 55 * 60, image: sampleByKey('bedroom')!.relit!['golden-hour']!, parent: ORIGINAL, applied: { ...blank('relight'), lighting: golden }, finishes: { ...NO_FINISHES, lighting: golden }, n: 1 },
+          { id: J('kitchen', 'scandinavian'), room: 'kitchen', kind: 'restyle', by: 'michelle', at: t0 + 70 * 60, image: sampleByKey('kitchen')!.looks.Scandinavian!, parent: ORIGINAL, applied: { ...blank('restyle'), style: 'Scandinavian' }, finishes: restyled('Scandinavian'), n: 1 },
+        ]
+        for (const j of jobs) {
+          const v: Variant = { id: 1, n: j.n, imageUrl: j.image, materials: j.applied.surfaces.map((x) => ({ label: titleCaseLabel(x.label), material: x.name })), parentKey: j.parent, applied: j.applied, finishes: j.finishes, deletedAt: null }
+          await client.execute({ sql: `INSERT OR IGNORE INTO render_jobs (id, room_id, lead_id, project_id, model, status, kind, style, variants_json, created_by, created_at, completed_at) VALUES (?, ?, ?, NULL, 'fast', 'completed', ?, ?, ?, ?, ?, ?)`, args: [j.id, roomId[j.room]!, leadId, j.kind, descriptor(j.applied), JSON.stringify([v]), j.by, j.at, j.at] })
+        }
+        const byKey = new Map(jobs.map((j) => [versionKey(j.id, 1), j]))
+        const lrEdit = versionKey(J('living-room', 'edit'), 1), lrGold = versionKey(J('living-room', 'golden'), 1), brGold = versionKey(J('bedroom', 'golden'), 1)
+        /* a note the studio pinned on the edit */
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_annotations (id, job_id, variant_id, x, y, body, status, author_role, author_member_id, author_name, comments_json, created_at, updated_at) VALUES (?, ?, 1, 0.8, 0.9, ?, 'open', 'studio', 'dane', 'Dane', '[]', ?, ?)`,
+          args: [sid(leadId, 'viz-pin-studio'), J('living-room', 'edit'), 'Walnut sample is at the showroom — I’ll bring it to our next meeting.', t0 + 45 * 60, t0 + 45 * 60] })
+        /* the link sent to Kevin, frozen as the versions were; each one filed in his Files › Renders */
+        const sent = NOW - 2 * D, shareId = sid(leadId, 'viz-share'), token = sid(leadId, 'viz-share-token').replace(/-/g, '').slice(0, 14)
+        const roomName = (k: string) => plan.find((r) => r.key === k)!.name
+        const snapshot = { versions: [lrEdit, lrGold, brGold].map((key) => {
+          const j = byKey.get(key)!, parent = j.parent === ORIGINAL ? null : byKey.get(j.parent)
+          return { key, roomId: roomId[j.room]!, roomName: roomName(j.room), label: `V${j.n} · ${descriptor(j.applied)}`, imageUrl: j.image, beforeUrl: parent?.image ?? sampleByKey(j.room)!.original, materials: changeLines(j.applied).map((c) => ({ label: c.what, material: c.to })) }
+        }) }
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_share_links (id, token, design_id, lead_id, snapshot, message, expires_at, view_count, last_viewed_at, sent_via, created_by, created_at, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?, 3, ?, 'whatsapp', 'dane', ?, NULL)`,
+          args: [shareId, token, designId, leadId, JSON.stringify(snapshot), 'Hi Kevin, three ideas from our meeting — the walnut floor is my favourite. Tap the one you like best, or pin a note on anything you’d change.', sent + 7 * D, NOW - D + 2 * H, sent] })
+        const renders = sid(leadId, 'files-renders')
+        await client.execute({ sql: `INSERT OR IGNORE INTO lead_files (id, lead_id, kind, name, thumb, created_at, parent_id, owner_id, size_bytes, mime, updated_at) VALUES (?, ?, 'folder', 'Renders', NULL, ?, NULL, 'dane', NULL, NULL, ?)`, args: [renders, leadId, sent, sent] })
+        for (const [i, key] of [lrEdit, lrGold, brGold].entries()) {
+          const j = byKey.get(key)!
+          await client.execute({ sql: `INSERT OR IGNORE INTO lead_files (id, lead_id, kind, name, thumb, created_at, parent_id, owner_id, size_bytes, mime, updated_at) VALUES (?, ?, 'image', ?, ?, ?, ?, 'dane', 140000, 'image/jpeg', ?)`, args: [sid(leadId, `files-render-${key}`), leadId, `Render - ${roomName(j.room)} - V${j.n}.jpg`, j.image, sent + i, renders, sent + i] })
+        }
+        /* what Kevin said, and who heard it */
+        const said = NOW - D
+        const edLabel = `${roomName('living-room')} · V2 · ${descriptor(edit)}`
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_consultation_requests (id, share_link_id, kind, version_key, client_name, client_phone, message, task_id, created_at) VALUES (?, ?, 'favourite', ?, ?, NULL, NULL, NULL, ?)`, args: [sid(leadId, 'viz-fav'), shareId, lrEdit, kevin.name, said] })
+        const noteText = 'Love the walnut floor — could the walls be a touch warmer?'
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_consultation_requests (id, share_link_id, kind, version_key, client_name, client_phone, message, task_id, created_at) VALUES (?, ?, 'note', ?, ?, NULL, ?, NULL, ?)`, args: [sid(leadId, 'viz-note'), shareId, lrEdit, kevin.name, noteText, said + 5 * 60] })
+        const pinText = 'Is the velvet easy to keep clean? We have a dog.'
+        const reply = [{ id: sid(leadId, 'viz-pin-reply'), authorRole: 'studio', authorName: 'Dane', authorMemberId: 'dane', body: 'Yes — we’d use a performance velvet that wipes clean. I’ll bring two swatches.', createdAt: (said + 3 * H) * 1000 }]
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_annotations (id, job_id, variant_id, x, y, body, status, author_role, author_member_id, author_name, comments_json, created_at, updated_at) VALUES (?, ?, 1, 0.34, 0.8, ?, 'open', 'client', NULL, ?, ?, ?, ?)`,
+          args: [sid(leadId, 'viz-pin-client'), J('living-room', 'edit'), pinText, kevin.name, JSON.stringify(reply), said + 8 * 60, said + 3 * H] })
+        const href = `/visualizer/${designId}?from=${encodeURIComponent(`/leads/${leadId}`)}`
+        const tells: [tag: string, title: string, body: string, at: number][] = [
+          ['fav', `${kevin.name} picked a favourite`, edLabel, said],
+          ['note', `${kevin.name} left a note on the renders`, `${edLabel}: “${noteText}”`, said + 5 * 60],
+          ['pin', `${kevin.name} pinned a note on a render`, `${edLabel}: “${pinText}”`, said + 8 * 60],
+        ]
+        for (const m of leadMembers) for (const [tag, title, body, at] of tells) {
+          await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'render_feedback', ?, ?, ?, ?, NULL, 'in_app,whatsapp', NULL, ?, ?)`,
+            args: [`n-viz-${tag}-${m}`, m, title, body, href, leadId, at, m === 'dane' && tag === 'fav' ? at + H : null] })
+        }
+        await client.execute({ sql: `UPDATE visualizer_designs SET updated_at = ? WHERE id = ?`, args: [Math.max(...jobs.map((j) => j.at)), designId] })
+        console.log(`  Kevin Ng’s design: ${plan.length} rooms · ${jobs.length} versions · 1 link with a favourite, a note and a pin · ${leadMembers.length * tells.length} notifications`)
+      }
+    }
+    /* a personal design in a folder of the AI Visualizer */
+    const folderAt = NOW - 12 * D
+    await client.execute({ sql: `INSERT OR IGNORE INTO library_folders (id, library, name, parent_id, created_by, created_at, updated_at) VALUES ('lf-visualizer-showroom', 'visualizer', 'Showroom ideas', NULL, 'dane', ?, ?)`, args: [folderAt, folderAt] })
+    const showroom = sid('showroom-kitchen', 'viz-design')
+    const p = await client.execute({ sql: `INSERT OR IGNORE INTO visualizer_designs (id, kind, lead_id, name, folder_id, custom_json, created_by, created_at, updated_at, deleted_at, deleted_by) VALUES (?, 'personal', NULL, 'Showroom — kitchen concept', 'lf-visualizer-showroom', NULL, 'dane', ?, ?, NULL, NULL)`, args: [showroom, folderAt + 10 * 60, folderAt + 30 * 60] })
+    if (p.rowsAffected) {
+      const kitchen = sampleByKey('kitchen')!
+      const room = sid('showroom-kitchen', 'viz-room')
+      await client.execute({ sql: `INSERT OR IGNORE INTO project_rooms (id, design_id, lead_id, project_id, name, original_image_url, sample_key, source_file_id, detection_json, state_json, position, created_by, created_at, updated_at) VALUES (?, ?, NULL, NULL, 'Kitchen sketch', ?, 'kitchen', NULL, ?, NULL, 0, 'dane', ?, ?)`, args: [room, showroom, kitchen.sketch!, JSON.stringify(sampleDetection(kitchen, true)), folderAt + 12 * 60, folderAt + 12 * 60] })
+      const applied: Applied = { kind: 'sketch', surfaces: [], furniture: [], style: 'Japandi', lighting: null, note: null, palette: null, scope: null }
+      const v: Variant = { id: 1, n: 1, imageUrl: kitchen.looks.Japandi!, materials: [], parentKey: ORIGINAL, applied, finishes: { ...NO_FINISHES, fromSketch: true, reshaped: true, style: 'Japandi' }, deletedAt: null }
+      await client.execute({ sql: `INSERT OR IGNORE INTO render_jobs (id, room_id, lead_id, project_id, model, status, kind, style, variants_json, created_by, created_at, completed_at) VALUES (?, ?, NULL, NULL, 'high', 'completed', 'sketch', ?, ?, 'dane', ?, ?)`, args: [sid('showroom-kitchen', 'viz-job'), room, descriptor(applied), JSON.stringify([v]), folderAt + 30 * 60, folderAt + 30 * 60] })
+      console.log('  Showroom — kitchen concept filed in Showroom ideas')
+    }
+    /* the studio's own materials (Company › Materials) */
+    const book = async (name: string) => rows<{ id: string }>(await client.execute({ sql: `SELECT id FROM price_book_items WHERE name = ? AND deleted_at IS NULL AND status = 'live' LIMIT 1`, args: [name] }))[0]?.id ?? null
+    const matAt = NOW - 20 * D
+    await client.execute({ sql: `INSERT OR IGNORE INTO library_folders (id, library, name, parent_id, created_by, created_at, updated_at) VALUES ('lf-materials-floors', 'materials', 'Floors', NULL, 'dane', ?, ?)`, args: [matAt, matAt] })
+    const mats: [id: string, name: string, category: string, hex: string, finish: string, image: string | null, desc: string | null, bookName: string | null, folder: string | null, by: string, at: number][] = [
+      ['sm-sage-whisper', 'Sage Whisper paint', 'Paints', '#9DAF94', 'matte', null, 'Two coats on a skim coat', 'Painting, whole unit', null, 'dane', matAt],
+      ['sm-walnut-vinyl', 'Walnut vinyl plank', 'Flooring', DEMO_EDIT.swatches.walnut.hex, 'natural', DEMO_EDIT.swatches.walnut.image, 'Wide plank, matte lacquer', 'Vinyl flooring, supply and install', 'lf-materials-floors', 'dane', matAt + H],
+      ['sm-oak-veneer', 'Natural oak veneer', 'Laminates', DEMO_EDIT.swatches.oak.hex, 'natural', DEMO_EDIT.swatches.oak.image, 'For wardrobes and feature panels', null, null, 'sarah', matAt + 2 * H],
+      ['sm-calacatta', 'Calacatta quartz', 'Countertops', '#E9E5DE', 'gloss', null, '20 mm slab, polished edge', null, null, 'sarah', matAt + 3 * H],
+    ]
+    let nm = 0
+    for (const [id, name, category, hex, finish, image, desc, bookName, folder, by, at] of mats) {
+      const r = await client.execute({ sql: `INSERT OR IGNORE INTO studio_materials (id, name, category, image_url, hex, finish, description, folder_id, price_book_item_id, uploaded_by, is_active, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NULL)`,
+        args: [id, name, category, image, hex, finish, desc, folder, bookName ? await book(bookName) : null, by, at, at] })
+      nm += r.rowsAffected
+    }
+    console.log(`  ${nm} studio materials added`)
+  }
+
+  /* ── R62 · the AI Visualizer after its audit (audit 2026-09-26) ────────────────────────────────────────────────────────────────────
+     What the audit's fixes keep, written for the records made before them: (a) a version's picture beside its job, the job keeping its
+     address (F213 — migration 0055 moved them; this catches any written since by an older build); (b) each render filed in a lead's Files
+     linked to the version it is (F095 · F194), holding its own copy of the picture (F093), at its real size (F113); (c) a room's reference
+     and piece photos in the room's own store, the picks keeping addresses (F200); (d) a client's answer in the bell opening the room, the
+     version and the pin it is about (F098). Each step touches only what is still in the old shape, so a second run changes nothing. */
+  console.log('\nR62 the AI Visualizer, audited')
+  {
+    /* (a) */
+    const inline = rows<{ id: string; variants_json: string }>(await client.execute(`SELECT id, variants_json FROM render_jobs WHERE variants_json LIKE '%"imageUrl":"data:%'`))
+    for (const j of inline) {
+      let vs: Record<string, unknown>[]
+      try { vs = JSON.parse(j.variants_json) as Record<string, unknown>[] } catch { continue }
+      if (!Array.isArray(vs)) continue
+      for (const v of vs) {
+        if (typeof v.id !== 'number' || !isDataImage(v.imageUrl)) continue
+        await client.execute({ sql: `INSERT OR IGNORE INTO render_images (job_id, variant_id, data) VALUES (?, ?, ?)`, args: [j.id, v.id, v.imageUrl] })
+        v.imageUrl = renderAddress(j.id, v.id)
+      }
+      await client.execute({ sql: `UPDATE render_jobs SET variants_json = ? WHERE id = ?`, args: [JSON.stringify(vs), j.id] })
+    }
+    /* (b) every version of a lead's design, and the files that are one */
+    type Ver = { key: string; designId: string; roomId: string; room: string; n: number; image: string; leadId: string }
+    const vjobs = rows<{ id: string; room_id: string; variants_json: string; design_id: string; room_name: string; lead_id: string }>(await client.execute(
+      `SELECT j.id, j.room_id, j.variants_json, r.design_id, r.name AS room_name, d.lead_id FROM render_jobs j JOIN project_rooms r ON r.id = j.room_id JOIN visualizer_designs d ON d.id = r.design_id WHERE d.kind = 'lead' AND d.lead_id IS NOT NULL`))
+    const vers: Ver[] = []
+    for (const j of vjobs) {
+      let vs: { id?: unknown; n?: unknown; imageUrl?: unknown }[] = []
+      try { const x = JSON.parse(j.variants_json) as unknown; if (Array.isArray(x)) vs = x } catch { continue }
+      for (const v of vs) if (typeof v.id === 'number' && typeof v.n === 'number' && typeof v.imageUrl === 'string') vers.push({ key: `${j.id}:${v.id}`, designId: j.design_id, roomId: j.room_id, room: j.room_name, n: v.n, image: v.imageUrl, leadId: j.lead_id })
+    }
+    const unlinked = rows<{ id: string; lead_id: string; name: string; thumb: string }>(await client.execute(
+      `SELECT f.id, f.lead_id, f.name, f.thumb FROM lead_files f WHERE f.kind = 'image' AND f.thumb IS NOT NULL AND NOT EXISTS (SELECT 1 FROM lead_file_renders x WHERE x.file_id = f.id) AND (f.thumb LIKE '/visualizer/img/v/%' OR f.name LIKE 'Render - % - V%.jpg')`))
+    let linked = 0
+    for (const f of unlinked) {
+      const byAddress = /^\/visualizer\/img\/v\/([^/?]+)\/(\d+)/.exec(f.thumb)
+      const byName = /^Render - (.+) - V(\d+)\.jpg$/.exec(f.name)
+      const hits = byAddress ? vers.filter((x) => x.key === `${byAddress[1]}:${byAddress[2]}` && x.leadId === f.lead_id)
+        : byName ? vers.filter((x) => x.leadId === f.lead_id && x.room === byName[1] && x.n === Number(byName[2]) && x.image === f.thumb) : []
+      const v = hits.length === 1 ? hits[0]! : null
+      if (!v) continue
+      linked += (await client.execute({ sql: `INSERT OR IGNORE INTO lead_file_renders (file_id, render_key, design_id, room_id, n) VALUES (?, ?, ?, ?, ?)`, args: [f.id, v.key, v.designId, v.roomId, v.n] })).rowsAffected
+    }
+    /* a filed render keeps its own picture (F093) */
+    let owned = 0
+    for (const f of rows<{ id: string; thumb: string }>(await client.execute(`SELECT id, thumb FROM lead_files WHERE thumb LIKE '/visualizer/img/v/%'`))) {
+      const m = /^\/visualizer\/img\/v\/([^/?]+)\/(\d+)/.exec(f.thumb); if (!m) continue
+      const pic = rows<{ data: string }>(await client.execute({ sql: `SELECT data FROM render_images WHERE job_id = ? AND variant_id = ?`, args: [m[1]!, Number(m[2])] }))[0]?.data
+      if (!pic || !isDataImage(pic)) continue
+      await client.execute({ sql: `INSERT OR IGNORE INTO lead_file_images (file_id, data) VALUES (?, ?)`, args: [f.id, pic] })
+      await client.execute({ sql: `UPDATE lead_files SET thumb = ?, size_bytes = ?, mime = ? WHERE id = ?`, args: [`/files/img/${f.id}`, dataUrlBytes(pic), pic.slice(5, pic.indexOf(';')), f.id] })
+      owned++
+    }
+    /* its real size — a sample's pre-made render reads its file (F113) */
+    let sized = 0
+    for (const f of rows<{ id: string; thumb: string; size_bytes: number | null }>(await client.execute(`SELECT f.id, f.thumb, f.size_bytes FROM lead_files f JOIN lead_file_renders x ON x.file_id = f.id WHERE f.thumb LIKE '/visualizer/%'`))) {
+      let size: number | null = null
+      try { size = statSync(path.join(process.cwd(), 'public', f.thumb)).size } catch { size = null }
+      if (size !== f.size_bytes) { await client.execute({ sql: `UPDATE lead_files SET size_bytes = ? WHERE id = ?`, args: [size, f.id] }); sized++ }
+    }
+    /* (c) a room's picks carry addresses, the pictures sit in the room's store (F200) */
+    let lifted = 0
+    for (const r of rows<{ id: string; state_json: string; assets_json: string | null }>(await client.execute(`SELECT id, state_json, assets_json FROM project_rooms WHERE state_json LIKE '%data:image%'`))) {
+      let raw: unknown = null
+      try { raw = JSON.parse(r.state_json) } catch { continue }
+      const out = liftPictures(r.id, readPending(raw), parseAssets(r.assets_json))
+      await client.execute({ sql: `UPDATE project_rooms SET state_json = ?, assets_json = ?, state_rev = state_rev + 1 WHERE id = ?`, args: [JSON.stringify(out.pending), JSON.stringify(out.assets), r.id] })
+      lifted++
+    }
+    /* (d) the bell's answers open their version, and a pin's its pin (F098) */
+    let bells = 0
+    for (const b of rows<{ id: string; href: string; body: string | null; title: string }>(await client.execute(`SELECT id, href, body, title FROM notifications WHERE kind = 'render_feedback' AND href LIKE '/visualizer/%' AND href NOT LIKE '%v=%'`))) {
+      const hm = /^\/visualizer\/([^?]+)(?:\?(.*))?$/.exec(b.href)
+      const bm = /^(.+?) · V(\d+)\b/.exec(b.body ?? '')
+      if (!hm || !bm) continue
+      const designId = hm[1]!, from = new URLSearchParams(hm[2] ?? '').get('from')
+      const v = vers.find((x) => x.designId === designId && x.room === bm[1] && x.n === Number(bm[2]))
+      if (!v) continue
+      const [jobId, vid] = v.key.split(':')
+      const said = /pinned a note/.test(b.title) ? /“(.*)”$/.exec(b.body ?? '')?.[1] ?? null : null
+      const pin = said ? rows<{ id: string }>(await client.execute({ sql: `SELECT id FROM render_annotations WHERE job_id = ? AND variant_id = ? AND author_role = 'client' AND body = ? LIMIT 1`, args: [jobId!, Number(vid), said] }))[0]?.id ?? null : null
+      const q = [`room=${v.roomId}`, `v=${encodeURIComponent(v.key)}`, pin ? `pin=${pin}` : null, from ? `from=${encodeURIComponent(from)}` : null].filter(Boolean).join('&')
+      await client.execute({ sql: `UPDATE notifications SET href = ? WHERE id = ?`, args: [`/visualizer/${designId}?${q}`, b.id] })
+      bells++
+    }
+    console.log(`  ${inline.length} jobs’ pictures moved beside them · ${linked} filed renders linked to their version · ${owned} given their own picture · ${sized} sized · ${lifted} rooms’ picks lifted · ${bells} bell entries pointed at their version`)
+  }
+
   const checks: [string, string][] = [
+    /* (audit 2026-09-26) the AI Visualizer's audit fixes */
+    ['render picture still inside its job (F213)', `SELECT id FROM render_jobs WHERE variants_json LIKE '%"imageUrl":"data:%'`],
+    ['render picture stored for a version its job does not have (F213)', `SELECT i.job_id FROM render_images i WHERE NOT EXISTS (SELECT 1 FROM render_jobs j, json_each(j.variants_json) v WHERE j.id = i.job_id AND json_extract(v.value, '$.id') = i.variant_id)`],
+    ['saved render showing a picture that lives in the design (F093)', `SELECT name FROM lead_files WHERE thumb LIKE '/visualizer/img/%'`],
+    /* (round 3) only a live file still in the old shape — its picture borrowed from the design — is a render the repair failed to link; a file
+       holding its own picture is a studio's upload that happens to share the name (a render filed today is linked in the same step) */
+    ['render in Files with no record of the version it is (F095)', `SELECT f.name FROM lead_files f JOIN lead_files p ON p.id = f.parent_id WHERE p.kind = 'folder' AND p.name = 'Renders' AND f.kind = 'image' AND f.deleted_at IS NULL AND f.name LIKE 'Render - % - V%.jpg' AND (f.thumb IS NULL OR f.thumb <> '/files/img/' || f.id) AND EXISTS (SELECT 1 FROM visualizer_designs d WHERE d.lead_id = f.lead_id AND d.kind = 'lead') AND NOT EXISTS (SELECT 1 FROM lead_file_renders x WHERE x.file_id = f.id)`],
+    ['filed-render record on a file that is not an image, or naming another lead\'s design (F095)', `SELECT x.file_id FROM lead_file_renders x JOIN lead_files f ON f.id = x.file_id WHERE f.kind <> 'image' OR EXISTS (SELECT 1 FROM visualizer_designs d WHERE d.id = x.design_id AND d.lead_id IS NOT f.lead_id)`],
+    ['filed render with a made-up size (F113)', `SELECT f.name FROM lead_files f JOIN lead_file_renders x ON x.file_id = f.id WHERE f.size_bytes = 140000`],
+    ['room picks holding a picture (F200)', `SELECT name FROM project_rooms WHERE state_json LIKE '%data:image%'`],
+    ['room picture store that is not JSON (F200)', `SELECT name FROM project_rooms WHERE assets_json IS NOT NULL AND NOT json_valid(assets_json)`],
+    ['a second lead design for one lead (F215)', `SELECT lead_id FROM visualizer_designs WHERE kind = 'lead' GROUP BY lead_id HAVING count(*) > 1`],
+    ['a lead design naming a source lead (F115)', `SELECT name FROM visualizer_designs WHERE source_lead_id IS NOT NULL AND kind <> 'personal'`],
+    ['a client answer in the bell that opens no version (F098)', `SELECT id FROM notifications WHERE kind = 'render_feedback' AND body LIKE '% · V%' AND href NOT LIKE '%v=%'`],
+    /* (wave E, files-16) a design the studio moved to the trash is still there (its Restore brings it back); one deleted for good is written
+       again by R61's fixed ids — so only "no design at all" is missing */
+    ['AI Visualizer demo design missing (REG-673)', `SELECT 'Kevin Ng' WHERE EXISTS (SELECT 1 FROM leads WHERE name = 'Kevin Ng' AND deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM visualizer_designs d JOIN leads l ON l.id = d.lead_id WHERE l.name = 'Kevin Ng')`],
+    ['lead design on a lead that is gone, or a personal design naming a lead (REG-673)', `SELECT name FROM visualizer_designs WHERE (kind = 'lead' AND (lead_id IS NULL OR NOT EXISTS (SELECT 1 FROM leads l WHERE l.id = lead_id))) OR (kind = 'personal' AND lead_id IS NOT NULL)`],
+    ['room with no photo, or a room of another lead than its design (REG-673)', `SELECT r.name FROM project_rooms r JOIN visualizer_designs d ON d.id = r.design_id WHERE r.original_image_url IS NULL OR r.original_image_url = '' OR r.lead_id IS NOT d.lead_id`],
+    ['render with unreadable versions or no version (REG-673)', `SELECT id FROM render_jobs WHERE NOT json_valid(variants_json) OR json_array_length(variants_json) = 0`],
+    ['render on another lead than its room (REG-673)', `SELECT j.id FROM render_jobs j JOIN project_rooms r ON r.id = j.room_id WHERE j.lead_id IS NOT r.lead_id`],
+    ['shared link whose snapshot is unreadable or empty (REG-675)', `SELECT token FROM render_share_links WHERE NOT json_valid(snapshot) OR json_array_length(json_extract(snapshot, '$.versions')) = 0`],
+    ['client favourite or note naming a version its link does not carry (REG-676)', `SELECT c.id FROM render_consultation_requests c JOIN render_share_links s ON s.id = c.share_link_id WHERE c.version_key IS NOT NULL AND NOT EXISTS (SELECT 1 FROM json_each(json_extract(s.snapshot, '$.versions')) v WHERE json_extract(v.value, '$.key') = c.version_key)`],
+    ['call back with no follow-up task (REG-676)', `SELECT c.id FROM render_consultation_requests c WHERE c.kind = 'call_back' AND (c.task_id IS NULL OR NOT EXISTS (SELECT 1 FROM lead_tasks t WHERE t.id = c.task_id))`],
+    ['pin by a member who is not one, or a client pin with a member (REG-675)', `SELECT id FROM render_annotations WHERE (author_role = 'studio' AND NOT EXISTS (SELECT 1 FROM members m WHERE m.id = author_member_id)) OR (author_role = 'client' AND author_member_id IS NOT NULL)`],
+    ['studio material without a colour, or linked to a Price book item that is gone (REG-677)', `SELECT name FROM studio_materials m WHERE m.hex NOT GLOB '#[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]' OR (m.price_book_item_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM price_book_items p WHERE p.id = m.price_book_item_id))`],
+    ['studio material last changed by someone not on the team (wave E, E5)', `SELECT name FROM studio_materials m WHERE m.updated_by IS NOT NULL AND NOT EXISTS (SELECT 1 FROM members x WHERE x.id = m.updated_by)`],
+    ['design or material filed in a folder of another library (REG-673)', `SELECT name FROM visualizer_designs d WHERE d.folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = d.folder_id AND f.library = 'visualizer') UNION ALL SELECT name FROM studio_materials m WHERE m.folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = m.folder_id AND f.library = 'materials')`],
     ['no Admin on the demo team (REG-668)', `SELECT 'studio' WHERE NOT EXISTS (SELECT 1 FROM members WHERE role = 'Admin' AND is_active = 1)`],
     ['not exactly one signed-in member (REG-667)', `SELECT 'members' WHERE (SELECT count(*) FROM members WHERE is_you = 1) <> 1`],
+    /* (wave E, files-16) an entry the studio moved to the trash still counts as filed — it keeps its folder, and its Restore puts it back
+       there; a studio's own deletes never fail the repair */
     ['demo folder with nothing filed in it (REG-664)', `SELECT f.library || ' · ' || f.name FROM library_folders f WHERE f.deleted_at IS NULL AND f.id LIKE 'lf-%' AND NOT EXISTS (SELECT 1 FROM library_folders c WHERE c.parent_id = f.id AND c.deleted_at IS NULL)
-      AND NOT EXISTS (SELECT 1 FROM quote_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM contract_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
-      AND NOT EXISTS (SELECT 1 FROM task_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
-      AND NOT EXISTS (SELECT 1 FROM payment_templates x WHERE x.folder_id = f.id AND x.deleted_at IS NULL) AND NOT EXISTS (SELECT 1 FROM price_book_items x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)
-      AND NOT EXISTS (SELECT 1 FROM price_book_sections x WHERE x.folder_id = f.id AND x.deleted_at IS NULL)`],
+      AND NOT EXISTS (SELECT 1 FROM quote_templates x WHERE x.folder_id = f.id) AND NOT EXISTS (SELECT 1 FROM contract_templates x WHERE x.folder_id = f.id)
+      AND NOT EXISTS (SELECT 1 FROM task_templates x WHERE x.folder_id = f.id) AND NOT EXISTS (SELECT 1 FROM quote_text_templates x WHERE x.folder_id = f.id)
+      AND NOT EXISTS (SELECT 1 FROM payment_templates x WHERE x.folder_id = f.id) AND NOT EXISTS (SELECT 1 FROM price_book_items x WHERE x.folder_id = f.id)
+      AND NOT EXISTS (SELECT 1 FROM price_book_sections x WHERE x.folder_id = f.id)
+      AND NOT EXISTS (SELECT 1 FROM visualizer_designs x WHERE x.folder_id = f.id) AND NOT EXISTS (SELECT 1 FROM studio_materials x WHERE x.folder_id = f.id)`],   /* (REG-673 · 677) the AI Visualizer's and Materials' folders */
     ['entry filed in a folder of another library, or one that is gone (REG-664)', `SELECT 'quotes · ' || name FROM quote_templates t WHERE folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = t.folder_id AND f.library = 'quotes' AND f.deleted_at IS NULL)
       UNION ALL SELECT 'book-items · ' || name FROM price_book_items t WHERE folder_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM library_folders f WHERE f.id = t.folder_id AND f.library = 'book-items' AND f.deleted_at IS NULL)`],
     ['quote comparison with a straight apostrophe in its words (sweep S3)', `SELECT your_label FROM quote_comparisons WHERE result_json LIKE '%doesn''t%' OR result_json LIKE '%it''s %' OR result_json LIKE '%I''ve%' OR instr(result_json, other_studio || '''s') > 0`],
@@ -1495,7 +1764,9 @@ async function main() {
     ['Letter footer address still under the signature (REG-569)', `SELECT name FROM quote_templates WHERE design_json LIKE '%"kind":"footer"%' AND design_json LIKE '%"y":16,"w":174,"text":"{studio_name}%'`],
     ['lead with a key collection outside the vocabulary (REG-607)', `SELECT name FROM leads WHERE key_collection IS NOT NULL AND key_collection NOT IN ('Collected', 'in 3 months', 'in 6 months', 'in 9 months', 'Later')`],
     ['parity demo lead missing (REG-613)', `SELECT id FROM (SELECT 'plead-hangout' AS id UNION SELECT 'plead-lost-budget' UNION SELECT 'plead-lost-postponed') WHERE id NOT IN (SELECT id FROM leads)`],
-    ['event with an unknown kind (REG-613)', `SELECT id FROM lead_events WHERE kind NOT IN ('member_removed','field_edited','task_deleted','note_deleted','file_trashed','file_deleted','return_undone','invite_sent','questionnaire_asked')`],
+    ['event with an unknown kind (REG-613)', `SELECT id FROM lead_events WHERE kind NOT IN ('member_removed','field_edited','task_deleted','note_deleted','file_trashed','file_deleted','return_undone','invite_sent','questionnaire_asked',
+      'contract_unsigned','contract_archived','contract_restored','comparison_deleted',
+      'design_deleted','design_restored','design_purged','room_deleted','room_restored','version_deleted','version_restored','share_stopped','share_renewed','share_reopened')`],   /* (REG-634 · 641 · audit 2026-09-26) every kind LeadEventKind names */
     ['bank question with an unknown type (REG-612)', `SELECT question FROM studio_scope_questions WHERE question_type NOT IN ('text','yes_no','number','single_select','multi_select','date')`],
     ['member preferences that are not JSON (REG-612)', `SELECT name FROM members WHERE lead_preferences IS NOT NULL AND json_valid(lead_preferences) = 0`],
     ['custom field value on an inactive or missing field (REG-612)', `SELECT v.id FROM lead_custom_field_values v LEFT JOIN lead_custom_fields f ON f.id = v.field_id WHERE f.id IS NULL`],

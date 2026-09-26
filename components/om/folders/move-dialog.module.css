@@ -36,6 +36,9 @@
   min-width: 0;
 }
 .chipIcon { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+/* (critic 14) the line that says what stays, and why */
+.note { display: flex; align-items: flex-start; gap: var(--om-spacing-2); margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.note > :first-child { flex-shrink: 0; margin-top: 2px; }
 .chipName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* modal-body V g20 p12/12/24/12 */

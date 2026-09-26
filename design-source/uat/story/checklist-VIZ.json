@@ -1,0 +1,890 @@
+[
+ {
+  "key": "VIZ",
+  "id": "DEF-01",
+  "area": "Definitions",
+  "feature": "The tool",
+  "now": "Built",
+  "why": "Mismatch in both — Q-01: AI Visualizer everywhere."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-02",
+  "area": "Definitions",
+  "feature": "A design",
+  "now": "Built",
+  "why": "Missing — Q-03: a visualizer_designs row — one per lead, any number of personal ones."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-03",
+  "area": "Definitions",
+  "feature": "A room",
+  "now": "Built",
+  "why": "Missing — built with 1.0's table name (§4)."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-04",
+  "area": "Definitions",
+  "feature": "A version",
+  "now": "Built",
+  "why": "Missing — built with 1.0's shape (§4)."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-05",
+  "area": "Definitions",
+  "feature": "The editing base",
+  "now": "Built",
+  "why": "Mismatch inside 1.0 — Q-08: what the canvas shows is what you edit."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-06",
+  "area": "Definitions",
+  "feature": "A surface",
+  "now": "Built",
+  "why": "Missing — 2.0 keeps the label, the dot and the groups and adds the region the engine changes (§5)."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-07",
+  "area": "Definitions",
+  "feature": "A material",
+  "now": "Built",
+  "why": "Missing — Q-18 · Q-19."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-08",
+  "area": "Definitions",
+  "feature": "A render",
+  "now": "Built",
+  "why": "Platform — Q-05: the curated engine (§5)."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-09",
+  "area": "Definitions",
+  "feature": "Sharing",
+  "now": "Built",
+  "why": "Missing — Q-14: one link, to the lead's client."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-10",
+  "area": "Definitions",
+  "feature": "Annotate",
+  "now": "Built",
+  "why": "Missing — Q-15: pins on a version, shown on the share link."
+ },
+ {
+  "key": "VIZ",
+  "id": "DEF-11",
+  "area": "Definitions",
+  "feature": "Save to the lead",
+  "now": "Built",
+  "why": "Mismatch — Q-13."
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-01",
+  "area": "Mismatches",
+  "feature": "Saving a lead's renders",
+  "now": "Built",
+  "why": "Q-13"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-02",
+  "area": "Mismatches",
+  "feature": "Variants on desktop",
+  "now": "Built",
+  "why": "Q-09"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-03",
+  "area": "Mismatches",
+  "feature": "Auto Furnish on a phone",
+  "now": "Built",
+  "why": "Q-25"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-04",
+  "area": "Mismatches",
+  "feature": "What you edit after a render",
+  "now": "Built",
+  "why": "Q-08"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-05",
+  "area": "Mismatches",
+  "feature": "Deleting",
+  "now": "Built",
+  "why": "Q-11"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-06",
+  "area": "Mismatches",
+  "feature": "The share link's style",
+  "now": "Built",
+  "why": "Q-14"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-07",
+  "area": "Mismatches",
+  "feature": "Send to Chat",
+  "now": "Built",
+  "why": "Q-14"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-08",
+  "area": "Mismatches",
+  "feature": "The consultation form",
+  "now": "Built",
+  "why": "Q-16"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-09",
+  "area": "Mismatches",
+  "feature": "The material list \"for quoting\"",
+  "now": "Built",
+  "why": "Q-17"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-10",
+  "area": "Mismatches",
+  "feature": "The lighting copy",
+  "now": "Built",
+  "why": "Q-22"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-11",
+  "area": "Mismatches",
+  "feature": "Surface markers",
+  "now": "Built",
+  "why": "Q-06"
+ },
+ {
+  "key": "VIZ",
+  "id": "MM-12",
+  "area": "Mismatches",
+  "feature": "Work in progress",
+  "now": "Built",
+  "why": "Q-07"
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-01",
+  "area": "Ways in, the page and the way back",
+  "feature": "Tools › AI Visualizer",
+  "now": "Built",
+  "why": "The Tools tile opens /visualizer (desktop popover and the phone's Tools sheet)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-02",
+  "area": "Ways in, the page and the way back",
+  "feature": "The lead drawer's Open AI Visualizer",
+  "now": "Built",
+  "why": "The lead's quick link AI Visualizer opens the lead's design (made on first open) with ?from= the tab it was pressed on (Q-02)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-03",
+  "area": "Ways in, the page and the way back",
+  "feature": "Deep links",
+  "now": "Built",
+  "why": "Every design has its address /visualizer/[designId] (?room= picks a room); Back honours ?from=."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-04",
+  "area": "Ways in, the page and the way back",
+  "feature": "The project's Photo Renders + entry dialog, the Renders tab",
+  "now": "Later",
+  "why": "Projects module."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-05",
+  "area": "Ways in, the page and the way back",
+  "feature": "Coach mark",
+  "now": "Built",
+  "why": "The editor's first-visit hint (the template editor's pattern, remembered per browser)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-06",
+  "area": "Ways in, the page and the way back",
+  "feature": "Page flag + access matrix",
+  "now": "Platform",
+  "why": "Every member; Who sees leads decides which lead designs a member sees (Q-24)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-07",
+  "area": "Ways in, the page and the way back",
+  "feature": "Focus mode below lg",
+  "now": "Built",
+  "why": "The editor is a rail-less app frame at every width (the (editor) group)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VE-08",
+  "area": "Ways in, the page and the way back",
+  "feature": "Open in AI Visualizer on a lead file",
+  "now": "Built",
+  "why": "2.0 builds it (Q-31): the file viewer's kebab and the Files grid's menu."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-01",
+  "area": "The landing (designs)",
+  "feature": "Header AI Visualizer + New design",
+  "now": "Built",
+  "why": "L1 header; New design ▾ — Blank design · From a lead · From a sample room."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-02",
+  "area": "The landing (designs)",
+  "feature": "First-run hero",
+  "now": "Built",
+  "why": "The gallery's empty state with the three steps and the same two actions."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-03",
+  "area": "The landing (designs)",
+  "feature": "Start strip",
+  "now": "Built",
+  "why": "New design ▾ carries them (projects Later); the sample rooms are a third way in (Q-05)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-04",
+  "area": "The landing (designs)",
+  "feature": "View chips All · Leads · Projects · Personal",
+  "now": "Built",
+  "why": "The gallery's scope pill Kind: All ▾ (REG-666's grammar) — Leads · Personal."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-05",
+  "area": "The landing (designs)",
+  "feature": "Search",
+  "now": "Built",
+  "why": "The gallery's search (name, lead, room names)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-06",
+  "area": "The landing (designs)",
+  "feature": "Folders for personal designs",
+  "now": "Built",
+  "why": "The house folders (library visualizer), personal designs only (Q-04)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-07",
+  "area": "The landing (designs)",
+  "feature": "Continue row",
+  "now": "Built",
+  "why": "The gallery sorts by last edited; the cards say Edited 2h ago — no second row."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-08",
+  "area": "The landing (designs)",
+  "feature": "Design card + mosaic",
+  "now": "Built",
+  "why": "The gallery card: the cover mosaic in the thumb band, the kind chip, the counts; kebab Open · Rename · Move · Duplicate · Delete."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-09",
+  "area": "The landing (designs)",
+  "feature": "Design detail",
+  "now": "Built",
+  "why": "Not a separate page: the editor's room tabs are the rooms (one press fewer)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-10",
+  "area": "The landing (designs)",
+  "feature": "Select + Move",
+  "now": "Built",
+  "why": "The gallery's selection + bulk bar (Move · Delete)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-11",
+  "area": "The landing (designs)",
+  "feature": "Delete a design",
+  "now": "Built",
+  "why": "Soft delete with Undo; the Deleted sheet restores or deletes for good (REG-502's rule)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-12",
+  "area": "The landing (designs)",
+  "feature": "Hidden empty lead designs",
+  "now": "Built",
+  "why": "A lead's design shows once it has a room."
+ },
+ {
+  "key": "VIZ",
+  "id": "VL-13",
+  "area": "The landing (designs)",
+  "feature": "Workspace JSON, last writer wins",
+  "now": "Built",
+  "why": "Rows (§4)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-01",
+  "area": "Rooms and upload",
+  "feature": "Empty state + Upload new room + Take photo",
+  "now": "Built",
+  "why": "The canvas empty state: Dropzone Upload a room photo · Take a photo (touch) · Use a sample room · From the lead's files (Q-31)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-02",
+  "area": "Rooms and upload",
+  "feature": "Room tabs + ⋯ Rename / Delete",
+  "now": "Built",
+  "why": "Room tabs in the top bar (a sheet on the phone); rename in place; delete with Undo (Q-11)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-03",
+  "area": "Rooms and upload",
+  "feature": "Accepted files, 10 MB, HEIC",
+  "now": "Built",
+  "why": "JPG · PNG · WebP up to 10 MB, the house words; HEIC is Platform (the browser cannot read it without the converter) — the error says so."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-04",
+  "area": "Rooms and upload",
+  "feature": "Bucket crop + downscales",
+  "now": "Platform",
+  "why": "The photo is scaled to 1600 on its long side for the engine; the stored copy is that scaled JPEG."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-05",
+  "area": "Rooms and upload",
+  "feature": "Change photo",
+  "now": "Built",
+  "why": "The same rule (renders keep their photo)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VR-06",
+  "area": "Rooms and upload",
+  "feature": "Auto-load + auto-detect a stored room",
+  "now": "Built",
+  "why": "The room's detection is stored with it (Q-07) — nothing to re-run."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-01",
+  "area": "Detection, markers, place and draw",
+  "feature": "The detect call",
+  "now": "Platform",
+  "why": "The curated reading (§5.2): sample rooms carry their surfaces and furniture; other photos get 1.0's own fallback set."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-02",
+  "area": "Detection, markers, place and draw",
+  "feature": "Failure fallback Walls · Floor · Ceiling",
+  "now": "Built",
+  "why": "The fallback for every unknown photo — placed where the photo's colour regions are, not at fixed points."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-03",
+  "area": "Detection, markers, place and draw",
+  "feature": "Markers — squares for surfaces, circles for furniture; panel-scoped",
+  "now": "Built",
+  "why": "The same shapes and scoping; one toggle Markers; a selected surface lights its region on the photo (2.0 only)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-04",
+  "area": "Detection, markers, place and draw",
+  "feature": "Place mode",
+  "now": "Built",
+  "why": "Same, with the place banner and Cancel."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-05",
+  "area": "Detection, markers, place and draw",
+  "feature": "Lasso re-detect",
+  "now": "Platform",
+  "why": "Draw a surface (2.0): the lasso draws the region itself and names it — the engine's regions need no model."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-06",
+  "area": "Detection, markers, place and draw",
+  "feature": "Remove from the list + pick-to-remove",
+  "now": "Built",
+  "why": "Same words; Undo."
+ },
+ {
+  "key": "VIZ",
+  "id": "VD-07",
+  "area": "Detection, markers, place and draw",
+  "feature": "Sketch classification",
+  "now": "Built",
+  "why": "The sample kitchen sketch reads as a sketch; Render from sketch is the primary; Not a sketch? Use as it is."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-01",
+  "area": "Surfaces and materials",
+  "feature": "Two-level list — 13 structural groups, identical labels ×N, bulk per group",
+  "now": "Built",
+  "why": "Same model and words."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-02",
+  "area": "Surfaces and materials",
+  "feature": "Assign / None",
+  "now": "Built",
+  "why": "Same."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-03",
+  "area": "Surfaces and materials",
+  "feature": "The picker — search, None, Suggested, category chips, Recent, Upload, library, customs, brands",
+  "now": "Built",
+  "why": "One picker (a rail panel; a sheet on the phone): search · None · Suggested for {surface} · {style} · Recent · Your library · categories · Gush Paints / Gush Enamel."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-04",
+  "area": "Surfaces and materials",
+  "feature": "suggestMaterials + the category maps",
+  "now": "Built",
+  "why": "Ported as they are (lib/visualizer/catalogue.ts)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-05",
+  "area": "Surfaces and materials",
+  "feature": "The stock catalogue — 136 generic + 310 Gush",
+  "now": "Built",
+  "why": "Ported whole (Q-19)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-06",
+  "area": "Surfaces and materials",
+  "feature": "Custom material upload + Save to studio library",
+  "now": "Built",
+  "why": "Upload a swatch → the dialog (name, category, Save to the studio's materials) (Q-18)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-07",
+  "area": "Surfaces and materials",
+  "feature": "Recent",
+  "now": "Built",
+  "why": "Same (om.viz.recent)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VS-08",
+  "area": "Surfaces and materials",
+  "feature": "Masked composite for surface-only renders",
+  "now": "Platform",
+  "why": "The engine only ever changes a surface's region (§5.3)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VF-01",
+  "area": "Furniture",
+  "feature": "Rows per group ×N, remove · replace · customize",
+  "now": "Built",
+  "why": "Same."
+ },
+ {
+  "key": "VIZ",
+  "id": "VF-02",
+  "area": "Furniture",
+  "feature": "Replace — Quick pick presets, describe, reference photo",
+  "now": "Built",
+  "why": "Same picker; the engine answers Replace honestly (Q-21)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VF-03",
+  "area": "Furniture",
+  "feature": "Customize — finish tables by label, 12 colours, describe",
+  "now": "Built",
+  "why": "Same chips; the engine recolours the piece (§5.3)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VF-04",
+  "area": "Furniture",
+  "feature": "Add furniture with a category",
+  "now": "Built",
+  "why": "Same."
+ },
+ {
+  "key": "VIZ",
+  "id": "VT-01",
+  "area": "Style",
+  "feature": "None + 25 styles with palettes",
+  "now": "Built",
+  "why": "Same list and words."
+ },
+ {
+  "key": "VIZ",
+  "id": "VT-02",
+  "area": "Style",
+  "feature": "Style resets on a fresh photo / the Original",
+  "now": "Built",
+  "why": "Same."
+ },
+ {
+  "key": "VIZ",
+  "id": "VT-03",
+  "area": "Style",
+  "feature": "Homeowner palette preference",
+  "now": "Built",
+  "why": "The lead's style leads the list: Kevin's style: Contemporary → Modern (Q-32)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VT-04",
+  "area": "Style",
+  "feature": "Style Transfer",
+  "now": "Built",
+  "why": "Same controls; the engine reads each reference's palette (§5.4)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VG-01",
+  "area": "Lighting",
+  "feature": "Six presets with photos",
+  "now": "Built",
+  "why": "Same, with 1.0's photos."
+ },
+ {
+  "key": "VIZ",
+  "id": "VG-02",
+  "area": "Lighting",
+  "feature": "Advanced sliders + word labels, fixtures, instruction",
+  "now": "Built",
+  "why": "Same."
+ },
+ {
+  "key": "VIZ",
+  "id": "VG-03",
+  "area": "Lighting",
+  "feature": "Relight pass + the live result panel",
+  "now": "Built",
+  "why": "One step (Q-22): the canvas previews the lighting live as the sliders move; Generate keeps it as a version."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-01",
+  "area": "Tools",
+  "feature": "Empty the room — Keep built-ins / Strip to shell, extra items",
+  "now": "Built",
+  "why": "Same words; the engine where an empty plate exists (Q-23)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-02",
+  "area": "Tools",
+  "feature": "Auto Furnish — room programs, density, leave out, direction, the scan note",
+  "now": "Built",
+  "why": "Same controls on every width."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-03",
+  "area": "Tools",
+  "feature": "Sketch to photo — quality, use as-is",
+  "now": "Built",
+  "why": "On every width."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-04",
+  "area": "Tools",
+  "feature": "The prompt / Finishing note",
+  "now": "Built",
+  "why": "Note for the render — the engine reads colours, styles and moods from it and says when it can't (§5.5)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-05",
+  "area": "Tools",
+  "feature": "Fast / High quality",
+  "now": "Platform",
+  "why": "Kept: High quality renders at full size and takes a little longer."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-06",
+  "area": "Tools",
+  "feature": "Drift guard",
+  "now": "Platform",
+  "why": "Not needed — the engine never moves geometry."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-07",
+  "area": "Tools",
+  "feature": "Outpaint · Reangle · Orbit video · Depth",
+  "now": "Dead",
+  "why": "Sandbox-only in 1.0 (audit: Dead) — not built."
+ },
+ {
+  "key": "VIZ",
+  "id": "VO-08",
+  "area": "Tools",
+  "feature": "The sandboxes",
+  "now": "Dead",
+  "why": "Internal sandboxes in 1.0 (audit: Dead) — not built."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-01",
+  "area": "Generate, versions and compare",
+  "feature": "One primary button, the label follows the intent",
+  "now": "Built",
+  "why": "Same matrix (§5.6), with the changes it will apply listed above it."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-02",
+  "area": "Generate, versions and compare",
+  "feature": "Variants 1 · 2 · 3",
+  "now": "Built",
+  "why": "Beside Generate at every width (Q-09)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-03",
+  "area": "Generate, versions and compare",
+  "feature": "Loading per slot, Cancel, wake lock, tab-hidden abort",
+  "now": "Built",
+  "why": "Placeholder tiles in the strip + the progress card on the canvas (1.0's trial copy), Cancel."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-04",
+  "area": "Generate, versions and compare",
+  "feature": "Errors per pass",
+  "now": "Built",
+  "why": "The house Couldn't … words (§5.7)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-05",
+  "area": "Generate, versions and compare",
+  "feature": "Gallery strip: Original + V1…Vn, labels",
+  "now": "Built",
+  "why": "The versions strip; each version keeps its label and parent."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-06",
+  "area": "Generate, versions and compare",
+  "feature": "Delete a version",
+  "now": "Built",
+  "why": "Undo (Q-11)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-07",
+  "area": "Generate, versions and compare",
+  "feature": "View dialog: compare any two, Changes list, actions",
+  "now": "Built",
+  "why": "Compare on the canvas + Present (xxl dialog) (Q-12); Changes lists surfaces and furniture."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-08",
+  "area": "Generate, versions and compare",
+  "feature": "Download",
+  "now": "Built",
+  "why": "The version at full size (Q-33)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-09",
+  "area": "Generate, versions and compare",
+  "feature": "Temp mode",
+  "now": "Not in 2.0",
+  "why": "Personal designs cover it (Q-10)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VN-10",
+  "area": "Generate, versions and compare",
+  "feature": "No undo, no unsaved guard",
+  "now": "Built",
+  "why": "⌘Z / ⇧⌘Z on the picks; Undo on removes; nothing to lose (autosave)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-01",
+  "area": "Out to the client and into the lead",
+  "feature": "Share → public link, 7 days, share dialog (QR placeholder, WhatsApp, copy)",
+  "now": "Built",
+  "why": "Share with client (Q-14): pick up to 6 versions, one link per share, 7 days, renew / stop; the WhatsApp draft to the lead's number (X-Ray's dialog)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-02",
+  "area": "Out to the client and into the lead",
+  "feature": "The public page",
+  "now": "Built",
+  "why": "/renders/[token] on the brand kit: each version with before / after, the materials, the studio's pins."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-03",
+  "area": "Out to the client and into the lead",
+  "feature": "Request a Consultation",
+  "now": "Built",
+  "why": "Ask for a call back → a Follow-up task for the lead's members + a notification (Q-16)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-04",
+  "area": "Out to the client and into the lead",
+  "feature": "Portal likes / comments / pins",
+  "now": "Partly built",
+  "why": "The share page carries the client's side: pick a favourite, leave a note, drop a pin and reply (Q-15)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-05",
+  "area": "Out to the client and into the lead",
+  "feature": "Studio annotator",
+  "now": "Built",
+  "why": "Pins on any version in the editor (Q-15)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-06",
+  "area": "Out to the client and into the lead",
+  "feature": "Send to Chat",
+  "now": "Not in 2.0",
+  "why": "2.0 has no chat; WhatsApp is the channel (Q-14)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-07",
+  "area": "Out to the client and into the lead",
+  "feature": "Share to Portal",
+  "now": "Later",
+  "why": "Projects / portal."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-08",
+  "area": "Out to the client and into the lead",
+  "feature": "Save to the lead (MM-01)",
+  "now": "Built",
+  "why": "Save to Files — the lead's Files › Renders (Q-13)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-09",
+  "area": "Out to the client and into the lead",
+  "feature": "Material list for quoting (MM-09)",
+  "now": "Built",
+  "why": "Add to quote (Q-17)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-10",
+  "area": "Out to the client and into the lead",
+  "feature": "Activity, notifications",
+  "now": "Built",
+  "why": "Activity lines and the render_feedback event (Q-34)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VX-11",
+  "area": "Out to the client and into the lead",
+  "feature": "mAIson tools + page context (A F-01…F-11, A-16)",
+  "now": "Later",
+  "why": "The editor registers its Maison AI suggestions (the house rule: they answer coming soon)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VM-01",
+  "area": "Materials library, phone, who may",
+  "feature": "studio_materials library",
+  "now": "Built",
+  "why": "Company › Materials (Q-18)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VP-01",
+  "area": "Materials library, phone, who may",
+  "feature": "Camera-app shell below lg (D; B-113…B-115)",
+  "now": "Built",
+  "why": "The same model ≤1024 on 2.0 pieces (Q-25)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VP-02",
+  "area": "Materials library, phone, who may",
+  "feature": "Touch rules",
+  "now": "Built",
+  "why": "The house (hover: none) arms; pointer events on the canvas."
+ },
+ {
+  "key": "VIZ",
+  "id": "VW-01",
+  "area": "Materials library, phone, who may",
+  "feature": "Who may",
+  "now": "Built",
+  "why": "Every member; Who sees leads on lead designs; delete by maker, Owner or Admin (Q-24)."
+ },
+ {
+  "key": "VIZ",
+  "id": "VW-02",
+  "area": "Materials library, phone, who may",
+  "feature": "Usage funnel",
+  "now": "Platform",
+  "why": "Not built."
+ },
+ {
+  "key": "VIZ",
+  "id": "VW-03",
+  "area": "Materials library, phone, who may",
+  "feature": "Trial + demo (A G-01…G-14)",
+  "now": "Not in 2.0",
+  "why": "Not built."
+ }
+]

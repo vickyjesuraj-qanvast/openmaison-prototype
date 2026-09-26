@@ -1,0 +1,215 @@
+F001 [editor-visual] major/conf Photo fit ignores the stage chip and the zoom bar: the bar covers the photo's bottom and the chip covers its corner  ::  editor.module.css, file-viewer.module.css, stage.module.css, stage.tsx
+F002 [editor-visual] major/conf The versions strip never scrolls the version on screen, a new render or the in-flight tiles into view  ::  versions-strip.module.css, versions-strip.tsx
+F003 [editor-visual] major/conf Picks made while a render runs are silently wiped when it finishes  ::  model.ts, rail.tsx, visualizer-editor.tsx
+F004 [editor-visual] minor/part With many rooms, the active room's chip is off-screen, and at 1025 the room rail shrinks to one truncated chip  ::  chip-rail.tsx, topbar.module.css, topbar.tsx, visualizer-editor.tsx
+F005 [editor-visual] minor/part A version tile's ⋯ is hidden under the favourite badge  ::  kebab.cjs, tile-2.png, versions-strip.module.css, versions-strip.tsx
+F006 [editor-visual] minor/conf The change count disagrees between 'Your changes · n' and the Generate label  ::  model.ts, rail.tsx, visualizer-editor.tsx
+F007 [editor-visual] minor/conf The changes list cuts a row in half with no sign that it scrolls  ::  rail.module.css, rail.tsx
+F008 [editor-visual] minor/conf The Maison AI FAB floats mid-canvas when there is no rail (blank or deleted design)  ::  editor.module.css, maison-fab.module.css, visualizer-editor.tsx
+F009 [editor-visual] polis/part The photo opens at the fallback 3:2 frame, with grey bars and offset markers until the next switch  ::  stage.module.css, stage.tsx
+F010 [editor-visual] minor/conf Markers and pins grow with zoom, and panning has no bounds  ::  stage.module.css, stage.tsx
+F011 [editor-visual] polis/part Markers take a light finish's colour and vanish on light photos  ::  stage.module.css
+F012 [editor-visual] minor/conf Marker tooltips and the furniture list keep the original photo's labels after edits  ::  demo.ts, furniture-panel.tsx, model.ts, run.ts, stage.tsx, visualizer-editor.tsx
+F013 [editor-visual] minor/conf Long names: the design title truncates with no way to read it, room names are silently cut at 60 characters, and room chips grow without limit  ::  actions.ts, topbar.module.css, topbar.tsx, visualizer-editor.tsx
+F014 [editor-visual] minor/conf The 'versions ready' snackbar wraps to two lines and covers the versions strip  ::  maison-fab.module.css, review-banner.tsx, snackbar.module.css, visualizer-editor.tsx
+F015 [editor-visual] minor/conf Style cards mix photo and palette headers, so rows misalign and the material words truncate  ::  panels.module.css, style-panel.tsx
+F016 [editor-visual] polis/part The rail keeps 372px between 1025 and 1279, starving the photo and the panels  ::  editor.module.css, rail.module.css
+F017 [editor-visual] polis/conf The draft pin card crams its helper line, and both pin boxes show a native resize grip  ::  describe-box.module.css, pin-card.module.css, pin-card.tsx, styles.css
+F018 [editor-visual] minor/conf Pin mode gives no instruction banner, and markers stay in the way  ::  REGISTER.md, stage.module.css, stage.tsx, visualizer-editor.tsx
+F019 [editor-visual] polis/part The save stamp is blank at rest (the template editor shows 'Saved <date>')  ::  ago.ts, queries.ts, template-editor.tsx, use-editor-state.ts, visualizer-editor.tsx
+F020 [editor-visual] polis/part The room menu doesn't name its room, and the version menu's first row wraps  ::  visualizer-editor.tsx
+F021 [editor-visual] polis/conf Furniture glyphs are wrong: the TV shows a toolbox, and every decor piece a palette  ::  ICONS.txt, furniture-panel.tsx, furniture.ts, material-symbols-outlined.subset.woff2, material-symbols-rounded.subset.woff2, samples.ts
+F022 [surfaces-furniture] major/conf Surfaces on a restyled version use the original photo's outlines, so the render comes out broken  ::  model.ts, run.ts, samples.ts, surfaces-panel.tsx, visualizer-editor.tsx
+F023 [surfaces-furniture] major/conf A surface added by name + tap, or with "Mark another one like this", floods almost the whole photo  ::  08-window-frame-placed.png, 09-window-frame-result.png, run.ts, segment.ts, surfaces-panel.tsx, visualizer-editor.tsx
+F024 [surfaces-furniture] major/conf Furniture Customize and Replace paint rectangles that spill onto walls, floor and the neighbouring pieces  ::  15-result.png, 16-bed-result.png, 17-kit-result.png, run.ts, samples.ts, segment.ts
+F025 [surfaces-furniture] major/part Rectangular exclude boxes leave unpainted patches with straight seams on floors and walls  ::  samples.ts, segment.ts
+F026 [surfaces-furniture] minor/part Surface edges bounded by an outline come out stair-stepped  ::  run.ts, segment.ts
+F027 [surfaces-furniture] major/conf A group with mixed picks shows "As in the photo" ticked and "Now: As in the photo"  ::  material-picker.tsx, surfaces-panel.tsx
+F028 [surfaces-furniture] major/part Remove on the sofa leaves a ghost of its arm, and a Replace after a Remove paints the pasted floor  ::  22-after.png, poly.png, recolor.ts, run.ts, samples.ts, z22-arm.png
+F029 [surfaces-furniture] minor/part Curtains and bedspread get ceramic / brass / marble finishes, and Terracotta appears twice  ::  furniture-panel.tsx, furniture.ts
+F030 [surfaces-furniture] major/conf After Redraw its outline, the photo keeps showing the old region  ::  run.ts, visualizer-editor.tsx
+F031 [surfaces-furniture] major/conf Take off the list can't be undone with ⌘Z, and the snackbar's Undo can revert an unrelated pick  ::  use-editor-state.ts, visualizer-editor.tsx
+F032 [surfaces-furniture] minor/conf Replace or Customize with nothing chosen still lets you Generate, then fails after a fake progress run  ::  furniture-panel.tsx, furniture.ts, model.ts, rail.tsx, run.ts, visualizer-editor.tsx
+F033 [surfaces-furniture] major/part Drawn surfaces paint over whatever stands in front of them  ::  model.ts, run.ts, samples.ts, segment.ts, visualizer-editor.tsx
+F034 [surfaces-furniture] minor/conf The outline being traced is invisible: stroke width is 0.004 px  ::  stage.tsx
+F035 [surfaces-furniture] minor/conf Generate's change count doesn't match "Your changes"  ::  model.ts, rail.tsx, visualizer-editor.tsx
+F036 [surfaces-furniture] minor/conf Change chips say "Walls" or "Cabinets" even when only one of them changes  ::  model.ts, samples.ts, visualizer-editor.tsx
+F037 [surfaces-furniture] minor/conf Rooms without an empty plate still offer an enabled-looking "Remove (not on this photo)" and mention "the sample living room"  ::  chips.tsx, furniture-panel.tsx, run.ts, visualizer-editor.tsx
+F038 [surfaces-furniture] minor/conf Furniture rows on a version don't say what that version already changed  ::  furniture-panel.tsx, run.ts, surfaces-panel.tsx, visualizer-editor.tsx
+F039 [surfaces-furniture] minor/conf A swatch uploaded from the Floor picker defaults to Paints and Matte  ::  material-picker.tsx, small-dialogs.tsx, surfaces-panel.tsx, surfaces.ts, visualizer-editor.tsx
+F040 [surfaces-furniture] minor/conf Replace's reference photo isn't shown and silently overrides the typed description  ::  REGISTER.md, furniture-panel.tsx, run.ts, visualizer-editor.tsx
+F041 [surfaces-furniture] minor/conf Picks made just before leaving are lost: autosave waits 900 ms and has no flush  ::  use-editor-state.ts, visualizer-editor.tsx
+F042 [surfaces-furniture] minor/part Add / Draw a surface: duplicate entry points, footers that don't match, and scribbles kept  ::  small-dialogs.tsx, stage.tsx, surfaces-panel.tsx, visualizer-editor.tsx
+F043 [surfaces-furniture] minor/conf Groups with one surface hide Redraw and use odd wording  ::  surfaces-panel.tsx, visualizer-editor.tsx
+F044 [surfaces-furniture] minor/conf Replace quick picks suggest the wrong kind of piece  ::  furniture-panel.tsx, furniture.ts
+F045 [surfaces-furniture] minor/part "Window frame" suggests glass  ::  catalogue.ts, surfaces-panel.tsx, surfaces.ts
+F046 [surfaces-furniture] major/part On a phone the Surfaces list scrolls inside a short tray under the Describe box  ::  editor.module.css, panels.module.css, rail.module.css, tray-scrolled.png, tray.cjs, tray2.cjs
+F047 [surfaces-furniture] polis/conf Patterns and tiles are laid flat, with no perspective or tile texture  ::  patterns.ts, recolor.ts, run.ts, samples.ts
+F048 [surfaces-furniture] polis/conf Detector labels title-case every word  ::  furniture-panel.tsx, samples.ts, stage.tsx, surfaces-panel.tsx, surfaces.ts
+F049 [surfaces-furniture] polis/conf Furniture icons: a toolbox for the TV and a palette for every decor piece  ::  ICONS.txt, furniture-panel.tsx, material-symbols-outlined.subset.woff2, material-symbols-rounded.subset.woff2, samples.ts
+F050 [surfaces-furniture] polis/conf Customize's colour chips have no colour  ::  chips.module.css, chips.tsx, furniture-panel.tsx
+F051 [surfaces-furniture] polis/part The changes list is clipped mid-chip with no sign there's more  ::  15-before.png, rail.module.css, rail.tsx
+F052 [style-light-tools] major/conf Picks shown under 'Your changes' are silently dropped by Restyle, Relight, Style transfer, Render from sketch, Empty and Furnish, then wiped from the room  ::  model.ts, rail.tsx, run.ts, visualizer-editor.tsx
+F053 [style-light-tools] major/conf Empty the room / Furnish the room are offered and enabled where they cannot run; the studio waits through a fake progress card, then gets a wrong message  ::  model.ts, rail.tsx, run.ts, tools-panel.tsx, visualizer-editor.tsx
+F054 [style-light-tools] major/conf A failed Generate's error stays under the button after picks change, the tool changes and even the room changes  ::  rail.tsx, run.ts, visualizer-editor.tsx
+F055 [style-light-tools] major/conf Furnish ignores Leave out, density, room type and the style it names; it returns the original furnished photo  ::  programs.gen.ts, run.ts, samples.ts, tools-panel.tsx, tools.ts, visualizer-editor.tsx
+F056 [style-light-tools] major/conf Style transfer 'Keep unchanged' does nothing with its own example ('the floor') and is forgotten after Generate  ::  model.ts, run.ts, samples.ts, style-panel.tsx
+F057 [style-light-tools] major/conf Reference photos survive every Generate and silently override later style picks (Generate stays 'Style transfer')  ::  model.ts, rail.tsx, style-panel.tsx, visualizer-editor.tsx
+F058 [style-light-tools] major/conf 'Not a sketch? Use it as it is' cannot be undone; the room loses Render from sketch for good  ::  model.ts, queries.ts, tools-panel.tsx, use-editor-state.ts, visualizer-editor.tsx
+F059 [style-light-tools] major/conf Restyle in any of the 20 styles without a finished render (the lead's own pick included) leaves hard rectangles of old floor and a blown-out white wall  ::  recolor.ts, run.ts, samples.ts, segment.ts
+F060 [style-light-tools] major/conf On an uploaded (non-sample) photo, restyle and notes paint the bed, window and nightstand, with a hard cut line at 80% height  ::  45-upload-restyle-japandi.png, 48-upload-note-navy.png, fallback.ts, model.ts, segment.ts, style-panel.tsx, visualizer-editor.tsx
+F061 [style-light-tools] minor/part ⌘Z does nothing after dragging a lighting slider (focus stays on the range input)  ::  lighting-panel.tsx, visualizer-editor.tsx
+F062 [style-light-tools] major/conf On a laptop screen the Generate footer eats the rail: the Tools panel gets 168px  ::  58-1366x768-furnish.png, describe-box.module.css, rail.module.css, rail.tsx, visualizer-editor.tsx
+F063 [style-light-tools] minor/conf Relighting a version that is already relit stacks the grades (Blue Hour on a Golden Hour version stays golden)  ::  run.ts, visualizer-editor.tsx
+F064 [style-light-tools] minor/part Empty the room ignores 'Strip to shell' vs 'Keep built-ins' and 'Anything else to take out'  ::  defurnished.jpg, run.ts, samples.ts, tools-panel.tsx, tools.ts
+F065 [style-light-tools] minor/conf Two free-text boxes stacked in Lighting: 'Anything else about the light' right above 'Describe a change'  ::  describe-box.tsx, lighting-panel.tsx, model.ts, run.ts
+F066 [style-light-tools] minor/conf On ≤1024 the waiting changes are only a count; they can't be seen or removed  ::  rail.module.css, rail.tsx
+F067 [style-light-tools] minor/conf Versions / Quality row overflows the footer by 18px at every desktop width  ::  knobs-1440.png, knobs.cjs, rail.module.css, rail.tsx
+F068 [style-light-tools] polis/conf Reference 'Use it for' selects are clipped to 'Overall \' / 'Palette c'  ::  31-transfer-2ref.png, panels.module.css, style-panel.tsx, tools.ts
+F069 [style-light-tools] polis/conf Style cards' material-board words are truncated to one word ('Porcelain …', 'Travertin…')  ::  panels.module.css, style-panel.tsx
+F070 [style-light-tools] polis/part Cancel leaves the old run's step timer going; a quick re-Generate advances at double speed  ::  visualizer-editor.tsx
+F071 [style-light-tools] polis/conf Small copy slips around Generate and the sketch  ::  REGISTER.md, surfaces-panel.tsx, tools-panel.tsx, versions-strip.tsx, visualizer-editor.tsx
+F072 [versions-menus] major/conf The Compare slider can't be dragged, clicked or tapped in the editor; only the keyboard moves it  ::  compare-slider.tsx, stage.module.css, stage.tsx
+F073 [versions-menus] major/conf Leaving the editor within about 1 s of a pick silently loses that pick (autosave timer dropped on unmount)  ::  topbar.tsx, use-editor-state.ts, visualizer-editor.tsx
+F074 [versions-menus] major/conf The version tile's ⋯ and Present's ‹ › arrows have no background, so they are near-invisible on photos (display:contents bug)  ::  dialogs.module.css, icon-button.module.css, present-dialog.tsx, tooltip.module.css, versions-strip.module.css, versions-strip.tsx
+F075 [versions-menus] major/conf Moodboard for a version built on another (V3 relight, V4 wallpaper) prints 'Paints · Paints · Matte' and 'A piece — Emerald Velvet'  ::  20-mood-V3.png, model.ts, moodboard-dialog.tsx, visualizer-editor.tsx
+F076 [versions-menus] major/conf A Designer who can't delete the design can still delete any whole room (and every version in it)  ::  actions.ts, permissions.ts, policy.ts, queries.ts, visualizer-editor.tsx
+F077 [versions-menus] major/conf Deleting a shared version (the client's favourite) has no warning and no way back once the snackbar closes; the client's pins and notes vanish from the studio's view  ::  actions.ts, queries.ts, versions-strip.tsx, visualizer-editor.tsx
+F078 [versions-menus] minor/conf Present's version thumbs overflow the 280 px side column; the one on screen is often hidden and there is no scroll cue  ::  11-present.png, dialogs.module.css, present-dialog.tsx
+F079 [versions-menus] minor/conf Esc does nothing inside a pin's note or reply box (react-aria TextArea stops the key)  ::  createEventHandler.js, pin-card.tsx, render-share-page.tsx, visualizer-editor.tsx
+F080 [versions-menus] minor/conf Pin mode gives no instruction, the surface markers stay live under it, and pinning works while Compare is on  ::  REGISTER.md, stage.tsx, visualizer-editor.tsx
+F081 [versions-menus] minor/conf ← → change the version behind an open ⋯ / room / design menu  ::  visualizer-editor.tsx
+F082 [versions-menus] minor/conf Compare against a deleted parent shows the deleted version, while Present falls back to the Original  ::  model.ts, present-dialog.tsx, visualizer-editor.tsx
+F083 [versions-menus] minor/conf Room rename accepts a name another room already has, and cuts long names at 60 characters without saying so  ::  actions.ts, visualizer-editor.tsx
+F084 [versions-menus] minor/conf Back loses the gallery folder, and 'Open the lead' doesn't carry ?from= (REG-465)  ::  nav.ts, visualizer-editor.tsx, visualizer-home.tsx
+F085 [versions-menus] minor/part Delete design lands on the gallery with no Undo snackbar  ::  contract-templates-gallery.tsx, layout.tsx, visualizer-editor.tsx, visualizer-home.tsx
+F086 [versions-menus] minor/conf Present focus drops to <body> at the first or last version, and 'Show it alone' stays pressed but disabled on the Original  ::  icon-button.tsx, present-dialog.tsx
+F087 [versions-menus] minor/conf Moodboard wallpaper swatch shows a different motif, and a different scale in print, from the one on the wall  ::  materials.ts, moodboard-dialog.tsx, patterns.ts, surfaces-panel.tsx
+F088 [versions-menus] polis/conf Printed moodboard puts the render in a grey box with big empty bands  ::  moodboard.module.css
+F089 [versions-menus] polis/conf Snackbars sit on top of the versions strip's labels  ::  editor.module.css, review-banner.tsx, snackbar.module.css, visualizer-editor.tsx
+F090 [versions-menus] polis/conf Change photo has no Undo and clears the room's picks  ::  actions.ts, visualizer-editor.tsx
+F091 [files-client] block/conf On a phone the client cannot post a pin: the draft card's 'Pin it' button is clipped under the photo, and pin threads are cut to one line  ::  pin-card.module.css, pin-card.tsx, render-share-page.module.css, render-share-page.tsx, sheet.tsx, visualizer-editor.tsx
+F092 [files-client] major/conf Deleting a design promises 'Shared links stop working', but the client's link stays open and still accepts notes  ::  actions.ts, page.tsx, queries.ts, visualizer-editor.tsx
+F093 [files-client] major/conf 'Delete forever' on a design breaks the renders saved in the lead's Files › Renders and erases its Activity history  ::  actions.ts, activity.ts, events.ts, repair-demo-data.ts, route.ts, visualizer-home.tsx
+F094 [files-client] major/conf The client's view count is inflated: every like, note or pin counts as two more opens  ::  actions.ts, activity.ts, page.tsx, render-share-page.tsx, share-dialog.tsx
+F095 [files-client] major/conf 'Open in AI Visualizer' on a render in Files adds a new room made from the render, instead of opening that version  ::  actions.ts, file-viewer.tsx, files-grid.tsx, files-table.tsx, files.ts, lead-files.tsx, page.tsx, queries.ts, repair-demo-data.ts, schema.ts, visualiz
+F096 [files-client] major/part Add to a quote: one line per wall instead of per finish, and nothing is ever priced (exact-name match only, Company › Materials' Price book link ignored)  ::  actions.ts, baseline.json, model.ts, small-dialogs.tsx, visualizer-editor.tsx
+F097 [files-client] major/conf 'Add to a quote' is disabled on a relit version even though it carries the finishes it was made from  ::  actions.ts, model.ts, moodboard-dialog.tsx, visualizer-editor.tsx
+F098 [files-client] major/conf A render_feedback notification opens the design on the wrong room and version, and never shows the pin it is about  ::  actions.ts, activity.ts, page.tsx, visualizer-editor.tsx
+F099 [files-client] major/part 'Ask for a call back' goes through with no phone number, and the task is due within the hour even at 3 a.m.  ::  actions.ts, queries.ts, render-share-page.tsx
+F100 [files-client] minor/conf Adding the same version to a draft twice silently duplicates the whole section  ::  actions.ts, queries.ts, small-dialogs.tsx, visualizer-editor.tsx
+F101 [files-client] minor/conf Quote lines from the visualizer are inconsistent and print internal wording to the client  ::  actions.ts, model.ts, surfaces.ts
+F102 [files-client] minor/conf The client page lists versions in pick order (V3, V1, V2) and joins rooms with repeated 'and'  ::  actions.ts, format.ts, render-share-page.tsx, share-dialog.tsx
+F103 [files-client] minor/part The client and the bell see the studio's internal version labels ('Walls, Floor +1', 'From a note', 'Kitchen sketch')  ::  actions.ts, model.ts, render-share-page.tsx, share-dialog.tsx
+F104 [files-client] minor/conf Pin times on the client page count from when the link was made, not from now  ::  pin-card.tsx, queries.ts, render-share-page.tsx
+F105 [files-client] minor/conf The file viewer's Back says 'Back to Files' when it returns to the AI Visualizer  ::  file-viewer.tsx, files-section.tsx, nav.ts, visualizer-editor.tsx
+F106 [files-client] minor/conf Activity lines for sharing are wrong or missing: 'You stopped sharing' names nobody, and renew, save-to-Files and replies aren't named  ::  actions.ts, activity.ts, events.ts, schema.ts
+F107 [files-client] minor/conf Shared before: no way to copy or open an existing link, and unsent links read 'sent today'  ::  actions.ts, queries.ts, share-dialog.tsx, visualizer-editor.tsx
+F108 [files-client] minor/part The 'Stopped sharing' snackbar wraps to two lines and covers the dialog footer; Undo re-opens with a new expiry  ::  actions.ts, snackbar.module.css, visualizer-editor.tsx
+F109 [files-client] minor/conf The bell panel's 'Notification settings' link is drawn over the list rows  ::  drawer.tsx, notifications-panel.module.css, notifications-panel.tsx
+F110 [files-client] minor/conf The AI Visualizer quick link from inside a Files folder brings you back to All Files, not the folder  ::  lead-files.tsx, overview.tsx
+F111 [files-client] polis/part A malformed renders link shows Next's bare unstyled 404 instead of the studio's notice  ::  link-notice.tsx, page.tsx, render-share-page.tsx
+F112 [files-client] polis/part The closed-link notice offers only a phone number, and no WhatsApp or designer's name  ::  page.tsx, queries.ts, render-share-page.tsx
+F113 [files-client] polis/part Saved renders: a placeholder upload thumbnail, made-up sizes, no origin in Information, and download names that differ by place  ::  actions.ts, file-info-panel.tsx, lead-files.tsx, upload-toast.tsx, visualizer-editor.tsx
+F114 [files-client] polis/conf Share with client saves every shared version into Files › Renders without saying so  ::  REGISTER.md, actions.ts, share-dialog.tsx, visualizer-editor.tsx
+F115 [gallery-materials] major/conf Duplicating a lead's design leaks the client's photos to members who may not see the lead  ::  actions.ts, queries.ts, repair-demo-data.ts, schema.ts, visualizer-home.tsx
+F116 [gallery-materials] major/conf Duplicate drops every render: a 5-render design becomes '3 rooms · 0 renders'  ::  actions.ts, model.ts, queries.ts, schema.ts, visualizer-home.tsx
+F117 [gallery-materials] major/conf The PERSONAL chip squeezes design names to a few letters  ::  chip-1440.png, chip-390b.png, library-gallery.tsx, visualizer-home.tsx
+F118 [gallery-materials] minor/part New design from inside a folder lands at the root, and Back leaves the folder  ::  actions.ts, library-gallery.tsx, nav.ts, visualizer-home.tsx
+F119 [gallery-materials] minor/conf A lead design's kebab shows three greyed items; the only reason is a native tooltip that is wrong and unreachable on touch  ::  actions.ts, library-gallery.tsx, policy.ts, visualizer-editor.tsx, visualizer-home.tsx
+F120 [gallery-materials] minor/conf Price book item select: of two items with the same name, the second can never be linked  ::  material-dialog.tsx, queries.ts, text-field.tsx
+F121 [gallery-materials] minor/conf The Colour field rejects hex without '#' and silently throws away a partial value on blur  ::  brand-kit-view.tsx, format.ts, material-dialog.tsx
+F122 [gallery-materials] minor/part Long names are cut silently on save, and Duplicate then loses its '(copy)' suffix  ::  actions.ts, library-gallery.tsx, material-dialog.tsx, materials-actions.ts
+F123 [gallery-materials] minor/conf Deleted Materials sheet: doubled crumb, 'Used by: Linked', 'Made by'  ::  library-deleted-sheet.tsx, library-gallery.tsx, materials-view.tsx
+F124 [gallery-materials] minor/part Any member can rename or delete the studio's AI Visualizer folders  ::  REGISTER.md, folder-actions.ts, folder-libraries.ts, policy.ts, queries.ts, visualizer-home.tsx
+F125 [gallery-materials] minor/conf Undo / Restore bumps updatedAt: the card jumps to the front and reads 'edited just now'  ::  actions.ts, materials-actions.ts, queries.ts
+F126 [gallery-materials] minor/conf 'edited 0 min ago' between 45 and 59 seconds  ::  ago.ts
+F127 [gallery-materials] polis/part Move dialog lists every entry with an empty grey thumb, including lead designs that can't be foldered  ::  library-gallery.tsx, materials-view.tsx, move-dialog.tsx, visualizer-home.tsx
+F128 [gallery-materials] minor/conf Copy slips: lowercase sample help text, 'its 0 renders', 'The 1 design inside move up', 'Sept'  ::  actions.ts, format.ts, library-gallery.tsx, samples.ts, visualizer-home.tsx
+F129 [gallery-materials] minor/conf Server restores and material rename skip the permission check; refusals report success  ::  actions.ts, library-gallery.tsx, materials-actions.ts, materials-view.tsx, visualizer-home.tsx
+F130 [gallery-materials] polis/conf 'For a lead…' picker doesn't say which leads already have a design  ::  pick-one-dialog.tsx, queries.ts, visualizer-home.tsx
+F131 [gallery-materials] polis/conf 'edited … by' and the 'Updated by' column show the creator, not the last editor  ::  library-gallery.tsx, queries.ts, visualizer-home.tsx
+F132 [gallery-materials] polis/part Materials: New ▾ opens a menu with one item; read-only dialog invites an upload; kebab says Edit for read-only  ::  library-toolbar-actions.tsx, material-dialog.tsx, materials-view.tsx, price-book-sections.tsx, read-only.tsx
+F133 [gallery-materials] polis/conf List views and Deleted sheets show generic glyphs where the cover or swatch would identify the row  ::  library-deleted-sheet.tsx, library-gallery.tsx, materials-view.tsx, price-book-items.tsx, visualizer-home.tsx
+F134 [gallery-materials] polis/conf The same lead design is labelled LEAD in the editor but MET on the landing card  ::  queries.ts, topbar.tsx, visualizer-editor.tsx, visualizer-home.tsx
+F135 [phone-tablet] block/conf Editor Compare slider can't be dragged (touch or mouse): the slider box gets `.fill { pointer-events: none }`  ::  compare-slider.module.css, compare-slider.tsx, stage.module.css, stage.tsx
+F136 [phone-tablet] block/conf Surfaces / Furniture lists get squashed and clipped. Pieces past the first few can't be reached, and the panel body doesn't scroll  ::  panels.module.css, rail.module.css
+F137 [phone-tablet] major/conf On a phone the Generate progress card is clipped by the photo frame, so its title glyph and Stop button are cut off  ::  stage.module.css, stage.tsx
+F138 [phone-tablet] major/conf Pin cards (new pin and thread) are clipped by the photo on phones. The studio's note is unreadable and Cancel / Pin it are cut, in the editor and on the client link  ::  pin-card.module.css, pin-card.tsx, render-share-page.module.css, render-share-page.tsx, sheet.tsx, stage.module.css
+F139 [phone-tablet] major/conf The Maison AI FAB covers the versions strip, including the newest version, on phones and tablets  ::  editor.module.css, fab-390.png, fab-768.png, versions-strip.module.css
+F140 [phone-tablet] minor/part The snackbar covers the editor's dock and sits on the Generate footer on phones  ::  editor.module.css, globals.css, layout.tsx, snackbar.module.css
+F141 [phone-tablet] major/conf Moodboard footer overflows on phones: 'Print or save as PDF' is cut off the left edge  ::  dialog.module.css, moodboard-dialog.tsx, moodboard.module.css
+F142 [phone-tablet] major/conf The canvas zoom bar overlaps the photo's bottom and its markers, and at 320 it is wider than the screen  ::  stage.module.css, stage.tsx
+F143 [phone-tablet] major/conf No touch pan or pinch on the photo: a zoomed pan stops after a few pixels, and pinch zooms the whole page  ::  layout.tsx, stage.module.css, stage.tsx
+F144 [phone-tablet] major/conf On a phone the waiting changes can't be seen, taken off one by one or cleared. The footer only says 'n changes waiting'  ::  portal-menu.tsx, rail.module.css, rail.tsx, visualizer-editor.tsx
+F145 [phone-tablet] minor/part The tray always pins 'Describe a change' above the panel, leaving about 118px of panel on a 375×667 phone  ::  describe-box.module.css, describe-box.tsx, editor.module.css, visualizer-editor.tsx
+F146 [phone-tablet] major/part At 1024×768 the touch tablet gets the phone model: an open tray shrinks the photo to about 290×196 with a wide empty screen  ::  breakpoint.ts, ed-t1024.png, editor.module.css, responsive.md, t1024-10-tray-Surfaces.png, visualizer-editor.tsx
+F147 [phone-tablet] minor/conf Present on touch: the arrows are near-invisible and there's no swipe. At 1024 landscape the photo is small  ::  dialogs.module.css, present-dialog.tsx, tooltip.tsx
+F148 [phone-tablet] minor/conf Compact top bar truncates the design name at half the free width ('Showroo…', 'Design · 2…')  ::  topbar.module.css, topbar.tsx
+F149 [phone-tablet] minor/conf The version on screen and the active room chip aren't scrolled into view on phones  ::  chip-rail.module.css, chip-rail.tsx, topbar.tsx, versions-strip.module.css, versions-strip.tsx, visualizer-editor.tsx
+F150 [phone-tablet] minor/part Touch targets under 36px: the version tile ⋯ (24×24, overlapping the tile's badges), client-page pins (26×26), the landing intro's Dismiss (24×24)  ::  stage.module.css, versions-strip.module.css, versions-strip.tsx, visualizer-home.tsx
+F151 [phone-tablet] minor/conf Pin mode on touch: no banner says what to do, and the finish markers stay tappable, so a tap near a square opens the picker instead of pinning  ::  stage.tsx, visualizer-editor.tsx
+F152 [phone-tablet] polis/conf Dock tabs keep a grey hover background after a tap (sticky :hover on touch)  ::  editor.module.css, panels.module.css, rail.module.css, stage.module.css
+F153 [phone-tablet] minor/conf The design ⋯ sheet on phones has Undo but no Redo (the compact top bar drops both)  ::  topbar.tsx, visualizer-editor.tsx
+F154 [phone-tablet] minor/conf Client link: the full-width Before/after box traps vertical swipes (touch-action: none), so scrolling over it moves the divider  ::  compare-slider.module.css, compare-slider.tsx, render-share-page.tsx
+F155 [phone-tablet] polis/part Phone landing: the intro card fills the first screen, and at 320 the 2-up cards truncate to 'Ke…' / '3 rooms · 5…'  ::  quote-templates-gallery.module.css, visualizer-home.module.css, visualizer-home.tsx
+F156 [phone-tablet] minor/conf No left / right / top safe-area insets in the fixed editor frame (the viewport is viewportFit: 'cover')  ::  editor.module.css, layout.tsx, mobile-nav.module.css, rail.module.css, topbar.module.css, versions-strip.module.css
+F157 [phone-tablet] polis/conf With the tray open, the stage chip overlaps the photo's top-left corner  ::  editor.module.css, stage.module.css, stage.tsx
+F158 [phone-tablet] polis/conf The compact footer repeats the count ('2 changes waiting' plus 'Generate · 2 changes') and wraps to two lines  ::  model.ts, rail.module.css, rail.tsx
+F159 [phone-tablet] polis/conf Opened from the file viewer, the editor's Back says 'Back to Kevin Ng' but returns to the photo  ::  file-viewer.tsx, lead-files.tsx, nav.ts, visualizer-editor.tsx
+F160 [motion-a11y] major/conf Pin note boxes are clipped inside the photo on phones, so a pin can't be saved (editor and client link)  ::  pin-card.module.css, pin-card.tsx, render-share-page.module.css, render-share-page.tsx, sheet.tsx, stage.module.css
+F161 [motion-a11y] minor/part Esc does nothing while typing a pin note or a reply  ::  pin-card.tsx, render-share-page.tsx, visualizer-editor.tsx
+F162 [motion-a11y] major/conf Keyboard focus drops to <body> after Generate, after a render lands, and after closing a pin  ::  pin-card.tsx, rail.tsx, stage.tsx, surface.ts, versions-strip.tsx, visualizer-editor.tsx
+F163 [motion-a11y] minor/part Client link: 'Your favourite' is a disabled, half-opacity button, which reads as unavailable and fails contrast  ::  render-share-page.tsx, styles.css
+F164 [motion-a11y] minor/part Pin mode has no banner and no toggle state; pin and place modes are pointer-only  ::  icon-button.tsx, render-share-page.tsx, stage.tsx, visualizer-editor.tsx
+F165 [motion-a11y] minor/conf Editor route ghost doesn't match the editor, and the swap is a hard cut (no PageReveal)  ::  loading.tsx, page-reveal.tsx, skeleton.tsx, skeletons.module.css, skeletons.tsx, visualizer-editor.tsx
+F166 [motion-a11y] minor/conf Landing ghost omits the intro card and folders, so the gallery jumps ~180px on reveal  ::  library-gallery.tsx, loading.tsx, skeletons.module.css, skeletons.tsx, visualizer-home.tsx
+F167 [motion-a11y] minor/conf Client link ghost is 120px short of the real page and has no crossfade  ::  loading.tsx, page-reveal.tsx, page.tsx, render-share-page.tsx, skeletons.module.css, skeletons.tsx
+F168 [motion-a11y] minor/conf Panning a zoomed photo lags far behind the pointer  ::  stage.module.css, stage.tsx
+F169 [motion-a11y] minor/conf Rail mode tabs and the Style, Lighting and Tools radio groups ignore arrow keys  ::  chips.tsx, lighting-panel.tsx, rail.tsx, style-panel.tsx, tabs.tsx, tools-panel.tsx, visualizer-editor.tsx
+F170 [motion-a11y] minor/conf Markers have no visible focus ring, and their names don't say what they are or what finish they carry  ::  model.ts, stage.module.css, stage.tsx, visualizer-editor.tsx
+F171 [motion-a11y] minor/conf The versions strip hides its badges and descriptors from assistive tech, and version changes aren't announced  ::  globals.css, versions-strip.tsx, visualizer-editor.tsx
+F172 [motion-a11y] polis/part Reduced motion isn't honoured by the motion-driven transitions, and durations are hard-coded  ::  editor.module.css, globals.css, layout.tsx, motion.ts, pin-card.module.css, section-card.tsx, stage.module.css, stage.tsx
+F173 [motion-a11y] minor/conf Phone tray: the layout snaps around a 24px slide, and closing is an instant cut  ::  editor.module.css, motion.ts, visualizer-editor.tsx
+F174 [motion-a11y] minor/conf Phone: the Maison AI button covers the versions strip  ::  editor.module.css, versions-strip.module.css
+F175 [motion-a11y] minor/conf The go bar says '1 change waiting' while the button says 'Generate · 2 changes'  ::  model.ts, rail.tsx, visualizer-editor.tsx
+F176 [motion-a11y] polis/part Present: the image hard-cuts, thumbnails show no state, and the active thumbnail can be off screen  ::  dialogs.module.css, globals.css, present-dialog.tsx, stage.tsx
+F177 [motion-a11y] polis/conf The highlight overlay and lighting preview pop in with no fade, and flicker between selections  ::  hl-flicker.cjs, stage.module.css, stage.tsx, visualizer-editor.tsx
+F178 [motion-a11y] polis/conf The zoom level is hidden from screen readers, and the snackbar covers the strip's labels  ::  editor.module.css, review-banner.tsx, snackbar.module.css, stage.tsx
+F179 [engine] block/conf Empty the room, and Remove on an edited version, leave white furniture ghosts on the new walls and oak cut-outs in the new floor  ::  empty-from-v2.jpg, remove-tv-coffee-from-v2.jpg, render-test.mts, run.ts, samples.ts
+F180 [engine] block/conf Uploaded (non-sample) photos: Walls floods the ceiling, curtains and bedding, and Floor paints the lower half of the wall, with a straight seam across the photo  ::  fallback.ts, model.ts, run.ts, segment.ts, visualizer-editor.tsx
+F181 [engine] major/conf Remove in the living room cuts through the pieces in front: coffee table punches a hole in the sofa, console erases the coffee table and fades the TV, TV and sofa leave ghosts  ::  orig-coffee.png, recolor.ts, rm-coffee2.png, run.ts, samples.ts, z-rm-tv.png
+F182 [engine] major/conf Customize paints the piece's whole box: plant turns the wall behind it into a rectangle, armchair and coffee table colour the sofa, rug and stools colour the floor  ::  cu-plant.jpg, run.ts, samples.ts, segment.ts, z-cu-arm.png
+F183 [engine] major/conf Living-room floor: rectangular seams at the rug, an unpainted strip in front of the console, and the throw painted with the floor (visible in the demo V2/V3 and the client link)  ::  demo-renders.mts, demo.ts, edit.png, living-room-edit-golden-hour.jpg, living-room-edit.jpg, orig.png, samples.ts, swatch-walnut.jpg
+F184 [engine] major/conf Kitchen and bedroom floors keep large unpainted rectangles, and other kitchen and bedroom outlines leak or leave rims  ::  regions.mts, samples.ts
+F185 [engine] major/conf Every curated outline edge is a visible staircase (wall and ceiling line, floor edges, wall base)  ::  run.ts, samples.ts, segment.ts
+F186 [engine] major/conf White halos and pale boxes around plants, pampas, the pot and lamps whenever a wall is painted  ::  samples.ts, segment.ts, z-bd-wall-low.png, z-lr-wall-right.png, z-v4-right.png
+F187 [engine] major/conf Floors, tiles and stone render as flat colour: no wood grain, herringbone, grout or veining; the old texture shows through, and light materials burn out  ::  materials.ts, patterns.ts, recolor.ts, run.ts
+F188 [engine] major/conf Relight presets don't deliver what their cards show: Daylight burns out, Blue Hour and Spotlight barely change, night presets keep a daylit window, lights glow in the wrong places  ::  grade.ts, lighting.ts, run.ts, samples.ts, sheet-light-kt.jpg, sheet-light-previews.jpg, z-kt-cozy.png
+F189 [engine] major/part Style transfer from a mood board paints the walls the board's paper and the floor its darkest swatch, not the walnut the board names  ::  kitchen-moodboard.jpg, palette.ts, run.ts, transfer-moodboard.jpg
+F190 [engine] major/conf After a style transfer, the kept reference hijacks the next Generate: a typed note re-runs the transfer and the note is ignored  ::  model.ts, run.ts, visualizer-editor.tsx
+F191 [engine] minor/conf Wallpaper is laid flat in screen space: no perspective on receding walls, a fixed scale, printed across shelves, and 40 % flatter than the wall's light  ::  recolor.ts, run.ts, samples.ts
+F192 [engine] minor/part Restyle on a sample room drops the version's edits: restyling V2 returns the same stock render as restyling the Original  ::  run.ts, style-panel.tsx, visualizer-editor.tsx
+F193 [engine] polis/conf A faint light stepped line where two painted surfaces meet  ::  recolor.ts, run.ts, segment.ts
+F194 [code-robustness] minor/part Save to Files (and Share) files the wrong render when two rooms share a name  ::  actions.ts, schema.ts, visualizer-editor.tsx
+F195 [code-robustness] major/conf Deleting a design says “Shared links stop working” but the client link keeps working  ::  actions.ts, page.tsx, queries.ts, visualizer-editor.tsx
+F196 [code-robustness] major/conf Switching rooms during Generate shows the other room's render running over the wrong photo  ::  i-switch-after.png, i-switch-during-run.png, stage.tsx, versions-strip.tsx, visualizer-editor.tsx
+F197 [code-robustness] minor/part A removed swatch or material leaves a dangling pick; Generate then keeps a no-change version  ::  d-dangling.png, model.ts, run.ts, visualizer-editor.tsx
+F198 [code-robustness] major/conf Undo after removing an uploaded swatch silently does nothing  ::  actions.ts, materials.ts, queries.ts, visualizer-editor.tsx
+F199 [code-robustness] major/conf The client link's view count counts the client's own clicks (and every revalidation)  ::  actions.ts, activity.ts, page.tsx, render-share-page.tsx, share-dialog.tsx
+F200 [code-robustness] minor/part Reference and piece photos are stored as data URLs in the room state and shipped in the page props  ::  actions.ts, model.ts, queries.ts, repair-demo-data.ts, route.ts, schema.ts, use-editor-state.ts, visualizer-editor.tsx
+F201 [code-robustness] major/conf Picks made in the last 900 ms are lost on Back or tab close; a failed autosave never retries  ::  quote-editor.tsx, template-editor.tsx, use-editor-state.ts, visualizer-editor.tsx
+F202 [code-robustness] major/conf Any member can delete another member's room — the maker / Owner / Admin rule isn't applied  ::  actions.ts, policy.ts, queries.ts, visualizer-editor.tsx
+F203 [code-robustness] minor/part Files uploads that aren't JPG/PNG/WebP (BMP, GIF, AVIF, HEIC) show a floor plan and are recorded as JPEG  ::  files-actions.ts, files.ts, lead-files.tsx
+F204 [code-robustness] minor/conf Several writes skip every check: restore, stop / renew / sent, material restore  ::  actions.ts, materials-actions.ts, materials-view.tsx, policy.ts, visualizer-editor.tsx, visualizer-home.tsx
+F205 [code-robustness] minor/conf A room photo under the 10 MB promise fails with a 500 when it isn't downscaled  ::  actions.ts, files-actions.ts, files.ts, lead-files.tsx, next.config.ts, policy.ts, visualizer-editor.tsx
+F206 [code-robustness] polis/part Stored JSON is parsed without guards — one bad row takes down the editor or the client link  ::  actions.ts, queries.ts
+F207 [code-robustness] minor/conf Activity misses or misstates visualizer events  ::  actions.ts, activity.ts, events.ts, page.tsx
+F208 [code-robustness] minor/part Undo of ‘Stop sharing’ gives the link a fresh 7 days instead of putting it back  ::  actions.ts, share-dialog.tsx, visualizer-editor.tsx
+F209 [code-robustness] minor/conf Pin times on the client link are measured from the link's creation, so new pins always say ‘just now’  ::  pin-card.tsx, queries.ts, render-share-page.tsx
+F210 [code-robustness] minor/conf Fire-and-forget actions fail silently; the version Undo is optimistic with no rollback  ::  actions.ts, visualizer-editor.tsx
+F211 [code-robustness] minor/conf A Cancel pressed while the render is being kept burns a V number and the next labels drift from the server's  ::  actions.ts, stage.tsx, visualizer-editor.tsx
+F212 [code-robustness] polis/part Unbounded in-browser image caches grow with every version viewed  ::  run.ts, visualizer-editor.tsx
+F213 [code-robustness] polis/part Every gallery, editor and Activity load reads every render's base64 out of variants_json  ::  actions.ts, activity.ts, page.tsx, queries.ts, route.ts, schema.ts
+F214 [code-robustness] minor/conf New designs ignore the open folder; a failed sample start leaves an empty design  ::  actions.ts, library-gallery.tsx, visualizer-home.tsx
+F215 [code-robustness] polis/conf A lead can get two lead designs (no unique constraint)  ::  0053_ai_visualizer.sql, actions.ts, queries.ts, repair-demo-data.ts, schema.ts

@@ -21,6 +21,7 @@ import { DeleteQuotesDialog } from '@/components/leads/quotes/delete-dialog'
 import { CreateQuoteModal } from '@/components/quotes/create-quote-modal'
 import { archiveQuote, listArchivedQuotes, unarchiveQuotes, createQuote, createQuoteFromUpload, deleteQuotes, deleteQuotesForever, emptyQuoteTrash, listDeletedQuotes, restoreQuotes, setDefaultTemplate, setQuoteDue, setQuoteStatus } from '@/app/leads/quotes-actions'
 import { canDeleteQuote, deletedLine } from '@/lib/quotes/policy'
+import { templateDefaultBlock } from '@/lib/company/template-rules'
 import { DeletedQuotesSheet } from '@/components/leads/quotes/deleted-quotes-sheet'
 import { ArchivedQuotesSheet } from '@/components/leads/quotes/archived-quotes-sheet'
 import type { Quote } from '@/lib/db/schema'
@@ -151,6 +152,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
                           render={{ brand: data.brand, sample: data.sample, extras: data.extras }} preselect={preselect}
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
+                          defaultBlock={templateDefaultBlock(data.viewer)}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */
                           onUpload={(read, clientId) => { if (!clientId) return; void run('create the quote', async () => { const id = await createQuoteFromUpload(clientId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }} />
         <DeleteQuotesDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}
                             onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); removeQuotes(ids) }} />

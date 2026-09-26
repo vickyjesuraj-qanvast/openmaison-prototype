@@ -1,0 +1,578 @@
+{
+ "results": [
+  {
+   "ref": "F162",
+   "status": "partly",
+   "evidence": "1440 keyboard (h-focus.cjs): Enter on Generate → focus on the running card's Cancel during the run → on the new V4 tile after it lands (\"V4, on screen · Walls\"). Enter on Cancel → focus back on Generate at once and after the fade. Pins: Enter on the pin toggle sets aria-pressed=true; the photo is a focusable region (\"…or press Enter to use the middle of the view\"); Enter opens the draft with focus in the textarea; Esc on the draft returns focus to the photo region; Esc on a thread returns focus to its pin marker; the thread's Close returns to the marker; Remove hands focus to the pin toggle.",
+   "remaining": "(1) Esc pressed while focus is on the photo region in pin mode ends pin mode and drops focus to <body> (z3.cjs: \"after Esc from frame: BODY\"). (2) After \"Pin it\" the new pin's thread opens and takes focus; closing it (Esc) returns focus to the photo region, not the new pin's marker as the wave-D claim says. (3) From the pin toggle the photo region is 5 Shift+Tab stops back (Compare, Hide markers, Zoom in, Zoom 100%, photo) — fine, but nothing tells a keyboard user it is there except the region's aria-label.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/pin-card.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/h-pair.png"
+  },
+  {
+   "ref": "F164",
+   "status": "fixed",
+   "evidence": "Pin banner: 1024×768 touch one line, 356×44, pill, moved right of the version chip (x188, chip ends 177); 768×1024 touch one line beside the chip (x206); 1025 and 1280 mouse one line (364 wide) beside the chip; 1440 mouse reads \"Click the photo where your note goes\" and the Cancel tooltip reads \"Cancel (Esc)\". Phones: 390 one line under the chip, radius 8; 375×667 and 320 wrap/drop under the chip with radius 8 and pointer-events none.",
+   "remaining": "Residual (phone, not tablet): at 375×667 the banner (y169–213) and at 320 (y169–217) sit over the top 44–48px of the photo (frame starts y169). Taps pass through, but it hides the ceiling band where a note may be meant.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/v-pair.png (+ d-L-pinmode.png, d-P-pinmode.png, r-D-banner.png)"
+  },
+  {
+   "ref": "F166",
+   "status": "fixed",
+   "evidence": "Landing ghost vs page measured in the same frame (PageReveal ghost over the laid-out page, b2-measure.cjs): intro, toolbar, Folders head, folder row and first card row land at identical y at 1024×768 touch (intro 100–257, bar 305, Folders 373, folder 433, cards 513), 768×1024 touch (bar 376, cards 584), 1440 (bar 280, cards 460) and 390 touch (bar 260, folder 172-wide × 116 at 380, cards 520, two columns). Gap intro→toolbar = 48px at 1024. Toolbar bones match per width (Kind pill, New folder, New, search field at 1440 / icon at tablet, view toggle, kebab; phone: pill + 4 icon squares, no title). One Folders label line + one folder bone at real size.",
+   "remaining": "Nothing blocking. At 390 the ghost card is 254 tall vs the page's 270 (16px).",
+   "files": [
+    "components/visualizer/home/home-skeleton.tsx",
+    "components/company/templates/library-gallery.skeleton.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c-land-L.png (+ c-land-P.png, c-land-D.png, c-land-390.png)"
+  },
+  {
+   "ref": "F167",
+   "status": "fixed",
+   "evidence": "Client link fills the window: /renders/17fe84ab2eca47 page = viewport width and letterhead full width at 1440, 1025, 1024 touch, 768 touch, 390, 320; main column 928 centred (x256 at 1440, x49 at 1025, x48 at 1024); scrollWidth = viewport everywhere. The gone state (/renders/nope-not-a-token) and a stopped link (made and stopped in this run, /renders/fDys1GS7oSZ1) show a centred 560 notice at 1024/768/1440 and a full-width card at 390/320. Ghost and page land at the same x during the crossfade (column x 278 vs 280 at 1440).",
+   "remaining": "Polish only: the ghost's greeting bones sit ~10–12px higher than the real text, so the first card drops ~11px on reveal (ghost card top 370 vs page 381 at 1024; 380 vs 392 at 1440).",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css",
+    "components/visualizer/skeletons.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c-share-D.png (+ c-share-L.png, c2-gone.png, j-L-stopped-client.png)"
+  },
+  {
+   "ref": "F172",
+   "status": "fixed",
+   "evidence": "Reduced motion (g-rm.cjs, 1440): stage crossfade on ← is done in ~60ms (0.38/0.62 at 8ms, 0/1 at 59ms) vs ~260ms without; Present crossfade ~80ms vs ~270ms; the pin banner fades in ~80ms with no translate (transform none) vs the 8px slide normally. Pin card uses `animation: rise var(--motion-toggle)` and is cut under reduced motion; Present uses useReducedMotion. The camera-model tray folds are instant under reduced motion (f-tray.cjs reduce).",
+   "remaining": "One literal left: stage.module.css .barFill `transition: width 300ms cubic-bezier(0.4,0,0.2,1)` (disabled under reduced motion, so harmless).",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": ""
+  },
+  {
+   "ref": "F173",
+   "status": "partly",
+   "evidence": "Portrait 768×1024 touch, frame-by-frame (f-tray.cjs): opening Lighting — the tray rises over ~300ms while the rooms row and strip fold and the photo shrinks smoothly 704→470 wide. Closing — the tray folds first (100–250ms), then the rooms row and strip unfold and the canvas bar fades back (opacity 0.44→1 from 303ms). Focus returns to the dock tab. Reduced motion: both folds instant (only the house 80ms rule remains).",
+   "remaining": "(1) Close still makes the photo travel twice: while only the tray folds, the photo grows and slides DOWN from y112 to y259, then when the rooms row and strip unfold it slides back UP to its rest at y217 — a visible 42px overshoot-and-return (253ms: 259, 303ms: 231, 553ms: 217). Unfold the rooms row/strip on the same beat as the tray folds (or animate the stage with `layout`) so the photo moves once. (2) On open the canvas bar still vanishes in one frame (display:none at ~106ms) instead of fading.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/editor.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/f-tray-pair.png"
+  },
+  {
+   "ref": "critic-21",
+   "status": "fixed",
+   "evidence": "Throttled soft navigations (350ms latency, 250KB/s) at 1024×768 touch: lead › AI Visualizer quick link, landing card, and Files › Kitchen.jpg › Open in AI Visualizer all show the editor's loading.tsx ghost, then the PageReveal ghost crossfades to the page (ghost 1 → 0.22 → 0 while content 0 → 0.77 → 1). Photo box ghost 149+416 vs page 144+416; strip tiles ghost 675 vs page 676; room chips and 96×60 tiles match. Landing and client link ghosts: see F166 / F167.",
+   "remaining": "Two residuals reported as new issues: the editor ghost's rail foot is 28px taller than the page's at ≤800-tall windows; the lead quick link gives no pending feedback while its server action runs (~1.1s throttled) before the ghost appears.",
+   "files": [
+    "components/visualizer/skeletons.module.css",
+    "components/leads/detail/quick-links.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/u-pair.png (+ u3-pair.png)"
+  },
+  {
+   "ref": "critic-20",
+   "status": "fixed",
+   "evidence": "Client page at 768×1024 touch and 1025 (main 928 centred at x49, letterhead full width) and 1024×768 touch; Present at 768 portrait (thumb row 61px tall, facts scroll under it), 1024×768 touch (facts open at What changed, versions 2 across) and 1025 mouse (3 across); Company › Materials at 320 touch: scrollWidth 320 in grid and list view, toolbar fits.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/t-P-present-v2.png (+ s-pair.png, s-320-materials.png)"
+  },
+  {
+   "ref": "critic-17",
+   "status": "fixed",
+   "evidence": "Hovering \"Versions\" in the strip head at 1440 shows the tooltip \"← → step through the versions\"; the stage banner's Cancel tooltip reads \"Cancel (Esc)\" and carries aria-keyshortcuts=Escape; Undo/Redo keep their ⌘Z tooltips. No \"?\" sheet was built (proposal only, as intended).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/r-D-versions-tip.png"
+  },
+  {
+   "ref": "Client link pages collapse to their content width and pin to the left since the PageReveal wrap; the 'no longer active' notice is clipped on phones",
+   "status": "fixed",
+   "evidence": "Same checks as F167: page = viewport at 1440/1280/1025/1024/768/390/320, main centred; /renders/nonexistent at 390 and 320 shows the full notice card (16px gutters, 358 / 288 wide), scrollWidth = viewport.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c2-gone.png"
+  },
+  {
+   "ref": "Present on tablets (portrait) and phones: the thumbnail row is crushed to a ~12px sliver when the version has a 'What changed' list",
+   "status": "fixed",
+   "evidence": "768×1024 touch and 390×844 touch, Present on V2 (3 change rows from the Original): the thumbnail row is 61px tall (4+ thumbs), What changed sits under it in its own 143px scroller; at 390 the row scrolls inside the sheet (scrollWidth 390).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/t-pair.png"
+  },
+  {
+   "ref": "Stage banners (pin, place, draw, remove) and the client link's pin hint wrap into a narrow pill that covers the photo on phones",
+   "status": "fixed",
+   "evidence": "Stage banner is one line where it fits (1024, 1025, 1280, 768, 390) and sits beside the chip; wraps with radius 8 on narrow phones. Client link pin hint at 390: one line, 284×32, radius 8, pointer-events none, centred on the photo; pill at 768.",
+   "remaining": "Short phones (375×667, 320): the banner drops under the chip over the top ~44–48px of the photo (taps pass through).",
+   "files": [
+    "components/visualizer/editor/stage.module.css",
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/v-pair.png (+ w-pair.png)"
+  },
+  {
+   "ref": "Client link on a phone: a snackbar covers the pin sheet's Cancel / Pin it for its whole life",
+   "status": "fixed",
+   "evidence": "390×844 touch on /renders/Q-cSKt7KkEC8: \"I like this one\" then at once Pin a note + tap on the picture → the draft sheet spans y496–844 with Cancel/Pin it at y792–828; the snackbar \"Thanks — Dane will see it’s your favourite\" rests above the sheet (bottom ≈ 488), never on its buttons. The sheet also shows the spot on a small copy of the picture.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/w-pair.png"
+  },
+  {
+   "ref": "'Describe a change' shows half of its second placeholder line at rest on laptops, tablets and in the phone tray",
+   "status": "fixed",
+   "evidence": "Describe a change rests at exactly one 20px line with scrollHeight 20 = clientHeight at 1280×800, 1025×800, 1024×768 and in the 390 tray; placeholders read whole on one line (\"e.g. walnut floor, sage green walls\", tray \"Describe a change, e.g. sage walls\"); 1440 keeps two whole lines. No half line peeks.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/v-desc.png (+ d-L-describe.png)"
+  },
+  {
+   "ref": "320: the canvas bar's Download button hangs past the bar and off the screen",
+   "status": "fixed",
+   "evidence": "320×640 touch: the canvas bar is 240 wide (x40–280) with the %, Hide markers, Before and after, Pin, Present and Download buttons all inside it (Download 239–275); − / + are dropped under 360.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/v-pair.png"
+  },
+  {
+   "ref": "Phone versions strip: the Original tile's label is wider than its tile, so a stray 'to' fragment floats at the strip's left edge",
+   "status": "partly",
+   "evidence": "Tiles are now exactly their thumbnail's width (96) and captions ellipsize, so no label is wider than its tile.",
+   "remaining": "At 390 and 320 the strip scrolls to the newest version and hard-clips the tile at its left edge with no fade: a sliver of a thumbnail plus a caption fragment (\". .\" at 390, \"n a note\" at 320) still floats beside the VERSIONS head. Add an edge fade (mask-image) on the strip scroller, or snap-scroll so a whole tile starts at the edge.",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/v2-pair.png"
+  },
+  {
+   "ref": "The client's render link shrinks to its content and hugs the left edge on a landscape tablet and on desktop (a regression from wrapping the page in PageReveal for F167)",
+   "status": "fixed",
+   "evidence": "See F167: at 1024×768 touch the open link (/renders/17fe84ab2eca47) is full width with the column at x48–976; stopped (/renders/fDys1GS7oSZ1, stopped in this run) and malformed links show the centred notice.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c-share-L.png (+ j-L-stopped-client.png)"
+  },
+  {
+   "ref": "Remove a piece and change the floor in the same Generate: the old light-oak floor stays under the removed sofa as a hard-edged rectangle (and this went to the client)",
+   "status": "fixed",
+   "evidence": "Kevin Ng › Living room › Original → Floor = Walnut vinyl plank + Grey Fabric Sofa = Remove → Generate (V5). The sofa's footprint is walnut like the floor around it; no light-oak rectangle.",
+   "remaining": "The rug laid under the removed sofa is a new, separate problem (see newIssues).",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/m2-v5.png"
+  },
+  {
+   "ref": "Tasks table on touch tablets: an empty 150px column sits between the checkbox and Title (the REG-310 end band lands at the start)",
+   "status": "fixed",
+   "evidence": "Lead (Kevin Ng) › Tasks and /tasks at 1024×768 and 768×1024 touch: checkbox cell at x93, Title at x149 in head and rows — no empty band; the ::after band has order 9999, flex 0 0 150px (row end). 1440 has no band. The leads listing at 1024 touch is pixel-identical to round 1's L-01-leads.png apart from the bell count.",
+   "remaining": "",
+   "files": [
+    "components/leads/tasks/tasks-table.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/l-pair1.png (+ l-pair2.png)"
+  },
+  {
+   "ref": "The editor loses the open room from its address after any action that refreshes, so Add to a quote › Open quote › Close comes back to the wrong room",
+   "status": "fixed",
+   "evidence": "1024×768 touch: open the design, tap Kitchen then Living room (URL ?room=4088…), tap V2, ⋯ › Save to Files → URL keeps room=; ⋯ › Add to a quote… › A new quote › Add to quote → Open quote: the quote URL's from= carries room=…&v=<V2 key>. Close (×) returns to Living room with \"V2 · Walls, Light Oak Floor +1\" on the canvas.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "lib/nav.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/i-pair.png"
+  },
+  {
+   "ref": "Library list view on touch tablets: the head grows from 56 to 76px and the frozen Name column loses its bottom rule (AI Visualizer, Materials, Templates)",
+   "status": "fixed",
+   "evidence": "List view at 1024×768 and 768×1024 touch: the head row is 56px in Tools › AI Visualizer, Company › Materials and Templates › Quotes, every head cell 56 tall, and the frozen name head keeps its rule under it.",
+   "remaining": "",
+   "files": [
+    "components/company/templates/library-gallery.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/k-pair1.png (+ k-pair2.png)"
+  },
+  {
+   "ref": "Versions strip: tiles widen to their label, so a version's ⋯ floats in the gap beside the thumbnail and the tiles are spaced unevenly",
+   "status": "fixed",
+   "evidence": "Tiles measure 96 wide at 1024 and 768 touch (128 at 1440); each ⋯ sits inside its picture (e.g. V1 kebab x265–289 within the 197–293 thumb); captions ellipsize (\"V3 · Relit · Gol…\", \"V5 · Light Oak …\").",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/a-editor-L.png"
+  },
+  {
+   "ref": "Client page: 'Before and after' compares with the parent version (another design on the same page), and the studio's typed instruction is shown to the client as a 'Note' line",
+   "status": "fixed",
+   "evidence": "Shared V1 (Japandi), V2 and V7 (made from V1 with \"warmer evening light and a darker walnut floor, sage walls stay\"). On the client link every design's Before is the room's own photo (/visualizer/samples/living-room/original.jpg), not the parent version; no \"Note\" line reaches the client (Design 7 lists Style · Japandi and Lighting · Warm Cozy Home only).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts",
+    "components/visualizer/share/render-share-page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/n3-L-compare-design7.png"
+  },
+  {
+   "ref": "Present on a landscape tablet opens with the side column scrolled past 'What changed'",
+   "status": "fixed",
+   "evidence": "1024×768 touch, Present on V3 of a 4-version room: the facts block opens at scrollTop 0 with WHAT CHANGED · FROM V2 at the top, the versions sit below in their own block, two across.",
+   "remaining": "Polish: with 7 versions (V7) both side scrollers land mid-content — see newIssues.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/d-L-present.png"
+  },
+  {
+   "ref": "Moodboard on a landscape tablet: the render is a 358×240 postage stamp in a grey band, while two finish chips fill the rest at about 430×320 each",
+   "status": "fixed",
+   "evidence": "1024×768 touch, V2 › Moodboard: the render is 600×402 beside a 260px side (finishes, pieces, colours); 768 portrait shows the render full width with the board scrolling under it.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/e-L-2.png (+ e-P-1.png)"
+  },
+  {
+   "ref": "Uploaded site photo: the Floor square sits on the photo's caption strip, not on the floor",
+   "status": "fixed",
+   "evidence": "Add room › upload public/uat-files/sophia-living-room.jpg at 768×1024 touch: the Floor square lands at 49%/81% on the tan floor band, above the caption strip; Walls at 51%/30%.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/engine"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/o-pair.png"
+  },
+  {
+   "ref": "The AI Visualizer landing ghost doesn't match the page on tablets: the cards jump about 89px (1024) or 269px (768) on reveal",
+   "status": "fixed",
+   "evidence": "See F166: ghost and page share every row's y at 1024 and 768 touch; nothing jumps on reveal.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/home/home-skeleton.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c-land-L.png (+ c-land-P.png)"
+  },
+  {
+   "ref": "Snackbars land on top of open dialogs' content in the editor",
+   "status": "fixed",
+   "evidence": "(a) Save to Files on V2 then at once Add to a quote…: the \"V2 is already in Files › Renders\" snackbar rests at y696–744, below the 600×555 dialog (y107–662), not on it. (b) Share › Shared before › Stop sharing › confirm: the row reads \"Stopped · not opened yet\" with Undo in the row; no snackbar appears over the dialog.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/j-pair.png (+ i-pair.png)"
+  },
+  {
+   "ref": "The quote section from Add to a quote is cut to one letter ('L') in the Items table at 1024 touch",
+   "status": "not-fixed",
+   "evidence": "1024×768 touch, Add V2 to a new quote › Open quote › Items: the section's name cell still reads \"L\" (then the SECTION chip and \"3 items\"); item names are cut to \"Walls — Sag…\", \"Floor — Wal…\". Wave D left this undone on purpose (server report: the fix is the Items table's name-cell floor, owned by no package).",
+   "remaining": "Give the Items name cell a floor (min-width ~120px) and drop \"n items\" first when narrow; consider a shorter quoteGroupName.",
+   "files": [
+    "components/quotes/editor/items/item-row.tsx",
+    "components/quotes/editor/items/items-table.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/i-pair.png"
+  },
+  {
+   "ref": "The pin card covers the canvas toolbar near the photo's bottom (portrait)",
+   "status": "fixed",
+   "evidence": "768×1024 touch, Pin a note then tap at 85%/85%: the draft card spans y558–737, ending 8px above the canvas bar (top 745); at 1024×768 the card ends at 595 with the bar at 603.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/e-P-1.png (+ e-L-1.png)"
+  },
+  {
+   "ref": "Describe a change: at 1024×768 the placeholder's second line peeks out of the one-line box",
+   "status": "fixed",
+   "evidence": "Duplicate of the Describe item: at 1024×768 the box is one whole line (20px, scrollHeight 20).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/d-L-describe.png"
+  },
+  {
+   "ref": "The pin-mode banner wraps to two lines on a landscape tablet with plenty of room",
+   "status": "fixed",
+   "evidence": "Duplicate of F164: at 1024×768 the pin banner is one line (44 tall) beside the chip.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/e-L-1.png"
+  },
+  {
+   "ref": "The editor ghost at 1024 landscape draws desktop tiles and pill room chips",
+   "status": "fixed",
+   "evidence": "Editor ghost at 1024×768 touch: room chips are r4 rectangles ~40 tall (not pills), strip tiles 96×60, photo 149+416 vs page 144+416.",
+   "remaining": "Residual: the rail foot is drawn for a two-line Describe box + two hint lines, 28px taller than the page's at this height (newIssues).",
+   "files": [
+    "components/visualizer/skeletons.tsx",
+    "components/visualizer/skeletons.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/c-ed-L.png (+ u-pair.png)"
+  },
+  {
+   "ref": "'1 deleted' under the versions count keeps its underline after a tap (sticky :hover on touch)",
+   "status": "fixed",
+   "evidence": "On touch tablets the hover styles are gated: forcing :hover (CDP) at 1024×768 touch leaves \"1 deleted\" without underline and the strip tile without its hover ring (at 1440 mouse the same forced :hover underlines and rings, so the rule exists only for hover pointers). After deleting V6, tapping \"1 deleted\" and closing the dialog, the link shows no underline.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/q-L-deleted-after.png"
+  },
+  {
+   "ref": "Room names: an uploaded photo becomes 'Room 2', and the client headline prints the auto-suffixed name in lower case ('your living room 2')",
+   "status": "partly",
+   "evidence": "Uploading sophia-living-room.jpg names the room from the file: \"Living room 2\" (the design already has a Living room). Sharing only that room: the client headline reads \"A design idea for your living room\" (number dropped, casing kept).",
+   "remaining": "The Share dialog's WhatsApp draft still says \"Hi Kevin, here is a design idea for your living room 2:\" — share-dialog.tsx calls clientRoomNames(sharedRooms) without the design's room names, so a lone \"Living room 2\" keeps its number there (the server passes inDesign, the dialog doesn't).",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/o2-pair.png"
+  },
+  {
+   "ref": "Portrait landing: opening search truncates the bar's title to 'All d…'",
+   "status": "fixed",
+   "evidence": "768×1024 touch: opening search hides the \"All designs\" title and the search field takes the row (Kind pill, New folder, New, search field, view toggle, kebab), no \"All d…\" truncation.",
+   "remaining": "",
+   "files": [
+    "components/company/templates/library-gallery.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/k-pair2.png"
+  },
+  {
+   "ref": "'Open in AI Visualizer' on a lead's site photo lands on the room's newest render, not the photo that was opened",
+   "status": "fixed",
+   "evidence": "Kevin Ng › Files › Master bedroom.jpg › ⋯ › Open in AI Visualizer lands on Master bedroom with \"Original\" on the canvas; Back returns to the file viewer.",
+   "remaining": "",
+   "files": [
+    "app/(editor)/visualizer/[designId]/page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/p-L-file-viz.png"
+  },
+  {
+   "ref": "Company › Materials has no way to filter by category (search only)",
+   "status": "fixed",
+   "evidence": "Company › Materials has a Filters button (1024 and 768 touch) opening the house Filters dialog: Category, Finish, Price book, \"4 materials shown\", Clear All / Done.",
+   "remaining": "Owner decision: this is invented UI (no mock); gallery flagged it and it can be dropped by removing the facets prop.",
+   "files": [
+    "components/company/materials"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/y-L-mat-filters.png"
+  }
+ ],
+ "newIssues": [
+  {
+   "title": "Esc from the photo in pin mode drops keyboard focus to the page",
+   "severity": "minor",
+   "width": "1440 keyboard (same code on every width)",
+   "repro": "Editor, Tab to \"Pin a note\" and press Enter; Shift+Tab ×5 to the photo region; press Esc.",
+   "evidence": "document.activeElement is <body> after the Esc (z3.cjs: \"after Esc from frame: BODY\", pin mode false). The same happens after Esc closes a thread whose focus had gone back to the photo region (h-focus.cjs step C, \"after Esc (2) BODY\"). Esc pressed on the pin toggle itself keeps focus there.",
+   "fix": "When pin / place / draw mode ends and focus is on the stage region that is about to lose its tabIndex/role, move focus to the tool that started the mode (the pin toggle; the Add-a-surface opener for place/draw) — e.g. in the mode-exit handler: if (frame.contains(document.activeElement)) pinToggle.focus({ preventScroll: true }).",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/h-pair.png"
+  },
+  {
+   "title": "The Share dialog's WhatsApp draft keeps the editor's \"2\" (\"your living room 2\") while the client page says \"your living room\"",
+   "severity": "minor",
+   "width": "all (seen at 768×1024 touch)",
+   "repro": "Add a room from sophia-living-room.jpg to a design that already has a Living room (it becomes \"Living room 2\"), Generate a version, Share only that version, Create link.",
+   "evidence": "Draft: \"Hi Kevin, here is a design idea for your living room 2: …\". The same link's page h1: \"A design idea for your living room\".",
+   "fix": "share-dialog.tsx line ~65: const plain = clientRoomNames(sharedRooms, rooms.map((r) => r.name)) — pass the design's room names as inDesign, as lib/visualizer/queries.ts and app/visualizer/actions.ts already do.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/o2-pair.png"
+  },
+  {
+   "title": "\"Vn is ready\" / \"Saved to Files\" snackbars sit over the photo's bottom-left corner on wide stages",
+   "severity": "minor",
+   "width": "1440×1024 mouse, 1024×768 touch",
+   "repro": "1440: pick a light on the Original, Generate. 1024 touch: a version's ⋯ › Save to Files.",
+   "evidence": "1440: snackbar x16–360 y775–823, photo frame x32–1036 y129–802 → 27px of the photo (floor) covered; the lift counts the canvas bar because the bar (x318–750) overlaps the snackbar band by 42px. 1024 touch: snackbar y547–595 vs photo bottom 560 (13px).",
+   "fix": "In the --bottom-dock measure, when the only thing the snackbar would cover is the bar's left 10–50px, rest it at the house place beside the bar instead of lifting over the photo; or include the photo frame in the check and prefer the lower position (over the grey canvas margin / strip head) whenever lifting would land on the photo.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/s-pair.png"
+  },
+  {
+   "title": "Remove the sofa: the rug laid under it is a paler, flat patch with a straight seam",
+   "severity": "minor",
+   "width": "all (engine; goes to the client)",
+   "repro": "Kevin Ng › Living room › Original › Furniture › Grey Fabric Sofa › Remove › Generate (also with Floor = Walnut vinyl plank in the same Generate).",
+   "evidence": "The rug's new part under the sofa is lighter and flatter than the real rug, with a hard vertical join where it meets it (≈ x685 of the 1004px crop), a straight left edge and a straight slanted top edge; the coffee table's left end reads sliced above it. Same result with Remove alone (V6) and Remove + walnut (V5). The engine report claims \"no straight seam\".",
+   "fix": "Blend the mended rug into the real rug with a feathered seam and match its luminance/scale to the rug's visible part (sample the patch nearer the join, histogram-match); alternatively stop the rug at its visible outline and lay floor where the sofa stood, which reads more natural than a pasted rug.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/m3-remove-only.png (+ m2-v5.png, m2-orig.png)"
+  },
+  {
+   "title": "Editor ghost: the rail foot is 28px taller than the page's on ≤800px-tall windows",
+   "severity": "polish",
+   "width": "1024×768 touch (also 1280×800, 1366×768 by the CSS)",
+   "repro": "Throttle the network and open Kevin Ng's design from the landing or the lead's quick link at 1024×768.",
+   "evidence": "In the PageReveal frame: ghost rail foot 559+209 vs page foot 587+181; ghost draws a 60px Describe bone, a 40px button and two hint lines, the page rests at a 36px one-line box and one hint line.",
+   "fix": "skeletons.module.css: add the Describe box's own rest rule — @media (min-width: 768px) and (max-height: 800px) { the foot's first tall bone 36px, drop the second hint line }.",
+   "files": [
+    "components/visualizer/skeletons.tsx",
+    "components/visualizer/skeletons.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/u-pair.png"
+  },
+  {
+   "title": "The lead's AI Visualizer quick link gives no feedback while it opens the design",
+   "severity": "polish",
+   "width": "1024×768 touch, throttled network",
+   "repro": "Kevin Ng › Overview, throttle (350ms latency), tap the AI Visualizer quick link (wand icon).",
+   "evidence": "A POST server action runs first; for ~1.1s the URL stays on the lead and nothing changes (no spinner, aria-busy null, not disabled); only then does the editor ghost appear.",
+   "fix": "Wrap openVisualizer in useTransition and show the pending state on the quick link (spinner in place of the icon, aria-busy, disabled), or navigate first to /visualizer/new-for-lead and let the ghost cover the wait.",
+   "files": [
+    "components/leads/detail/quick-links.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/u2-L-quicklink-pending.png"
+  },
+  {
+   "title": "Quote Items: the active row's \"Expand description\" button hangs over the next row's name",
+   "severity": "minor",
+   "width": "1024×768 touch (straddles the row boundary at 1440)",
+   "repro": "Open a quote with 2+ items at 1024 touch, tap a line's Unit (or its description) so the row is active.",
+   "evidence": "The 24px expand_content button sits at x281–305 y463–487, over row 1.2's name (\"F⤢r — Wal…\"); at 1440 it sits on the divider between the rows.",
+   "fix": "At ≤1024 put the button inside the description box as its end adornment (or reserve 28px under the active row) so it never overlaps the next row.",
+   "files": [
+    "components/quotes/editor/items/item-row.tsx",
+    "components/quotes/editor/items/items-table.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/x-crops.png"
+  },
+  {
+   "title": "Present at 1024×768 with many versions: both side scrollers open mid-content",
+   "severity": "polish",
+   "width": "1024×768 touch",
+   "repro": "Living room with 7 versions, V7 on screen, tap Present.",
+   "evidence": "The facts block ends right under the \"EVERYTHING IN V7\" heading with a 6px sliver of its list showing; the versions block below is scrolled so its first visible row shows only the \"V2 / V3\" labels of cut-off thumbnails. Neither edge has a fade, so the side reads as clipped.",
+   "fix": "Add scroll-edge fades (mask-image) to both blocks and snap the versions block to whole rows; or cap the facts block to end on a whole card.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/n2-L-present-v7.png"
+  },
+  {
+   "title": "A keyboard-focused on-screen version tile looks the same as a merely selected one",
+   "severity": "polish",
+   "width": "1440 keyboard",
+   "repro": "Tab to the version on screen in the strip (or let focus land there after a Generate).",
+   "evidence": "The tile keeps its 2px primary selected ring and adds a 2px primary outline at offset 2px; they touch and read as one thicker frame, with no gap or second colour.",
+   "fix": "For [aria-pressed=true]:focus-visible use a gapped ring, e.g. box-shadow: 0 0 0 2px var(--om-color-surface-default), 0 0 0 4px var(--om-color-primary-default), or outline-offset 4px.",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/h2-tile-focus.png"
+  },
+  {
+   "title": "Unclear copy: the note caveat and the disabled Add to a quote reason",
+   "severity": "polish",
+   "width": "all",
+   "repro": "(a) From V1 (Japandi), Describe \"warmer evening light and a darker walnut floor, sage walls stay\", Generate, then Present. (b) Kitchen › V1 (Scandinavian look) › ⋯.",
+   "evidence": "(a) Present shows \"Couldn’t find the floor, the wall on this version — the note’s colours weren’t laid\" (reads like a list glitch; a studio person won't know what \"laid\" means here). (b) \"Add to a quote… — No finishes to quote yet\" on a whole-room look whose style card names its floor, walls and counters; \"yet\" suggests waiting will fix it.",
+   "fix": "(a) \"Couldn’t find the floor or the walls in this look, so the note’s colours weren’t applied — pick them on the Original instead.\" (b) \"A whole-room look has no finishes to quote — pick finishes on the Original.\" Log as invented copy.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/n2-L-present-v7.png (+ i-L-menu-after-save.png)"
+  },
+  {
+   "title": "House menu rows keep a hover tint under the finger on touch tablets",
+   "severity": "polish",
+   "width": "1024×768 and 768×1024 touch",
+   "repro": "Quote Items › a line's ⋯ › Print as ›.",
+   "evidence": "The submenu opens with the row under the tap (KIV) tinted rgba(0,0,0,0.04); `.item:hover` in components/leads/menus.module.css is not gated by (hover: hover), unlike the visualizer's own hover rules.",
+   "fix": "Wrap `.item:hover` (and the disabled override) in @media (hover: hover).",
+   "files": [
+    "components/leads/menus.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/x4-L-printas.png"
+  }
+ ],
+ "checks": [
+  {
+   "what": "The editor's loading ghost at 1024×768 touch matches the page",
+   "ok": false,
+   "evidence": "Top bar, room chips (r4, ~40 tall), stage chip, photo box (ghost 149+416 vs page 144+416), canvas bar, strip (96×60 tiles) and rail tabs match. The rail foot does not: the ghost draws a 60px Describe bone + 40px button + two hint lines (foot top y559) while the page rests at one line at ≤800px tall (36px box, one hint line, foot top y587) — a 28px jump on reveal. Same at 1280×800 / 1366×768 by the CSS (no max-height rule in skeletons.module.css). Shot /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/u-pair.png"
+  },
+  {
+   "what": "Tasks table on touch tablets: end band at the row end (lead › Tasks and /tasks); leads listing unchanged",
+   "ok": true,
+   "evidence": "1024×768 and 768×1024 touch: checkbox x93, Title x149 on both tables; the band is ::after with order 9999. Leads listing at 1024 touch matches round 1's L-01-leads.png. Shots /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/l-pair1.png, /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/l-L-leads.png"
+  },
+  {
+   "what": "Scope menus show the current choice with the DS Selected fill",
+   "ok": true,
+   "evidence": "Checked at 1024 and 768 touch: Tools › AI Visualizer Kind pill (All · 2), Templates › Quotes 'Status: All ▾' (All · 4), /tasks scope (All Tasks), /tasks add-row lead picker (Studio (no lead)), quote Items unit menu (Lot) — each current row has background rgb(238,229,255) (primary-variant) with primary text; the others transparent. Rows that draw their own mark (Items › Print as radios) keep the radio glyph instead, as designed. Shots /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/k-pair1.png, /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/l3-L-leadpick.png, /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/x-L-unit-1.png"
+  },
+  {
+   "what": "Focus rings",
+   "ok": true,
+   "evidence": "Tab walk at 1440 (60 stops): every stop shows a 2px primary outline except the Describe textarea, whose field draws a 2px primary border instead (checked visually). Focus lands on the running card's Cancel, the new tile, Generate and the pin marker as expected. Polish: on the selected (on-screen) tile the focus outline merges with the selected 2px ring into one thick frame (see newIssues). Shots /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/h2-tile-focus.png, /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/tablet/z2-describe-focus.png"
+  },
+  {
+   "what": "Reduced motion (emulated prefers-reduced-motion)",
+   "ok": true,
+   "evidence": "Stage crossfade ~60ms, Present ~80ms, banner ~80ms with no slide, tray folds instant, pin card animation off; the house rule shortens remaining CSS transitions to 0.08s (the photo's refit after the tray at 768 portrait takes 80ms)."
+  },
+  {
+   "what": "Esc order",
+   "ok": false,
+   "evidence": "Good: version ⋯ menu → Esc closes it and focus returns to its kebab; Present → Esc closes and focus returns to Present; Share + nested Stop-sharing confirm → first Esc closes only the confirm, second closes Share, focus back on Share; pin thread → Esc closes the thread (pin mode stays), next Esc ends pin mode. Bad: that last Esc drops focus to <body> when focus was on the photo region (z3.cjs)."
+  },
+  {
+   "what": "Hover rings not sticking after a tap",
+   "ok": true,
+   "evidence": "With :hover forced through CDP at 1024×768 touch: '1 deleted' underline, strip tile ring, Present thumbs and share tiles show no hover change (at 1440 mouse the share tile border turns primary and the tile ring grows, so the gating is (hover: hover)). Residual polish: the house menu row's 4% hover tint (components/leads/menus.module.css .item:hover) is not gated, so a submenu opened by a tap shows the row under the finger tinted (Items › Print as, KIV row, x4-L-printas.png)."
+  }
+ ]
+}

@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from './surface'
 import { Sheet, sheetMenuBody, useSheetLayout } from './sheet'
+import { PHONE_SIDEWAYS, useMediaQuery } from '@/lib/breakpoint'
 import menuStyles from '@/components/leads/menus.module.css'
 
 /** Anchored menu rendered through a body portal so scroll containers (modal
@@ -41,7 +42,9 @@ export function PortalMenu({
   autoFocus?: boolean
 }) {
   const menuRef = useRef<HTMLDivElement | null>(null)
-  const sheet = useSheetLayout() && sheetTitle !== undefined
+  /* (audit 2026-09-26, phone-12) a phone held sideways is a phone too: a 290px card cut its rows in half on a 375-tall screen */
+  const phone = useSheetLayout(), sideways = useMediaQuery(PHONE_SIDEWAYS)
+  const sheet = (phone || sideways) && sheetTitle !== undefined
   useMenuKeyboard(open && !sheet, menuRef, onClose, { autoFocus })   // (REG-286) keyboard reach — see the note above
 
   // Position via callback ref (runs before paint) — measured-DOM styling

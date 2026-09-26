@@ -54,7 +54,7 @@ const LINKS: Link[] = [
   { icon: 'sticky_note_2', label: 'Note', kind: 'note' },
   { icon: 'call_log', label: 'Contact Log', kind: 'callLog' },   /* REG-279: the record it creates is a Contact log everywhere else (REG-278) */
   /* (REG-552) Meeting (icon `event`) is hidden with the Meetings tab until its mocks land. */
-  { icon: 'wand_shine', label: 'AI Visualiser', kind: 'other' },
+  { icon: 'wand_shine', label: 'AI Visualizer', kind: 'other' },   /* (REG-673, Q-01) one spelling everywhere — the product's name */
   { icon: 'scan', label: 'Quote X-Ray', kind: 'other' },
   { icon: 'deployed_code', label: '3D Space Planner', kind: 'other' },
 ]
@@ -65,7 +65,11 @@ export function QuickLinks({
   onCallLog,
   onNote,
   onOther,
+  busy = null,
 }: {
+  /** (wave E, tablet-11) The link whose work is still running — "AI Visualizer" while the lead's design is made / found before the editor
+   *  opens (~1 s): its glyph turns into the house spinner, it reads aria-busy and a second press does nothing. */
+  busy?: string | null
   onTask: () => void
   /** "Quote" → the Quotes tab's new-quote path; absent, the link answers like the other inert ones (onOther). */
   onQuote?: () => void
@@ -85,6 +89,7 @@ export function QuickLinks({
   const toggle = () => write(expanded ? 'collapsed' : 'expanded')
 
   const fire = (link: Link) => {
+    if (link.label === busy) return
     if (link.kind === 'task') onTask()
     else if (link.kind === 'quote') { if (onQuote) onQuote(); else onOther(link.label) }
     else if (link.kind === 'callLog') onCallLog()
@@ -108,8 +113,9 @@ export function QuickLinks({
           </div>
           <div className={styles.tiles}>
             {LINKS.map((link) => (
-              <button key={link.label} type="button" className={styles.tile} onClick={() => fire(link)}>
-                <Icon name={link.icon} size={24} weight={300} />
+              <button key={link.label} type="button" className={styles.tile} onClick={() => fire(link)}
+                      aria-busy={link.label === busy || undefined} aria-disabled={link.label === busy || undefined}>
+                <Glyph link={link} busy={link.label === busy} />
                 <span className={styles.label}>{link.label}</span>
               </button>
             ))}
@@ -126,8 +132,9 @@ export function QuickLinks({
           <div className={styles.glyphs}>
             {LINKS.map((link) => (
               <Tooltip key={link.label} label={link.label} side="left">
-                <button type="button" className={styles.glyph} aria-label={link.label} onClick={() => fire(link)}>
-                  <Icon name={link.icon} size={24} weight={300} />
+                <button type="button" className={styles.glyph} aria-label={link.label} onClick={() => fire(link)}
+                        aria-busy={link.label === busy || undefined} aria-disabled={link.label === busy || undefined}>
+                  <Glyph link={link} busy={link.label === busy} />
                 </button>
               </Tooltip>
             ))}
@@ -136,4 +143,11 @@ export function QuickLinks({
       )}
     </aside>
   )
+}
+
+/** A link's 24px Light glyph, or — while its work runs — the house spinner (`progress_activity`, the upload toast's) in the same box. */
+function Glyph({ link, busy }: { link: Link; busy: boolean }) {
+  return busy
+    ? <span className={styles.spin} data-testid="quick-link-busy"><Icon name="progress_activity" size={24} weight={300} /></span>
+    : <Icon name={link.icon} size={24} weight={300} />
 }

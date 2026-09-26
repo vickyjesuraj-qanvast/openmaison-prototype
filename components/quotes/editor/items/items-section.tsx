@@ -42,6 +42,7 @@ import { BookRuleContext, useLevelFocus } from './table-menus'
 import styles from './items-section.module.css'
 import { roundToStep, type RoundStep } from '@/lib/settings/types'
 import type { FolderNode } from '@/lib/folders'
+import { isRefusal } from '@/lib/company/template-rules'
 
 const AUTOSAVE_MS = 600
 
@@ -457,12 +458,13 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const linkLine = (id: string, bookId: string | null) => setItems((cur) => cur.map((i) => (i.id === id ? { ...i, priceBookItemId: bookId } : i)))
   const saveToBook = async (item: QuoteItem, mode: 'new' | 'update') => {
     const box: { r: SavedToBook | null } = { r: null }
-    if (!(await run(mode === 'update' ? 'update the item' : 'save to My Items', async () => { box.r = await saveItemToPriceBook(item.id, mode) })) || !box.r) return
+    /* (wave E, E7) a refusal answered as `{ error }` — the rule ("only an Owner or an Admin changes the price book") reaches the snackbar */
+    if (!(await run(mode === 'update' ? 'update the item' : 'save to My Items', async () => { const a = await saveItemToPriceBook(item.id, mode); if (isRefusal(a)) return a; box.r = a })) || !box.r) return
     const r = box.r
     setPriceBook((b) => [...b.filter((p) => p.id !== r.item.id), r.item].sort((a, c) => a.name.localeCompare(c.name)))
     linkLine(item.id, r.item.id)
     const undo = () => { void run('undo the save', async () => {
-      await undoSaveToPriceBook(item.id, { mode: r.mode, itemId: r.item.id, prevLink: r.prevLink, previous: r.previous })
+      const u = await undoSaveToPriceBook(item.id, { mode: r.mode, itemId: r.item.id, prevLink: r.prevLink, previous: r.previous }); if (isRefusal(u)) return u
       if (r.mode === 'update' && r.previous) { const prev = r.previous; setPriceBook((b) => b.map((p) => (p.id === prev.id ? prev : p))) }
       else { setPriceBook((b) => b.filter((p) => p.id !== r.item.id)); linkLine(item.id, r.prevLink) }
     }, r.mode === 'update' ? `${r.item.name} is back as it was` : 'Taken back out of My Items') }
@@ -484,7 +486,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       case 'library': void saveToBook(item, 'new'); break
       case 'libraryUpdate': void saveToBook(item, 'update'); break
       case 'addFromBook': askFromBook(item); break
-      case 'saveSection': void run('save the section to My Sections', async () => { const p = await saveSectionToPriceBook(item.id); setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Sections — find it in the Add Item box'); break   /* REG-566 · (REG-653, Q-18) the book's own names */
+      case 'saveSection': void run('save the section to My Sections', async () => { const p = await saveSectionToPriceBook(item.id); if (isRefusal(p)) return p; setPriceBookSections((b) => [...b, p].sort((a, c) => a.name.localeCompare(c.name))) }, 'Section saved to My Sections — find it in the Add Item box'); break   /* REG-566 · (REG-653, Q-18) the book's own names */
       case 'noNumber': patchItem(item.id, { noNumber: !item.noNumber }); snackbar({ message: item.noNumber ? 'The line is numbered again' : 'The line prints without a number' }); break   /* REG-558 */
       case 'ungroup': void structural('ungroup the section', async () => { const r = await ungroupQuoteItem(item.id); onSaved(r.updatedAt, r.amountMinor) }, 'Section removed — its lines stay. Undo with ⌘Z'); break   /* REG-558 */
       case 'subtotalLabel': setLabelling(item); break   /* REG-555 (T-3) */

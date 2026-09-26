@@ -1,0 +1,166 @@
+{
+ "done": [
+  {
+   "ids": [
+    "files-15",
+    "E7"
+   ],
+   "what": "Every Company library action answers a refusal as { error: <the rule> } instead of throwing (a production throw arrives redacted, so the snackbar said 'please try again'). This covers quote templates (rename, delete, restore, bulk restore / forever / empty, set default, publish, submit, request changes, roll back, restore one), task, payment, contract and T&Cs & Notes templates (rename, delete, restore, forever, empty, contract set default, the contract title's rename rule, a too-large body), the price book (update, rename, duplicate, import, bulk change and its Undo, delete, restore, forever, empty, approve, send back, and every section action), folders (create, rename, move, delete, undo) and saveBrand (the Owner or Admin rule plus the entity-in-use refusal). The shared pieces live in the client-safe lib/company/template-rules.ts: Refusal, refuse(), isRefusal(), orThrow() and the new rule strings. lib/company/template-guard.ts now answers a block (changeBlock, defaultBlock, nothingChangeable) and never throws. A bulk Restore now answers { restored, kept } and Delete forever answers { removed, kept }, and when none of the rows are the viewer's the answer is the rule. Price book edits share one internal writeItem, so import, bulk change and Undo check the rule once and keep their History notes. My callers read the answer: the quote template editor (publish, submit, request changes, roll back, Restore on the deleted bar), the task, payment and T&Cs editors (Delete), and the quote editor's T&Cs modal, where a refused delete puts the card back. The quote editor's Save to My Items, its Undo and Save section to My Sections are written to accept an { error } answer already, ready for the items-actions request below.",
+   "files": [
+    "lib/company/template-rules.ts",
+    "lib/company/template-guard.ts",
+    "app/company/templates-actions.ts",
+    "app/company/task-templates-actions.ts",
+    "app/company/payment-templates-actions.ts",
+    "app/company/contract-templates-actions.ts",
+    "app/company/price-book-actions.ts",
+    "app/company/folder-actions.ts",
+    "app/quotes/text-actions.ts",
+    "components/templates/editor/template-editor.tsx",
+    "components/company/templates/editors/task-template-editor.tsx",
+    "components/company/templates/editors/payment-template-editor.tsx",
+    "components/company/templates/editors/text-template-editor.tsx",
+    "components/quotes/editor/text/templates-modal.tsx",
+    "components/quotes/editor/items/items-section.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "gallery-2"
+   ],
+   "what": "The server's part: when a folder change is refused, the rule names the folder's maker ('Only Dane, an Owner or an Admin can rename, move or delete this folder'). folder-actions looks up the maker's name and passes it to folderChangeBlockFor. The menu rows and the lead-design wording belong to server and gallery (folder-libraries.ts and the galleries).",
+   "files": [
+    "app/company/folder-actions.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-6"
+   ],
+   "what": "The Items table's Sum row now counts only lines that carry a price (a non-zero total). A counted line still at S$0, such as an unpriced finish or a floor waiting for its measured quantity, is counted but not priced. The row reads 'Sum · n priced items' when every line carries a price and 'Sum · n of m priced' otherwise, so the Add-to-quote quote now reads 'Sum · 0 of 3 priced' over S$0.00. Find's subset follows the same rule.",
+   "files": [
+    "components/quotes/editor/items/items-table.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "phone-4"
+   ],
+   "what": "Quote editor at 767px and below. The stray '#n' before Add Item is gone (the phone's Add Item row gets autonumber={false}). 'Additional Discount' takes its own line, with the % | S$ select and the amount box below it at full width. A named discount's word box does the same. Under a finger, the GST switch keeps its gap from 'GST 9%': the house 44px checkbox box (globals, −10 all round) had pulled the track onto the text. The By category head takes its own line above the Share · Margin chips. The Total row keeps the amount's width and drops 'Round Prices' under 'Total' when the two can't share the line; at 320 the link ran into S$49,838.07.",
+   "files": [
+    "components/quotes/editor/items/items-table.tsx",
+    "components/quotes/editor/items/items-summary.tsx",
+    "components/quotes/editor/items/items-section.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-4"
+   ],
+   "what": "The ITEM cell of each row is now a size container (itemcell). When a cell has 260px of content or less (the 240 cell at 1024 or below, or a column dragged narrow), a section's 'n items' count steps aside first. After that, a section's EMPTY picture well gives its 60px to the name; a picture the section holds stays. The Add-to-quote section name went from 10px wide ('L') to 116px ('Living room · …') at 1024×768 and 768×1024 touch. 1440 is unchanged (the name box measured the same before and after).",
+   "files": [
+    "components/quotes/editor/items/items-table.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-12"
+   ],
+   "what": "At 1024 and below, the active line's Expand sits inside the one-line description box as its end button: absolute, 24×22, no border or shadow, a 16px glyph, and 26px kept clear at the box's end. Before, it hung under the box. Under a finger the touch rules made it position: relative, so it also grew the active row from 80 to 90 and sat on the next row's name. A formatted or full description keeps the hanging button, and 1440 keeps the owner's REG-478 placement.",
+   "files": [
+    "components/quotes/editor/items/items-table.module.css",
+    "components/quotes/editor/items/item-row.tsx"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "tablet-4"
+   ],
+   "why": "The remaining suggestion to use a shorter quoteGroupName is not done. It lives in lib/visualizer/outputs.ts (server package). It isn't needed now: the section name reads 'Living room · …' at 1024 touch."
+  },
+  {
+   "ids": [
+    "tablet-12"
+   ],
+   "why": "Left as is at 1440: the Expand hangs 2px across the row boundary. That is the owner's REG-478 placement ('hanging under the description box's right end'), and at 1440 it doesn't cover the next row's name."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "app/quotes/items-actions.ts",
+   "ids": [
+    "E7",
+    "files-15"
+   ],
+   "change": "updatePriceBookItem now answers PriceBookItem | Refusal, so tsc fails here (line ~367) until this is applied. (1) Add import { refuse, type Refusal } from '@/lib/company/template-rules'. (2) In saveItemToPriceBook, change the return type to Promise<SavedToBook | Refusal>. Replace `if (!runsBook(v)) throw new Error(BOOK_RULE)` with `if (!runsBook(v)) return refuse(BOOK_RULE)`. Replace `if (!cur || cur.deletedAt) throw new Error('item not in the book')` with `return refuse('That item is gone from the price book')`. Replace `const item = await updatePriceBookItem(cur.id, fromLine(i, cur), `Updated from ${q.number}`)` with `const item = await updatePriceBookItem(...same args...); if ('error' in item) return item`. (3) In saveSectionToPriceBook, change the return type to Promise<PriceBookSection | Refusal> (its current type) and replace `if (!runsBook(v)) throw new Error(SECTION_RULE)` with `return refuse(SECTION_RULE)`. (4) In undoSaveToPriceBook, change the return type to Promise<void | Refusal>. Replace `if (block) throw new Error(block)` with `if (block) return refuse(block)`. Replace `throw new Error('already used on another line')` with `return refuse('Another quote line uses it now — it stays in My Items')` (invented copy). Replace `await updatePriceBookItem(cur.id, {...}, 'Undone')` with `const u = await updatePriceBookItem(cur.id, {...}, 'Undone'); if ('error' in u) return u`. components/quotes/editor/items/items-section.tsx already handles all three answers (isRefusal → run() says the rule)."
+  },
+  {
+   "file": "components/contracts/editor/contract-template-editor.tsx",
+   "ids": [
+    "E7",
+    "files-15"
+   ],
+   "change": "saveContractTemplate answers number | Refusal, so tsc fails at line 64. Add imports: import { isRefusal } from '@/lib/company/template-rules' and import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'. Line 64: `try { setUpdatedAt(await saveContractTemplate(template.id, patch)) } catch {...}` → `try { const r = await saveContractTemplate(template.id, patch); if (isRefusal(r)) snackbar({ message: couldnt('save the template', refusalOf(r.error)) }); else setUpdatedAt(r) } catch {...}`. This covers the title's rename rule and 'The document is too large to save — use a smaller picture'. Line ~120 (Delete confirm): `.then(() => deleteContractTemplate(template.id)).then(() => { router.push(...) }, ...)` → `.then(() => deleteContractTemplate(template.id)).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } router.push(...) }, ...)`."
+  },
+  {
+   "file": "components/company/templates/brand-kit-view.tsx",
+   "ids": [
+    "E7"
+   ],
+   "change": "saveBrand answers void | Refusal. Line 46: `try { await saveBrand({ kit }); setSaved(kit); snackbar({ message: 'Brand kit saved' }) } catch {...}` → `try { const r = await saveBrand({ kit }); if (isRefusal(r)) { snackbar({ message: couldnt('save the brand kit', refusalOf(r.error)) }); return } setSaved(kit); snackbar({ message: 'Brand kit saved' }) } catch {...}`. Imports: isRefusal from '@/lib/company/template-rules'; couldnt and refusalOf from '@/components/leads/tasks/use-run'. Without this a refusal reads 'Brand kit saved'."
+  },
+  {
+   "file": "components/company/profile-view.tsx",
+   "ids": [
+    "E7"
+   ],
+   "change": "Line 78: `await saveBrand({ details: next }); setDetails(next); setSaved(next); snackbar(...)` → `const r = await saveBrand({ details: next }); if (isRefusal(r)) { snackbar({ message: couldnt('save the company details', refusalOf(r.error)) }); return }` followed by the same three calls. This makes the entity-in-use refusal from reconcileEntities, and the Owner or Admin rule, reach the snackbar whole instead of reading 'Company details saved'. Imports as for brand-kit-view."
+  },
+  {
+   "file": "components/om/folders/move-dialog.tsx",
+   "ids": [
+    "E7"
+   ],
+   "change": "In createFolder's catch (line ~124), `catch { snackbar({ message: 'Couldn’t create the folder — please try again' }) }` → `catch (e) { snackbar({ message: couldnt('create the folder', refusalOf(e)) }) }`, importing couldnt and refusalOf from '@/components/leads/tasks/use-run'. LibraryGallery's onCreateFolder throws the rule (newIdOf / orThrow), so the dialog then says 'Couldn’t create the folder — only an Owner or an Admin makes, renames and deletes folders'."
+  },
+  {
+   "file": "components/company/price-book/price-book-items.tsx + price-book-sections.tsx + components/company/templates/library-gallery.tsx",
+   "ids": [
+    "E7"
+   ],
+   "change": "The gallery package has already wrapped these with its exported settle() (tsc is clean there). Check two things. (a) The send-back handler on line ~149 should also settle(sendBackPriceBookItem(...)): its answer can be { error } ('Say what to change — a note goes back with it' or the rule). (b) The bulk Delete / Restore / Undo inside run() on line ~168 should settle() deletePriceBookItems, restorePriceBookItems and undoBulkPriceBook, because each answers { error } when refused. Delete forever / Empty Trash for items and sections now answer { removed, kept }, which the sheet's purgedLine reads."
+  },
+  {
+   "file": "app/leads/quotes-actions.ts",
+   "ids": [
+    "E7"
+   ],
+   "change": "setDefaultTemplate (line 225), used by the Create Quote modal's tile kebab in lead-quotes.tsx and quotes-workspace.tsx, has no rule check: a Designer can set the studio's default there, which breaks REG-646. Make it delegate: `export async function setDefaultTemplate(templateId: string) { const { setDefaultTemplate: set } = await import('@/app/company/templates-actions'); return set(templateId) }`. The return type becomes Promise<void | Refusal>. The templates-actions version already revalidates every lead (touch). Both callers already go through run(), which says the rule ('Couldn’t set the default template — only an Owner or an Admin sets the studio’s default')."
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "(wave E, E7 · files-15) Every Company library action answers a refusal as { error: <the rule> } instead of throwing it. This covers quote, contract, task, T&Cs & Notes and payment templates, the price book (items, sections, proposals, import, bulk changes), folders and the brand kit. In production the snackbar now says the studio's rule ('Couldn’t delete the template — only its author, an Owner or an Admin renames or deletes it') instead of 'please try again'. A bulk Restore answers what came back and what stayed. The quote template editor, the task, payment and T&Cs editors, and the quote editor's T&Cs modal (a refused delete puts the card back) say the rule. Source: bug fix. Invented copy: 'A template awaiting approval can’t be deleted' · 'Only an Owner, an Admin or the backup approver publishes while templates need approval' · 'Only an Owner, an Admin or the backup approver answers a submission' · 'The template is deleted — restore it first' · 'That template is gone' · 'Quotes still print through it — restore it instead' · 'Only a published template can be the default' · 'The studio default split can’t be deleted' · 'Only an Owner or an Admin changes the company details and the brand kit' · 'Give the template a name' · 'That item is gone from the price book' · 'That section is gone from My Sections' · 'Say what to change — a note goes back with it' · 'That folder is gone' · 'That library keeps no folders' · 'A folder can’t go inside itself' · 'Delete it first — only a deleted template can go for good'.",
+  "(wave E, gallery-2) A refused folder rename, move or delete names the folder's maker ('Only Dane, an Owner or an Admin can rename, move or delete this folder'). Source: bug fix.",
+  "(wave E, desktop-6) The quote Items table's Sum row counts only lines that carry a price. It reads 'Sum · 0 of 2 priced' while lines wait at S$0; before, it read '2 priced items' over a S$0.00 total. Source: bug fix. Invented copy: 'n of m priced'.",
+  "(wave E, phone-4) Quote editor on a phone: no stray '#n' before Add Item. 'Additional Discount', and a named discount's word box, take their own line over the % | S$ select and the amount. Under a finger the GST switch keeps its gap from 'GST 9%'. By category's head takes its own line over the Share · Margin chips. The Total row drops 'Round Prices' under 'Total' when the two can't share a line (320). Source: bug fix.",
+  "(wave E, tablet-4) Quote Items table with an ITEM cell of 260px or less (1024 and below): a section's 'n items' count steps aside and an empty section picture well gives its room to the name. The section name read 'L' at 1024 and now reads 'Living room · …'. Source: bug fix.",
+  "(wave E, tablet-12) Quote Items table at 1024 and below: the active line's Expand sits inside the description box as its end button. Before, it hung over the next row's name and, under a finger, grew the active row from 80 to 90. 1440 keeps the REG-478 placement. Source: bug fix."
+ ],
+ "verification": "npx tsc --noEmit -p . is clean for every file I own. Two errors remain, both in files other packages own, and both go away once the crossFileRequests are applied: app/quotes/items-actions.ts:367 (updatePriceBookItem now answers PriceBookItem | Refusal) and components/contracts/editor/contract-template-editor.tsx:64 (saveContractTemplate answers number | Refusal). npx eslint on my files: 0 errors, and 1 warning (the scrollbar role in items-table.tsx) that I did not touch. Server actions: I ran every changed library action under tsx (react-server condition, a stubbed Next work store) against a scratch copy of srv/base.db (waveE/quotes/t.db; local.db untouched). As Sarah (Designer), all 35 refusal paths answered { error: <rule> } and none threw, including 'Only Dane, an Owner or an Admin can rename, move or delete this folder' and 'The studio default split can’t be deleted'. As Dane (Owner), the paths that should pass still did: task template rename, delete and restore ({restored:1,kept:0}); updatePriceBookItem; bulk change plus its Undo; import updating a match (History wrote edited:null · Bulk change · Undo · Imported); folder delete answering its FolderUndo. 'A folder can’t go inside itself' and 'The default can’t be deleted' came back as refusals. I also ran every rule string through a copy of use-run's refusalOf and couldnt: all read as rules (script waveE/quotes/msgs.mts). UI: the running :3023/:3024 builds are from before this wave, so I injected my new CSS (with the build's hashed class names) and emulated the JSX changes (the trowStack and switchLabel classes, the Add Item number removed, the expandGlyph class) on the real DOM with Playwright. Results: at 390/375/320 touch, Additional Discount sits on its own line (label 290 wide, no overflow); the GST track starts 10px after the text (it touched before); By category's head sits above the chips; Total / Round Prices wraps at 320 only; no page overflow (scrollWidth equals the viewport). Shots: quotes/phone-{390,375,320}-{before,after}.png and phone-390-additem-after.png. At 1024×768 and 768×1024 touch, the section name box went from 10 to 116px. The active line's Expand sat at 384–408 × 307–329, inside the description box (265–409 × 306–330), and the active row stayed 80 tall (it was 90). At 1440 every measurement matched before and after. Shots: quotes/tab2-{1024,768}-{before,after}.png, tab-1024-active-after.png. I checked the Sum label by reading the code only: the old build can't show the new JSX.",
+ "checkOnBuild": [
+  "Before building, apply the crossFileRequests for app/quotes/items-actions.ts and components/contracts/editor/contract-template-editor.tsx. Without them tsc fails.",
+  "View as Sarah on a page loaded as Dane (stale). Company › Templates › Tasks › ⋯ › Delete on Dane's 'Template 1' should read 'Couldn’t delete the template — only its author, an Owner or an Admin renames or deletes it'. Do the same with Rename, the T&Cs editor's Delete and the quote editor's T&Cs modal Delete (the card should come back).",
+  "View as Sarah on Company › Price book pages loaded as Dane. Edit an item, Duplicate, Import, a bulk change and Delete should each say 'only an Owner or an Admin changes the price book'. In My Sections, Save should say 'only an Owner or an Admin saves or changes My Sections'.",
+  "View as Sarah: Delete on a Templates folder should say 'only an Owner or an Admin makes, renames and deletes folders'. Delete on Dane's AI Visualizer folder should say 'only Dane, an Owner or an Admin can rename, move or delete this folder'.",
+  "Quote template editor as a Designer with template approval switched on after the page loaded: Publish should say 'Couldn’t publish — only an Owner, an Admin or the backup approver publishes while templates need approval'.",
+  "Company › Profile: removing an issuing entity that quotes use should put reconcileEntities' own sentence in the snackbar, not 'please try again' (needs the profile-view request).",
+  "Deleted sheets (Tasks, Payments, Contracts, T&Cs): a Restore or Delete forever of only someone else's rows should say the rule. A mixed pick should say 'n restored — k stays'.",
+  "Quote OM-10010 (Add to a quote) at 1440: the Sum row should read 'Sum · 0 of 3 priced'. Price one line and it should read '1 of 3 priced'. Price all three and it should read '3 priced items'.",
+  "Same quote at 1024×768 and 768×1024 touch: the section band should read 'Living room · …' with SECTION and the fold chevron, with no '3 items' and no empty picture well. Tap a line's Qty: the Expand glyph should sit inside the description box's right end, the row should stay 80 tall, and the next row's name should be clear.",
+  "At 1440 the Items table should be byte-identical to the baseline apart from the Sum label (the ITEM cell has more than 260px of content, so the container rules stay off).",
+  "Any quote at 390, 375 and 320 touch, totals card and By category: Additional Discount stacked, a GST gap, chips under the By category head, and at 320 'Round Prices' under 'Total'. No '2' should appear before Add Item. Also check a quote with a named discount (Add a discount) at 390: the word box should be on its own line."
+ ]
+}

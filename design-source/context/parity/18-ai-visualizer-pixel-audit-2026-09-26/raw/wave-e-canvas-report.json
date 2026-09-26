@@ -1,0 +1,326 @@
+{
+ "done": [
+  {
+   "ids": [
+    "desktop-7",
+    "desktop-14"
+   ],
+   "what": "E2: every copy in the Share dialog confirms in the button that copied — 'Link copied' / 'Message copied' with a check for ~2 s (the made link, each Shared-before row, Copy message); no success snackbar is raised from the dialog any more, so nothing lands over its footer on 800-tall windows. A failed copy still says so in the house snackbar. Local hook useCopiedMark replaces useCopy there.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-10"
+   ],
+   "what": "The Share dialog is the house l modal (800, was 720); the version tiles take four to a row.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-5",
+    "tablet-7"
+   ],
+   "what": "E13: the WhatsApp draft names the rooms with clientRoomNames(sharedRooms, every room of the design) — a lone 'Living room 2' on the link reads 'your living room', exactly as the client page and the server say.",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "files-11"
+   ],
+   "what": "A pin (or reply) whose author the client page names by role ('You', 'Client', 'Your client') no longer carries ' · Client' — the client's own sheet reads 'You / Pin 1 · just now'.",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "phone-8"
+   ],
+   "what": "A phone held sideways (≤1024 wide, landscape, ≤500 tall) gets the bottom sheet for a pin's thread and a new pin's box (with the spot on a small copy of the picture), never a 280px card over the spot being pinned; the new pin's spot sits beside its note box there. The float card also stops treating a stood-on-end canvas bar as a floor.",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx",
+    "components/visualizer/editor/pin-card.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-1",
+    "tablet-6",
+    "tablet-18"
+   ],
+   "what": "Esc (or Cancel / the tool again) ending pin or place mode while the photo holds focus hands focus back to what started the mode (the pin toggle, the rail's Add), else the pin toggle, else the canvas bar — never <body>. A thread opened straight from the photo (after Pin it) returns focus to its own pin marker when it closes, not to the photo region.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/pin-card.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-22",
+    "versions-2",
+    "tablet-14"
+   ],
+   "what": "With a strip tile focused, ← / → move focus with the version on screen (one ring, never two); the focus ring on the on-screen tile stands 4px off its selected ring (a white gap between two rings). The row gained 4px of inner room with a -4px margin, so nothing moves at 1440 (tile rects identical to the pre-wave bundle).",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-23",
+    "versions-3"
+   ],
+   "what": "Deleting a version from its ⋯ (or after the ask) hands focus to the tile that took its place (the next, else the one before, else the Original) once the menu/dialog has let go and only if the page holds focus; Undo or a restore focuses the tile that came back; the last restore in Deleted versions focuses the restored tile after the dialog leaves (its 'n deleted' opener is gone).",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/dialogs/deleted-versions.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-24",
+    "versions-4"
+   ],
+   "what": "A tile whose parent was deleted says 'made from V2' (the nearest live ancestor, beforeKeyOf) in its name and tooltip, as Present and Compare do — through a new optional `lineage` prop (every version incl. deleted); the editor must pass it (crossFileRequest).",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "tablet-3"
+   ],
+   "what": "The versions row fades (24px mask) at an edge with more tiles beyond it, so a cut tile at 390/320 reads as 'scroll for more', not a stray fragment beside the head.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "phone-2"
+   ],
+   "what": "(strip part) The strip's top rule runs on into the notch's left inset (a pseudo-element env(safe-area-inset-left) wide; 0 wide everywhere else). The rail's rules are the rail package's.",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "phone-1",
+    "phone-13"
+   ],
+   "what": "E3 (canvas side): the canvas bar compacts by the stage's own width (− / + and the rule step aside, Compare keeps only its icon — CSS on the editor's text button, its word stays its accessible name) whenever the stage is narrower than the whole bar, on every sideways phone and whenever the bar stands on end; measured without feedback (the whole bar's width is read only while it lies flat and uncompact; the column's length is counted from its tools). Sideways phones: the photo comes to 4px of the stage top/bottom and 2px of its sides; `side` now really triggers — the bar stands on end as a compact column beside the photo, photo and column centred together — whenever that costs the photo ≤8px, else `over` (compact bar over the photo's bottom edge); the chip steps aside (the strip marks the version). Harness: 844×390 with a 544×297 stage → side, photo 431×289; 667×375 with a 367×271 stage → over, photo 363×242; 1440, 1025, 390 portrait unchanged; a short 1440×500 desktop stage also gets the column (443×297, was 445×297 flat).",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-28",
+    "versions-8"
+   ],
+   "what": "On a sideways phone the mode banner is a small one-line pill 8px inside the photo's top-left corner with the short line ('Tap where your note goes · Cancel'), never a 44px band across the top third; the photo region's name keeps the whole sentence.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "E3"
+   ],
+   "what": "Slim versions row on a sideways phone: 64×40 tiles, captions stepped aside (each tile's name and tooltip still carry them), the head as two short lines ('VERSIONS 4' / '1 deleted'), the ⋯ at 80% with its target kept; the strip is 49px tall incl. its rule (was ~100).",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "phone-6"
+   ],
+   "what": "E3: Present on a phone held sideways takes the screen less 8px with a compact head / body / foot (the house dialog's parts, reached only through :has(.present)) and lays the picture left, the facts right (200px side: what changed over the versions, two to a row). 667×375: picture 373×250 (was 0×0); 844×390: 396×265 (was 169×113).",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "phone-7"
+   ],
+   "what": "Present on ≤700-tall portrait phones scrolls as one column: the picture the full width (up to half the screen's height), then the versions row and what changed — 343×230 at 375×667 (was 182×122), 288×193 at 320×640 (was 147×98). 390×844 unchanged (358×240).",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "phone-9"
+   ],
+   "what": "Present's arrow at an end steps aside (visibility hidden, slot kept) instead of a pale ghost on the picture; focus on it goes to the other arrow first (clicks and ← →). On phones and sideways the title is one line ('Living room · V4') and the version's full name heads the facts.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-25",
+    "versions-5",
+    "tablet-13"
+   ],
+   "what": "Present's side: the versions block is sized to a whole number of thumbnail rows (useWholeRows) with y-snap, and keepInView lands on a row's top — it opens on whole rows, never a sliver with floating captions; the facts (and the versions) fade at an edge with more beyond (useEdgeFade). 1440 and 390 layouts identical to the pre-wave bundle.",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "surfaces-26",
+    "versions-6",
+    "desktop-4",
+    "desktop-8",
+    "desktop-15"
+   ],
+   "what": "Present's 'What changed' is now changedFacts (version-facts.ts): the pass's surfaces named by the same rule as 'Everything in' — a group covered whole reads by its group ('Ceiling', 'Floor', never the reading's 'White Ceiling' / 'Light Oak Floor', the finish it replaced), a lone surface of a plural group reads singular ('Feature Wall'), two finishes in one group read surface by surface (never 'Countertops' twice). Every style-transfer colour (materialId ref:#hex) is re-read at display time for the surface it lies on (plainFinishName(`Reference ${hex}`, label)), so older versions follow today's rule; the moodboard makes one swatch per resolved name (the same colour on walls and a worktop is two swatches, each named for its kind) and Present agrees with it. The strip caption itself (descriptor) is model.ts — crossFileRequest.",
+   "files": [
+    "components/visualizer/editor/dialogs/version-facts.ts",
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx"
+   ]
+  },
+  {
+   "ids": [
+    "phone-10"
+   ],
+   "what": "Add a room on a touch screen says 'Choose room photos' / 'Choose a room photo' (the whole box is the picker); the box's lines sit 16px off its dashed edge at every width.",
+   "files": [
+    "components/visualizer/editor/dialogs/add-room.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-5"
+   ],
+   "what": "(stage part) A piece lit on the photo gets a lighter wash (4% brand, surfaces keep 10%) under its rim, and the pick's colour as a tint once every lit marker carries a pick (`fill` + `pending`) — the same rule surfaces use, now for any marker kind. The editor must give furniture markers their Customize colour and words (crossFileRequest); until then pieces show rim + light wash only.",
+   "files": [
+    "components/visualizer/editor/stage.tsx"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "desktop-2"
+   ],
+   "why": "Owner proposal, not a defect: keys and hints for Generate / Compare / Pin / Hide markers need the owner's call and a REG before building; E9 keeps 'no \"?\" shortcut sheet'. The existing hints (← → on the strip head, Cancel (Esc), ⌘Z) are untouched."
+  },
+  {
+   "ids": [
+    "phone-12"
+   ],
+   "why": "The version ⋯ menu's popover-vs-sheet choice lives in components/om/portal-menu.tsx (used by the editor), outside every package — see crossFileRequests."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ids": [
+    "surfaces-24",
+    "versions-4"
+   ],
+   "change": "Pass the room's whole lineage to the strip: in `const strip = room ? (… <VersionsStrip …` add the prop `lineage={all}` (every version incl. deleted; `all` is already in scope). Without it the strip keeps today's live-parent-only provenance."
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ids": [
+    "desktop-5"
+   ],
+   "change": "Give furniture markers their Customize pick: in the `mode === 'furniture'` branch of `const markers`, replace `fill: null` with `fill: p?.action === 'customize' ? (p.customizeColor ? COLOUR_HEX[p.customizeColor] ?? null : p.customizeMaterial ? FINISH_HEX[p.customizeMaterial] ?? null : null) : null` and add `pending: p?.action === 'customize' ? composeCustomizeDesc(p) || null : null` (import COLOUR_HEX, FINISH_HEX, composeCustomizeDesc from '@/lib/visualizer/furniture'). The stage then tints the lit piece with the pick's colour, as surfaces do."
+  },
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx + editor.module.css",
+   "ids": [
+    "phone-13",
+    "E3"
+   ],
+   "change": "Frame budget for the hero photo on a sideways phone: the stage now fills its column (4px top/bottom, 2px sides) and my slim strip is 49px incl. its rule. At 844×390 the photo is height-bound: 440×290 needs a stage ≥ 298px tall → compact top bar ≤ 43px (with the 49px strip, no other row). At 667×375 it is width-bound: 363×242 in the 367px column beside the 300px rail. No change is needed to the Compare toggle (the stage's compact bar shows only its icon; its word stays the accessible name). The canvas bar can now be a vertical column at the stage's right (aria-orientation=vertical) — the --bottom-dock snackbar measure already ignores it (it is outside the 16–360 band)."
+  },
+  {
+   "file": "components/om/portal-menu.tsx",
+   "ids": [
+    "phone-12"
+   ],
+   "change": "Open the menu as the bottom sheet on a phone held sideways too: `const sideways = useMediaQuery('(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)')` (from '@/lib/breakpoint') and `const sheet = (useSheetLayout() || sideways) && sheetTitle !== undefined`. The version ⋯ menu already passes sheetTitle."
+  },
+  {
+   "file": "lib/visualizer/model.ts",
+   "ids": [
+    "surfaces-26",
+    "versions-6"
+   ],
+   "change": "Strip captions / the stage chip (descriptor → surfaceWords) name a lone changed surface by the label that carries the finish it replaced ('V1 · Light Oak Floor' for a walnut floor, 'White Ceiling' for an olive one). Use the rule Present now uses (version-facts.ts `wholeWord`): a group changed on its only surface in the room reads by the group word ('Floor', 'Ceiling', 'Walls'), singular when the label's noun is singular ('Feature Wall'); keep the label only where the room has several of that group ('Back Wall'). descriptor() has no room reading — the simplest faithful version: in surfaceWords, when the group is Floor / Ceiling / Backsplash (one per room) use the group word. Pieces ('V5 · Grey Fabric Sofa' for a sage linen sofa) are an owner copy call."
+  },
+  {
+   "file": "lib/visualizer/outputs.ts",
+   "ids": [
+    "desktop-8",
+    "desktop-4",
+    "desktop-15"
+   ],
+   "change": "nearestFinish: pick the catalogue kind from the surface's group, not only resolveSurfaceCategories(label) — 'quartz island waterfall end' falls through to Paints ('close to Linen' on a worktop). Map surfaceGroupFor(label): Countertops → the countertop / stone category, Backsplash → tiles / stone, Floor → indoor floorings (never 'Teak Outdoor'), Walls/Ceiling/Trim → Paints. Present and the moodboard now re-read every ref:#hex finish through plainFinishName at display time, so the fix reaches existing versions there."
+  },
+  {
+   "file": "components/visualizer/editor/rail.module.css",
+   "ids": [
+    "phone-2"
+   ],
+   "change": "(rail's half of phone-2) run the rules under the mode tabs and above the go line on into the right safe-area inset (put the border on the row that carries the inset padding, or a pseudo-element env(safe-area-inset-right) wide, as the strip now does on the left)."
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-? (wave E · E2 · desktop-7/14) Share with client: every copy confirms in the button that copied — 'Link copied' / 'Message copied' with a check for ~2 s (the new link, each Shared-before row, Copy message); no snackbar over the dialog. ('Message copied' as a button label: invented copy, the house snackbar's words.)",
+  "REG-? (desktop-10) Share with client is the house l modal (800).",
+  "REG-? (E13 · tablet-5/7) The WhatsApp draft names rooms exactly as the client's page does (a lone 'Living room 2' is 'your living room').",
+  "REG-? (files-11) The client's own pin sheet reads 'You / Pin 1 · just now' — no ' · Client' after a name that already says who.",
+  "REG-? (phone-8 · E3) On a phone held sideways a pin's thread and a new pin's box are the bottom sheet; the new pin's spot sits beside its note box.",
+  "REG-? (tablet-1/6/18) Esc out of pin / place mode from the photo returns focus to the tool that started it; a thread opened straight from the photo returns focus to its pin.",
+  "REG-? (surfaces-22 · tablet-14) Versions strip: keyboard focus follows ← →; the on-screen tile's focus ring stands off its selected ring.",
+  "REG-? (surfaces-23) After a version is deleted, restored or brought back with Undo, focus lands on the neighbouring / returned tile, never the page.",
+  "REG-? (surfaces-24) A version whose parent was deleted says 'made from' the nearest live version, as Present does.",
+  "REG-? (tablet-3) The versions row fades at an edge with more tiles beyond it (invented UI: edge fade).",
+  "REG-? (phone-1) The canvas bar compacts by the stage's own width: − / + and the rule step aside, Compare shows its icon.",
+  "REG-? (E3 · phone-13) A phone held sideways: the photo fills its stage; the canvas bar stands on end beside it (or lies compact over its bottom edge where that gives a bigger photo); the versions are a slim row of 64×40 tiles with their captions in the tooltip (invented UI: vertical canvas bar, slim strip).",
+  "REG-? (surfaces-28) Sideways, the mode banner is a small pill in the photo's corner with the short line — invented copy: 'Tap where your note goes', 'Tap where {the x} is', 'Draw around {x}', 'Tap the {x}', 'Trace all the way round' (Click… with a mouse).",
+  "REG-? (phone-6 · E3) Present on a phone held sideways: the picture left, the facts right, compact head and foot (invented UI).",
+  "REG-? (phone-7) Present on short portrait phones scrolls as one column with the picture the full width.",
+  "REG-? (phone-9) Present: an arrow with nowhere to go steps aside; on a phone the title is 'Room · Vn' and the version's full name heads its facts (invented UI: the name line).",
+  "REG-? (surfaces-25 · tablet-13) Present's side shows the versions on whole rows and fades an edge with more beyond (invented UI: fades).",
+  "REG-? (surfaces-26 · desktop-4/8/15) Present's 'What changed' names each surface as 'Everything in' does (the group, never the finish it replaced); a style transfer's colours are named for each surface's kind, and the moodboard gives each name its own swatch.",
+  "REG-? (phone-10) Add a room on a touch screen: 'Choose room photos' / 'Choose a room photo' (invented copy); the box's lines 16px off its edge.",
+  "REG-? (desktop-5) A piece lit on the photo wears a lighter wash, and its Customize colour once picked (with the editor's marker change)."
+ ],
+ "verification": "npx tsc --noEmit -p . — no errors in my files (the only errors were other packages' mid-edit files: app/quotes/items-actions.ts, contract-template-editor.tsx); npx eslint on stage.tsx, pin-card.tsx, versions-strip.tsx and dialogs/** — clean. No build/dev/start run. Read-only esbuild harness (scratchpad/waveE/canvas/harness: entry.tsx bundling the real components over the :3021 build's global CSS; shots in harness/shots/) — looked at every shot: stage at 1440/1025/390/320/844×390/667×375/1280×600/1440×500 (fit, photo and bar rects probed; 1440 roomy unchanged), pin banner sideways, pin sheets at 844×390 and the client's 'You' sheet at 390, strip at 1440 (tile rects identical to wave D's bundle), 390 (edge fade), 844×390/667×375 (slim, 49px), Present at 1440 (image rect identical to wave D's bundle), 1024×768 (whole rows + fades), 390 (identical), 375×667 (343×230), 320×640 (288×193), 667×375 (373×250), 844×390 (396×265), Share at 1025×800 (800 wide, 'Link copied' with a check on a row and on the new link, no snackbar; draft 'your living room' for a lone 'Living room 2'), Add a room at 390 touch. Behaviour scripts: t-stage.cjs (Esc from the focused photo in pin mode → focus on 'Pin a note'; compact bar at a 367px stage, whole at 900), t-strip.cjs (focus follows ← →, delete via ⋯ → focus on the next tile which says 'made from V2', restore → restored tile), t-present.cjs (Next at the end hands focus to Previous; the ended arrow is hidden), naming probes (Present and moodboard agree: walls/ceiling 'close to Warm Greige', floor 'close to Ash Wide Plank', 'Ceiling' not 'White Ceiling').",
+ "checkOnBuild": [
+  "The sideways Present override uses :global([role='dialog'][aria-modal='true'][data-fluid]):has(.present) > div:nth-of-type(n) in dialogs.module.css — confirm Turbopack compiles it and that Present at 667×375 / 844×390 touch shows a compact head (≈40px) and foot (≈53px), picture left and facts right.",
+  "Real editor at 844×390 and 667×375 touch (after the editor's frame work): stage data-fit='side' at 844 with a vertical canvas bar right of the photo (5 tools + %; photo ≈ 417–433 × 278–289 depending on the top bar), data-fit='over' at 667 (photo ≈ 363×242, compact bar over its bottom edge); pin mode's banner a small pill at the photo's top-left; the versions strip 49px with 64×40 tiles.",
+  "1440 / 1280 / 1025 editor: stage, canvas bar and strip look exactly as before (no data-compact at ≥1025 with the text Compare unless the stage is narrower than ~446px).",
+  "Keyboard at 1440: Tab to a strip tile, ← → — focus moves with the chip; delete a version from its ⋯ — focus on the next tile; open 'n deleted', restore the last — focus on the restored tile; Pin a note → focus the photo → Esc twice — focus on the pin toggle.",
+  "Share with client at 1280×800 and 1025×800: Copy link on a row / on the new link reads 'Link copied' with a check for ~2 s, no snackbar; Copy message reads 'Message copied'.",
+  "After the editor passes lineage={all}: delete V3 of a V2→V3→V4 chain — V4's tile tooltip says 'made from V2'.",
+  "After the editor gives furniture markers fill/pending: Grey Fabric Sofa › Customize › Navy — the sofa wears a navy tint over a faint wash, never lavender.",
+  "Notched iPhone landscape (safe-area 47): the strip's top rule reaches x=0."
+ ]
+}

@@ -28,6 +28,9 @@ export default async function TemplateEditorPage({ params, searchParams }: { par
   } else if (typeof sp.lead === 'string') {
     const l = await fetchEditorOrigin({ leadId: sp.lead })
     if (l.lead) origin = { from, lead: l.lead }
+  } else if (from) {
+    /* (audit 2026-09-26, round 3) opened from Company › Templates (a folder, a search): Back returns there (REG-465) */
+    origin = { from }
   }
   return <TemplateEditor data={data} initialPreview={sp.preview === '1'} origin={origin} />
 }

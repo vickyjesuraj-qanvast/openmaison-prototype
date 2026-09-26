@@ -78,7 +78,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
           <span className={styles.tlabel}>Discount</span>
           <span className={styles.tvalue}>{money2(totals.discountMinor)}</span>
         </div>
-        <div className={styles.trow}>
+        <div className={`${styles.trow} ${styles.trowStack}`}>   {/* (wave E, phone-4) on a phone the label takes its line, the % | S$ and the amount the next */}
           <span className={styles.tlabel}>Additional Discount</span>
           <span className={styles.tcontrols}>
             <button ref={modeRef} type="button" className={`${styles.mini} ${styles.miniSelect}`} aria-haspopup="menu" aria-expanded={modeOpen} aria-label="Additional discount unit" onClick={() => setModeOpen((o) => !o)}>
@@ -100,7 +100,7 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
           </button>
         ) : null}
         <div className={styles.trow}>
-          <span className={styles.tlabel}>{gstLabel} <Switch size="sm" isSelected={pricing.gstEnabled} onChange={(v: boolean) => onPricing({ gstEnabled: v })} aria-label="Apply GST" /></span>
+          <span className={`${styles.tlabel} ${styles.switchLabel}`}>{gstLabel} <Switch size="sm" isSelected={pricing.gstEnabled} onChange={(v: boolean) => onPricing({ gstEnabled: v })} aria-label="Apply GST" /></span>
           <span className={styles.tvalue}>{money2(totals.gstMinor)}</span>
         </div>
         <div className={styles.rule} />

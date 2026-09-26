@@ -1,0 +1,130 @@
+/* The rail (REG-673): 372 wide, white, the mode tabs on top, the panel scrolling, the footer pinned — the template editor's pane grammar
+   with the phone dock's tabs (mobile-nav's glyph-over-label), so the same tabs work as the dock ≤1024. */
+.tabs { flex-shrink: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+.tabs[data-variant='dock'] { border-bottom: 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); padding: 0 var(--viz-inset-r, 0px) env(safe-area-inset-bottom, 0px) var(--viz-inset-l, 0px); }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 60px; border: 0; background: none; cursor: pointer; color: var(--om-color-on-surface-secondary); transition: color var(--motion-hover), background-color var(--motion-hover); }
+/* (F152) a pointer's hover only — a tapped tab never keeps a grey block */
+@media (hover: hover) { .tab:hover { background: var(--om-color-hover-04p); } }
+.tab[aria-selected='true'] { color: var(--om-color-primary-default); }
+.tab[aria-selected='true']::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: -1px; height: 2px; border-radius: 1px; background: var(--om-color-primary-default); }
+.tabs[data-variant='dock'] .tab[aria-selected='true']::after { top: -1px; bottom: auto; }
+.tab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.tabIcon { position: relative; display: inline-flex; }
+.mark { position: absolute; top: -2px; right: -5px; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); box-shadow: 0 0 0 2px var(--om-color-surface-default); }
+.tabLabel { font: var(--om-type-caption-s); }
+/* (phone-2 · F156) The rail pads a notch's right inset in its own white (the editor's .rail): its two rules — under the tabs, over
+   the go line — run on under that inset to the screen's edge, never stopping 47px short. The pieces are 0 wide without an inset. */
+.tabs:not([data-variant='dock']) { position: relative; padding-right: var(--viz-inset-r, 0px); }
+.tabs:not([data-variant='dock'])::before, aside > .foot[data-compact]::before { content: ''; position: absolute; left: 100%; width: env(safe-area-inset-right, 0px); height: var(--om-border-1); background: var(--om-color-surface-variant); pointer-events: none; }
+.tabs:not([data-variant='dock'])::before { bottom: calc(-1 * var(--om-border-1)); }
+aside > .foot[data-compact] { position: relative; }
+aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
+/* Read by a screen reader, never seen (", has changes" after a tab's name; a muted chip's "kept for your next Generate"). */
+.srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.panel { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.back { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 36px; margin: var(--om-spacing-3) var(--om-spacing-4) 0 calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); padding: var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); }
+@media (hover: hover) { .back:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
+.back:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+.panelHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-4) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); }
+.panelTitles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.panelTitle { margin: 0; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.panelSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.panelActions { display: inline-flex; gap: var(--om-spacing-1); flex-shrink: 0; }
+/* (F136 · F046) The body is the one scroller: what sits in it keeps its own height (a list card, a card grid, a section) instead of
+   being squeezed and clipped by the flex column — at every width, the tray's short one included. */
+.panelBody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-5) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.panelBody > * { flex-shrink: 0; }
+.foot { flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-4) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); border-top: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+/* (F062) the foot's rows keep their own height — when the foot scrolls on a short laptop, the scroll takes the overflow, never Generate */
+.foot > * { flex-shrink: 0; }
+.changes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.changesHead { display: flex; align-items: center; justify-content: space-between; font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-body-s); text-transform: none; letter-spacing: 0; color: var(--om-color-primary-default); }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* (F007 · F051) Three rows and half of the fourth: a chip cut mid-way reads as "there is more", and the foot fades while there is. */
+.changeList { --chip-h: 28px; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
+.changeList[data-capped] { max-height: calc(var(--chip-h) * 3.5 + var(--om-spacing-2) * 3); overflow-y: auto; overscroll-behavior: contain; }
+.changeList[data-more] { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
+.change { height: var(--chip-h); padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); gap: var(--om-spacing-1); max-width: 100%; cursor: default; }
+/* (F052) waiting for a later Generate: the outlined chip, the secondary words */
+.change[data-muted] { color: var(--om-color-on-surface-secondary); border-style: dashed; }
+.changeText { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: var(--om-type-body-s); }
+.changeX { position: relative; flex-shrink: 0; display: inline-flex; border: 0; background: none; padding: 2px; border-radius: var(--om-radius-1); cursor: pointer; color: inherit; }
+/* a pointer's target around the 20px glyph, kept inside the 28px chip (F007: a hit area past the chip made the list read as
+   overflowing — the fade then sat on every list); leftwards it reaches over the words, which do nothing when pressed */
+.changeX::after { content: ''; position: absolute; inset: -4px -4px -4px -8px; }
+@media (hover: hover) { .changeX:hover { background: var(--om-color-hover-08p); } }
+.changeX:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+.note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* the way on, inside the reason Generate waits for (a version to open) */
+.inlineLink { display: inline; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; }
+.inlineLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* (F067) Versions and Quality, one row each: the label on the left, the switch on the right — never past the rail's edge. */
+.knobs { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.opts { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-2); }
+.optsText { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.knob { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
+.knob[data-off] { opacity: 0.55; }
+.knobLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.go { width: 100%; min-height: 36px; }
+.error { display: flex; align-items: flex-start; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.error > :first-child { flex-shrink: 0; margin-top: 1px; }
+.hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
+/* (F062) A laptop's short screen (1366×768, 1280×800): the foot folds so the panel keeps its room — the chips one row and a half
+   (the rest scroll), the gaps tighter, and past its share of the rail the foot scrolls with Generate held in view. */
+@media (max-height: 860px) and (min-width: 1025px) {
+  .foot { gap: var(--om-spacing-2); padding-top: var(--om-spacing-2); padding-bottom: var(--om-spacing-3); max-height: 42dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .changeList[data-capped] { max-height: calc(var(--chip-h) * 1.5 + var(--om-spacing-2)); }
+  .go { position: sticky; bottom: 0; z-index: 1; }
+}
+/* (F016) 768–800px tall at any rail width: nothing is picked yet, so the greyed Generate already says it — the idle hint ("Pick a
+   finish, a style or a light first.") steps out of sight (still read aloud) and the panel keeps the room. Describe folds in its own CSS. */
+@media (min-width: 768px) and (max-height: 800px) {
+  .hint[data-idle] { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+/* ≤1024 with the tray closed: one line — what waits, and the button. */
+.foot[data-compact] { container-type: inline-size; padding: var(--om-spacing-2) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-2) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); gap: var(--om-spacing-2); }
+/* (phone-tablet 9) Clear all on the sheet's title line: the 36px button takes the title's 24px of the row, its target unchanged */
+.sheetAction { display: inline-flex; margin-block: -6px; }
+.compactRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
+.compactToggle { flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-primary-default); white-space: nowrap; }
+.compactToggle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
+@media (hover: hover) { .compactToggle:hover { background: var(--om-color-hover-04p); } }
+.compactStatus { flex: 1; min-width: 0; }
+.compactStatus > .error { align-items: center; }
+.compactLine { min-width: 0; }
+.compactText { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.sheetBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-6); }
+@media (max-width: 767px) { .sheetBody { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); } }
+/* a finger's 36px floor for the chips, their × and the foot's links (REG-307) — on any touch screen, the landscape tablet's rail too */
+@media (hover: none) { .link { min-height: 36px; padding: 0 var(--om-spacing-1); } }
+@media (max-width: 767px), (hover: none) {
+  .changeList { --chip-h: 36px; }
+  .change { height: auto; min-height: var(--chip-h); }
+  .changeX { padding: 10px; }
+  .changeX::after { inset: 0; }
+}
+.goCompact { flex: 0 1 auto; min-width: 0; max-width: 60%; }
+.goText { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a phone: "2 changes ▾" — the word "waiting" gives way so the row stays one line (and the 320 gate holds) */
+@media (max-width: 419px) { .waitWord { display: none; } }
+/* (phone-11 · E3) A go line too narrow for its words beside the button — the 300px rail of a phone on its side: why Generate waits
+   takes its own line under the button, whole ("Pick a finish, a style or a light first." never cut to "…a light..."), and the button
+   takes the row; with changes waiting, "waiting" gives way as on a phone, and the button says its verb alone ("Furnish", never
+   "Furnish th…" — its full words stay its name). */
+.goShort { display: none; }
+@container (max-width: 279px) {
+  .compactRow:has(> .compactStatus:not(:empty)) { flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+  .compactStatus:not(:empty) { order: 3; flex: 1 0 100%; }
+  .compactRow:has(> .compactStatus:not(:empty)) > .goCompact { flex: 1 1 auto; max-width: none; }
+  .waitWord { display: none; }
+  .goText:has(+ .goShort) { display: none; }
+  .goShort { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* (E3) A phone on its side: the rail's tabs sit 48 tall, not 60, and a panel's head is 8px tighter — the panel keeps the room the go
+   line's own line takes (the dock's tabs stay 60). */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tabs:not([data-variant='dock']) .tab { height: 48px; gap: 0; }
+  .panelHead { padding-top: var(--om-spacing-3); padding-bottom: var(--om-spacing-2); }
+}

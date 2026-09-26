@@ -1,0 +1,189 @@
+{
+ "done": [
+  {
+   "ref": "F007",
+   "what": "(earlier agent) The changes list's 'more below' fade is set only when the last chip's own box passes the list's foot (2px tolerance), not from scrollHeight; the chip's × hit area now stays inside the 28px chip (inset -4/-4/-4/-8), so nothing overflows. Measured on the pre-D build with the new CSS: 1–2 chips sh=ch=28, 3 chips 64/64 at 1440; at 1280/1366 the 1.5-row cap cuts the third chip and the fade shows only then. Also covers new:editor-visual:fade on every list and new:surfaces-furniture:last chip always fades.",
+   "files": [
+    "components/visualizer/editor/rail.tsx",
+    "components/visualizer/editor/rail.module.css"
+   ]
+  },
+  {
+   "ref": "F062",
+   "what": "(earlier agent) The foot's rows never shrink (.foot > * { flex-shrink: 0 }) and Generate keeps a 36px floor, so the scroll takes the overflow on a short laptop (new:style-light-tools:Generate collapses to 20px) — measured 36px at 1366×768 and 1280×800 with a long focused note. (this run) The remaining part: picking Empty the room or Furnish the room scrolls the panel so the options under the card come into view (never the chosen card past its top; a panel reopened on a tool already picked stays put; smooth unless reduced motion). The panel body carries data-viz-panel-body for it.",
+   "files": [
+    "components/visualizer/editor/rail.module.css",
+    "components/visualizer/editor/rail.tsx",
+    "components/visualizer/editor/panels/tools-panel.tsx"
+   ]
+  },
+  {
+   "ref": "F145",
+   "what": "(earlier agent) Describe a change draws its box on the field around a padding-less textarea, so every resting height is whole 20px lines and a second line can never peek; the tray's caption is visually hidden (still the textarea's name); a press on the field's padding focuses the words. (this run) The example is picked by measuring the box in its own type (ResizeObserver + canvas measureText, re-measured when the web font lands): the full sentence where the box rests on two lines, else 'e.g. walnut floor, sage green walls' or 'e.g. sage green walls'; the tray's box 'Describe a change, e.g. sage walls' or 'Describe a change…' — so it fits at the 372/336 rails, the 300px short-landscape rail and every phone tray. The compact mic's resting position keys on the textarea's focus like the others. Dedupes new:editor-visual 2, engine 3, surfaces-furniture 2, phone-tablet 3, motion-a11y 4, style-light-tools 2, fresh-desktop 6, fresh-tablet 14, fresh-phone 5.",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx",
+    "components/visualizer/editor/describe-box.module.css"
+   ]
+  },
+  {
+   "ref": "F015 · F069",
+   "what": "(earlier agent) A style card's materials are listed one to a line beside their chip, named in full (no clamp). (this run) The style cards sit on a subgrid (inside @supports), so across a row the pictures, names, descriptions and material lists each start level whatever wraps. Checked at 1440, 1025, 390 and 320: no name cut.",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx",
+    "components/visualizer/editor/panels/panels.module.css"
+   ]
+  },
+  {
+   "ref": "F049",
+   "what": "(earlier agent) Every table reads as a table (coffee / side / end / console / dining table, desk → table_restaurant; the Tables fallback too); a TV console stays storage. All glyph names are in the subset (checked).",
+   "files": [
+    "components/visualizer/editor/panels/furniture-glyph.ts"
+   ]
+  },
+  {
+   "ref": "F197",
+   "what": "(earlier agent) The surface header, ticks and rows read only picks whose material still resolves — no 'Now: … · →' with an empty target. The Surfaces tab dot is the editor's (its marks now count only resolvable picks).",
+   "files": [
+    "components/visualizer/editor/panels/surfaces-panel.tsx"
+   ]
+  },
+  {
+   "ref": "critic-13",
+   "what": "(earlier agent) D6: the picker's 'Now' line reads '{name} (renamed since)' when the version's snapshot name differs from the material's current one. (this run) '(recoloured since)' when only the colour changed; Recent now shows the studio's and the design's own materials (it resolved catalogue ids only), and a studio material's chip wears the pattern the render gives it (resolveMaterial). The delete-confirm 'Used in n designs' is the gallery's (notDone).",
+   "files": [
+    "components/visualizer/editor/panels/surfaces-panel.tsx",
+    "components/visualizer/editor/panels/material-picker.tsx"
+   ]
+  },
+  {
+   "ref": "F087",
+   "what": "(this run) Part (1): the picker's swatches and the rail's surface rows share one chip (useSwatchCss): a printed motif (wallpaper prints, tile bonds — stripe, botanical, deco, wave, floral, geometric, brick, subway, hex, penny, herringbone, chevron, cement…) wears the engine's own tile at its real repeat via version-facts' finishChip — the moodboard's chip — after hydration; textures (marble, boards, concrete) keep the CSS chip (drawing them costs ~140ms). Compared all 29 tiled swatches side by side against the CSS sketches (tiles-cmp.png).",
+   "files": [
+    "components/visualizer/editor/panels/material-picker.tsx",
+    "components/visualizer/editor/panels/surfaces-panel.tsx"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:reference × invisible",
+   "what": "(earlier agent) A reference photo's remove × is a white round chip with elevation-1 and a 36px target — readable on light, mid and dark photos (checked).",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx",
+    "components/visualizer/editor/panels/panels.module.css"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:Furnish copy · new:fresh-phone:Furnish hint",
+   "what": "(this run) The density line ends with its own full stop and says what the render does today in plain words; 'empty it first' shows only where this version can be emptied and isn't.",
+   "files": [
+    "components/visualizer/editor/panels/tools-panel.tsx"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Furnish says Empty first though an emptied version exists",
+   "what": "(this run) ToolsPanel takes `emptied` ({ n, onOpen }): the Furnish card's help reads 'Furnish works on an emptied version — V4 is one' and its options end 'Furnish works on an emptied version — open V4' (a link that opens it). GenerateFooter takes `reasonLink` ({ text, label, onPress }) that replaces the waiting reason with the same words and link (desktop hint, compact line, and the changes sheet, where the link also closes the sheet). Needs the editor's wiring (crossFileRequests).",
+   "files": [
+    "components/visualizer/editor/panels/tools-panel.tsx",
+    "components/visualizer/editor/rail.tsx",
+    "components/visualizer/editor/rail.module.css"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:'Grace’s pick' on the nearest",
+   "what": "(earlier agent) The lead's-pick tag says '{first name}’s pick' only when the lead's style is itself a card; on the nearest one it says 'Closest match'.",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx"
+   ]
+  },
+  {
+   "ref": "new:phone-tablet:Clear all below the title",
+   "what": "(earlier agent) The changes sheet's Clear all sits on the title line (its 36px button takes 24px of the row, target unchanged). Measured: title 735 / Clear all 737 / close 737 at 390; 915 / 917 / 917 at 768 touch (was 8px low). Also style-light-tools 10 and fresh-phone 13.",
+   "files": [
+    "components/visualizer/editor/rail.tsx",
+    "components/visualizer/editor/rail.module.css"
+   ]
+  },
+  {
+   "ref": "new:fresh-desktop:Replace quick pick cut mid-word",
+   "what": "(this run) The piece's caption names a quick pick by its own name ('Replace · Mid-Century Coffee Table'), and words the studio typed are cut at a word with '…' (Replace and Customize). The printed line ('Swapped for a …') is the engine's replacementName in run.ts, already in the tree.",
+   "files": [
+    "components/visualizer/editor/panels/furniture-panel.tsx"
+   ]
+  },
+  {
+   "ref": "D3",
+   "what": "(this run) Customize takes its finish row from the engine's finishRowFor(piece): a row naming a part (Planter, Frame, a TV's Finish) shows only where that part is traced; where it is, the Colour row reads 'Colour · the pot' (frame / frame and stand), since the colour lands on that part too.",
+   "files": [
+    "components/visualizer/editor/panels/furniture-panel.tsx"
+   ]
+  },
+  {
+   "ref": "F156",
+   "what": "(earlier agent, rail side) The dock tabs, the panel's Back, head and body and the foot add `--viz-inset-l/-r` (0 when unset) to their padding, so on a notched phone on its side the rows' own white reaches under the insets. Currently the editor paints those insets with env() on .rail / .goDock / .fold and does not set the variables, which is equivalent; see crossFileRequests so the two never add up.",
+   "files": [
+    "components/visualizer/editor/rail.module.css"
+   ]
+  },
+  {
+   "ref": "new:style-light-tools:FAB over the knobs",
+   "what": "(earlier agent, rail side) The compact foot carries data-viz-knobs while Versions and quality is open; the editor hides the Maison AI button then (editor.module.css, keyed on the button's aria-expanded).",
+   "files": [
+    "components/visualizer/editor/rail.tsx"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ref": "F145 (3)",
+   "why": "The 52dvh tray cap that shrinks the photo on short phones is editor.module.css (editor package), not the rail's."
+  },
+  {
+   "ref": "critic-13 (Used in n designs)",
+   "why": "D6's 'Used in n designs' on the material's delete confirm and the Deleted sheet lives in components/company/materials/** and needs a server count — gallery / server packages."
+  },
+  {
+   "ref": "F087 (2)",
+   "why": "The moodboard's pre-tiled print bitmap is the canvas package's (version-facts.ts patternBoard already exists there)."
+  },
+  {
+   "ref": "new:surfaces-furniture:Oak TV Console Customize offers table tops",
+   "why": "Engine's furniture.ts — already changed there (a TV console now takes Front / finish); nothing in the panel."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx",
+   "ref": "new:fresh-desktop:Furnish says Empty first though an emptied version exists",
+   "change": "Wire the new props. Near `tools`: `const emptiedV = tools && !tools.canFurnish && tools.canEmpty ? [...all].reverse().find((v) => v.finishes.emptied && !v.deleted && v.key !== viewKey) ?? null : null; const emptiedLink = emptiedV ? { n: emptiedV.n, onOpen: () => setView(emptiedV.key) } : null`. Pass `emptied={emptiedLink}` to <ToolsPanel …>, and to <GenerateFooter …> in footer(): `reasonLink={pending.tool === 'furnish' && emptiedLink && !footIntent.kind ? { text: 'Furnish works on an emptied version —', label: `open V${emptiedLink.n}`, onPress: emptiedLink.onOpen } : null}` (invented copy, same words as the Tools panel)."
+  },
+  {
+   "file": "components/visualizer/editor/editor.module.css",
+   "ref": "F156 · new:style-light-tools:FAB over the knobs",
+   "change": "(1) The rail's rows add var(--viz-inset-l/-r, 0px) to their padding; while the editor paints the notch insets with env() on .rail / .goDock / .fold, do NOT also define --viz-inset-l/-r on an ancestor of the rail or the dock, or those rows get the inset twice (stage.module.css / versions-strip.module.css read the same variables). (2) Optional: key the FAB rule on the rail's own hook `.editor:has([data-viz-knobs]) .fab { display: none; }` instead of the button's aria-label text."
+  },
+  {
+   "file": "components/visualizer/editor/dialogs/version-facts.ts",
+   "ref": "F087",
+   "change": "Keep `export function finishChip(f: Pick<FinishedSurface, 'hex' | 'pattern'>, imageUrl?: string | null): string` exported with this signature — panels/material-picker.tsx imports it so the picker, the rail rows and the moodboard draw one tile. (Better home later: move patternUrl / finishChip into lib/visualizer/patterns.ts.)"
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn · The rail's changes list fades at its foot only while a chip is really hidden below; the × hit area stays inside its chip (F007 · new:editor-visual:fade on every list · new:surfaces-furniture:last chip always fades) — bug fix",
+  "REG-nnn · On a short laptop the rail's foot scrolls and Generate keeps its full 36px; picking Empty the room or Furnish the room scrolls its options into view (F062 · new:style-light-tools:Generate collapses) — bug fix",
+  "REG-nnn · Describe a change rests on whole lines only (no half line), its caption hidden in the tray; its example fits the box it rests in — 'e.g. walnut floor, sage green walls, warmer evening light' on two lines, 'e.g. walnut floor, sage green walls' or 'e.g. sage green walls' on one, 'Describe a change, e.g. sage walls' or 'Describe a change…' in the tray (F145 · new:*:Describe placeholder cut ×9) — bug fix; the shorter examples and the tray's words are invented copy",
+  "REG-nnn · Style cards list their three materials one to a line, in full, and a row's cards line up picture, name, description and list (F015 · F069) — bug fix",
+  "REG-nnn · The lead's-pick tag reads '{first name}’s pick' only on the lead's own style; on the nearest style it reads 'Closest match' (new:fresh-desktop:'Grace’s pick' on the nearest) — invented copy",
+  "REG-nnn · A style reference's remove × sits on a white round chip with a 36px target (new:style-light-tools:reference × invisible) — bug fix",
+  "REG-nnn · Tables show a table glyph in the Furniture list (F049) — bug fix",
+  "REG-nnn · A surface whose picked material is gone shows no pick (no empty '→') (F197 · critic-13) — bug fix",
+  "REG-nnn · A surface's 'Now' names the finish as the version laid it, with '(renamed since)' when the material was renamed in Materials (D6) and '(recoloured since)' when only its colour changed (critic-13) — user-directed (D6); '(recoloured since)' is invented copy",
+  "REG-nnn · The picker's Recent keeps the studio's and the design's own materials, and a studio material's chip wears the pattern the render gives it (critic-13) — bug fix",
+  "REG-nnn · Wallpaper and tile swatches in the picker and the Surfaces rows wear the tile the engine lays and the moodboard prints (F087) — bug fix",
+  "REG-nnn · Tools › Furnish: the density line reads '{density}. For now it places the pieces the sample room holds.'; 'empty it first' shows only on a version that can still be emptied (new:style-light-tools:Furnish copy · new:fresh-phone:Furnish hint) — invented copy",
+  "REG-nnn · Furnish on a version that isn't emptied, when the room has an emptied one: the card says 'Furnish works on an emptied version — V{n} is one' and the options and the rail's foot say 'Furnish works on an emptied version — open V{n}', the link opening it (new:fresh-desktop:Furnish says Empty first) — invented copy (the foot's link needs the editor's wiring)",
+  "REG-nnn · The changes sheet's Clear all sits on the title line (new:phone-tablet:Clear all below the title) — bug fix",
+  "REG-nnn · A Replace's caption names the quick pick ('Replace · Mid-Century Coffee Table'); typed words are cut at a word with '…' (new:fresh-desktop:Replace quick pick cut mid-word) — bug fix",
+  "REG-nnn · Customize offers a part's finish row (Planter, Frame, a TV's Finish) only where that part is traced, and then labels the colour row 'Colour · the pot' / 'the frame' / 'the frame and stand' (D3) — user-directed (D3); the colour row's words are invented copy"
+ ],
+ "verification": "npx tsc --noEmit -p . (clean) and npx eslint on rail.tsx, describe-box.tsx and panels/ (clean). Read-only Playwright on the pre-wave-D build at :3021 with every non-GET request aborted (nothing reached its DB), my CSS modules injected under the build's hashed names and the new markup simulated where the TSX changed: change chips at 1440 / 1366×768 / 1280×800 (sh=ch with 1–2 chips, fade only when the 1.5-row cap hides a chip; Generate 36px with a long focused note); the style cards at 1440 / 1025 / 390 / 320 (no material name cut; subgrid rows level); the changes sheet head at 390 and 768 touch (title 735 / Clear all 737 / close 737); the reference × chip on light and dark photos; the measured Describe example at 1440, 1280×800, 1025, 1024t, 768t, 430, 390, 375, 320 (every pick fits its line; 300px short-landscape rail falls to 'Describe a change…' by the same rule). tsx: furniture glyphs (tables → table_restaurant, all in ICONS.txt), clipWords, and the 29 tiled swatches rendered beside their CSS sketches (tiles-cmp.png). Screenshots in scratchpad/resume/rail/. Not seen live: the Tools options scroll, the measured placeholder and the emptied link in a real build (JS changes; the :302x servers predate them)."
+}

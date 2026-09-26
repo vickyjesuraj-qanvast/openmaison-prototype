@@ -8,14 +8,14 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
-import { withFrom } from '@/lib/nav'
 import { templateKind } from '@/lib/company/sections'
 import type { TaskTemplateRow, TaskTemplatesData } from '@/lib/company/task-templates'
 import { addTaskTemplateToLead, createTaskTemplate, deleteTaskTemplate, deleteTaskTemplatesForever, duplicateTaskTemplate, emptyTaskTemplateTrash, renameTaskTemplate, restoreTaskTemplates } from '@/app/company/task-templates-actions'
-import { LibraryGallery, type LibraryItem } from './library-gallery'
+import { LibraryGallery, newIdOf, reasonOf, settle, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
-import { templateChangeBlock } from '@/lib/company/template-rules'
+import { templateChangeBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { useHere } from '@/components/om/use-here'
 
 type Row = TaskTemplateRow & LibraryItem
 const toRow = (t: TaskTemplateRow): Row => ({ ...t, title: t.name, updatedAt: t.updatedAt ?? t.createdAt })
@@ -33,9 +33,10 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
   const [addFor, setAddFor] = useState<string | null>(null)
   const [fromLead, setFromLead] = useState(false)
   const kind = templateKind('tasks')!
-  const here = '/company/templates/tasks'
-  const open = useCallback((id: string) => router.push(`/templates/tasks/${id}?from=${encodeURIComponent(withFrom(here, from))}`), [router, from])
-  const create = async (fn: () => Promise<string>, what: string) => { try { open(await fn()) } catch { fail(what) } }
+  const here = useHere('/company/templates/tasks')   // (round 3) the open folder and search ride along
+  const open = useCallback((id: string) => router.push(`/templates/tasks/${id}?from=${encodeURIComponent(here)}`), [router, here])
+  /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
+  const create = async (fn: () => Promise<unknown>, what: string) => { try { open(await newIdOf(fn())) } catch (e) { fail(what, reasonOf(e)) } }
   const keeps = (t: TaskTemplateRow) => [t.keepMembers ? 'members' : null, t.keepDescription ? 'descriptions' : null].filter(Boolean).join(' · ')
 
   return (
@@ -71,10 +72,13 @@ export function TaskTemplatesGallery({ data, from, folders = [] }: { data: TaskT
       onDelete={(t) => deleteTaskTemplate(t.id)}
       deleteMessage={(t) => (t.usedBy ? `The tasks it already added to ${t.usedBy} ${t.usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.')}
       onRestore={(ids) => restoreTaskTemplates(ids)} onDeleteForever={(ids) => deleteTaskTemplatesForever(ids)} onEmptyTrash={() => emptyTaskTemplateTrash()}
+      /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a template the viewer wrote (or
+         any, for an Owner or an Admin), the rule said in the row with its author's name; Empty Trash counts only those */
+      restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       deletedMeta={{ label: 'Steps', value: (t) => `${t.tasks.length} ${t.tasks.length === 1 ? 'step' : 'steps'}` }}
       empty={{ title: 'No task templates yet', help: 'Save a lead’s tasks as a template from its Tasks tab, or start a blank checklist here.' }}>
       <PickLeadDialog open={!!addFor} onClose={() => setAddFor(null)} leads={leads} allowStudio title="Add these tasks to which lead?" confirmLabel="Add tasks"
-                      onPick={(leadId) => { const id = addFor; setAddFor(null); if (id) void run('add the tasks', async () => { const n = await addTaskTemplateToLead(id, leadId); snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added${leadId ? '' : ' to the studio’s tasks'}`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }) }) }} />
+                      onPick={(leadId) => { const id = addFor; setAddFor(null); if (id) void run('add the tasks', async () => { const v = await settle(addTaskTemplateToLead(id, leadId)); const n = typeof v === 'number' ? v : 0; snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added${leadId ? '' : ' to the studio’s tasks'}`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }) }) }} />
       <PickLeadDialog open={fromLead} onClose={() => setFromLead(false)} leads={leads} allowStudio title="Whose open tasks become the template?" confirmLabel="Create template"
                       onPick={(leadId) => { setFromLead(false); void create(() => createTaskTemplate({ source: { kind: 'lead', leadId } }), 'create the template') }} />
     </LibraryGallery>

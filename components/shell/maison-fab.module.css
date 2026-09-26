@@ -1,4 +1,4 @@
-.wrap { position: fixed; right: 24px; bottom: 24px; width: 48px; height: 48px; z-index: 90; transition: bottom var(--motion-toggle); }
+.wrap { position: fixed; right: 24px; bottom: 24px; width: 48px; height: 48px; z-index: 90; transition: bottom var(--motion-toggle), transform var(--motion-toggle), opacity var(--motion-toggle); }
 /* Sits 16px above the review banner when it is shown (banner 16 + 50 + 16 = 82 on desktop; the mock's 34px gap read as
    too loose — user 2026-08-27). (REG-302) The banner writes `--bottom-dock` = its measured height + 6, so this is
    16 + height + 16 = --bottom-dock + 26 whatever the banner wraps to — 82 to the pixel on desktop. */
@@ -43,4 +43,14 @@
      FAB lands ON the review banner, which travels to the bottom edge at the same moment. */
   :global(body[data-om-chrome-hidden]) .wrap { bottom: var(--om-spacing-4); }
   :global(body[data-om-chrome-hidden]) .wrap[data-raised] { bottom: calc(var(--bottom-dock, 56px) + 26px); }
+}
+
+/* (wave E, E4 — the owner's call, gallery-3) A phone: while the page scrolls down the button slides off the bottom edge (its glow with it)
+   and fades, so it never rests on a card's corner chip or the line being read; scrolling up, or stopping at the page's end, brings it back
+   (maison-fab.tsx sets `data-tucked`). A tucked button takes no press; one holding keyboard focus stays. Reduced motion: at once. */
+@media (max-width: 767px) {
+  .wrap[data-tucked]:not(:focus-within) { transform: translateY(calc(100% + var(--app-mobile-dock-height, 0px) + 64px)); opacity: 0; pointer-events: none; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .wrap { transition: none; }
 }

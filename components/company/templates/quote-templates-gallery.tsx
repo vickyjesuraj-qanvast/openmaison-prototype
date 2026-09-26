@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MetaChip } from '@/components/om/meta-chip'
-import { useSnackbar } from '@/components/om/snackbar'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { TemplateThumb } from '@/components/templates/render/document'
@@ -12,7 +11,7 @@ import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { HouseStyleDialog } from './house-style-dialog'
 import { RecreateDialog } from './recreate-dialog'
 import { createTemplate, deleteTemplate, deleteTemplatesForever, duplicateTemplate, emptyTemplateTrash, renameTemplate, restoreTemplates, setDefaultTemplate } from '@/app/company/templates-actions'
-import { LibraryGallery, type LibraryColumn, type LibraryItem } from './library-gallery'
+import { LibraryGallery, newIdOf, reasonOf, type LibraryColumn, type LibraryItem } from './library-gallery'
 import { templateKind } from '@/lib/company/sections'
 import { TEMPLATE_DEFAULT_RULE, TEMPLATE_RUNNER_RULE } from '@/lib/company/template-rules'
 import { FOLDER_RULE, type Folder } from '@/lib/company/folder-libraries'
@@ -22,6 +21,7 @@ import { ago } from '@/lib/templates/ago'
 import { withFrom } from '@/lib/nav'
 import styles from './quote-templates-gallery.module.css'
 import table from './templates-table.module.css'
+import { useHere } from '@/components/om/use-here'
 
 type Row = LibraryItem & { t: TemplateSummary }
 
@@ -45,21 +45,21 @@ const toDeletedRow = (t: TemplateSummary): Row => ({ ...toRow(t), author: (t.del
 export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: TemplatesData; from?: string; folders?: Folder[] }) {
   const { templates, deleted, brand, sample, now, approval, canRun } = data
   const router = useRouter()
-  const snackbar = useSnackbar()
-  const { run } = useRun()
+  const { run, fail } = useRun()
   const phone = useMediaQuery(MOBILE)
   const [houseOpen, setHouseOpen] = useState(false)
   const [recreateOpen, setRecreateOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const kind = templateKind('quotes')!
-  const here = '/company/templates/quotes'
+  const here = useHere('/company/templates/quotes')   // (round 3) the open folder and search ride along
 
   const open = (id: string) => router.push(withFrom(`/templates/${id}`, here))   /* (REG-465) Back returns here */
-  const create = async (fn: () => Promise<string>, what: string) => {
+  /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
+  const create = async (fn: () => Promise<unknown>, what: string) => {
     if (busy) return
     setBusy(true)
-    try { const id = await fn(); router.push(`/templates/${id}`) }
-    catch { snackbar({ message: `Couldn’t ${what} — please try again` }) }
+    try { const id = await newIdOf(fn()); router.push(`/templates/${id}`) }
+    catch (e) { fail(what, reasonOf(e)) }
     finally { setBusy(false) }
   }
   const statusLine = (t: TemplateSummary) => {

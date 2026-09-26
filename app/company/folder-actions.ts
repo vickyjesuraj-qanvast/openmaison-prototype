@@ -4,11 +4,12 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractTemplates, libraryFolders, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates, quoteTextTemplates, taskTemplates } from '@/lib/db/schema'
+import { contractTemplates, libraryFolders, members, paymentTemplates, priceBookItems, priceBookSections, quoteTemplates, quoteTextTemplates, studioMaterials, taskTemplates, visualizerDesigns } from '@/lib/db/schema'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { folderNameProblem, foldersIn, foldersUnder } from '@/lib/folders'
-import { folderBlock, isFolderLibrary, LIBRARY_PATH, type FolderLibrary, type FolderUndo } from '@/lib/company/folder-libraries'
-import { templateChangeBlock } from '@/lib/company/template-rules'
+import { folderBlockFor, folderChangeBlockFor, isFolderLibrary, LIBRARY_PATH, type FolderLibrary, type FolderUndo } from '@/lib/company/folder-libraries'
+import { designChangeBlock } from '@/lib/visualizer/policy'
+import { refuse, templateChangeBlock, type Refusal } from '@/lib/company/template-rules'
 import { itemChangeBlock, runsBook, SECTION_RULE } from '@/lib/company/price-book-rules'
 
 /*
@@ -29,6 +30,8 @@ async function entriesOf(library: FolderLibrary, ids?: string[]): Promise<Entry[
     case 'payments': return pick(await db.select({ id: paymentTemplates.id, folderId: paymentTemplates.folderId, createdBy: paymentTemplates.createdBy }).from(paymentTemplates)).map((r) => ({ ...r, status: 'live' }))
     case 'book-items': return pick(await db.select({ id: priceBookItems.id, folderId: priceBookItems.folderId, createdBy: priceBookItems.createdBy, status: priceBookItems.status }).from(priceBookItems))
     case 'book-sections': return pick(await db.select({ id: priceBookSections.id, folderId: priceBookSections.folderId, createdBy: priceBookSections.createdBy }).from(priceBookSections)).map((r) => ({ ...r, status: 'live' }))
+    case 'visualizer': return pick(await db.select({ id: visualizerDesigns.id, folderId: visualizerDesigns.folderId, createdBy: visualizerDesigns.createdBy }).from(visualizerDesigns).where(eq(visualizerDesigns.kind, 'personal'))).map((r) => ({ ...r, status: 'live' }))
+    case 'materials': return pick(await db.select({ id: studioMaterials.id, folderId: studioMaterials.folderId, createdBy: studioMaterials.uploadedBy }).from(studioMaterials)).map((r) => ({ ...r, status: 'live' }))
   }
 }
 
@@ -42,6 +45,8 @@ async function setEntryFolder(library: FolderLibrary, ids: string[], folderId: s
     case 'payments': await db.update(paymentTemplates).set({ folderId }).where(inArray(paymentTemplates.id, ids)); return
     case 'book-items': await db.update(priceBookItems).set({ folderId }).where(inArray(priceBookItems.id, ids)); return
     case 'book-sections': await db.update(priceBookSections).set({ folderId }).where(inArray(priceBookSections.id, ids)); return
+    case 'visualizer': await db.update(visualizerDesigns).set({ folderId }).where(inArray(visualizerDesigns.id, ids)); return
+    case 'materials': await db.update(studioMaterials).set({ folderId }).where(inArray(studioMaterials.id, ids)); return
   }
 }
 
@@ -50,17 +55,23 @@ function entryBlock(library: FolderLibrary, viewer: { id: string | null; role: s
   if (library === 'quotes') return templateChangeBlock(viewer, undefined)
   if (library === 'book-items') return itemChangeBlock(viewer, e)
   if (library === 'book-sections') return runsBook(viewer) ? null : SECTION_RULE
+  if (library === 'visualizer' || library === 'materials') return designChangeBlock(viewer, e.createdBy)
   return templateChangeBlock(viewer, e.createdBy)
 }
 
 const liveFolders = async (library: FolderLibrary) =>
   (await db.select().from(libraryFolders).where(and(eq(libraryFolders.library, library), isNull(libraryFolders.deletedAt)))).map((r) => ({ ...r, parentId: r.parentId ?? null }))
 
-async function organiser() {
+/* (wave E, E7) Every folder action answers a refusal as `{ error: <the rule> }` — a thrown rule reached the page redacted, and the
+   snackbar said "please try again" instead of who may. */
+const GONE = 'That folder is gone'
+const UNKNOWN = 'That library keeps no folders'
+/** (audit 2026-09-26, F124) Renaming, moving or deleting a folder that exists: its library's rule for that folder — an AI Visualizer
+    folder answers to whoever made it, an Owner or an Admin; (wave E, gallery-2) the rule names its maker. */
+async function changeRefusal(f: { library: FolderLibrary; createdBy: string | null }): Promise<string | null> {
   const viewer = await fetchViewer()
-  const block = folderBlock(viewer)
-  if (block) throw new Error(block)
-  return viewer
+  const maker = f.createdBy ? (await db.select({ name: members.name }).from(members).where(eq(members.id, f.createdBy)))[0]?.name ?? null : null
+  return folderChangeBlockFor(f.library, viewer, f.createdBy, maker)
 }
 const touch = (library: FolderLibrary) => {
   revalidatePath(LIBRARY_PATH[library])
@@ -68,24 +79,25 @@ const touch = (library: FolderLibrary) => {
 }
 
 /** New Folder — at the top or inside `parentId`. Returns its id. */
-export async function createLibraryFolder(library: FolderLibrary, name: string, parentId: string | null): Promise<string> {
-  if (!isFolderLibrary(library)) throw new Error('unknown library')
-  const viewer = await organiser()
+export async function createLibraryFolder(library: FolderLibrary, name: string, parentId: string | null): Promise<string | Refusal> {
+  if (!isFolderLibrary(library)) return refuse(UNKNOWN)
+  const viewer = await fetchViewer()
+  const block = folderBlockFor(library, viewer); if (block) return refuse(block)
   const all = await liveFolders(library)
-  if (parentId && !all.some((f) => f.id === parentId)) throw new Error('folder not found')
-  const problem = folderNameProblem(name, foldersIn(all, parentId)); if (problem) throw new Error(problem)
+  if (parentId && !all.some((f) => f.id === parentId)) return refuse(GONE)
+  const problem = folderNameProblem(name, foldersIn(all, parentId)); if (problem) return refuse(problem)
   const id = randomUUID(); const now = new Date()
   await db.insert(libraryFolders).values({ id, library, name: name.trim(), parentId, createdBy: viewer.id, createdAt: now, updatedAt: now })
   touch(library); return id
 }
 
 /** Rename Folder. */
-export async function renameLibraryFolder(id: string, name: string): Promise<void> {
-  await organiser()
+export async function renameLibraryFolder(id: string, name: string): Promise<void | Refusal> {
   const [f] = await db.select().from(libraryFolders).where(and(eq(libraryFolders.id, id), isNull(libraryFolders.deletedAt)))
-  if (!f || !isFolderLibrary(f.library)) throw new Error('folder not found')
+  if (!f || !isFolderLibrary(f.library)) return refuse(GONE)
+  const block = await changeRefusal({ library: f.library, createdBy: f.createdBy }); if (block) return refuse(block)
   const all = await liveFolders(f.library)
-  const problem = folderNameProblem(name, foldersIn(all, f.parentId ?? null), id); if (problem) throw new Error(problem)
+  const problem = folderNameProblem(name, foldersIn(all, f.parentId ?? null), id); if (problem) return refuse(problem)
   await db.update(libraryFolders).set({ name: name.trim(), updatedAt: new Date() }).where(eq(libraryFolders.id, id))
   touch(f.library)
 }
@@ -94,17 +106,17 @@ export async function renameLibraryFolder(id: string, name: string): Promise<voi
  * Move to Folder — entries and folders into `target` (null = the top). A folder never goes into itself or anything under it; an entry
  * the viewer may not rename stays where it is. Returns how many moved and how many stayed, so the snackbar can say so.
  */
-export async function moveToLibraryFolder(library: FolderLibrary, pick: { entries: string[]; folders: string[] }, target: string | null): Promise<{ moved: number; kept: number }> {
-  if (!isFolderLibrary(library)) throw new Error('unknown library')
+export async function moveToLibraryFolder(library: FolderLibrary, pick: { entries: string[]; folders: string[] }, target: string | null): Promise<{ moved: number; kept: number } | Refusal> {
+  if (!isFolderLibrary(library)) return refuse(UNKNOWN)
   const viewer = await fetchViewer()
   const all = await liveFolders(library)
-  if (target && !all.some((f) => f.id === target)) throw new Error('folder not found')
+  if (target && !all.some((f) => f.id === target)) return refuse(GONE)
   let kept = 0
-  const folders = pick.folders.filter((id) => all.some((f) => f.id === id))
-  if (folders.length) {
-    if (folderBlock(viewer)) { kept += folders.length; folders.length = 0 }
-    else if (target && folders.some((id) => id === target || foldersUnder(all, id).includes(target))) throw new Error('a folder can’t go inside itself')
-  }
+  /* (F124) each folder moves on its own rule; one this viewer may not change stays where it is */
+  const picked = pick.folders.filter((id) => all.some((f) => f.id === id))
+  const folders = picked.filter((id) => !folderChangeBlockFor(library, viewer, all.find((f) => f.id === id)?.createdBy ?? null))
+  kept += picked.length - folders.length
+  if (folders.length && target && folders.some((id) => id === target || foldersUnder(all, id).includes(target))) return refuse('A folder can’t go inside itself')
   const rows = await entriesOf(library, pick.entries)
   const allowed = rows.filter((e) => !entryBlock(library, viewer, e)).map((e) => e.id)
   kept += rows.length - allowed.length
@@ -116,10 +128,10 @@ export async function moveToLibraryFolder(library: FolderLibrary, pick: { entrie
 }
 
 /** Delete a folder: it goes; its entries (deleted ones too, so a restore lands somewhere real) and its sub-folders move up a level. */
-export async function deleteLibraryFolder(id: string): Promise<FolderUndo> {
-  await organiser()
+export async function deleteLibraryFolder(id: string): Promise<FolderUndo | Refusal> {
   const [f] = await db.select().from(libraryFolders).where(and(eq(libraryFolders.id, id), isNull(libraryFolders.deletedAt)))
-  if (!f || !isFolderLibrary(f.library)) throw new Error('folder not found')
+  if (!f || !isFolderLibrary(f.library)) return refuse(GONE)
+  const block = await changeRefusal({ library: f.library, createdBy: f.createdBy }); if (block) return refuse(block)
   const library = f.library
   const up = f.parentId ?? null
   const all = await liveFolders(library)
@@ -136,11 +148,11 @@ export async function deleteLibraryFolder(id: string): Promise<FolderUndo> {
 }
 
 /** Undo a folder's delete: the folder is back, and whatever it held that still sits where the delete left it goes back inside. */
-export async function undoDeleteLibraryFolder(undo: FolderUndo): Promise<void> {
-  await organiser()
-  if (!isFolderLibrary(undo.library)) throw new Error('unknown library')
+export async function undoDeleteLibraryFolder(undo: FolderUndo): Promise<void | Refusal> {
+  if (!isFolderLibrary(undo.library)) return refuse(UNKNOWN)
   const [f] = await db.select().from(libraryFolders).where(eq(libraryFolders.id, undo.id))
-  if (!f || f.library !== undo.library) throw new Error('folder not found')
+  if (!f || f.library !== undo.library) return refuse(GONE)
+  const block = await changeRefusal({ library: undo.library, createdBy: f.createdBy }); if (block) return refuse(block)
   const now = new Date()
   await db.update(libraryFolders).set({ deletedAt: null, updatedAt: now }).where(eq(libraryFolders.id, undo.id))
   const all = await liveFolders(undo.library)

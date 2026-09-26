@@ -1,0 +1,835 @@
+{
+ "results": [
+  {
+   "ref": "F180",
+   "status": "partly",
+   "evidence": "1440, uploaded as new rooms. Sophia's photo (public/uat-files/sophia-living-room.jpg): Floor sits on the floor and stops at the caption band; Walls go round the window and sofa. Busy photo (the sample kitchen uploaded as an unknown room): 'Walls' is the marble backsplash plus two strips that are the window head soffit and the dropped-ceiling beam. It takes none of the real wall by the window or behind the dining table. 'Floor' takes the island's waterfall side, a blob of the island top and a cabinet door, and misses the floor under the stools and the dining area. The outlines are blob-shaped. Wave D lists this as not solved.",
+   "remaining": "On an untraced busy photo the fallback reading is still wrong. Walls should not include backsplash or soffits, and should include the real wall planes. Floor should not take the island side, the worktop or the cabinet doors, and should include the shaded floor. Either a plane-following reader, or the honest 'Marked roughly' note plus a prompt to draw.",
+   "files": [
+    "lib/visualizer/engine/fallback.ts",
+    "lib/visualizer/engine/segment.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/f3-kit-Walls.png"
+  },
+  {
+   "ref": "F181",
+   "status": "partly",
+   "evidence": "1440, Living room Original, Remove each piece, each render viewed at full size and zoomed. Clean: Oak TV Console (the TV hangs on the wall without its feet, the vase and speaker go too), Floor Lamp, Fiddle Leaf Fig (its wall shadow goes too), Wall-Mounted TV, Framed Abstract Art. Not clean, in 4 of the 9 Removes. (1) Sofa (b1-rm-grey-fabric-sofa.jpg): the mirrored armchair has a white block in its left arm, a pale blob on the seat, white wedges between its legs, and a seat wider than its back. The rug under the sofa is a lighter tiled patch with a vertical seam where it meets the real rug and a stair-step in the front edge. The coffee table's mended front is a smeared, streaked band, and the table floats with no left legs. (2) Coffee table: the console's bottom rail is torn and stair-stepped, with a white gap line along it. Where the table's leg stood there is a rectangular slab of stretched, lighter rug. (3) Rug: a dark mottled wedge of rug stays beside the throw's fringe. (4) Armchair: a grey ghost of the chair's shadow stays on the wall. The floor-lamp pole is continued as a pale stub.",
+   "remaining": "Remove on the sofa, the coffee table and the rug leaves ghosts and slabs a client would notice: the armchair's mirrored side, the rug seam and step, the table-front smear, the console's torn rail, the rug slab by the throw, and the rug remnant. For the armchair Remove, take the chair's wall shadow and keep the lamp pole's tone.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/EV-sofa-remove.png"
+  },
+  {
+   "ref": "F182",
+   "status": "fixed",
+   "evidence": "1440. Coffee table Customize › Marble: one tone across the lit and shaded top and the front edge, and the bowl, books, cup and candle keep their own look (z-coffee-marble.png). Curtains › Terracotta: both drapes are fully painted, including the right curtain's shaded folds by the wall and the left curtain's header (z-curt.png). Rug › Navy: the whole outline is painted and runs under the sofa. Only a 1 px beige binding line shows at the front edge at 6× zoom. The part targeting is verified under D3 (checks).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-coffee-marble.png"
+  },
+  {
+   "ref": "F183",
+   "status": "fixed",
+   "evidence": "1440. My Walls → Navy + Floor → Walnut render, and Kevin Ng's demo V2 / V3 (/visualizer/demo/living-room-edit*.jpg, re-rendered 09:14). The floor strip between the sofa back and the skirting is painted walnut. The sofa legs have no white halo on walnut (z-wf-legs.png, z-kevin-legs.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kevin-legs.png"
+  },
+  {
+   "ref": "F184",
+   "status": "partly",
+   "evidence": "1440. Bedroom Walls → Navy: the back wall reaches the wardrobe's diagonal top, the wedge between the nightstand and the bed is painted, and the glasses let the paint show through (z-bd-top.png, z-bd-ns.png). Kitchen Countertops → Granite Black: the back run stops at its front edge by the hob, and the drawer fronts are untouched. But a white fleck is still at the island top's left corner, which the claim says is gone. The worktop's overhang lip and the waterfall's inner edge stay as bright white slivers framing the stool recess (z-kt-island.png).",
+   "remaining": "Kitchen: the white fleck at the island's corner, and the unpainted lip and inner edge of the island worktop.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-island.png"
+  },
+  {
+   "ref": "F186",
+   "status": "partly",
+   "evidence": "1440, Walls → Navy. The pampas are clean: navy fills between the fronds. The gap under the armchair's arm is painted, and the pot rim is clean. Three small leftovers remain. (1) At 4× zoom, every fig leaf has a pale 1 px fringe against the navy. (2) Along the console top, light flecks and stair-steps remain round the cup and between the cup and the TV foot, which the claim says are gone (no 'white box'). (3) The vase's handle loop is painted over (z-wf-cup.png at 10×).",
+   "remaining": "Matte the fig leaf edges, and the cup / vase / console-top line, so no pale fringe or flecks remain on dark paint. Keep the vase handle.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/engine/segment.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-wf-cup.png"
+  },
+  {
+   "ref": "F188",
+   "status": "fixed",
+   "evidence": "1440, Blue Hour on all three sample rooms. Living room: the glass is keyed to a dusk sky, the sofa's arm in front of the window keeps its grey, and the floor lamp is lit (z-lr-bh.png). Bedroom: the pampas and vase on the sill keep their tone, and nothing runs past the frame (z-bd-bh.png). Kitchen: the basil, pot and vases keep their tone. Warm Cozy and Spotlight look right. Leftover: in the kitchen at Blue Hour only the upper panes darken. The lower panes still show the bright daylit garden, brighter than the dimmed room (z-kt-bh.png).",
+   "remaining": "Minor: at dusk, the kitchen's lower panes still show daylight.",
+   "files": [
+    "lib/visualizer/lighting.ts",
+    "lib/visualizer/engine/grade.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-bh.png"
+  },
+  {
+   "ref": "F189",
+   "status": "partly",
+   "evidence": "1440, Living room Original › Style › Upload a reference photo (public/uat-files/kitchen-moodboard.jpg) › Style transfer (V29). The palette under the reference thumbnail is now #DEDBD3 · #B7BEB5 · #C7A26B · #6F8C6D · #8B7156 · #2F3C45. Walnut (#8B7156 ≈ #8B6F55) and sage are separate, so the palette merge is fixed in the browser. But Present's 'What changed' says the floor took 'Reference colour, close to Teak Outdoor' (the brass #C7A26B), not the walnut. The render's floor is a light tan (#C6A88B lit, #7E654B shaded, which is barely changed from the photo), and the walls took 'Linen'. Round 1's test ('assert the floor is near #8B6F55') still fails. The sheer curtains turn an opaque tan.",
+   "remaining": "The palette is right, but the transfer gives the floor the brass swatch rather than the walnut laminate. Check how transferPass assigns palette entries to surfaces (floor ← the mid-dark warm wood entry).",
+   "files": [
+    "lib/visualizer/engine/palette.ts",
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/e4-present-transfer.png"
+  },
+  {
+   "ref": "F191",
+   "status": "fixed",
+   "evidence": "1440, Kitchen Walls → Tropical Botanical. The band under the dropped ceiling is papered in phase, with no stray navy block by the tall unit. The paper stops at the window's reveals (they stay white) with no grey hairlines or stepped joins (z-kt-win.png, z-kt-right.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/engine/texture.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-win.png"
+  },
+  {
+   "ref": "critic-11",
+   "status": "not-fixed",
+   "evidence": "(Covers both the engine and the versions-menus entries.) Download is still JPEG only, at the 900×603 render size (helper run, magic bytes FFD8). There is no PNG, no full-resolution file, no 'Download all versions' and no brand mark. Wave D left this as the owner's call.",
+   "remaining": "Owner's call: PNG / native resolution, Download all as a zip, and an optional brand-kit mark.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "lib/visualizer/outputs.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-tdl-vmenu.png"
+  },
+  {
+   "ref": "F022",
+   "status": "fixed",
+   "evidence": "1440, Living room. I drew 'Fig Wall Panel' on the Original and generated V30, then generated Style › Scandinavian from the Original (V31). On V31 the Surfaces panel shows 'This version is a whole-room look — its surfaces aren’t marked. Draw one, or edit from the Original.' There are 0 markers and the panel doesn't offer the hand-drawn panel. V30 (made from the Original) still lists Fig Wall Panel.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/model.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/h3-note-on-look.png"
+  },
+  {
+   "ref": "F023",
+   "status": "fixed",
+   "evidence": "1440. Add a surface › 'Feature wall' › Click where it is on the big back wall snacks 'This spread too far — trace its outline instead' and opens the draw banner. It does not save a rectangle. In the kitchen, taps on the island side, the floating shelf and a wall sliver save outlines that follow the region, with no straight box edges (g2-kt-island.png).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/g2-kt-island.png"
+  },
+  {
+   "ref": "F024",
+   "status": "fixed",
+   "evidence": "1440. Sheer Curtains › Customize › Terracotta paints the right curtain's full width, including the shaded folds by the wall, with no stepped or torn edge (z-curt.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-curt.png"
+  },
+  {
+   "ref": "F025",
+   "status": "fixed",
+   "evidence": "1440. Kitchen Floor → Oak Herringbone: the stools' legs and footrest rails keep their walnut, and the herringbone runs between them (z-kt-stools.png). A separate leftover: a strip of grey tile stays unpainted under the island's overhang (reported under new issues).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-stools.png"
+  },
+  {
+   "ref": "F028",
+   "status": "partly",
+   "evidence": "1440. Sofa Remove + Armchair Replace › 'Mid-Century armchair' (V25). The chair takes the tan on its mended side too, and the coffee table's front is no longer sliced. But the rebuilt chair still shows a white patch on the seat, a pale block in the left arm and white wedges between the legs. The left front leg is a stub with a pale block under it. The gap under the right arm is painted tan instead of showing the wall. The rug keeps the seam and step described under F181 (z-f028.png).",
+   "remaining": "The mirrored chair's artefacts (seat patch, arm block, wedges, leg stub). The Replace paints the wall seen under the arm.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-f028.png"
+  },
+  {
+   "ref": "F033",
+   "status": "partly",
+   "evidence": "1440. I drew 'Fig Wall Panel' round the fig (Draw a surface) and painted it Navy Accent (V30). The wall between the leaves is now keyed back and painted. But the fig's cut polygon, an octagon, still shows as a thin light dashed seam round the leaves. A ragged unpainted light patch stays on the wall right of the speaker, where the console's cut reaches into the drawn surface (z-figpanel.png, 3×).",
+   "remaining": "Hide the fig cut's hull seam, and keep the console's cut from carving a hole in a drawn wall surface.",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-figpanel.png"
+  },
+  {
+   "ref": "F049",
+   "status": "fixed",
+   "evidence": "1440, Furniture list. Oak Coffee Table shows the table_restaurant glyph, the console the dresser, the TV the tv and the floor lamp floor_lamp. Every glyph renders (no literal words) (j1-furniture-list.png).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/furniture-glyph.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/j1-furniture-list.png"
+  },
+  {
+   "ref": "F073",
+   "status": "fixed",
+   "evidence": "1440: Ceiling pick, then reload 30 / 80 / 250 / 600 ms later. The pick is back every time. The next pick saves ('Saved just now') and no conflict bar shows (0 of 4). A hard navigation 100 ms after a pick keeps it. Tab closed (runBeforeUnload) 60 ms and 300 ms after a pick: a brand-new context, so no sessionStorage draft, sees the pick, and the next save has no conflict. A real second tab still raises 'Changed in another tab — reload to see the latest', as it should.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/use-editor-state.ts",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t73-two-tabs.png"
+  },
+  {
+   "ref": "F078",
+   "status": "fixed",
+   "evidence": "Present, V2 and V4, at 768×1024 touch and 390×844 touch: the thumbs row is 85 px (never shrinks) above the facts, with the on-screen tile in view (390 V4: row scrollLeft 158, V4 tile at x276–372). Facts scrollTop is 0 with 'What changed' visible. No page overflow.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css",
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t78-present-768x1024-V2.png"
+  },
+  {
+   "ref": "F083",
+   "status": "fixed",
+   "evidence": "1440, Kitchen › Room options › Rename. Typing 'living room' or '  Living   Room ' puts the field in its error state (aria-invalid, red) with 'There’s already a room called Living room', and Save is disabled. 52 characters shows the helper '52 / 60'. 61 characters shows 'Keep the room’s name to 60 characters' with Save disabled, and the value is not cut (61 kept). The same name ('Kitchen') is allowed, and Enter saves and closes.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t83-dup.png"
+  },
+  {
+   "ref": "F084",
+   "status": "fixed",
+   "evidence": "The gallery's `here` now carries its URL parameters. Inside ?folder=lf-visualizer-showroom, a card's Open requested /visualizer/<id>?from=/visualizer?folder=lf-visualizer-showroom. That is the same `here` the card kebab's Open the lead pushes. No lead design sits in a folder, and I made no folders on the shared server, so the folder case was proven through Open. From the root, Kevin Ng's kebab › Open the lead goes to /leads/1f12…?from=/visualizer, and the lead's 'Back to AI Visualizer' returns there. One note on the claim: it says the search rides along too, but the gallery's search box is not in the URL. Search 'Kevin' › Open the lead › Back lands on /visualizer with the search empty. The worklist only asked for the folder.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/home/visualizer-home.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t84-lead.png"
+  },
+  {
+   "ref": "critic-12",
+   "status": "fixed",
+   "evidence": "The editor now shows provenance. Tile names read 'Show V2 · Walls, White Ceiling · made from V1', '… V3 · Relit · Golden Hour · made from V2', 'V4 · Walls · made from V3', 'V5 · Grey Fabric Sofa · made from V4'. Caption tooltips read 'V2 · Walls, White Ceiling — made from V1' and 'V4 · Walls — made from V3'. With V3 deleted, Present on V4 reads 'What changed · From V2: Walls — Tropical Botanical; Lighting — Golden Hour', so V3's relight is now listed. Facts open at their top at 1280×800, 1025×700 and 1024×768 touch. Polish left: once the parent is deleted the tile drops its provenance altogether (see newIssues).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/version-facts.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t82-present-v4-after-v3-deleted.png"
+  },
+  {
+   "ref": "F087",
+   "status": "fixed",
+   "evidence": "1440 at 3× DPR. With Walls → Japanese Wave, Fig Wall Panel → Tropical Botanical and Floor → Oak Herringbone, the Surfaces rows' chips show the wave, leaf and herringbone motifs (j3-rows-3x.png). The picker's swatch shows the same wave tile (j3-swatch-3x.png), and so does the moodboard's finish chip for V22 · Japanese Wave ceiling (j4-moodboard.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/materials.ts",
+    "components/visualizer/editor/panels/surfaces-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/j3-rows-3x.png"
+  },
+  {
+   "ref": "critic-15",
+   "status": "not-fixed",
+   "evidence": "1440, View as Michelle (Designer), then switched back to Dane. On Dane's personal design, Room options on a room with no versions offers 'Rename' and 'Change photo' enabled; only Delete room carries the rule. On a room with versions, Change photo is disabled only because 'Its versions were made of this photo', not by role. Wave D left this as needing the owner.",
+   "remaining": "Owner's call: apply the room rule (room's maker, design's maker, Owner, Admin) to Change photo, and maybe Rename, with the rule as the row's meta, plus a Who may do what row.",
+   "files": [
+    "lib/visualizer/policy.ts",
+    "app/visualizer/actions.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/m1-michelle-room-menu.png"
+  },
+  {
+   "ref": "Client share page (/renders/[token]) hugs the left 928 px at desktop widths — regression from wrapping it in PageReveal",
+   "status": "fixed",
+   "evidence": "/renders/17fe84ab2eca47?preview=1: main is 928 wide at x256 at 1440, x176 at 1280×800 and x49 at 1025×768, so it is centred. The letterbar spans the window (n2-share-1440.png).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/n2-share-1440.png"
+  },
+  {
+   "ref": "Night and dusk relight paints a flat navy quad over whatever stands in front of the window (sofa, plants, vases) and past the frame",
+   "status": "fixed",
+   "evidence": "See F188. At Blue Hour the sofa's arm, the kitchen's basil and vases, and the bedroom's pampas and vase keep their tone, and the sky stays inside the glass.",
+   "remaining": "The kitchen's lower panes still show daylight at dusk (minor, under F188).",
+   "files": [
+    "lib/visualizer/lighting.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-bd-bh.png"
+  },
+  {
+   "ref": "Customize paints the whole piece whatever part the finish names: 'Planter' turns the fig's leaves navy, 'Frame' blacks out the artwork",
+   "status": "fixed",
+   "evidence": "1440. Fig › Planter: Matte black pot + Navy paints only the pot (the leaves and soil stay). The art's Black and Brass frames paint only the frame ring, and the canvas stays. The TV's Gloss white and Terracotta paint the bezel and stand, not the screen. The floor lamp's Linen shade + Mustard paints only the shade, and Brass / Matte black only the pole. The bedroom lamp's Linen shade + Sage paints the shade and Brass the base. The botanical frame paints only the frame (z-fig-pot.png, z-art.png, z-tv.png, z-lamp.png, z-bd.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-tv.png"
+  },
+  {
+   "ref": "Describe a change: the two-line placeholder is cut in half at ≤1024",
+   "status": "fixed",
+   "evidence": "Measured the placeholder against its box, in the box's own font. At 1440 the full sentence needs 2 lines and 2 are shown. At 1280×800, 1366×768, 1025×768 and 1024×768t the placeholder is 'e.g. walnut floor, sage green walls' on 1 line. At 768t, 390t and 375×667t it is 'Describe a change, e.g. sage walls' on 1 line. At 320t and 844×390t it is 'Describe a change…'. Nothing is cut (z-describe-desk.png).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-describe-desk.png"
+  },
+  {
+   "ref": "Closed share-link notice copy differs from the other client links",
+   "status": "fixed",
+   "evidence": "1440: /renders/<bad>, /sign/<bad> and /confirm/<bad> all read 'This link is no longer active · Please ask Demo Studio Pte Ltd for an updated link.'",
+   "remaining": "",
+   "files": [
+    "components/contracts/sign/link-notice.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/n2-gone-1440.png"
+  },
+  {
+   "ref": "Customize finishes meant for part of a piece recolour the whole piece: a black plant, a painted artwork, a white TV screen",
+   "status": "fixed",
+   "evidence": "Same runs as the engine duplicate above. The fig pot, the frame rings and the TV bezel / stand are painted alone, and the TV screen is untouched. A hand-added piece with no traced part offers no part row, only Colour.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-fig-pot.png"
+  },
+  {
+   "ref": "The last change chip always fades, even with one chip (introduced by the F051/F007 fade)",
+   "status": "fixed",
+   "evidence": "Kitchen, data-more on the list. At 1440: 1 chip off (28/28), 2 off (64/64), 3 off (100/100), 4 and 5 on (136/122). At 1280×800: 1 chip off. From 2 chips on, the 1.5-row cap cuts the second chip and the fade is on, as designed.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/rail.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/i1-1280-3.png"
+  },
+  {
+   "ref": "Describe a change resting on one line cuts its two-line placeholder in half (introduced by the F046 tray fix)",
+   "status": "fixed",
+   "evidence": "See the engine duplicate: every resting box shows its example whole, at 390×844t, 375×667t, 320t and 1025×768.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/describe-box.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-describe-desk.png"
+  },
+  {
+   "ref": "Chips and version captions call a one-surface group by its group word, while the list names the surface",
+   "status": "fixed",
+   "evidence": "Kitchen, 1440. Picking only 'Charcoal Lower Cabinets' in the Cabinets group lists it as 'Charcoal Lower Cabinets → Sage Laminate'. The single-surface groups read 'Floating Shelf → Walnut Grain' and 'Oven Door → Granite Black'. The version reads 'V8 · Floating Shelf, Oven Door +1'.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/model.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/g4-changes.png"
+  },
+  {
+   "ref": "Generate from a note on a whole-room look makes a version identical to its parent",
+   "status": "fixed",
+   "evidence": "1440, Living room V31 (Scandinavian). Typing 'walnut floor' leaves Generate from note disabled, with the footer 'This version is a whole-room look — its surfaces aren’t marked. Draw one, or edit from the Original.' No version is made (h3-note-on-look.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/model.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/h3-note-on-look.png"
+  },
+  {
+   "ref": "The snackbar’s Undo stays on screen but does nothing once another step lands; stacked Undo snackbars",
+   "status": "partly",
+   "evidence": "1440. After × on White Ceiling ('White Ceiling taken off the list · Undo') and then a floor pick, the old snackbar's Undo now answers 'Newer changes came after that — use Undo to step back' instead of doing nothing. But two take-offs still stack two Undo snackbars ('Light Oak Floor taken off the list' above 'Fig Wall Panel taken off the list'), and the older one keeps offering an Undo it will refuse (h5-two-takeoffs.png).",
+   "remaining": "Keep only the newest Undo snackbar, or withdraw the stale one. This needs an id / dismiss API in components/om/snackbar.tsx (wave D's cross-file request).",
+   "files": [
+    "components/om/snackbar.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/h5-two-takeoffs.png"
+  },
+  {
+   "ref": "At 375×667 with a tray open the photo is ~123 px wide and nine furniture markers cover it",
+   "status": "fixed",
+   "evidence": "375×667 touch, Furniture tab, Original: the photo is 307×206 (was 123 px wide), with 11 markers at 16 px that do not cover it (i4-375x667t-furn.png). At 320×640t the photo is 284×190 and at 390×844t it is 351×235.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/i4-375x667t-furn.png"
+  },
+  {
+   "ref": "Replace quick picks mix sentence case and title case",
+   "status": "fixed",
+   "evidence": "1440 Replace quick picks: coffee table 'Modern coffee table · Mid-Century coffee table · Scandinavian coffee table · Industrial coffee table'; console 'Modern sideboard · Mid-Century credenza · Modern TV console · Scandinavian TV console'; fig 'Large plant · Trailing plant · Modern plant · Scandinavian plant'. Polish: the armchair's first pick reads 'Boucle accent chair' while the Upholstery chips say 'Bouclé'.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/furniture.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/c3-replace-Upholstered-Armchair.png"
+  },
+  {
+   "ref": "Messages lower-case the piece name and lose acronyms ('the wall-mounted tv', 'the oak tv console')",
+   "status": "fixed",
+   "evidence": "1440: 'Pick a colour or a finish for the wall-mounted TV first.' and 'Pick or describe what replaces the oak TV console first.' appear both in the row and in the footer. Polish: the radiogroup's accessible name still reads 'What happens to the wall-mounted tv' / 'the oak tv console', lower-cased.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/panels/furniture-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/j1-furniture-list.png"
+  },
+  {
+   "ref": "Oak TV Console › Customize offers table tops, not storage fronts",
+   "status": "fixed",
+   "evidence": "1440: Oak TV Console › Customize offers 'Front / finish: Natural oak veneer, Walnut veneer, Matte lacquer, Gloss lacquer, Fluted wood, Rattan front, Glass front, Matte black'.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/furniture.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/a1-cust-Oak-TV-Console.png"
+  },
+  {
+   "ref": "Ceiling wallpaper paints over the ceiling diffuser and downlights",
+   "status": "fixed",
+   "evidence": "1440, Living room White Ceiling → Japanese Wave: the round diffuser and all four downlights keep their own look (c1-ceiling_wave.jpg, j4-moodboard.png).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/img/c1-ceiling_wave.jpg"
+  },
+  {
+   "ref": "A quick reload after a pick shows the old state, then a false 'Changed in another tab' bar",
+   "status": "fixed",
+   "evidence": "Same runs as F073. After a reload made 30–600 ms after a pick, the pick is back, and the next pick saves with no bar (4/4). The fresh-context and tab-close runs agree.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/use-editor-state.ts",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t73-two-tabs.png"
+  },
+  {
+   "ref": "Versions strip tiles stretch to their label: the ⋯ floats off the thumbnail and the gaps between tiles vary",
+   "status": "fixed",
+   "evidence": "Every tile is its thumbnail's width: 128×80 at 1440 and 1280, 96×60 at 768t, 390t and 320t. Gaps are 12/12/12/12 at every width. The ⋯ is 24 px, 4 px in from the image's top-right on every tile. Long captions ('V2 · Walls, White Ce…', 'V3 · Relit · Golden H…') ellipsize and give their full text in a house Tooltip. No page overflow at 768, 390 or 320.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/versions-strip.module.css",
+    "components/visualizer/editor/versions-strip.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t74-captip-1440.png"
+  },
+  {
+   "ref": "Present opens with 'What changed' scrolled out of view on laptop and landscape tablet sizes",
+   "status": "fixed",
+   "evidence": "Present on V4 (5 tiles): facts scrollTop 0 with the 'WHAT CHANGED · FROM V3' head inside the facts box at 1440, 1280×800, 1025×700 and 1024×768 touch. The thumbs are a separate block under a 1px rule (169 px at 1280, 221 px at 1024t) that scrolls on its own to keep V4 in view.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t78-present-1280x800-V4.png"
+  },
+  {
+   "ref": "Undo on Change photo within the same second leaves the new photo showing, under the old reading and picks",
+   "status": "fixed",
+   "evidence": "Kitchen room with no versions, pick 'White Ceiling → Sky Blue', then Room options › Change photo › sophia-living-room.jpg. The snackbar came about 234 ms later and I pressed Undo at once. After a reload the room shows its own kitchen photo with the old reading and pick, in the same context and in a fresh one. Slower run with Undo at 1.5 s: the src changed …?v=7cd1b01fe390 → ?v=ead00af400a9, then Undo put back ?v=7cd1b01fe390 (the address is tagged by the picture), and that held after a reload with the pick 'Ceiling → Olive Green'.",
+   "remaining": "",
+   "files": [
+    "app/visualizer/actions.ts",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t90-reloaded.png"
+  },
+  {
+   "ref": "Present's 'What changed · From V2' leaves out what a deleted in-between version changed",
+   "status": "fixed",
+   "evidence": "1440: V1 → V2 → V3 (Golden Hour on V2) → V4 (Tropical Botanical on V3), then V3 deleted. Present V4 reads 'WHAT CHANGED · FROM V2: Walls / Tropical Botanical; Lighting / Golden Hour', and the button reads 'Before and after · V2'.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/version-facts.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t82-present-v4-after-v3-deleted.png"
+  },
+  {
+   "ref": "The first-visit tip grew to three or four lines on phones and names an entry the strip doesn't show",
+   "status": "fixed",
+   "evidence": "The tip is its first sentence only. At 1440 and 1025 it reads 'Click a square on the photo to pick its finish, or choose a style or a light on the right — then Generate.' (44 px). On touch it reads 'Tap a square … or a mode below — then Generate.': 44 px at 768t, 52 px (2 lines) at 390t, 64 px (3 lines) at 320t. It is hidden at 844×390 touch. The Deleted versions sentence is gone.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t320-tip-320x640.png"
+  },
+  {
+   "ref": "At 320 the canvas bar overflows and clips its Download button",
+   "status": "fixed",
+   "evidence": "320×640 touch: the bar is 240 px (x40–280). Zoom out and Zoom in are hidden, the 100% button stays, and Download sits at x239–275, inside the bar. scrollWidth equals clientWidth (238) and page overflow is 0. At 390 the bar is 323 px with all eight controls.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t320-tip-320x640.png"
+  },
+  {
+   "ref": "Pin-mode banner says 'Tap' to mouse users, and at 390 it wraps into a three-line pill",
+   "status": "fixed",
+   "evidence": "With a mouse at 1440 and 1280 the banner reads 'Click the photo where your note goes · Cancel': one line, 364×44 pill, clear of the chip. On touch it reads 'Tap …' at 1024t, 768t and 844×390t. At 390t it is one line, 322×44, radius 8, under the chip. At 320t it is two lines, 288×48, radius 8. Esc leaves pin mode.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t80-pin-390x844.png"
+  },
+  {
+   "ref": "Moodboard repeats the room in its title, and its Pieces and Look-and-light rows are indented with no bullet",
+   "status": "fixed",
+   "evidence": "The heading reads 'Sample · Living room', with the room not repeated, at 1440, at 390 and in print emulation. The Pieces ('Grey Fabric Sofa — Sage green Linen') and Look and light ('Lighting — Golden Hour') lists have padding-left 0 and list-style none, and their x (1048 at 1440, 16 at 390) equals their section heads' x. The print layout has the render left and the board right, with the lists aligned.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/moodboard-dialog.tsx",
+    "components/visualizer/editor/dialogs/moodboard.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t75-mood-V5-1440.png"
+  },
+  {
+   "ref": "Deleted versions stays open and empty after the last restore, with no confirmation",
+   "status": "fixed",
+   "evidence": "With two deleted, restoring V1 showed '✓ V1 is back in the strip.' in the dialog, with no snackbar. Restoring V3, the last one, closed the dialog and snacked 'V3 restored', and '1 deleted' left the strip head. At 390 touch, restoring the only deleted version closed the sheet and snacked 'V1 restored' above the canvas bar.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/deleted-versions.tsx",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t82-after-restore-last.png"
+  },
+  {
+   "ref": "Present's Before and after labels and divider sit on the grey letterbox, not on the photo",
+   "status": "fixed",
+   "evidence": "The compare box equals the image box at every size: 1440 996×667 at y176 (stage 747 tall), 1280×800 781×523 at x100, 1025×700 581×389, 1024t 644×431, 768t 624×418, 390t 358×240. The 'V3' and 'V4' labels sit 12 px inside the photo's top corners, and the divider runs only over the photo.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/present-dialog.tsx",
+    "components/visualizer/editor/dialogs/dialogs.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t78-ba-1440x1024-V4.png"
+  },
+  {
+   "ref": "A Designer can Rename and Change photo on another member's room",
+   "status": "not-fixed",
+   "evidence": "Same run as critic-15: as Michelle (Designer), Rename and Change photo are enabled on Dane's room. I switched back to Dane afterwards.",
+   "remaining": "Owner's call, proposed in wave D's notDone.",
+   "files": [
+    "lib/visualizer/policy.ts",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/m2-michelle-room-menu-noversions.png"
+  }
+ ],
+ "newIssues": [
+  {
+   "title": "Sofa Customize leaves the sofa's right arm end, its base rail and patches of the cushions grey. The demo's hero V2 (the client's favourite) shows it",
+   "severity": "major",
+   "width": "1440 (the image is the same at every width)",
+   "repro": "Living room Original › Furniture › Grey Fabric Sofa › Customize › Velvet + Emerald › Generate. Or open Kevin Ng › Living room › V2, or the client link /renders/17fe84ab2eca47.",
+   "evidence": "The sofa's highlight covers the whole sofa (c2-sofa-highlight.png). The render paints the back and cushions but leaves the right arm's end panel under the throw grey (image x≈528–565, y≈450–590 of 900×603). The base rail along the bottom stays grey, and grey patches stay at the cushions' right end and in the middle. The painted edge is a straight vertical line. Round 1's lr-cu-sofa.jpg shows the same, so it is not a regression, but nobody reported it. It is on Kevin Ng's V2, which the client link shows as 'Your favourite'.",
+   "fix": "The recolour key seems to reject the sofa's shaded side fabric. For a Customize of the whole piece, paint the piece's traced outline and leave out only the traced cuts (the throw, the cushions of other colours), not pixels keyed by lightness. Then re-render the demo V2 / V3 (scripts/viz/demo-renders.mts) and run db:baseline.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/samples.ts",
+    "public/visualizer/demo/living-room-edit.jpg"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-sofa-em.png"
+  },
+  {
+   "title": "Picking a piece on the photo, or opening Customize, doesn't bring its row and options into view in the Furniture panel",
+   "severity": "major",
+   "width": "1280×800 (worst), 1440×1024 (Customize), 390×844 touch",
+   "repro": "1280×800: Living room Original › Furniture › click the Floor Lamp (or fig) marker on the photo. Or at 1440, click Fiddle Leaf Fig › Customize.",
+   "evidence": "At 1280×800, clicking the Floor Lamp marker selects it and outlines it on the photo, but the panel stays at the top. The lamp's row and its Remove / Replace / Customize actions are at y 763–795, under the Describe box, and nothing shows in view (o2-1280-marker-lamp.png). At 1280 and 1440, Fiddle Leaf Fig › Customize puts the Planter and Colour chips at y 732–852, below the fold, while the footer says 'Pick a colour or a finish … first' (o1-1280-Fiddle-Leaf-Fig-Customize.png). At 390×844t, tapping the fig on the photo leaves its row at y 879, off screen (o3-390-marker-fig.png). The Tools panel already scrolls a picked tool into view (checks), so Furniture and Surfaces should do the same.",
+   "fix": "When a piece is picked (marker or row), scrollIntoView({ block: 'nearest' }) on its row plus its actions. When an action opens its options, scroll so the first options group is in view (reduced motion: no smooth). Use the same helper the Tools panel uses.",
+   "files": [
+    "components/visualizer/editor/panels/furniture-panel.tsx",
+    "components/visualizer/editor/rail.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/o2-1280-marker-lamp.png"
+  },
+  {
+   "title": "A piece added by one click gets almost no region, so its Customize paints a small blotch inside it",
+   "severity": "major",
+   "width": "1440",
+   "repro": "Kitchen Original › Furniture › + › 'Basil plant in a pot' (Decor) › Click where it is › click the basil › Customize › Navy › Generate.",
+   "evidence": "The piece is added (a marker with no outline). Customize offers only Colour, correctly, since no part is traced. The render paints a small irregular navy blotch in the middle of the basil leaves and leaves the rest of the plant and the pot untouched (z-basil.png). The row also says 'Customize · choose a colour or finish' although no finish row is offered.",
+   "fix": "After a click-to-place, show the found outline. When it is tiny or unsure, go to trace ('Draw round it'), as surfaces do with F023's check. Or refuse Customize and Remove on a piece with no usable outline, with a line that says why. Say 'choose a colour' when there is no finish row.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "lib/visualizer/engine/segment.ts",
+    "components/visualizer/editor/panels/furniture-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-basil.png"
+  },
+  {
+   "title": "Armchair Customize / Replace paints the wooden arms and the wall seen under the arm, and leaves the seat's top edge pale",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Living room Original › Upholstered Armchair › Customize › Velvet + Mustard › Generate. Or Replace › Mid-Century armchair.",
+   "evidence": "The upholstery colour covers the wooden arm frames and fills the gap under the right arm, which should show the wall. A pale unpainted band stays along the seat's back edge (z-arm-must.png against z-arm-orig.png). Round 1's lr-cu-arm.jpg shows the same, but nobody reported it.",
+   "fix": "Trace the armchair's arm gap as a hole in the piece, and its wooden frame as a 'frame' part that an Upholstery finish leaves alone. Include the seat's lit top edge.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-arm-must.png"
+  },
+  {
+   "title": "Kitchen 'Charcoal Lower Cabinets' misses the drawer run behind the island and includes the plinth recess",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Kitchen Original › Cabinets › Charcoal Lower Cabinets › Sage Laminate › Generate.",
+   "evidence": "The outline stops at x≈430 of the stage (g5-lower-cab.png). The drawer run under the hob, between the island top and the worktop, stays charcoal next to the sage run. The toe-kick recess is painted as a pale green slab (z-kt-cab.png).",
+   "fix": "Extend the lower-cabinet trace to the visible drawer run behind the island, and cut the plinth recess out, or make it its own shadowed surface.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-cab.png"
+  },
+  {
+   "title": "Kitchen floor: a strip of grey tile stays unpainted under the island's overhang",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Kitchen Original › Light Grey Tile Floor › Oak Herringbone › Generate.",
+   "evidence": "A grey-blue band of the original tile runs along the island's base, between the island and the herringbone, from the waterfall to the right end (z-kt-stools.png).",
+   "fix": "Take the floor outline up to the island's base line. The shaded floor under the overhang is still floor.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/z-kt-stools.png"
+  },
+  {
+   "title": "After a reference photo is added, the Style panel doesn't bring the reference and its settings into view",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Living room › Style › Upload a reference photo › pick kitchen-moodboard.jpg.",
+   "evidence": "The Generate button turns into 'Style transfer' and a 'Reference · 1' chip appears. But the panel stays scrolled on the style cards: the new thumbnail shows as a 12 px sliver at the panel's foot, and How far / What carries over are out of view (e2-ref.png).",
+   "fix": "After a reference is added, scroll its block into view, the same way the Tools panel does for a picked tool.",
+   "files": [
+    "components/visualizer/editor/panels/style-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/e2-ref.png"
+  },
+  {
+   "title": "Tapping to add a surface where one is already marked makes a duplicate",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Kitchen Original › Surfaces › + › 'Island side' › Click where it is › click the island's waterfall end.",
+   "evidence": "The new 'Island Side' has the same outline as the existing 'Quartz Island Waterfall End'. Countertops now has 3 entries, two of them the same region (g2-kt-island.png).",
+   "fix": "When the tap lands inside an existing surface's region, offer that surface ('That’s the Quartz Island Waterfall End — pick it?') instead of adding a copy.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/g2-kt-island.png"
+  },
+  {
+   "title": "The Customize summary reads as a contradiction: 'Navy matte black pot'",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Fig › Customize › Planter: Matte black pot + Colour: Navy.",
+   "evidence": "The row and the helper line read 'Customize · Navy matte black pot'. The render is a navy pot (a2-fig-picked.png).",
+   "fix": "When a colour is picked with a finish that names a colour, drop the finish's colour word ('Navy matte pot'), or show 'Matte black pot, in Navy'.",
+   "files": [
+    "lib/visualizer/furniture.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/shots/a2-fig-picked.png"
+  },
+  {
+   "title": "Snackbars land on the photo's bottom-left corner at 1025–1440 (F014's 'off the photo' does not hold)",
+   "severity": "minor",
+   "width": "1440×1024, 1280×800, 1025×700 (clear at 1920×1080)",
+   "repro": "Open a room with versions and delete a version (or Generate, or Change photo). Watch where 'V1 deleted · Undo' / 'V4 is ready · Compare' lands.",
+   "evidence": "The snackbar (344×48, x16–360) is lifted above the canvas bar because the bar starts inside its band (bar.left 318 at 1440, 238 at 1280, 128 at 1025). Overlap with the photo: 27 px at 1440 (snack y775–823, photo bottom 802), 44 px at 1280 (y551–599 over x94–360, photo bottom 595) and 44 px at 1025. At 1920 the bar starts at 558, so the snackbar rests above the strip and clears the photo. The editor's comment and the F014 claim say it 'rests above the versions, off the photo' beside a narrow bar.",
+   "fix": "Either correct the claim and accept the corner, or, when lifting over the bar would put it on the photo, dock it at the bar's row by narrowing the host to the space left of the bar (bar.left − 32; this fails below about 1340) or over the strip's head column. The owner should pick. The rule is in the F014 · F089 · F140 effect in visualizer-editor.tsx.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-tsnack-1280x800.png"
+  },
+  {
+   "title": "Keyboard: with a strip tile focused, ← → change the version on screen but focus stays behind, leaving two identical purple rings",
+   "severity": "minor",
+   "width": "1440 (any, keyboard)",
+   "repro": "With V5 on screen, Tab to the V2 tile and press ← twice.",
+   "evidence": "The chip goes V5 → V4 → V3 while document.activeElement stays 'Show V2 …'. V2 wears the focus ring and V3 the selected ring, both 2px primary, so you cannot tell which one is on screen.",
+   "fix": "When the keydown comes from a strip tile, move focus to the tile just shown (a roving list, as the mode tabs do), or step from the focused tile. Also give :focus-visible a look distinct from the selected ring (e.g. an outline offset in on-surface).",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/versions-strip.tsx",
+    "components/visualizer/editor/versions-strip.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-tkb2-strip-focus.png"
+  },
+  {
+   "title": "Focus falls to <body> after deleting a version from its ⋯ menu, and after the last restore closes Deleted versions",
+   "severity": "minor",
+   "width": "1440 and 390 touch",
+   "repro": "Keyboard: open V1's ⋯, choose Delete. Or open 'n deleted', focus the only Restore and press Enter.",
+   "evidence": "After Delete, activeElement is BODY (the kebab left with its tile). After the last restore the dialog closes, the 'n deleted' trigger it would return to is gone, and activeElement is BODY at both 1440 and 390. A keyboard or screen-reader user loses their place in the strip.",
+   "fix": "After a delete, focus the neighbouring tile (the next, else the previous). After the last restore, focus the restored version's tile (or the strip's 'Versions' list).",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/dialogs/deleted-versions.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t82-after-restore-last.png"
+  },
+  {
+   "title": "Once its parent is deleted, a tile drops its provenance while Present still says 'From V2'",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "V2 → V3 → V4 chain. Delete V3, then read V4's tile name or caption tooltip, and open Present on V4.",
+   "evidence": "After V3 is deleted, the tile reads 'V4, on screen · Walls' with no 'made from', while Present's head says 'From V2' and its button 'Before and after · V2'. Deleting V1 likewise strips V2's 'made from V1'. The strip looks up the parent only among live versions.",
+   "fix": "In versions-strip.tsx derive `from` with beforeKeyOf (the nearest live ancestor), as Present and Compare do: 'made from V2'. Or say 'made from V3, deleted'.",
+   "files": [
+    "components/visualizer/editor/versions-strip.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t82-deleted-v3.png"
+  },
+  {
+   "title": "Present at 1024×768 touch: both side blocks open cut mid-line ('Ceiling' clipped, a 20 px sliver of the first thumbnail row)",
+   "severity": "polish",
+   "width": "1024×768 touch",
+   "repro": "Open Present on the latest version of a room with 5 or more tiles on a landscape tablet.",
+   "evidence": "The side is 220 px wide. Facts are 254 px tall, and the third 'Everything in V4' row ('Ceiling') is cut through its glyphs at the bottom edge. The thumbs block (221 px) opens at scrollTop 62, so the first row shows only its bottom edge and the captions 'Original' and 'V1' float without their pictures. It reads as clipping rather than as a scroller.",
+   "fix": "Give .thumbs scroll-snap-type: y mandatory, with scroll-snap-align on .thumb (or round keepInView to a row). Add a short fade mask at the facts' bottom edge while more is below.",
+   "files": [
+    "components/visualizer/editor/dialogs/dialogs.module.css",
+    "components/visualizer/editor/dialogs/present-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t78-1024-side-zoom.png"
+  },
+  {
+   "title": "Version captions and 'What changed' name a changed surface by the finish it replaced",
+   "severity": "polish",
+   "width": "any",
+   "repro": "Floor → Walnut Engineered, then Generate. Then Ceiling → Olive Green with Walls → Sage Green, Generate. Then customise the Grey Fabric Sofa to sage green linen.",
+   "evidence": "The strip and chip read 'V1 · Light Oak Floor' for a walnut floor, 'V2 · Walls, White Ceiling' for an olive ceiling, and 'V5 · Grey Fabric Sofa' for a sage linen sofa. Present's 'What changed' says 'White Ceiling — Olive Green', but the list under it ('Everything in V2') says 'Ceiling — Olive Green', so one surface has two names in one panel. The labels come from the reading, which carries the photo's original finish.",
+   "fix": "For captions and change lines, use the group word where the reading's label carries its old finish (Floor, Ceiling, Sofa), as 'Everything in' and the moodboard do. Or keep the label and add the new finish ('Floor → Walnut Engineered'). This is a copy call for the owner.",
+   "files": [
+    "lib/visualizer/model.ts",
+    "components/visualizer/editor/dialogs/version-facts.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t78-present-768x1024-V2.png"
+  },
+  {
+   "title": "A version's ⋯ with the Original on screen offers a disabled 'Compare · Show a version first'",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Put the Original on screen, then open V5's ⋯.",
+   "evidence": "The first row is greyed with the meta 'Show a version first', although the menu belongs to a version and comparing it with the Original is the obvious ask. The canvas bar's Compare is disabled too.",
+   "fix": "In that case offer 'Compare with the Original' (V5 against the photo) or 'Before and after' (V5 against its parent) instead of a dead row.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-tdl-vmenu.png"
+  },
+  {
+   "title": "Pin-mode banner covers the top third of the photo on a phone held sideways",
+   "severity": "polish",
+   "width": "844×390 touch",
+   "repro": "On a phone in landscape, open a room and press Pin a note.",
+   "evidence": "The banner is 356×44 at y72 (x94–450), wider than the whole 222 px photo (x161–383, y64–212), and hides its top 44 px, the ceiling, where a note may be pinned. Presses pass through, but the spot is hidden. The chip is hidden (low layout), so the banner could go elsewhere.",
+   "fix": "In the short layouts, put the banner in the free grey beside the photo (161 px left of it here), or at the stage's bottom above the bar. Or shorten it there to 'Tap where your note goes · Cancel'.",
+   "files": [
+    "components/visualizer/editor/stage.tsx",
+    "components/visualizer/editor/stage.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/surfaces/vm/vm-t80-pin-844x390.png"
+  }
+ ],
+ "checks": [
+  {
+   "what": "D3 Customize by part (the fig's Planter, the art's Frame, the TV's frame and stand, the lamps' shade and base; no part row on a piece without a traced part; the 'Colour · the pot' wording)",
+   "ok": true,
+   "evidence": "1440. Each finish paints only its part: the fig pot (leaves and soil kept), the living-room and bedroom frames (canvases kept), the TV bezel and stand (screen kept), the floor lamp's shade (Linen + Mustard) and its pole (Brass / Matte black), and the bedroom lamp's shade (Sage) and base (Brass). The headings read 'COLOUR · THE POT', 'COLOUR · THE FRAME' and 'COLOUR · THE FRAME AND STAND'; lamps say 'COLOUR'. A hand-added 'Basil Plant in a Pot' offers no Planter row, only Colour, as specified. Its render is a separate new issue. Shots: z-fig-pot.png, z-art.png, z-tv.png, z-lamp.png, z-bd.png."
+  },
+  {
+   "what": "Remove on the living room, piece by piece, each render looked at full size",
+   "ok": false,
+   "evidence": "Clean: TV console (it takes the TV's feet, and the TV hangs on the wall), floor lamp (its own piece), fig (its wall shadow goes), TV, art. Not clean: sofa (armchair rebuilt with a white arm block, a seat blob and wedges between its legs; the rug continues but with a seam, a step and a tiled look; the table's front smeared, the table floating with no left legs), coffee table (the console's rail torn with a white gap line; a rug slab where the leg was), rug (a remnant by the throw's fringe), armchair (the chair's shadow ghost on the wall; a pale stub on the lamp pole). See F181. Shots: EV-sofa-remove.png, EV-coffee-rug-armchair-remove.png."
+  },
+  {
+   "what": "The Tools panel scrolls a picked tool's options into view",
+   "ok": true,
+   "evidence": "At 1280×800, Tools › Furnish the room scrolls the panel so the picked card with its room select, density chips and 'Will place' box sits in view. At 1440 everything fits (k2-1280-Furnish-the-room.png). Furniture and Style do not do the same (new issues)."
+  },
+  {
+   "what": "The Describe box's example fits whole at every rail width",
+   "ok": true,
+   "evidence": "Measured in the box's own font. 1440: the full sentence on 2 of 2 lines. 1280×800, 1366×768, 1025×768 and 1024t: 'e.g. walnut floor, sage green walls' on 1 line. 768t, 390t and 375×667t: 'Describe a change, e.g. sage walls'. 320t and 844×390t: 'Describe a change…'. Nothing is cut."
+  },
+  {
+   "what": "The style cards line up picture, name, description and materials across a row",
+   "ok": true,
+   "evidence": "25 cards in 13 rows at 1440, 1280, 1025, 768t and 390t. In every row the card heights and the tops of the name, description and first material line are equal. The palette-block cards (Classic, Coastal, Balinese) match their neighbours' photo height (k3-style-*.png)."
+  },
+  {
+   "what": "The Surfaces rows' chips show a wallpaper's motif",
+   "ok": true,
+   "evidence": "At 3× DPR, the rows show the wave, botanical leaf and herringbone motifs, the same tile as the picker swatch and the moodboard chip (j3-rows-3x.png, j3-swatch-3x.png, j4-moodboard.png)."
+  },
+  {
+   "what": "Deleted versions: restoring one while others remain says 'V3 is back in the strip.' in the dialog, and no snackbar lands over it",
+   "ok": true,
+   "evidence": "Helper run, 1440: with V1 and V3 deleted, Restore V1 shows '✓ V1 is back in the strip.' (role=status) in the dialog. No snackbar at 300 ms or 1.5 s, and the dialog stays open with V3. Restoring V3, the last one, closes the dialog and snacks 'V3 restored'. I looked at vm-t82-after-restore-1.png myself."
+  },
+  {
+   "what": "Version tiles say 'made from V2'",
+   "ok": true,
+   "evidence": "Helper run: 'Show V3 · Relit · Golden Hour · made from V2', 'V4 · Walls · made from V3', and so on. My own read of Kevin Ng's strip: 'V3, on screen · Relit · Golden Hour · made from V2 · shared with the client'. Once a parent is deleted, the tile drops its provenance (helper's polish issue)."
+  },
+  {
+   "what": "Version ⋯ menu and Present by keyboard",
+   "ok": true,
+   "evidence": "Enter on 'More options for V2' opens the menu with focus on its first row. ↓ moves (Present, Moodboard). Esc closes it and focus returns to the kebab. Present by keyboard: ← → walk the versions, and on the Original 'Before and after' is disabled and skipped. Tab cycles Close › Previous › Next › thumbnails › Done inside the dialog. Esc closes and returns focus to the kebab."
+  },
+  {
+   "what": "Phone sheets (390 / 320 touch): version ⋯, Room options, Present, Deleted versions, Rename",
+   "ok": true,
+   "evidence": "The version ⋯ is a bottom sheet titled 'V4 · Walls' with six rows. Room options is a sheet whose 'Change photo' is disabled with the meta 'Its versions were made of this photo — add a new room instead'. At 320 Present is a sheet with the arrows on the photo, an 85 px thumbs row and a footer of 'Before and after · V3' and 'Done' that fits. Page overflow is 0 everywhere."
+  },
+  {
+   "what": "Canvas bar tooltips and targets (1440)",
+   "ok": true,
+   "evidence": "Every control is 36 px tall with a house tooltip: Zoom out, Fit to screen, Zoom in, Hide markers, 'Before and after · V4' (Compare), 'Pin a note on the photo', Present, Download. The strip head's 'Versions' tooltip reads '← → step through the versions'."
+  },
+  {
+   "what": "Reading Kevin Ng's design sends no writes",
+   "ok": true,
+   "evidence": "Opening Kevin Ng's Living room at 1440 and 390 fired 0 POSTs. The strip shows the marks: V2 with a star, a note count and '+2' (1440) or a star and '+3' (390), and V3 with the shared mark."
+  }
+ ]
+}

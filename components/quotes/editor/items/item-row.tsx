@@ -313,7 +313,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
                row stays active through the press (the button only shows on an active row). */
             <Tooltip label="Expand">
               <button type="button" className={styles.expand} data-expand aria-label="Expand description" onMouseDown={(e) => e.preventDefault()} onClick={() => setDescOpen(true)}>
-                <Icon name="expand_content" size={20} />
+                <Icon name="expand_content" size={20} className={styles.expandGlyph} />
               </button>
             </Tooltip>
           ) : null}

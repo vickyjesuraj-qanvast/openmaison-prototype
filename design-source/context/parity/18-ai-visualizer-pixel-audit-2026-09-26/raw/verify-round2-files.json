@@ -1,0 +1,566 @@
+{
+ "results": [
+  {
+   "ref": "F197",
+   "status": "fixed",
+   "evidence": "1440, Dane: restored the studio material 'Sage Whisper paint', picked it for the Living room walls on the Original ('Walls → Sage Whisper paint', Surfaces tab 'has changes', Saved just now), deleted it in Company › Materials, reopened the editor. The Surfaces tab lost its dot ('Surfaces', no ', has changes'), 'Your changes' was gone, Generate went idle, and Walls read '2 surfaces · Now: As in the photo' with no '→' and no empty target. After Restore the pick came back alive ('Walls → Sage Whisper paint', dot back). The engine's 'Nothing changed' guard was not reached live.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/panels/surfaces-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s8-04-after-delete-walls.png"
+  },
+  {
+   "ref": "F204",
+   "status": "fixed",
+   "evidence": "1440, View as Sarah (Designer). (1) Deleted Designs: Dane's 'Showroom — kitchen concept' shows the rule under its name, Restore and Delete Forever are disabled, the row's tick is disabled, and Empty Trash is disabled with the tooltip 'Only Dane, an Owner or an Admin can delete this design for good'. (2) A page loaded as Dane and pressed as Sarah (card ⋯ › Delete on Kevin Ng) reads 'Couldn’t delete the design — only Dane, an Owner or an Admin can move, rename or delete this', and the design stays. (3) The deleted design's editor shows 'This design is in Deleted designs — only whoever made it, an Owner or an Admin can restore it.' with no Restore button. (4) Deleted Materials: Dane's 'Sage Whisper paint' row carries its rule, Restore and Delete Forever are disabled, and Empty Trash is disabled. (5) restorePin now answers 'You can only bring back the studio’s own pins.' (checked in code only, since the UI cannot reach it).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/home/visualizer-home.tsx",
+    "components/company/templates/library-gallery.tsx",
+    "components/leads/tasks/use-run.ts",
+    "components/company/materials/materials-view.tsx",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s7-01-sarah-deleted-designs.png"
+  },
+  {
+   "ref": "F205",
+   "status": "not-fixed",
+   "evidence": "1440, Gavin See › Files. noise.png (9,927,168 B, 1575 px RGBA) was redrawn on the client, so the action POST dropped to 2,245,055 characters, but the server still answered 500 and no file was made. The :3025 log reads '⨯ Error: Maximum array nesting exceeded. Large nested arrays can be dangerous.' The 12 MB body limit is not the cause. React's server-action reply decoder counts a string argument's length against its 1,000,000 arraySizeLimit whenever the argument list has more than one item, and uploadFile(leadId, parentId, name, image) passes the picture as a separate argument. A controlled run shows the threshold: photo-500k.jpg (data URL 321k chars) → 200, saved. photo-900k.jpg (830k) → 200, saved. photo-1m.jpg (a plain 1.05 MB, 1900×1300 JPEG, 1.40M chars) → 500, nothing saved, same log line. phone-4032.jpg (3 MB, 4032 px) → 200, because readFileAsDataUrl scaled it to 2000 px and re-encoded it to 305 KB. So the toast half is fixed (see the new-issue result), but ordinary photos around 750 KB and up still fail to upload.",
+   "remaining": "Every JPEG, PNG or WebP under 2000 px whose data URL is over 1,000,000 characters (about 730 KB of file) fails with a 500, including the original 9.9 MB PNG. PICTURE_CAP = 8,000,000 in upload-picture.ts never takes effect. Fix: send the picture inside one object argument (uploadFile({ leadId, parentId, name, image })), because strings under an object are not counted, or send it as FormData or a Blob. Otherwise cap the data URL below 1,000,000 characters and redraw smaller. Check any other action that takes a big string as a separate argument too (e.g. saveQuoteText(quoteId, kind, html) with pasted images).",
+   "files": [
+    "app/leads/files-actions.ts",
+    "components/leads/files/lead-files.tsx",
+    "components/leads/files/upload-picture.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6b-photo-1m-failed.png"
+  },
+  {
+   "ref": "critic-4 (code-robustness)",
+   "status": "fixed",
+   "evidence": "1440. Gavin See's design had V1 and a live link (s89f_fy_Lhy_). A second tab held the Share dialog open, and then the lead was deleted. The client link now shows 'This link is no longer active · Please ask Dane at Demo Studio Pte Ltd for an updated link.' In the stale tab, Create link was refused inline in red: 'This lead was returned or deleted — its links stay off.' No link was made (1 link on the design). Reopened, the editor's Share with client is disabled with the tooltip 'This lead was returned or deleted — its links stay off', and the version menu's 'Share with the client…' is disabled with the same meta line. A returned lead was not exercised live; it takes the same leadClosed path in code.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts",
+    "app/visualizer/actions.ts",
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-08-closed-lead-version-menu.png"
+  },
+  {
+   "ref": "critic-13 (code-robustness)",
+   "status": "fixed",
+   "evidence": "The same run as F197: no stale Surfaces dot, and no '→' with an empty name. The material's delete confirm also reads 'Used in 1 design — its renders keep it. You can restore it from Deleted Materials.' (D6). One wording nit is logged as a new issue.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "components/visualizer/editor/panels/surfaces-panel.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s8-02-delete-used-confirm.png"
+  },
+  {
+   "ref": "critic-15 (code-robustness)",
+   "status": "fixed",
+   "evidence": "The Deleted sheets offer only what the server allows (see F204). The refusal copy carries the rule. The mixed trash was tried as Sarah, with her own deleted 'Sample · Living room' and Dane's Showroom. Empty Trash was enabled, and its confirm read 'This can’t be undone. 1 deleted design will be removed permanently; 1 stays — only Dane, an Owner or an Admin can delete this design for good.' The result read '1 design deleted forever — 1 stays', which was true: hers was gone and Dane's stayed.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/home/visualizer-home.tsx",
+    "components/company/materials/materials-view.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s10-03-empty-confirm.png"
+  },
+  {
+   "ref": "critic-7",
+   "status": "fixed",
+   "evidence": "This was run on private copies under verify2/files/c7, with DATABASE_URL on the command and cwd set to the scratch folder, so fixtures/ resolved there. The repo's fixtures/baseline.json md5 and local.db were unchanged afterwards. The baseline copy took repair twice, both runs 'all checks pass', and a table-by-table md5 of every table showed that the second run changed nothing. snapshot-baseline → restore-baseline onto a copy with its visualizer rows cleared gave 61 tables, 593 rows, identical table by table (baseline 586 KB). Kevin Ng's design was purged with the FK cascade (rooms and links gone), and repair R61 re-seeded it: 'Kevin Ng’s design: 3 rooms · 5 versions · 1 link with a favourite, a note and a pin · 9 notifications', all checks pass.",
+   "remaining": "",
+   "files": [
+    "scripts/repair-demo-data.ts",
+    "scripts/snapshot-baseline.ts",
+    "lib/db/baseline.ts"
+   ],
+   "shot": ""
+  },
+  {
+   "ref": "F093",
+   "status": "fixed",
+   "evidence": "1440. Delete Forever on Gavin See's deleted design (1 render, saved to Files) confirms with 'This can’t be undone. The design will be removed permanently. Renders saved to the lead’s Files stay there. Its client links, and the client’s notes and replies on them, go with it.' In Files, the kept render opens: Information › From reads 'AI Visualizer · V1 · design deleted' as a SPAN, not a link. The grid menu and the viewer menu read 'Open in AI Visualizer', which opened /visualizer/<new design>?room=… as a room called 'Kitchen', with no 404 document response.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/home/visualizer-home.tsx",
+    "components/company/templates/library-deleted-sheet.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s5-04-forever-confirm.png"
+  },
+  {
+   "ref": "F102",
+   "status": "fixed",
+   "evidence": "1440. On Kevin's design, with V3 pre-ticked, I ticked Kitchen V1 first and then Master bedroom V1. The draft reads 'Hi Kevin, here are 3 design ideas for your living room, master bedroom and kitchen: …'. The rooms are in design order, joined as a sentence, and the client page's h1 reads the same.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s2-02-made-L1.png"
+  },
+  {
+   "ref": "F103",
+   "status": "fixed",
+   "evidence": "1440. The Showroom design (room 'Kitchen sketch') drafts 'Hi there, here is a design idea for your kitchen: …', without 'sketch'. The client page reads 'A design idea for your kitchen' and 'Design 1 · Japandi'.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s2-08-showroom-made.png"
+  },
+  {
+   "ref": "F111",
+   "status": "partly",
+   "evidence": "The renders half is fixed. /renders/nope-token and /renders/x! show the letterhead and the notice 'This link is no longer active · Please ask Demo Studio Pte Ltd for an updated link · +65 6222 0188' at 1440 (notice x440 w560), 1024t, 390t (x16 w358) and 320t (w288), with scrollWidth equal to the viewport. /sign/nope-contract, /sign/bundle/x! and /confirm/x! read the same LinkGone notice. /sign/nope-contract/quote and /sign/x!/quote still show Next's bare '404 · This page could not be found.' at 1440 and 390.",
+   "remaining": "app/sign/[id]/quote/page.tsx still calls notFound() when fetchSigning returns nothing. Return <LinkGone studio={brand.details.name} brand={brand.kit} /> as /sign/[id] does. The share package left this as notDone because the file is outside every wave-D package.",
+   "files": [
+    "app/sign/[id]/quote/page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s1-_sign_x_quote-1440.png"
+  },
+  {
+   "ref": "critic-1",
+   "status": "partly",
+   "evidence": "Per-member visibility is now exercised on the private DB, with settings.lead_visibility = 'assigned' and View as Sarah, who is not on Kevin Ng. /visualizer/img/v/<Kevin job>/1 returned 404, /visualizer/img/room/<Kevin room> 404, and /files/img/<Gavin See file> 404. As Dane they returned 200 image/jpeg 'private, max-age=31536000, immutable', 307 and 200 image/png. A stopped link's ?t= picture returned 404. The setting was removed and View as returned to Dane afterwards.",
+   "remaining": "design-source/context/parity/17-ai-visualizer-migration-map-2026-09-25.md still doesn't say that the studio's /visualizer/img and /files/img paths need an authenticated session (grep: no 'authenticat'). In the prototype, any cookie-less request is 'the signed-in member'.",
+   "files": [
+    "design-source/context/parity/17-ai-visualizer-migration-map-2026-09-25.md",
+    "app/visualizer/img/[...key]/route.ts",
+    "app/files/img/[fileId]/route.ts"
+   ],
+   "shot": ""
+  },
+  {
+   "ref": "critic-4 (files-client)",
+   "status": "fixed",
+   "evidence": "Checked live this round (it was cannot-check). Deleting Gavin See closed its live /renders link to the house notice. Share with client, the version menu's share row and the server's createShareLink all refuse with 'This lead was returned or deleted — its links stay off'. Return Lead was not run; it takes the same leadClosed code path. Leftovers of the lead lifecycle are logged as new issues (the delete dialog is silent about render links; the editor of a deleted lead has no notice).",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-07-closed-lead-editor.png"
+  },
+  {
+   "ref": "critic-18",
+   "status": "fixed",
+   "evidence": "1440. L3's expires_at was set to now + 5 h on the private DB. Its Shared before row read 'Open — closes in 5 h · opened 1× · asked for a call back', with a schedule icon, Copy link, Renew and Stop. Renew moved it to 'Open until 3 Oct ’26', with the snackbar 'The link is open for another 7 days' at the house place, outside the dialog. With the link expired (now − 1 h) the client page read 'This link has ended · It was open until 26 Sep ’26. Please ask Hui at Demo Studio Pte Ltd for an updated link.' The name cut is logged as a new issue.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-01-closes-soon.png"
+  },
+  {
+   "ref": "critic-20",
+   "status": "fixed",
+   "evidence": "The client page at 1024×768 touch: page w1024, letterhead w1024, cards x72 w880 (centred). At 1440: page 1440, card x280 w880. At 390t / 320t: page equals viewport, scrollWidth equals viewport. Present at 1024 touch (880×491) has a facts block ('What changed') and a versions grid below it, with no overflow. The slow-network ghost at 1440 is centred on the same 880 column as the page, so the crossfade doesn't jump sideways.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css",
+    "app/renders/[token]/page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s11-present-1024t.png"
+  },
+  {
+   "ref": "Client link page is squeezed into the left ~718 px on every width over 718 (regression from the PageReveal wrapper)",
+   "status": "fixed",
+   "evidence": "/renders/17fe84ab2eca47?preview=1: at 1440 the page is 1440 wide, the header 1440 and the card x280 w880. At 1024 touch the page is 1024 wide and the card x72.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s1-open-1440.png"
+  },
+  {
+   "ref": "On phones the closed-link notice (stopped, expired or unknown link) is laid out 560 px wide and cut off",
+   "status": "fixed",
+   "evidence": "/renders/nope-token at 390t: notice x16 w358, scrollWidth 390. At 320t: notice w288, scrollWidth 320. The title and phone number are whole.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s1-unknown-320t.png"
+  },
+  {
+   "ref": "A design whose lead is deleted or returned still offers Share with client and makes a link that is dead on arrival",
+   "status": "fixed",
+   "evidence": "See critic-4 (code-robustness): Share is disabled with its reason, the version menu row is disabled, and a stale dialog's Create link is refused.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-06-stale-create.png"
+  },
+  {
+   "ref": "Editor snackbars are lifted above the canvas bar even while a dialog is open, so they cover the Share dialog's content",
+   "status": "fixed",
+   "evidence": "1440, Share dialog open. Stop sharing now answers in its own row ('Stopped · opened 1× · Undo'), with no snackbar. A forced refusal (the action POST fulfilled 500) showed 'Couldn’t stop sharing — please try again' at x16 w344, bottom-left and outside the 720-wide dialog (x360), next to Renew's 'The link is open for another 7 days'. The link stayed live in the DB.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-03-refused-stop.png"
+  },
+  {
+   "ref": "A failed upload in Lead › Files leaves the upload toast spinning 'Uploading…' for good",
+   "status": "fixed",
+   "evidence": "1440. The first action POST of small.png was fulfilled with 500. The toast row reads 'small.png · Failed' with a red refresh 'Retry upload' button, and the snackbar reads 'Couldn’t upload small.png — please try again'. Retry sent it again, and the row turned into a check with the file saved (0 → 1 rows). The real 500 on a 1 MB photo also ends in Failed (see F205).",
+   "remaining": "",
+   "files": [
+    "components/leads/files/lead-files.tsx",
+    "components/leads/files/upload-toast.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6-07-failed.png"
+  },
+  {
+   "ref": "Deleted Designs › Empty Trash says 'Trash emptied' when nothing was deleted",
+   "status": "fixed",
+   "evidence": "As Sarah with only Dane's design in the trash, Empty Trash is disabled with the tooltip rule. With her own design and Dane's in the trash, the confirm names what stays, and the result reads '1 design deleted forever — 1 stays'.",
+   "remaining": "",
+   "files": [
+    "components/company/templates/library-gallery.tsx",
+    "app/visualizer/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s7-02-sarah-empty-trash.png"
+  },
+  {
+   "ref": "A style transfer names finishes by hex code ('Reference #E8E6E2'), and that name reaches the client link, the moodboard and quote lines",
+   "status": "fixed",
+   "evidence": "1440. Style › Upload a reference photo (sophia-living-room.jpg) › Generate 'Style transfer' made V4. The Surfaces list reads 'Walls · Reference colour, close to Linen', 'Light Oak Floor · Reference colour, close to Vinyl Plank Grey' and 'White Ceiling · Reference colour, close to Linen'. Present lists the same words and 'Palette · From the reference'. No hex appears.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s8-05-transfer-surfaces.png"
+  },
+  {
+   "ref": "The client's renders link lost its full-width layout: desktop and tablet pages are stuck at 800px on the left, and every ended/stopped/unknown-link notice is 560px wide and overflows phones",
+   "status": "fixed",
+   "evidence": "The letterhead spans the window and the column is centred at 880 at 1440 and 1024t. The notices fit at 390t and 320t (see the two rows above). The ghost matches the page's column.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s1-open-1024t.png"
+  },
+  {
+   "ref": "After a design's Delete forever, its saved render's 'From' link and 'Open in AI Visualizer' both open Next's bare 404",
+   "status": "fixed",
+   "evidence": "See F093: From reads 'AI Visualizer · V1 · design deleted' as plain text. 'Open in AI Visualizer' (grid menu and viewer menu) opens the render as a room of a new lead design, with no 404.",
+   "remaining": "",
+   "files": [
+    "components/leads/files/render-origin.ts",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6-03-viewer-info.png"
+  },
+  {
+   "ref": "The studio's own 'Open the link' (Shared before) counts as the client opening it, and Activity credits the client",
+   "status": "fixed",
+   "evidence": "Shared before › Open the link opened http://localhost:3025/renders/Qvpe_cVyd801?preview=1. view_count stayed at 0. The client's own open afterwards made it 1. Six ?preview=1 loads of the seeded link left it at 3.",
+   "remaining": "",
+   "files": [
+    "components/visualizer/editor/dialogs/share-dialog.tsx",
+    "components/visualizer/share/render-share-page.tsx"
+   ],
+   "shot": ""
+  },
+  {
+   "ref": "On a phone, the pin thread sheet hides the pin it is about; right after pinning, the snackbar covers the sheet's Reply button",
+   "status": "fixed",
+   "evidence": "390 touch, client link L2. The draft sheet shows an 88 px copy of the picture with the new pin's glyph. Pin it closes the sheet. Tapping pin 1 within a second opens the thread sheet (y470–844), with 'Pinned — Dane will see it' at y414–462 above it (--bottom-dock 366px), clear of Reply. The editor at 390 shows the same copy in its thread sheet (Dane's pin 1 on V2).",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx",
+    "components/visualizer/editor/pin-card.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s3-05-thread-sheet-with-snack.png"
+  },
+  {
+   "ref": "A personal link's client pin reads 'Client / Client · 9 min ago', and the bell says 'Client pinned a note on a render'",
+   "status": "fixed",
+   "evidence": "The no-lead link L2 got a pin from a phone. The bell reads 'Your client pinned a note on a render · Kitchen sketch · V1 · From sketch · Japandi: “Can this cabinet be a darker oak? (verify2)”'. The editor's pin card reads 'Your client / just now', with no 'Client ·' prefix, and the reply box says 'Reply — the client sees it'. On the client's own page the sheet reads 'You / Pin 1 · Client · just now' (logged as a new polish issue).",
+   "remaining": "",
+   "files": [
+    "app/renders/actions.ts",
+    "components/visualizer/editor/pin-card.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s3-08-editor-pin.png"
+  },
+  {
+   "ref": "The client's 'Design n' names are unknown to the studio and change from link to link",
+   "status": "fixed",
+   "evidence": "On the seeded link V2 is 'Design 2'. On the new link L1 (Living room V3 + Master bedroom V1 + Kitchen V1) the cards read 'Design 3 · Golden Hour', 'Design 1 · Golden Hour' and 'Design 1 · Scandinavian', each under its room heading. The V-number and the Design number match on every link.",
+   "remaining": "",
+   "files": [
+    "lib/visualizer/outputs.ts",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s2-03-client-L1-top.png"
+  },
+  {
+   "ref": "A client whose write is refused because the link closed stays on a live-looking page, and the snackbar says 'your designer' while the page says 'Dane'",
+   "status": "fixed",
+   "evidence": "390 touch. The client opened L1, the studio stopped it, and then the client tapped 'I like this one'. The page turned into the notice 'This link is no longer active · Please ask Dane at Demo Studio Pte Ltd for an updated link. · +65 6222 0188', and the snackbar read 'This link is no longer active — ask Dane for an updated one.'",
+   "remaining": "",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s2-06-client-like-on-stopped.png"
+  }
+ ],
+ "newIssues": [
+  {
+   "title": "Lead › Files refuses every picture over about 730 KB (a data URL over 1,000,000 characters) with a server 500 ('Maximum array nesting exceeded'), so ordinary site photos don't upload",
+   "severity": "major",
+   "width": "1440 (any width)",
+   "repro": "Lead › Files › New File › upload a 1.05 MB, 1900×1300 JPEG (verify2/files/photo-1m.jpg), or the 9.9 MB noise.png.",
+   "evidence": "Action POST → 500, and no lead_files row is made. The :3025 log reads '⨯ Error: Maximum array nesting exceeded. Large nested arrays can be dangerous. Try adding intermediate objects.' A 0.62 MB JPEG (830k chars) lands, and so does a 3 MB 4032-px phone photo, because it is scaled to 2000 px and re-encoded to 305 KB. In Next 16.3.4's react-server-dom, bumpArrayCount adds a string argument's length to a 1e6 limit when the argument list has more than one item. uploadFile(leadId, parentId, name, image) passes the picture as a separate argument, so upload-picture.ts's PICTURE_CAP (8M) never applies. The UI now says Failed with Retry, and Retry fails the same way.",
+   "fix": "Pass one object: uploadFile({ leadId, parentId, name, image }) (strings under an object are not counted), or send a Blob or FormData. Until then, set PICTURE_CAP below 1,000,000 characters and keep redrawing smaller. Check other actions that take long strings as separate arguments (saveQuoteText html with pasted pictures, contract bodies with images) the same way.",
+   "files": [
+    "app/leads/files-actions.ts",
+    "components/leads/files/lead-files.tsx",
+    "components/leads/files/upload-picture.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6b-photo-1m-failed.png"
+  },
+  {
+   "title": "File viewer: with Information or Comments open, the ⋯ menu opens behind the side panel (invisible, unclickable)",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Lead › Files › open any file › Information (or Comments) › ⋯ More options.",
+   "evidence": "The kebab shows pressed, and the menu (x1208 y52 w200 h190, z 60 inside a z-20 header) sits under the panel (x1032 w400, z 91). elementFromPoint at the menu's first row returns file-info-panel …__head (or file-comments-panel …__head). Only a 12 px white sliver shows under the header, so Open in AI Visualizer, Move, Duplicate, Rename and Delete can't be reached until the panel closes. The panel's z 91 predates this wave.",
+   "fix": "Open the viewer's kebab through PortalMenu (the house rule: every row, status and toolbar menu opens through PortalMenu), or give the header's Dropdown a layer above the panel.",
+   "files": [
+    "components/leads/files/file-viewer.tsx",
+    "components/leads/files/file-viewer.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6-03b-menu-over-info.png"
+  },
+  {
+   "title": "The client link shortens a member's name to its first word: 'Hui will call you back', 'ask Hui at Demo Studio'",
+   "severity": "minor",
+   "width": "1440 · 390",
+   "repro": "View as Hui Min, share Kevin Ng's design, and open the link as the client (Ask for a call back); or let that link expire.",
+   "evidence": "The byline reads 'From Hui Min, Demo Studio Pte Ltd', but the ask line reads 'Hui will call you back on the number they have for you.', the done card 'Hui will call you back', the expired notice 'Please ask Hui at Demo Studio Pte Ltd for an updated link.', and the snackbars 'ask Hui for …'. 'Hui Min' is one given name. Members are stored by the name the studio uses (Dane, Sarah, Hui Min).",
+   "fix": "Use the member's stored name as is (senderFirst in render-share-page.tsx, `sender.split(' ')[0]` in RenderLinkClosed, and closedLinkError/closedLinkMessage), or add a first-name field and fall back to the whole name.",
+   "files": [
+    "components/visualizer/share/render-share-page.tsx",
+    "lib/visualizer/queries.ts",
+    "app/renders/[token]/page.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s4-01-client-called.png"
+  },
+  {
+   "title": "Deleted Designs / Deleted Materials: a refused row's reason is cut mid-sentence with no way to read it",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "View as Sarah › AI Visualizer › More options › Deleted Designs (Dane's deleted design); the same in Company › Materials › Deleted Materials.",
+   "evidence": "The row reads 'Only Dane, an Owner or an Admin can restore t…' (scrollWidth 440 > clientWidth 280). It has no title and no tooltip on hover, so the part that says what is refused is never shown. Only Empty Trash's tooltip carries the delete-for-good half.",
+   "fix": "Let the meta line wrap to two lines, give it the house Tooltip with the full rule, or lift the rule above the table when every row says the same (as the gallery package intended).",
+   "files": [
+    "components/company/templates/library-deleted-sheet.tsx",
+    "components/company/templates/library-gallery.module.css"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s7b-01-reason-hover.png"
+  },
+  {
+   "title": "Deleting a lead doesn't warn that its client render links stop working",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Share a lead's design (a live /renders link), then Lead › ⋯ › Delete.",
+   "evidence": "The dialog reads only 'Delete this lead? · Gavin See · Current stage: Contacted · Reason · “Gavin See” will be permanently deleted in 30 days…'. The live link s89f_fy_Lhy_ closed without a word. countLiveSigningLinks counts contract signing links only.",
+   "fix": "Count the lead's open render_share_links too, and add a line like the signing one ('1 link to renders the client has stops working'). Give the Return Lead wizard the same line.",
+   "files": [
+    "app/leads/[id]/overview.tsx",
+    "components/leads/delete-dialog.tsx",
+    "app/leads/actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-05-lead-delete-dialog.png"
+  },
+  {
+   "title": "The editor of a deleted lead's design says nothing about the lead, and still offers Save to Files and Add to a quote…",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Delete a lead that has a design, then open /visualizer/<its design>.",
+   "evidence": "The top bar still reads 'Gavin See · LEAD · CONTACTED' with no banner. Only Share is disabled. The version menu still offers Save to Files and Add to a quote…, which write into a deleted lead.",
+   "fix": "Show a note like the deleted-design one ('Gavin See was deleted — restore the lead to share or file from this design'). Disable Save to Files and Add to a quote… with the same meta line.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-08-closed-lead-version-menu.png"
+  },
+  {
+   "title": "Two renders with the same name in one Renders folder",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Save a lead design's V1 to Files, delete the design for good, open the render in the AI Visualizer (it opens a new design), render V1 and share it.",
+   "evidence": "Gavin See › Files › Renders holds two files called 'Render - Kitchen - V1.jpg' with different pictures. A studio person can't tell them apart without opening each.",
+   "fix": "Add a suffix when a name is taken ('… V1 (2).jpg'), or put the design's date in a filed render's name.",
+   "files": [
+    "app/visualizer/actions.ts",
+    "app/leads/files-actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s13-dupe-names.png"
+  },
+  {
+   "title": "The client's own pin sheet labels them 'Client': 'You / Pin 1 · Client · just now'",
+   "severity": "polish",
+   "width": "390 touch",
+   "repro": "Pin a note on any /renders link on a phone, then tap the pin.",
+   "evidence": "The sheet's title reads 'You', and its meta reads 'Pin 1 · Client · just now'.",
+   "fix": "In pin-card.tsx, treat 'You' like the fallback names and drop the ' · Client' tag (the share package's crossFileRequest: /^(you|(your )?client)$/i).",
+   "files": [
+    "components/visualizer/editor/pin-card.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s3-05-thread-sheet-with-snack.png"
+  },
+  {
+   "title": "The upload toast keeps its title 'Uploading 1 file' while its only row reads Failed",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Lead › Files › upload a file the server refuses.",
+   "evidence": "The toast header reads 'Uploading 1 file', and the row under it reads 'small.png · Failed ⟳'.",
+   "fix": "Title it from the rows' state: 'Upload failed' or '1 upload failed', and 'Uploaded' when done.",
+   "files": [
+    "components/leads/files/upload-toast.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s6-07-failed.png"
+  },
+  {
+   "title": "Copy: a lead design's delete confirm reads 'Delete Gavin See?', and 'Deleted designs' is lower-case against the sheet's 'Deleted Designs'",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Open a lead's design › ⋯ › Delete design. Or open a deleted design as a non-maker.",
+   "evidence": "The confirm title 'Delete Gavin See?' reads like deleting the lead. Its body says 'go to Deleted designs'. The deleted note reads 'This design is in Deleted designs — only whoever made it…', while the sheet is titled 'Deleted Designs' and names 'Dane'.",
+   "fix": "Use 'Delete Gavin See’s design?', 'Deleted Designs' everywhere, and name the maker in the editor's note as the sheet does.",
+   "files": [
+    "components/visualizer/editor/visualizer-editor.tsx"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s5-02-delete-confirm.png"
+  },
+  {
+   "title": "A material only a waiting pick uses says 'its renders keep it' on delete",
+   "severity": "polish",
+   "width": "1440",
+   "repro": "Pick a studio material for a surface without generating, then Company › Materials › Delete it.",
+   "evidence": "The confirm reads 'Used in 1 design — its renders keep it.', but no render uses it. The waiting pick is dropped until the material is restored.",
+   "fix": "Split usedIn into rendered and waiting, and word the waiting case separately ('picked in 1 design, not rendered yet — the pick comes back if you restore it').",
+   "files": [
+    "components/company/materials/materials-view.tsx",
+    "lib/visualizer/queries.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s8-02-delete-used-confirm.png"
+  },
+  {
+   "title": "A refusal from a Company template action still reads 'please try again' (the rule is lost in production)",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Company › Templates › Tasks, loaded as Dane; View as Sarah; ⋯ › Delete on Dane's 'Template 1' › Delete.",
+   "evidence": "The snackbar reads 'Couldn’t delete the template — please try again' and the template stays. assertMayChangeTemplate throws, and a production server action's throw arrives redacted, so useRun's refusalOf can't read it. On a fresh load the menu does show the rule ('Only its author, an Owner or an Admin renames or deletes it'), so this only bites a stale page or a role change.",
+   "fix": "Have the template, price book and folder actions answer { error: block } (as the visualizer and materials actions now do) rather than throw.",
+   "files": [
+    "lib/company/template-guard.ts",
+    "app/company/task-templates-actions.ts",
+    "app/company/templates-actions.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s7b-02-refusal-templates.png"
+  },
+  {
+   "title": "db:repair fails its own check after the studio deletes the Showroom design",
+   "severity": "polish",
+   "width": "n/a",
+   "repro": "Delete 'Showroom — kitchen concept' (soft), then run npm run db:repair on that DB (done on a private copy).",
+   "evidence": "The output ends '  FAIL demo folder with nothing filed in it (REG-664): visualizer · Showroom ideas · 1 check(s) failed', exit 1. R61 doesn't bring the design back.",
+   "fix": "Have the check ignore a folder whose entries a user deleted, or have R61 restore or re-seed the showroom concept as it does Kevin's design.",
+   "files": [
+    "scripts/repair-demo-data.ts"
+   ],
+   "shot": ""
+  },
+  {
+   "title": "Restyling a room made from a filed render smears white blotches over the floor, beams and backsplash",
+   "severity": "minor",
+   "width": "1440",
+   "repro": "Open a filed render (a design deleted for good) in the AI Visualizer, then Style › Scandinavian › Generate.",
+   "evidence": "V1 shows white patches across the floor tiles, the ceiling beam, the backsplash and the stool legs. The rail reads 'Marked roughly on your photo'. The blotchy render is also what lands in Files › Renders when shared. This is for the engine lens to judge.",
+   "fix": "Engine: keep a restyle inside confident regions on a rough (non-sample) reading, or ask the studio to check the highlight before a whole-room restyle on an uploaded photo.",
+   "files": [
+    "lib/visualizer/engine/run.ts"
+   ],
+   "shot": "/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/verify2/files/s9-08-closed-lead-version-menu.png"
+  }
+ ],
+ "checks": [
+  {
+   "what": "Client link: a phone pin (the sheet shows the spot; the snackbar sits above the sheet)",
+   "ok": true,
+   "evidence": "390t: the draft and thread sheets show an 88 px copy with the pin. 'Pinned — Dane will see it' sits at y414–462 above the sheet (top 470)."
+  },
+  {
+   "what": "'I like this one' on a stopped link turns the page into its notice naming the studio",
+   "ok": true,
+   "evidence": "The page became 'This link is no longer active · Please ask Dane at Demo Studio Pte Ltd for an updated link. · +65 6222 0188', and the snackbar read 'This link is no longer active — ask Dane for an updated one.'"
+  },
+  {
+   "what": "A pin on a link with no lead → the bell says 'Your client'",
+   "ok": true,
+   "evidence": "'Your client pinned a note on a render', and the editor's card reads 'Your client / just now'."
+  },
+  {
+   "what": "A lead shared by someone who isn't one of its members → the sharer gets the bell row and the call-back Follow-up task",
+   "ok": true,
+   "evidence": "View as Hui Min (Admin, not on Kevin Ng) through the rail menu, shared, then the client asked for a call back. Notifications went to dane, james, michelle and huimin. The task 'Call Kevin Ng back about the renders' is assigned to dane, james, michelle and huimin. Hui Min's bell shows it at the top, and so does her /tasks."
+  },
+  {
+   "what": "The client sees only their own pin threads (D1) and the share dialog's line",
+   "ok": true,
+   "evidence": "The seeded link shows only 'Pin 1: Is the velvet easy to keep clean? We have a dog.'. Dane's studio pin on the same version is absent. The dialog shows the lock line 'Your team’s pins stay private — the client sees only their own notes.'"
+  },
+  {
+   "what": "Contract signing link's gone state reads 'Please ask {studio} for an updated link.'",
+   "ok": true,
+   "evidence": "/sign/nope-contract, /sign/bundle/x! and /confirm/x! read 'This link is no longer active · Please ask Demo Studio Pte Ltd for an updated link.' at 1440 and 390. (/sign/<id>/quote is still a bare 404; see F111.)"
+  },
+  {
+   "what": "Lead › Files: a picture too big uploads as a smaller JPEG",
+   "ok": false,
+   "evidence": "noise.png is redrawn (the POST is 2.2M chars) but still gets a 500. So does any picture whose data URL is over 1,000,000 chars; see F205 and the new issue."
+  },
+  {
+   "what": "Lead › Files: a refused upload reads 'Failed' with Retry",
+   "ok": true,
+   "evidence": "'small.png · Failed' with a red Retry, and the snackbar 'Couldn’t upload small.png — please try again'. Retry succeeded."
+  },
+  {
+   "what": "The file viewer's ⋯ sheet on a phone has Download as a row",
+   "ok": true,
+   "evidence": "390t: the sheet rows are Download · Open in AI Visualizer · Move · Duplicate · Rename · Delete, all at the sheet's 16 px gutter."
+  },
+  {
+   "what": "A render whose design was deleted forever opens as a plain photo, From is text ('AI Visualizer · V1 · design deleted'), no 404",
+   "ok": true,
+   "evidence": "From is a SPAN reading 'AI Visualizer · V1 · design deleted'. 'Open in AI Visualizer' opened a new lead design with the render as the 'Kitchen' room, with no 404 response."
+  },
+  {
+   "what": "useRun surfaces a refused action's reason — in the visualizer",
+   "ok": true,
+   "evidence": "Page loaded as Dane, pressed as Sarah: 'Couldn’t delete the design — only Dane, an Owner or an Admin can move, rename or delete this'."
+  },
+  {
+   "what": "useRun surfaces a refused action's reason — in a non-visualizer screen",
+   "ok": false,
+   "evidence": "A lead's Tasks has no delete rule: deleteTasks is unguarded, so a Designer's delete is never refused and there is nothing to surface. Company › Templates › Tasks (stale page, as Sarah) reads 'Couldn’t delete the template — please try again', because the template actions throw and production redacts the message. On a fresh load the menu row does carry the rule."
+  }
+ ]
+}

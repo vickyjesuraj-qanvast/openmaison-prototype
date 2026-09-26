@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { fetchSigning } from '@/lib/contracts/queries'
 import { SigningPage } from '@/components/contracts/sign/signing-page'
 import { stampViewed } from '@/lib/contracts/status'
@@ -19,9 +18,8 @@ export default async function SignPage({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const data = await fetchSigning(id)
   if (!data) {
-    if (!/^[0-9a-f-]{8,64}$/i.test(id)) notFound()   // not a link the app ever made
     const brand = await fetchBrand()
-    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14) deleted for good: the link says so, not a 404 */
+    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (sweep S2 #14 · F111) deleted for good, or never made: the link says so, never a 404 */
   }
   if (data.state === 'open' && !data.contract.viewedAt) await stampViewed(id)   // (REG-633, parity Q-17) the client opened it
   return <SigningPage data={data} />

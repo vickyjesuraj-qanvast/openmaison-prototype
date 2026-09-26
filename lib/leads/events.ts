@@ -11,10 +11,20 @@ import { sessionMemberSql } from '@/lib/db/session'
 export type LeadEventKind = 'member_removed' | 'field_edited' | 'task_deleted' | 'note_deleted' | 'file_trashed' | 'file_deleted' | 'return_undone' | 'invite_sent' | 'questionnaire_asked'
   | 'contract_unsigned' | 'contract_archived' | 'contract_restored'   // (REG-634, contracts parity E-128) what a contract's own stamps can't show
   | 'comparison_deleted'   // (REG-641, X-Ray parity Q-20) a Quote X-Ray reading removed — the row goes, the trail stays
+  /* (audit 2026-09-26, F093 · F106 · F207) the AI Visualizer's removals and its link's stops and renewals, which leave no row of their own;
+     a restore right after its delete is that delete's Undo and takes the delete's line away (the undoStageMove way) */
+  | 'design_deleted' | 'design_restored' | 'design_purged' | 'room_deleted' | 'room_restored' | 'version_deleted' | 'version_restored'
+  | 'share_stopped' | 'share_renewed' | 'share_reopened'
+export const LEAD_EVENT_KINDS: readonly LeadEventKind[] = ['member_removed', 'field_edited', 'task_deleted', 'note_deleted', 'file_trashed', 'file_deleted', 'return_undone', 'invite_sent', 'questionnaire_asked',
+  'contract_unsigned', 'contract_archived', 'contract_restored', 'comparison_deleted',
+  'design_deleted', 'design_restored', 'design_purged', 'room_deleted', 'room_restored', 'version_deleted', 'version_restored', 'share_stopped', 'share_renewed', 'share_reopened']
 export type FieldChange = { key: string; label: string; from: string; to: string }
 export type LeadEventDetail = {
   memberId?: string; name?: string; title?: string; kind?: string; when?: string | null; reason?: string | null; phone?: string
   fields?: FieldChange[]
+  /** (audit 2026-09-26) the AI Visualizer's record the line is about — a design, room, version (`jobId:variantId`) or link id; its room's
+      name and the version's number as they were */
+  id?: string; room?: string; n?: number; designId?: string; roomId?: string
 }
 type Writer = Pick<typeof db, 'insert'>
 

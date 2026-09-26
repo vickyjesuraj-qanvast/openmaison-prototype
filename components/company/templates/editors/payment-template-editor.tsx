@@ -20,6 +20,8 @@ import { DEFAULT_SPLIT_ID, splitWord, sumPct, type SplitRow } from '@/lib/quotes
 import type { PaymentTemplateEditorData } from '@/lib/company/payment-templates'
 import { deletePaymentTemplate, duplicatePaymentTemplate, savePaymentTemplate } from '@/app/company/payment-templates-actions'
 import { LibraryHeader } from '../library-header'
+import { isRefusal } from '@/lib/company/template-rules'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
 import styles from './library-editor.module.css'
 
@@ -109,7 +111,7 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
         </div>
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this split'}?`} confirmLabel="Delete" tone="danger"
                        message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted Templates.'}
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deletePaymentTemplate(template.id).then(() => { snackbar({ message: 'Template deleted' }); router.push('/company/templates/payments') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deletePaymentTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/payments') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>

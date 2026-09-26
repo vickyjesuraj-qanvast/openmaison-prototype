@@ -25,7 +25,12 @@ const nextConfig: NextConfig = {
    * demo's talking pauses (REG-238 — a tab explained for a minute went stale and the next hop refetched). Safe here
    * because every mutation goes through a server action that calls `revalidatePath`, which evicts these entries regardless.
    */
-  experimental: { staleTimes: { dynamic: 300, static: 300 } },
+  experimental: {
+    staleTimes: { dynamic: 300, static: 300 },
+    /* (REG-673) The AI Visualizer saves renders and room photos through server actions as data URLs (up to three versions of a
+       1600 px photo per Generate); the 1 MB default refused them. */
+    serverActions: { bodySizeLimit: '12mb' },
+  },
 
   transpilePackages: ['@openmaison/react'],   // @openmaison/icons is unused: the prototype renders Material Symbols (audit 2026-08-30)
 

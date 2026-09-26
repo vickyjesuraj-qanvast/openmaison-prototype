@@ -2,7 +2,7 @@
    (move-stage/fields.module.css), shared by every other chip group — 32 tall, subheading-s, the on-surface-border stroke. */
 .chips { display: flex; flex-wrap: wrap; gap: var(--om-spacing-3); }
 .chip {
-  display: inline-flex; align-items: center; height: 32px;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-2); height: 32px;
   padding: 0 var(--om-spacing-3);
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1);
@@ -11,10 +11,15 @@
   cursor: pointer; white-space: nowrap;
   transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
 }
-.chip:hover { background: var(--om-color-hover-04p); }   /* outlined-control hover (interaction-states.md) */
+/* outlined-control hover (interaction-states.md) — a pointer's only, so a tap never leaves it behind (F152) */
+@media (hover: hover) { .chip:hover:not(:disabled) { background: var(--om-color-hover-04p); } }
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
+/* (audit 2026-09-26, F050) a colour chip wears its colour: a 12px dot before the words. */
+.swatch { flex-shrink: 0; width: 12px; height: 12px; border-radius: var(--om-radius-full); border: var(--om-border-1) solid var(--om-color-overlay-20p); background: var(--chip-sw); background-size: cover; background-position: center; }
 /* Read-only (836:23276's disabled state, as the Move stage window's chips): nothing reacts. */
 .chip:disabled { cursor: default; color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); background: var(--om-color-surface-default); }
+.chip:disabled .swatch { opacity: 0.5; }
 .chip[data-selected]:disabled { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
 /* (REG-273 / REG-307) A finger's 44px floor. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .chip { height: auto; min-height: 44px; } }

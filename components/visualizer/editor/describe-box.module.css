@@ -1,0 +1,46 @@
+/* Describe a change (REG-679): the house field's box and type, two lines by default and growing with the words; the mic inside it.
+   The box is drawn on the field around the textarea, not on the textarea: a textarea shows its overflowing lines in its own padding,
+   so a box resting on one line cut the second line in half (the placeholder's "warmer evening light"). With the padding outside the
+   scroller every height is whole lines — 20px each — and nothing peeks. */
+.box { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.label { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+/* (F145) The tray's box: the caption steps out of sight (still the textarea's name) — its placeholder says what the box is for. */
+.box[data-compact] .label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.field { position: relative; display: flex; padding: 9px 44px 9px var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); cursor: text; transition: border-color var(--motion-hover), box-shadow var(--motion-hover); }
+.input { display: block; flex: 1; min-width: 0; width: 100%; min-height: 40px; max-height: 100px; field-sizing: content; resize: none; margin: 0; padding: 0; border: 0; border-radius: 0; outline: none; background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); transition: min-height var(--motion-hover), max-height var(--motion-hover); }
+.input::placeholder { color: var(--om-color-on-surface-secondary); }
+@media (hover: hover) { .field:hover { border-color: var(--om-color-on-surface-default); } }
+.field:has(.input:focus) { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
+.field:has(.input:disabled) { border-color: var(--om-color-surface-variant); cursor: default; }
+.input:disabled { color: var(--om-color-on-surface-disabled); }
+.mic { position: absolute; right: 3px; bottom: 3px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--om-radius-full); background: none; color: var(--om-color-on-surface-secondary); cursor: pointer; }
+@media (hover: hover) { .mic:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
+.mic:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.box[data-listening] .mic { background: var(--om-color-tertiary-red-default); color: var(--om-color-surface-default); animation: listen 1.2s ease-in-out infinite; }
+.box[data-listening] .field { border-color: var(--om-color-tertiary-red-default); box-shadow: inset 0 0 0 1px var(--om-color-tertiary-red-default); }
+@keyframes listen { 50% { box-shadow: 0 0 0 6px rgba(192, 0, 0, 0.18); } }
+/* (F062 · F145) One line at rest where room is short — the laptop's short screen, the tray ≤1024 (the only place the box shows at
+   that width) or a `compact` box: 40px, the words scroll inside it; focused (or listening) it opens up. The mic sits centred on the
+   one line. */
+@media (max-height: 860px) and (min-width: 1025px) {
+  .box:not([data-listening]) .input:not(:focus) { min-height: 20px; max-height: 20px; }
+  .box:not(:has(.input:focus)):not([data-listening]) .mic { bottom: 1px; }
+}
+@media (max-width: 1024px) {
+  .input { min-height: 20px; max-height: 60px; }
+  .box:not([data-listening]) .input:not(:focus) { max-height: 20px; }
+  .box:not(:has(.input:focus)):not([data-listening]) .mic { bottom: 1px; }
+}
+.box[data-compact] .input { min-height: 20px; max-height: 60px; }
+.box[data-compact]:not([data-listening]) .input:not(:focus) { max-height: 20px; }
+.box[data-compact]:not(:has(.input:focus)):not([data-listening]) .mic { bottom: 1px; }
+/* (F016) 800px tall or less: the box rests on one 36px line; it opens while focused (or listening) and keeps two lines once it holds
+   words, so what was typed stays readable without a click. */
+@media (min-width: 768px) and (max-height: 800px) {
+  .field { padding-top: 7px; padding-bottom: 7px; }
+  .box .input, .box[data-compact] .input { min-height: 20px; }
+  .box:not([data-listening]):not([data-filled]) .input:not(:focus) { max-height: 20px; }
+  .box[data-filled]:not([data-listening]) .input:not(:focus) { max-height: 40px; }
+  .box:not(:has(.input:focus)):not([data-listening]):not([data-filled]) .mic { bottom: -1px; }
+}
+@media (prefers-reduced-motion: reduce) { .box[data-listening] .mic { animation: none; } .input, .field { transition: none; } }

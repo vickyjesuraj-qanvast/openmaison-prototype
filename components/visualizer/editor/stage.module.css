@@ -1,0 +1,116 @@
+/* The AI Visualizer canvas (REG-673): the surface-bg stage the template editor's pages sit on; the photo in a white-edged frame; markers
+   as 1.0 drew them (squares for surfaces, circles for furniture) in 2.0's colours; the file viewer's zoom bar at the bottom centre. */
+/* The area's top / bottom padding (set inline) is the room the version chip and the zoom bar take, so the photo fits between them. */
+.area { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--om-color-surface-bg); box-sizing: border-box; padding-inline: var(--viz-inset-l, 0px) var(--viz-inset-r, 0px); }
+.area[data-mode='place'] .frame, .area[data-mode='pin'] .frame, .area[data-mode='draw'] .frame { cursor: crosshair; }
+.viewport { display: flex; align-items: center; justify-content: center; transition: transform var(--motion-toggle); transform-origin: center; }
+/* While a finger or the mouse pans or pinches, the photo follows the hand with no easing. */
+.viewport[data-live] { transition: none; }
+.viewport[data-grab] .frame { cursor: grab; }
+.viewport[data-grab][data-live] .frame { cursor: grabbing; }
+/* The photo owns its touch gestures (one-finger pan once zoomed, two-finger pinch) — the editor never scrolls behind it. */
+.frame { position: relative; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-2); background: var(--om-color-surface-variant); overflow: hidden; color: var(--om-color-primary-default); touch-action: none; }
+.frame:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.photo, .fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; }
+.fill { pointer-events: none; }
+/* The before / after slider takes presses (the passive overlays above do not). */
+.compare { position: absolute; inset: 0; width: 100%; height: 100%; }
+.markers { display: contents; }
+/* (verify round 1) The lit region is a light wash with a rim, still — never a pulsing purple flood that reads as the new colour. The
+   stage's SVG filter (`rimId`) turns the region's soft mask into both; `.ink` gives it the brand colour. */
+.highlight { pointer-events: none; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ink { flood-color: var(--om-color-primary-default); flood-opacity: 1; }
+/* The picked finish over the lit region (set inline: `--tint` the colour, `--mask` the region's picture): each layer is the colour through
+   the region's soft alpha (~43% at its heart), and the two stack to ~2/3 — the choice reads, the room's light still shows through. */
+.tint { position: absolute; inset: 0; pointer-events: none; }
+.tint::before, .tint::after { content: ''; position: absolute; inset: 0; background: var(--tint); -webkit-mask: var(--mask) 0 0 / 100% 100% no-repeat; mask: var(--mask) 0 0 / 100% 100% no-repeat; }
+.chip { position: absolute; top: var(--om-spacing-4); left: calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); z-index: 3; }
+/* (verify round 1) The banner is centred across the whole stage (not from its middle, which capped it at half the width and wrapped it
+   into a blob): one line where it fits, the house radius when it must wrap. Presses pass through it to the photo — only Cancel takes
+   them — so a tap under the words still lands. Its top is set inline: beside the chip, or under it where the two would meet. */
+.banner { position: absolute; top: var(--om-spacing-4); left: var(--om-spacing-4); right: var(--om-spacing-4); margin-inline: auto; width: max-content; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 4; display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-inverse-surface-default); color: var(--om-color-surface-default); font: var(--om-type-body-m); box-shadow: var(--om-elevation-level-3); pointer-events: none; }
+.banner > :global(.msr), .banner > span:first-child { flex-shrink: 0; }
+.banner > span:nth-child(2) { min-width: 0; }
+.bannerCancel { flex-shrink: 0; pointer-events: auto; border: 0; background: none; color: #CCB2FF; font: var(--om-type-subtitle-m); cursor: pointer; padding: var(--om-spacing-1) var(--om-spacing-2); border-radius: var(--om-radius-1); }
+.bannerCancel:focus-visible { outline: var(--om-border-2) solid #CCB2FF; }
+/* Markers: a 16 px shape with a 36 px hit area (1.0's rule, B-46); selected grows with a ring; a picked finish fills a surface's square.
+   `scale` undoes the stage's zoom, so a marker (and a pin) stays its own size at 200 % and its hit area with it. */
+.dot { position: absolute; z-index: 2; translate: -50% -50%; scale: calc(1 / var(--z, 1)); width: 16px; height: 16px; padding: 0; border: 2px solid var(--om-color-surface-default); background: var(--fill, var(--om-color-primary-default)); box-shadow: 0 0 0 1px var(--om-color-overlay-20p), var(--om-elevation-level-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-surface-default); transition: width var(--motion-toggle), height var(--motion-toggle), box-shadow var(--motion-toggle); }
+.dot::before { content: ''; position: absolute; inset: -10px; }
+.dot[data-kind='surface'] { border-radius: var(--om-radius-1); box-shadow: 0 0 0 1px var(--om-color-overlay-40p), var(--om-elevation-level-2); }   /* a dark edge whatever the finish, so a white square still reads on a cream wall */
+.dot[data-kind='furniture'] { border-radius: var(--om-radius-full); background: var(--om-color-surface-default); border-color: var(--om-color-primary-default); }
+/* Hover grows a marker only where a pointer hovers — a tap on a touch screen leaves no stuck size (F152); kept here so the selected / action sizes below still win. */
+@media (hover: hover) { .dot:hover { width: 22px; height: 22px; } }
+.dot:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.dot[data-selected] { width: 24px; height: 24px; box-shadow: 0 0 0 4px rgba(85, 0, 255, 0.28), var(--om-elevation-level-3); }
+.dot[data-kind='furniture'][data-selected] { background: var(--om-color-primary-default); border-color: var(--om-color-surface-default); }
+.dot[data-action='remove'] { width: 22px; height: 22px; background: var(--om-color-tertiary-red-default); border-color: var(--om-color-surface-default); }
+.dot[data-action='customize'] { width: 22px; height: 22px; background: var(--om-color-tertiary-blue-default); border-color: var(--om-color-surface-default); }
+.dot[data-action='replace'] { width: 22px; height: 22px; background: var(--om-color-primary-default); border-color: var(--om-color-surface-default); }
+.dot[data-target] { width: 24px; height: 24px; background: var(--om-color-tertiary-red-default); animation: pulse 1s ease-in-out infinite; }
+/* (verify round 1) a thumbnail-sized photo (a short phone with a tray open) gets small dots — the 36px hit areas stay */
+.frame[data-small] .dot { width: 10px; height: 10px; border-width: 1.5px; }
+.frame[data-small] .dot :global(.msr) { display: none; }
+.frame[data-small] .dot[data-selected], .frame[data-small] .dot[data-action], .frame[data-small] .dot[data-target] { width: 14px; height: 14px; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(192, 0, 0, 0.25); } }
+.pin { position: absolute; z-index: 3; translate: -50% -50%; scale: calc(1 / var(--z, 1)); min-width: 26px; height: 26px; padding: 0 6px; border: 2px solid var(--om-color-surface-default); border-radius: var(--om-radius-full); background: var(--om-color-primary-default); color: var(--om-color-surface-default); font: var(--om-type-caption-s); font-weight: 700; cursor: pointer; box-shadow: var(--om-elevation-level-3); display: inline-flex; align-items: center; justify-content: center; }
+/* (F150) a 42px target round the 26px disc, as the client link's pins have */
+.pin::before { content: ''; position: absolute; inset: -8px; border-radius: var(--om-radius-full); }
+.pin[data-role='client'] { background: var(--om-color-tertiary-blue-default); }
+.pin[data-resolved] { background: var(--om-color-tertiary-green-default); }
+.pin[data-active] { box-shadow: 0 0 0 4px rgba(85, 0, 255, 0.28), var(--om-elevation-level-3); }
+.pin:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+/* The progress card (Quote X-Ray's, REG-529) over the dimmed stage — outside the zoomed frame, so it is never scaled or clipped. */
+.running { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; background: var(--om-color-overlay-40p); backdrop-filter: blur(2px); }
+.runCard:focus { outline: none; }
+.runCard { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-6); min-width: 300px; max-width: calc(100% - 32px); max-height: calc(100% - 32px); overflow-y: auto; box-sizing: border-box; border-radius: var(--om-radius-3); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-4); text-align: center; }
+.runGlyph { width: 56px; height: 56px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+.runTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
+.bar { width: 100%; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); overflow: hidden; }
+.barFill { display: block; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1); }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--om-spacing-2); align-self: stretch; }
+.steps li { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.steps li[data-state='now'] { color: var(--om-color-on-surface-default); }
+.steps li[data-state='done'] .stepGlyph { color: var(--om-color-tertiary-green-default); }
+.steps li[data-state='now'] .stepGlyph { color: var(--om-color-primary-default); }
+.stepGlyph { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.stepDot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* The zoom bar (the file viewer's, 931:39855) with the canvas tools after a rule; never wider than the stage — it scrolls sideways at 320. */
+.toolbar { position: absolute; left: 50%; bottom: var(--om-spacing-4); translate: -50% 0; z-index: 5; max-width: calc(100% - 2 * var(--om-spacing-2)); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
+.toolbar::-webkit-scrollbar { display: none; }
+.toolbar > * { flex-shrink: 0; }
+.zoomLabel { min-width: 52px; height: 36px; border: 0; background: none; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); cursor: pointer; }
+@media (hover: hover) { .zoomLabel:hover { background: var(--om-color-hover-08p); } }
+.zoomLabel:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
+.rule { width: 1px; height: 24px; margin: 0 var(--om-spacing-1); background: var(--om-color-surface-variant); }
+.zoomStep { display: contents; }
+@media (prefers-reduced-motion: reduce) { .spin, .dot[data-target] { animation: none; } .viewport, .barFill { transition: none; } }
+@media (max-width: 767px) {
+  .toolbar { bottom: var(--om-spacing-3); gap: 0; padding: var(--om-spacing-1); } .runCard { min-width: 0; width: calc(100% - 32px); padding: var(--om-spacing-5); }
+  /* a phone's banner is a card, not a pill, when it wraps — body-s keeps it to one or two lines */
+  .banner { border-radius: var(--om-radius-2); font: var(--om-type-body-s); }
+}
+/* (F142) the narrowest phones: − / + step aside and the rule goes, so the % label and the five tools fit 304px with no hidden button */
+@media (max-width: 359px) { .zoomStep, .rule { display: none; } .zoomLabel { min-width: 48px; } }
+/* (phone-1) A stage narrower than the whole bar (stage.tsx `compact`, by the stage's own width): − / + and the rule step aside (a pinch or
+   Ctrl + wheel zooms, the % fits) and Compare keeps its icon — its word stays its name — so every tool fits with nothing clipped. */
+.area[data-compact] .zoomStep, .area[data-compact] .rule { display: none; }
+.area[data-compact] .zoomLabel { min-width: 48px; }
+.area[data-compact] .toolbar button:not([data-variant]):not(.zoomLabel) { width: 36px; padding: 0; gap: 0; justify-content: center; font-size: 0; }
+/* (verify round 1) A short stage (`Fit` in stage.tsx): the bar keeps a small edge (`--edge`) — over the photo's bottom edge on the
+   shortest (`over`); the chip steps aside where it would cover the photo. */
+.area:is([data-fit='side'], [data-fit='over']) .toolbar { bottom: var(--edge, var(--om-spacing-2)); }
+.area[data-fit='over'] .toolbar[data-top] { bottom: auto; top: var(--edge, var(--om-spacing-2)); }   /* (round 3) a pin under it at the foot: the bar takes the top edge */
+/* (wave E · E3) `side`: the bar stands on end, a column beside the photo at the stage's right edge, centred on its height */
+.area[data-fit='side'] .toolbar { left: auto; right: calc(var(--edge, var(--om-spacing-2)) + var(--viz-inset-r, 0px)); top: 50%; bottom: auto; translate: 0 -50%; flex-direction: column; gap: var(--om-spacing-1); max-width: none; max-height: calc(100% - 8px); overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; padding: var(--om-spacing-1); }
+.area[data-fit='side'] .zoomLabel { min-width: 0; width: 36px; font: var(--om-type-caption-s); font-weight: 600; }
+.area[data-fit='side'] .rule { width: 24px; height: 1px; margin: var(--om-spacing-1) 0; }
+.chip[data-off] { visibility: hidden; }
+.area[data-fit='side'] .banner { border-radius: var(--om-radius-2); font: var(--om-type-body-s); }
+/* (surfaces-28) a sideways phone's banner is small: the short line, one row, in the photo's top-left corner (stage.tsx places it) */
+.area[data-sideways] .banner { width: max-content; border-radius: var(--om-radius-2); font: var(--om-type-body-s); gap: var(--om-spacing-1); padding: 2px 2px 2px var(--om-spacing-2); box-shadow: var(--om-elevation-level-2); }
+.area[data-sideways] .banner > span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.area[data-sideways] .bannerCancel { font: var(--om-type-subtitle-s); font-weight: 600; }

@@ -122,6 +122,15 @@ export async function leadMemberIds(leadId: string): Promise<string[]> {
   const rows = await db.select({ memberId: leadAssignees.memberId }).from(leadAssignees).where(eq(leadAssignees.leadId, leadId))
   return rows.map((r) => r.memberId)
 }
+/** (D2, verify round 1) Who hears a client's answer on shared renders (render_feedback) and gets their call back: the lead's members and
+    whoever shared the link — the page names the sharer ("Dane will call you back"), so the sharer hears it too; once each. A link with no
+    lead and a sharer who has left falls back to the studio's Owners and Admins. */
+export async function renderFeedbackIds(link: { leadId: string | null; createdBy: string | null }): Promise<string[]> {
+  const leadIds = link.leadId ? await leadMemberIds(link.leadId) : []
+  const sharer = link.createdBy ? (await db.select({ id: members.id }).from(members).where(and(eq(members.id, link.createdBy), eq(members.isActive, true))))[0]?.id ?? null : null
+  const to = [...new Set([...leadIds, ...(sharer ? [sharer] : [])])]
+  return to.length ? to : studioRunnerIds()
+}
 export async function studioRunnerIds(): Promise<string[]> {
   const rows = await db.select({ id: members.id }).from(members).where(and(inArray(members.role, ['Owner', 'Admin']), eq(members.isActive, true)))   // (REG-646)
   return rows.map((r) => r.id)

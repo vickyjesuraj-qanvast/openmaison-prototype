@@ -62,6 +62,9 @@ export function usableViewportHeight(): number {
   return window.innerHeight - dock
 }
 
+/** (audit 2026-09-26, E3) A phone held sideways: short and wide — the AI Visualizer's landscape layout, and menus that open as a bottom sheet there. */
+export const PHONE_SIDEWAYS = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)'
+
 export function useMediaQuery(query: string): boolean {
   const { subscribe, get } = api(query)
   return useSyncExternalStore(subscribe, get, desktop)

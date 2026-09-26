@@ -14,6 +14,8 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { CompanyShell } from './company-shell'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { saveBrand } from '@/app/company/templates-actions'
+import { reasonOf, settle } from './templates/refusal'
+import { couldnt } from '@/components/leads/tasks/use-run'
 import { EMPTY_ENTITY, SOCIAL_LABEL, type IssuingEntity, type SocialKey, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import type { BrandSetting } from '@/lib/templates/brand'
@@ -75,9 +77,9 @@ export function ProfileView({ brand, previewDesign, previewName, sample, from, c
     setBusy(true)
     try {
       const next = { ...details, entities: entities.map((e, i) => (i === 0 ? { ...e, name: details.name } : e)) }
-      await saveBrand({ details: next }); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })   // (REG-646) its own half only
+      await settle(saveBrand({ details: next })); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })   // (REG-646) its own half only
     }
-    catch { snackbar({ message: 'Couldn’t save the company details — please try again' }) }
+    catch (e) { snackbar({ message: couldnt('save the company details', reasonOf(e)) }) }   // (wave E, E7) a refusal answers { error: the rule }
     finally { setBusy(false) }
   }
   const discard = () => setDetails(saved)

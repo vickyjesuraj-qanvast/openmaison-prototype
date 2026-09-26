@@ -1,0 +1,72 @@
+{
+  "done": [
+    {
+      "ids": ["engine-paint report-2 notDone: rug tone under the sofa after Remove + rug Customize", "surfaces-2", "tablet-9"],
+      "what": "Sofa Remove + rug Customize in one Generate: the laid rug by the table's leg now reads as the shaded rug beside the throw. Navy is L15 against L14 (was L19 against L14), and the plain rug is the same. Four changes in engine/mend weaveFill. (1) The rug's colour is its ONE colour as it reads beside the hidden part: the middle of the rug that shows within ~100 px, with a standing piece's traced shade left out. Before, a colour per row was read off the rug's clear far end, which laid the shade by the throw as a slanted band and made the laid rug lighter. (2) The light it lies in is read beside it close up (over a few ribs) and carried into the laid part the way light falls in the picture: wide, short reaches, nearest weighted most, fading over ~150 px. At the join the laid rug is the rug beside it. (3) The table's shade step now reaches down as far as its shadow lies on the rug beside the throw, in the shadow's warm colour (`tint`), softened over everything laid (`soft`, `shadeReach`: the rug woven under it too). (4) Weave blocks are evened out (their own brightness taken out) and are never cut from a shade (`source_` stays out of a standing piece's shade and the band the sofa threw). A standing piece's shade at the join stays the photo's own (the table's). The lighter slab at the laid rug's front-left is gone too.",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["final-engine new issue 0: Remove the fig erases the TV console's cast shadow"],
+      "what": "The console now has a traced `casts` (its shade on the wall right of its end, from the speaker's corner down, fading out before the fig's pot). In lift, a kept piece's traced shade stays wherever it isn't under the lifted piece itself, and its edge fades into the plate (~16 px). Taken out itself, the console still takes its shade with it. Fig Remove: the wall right of the console reads L36 against the photo's L36 (was L63, flat).",
+      "files": ["lib/visualizer/samples.ts", "lib/visualizer/engine/run.ts"]
+    },
+    {
+      "ids": ["final-engine new issue 2: after a sofa Remove the rebuilt coffee-table top's front edge is a pale, stair-stepped strip"],
+      "what": "The table's `along` step now reads off all of the table that shows along its front line (`wide`: the lip left of where the throw hung), not only its traced area, which had nothing showing, so the plate's pale floor stayed. The area's lower edge now follows the lip. The top reads as oak with one straight lip; the stair-steps are gone at 2x.",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["final-engine polish: tan rim on the throw's corner after the coffee table Remove"],
+      "what": "Where a piece in front borders the lifted piece, a rim pixel (2 px deep) goes with the lifted piece if its colour reads nearer the lifted piece close by than the front piece (`rimOf` in run.ts). That is the throw's corner blended with the table's oak. A rim that reads as itself stays (the console top under the TV). The tan rim round the throw's corner is gone at 12x.",
+      "files": ["lib/visualizer/engine/run.ts"]
+    },
+    {
+      "ids": ["final-engine polish: stepped TV bottom edge after the console Remove"],
+      "what": "A piece that stood on the lifted one (the TV on the console, `restsOn`) keeps all of its traced outline except its feet. Before, its bottom 3 px were cut back to the console's rim in steps. The TV's lit bottom bezel strip runs along its bottom edge again.",
+      "files": ["lib/visualizer/engine/run.ts"]
+    },
+    {
+      "ids": ["surfaces-12 (demo)"],
+      "what": "Demo re-rendered at the end, after waveF/engine-paint-report-3.json appeared. V2 and the golden-hour version are byte-identical to the render made earlier this round (which carried report-2's rug-edge floor line, 528 px, max ΔRGB 30, invisible at 1x). The Remove work doesn't touch V2 (an edit with a sofa Customize, no Remove), and engine-paint's round 3 doesn't either. Swatches are in step (#604337, #81623E).",
+      "files": ["public/visualizer/demo/living-room-edit.jpg", "public/visualizer/demo/living-room-edit-golden-hour.jpg"]
+    },
+    {
+      "ids": ["surfaces-2"],
+      "what": "scripts/viz/remove-test.mts has 11 checks now. Added: 'Sofa out + rug Customize: the laid rug by the table's leg is in the shade the rug beside it has' (fails before: L19 against L14), and 'Fig out: the console's shade on the wall right of it stays' (fails before: L63 against L36). The two sofa-rug checks read below the table's shadow, which now lies on the laid rug as it does on the rug beside the throw.",
+      "files": ["scripts/viz/remove-test.mts"]
+    }
+  ],
+  "notDone": [
+    {
+      "ids": ["final-engine polish: a small patch of rug weave among the throw's fringe tips after the rug Remove (≈12×16 px, 3x+)"],
+      "why": "Neither colour nor lightness tells the rug's lit binding from the fringe strands there (both beige, L ≈ 32–41). A lightness cut-off was tried and made no visible difference, so I reverted it. The verifier calls it fringe on screen. Fixing it properly would need the strands traced one by one."
+    },
+    {
+      "ids": ["(own find) a thin light line under the coffee table's front-left edge after the sofa Remove (x≈0.47–0.52, 2x)"],
+      "why": "Older than this round (it is in the round-start render) and not flagged. It is the sofa's lit top rim caught inside the table's traced outline. Tracing the table's front underside up to the rail would clear it; left for a later pass, since the table's front edge was just reworked."
+    }
+  ],
+  "crossFileRequests": [
+    {
+      "file": "design-source/verify/ai-visualizer/remove-wave-f/",
+      "change": "Bank /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveF/engine-remove/g/shots/: sheet-g0-final.jpg (12 cases, this round's start left, now right), rug-g0-g15.png (plain and navy rug, before and after), fig-g21.png (the console's wall shade kept), table2x.png and tabletop8c.png (the table top's front edge), throwcorner3.png, tvbottom.png, and the full-size renders.",
+      "ids": ["surfaces-2", "surfaces-29"]
+    }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-nnn (wave F, surfaces-2) AI Visualizer › Remove the sofa and recolour the rug in one Generate: the rug laid where the sofa stood takes the rug's shade beside the throw and the table's shadow runs across it. No lighter patch; the plain rug is the same. Source: bug fix.",
+    "REG-nnn (wave F, final engine) AI Visualizer › Remove the fiddle leaf fig: the TV console keeps its own shadow on the wall beside it. Source: bug fix.",
+    "REG-nnn (wave F, final engine) AI Visualizer › Remove the sofa: the coffee table's top keeps a straight oak front edge where the throw hung. No pale stair-stepped strip. Source: bug fix.",
+    "REG-nnn (wave F, final engine) AI Visualizer › Remove the coffee table / the TV console: no tan rim round the throw's corner, and the TV keeps its lit bottom edge. Source: bug fix."
+  ],
+  "verification": "npx tsc --noEmit -p . clean. npx eslint clean on mend.ts, run.ts, samples.ts, remove-test.mts, demo-renders.mts and demo.ts. scripts/viz/remove-test.mts: 14 cases, all 11 checks pass, run after every change and again after engine-paint's report-3 (the renders are byte-identical before and after their round 3). scripts/viz/render-test.mts: all checks pass. I looked at every changed render full size and at 1.5–14x against the photo and this round's start. Rug, plain and navy: whole-rug sheets at 1.5x, the join at 3x, the laid rug's front edge at 6x, and a low-frequency lightness map of the navy rug. Sofa+table and coffee table: the table's shadow patch at 3x; the tone step across its edge is now ≤1.4 L, and was 2.8–3.3. Fig: the console's shadow at 2.5x and 7x. Table top front edge at 2x and 7x. Throw corner at 12x. TV bottom at 6x. Armchair and rug side effects of the rim change at 6x (a 2–3 px fleck at the chair post under the left pillow, 6x only). Measured: the navy laid rug by the leg is L15 vs L14 beside it. Plain row slabs either side of the join are within ~1–2 L, except under the table top, which is meant to be darker. Demo re-rendered after report-3: byte-identical to this round's earlier render, swatches in step.",
+  "checkOnBuild": [
+    "Living room › Remove Grey Fabric Sofa + Jute Area Rug › Customize (Navy) in one Generate: the laid rug by the coffee table's right leg is as dark as the rug beside the throw. The table's shadow runs across the laid rug; no lighter patch or slab.",
+    "Living room › Remove Grey Fabric Sofa: the table top's front edge where the throw hung reads as oak with one straight lip at 2x. The rug under the table's front is in shade to the same depth as beside the throw.",
+    "Living room › Remove Fiddle Leaf Fig: the console keeps its shadow on the wall to its right, fading out before where the pot stood.",
+    "Remove Oak Coffee Table: no tan rim round the throw's corner at 3x+. Remove Oak TV Console: the TV's bottom edge has its thin lit strip, with small notches only where the feet were (6x).",
+    "Known leftovers, zoom only: a small patch of rug weave among the fringe tips after the rug Remove; a thin light line under the table's front-left after the sofa Remove (older); a 2–3 px fleck at the armchair post under the left pillow after the armchair Remove (6x).",
+    "Demo: V2 / golden-hour pictures unchanged by this round's last engine work (hard reload if the build still shows an older render)."
+  ]
+}

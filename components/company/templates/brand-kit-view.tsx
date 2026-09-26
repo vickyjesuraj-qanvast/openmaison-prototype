@@ -10,11 +10,14 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell, templateTabs } from '../company-shell'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { saveBrand } from '@/app/company/templates-actions'
+import { reasonOf, settle } from './refusal'
+import { couldnt } from '@/components/leads/tasks/use-run'
 import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLES, FONT_ROLE_LABEL, type BrandKit, type ColorKey, type FontRole, type TemplateDesign } from '@/lib/templates/model'
 import type { BrandSetting } from '@/lib/templates/brand'
 import { DEMO_BADGES, stampSvg } from '@/lib/templates/assets'
 import type { DocData } from '@/lib/templates/data'
 import { readFileAsDataUrl } from '@/lib/templates/files'
+import { hexOf, hexTyped } from '@/lib/format'
 import styles from '../profile-view.module.css'
 import { ReadOnlyScope } from '@/components/om/read-only'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
@@ -33,27 +36,38 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
   const [saved, setSaved] = useState<BrandKit>(brand.kit)
   const [busy, setBusy] = useState(false)
   const details = brand.details
-  const dirty = JSON.stringify(kit) !== JSON.stringify(saved)
   const logoInput = useRef<HTMLInputElement>(null)
   const stampInput = useRef<HTMLInputElement>(null)
   const badgeInput = useRef<HTMLInputElement>(null)
 
   const save = async () => {
+    /* (F121) a colour box still holding a half-typed value says so rather than saving the colour it had before */
+    const bad = Object.keys(colorDraft).filter((k) => !hexOf(colorDraft[k]!))
+    if (bad.length) { setColorShown((d) => ({ ...d, ...Object.fromEntries(bad.map((k) => [k, true])) })); return }
     setBusy(true)
-    try { await saveBrand({ kit });   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
-    catch { snackbar({ message: 'Couldn’t save the brand kit — please try again' }) }
+    try { await settle(saveBrand({ kit }));   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
+    catch (e) { snackbar({ message: couldnt('save the brand kit', reasonOf(e)) }) }   /* (wave E, E7) a refusal answers { error: the rule } — said, never "saved" */
     finally { setBusy(false) }
   }
-  const discard = () => setKit(saved)
+  const discard = () => { setKit(saved); setColorDraft({}); setColorShown({}) }
   const pick = async (input: HTMLInputElement | null, apply: (urls: string[]) => void, max = 1600) => {
     const files = Array.from(input?.files ?? [])
     if (input) input.value = ''
     if (!files.length) return
     apply(await Promise.all(files.map((f) => readFileAsDataUrl(f, max))))
   }
-  const hex = (v: string) => (/^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : null)
-  /* Drafts for the typed fields: the kit only takes a valid value, the box keeps what was typed until then. */
+  /* Drafts for the typed fields: the kit only takes a valid value, the box keeps what was typed until then. (F121) A colour is typed as
+     the house reads one (`hexTyped` drops what isn't hex; `hexOf` reads three or six digits), the same way as the Materials colour field;
+     a half-typed colour stays in its box with its error once the box is left, rather than jumping back. */
   const [colorDraft, setColorDraft] = useState<Record<string, string>>({})
+  const [colorShown, setColorShown] = useState<Record<string, boolean>>({})
+  /* (audit 2026-09-26) a half-typed colour is an unsaved change — Discard clears it and Save shows the field's error */
+  const dirty = JSON.stringify(kit) !== JSON.stringify(saved) || Object.keys(colorDraft).length > 0
+  const setColour = (key: ColorKey, h: string) => {
+    setKit((k) => ({ ...k, colors: { ...k.colors, [key]: h } }))
+    setColorDraft((d) => { const n = { ...d }; delete n[key]; return n })
+    setColorShown((d) => { const n = { ...d }; delete n[key]; return n })
+  }
   const [sizeDraft, setSizeDraft] = useState<Record<string, string>>({})
   /* Unsaved edits are not lost to a tab or a reload without a word (checklist: discarding edits asks first). */
   useEffect(() => {
@@ -127,12 +141,22 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
               {COLOR_KEYS.map((key: ColorKey) => (
                 <div key={key} className={styles.colour}>
                   <label className={styles.swatch} style={{ background: kit.colors[key] }}>
-                    <input type="color" value={kit.colors[key]} aria-label={`${COLOR_LABEL[key]} colour`} onChange={(e) => setKit((k) => ({ ...k, colors: { ...k.colors, [key]: e.target.value.toUpperCase() } }))} />
+                    <input type="color" value={kit.colors[key]} aria-label={`${COLOR_LABEL[key]} colour`} onChange={(e) => setColour(key, e.target.value.toUpperCase())} />
                   </label>
                   <div className={styles.colourField}>
-                    <TextField label={COLOR_LABEL[key]} value={colorDraft[key] ?? kit.colors[key]} maxLength={7} error={colorDraft[key] !== undefined && !hex(colorDraft[key]!) ? 'Six hex digits, like #5500FF' : undefined}
-                               onChange={(v) => { const h = hex(v); setColorDraft((d) => ({ ...d, [key]: v })); if (h) { setKit((k) => ({ ...k, colors: { ...k.colors, [key]: h } })); setColorDraft((d) => { const n = { ...d }; delete n[key]; return n }) } }}
-                               onBlur={() => setColorDraft((d) => { const n = { ...d }; delete n[key]; return n })} />
+                    <TextField label={COLOR_LABEL[key]} value={colorDraft[key] ?? kit.colors[key]} maxLength={7}
+                               error={colorShown[key] && colorDraft[key] !== undefined && !hexOf(colorDraft[key]!) ? 'Six hex digits, like #5500FF' : undefined}
+                               onChange={(v) => {
+                                 const t = hexTyped(v), h = hexOf(t)
+                                 if (h && t.replace('#', '').length === 6) setColour(key, h)   // six digits land at once; three wait for the box to be left
+                                 else setColorDraft((d) => ({ ...d, [key]: t }))
+                               }}
+                               onBlur={() => {
+                                 const t = colorDraft[key]; if (t === undefined) return
+                                 const h = hexOf(t)
+                                 if (h) setColour(key, h)
+                                 else setColorShown((d) => ({ ...d, [key]: true }))
+                               }} />
                   </div>
                 </div>
               ))}

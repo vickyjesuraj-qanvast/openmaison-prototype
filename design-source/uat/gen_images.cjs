@@ -20,7 +20,8 @@ const label = (x, y, s, size = 22, fill = '#fff') => `<text x="${x}" y="${y}" fo
   /* Fluted feature wall panel — vertical oak slats. */
   let slats = ''
   for (let i = 0; i < 40; i++) slats += `<rect x="${i * 20}" y="0" width="14" height="600" fill="${i % 2 ? '#B98A55' : '#C49766'}"/><rect x="${i * 20 + 14}" y="0" width="6" height="600" fill="#7A5634"/>`
-  await sharp(svg(800, 600, `<rect width="800" height="600" fill="#A67C4E"/>${slats}<rect x="0" y="540" width="800" height="60" fill="rgba(0,0,0,0.45)"/>${label(24, 580, 'Fluted feature wall panel (sample photo)')}`)).jpeg({ quality: 82 }).toFile(path.join(OUT, 'fluted-panel.jpg'))
+  /* (audit 2026-09-26, the UAT walk) a swatch photo is the material alone — a caption strip tiled as dark bands across the walls */
+  await sharp(svg(800, 600, `<rect width="800" height="600" fill="#A67C4E"/>${slats}`)).jpeg({ quality: 82 }).toFile(path.join(OUT, 'fluted-panel.jpg'))
 
   /* Sophia's living room — a simple illustration. */
   await sharp(svg(1200, 800, `<rect width="1200" height="800" fill="#EDE6DA"/><rect y="560" width="1200" height="240" fill="#C9B79C"/>

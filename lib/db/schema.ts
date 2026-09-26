@@ -780,6 +780,13 @@ export const leadFiles = sqliteTable(
   (t) => [index('lead_files_lead_idx').on(t.leadId)],
 )
 
+/** (REG-684) The picture an upload carried — kept beside its file, so a query of the files never carries it; the file's `thumb` is its
+    address, /files/img/<id>. */
+export const leadFileImages = sqliteTable('lead_file_images', {
+  fileId: text('file_id').primaryKey().references(() => leadFiles.id, { onDelete: 'cascade' }),
+  data: text('data').notNull(),
+})
+
 /** Notes tab (931:44865): a free note or a contact log, in creation order. */
 export const leadNotes = sqliteTable(
   'lead_notes',
@@ -1141,3 +1148,196 @@ export const libraryFolders = sqliteTable(
   (t) => [index('library_folders_library_idx').on(t.library)],
 )
 export type LibraryFolder = typeof libraryFolders.$inferSelect
+
+/* ── AI Visualizer (REG-673, parity audit 16 §4) ─────────────────────────────────────────────────────────────────────────────────
+   1.0's tables kept by name where they fit 2.0 (project_rooms · render_jobs · render_share_links · render_consultation_requests ·
+   studio_materials); 1.0's derived designs + its JSON sessions became `visualizer_designs`, its portal pins `render_annotations`.
+   Images are data URLs for what a studio uploads or the engine makes, public paths for the sample rooms (§4.2) — served through
+   /visualizer/img so a page's payload carries addresses, not pictures. */
+
+/** A design: one per lead (made on first open, named after the lead) or a personal one (Q-03). */
+export const visualizerDesigns = sqliteTable(
+  'visualizer_designs',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull(),                  // lead | personal
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),                  // a lead's design shows the lead's name
+    folderId: text('folder_id'),                   // library_folders (library `visualizer`) — personal designs only (Q-04)
+    customJson: text('custom_json'),               // the design's own swatches (1.0's session customs): [{ id, name, hex, imageUrl, category, finish }]
+    createdBy: text('created_by').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+    deletedBy: text('deleted_by'),
+    /* (audit 2026-09-26, F115) A personal copy of a lead's design keeps the lead it came from: the copy carries the client's photos, so it
+       follows Who sees leads as the original does. No foreign key — a lead deleted for good leaves its copies to Owners and Admins. */
+    sourceLeadId: text('source_lead_id'),
+  },
+  /* (audit 2026-09-26, F215) one lead design per lead — two first opens at once can't make a second */
+  (t) => [index('visualizer_designs_lead_idx').on(t.leadId), uniqueIndex('visualizer_designs_lead_one_idx').on(t.leadId).where(sql`kind = 'lead'`)],
+)
+export type VisualizerDesign = typeof visualizerDesigns.$inferSelect
+
+/** 1.0's `project_rooms`: a room — one photo in a design, with its reading and the work waiting on it. */
+export const projectRooms = sqliteTable(
+  'project_rooms',
+  {
+    id: text('id').primaryKey(),
+    designId: text('design_id').notNull().references(() => visualizerDesigns.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id'),                       // 1.0's column: the design's lead
+    projectId: text('project_id'),                 // 1.0's column: null until Projects
+    name: text('name').notNull(),
+    originalImageUrl: text('original_image_url'),  // the Original — a public path or a data URL
+    sampleKey: text('sample_key'),                 // a sample room (lib/visualizer/samples.ts): its curated reading and finished renders
+    sourceFileId: text('source_file_id'),          // the lead file it was opened from (Q-31)
+    detectionJson: text('detection_json'),         // Detection — the reading and every manual add (Q-07)
+    stateJson: text('state_json'),                 // Pending — the picks waiting for Generate, autosaved (Q-07)
+    /* (audit 2026-09-26, F200) the reference and piece photos the studio added, { id: data URL } — read only by /visualizer/img/a/{room}/{id};
+       the state carries their addresses, so a page and an autosave never carry the pictures */
+    assetsJson: text('assets_json'),
+    /* (audit 2026-09-26, two tabs) the state's revision: an autosave writes only on the revision its tab last saw */
+    stateRev: integer('state_rev').notNull().default(0),
+    /* (audit 2026-09-26, F090) the room as it was before Change photo — its Undo puts it back */
+    priorPhotoJson: text('prior_photo_json'),
+    position: integer('position').notNull().default(0),
+    createdBy: text('created_by'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('project_rooms_design_idx').on(t.designId)],
+)
+export type ProjectRoom = typeof projectRooms.$inferSelect
+
+/** 1.0's `render_jobs`: one Generate. Its variants are the room's versions (V1, V2…), each with its parent and what it changed. */
+export const renderJobs = sqliteTable(
+  'render_jobs',
+  {
+    id: text('id').primaryKey(),
+    roomId: text('room_id').notNull().references(() => projectRooms.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id'),
+    projectId: text('project_id'),
+    model: text('model').notNull(),                // fast | high (1.0: the image model's id)
+    status: text('status').notNull().default('completed'),
+    kind: text('kind').notNull(),                  // edit | restyle | relight | transfer | empty | furnish | sketch | note
+    style: text('style'),                          // the descriptor the strip prints ("Japandi", "Edit · Modern", "Relit · Golden Hour")
+    variantsJson: text('variants_json').notNull(), // [{ id, n, imageUrl, materials[{label, material}], parentKey, applied, finishes, deletedAt? }]
+    createdBy: text('created_by'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('render_jobs_room_idx').on(t.roomId)],
+)
+export type RenderJob = typeof renderJobs.$inferSelect
+
+/** (audit 2026-09-26, F213) A version's picture, beside its job — `variants_json` keeps the address (/visualizer/img/v/{job}/{variant}), so
+    the gallery, the editor and Activity read a few hundred bytes a job, never the pictures. */
+export const renderImages = sqliteTable(
+  'render_images',
+  {
+    jobId: text('job_id').notNull().references(() => renderJobs.id, { onDelete: 'cascade' }),
+    variantId: integer('variant_id').notNull(),
+    data: text('data').notNull(),                  // a data URL
+  },
+  (t) => [uniqueIndex('render_images_key_idx').on(t.jobId, t.variantId)],
+)
+
+/** (audit 2026-09-26, F095 · F194) A render filed in the lead's Files › Renders: the version it is, by identity, not by name — Save to Files
+    finds it again after a rename, and Files opens that very version. No foreign key to the design: the file (and its own copy of the
+    picture, lead_file_images) outlives the design's Delete forever (F093). */
+export const leadFileRenders = sqliteTable(
+  'lead_file_renders',
+  {
+    fileId: text('file_id').primaryKey().references(() => leadFiles.id, { onDelete: 'cascade' }),
+    renderKey: text('render_key').notNull(),       // `${jobId}:${variantId}`
+    designId: text('design_id').notNull(),
+    roomId: text('room_id').notNull(),
+    n: integer('n').notNull(),                     // the version's number, V{n}, when it was filed
+  },
+  (t) => [index('lead_file_renders_key_idx').on(t.renderKey)],
+)
+export type LeadFileRender = typeof leadFileRenders.$inferSelect
+
+/** 1.0's `render_share_links`: one link to the client — the versions picked, frozen as they were sent (Q-14). */
+export const renderShareLinks = sqliteTable(
+  'render_share_links',
+  {
+    id: text('id').primaryKey(),
+    token: text('token').notNull(),
+    designId: text('design_id').notNull().references(() => visualizerDesigns.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id'),
+    snapshot: text('snapshot').notNull(),          // { versions: [{ key, roomId, roomName, label, imageUrl, beforeUrl, materials[] }] }
+    message: text('message'),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    viewCount: integer('view_count').notNull().default(0),
+    lastViewedAt: integer('last_viewed_at', { mode: 'timestamp' }),
+    sentVia: text('sent_via'),                     // whatsapp | copy
+    createdBy: text('created_by'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    revokedAt: integer('revoked_at', { mode: 'timestamp' }),
+  },
+  (t) => [uniqueIndex('render_share_links_token_idx').on(t.token), index('render_share_links_design_idx').on(t.designId)],
+)
+export type RenderShareLink = typeof renderShareLinks.$inferSelect
+
+/** 1.0's `render_consultation_requests`: what the client says on the link — a favourite, a note, a call back (Q-16). */
+export const renderConsultationRequests = sqliteTable(
+  'render_consultation_requests',
+  {
+    id: text('id').primaryKey(),
+    shareLinkId: text('share_link_id').notNull().references(() => renderShareLinks.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),                  // favourite | note | call_back
+    versionKey: text('version_key'),               // `${jobId}:${variantId}`
+    clientName: text('client_name'),
+    clientPhone: text('client_phone'),
+    message: text('message'),
+    taskId: text('task_id'),                       // the call back's Follow-up
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => [index('render_consultation_link_idx').on(t.shareLinkId)],
+)
+export type RenderConsultationRequest = typeof renderConsultationRequests.$inferSelect
+
+/** Pins on a version — 1.0's `homeowner_shared_assets.metadata.annotations[]`, off the portal: the studio's in the editor, the client's on the link (Q-15). */
+export const renderAnnotations = sqliteTable(
+  'render_annotations',
+  {
+    id: text('id').primaryKey(),
+    jobId: text('job_id').notNull().references(() => renderJobs.id, { onDelete: 'cascade' }),
+    variantId: integer('variant_id').notNull(),
+    x: real('x').notNull(),
+    y: real('y').notNull(),
+    body: text('body').notNull(),
+    status: text('status').notNull().default('open'),   // open | resolved
+    authorRole: text('author_role').notNull(),          // studio | client
+    authorMemberId: text('author_member_id'),
+    authorName: text('author_name').notNull(),
+    commentsJson: text('comments_json'),                // [{ id, authorRole, authorName, authorMemberId, body, createdAt }]
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  },
+  (t) => [index('render_annotations_job_idx').on(t.jobId)],
+)
+export type RenderAnnotation = typeof renderAnnotations.$inferSelect
+
+/** 1.0's `studio_materials`: the studio's own swatches — Company › Materials and the picker's *Your library* (Q-18). */
+export const studioMaterials = sqliteTable('studio_materials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  category: text('category').notNull(),
+  imageUrl: text('image_url'),                     // a swatch photo (data URL), or null for a colour
+  hex: text('hex').notNull(),                      // the colour a render uses (a photo's dominant colour)
+  finish: text('finish').notNull().default('matte'),
+  description: text('description'),
+  folderId: text('folder_id'),                     // library_folders (library `materials`)
+  priceBookItemId: text('price_book_item_id'),     // what it is quoted as (Q-17)
+  uploadedBy: text('uploaded_by'),
+  updatedBy: text('updated_by'),                   // (wave E, E5) whoever changed it last — the card's "edited … by"
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+})
+export type StudioMaterial = typeof studioMaterials.$inferSelect

@@ -8,6 +8,7 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
@@ -15,7 +16,9 @@ import { folderNameProblem, foldersIn, foldersUnder, trailTo, type FolderNode } 
 import styles from './move-dialog.module.css'
 
 /** Something listed for orientation under the folders (the Files tab's files, a library's templates) — never a destination. */
-export type MoveEntry = { id: string; name: string; parentId: string | null; thumb?: string | null }
+export type MoveEntry = { id: string; name: string; parentId: string | null; thumb?: string | null
+  /** (audit 2026-09-26, F127) A colour-only entry (a material with no photo): its swatch fills the thumb. */
+  swatch?: string | null }
 
 /**
  * Move dialog (931:39219 frame 100 · 101 inside a folder 931:39285 · 106 New Folder 931:39335 · 107 "Move 2 items") —
@@ -45,7 +48,7 @@ export type MoveEntry = { id: string; name: string; parentId: string | null; thu
  * folders gets no New Folder.
  */
 export function MoveDialog({
-  open, title, root, folders, entries = [], moving, current, onMove, onCreateFolder, onClose,
+  open, title, root, folders, entries = [], moving, current, onMove, onCreateFolder, onClose, note,
 }: {
   open: boolean
   /** Move “<name>” · Move n items */
@@ -64,6 +67,8 @@ export function MoveDialog({
   /** Creates the folder inside `parentId` and resolves with its id; omitted = no New Folder. */
   onCreateFolder?: (name: string, parentId: string | null) => Promise<string>
   onClose: () => void
+  /** (audit 2026-09-26, critic 14) What of the picked stays where it is, and why — said before the move, under the location row. */
+  note?: string | null
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const snackbar = useSnackbar()
@@ -117,8 +122,9 @@ export function MoveDialog({
       setFolderId(id)   // frame 106 → the new folder opens as the destination
       setCreating(false)
       setNewName(''); setTried(false)
-    } catch {
-      snackbar({ message: 'Couldn’t create the folder — please try again' })   // the tab's `fail` wording; the form stays open
+    } catch (e) {
+      /* the tab's `fail` wording; the form stays open. (wave E, E7) a refusal's rule (thrown by the host) says why instead of "please try again" */
+      snackbar({ message: couldnt('create the folder', refusalOf(e)) })
     } finally { setBusy(false) }
   }
   const cancelCreate = () => { setCreating(false); setNewName(''); setTried(false) }
@@ -150,6 +156,7 @@ export function MoveDialog({
                   <span className={styles.chipName}>{currentFolder ? currentFolder.name : root}</span>
                 </span>
               </div>
+              {note ? <p className={styles.note} role="note"><Icon name="info" size={16} weight={300} />{note}</p> : null}
             </div>
 
             <div className={styles.body}>
@@ -189,7 +196,7 @@ export function MoveDialog({
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={f.thumb} alt="" className={styles.thumb} width={24} height={18} />
                     ) : (
-                      <span className={styles.thumb} />
+                      <span className={styles.thumb} style={f.swatch ? { background: f.swatch, boxShadow: 'inset 0 0 0 1px var(--om-color-overlay-20p)' } : undefined} />
                     )}
                     <span className={styles.rowName}>{f.name}</span>
                   </div>

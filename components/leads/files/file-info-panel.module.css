@@ -28,6 +28,10 @@
    at ~34 characters. Owner and Location are stated nowhere else in the viewer, so they wrap instead of truncating —
    the info column's rule (components/leads/detail/info-column.module.css). Every mocked value is one line still. */
 .value { flex: 1; min-width: 0; margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+/* (F113) the From row's link to the render's version in the AI Visualizer */
+.link { color: var(--om-color-primary-default); text-decoration: none; border-radius: var(--om-radius-1); }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    ≤1024 the panel narrows to 320 (file-viewer.module.css), so the label column drops to 96 — still wider

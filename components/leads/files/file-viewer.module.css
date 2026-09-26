@@ -145,8 +145,6 @@
   box-shadow: inset var(--om-border-1) 0 0 var(--om-color-surface-variant);
 }
 
-/* Download folds into the kebab's menu at mobile (see the responsive block) — it renders nowhere else. */
-.mobileItem { display: none; }
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    Tablet (768–1024): the letterbox padding gives way first — 100/120 becomes 24/40 (24 beside an open
@@ -174,7 +172,6 @@
   .header::after { border-radius: 0; }
   .actions { gap: var(--om-spacing-4); }                       /* 24 → 16: three icons + the name fit one 56px row */
   .actionDownload { display: none; }
-  .mobileItem { display: contents; }                           /* the wrapper vanishes; its DropdownItem is a menu row */
   /* The stage is the viewport under the app bar and this header — no shell gutters at mobile. */
   /* (REG-347) The dock is fixed over this page too: without subtracting it the zoom bar sat behind the dock and
      none of its three buttons could be reached. */

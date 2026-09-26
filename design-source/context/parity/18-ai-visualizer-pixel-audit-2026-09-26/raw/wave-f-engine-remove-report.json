@@ -1,0 +1,63 @@
+{
+  "done": [
+    {
+      "ids": ["tablet-9", "surfaces-2", "surfaces-29"],
+      "what": "Remove the sofa: no join left in the rug below the coffee table's right front leg. There were two causes. (1) The sofa's traced outline stopped 5–8 px short of the throw's real right edge. That strip of throw edge and shade counted as 'rug that shows', so the weave matched a grey strip against the warm rug, with a notch at the leg's foot. The cut now follows the throw's edge, and the table's leg edge is traced down to it. (2) The weave lifted the visible rug next to the join out of the sofa's shade, which brightened the real side. Now the laid weave is colour-matched to the real rug along the join: the difference, smoothed along the join, is carried into the laid part and fades over about 60 px, with the rug's colour at the same depth deeper in. The table's shadow now runs on across the join. The quilting also takes its sources from near the hidden part and prefers nearer blocks, so the ribs keep the angle they have by the join (53°/48° either side against 57°/49° before). The throw's shade on the rug's binding under its fringe is traced (sofa `casts`).",
+      "files": ["lib/visualizer/engine/mend.ts", "lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2", "surfaces-29", "desktop round 3 new issue: Remove the coffee table, pale patch where the skirting should run"],
+      "what": "Remove the coffee table: the floor strip beside the TV console's left end now takes the floor's light, and the skirting line runs on. Before, it was lit like the wall above it (L69 against the floor's L59). The plate's light is now matched off the floor alone for the floor (`paste` gets `zones`, fed the plate's floor region, soft-edged). The table also takes its shadow on the rug below its right front leg (a traced `plate` and `casts`), so no dark patch is left under where the leg stood.",
+      "files": ["lib/visualizer/engine/recolor.ts", "lib/visualizer/engine/run.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["surfaces-2"],
+      "what": "Found while looking. (a) Remove the sofa + Customize the rug in one Generate painted the table's rebuilt left legs in the rug's colour (navy legs). This was there since wave E. What a piece rebuilds (legs, wood) now stands in front of a piece mended before it, so a finish on that piece keeps off it. (b) Remove the sofa and the table together: the rug weave no longer takes the table (still to come out) or its shade as rug. The weave reads the rug off the picture as it is now, so parts laid by an earlier removal in the same Generate count as rug. (c) Remove the rug: the faint arc left over the floor where the throw's outline ran is gone. The fringe zone reaches past the outline, and a pixel the outline only half covers is never kept as a strand. A lit bit of the rug's binding is no longer kept among the fringe strands. (d) A kept piece's rim that lay under the lifted piece, outside its traced steps (the table leg's side against the throw), is mended from its own pixels, never left as a sliver of plate. This applies only in the lifted piece's rim band and never to a piece the plate still shows. (e) The armchair's rebuilt seat reaches up over the pillow's rim, so there is no stub or pale dot beside its post.",
+      "files": ["lib/visualizer/engine/run.ts", "lib/visualizer/engine/mend.ts", "lib/visualizer/samples.ts"]
+    },
+    {
+      "ids": ["tablet-9", "surfaces-2", "surfaces-29"],
+      "what": "scripts/viz/remove-test.mts has two new measured checks, making 9: the rug laid under the sofa meets the rug by the table's leg in one tone, and the floor beside the console's end matches the floor beside it (the old render reads L69 against L59). The weaveFill signature dropped its unused photo argument.",
+      "files": ["scripts/viz/remove-test.mts", "lib/visualizer/engine/mend.ts"]
+    },
+    {
+      "ids": ["surfaces-12", "desktop round 3 new issue: sofa Customize slivers (engine-paint's fix)"],
+      "what": "Demo re-rendered (scripts/viz/demo-renders.mts) after waveF/engine-paint-report.json appeared: public/visualizer/demo/living-room-edit.jpg and -golden-hour.jpg. Kevin Ng's V2 now carries engine-paint's wave F sofa fix: no hairline up the beige cushion, no fleck on the armchair seat, no arc on the grey cushion, clean back-cushion tops. It also records 'Emerald velvet'. Swatches are unchanged and still match DEMO_EDIT (#604337, #81623E). A second run after my last change was byte-identical.",
+      "files": ["public/visualizer/demo/living-room-edit.jpg", "public/visualizer/demo/living-room-edit-golden-hour.jpg"]
+    }
+  ],
+  "notDone": [],
+  "crossFileRequests": [
+    {
+      "file": "lib/visualizer/samples.ts (the rug's Customize outline — engine-paint / integrator)",
+      "change": "A Customize of the jute rug, with or without a Remove, leaves a 1–3 px tan line along the rug's front edge and a fainter one on its right edge. The rug's lit binding and dark side lie just outside its `cut` front edge (0.654,0.932)→(0.848,0.989). The lit edge runs about (0.70,0.950)…(0.80,0.977)…(0.845,0.990); the dark side is 2–4 px below that. If the cut's front edge is moved down to it, move the rug's `plane` front corners (FL 0.39,0.855 · FR 0.848,0.989) the same way, because the laid rug's edge line follows them. Also move the light oak floor's cutout, which is the same polygon, so a new floor keeps off the binding. Re-run scripts/viz/remove-test.mts afterwards.",
+      "ids": ["surfaces-2"]
+    },
+    {
+      "file": "lib/visualizer/samples.ts (armchair Customize cutout — engine-paint)",
+      "change": "The armchair's cutout [0.3015–0.3125 × 0.5855–0.596] ('walnut arms', wave E surfaces-15) covers the arm's lit upholstered top as well as its thin wood rail. An upholstery Replace or Customize (after a sofa Remove too) leaves a pale ~10×6 px block at the arm's top-left. This is likely the verifier's surfaces-7 'pale sliver on the rebuilt left side'. Narrow it to the rail line (about y 0.5865–0.589).",
+      "ids": ["surfaces-7"]
+    },
+    {
+      "file": "design-source/verify/ai-visualizer/remove-wave-f/",
+      "change": "Bank /private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveF/engine-remove/shots/: join-before-after.png (the rug join, wave E left, now right), skirting-before-after.png, fringe-compare2.png, armleft12b.png, remove-before-after-waveF.jpg (7 cases), and the full-size renders.",
+      "ids": ["tablet-9", "surfaces-29"]
+    }
+  ],
+  "iconsNeeded": [],
+  "registerLines": [
+    "REG-nnn (wave F, tablet-9 · surfaces-2 · surfaces-29) AI Visualizer › Remove the sofa: the rug laid where it stood meets the real rug below the coffee table's right leg in one tone and with the same run of ribs. There is no jagged join and no notch at the leg's foot, and the table's shadow runs across. Source: bug fix.",
+    "REG-nnn (wave F, surfaces-2 · surfaces-29) AI Visualizer › Remove the coffee table: the floor beside the TV console's end is the floor's colour and the skirting runs on, with no pale block; the table takes its shadow on the rug with it. Source: bug fix.",
+    "REG-nnn (wave F, surfaces-2) AI Visualizer › Remove: taking out the sofa and changing the rug in one Generate keeps the coffee table's rebuilt legs oak, and taking out the rug leaves no faint arc by the throw's fringe. Source: bug fix.",
+    "REG-nnn (wave F, surfaces-12) Demo design (Kevin Ng › Living room) V2 and its golden-hour version re-rendered with the cleaned-up sofa Customize (no slivers or flecks). Source: bug fix."
+  ],
+  "verification": "npx tsc --noEmit -p . and npx eslint on mend.ts, run.ts, recolor.ts, samples.ts, remove-test.mts, demo-renders.mts and demo.ts all clean. scripts/viz/remove-test.mts ran all 14 cases after every change (Node, the browser's runPass with sharp IO), and all 9 checks pass; the two new ones fail on the pre-wave-F renders. I looked at every changed render full size and at 2–14× against the photo and the pre-wave-F render. Sofa Remove: rug join, leg foot, table shadow, front edge, chair arm. Coffee table Remove: the console's end at 6×, the rug. Rug Remove: fringe at 8×. Also sofa+walnut floor, sofa+table, sofa+armchair, sofa + armchair Replace, sofa + rug Customize (legs at 8×). Unchanged pieces (TV, art, lamp, fig, console, armchair alone) are pixel-identical or within 17 levels on a handful of pixels. Rib angle by structure tensor either side of the join: 53°/48° now against 57°/49° before, with tone L49 a3.1 b11.0 on both sides. scripts/viz/render-test.mts: all checks pass. scripts/viz/regions.mts living-room: every region reads as before. Demo re-rendered after engine-paint's wave F report: V2 at 5× has no emerald on the throw and clean cushions; a second run was byte-identical.",
+  "checkOnBuild": [
+    "Living room › Remove Grey Fabric Sofa at 1440, 1:1 and zoomed, and on the 1004 px tablet stage: the rug below the coffee table's right leg continues with no vertical join, no greyer left side and no notch at the leg's foot. The table's shadow runs across; the table still stands on four legs.",
+    "Living room › Remove Oak Coffee Table: left of the console's end, the floor strip and skirting run on in the floor's tone (image x≈436–460, y≈389–413 of 900×603); no dark patch on the rug below where the right front leg stood.",
+    "Remove Grey Fabric Sofa + Jute Area Rug › Customize Navy in one Generate: the coffee table's legs stay oak. The thin tan line along the rug's front edge is the rug's Customize outline (crossFileRequests), not the Remove.",
+    "Remove Jute Area Rug: only fringe strands by the throw, no faint arc on the floor.",
+    "Kevin Ng › Living room › V2, the golden-hour version and the client link show the re-rendered pictures at the same paths (hard reload). The recorded words change to 'Emerald velvet' per engine-paint. Stored demo rows keep the old words until the repair / db:baseline is re-run by whoever owns the baseline; I did not touch local.db.",
+    "Browser timing of a sofa Remove on a phone or tablet: the join matching adds a few full-picture blurs (Node: sofa Remove about 2.7 s including the first decode; the lift runs once per Generate)."
+  ]
+}

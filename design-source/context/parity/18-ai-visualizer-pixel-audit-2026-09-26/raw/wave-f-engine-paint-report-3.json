@@ -1,0 +1,76 @@
+{
+ "done": [
+  {
+   "ids": [
+    "final-engine: ceiling corner above the left curtain"
+   ],
+   "what": "The living room's ceiling outline now runs to the frame's left edge and down the left curtain's heading (0.0605,0.059)→(0.03,0.037)→(0,0.019): the corner above the curtain takes the ceiling's finish — no grey wedge, no hard vertical edge at x≈53 (Olive Green and the transfer's Linen checked).",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "final-engine: style transfer floor 'Natural grain' streaks"
+   ],
+   "what": "recolor no longer adds a synthetic per-column grain for the 'natural' sheen (the vertical 1 px streaks that cut across diagonal boards); a wood keeps the photo's own boards and joints (the detail layer) or its laid tile, and 'textured' keeps its faint weave fleck. Transfer floor, Ash Wide Plank and Slate Dark checked at 5×: the grain follows the boards.",
+   "files": [
+    "lib/visualizer/engine/recolor.ts"
+   ]
+  },
+  {
+   "ids": [
+    "final-engine: kitchen island back panel (owner call)"
+   ],
+   "what": "The island's charcoal back panel under the overhang is part of the Charcoal Lower Cabinets: a new `keyed` outline on a surface (SurfaceDef.keyed, samples + model) — a part seen in pieces between things in front — is colour-keyed from seeds inside it (lightness counting fully, tight limit), checked again at full size against its seeds (`keepNear`) and kept off anything of clear hue (`offHue`: the stools' walnut legs and their shaded sides), with the three stools' seats and backs as cutouts. Sage Laminate now covers the panel between the stools; the stools keep their grey seats and walnut legs; the lit sliver at the panel's far right end stays as the photo's light.",
+   "files": [
+    "lib/visualizer/samples.ts",
+    "lib/visualizer/model.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/engine/segment.ts"
+   ]
+  },
+  {
+   "ids": [
+    "final-ui MAJOR: painting a relit version (Master bedroom V1 Golden Hour)"
+   ],
+   "what": "An edit, a note (colours) or a style transfer on a relit version is now made on the picture UNDER the light (the editor's `unlit`, from unlitSource) — so its regions are read on the room before the light, no sun patch or leaf shadow read as another colour — and the same light is laid again: each pixel keeps what the light did to it (lit ÷ unlit, per channel), so an unchanged pixel comes back exactly and the new wall carries the sun patches, leaf and pampas shadows and the lamps' glow; a pixel the light takes past white keeps its hue (the sun stays orange, not lemon). What 1.0's golden-hour render adds that the photo doesn't (the right nightstand's lit lamp, its moved candle) stays as rendered (`SampleRoom.relitKeep`). A pass that brings its own light (a preset or a note's preset) lays that one instead (lights never stack); a Remove on a relit version keeps the old path (the empty plate matched to the lit picture) — a ratio would print the removed piece's ghost. Checked: Master bedroom V1 (1.0 golden hour) → Ivory Cream walls; living room relit Golden Hour and Warm Cozy Home → Navy walls; relit living room → sofa Emerald velvet, a 'sage green walls' note, sofa Remove.",
+   "files": [
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "relit chain"
+   ],
+   "why": "A second edit on a version that was itself edited under a light (V2 = walls on relit V1, then the floor on V2) runs on V2's own lit picture — the editor passes `unlit` only when the version on screen is a relight (unlitSource returns null for an edit). The pixel regions are read on the lit picture then, as before this fix. Carrying the light pair down the chain needs the editor to pass it (see crossFileRequests)."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "components/visualizer/editor/visualizer-editor.tsx + lib/visualizer/model.ts unlitSource (editor)",
+   "change": "Optional follow-up: for a version whose finishes.lighting is set and that descends from a relight through edits, pass PassInput.unlit as that version's own picture divided by the relight's light (the engine can do the division if it gets the relight's lit and unlit urls) — not needed for the reported case (V1 relit), which is fixed.",
+   "ids": [
+    "final-ui MAJOR"
+   ]
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn (wave F, final engine) The living room's ceiling takes a finish right into the corner above the left curtain — bug fix",
+  "REG-nnn (wave F, final engine) A wood finish keeps the photo's own grain along the boards; the synthetic vertical grain is gone — bug fix",
+  "REG-nnn (wave F, final engine) The kitchen island's back panel changes with the lower cabinets (the stools keep their own colours) — owner call (integrator)",
+  "REG-nnn (wave F, final UI · major) A change made on a relit version is painted under the light and the same light laid again — the golden-hour bedroom with ivory walls keeps its sun patches, leaf shadows and lamp glow — bug fix"
+ ],
+ "verification": "npx tsc --noEmit -p . clean; npx eslint on lib/visualizer/engine, samples.ts, furniture.ts, model.ts clean; scripts/viz/render-test.mts and scripts/viz/remove-test.mts: all checks pass. Looked at full size and zoomed (2–10×): ceiling corner Olive Green and in the transfer (/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/engine-paint/out/i1-ceil-z.png, trG-ceil.png), transfer floor before/after at 5× (trG-floor5.png), Ash Wide Plank / Slate Dark floors (g-ash-z.png, g-slate-z.png, g-slate-p2.png), Sage Laminate lower cabinets with the island panel (i9-cab-z.png, i9-cab-full.jpg), the relit bedroom Ivory Cream old | new | from the Original (g-rl1.jpg, g-rl3.jpg, rl3-bed-rlamp.png, rl2-bed-wall.png), living room relit Golden Hour / Warm Cozy Navy old vs new (g-rl2.jpg), relit living room sofa Emerald / sage note / Remove (g-rl4.jpg, rl2-rm-z.png).",
+ "checkOnBuild": [
+  "Demo versions: none of the stored demo pictures change from this round — V2 (edit from the Original) and V3 (a relight) are not edits under a light, V2 paints no ceiling, uses no 'natural' sheen and no kitchen lower cabinets; the bedroom V1 and the kitchen / Japandi versions are 1.0 pictures. (The earlier rug-edge note still stands.)",
+  "Kevin Ng › Master bedroom (opens on V1 Relit · Golden Hour) › Walls → Ivory Cream › Generate: ivory walls in golden light with the orange sun patches, the leaf and pampas shadows, the lamps' glow — no flat white wall, no orange cut-outs or torn holes. Present lists 'Walls Ivory Cream · Lighting Golden Hour'.",
+  "Living room relit (Golden Hour and Warm Cozy Home) › Walls → Navy: the navy wall takes the room's light (warm and dim), not a flat bright navy plane.",
+  "Living room › Ceiling → any paint: the corner above the left curtain takes it. Style transfer: the floor shows the boards' own grain, no vertical streaks.",
+  "Kitchen › Charcoal Lower Cabinets → Sage Laminate: the island's back panel behind the stools is sage; the stools' seats and legs keep their colours."
+ ]
+}

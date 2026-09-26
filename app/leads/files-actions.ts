@@ -5,7 +5,7 @@ import { logLeadEvent } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { fileComments, leadFiles, type LeadFile } from '@/lib/db/schema'
+import { fileComments, leadFileRenders, leadFiles, type LeadFile, leadFileImages } from '@/lib/db/schema'
 import { sessionMemberSql } from '@/lib/db/session'
 import { descendantIds } from '@/lib/leads/file-model'
 import { folderNameProblem } from '@/lib/folders'
@@ -62,10 +62,18 @@ export async function createFolder(leadId: string, name: string, parentId: strin
  * derivation attach-files-modal.tsx and return-lead-wizard.tsx make on the way in, so the pick keeps its identity
  * once persisted; storing every pick as a JPEG turned an attached .pdf into a photograph on Confirm.
  */
-export async function uploadFile(leadId: string, parentId: string | null = null, name = 'Living Room'): Promise<string> {
+/* (audit 2026-09-26, F205) a long string travels inside an object: React's action decoder counts a bare string argument against a
+   1,000,000 limit whenever the action takes more than one argument, so a ~730 KB photo failed with a 500 */
+export async function uploadFile(leadId: string, o: { parentId?: string | null; name?: string; image?: string | null } = {}): Promise<string> {
+  const { parentId = null, name = 'Living Room', image = null } = o
   const id = randomUUID(); const now = new Date()
   const pdf = /\.pdf$/i.test(name)
-  await db.insert(leadFiles).values({ id, leadId, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: now, parentId, ownerId: ME, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: now })
+  /* (REG-684; the studios' sheet row 5: "renders / floor plans don't display when uploaded via Files") an image keeps its picture — the grid, the
+     viewer and Open in AI Visualizer show what was uploaded, not a stand-in */
+  /* (audit 2026-09-26, F205) the cap sits under the request's own 12 MB limit (next.config.ts), so this rule — not a failed request — decides */
+  const picture = !pdf && image && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(image) && image.length < 12_000_000 ? image : null
+  await db.insert(leadFiles).values({ id, leadId, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : picture ? `/files/img/${id}` : '/figma-assets/file-thumb-1.png', createdAt: now, parentId, ownerId: ME, sizeBytes: picture ? Math.round((picture.length - picture.indexOf(',')) * 0.75) : 728064, mime: pdf ? 'application/pdf' : picture ? picture.slice(5, picture.indexOf(';')) : 'image/jpeg', updatedAt: now })
+  if (picture) await db.insert(leadFileImages).values({ fileId: id, data: picture })
   touch(leadId); return id
 }
 
@@ -110,7 +118,11 @@ export async function duplicateFiles(fileIds: string[]): Promise<string[]> {
     const copy = async (id: string, parentId: string | null) => {
       const f = all.find((x) => x.id === id); if (!f) return
       const nid = randomUUID()
-      await tx.insert(leadFiles).values({ ...f, id: nid, parentId, createdAt: now, updatedAt: now, deletedAt: null })
+      const [pic] = await tx.select().from(leadFileImages).where(eq(leadFileImages.fileId, f.id))
+      await tx.insert(leadFiles).values({ ...f, id: nid, parentId, createdAt: now, updatedAt: now, deletedAt: null, thumb: pic ? `/files/img/${nid}` : f.thumb })
+      if (pic) await tx.insert(leadFileImages).values({ fileId: nid, data: pic.data })   // (REG-684) a copy keeps its own picture
+      const [from] = await tx.select().from(leadFileRenders).where(eq(leadFileRenders.fileId, f.id))
+      if (from) await tx.insert(leadFileRenders).values({ ...from, fileId: nid })   // (audit 2026-09-26, F095) and, a filed render, the version it is
       made.push(nid)
       if (f.kind === 'folder') for (const c of all.filter((x) => x.parentId === id && !x.deletedAt)) await copy(c.id, nid)
     }

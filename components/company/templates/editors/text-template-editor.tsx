@@ -18,6 +18,8 @@ import { TEXT_LABEL, TOKENS, tokenText, type TextKind } from '@/lib/quotes/text'
 import type { TextTemplateEditorData } from '@/lib/company/text-templates'
 import { deleteTextTemplate, duplicateTextTemplate, updateTextTemplate } from '@/app/quotes/text-actions'
 import { LibraryHeader } from '../library-header'
+import { isRefusal } from '@/lib/company/template-rules'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import modal from '@/components/quotes/editor/text/templates-modal.module.css'
 import page from '@/components/contracts/editor/contract-editor.module.css'
 import styles from './library-editor.module.css'
@@ -54,7 +56,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
     if (timer.current) { clearTimeout(timer.current); timer.current = null }
     if (!dirty.current) return
     dirty.current = false
-    try { const row = await updateTextTemplate(template.id, latest.current.title, latest.current.body); setUpdatedAt((row.updatedAt ?? row.createdAt).getTime()) } catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
+    try { const row = await updateTextTemplate(template.id, { title: latest.current.title, body: latest.current.body }); setUpdatedAt((row.updatedAt ?? row.createdAt).getTime()) } catch { snackbar({ message: 'Couldn’t save the template — please try again' }) }
   }, [template.id, snackbar])
   const flushRef = useRef(flush); useEffect(() => { flushRef.current = flush })
   const queue = useCallback(() => { dirty.current = true; if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => { void flushRef.current() }, AUTOSAVE_MS) }, [])
@@ -97,7 +99,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
         </div>
         <ConfirmDialog open={deleteOpen} title={`Delete ${title.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
                        message={template.usedBy ? `${template.usedBy} quote ${template.usedBy === 1 ? 'template names' : 'templates name'} it in their Defaults; new quotes from them start without it until you pick another. You can restore it from Deleted Templates.` : 'Quotes that already carry the text keep it. You can restore it from Deleted Templates.'}
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTextTemplate(template.id).then(() => { snackbar({ message: 'Template deleted' }); router.push('/company/templates/terms') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTextTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/terms') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>

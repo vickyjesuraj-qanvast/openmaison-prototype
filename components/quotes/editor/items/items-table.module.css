@@ -424,3 +424,25 @@
 @media (hover: none) { .commentCount { position: relative; } .commentCount::after { content: ''; position: absolute; inset: -12px -4px; } }
 /* (sweep S1) Find with nothing to show: one quiet row where the lines would be. */
 .findEmpty { grid-column: 1 / -1; padding: var(--om-spacing-5) var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+/* (wave E, tablet-4) A section's name keeps its room in a narrow ITEM cell (≤1024 the cell is 240; a dragged one can be too): the cell is a
+   size container, and under 260px of content the "n items" count steps aside first, then a section's EMPTY picture well gives its 60px to
+   the name (a picture the section holds stays; widen the column to add one) — the band read "L · SECTION · 3 items" at 1024. */
+.row .colItem { container: itemcell / inline-size; }
+@container itemcell (max-width: 260px) {
+  .groupCount { display: none; }
+  .row[data-group] .thumbBtn:has(.thumb[data-empty]) { display: none; }
+}
+/* (wave E, tablet-12) Up to 1024 the Expand button rides INSIDE the description box as its end button instead of hanging under it: the
+   hanging one sat on the next row's name (a 44px finger box made it worse). The box keeps 26px clear at its end for it. */
+@media (max-width: 1024px) {
+  .row[data-active] .itemText:has([data-expand]) > .input[data-desc] { padding-right: 26px; }   /* a line's box (a section's has no Expand) */
+  .itemText:has(> .input[data-desc]) .expand {   /* the one-line box; a formatted or full description keeps the hanging button */
+    position: absolute;   /* the touch rules above make it `relative` for its finger box — in the flow it grew the active row by 10 */
+    top: calc(24px + var(--om-border-1)); right: calc(-1 * var(--om-spacing-2) + var(--om-border-1));
+    width: 24px; height: calc(24px - 2 * var(--om-border-1));
+    border: 0; border-radius: 0 var(--om-radius-1) var(--om-radius-1) 0; box-shadow: none; background: transparent;
+  }
+  .itemText:has(> .input[data-desc]) .expand:hover { background: var(--om-color-hover-08p); }
+  .itemText:has(> .input[data-desc]) .expandGlyph { font-size: 16px !important; }   /* the 24px box's own glyph size (the inline 20 is the hanging button's) */
+}

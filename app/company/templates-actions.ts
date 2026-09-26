@@ -9,7 +9,8 @@ import { sessionMemberSql } from '@/lib/db/session'
 import { revalidateEveryLead } from '@/lib/leads/queries'
 import { STUDIO_KEY, fetchTemplateApproval, isApprover } from '@/lib/settings/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
-import { assertMayChangeTemplate, assertMaySetDefault } from '@/lib/company/template-guard'
+import { changeBlock, defaultBlock } from '@/lib/company/template-guard'
+import { BRAND_RULE, TEMPLATE_AWAITING_DELETE_RULE, TEMPLATE_DEFAULT_DELETE_RULE, TEMPLATE_DELETED_LINE, TEMPLATE_GONE_LINE, TEMPLATE_IN_USE_RULE, TEMPLATE_PUBLISH_RULE, TEMPLATE_REVIEW_RULE, TEMPLATE_UNPUBLISHED_RULE, refuse, type Refusal } from '@/lib/company/template-rules'
 import { findSplit, presetOf } from '@/lib/quotes/payments'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import { createPaymentTemplate } from '@/app/company/payment-templates-actions'
@@ -37,6 +38,8 @@ async function templateRow(id: string) {
   if (!row) throw new Error('template not found')
   return row
 }
+/* (wave E, E7) The library's actions answer a refusal — the rule, or a template gone from under a stale page — as `{ error }`. */
+const findTemplate = async (id: string) => (await db.select().from(quoteTemplates).where(eq(quoteTemplates.id, id)))[0] ?? null
 const uniqueName = async (base: string) => {
   const names = new Set((await db.select({ name: quoteTemplates.name }).from(quoteTemplates)).map((r) => r.name.toLowerCase()))
   if (!names.has(base.toLowerCase())) return base
@@ -120,13 +123,14 @@ export async function discardTemplateDraft(id: string): Promise<{ removed: boole
  * studio's default; `updateDrafts` re-pins every open Draft quote on this template to the new version (sent quotes stay
  * on the version they were sent with).
  */
-export async function publishTemplate(id: string, opts: { note?: string; setDefault?: boolean; updateDrafts?: boolean } = {}): Promise<{ version: number }> {
-  const row = await templateRow(id)
-  if (row.deletedAt) throw new Error('deleted')   // (REG-502) a deleted template cannot publish — the client flag was the only guard
+export async function publishTemplate(id: string, opts: { note?: string; setDefault?: boolean; updateDrafts?: boolean } = {}): Promise<{ version: number } | Refusal> {
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (row.deletedAt) return refuse(TEMPLATE_DELETED_LINE)   // (REG-502) a deleted template cannot publish — the client flag was the only guard
   const now = new Date()
   // (REG-501) With approval required, only an Owner or Admin publishes; a Designer submits (submitTemplate). (REG-646) The signed-in member's role decides.
   const [approval, viewer] = await Promise.all([fetchTemplateApproval(), fetchViewer()])
-  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
+  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) return refuse(TEMPLATE_PUBLISH_RULE)   // (REG-590) the backup approver may publish too
   let design: TemplateDesign, defaults: TemplateDefaults
   if (row.draftJson) {
     const j = JSON.parse(row.draftJson) as { design?: unknown; defaults?: unknown }
@@ -145,29 +149,31 @@ export async function publishTemplate(id: string, opts: { note?: string; setDefa
 }
 
 /** (REG-501) A Designer's Publish: the template waits for an Owner or Admin, with the designer's note on what changed. */
-export async function submitTemplate(id: string, note: string): Promise<void> {
-  const row = await templateRow(id)
-  if (row.deletedAt) throw new Error('deleted')
+export async function submitTemplate(id: string, note: string): Promise<void | Refusal> {
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (row.deletedAt) return refuse(TEMPLATE_DELETED_LINE)
   await db.update(quoteTemplates).set({ submittedBy: ME, submittedAt: new Date(), submitNote: note.trim() || null, reviewNote: null, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
 
 /** (REG-501) Request changes: the submission ends and the note waits at the top of the designer's editor until they submit again. */
-export async function requestTemplateChanges(id: string, note: string): Promise<void> {
+export async function requestTemplateChanges(id: string, note: string): Promise<void | Refusal> {
   const viewer = await fetchViewer()
-  if (!(await isApprover(viewer.id, viewer.role))) throw new Error('approvers only')   // (REG-646, E-87) only an approver answers a submission
-  await templateRow(id)
+  if (!(await isApprover(viewer.id, viewer.role))) return refuse(TEMPLATE_REVIEW_RULE)   // (REG-646, E-87) only an approver answers a submission
+  if (!(await findTemplate(id))) return refuse(TEMPLATE_GONE_LINE)
   await db.update(quoteTemplates).set({ submittedAt: null, reviewNote: note.trim() || 'Changes requested', updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
 
 /** History › Roll back: the chosen version is published again as a new version, so nothing is ever lost. */
-export async function rollbackTemplate(id: string, version: number): Promise<{ version: number }> {
-  const row = await templateRow(id)
-  if (row.deletedAt) throw new Error('deleted')
+export async function rollbackTemplate(id: string, version: number): Promise<{ version: number } | Refusal> {
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (row.deletedAt) return refuse(TEMPLATE_DELETED_LINE)
   // (REG-501) A rollback publishes: under approval it is an Owner's / Admin's move, exactly like Publish.
   const [approval, viewer] = await Promise.all([fetchTemplateApproval(), fetchViewer()])
-  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) throw new Error('approval required')   // (REG-590) the backup approver may publish too
+  if (approval === 'required' && !(await isApprover(viewer.id, viewer.role))) return refuse(TEMPLATE_PUBLISH_RULE)   // (REG-590) the backup approver may publish too
   const [v] = await db.select().from(quoteTemplateVersions).where(and(eq(quoteTemplateVersions.templateId, id), eq(quoteTemplateVersions.version, version)))
   if (!v) throw new Error('version not found')
   const now = new Date()
@@ -179,19 +185,20 @@ export async function rollbackTemplate(id: string, version: number): Promise<{ v
   return { version: next }
 }
 
-export async function renameTemplate(id: string, name: string): Promise<void> {
-  await assertMayChangeTemplate(undefined)   // (REG-646) a quote template keeps no author: Owners and Admins
+export async function renameTemplate(id: string, name: string): Promise<void | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)   // (REG-646) a quote template keeps no author: Owners and Admins
   const clean = name.trim()
-  if (!clean) throw new Error('empty')
-  await templateRow(id)
+  if (!clean) return refuse('Give the template a name')
+  if (!(await findTemplate(id))) return refuse(TEMPLATE_GONE_LINE)
   await db.update(quoteTemplates).set({ name: clean, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
 
-export async function setDefaultTemplate(id: string): Promise<void> {
-  await assertMaySetDefault()   // (REG-646) what every Blank Quote starts with is the Owners' and Admins' call
-  const row = await templateRow(id)
-  if (row.status !== 'published' || row.deletedAt) throw new Error('not published')
+export async function setDefaultTemplate(id: string): Promise<void | Refusal> {
+  const block = await defaultBlock(); if (block) return refuse(block)   // (REG-646) what every Blank Quote starts with is the Owners' and Admins' call
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (row.status !== 'published' || row.deletedAt) return refuse(TEMPLATE_UNPUBLISHED_RULE)
   await db.update(quoteTemplates).set({ isDefault: false })
   await db.update(quoteTemplates).set({ isDefault: true }).where(eq(quoteTemplates.id, id))
   touch(id)
@@ -206,27 +213,29 @@ export async function duplicateTemplate(id: string): Promise<string> {
  * templates with Restore; the quotes on it keep printing their pinned version. The default and a template awaiting
  * approval cannot be deleted.
  */
-export async function deleteTemplate(id: string): Promise<void> {
-  await assertMayChangeTemplate(undefined)
-  const row = await templateRow(id)
-  if (row.isDefault) throw new Error('default')
-  if (row.submittedAt) throw new Error('awaiting approval')
+export async function deleteTemplate(id: string): Promise<void | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (row.isDefault) return refuse(TEMPLATE_DEFAULT_DELETE_RULE)
+  if (row.submittedAt) return refuse(TEMPLATE_AWAITING_DELETE_RULE)
   await db.update(quoteTemplates).set({ deletedAt: new Date(), deletedBy: ME, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))   // (REG-538) deletedBy: the sheet's "Deleted by"
   touch(id)
 }
-export async function restoreTemplate(id: string): Promise<void> {
-  await assertMayChangeTemplate(undefined)
-  await templateRow(id)
+export async function restoreTemplate(id: string): Promise<void | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)
+  if (!(await findTemplate(id))) return refuse(TEMPLATE_GONE_LINE)
   await db.update(quoteTemplates).set({ deletedAt: null, updatedAt: new Date(), updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch(id)
 }
 /** Delete forever: only once no live quote is on the template — they would lose what they print through. */
-export async function deleteTemplateForever(id: string): Promise<void> {
-  await assertMayChangeTemplate(undefined)
-  const row = await templateRow(id)
-  if (!row.deletedAt) throw new Error('not deleted')
+export async function deleteTemplateForever(id: string): Promise<void | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)
+  const row = await findTemplate(id)
+  if (!row) return refuse(TEMPLATE_GONE_LINE)
+  if (!row.deletedAt) return refuse('Delete it first — only a deleted template can go for good')
   const [uses] = await db.select({ n: sql<number>`count(*)` }).from(quotes).where(and(eq(quotes.templateId, id), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))   // the gallery's usedBy predicate: live, unarchived quotes
-  if ((uses?.n ?? 0) > 0) throw new Error('in use')
+  if ((uses?.n ?? 0) > 0) return refuse(TEMPLATE_IN_USE_RULE)
   await db.delete(quoteTemplates).where(eq(quoteTemplates.id, id))
   touch()
 }
@@ -346,9 +355,9 @@ export async function loadQuoteDocData(quoteId: string): Promise<DocData | null>
 /** Company › Templates › Brand kit (the kit) and Company › Profile (the company details): one `brand` record every template prints (REG-554).
     (REG-646, settings parity Q-07 · E-86) Owners and Admins only; each page sends only its own half, merged onto the record as it is now —
     Profile and the Brand kit open in two tabs no longer overwrite each other's changes. */
-export async function saveBrand(part: { kit?: BrandSetting['kit']; details?: BrandSetting['details'] }): Promise<void> {
+export async function saveBrand(part: { kit?: BrandSetting['kit']; details?: BrandSetting['details'] }): Promise<void | Refusal> {
   const viewer = await fetchViewer()
-  if (viewer.role !== 'Owner' && viewer.role !== 'Admin') throw new Error('owners and admins only')
+  if (viewer.role !== 'Owner' && viewer.role !== 'Admin') return refuse(BRAND_RULE)   // (wave E, E7) the rule reaches the page
   const [cur] = await db.select().from(settings).where(eq(settings.key, BRAND_KEY)).limit(1)
   let stored: Partial<BrandSetting> = {}
   if (cur) { try { stored = JSON.parse(cur.value) as Partial<BrandSetting> } catch { stored = {} } }
@@ -371,7 +380,7 @@ export async function saveBrand(part: { kit?: BrandSetting['kit']; details?: Bra
   if (part.details) {
     const { reconcileEntities } = await import('@/lib/company/entities')
     const refusal = await reconcileEntities(parseBrandSetting(stored).details.entities, clean.details.entities)
-    if (refusal) throw new Error(refusal)
+    if (refusal) return refuse(refusal)   // (wave E, E7) "… is on n quotes" reaches the page whole
   }
   const now = new Date()
   await db.insert(settings).values({ key: BRAND_KEY, value: JSON.stringify(clean), updatedAt: now }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(clean), updatedAt: now } })
@@ -392,15 +401,15 @@ export async function setItemOptional(quoteId: string, itemId: string, optional:
 }
 
 /** (REG-524) The Deleted Templates sheet's bulk Restore — one action, one revalidation. */
-export async function restoreTemplates(ids: string[]): Promise<void> {
-  await assertMayChangeTemplate(undefined)
+export async function restoreTemplates(ids: string[]): Promise<void | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)
   const now = new Date()
   for (const id of ids) await db.update(quoteTemplates).set({ deletedAt: null, updatedAt: now, updatedBy: ME }).where(eq(quoteTemplates.id, id))
   touch()
 }
 /** (REG-524) Bulk Delete Forever: the in-use ones are skipped (the sheet never offers them), the rest go in one pass. */
-export async function deleteTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number }> {
-  await assertMayChangeTemplate(undefined)
+export async function deleteTemplatesForever(ids: string[]): Promise<{ removed: number; kept: number } | Refusal> {
+  const block = await changeBlock(undefined); if (block) return refuse(block)
   let removed = 0, kept = 0
   for (const id of ids) {
     const [row] = await db.select({ deletedAt: quoteTemplates.deletedAt }).from(quoteTemplates).where(eq(quoteTemplates.id, id))
@@ -413,7 +422,7 @@ export async function deleteTemplatesForever(ids: string[]): Promise<{ removed: 
   return { removed, kept }
 }
 /** (REG-524) Empty Trash: every deleted template no live quote prints through. */
-export async function emptyTemplateTrash(): Promise<{ removed: number; kept: number }> {
+export async function emptyTemplateTrash(): Promise<{ removed: number; kept: number } | Refusal> {
   const rows = await db.select({ id: quoteTemplates.id }).from(quoteTemplates).where(sql`${quoteTemplates.deletedAt} is not null`)
   return deleteTemplatesForever(rows.map((r) => r.id))
 }

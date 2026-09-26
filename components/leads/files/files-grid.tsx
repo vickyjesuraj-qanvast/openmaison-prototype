@@ -13,7 +13,7 @@ import type { FileRow } from '@/lib/leads/file-model'
 import styles from './files-grid.module.css'
 
 /** File tile kebab (931:40131, 200×226): Open · Move · Duplicate · Download · Rename · Delete. */
-export type FileAction = 'open' | 'move' | 'duplicate' | 'download' | 'rename' | 'delete'
+export type FileAction = 'open' | 'move' | 'duplicate' | 'download' | 'rename' | 'delete' | 'visualize'
 /** Folder card kebab (931:40130, 200×154): Open · Move · Rename · Delete. */
 export type FolderAction = 'open' | 'move' | 'rename' | 'delete'
 
@@ -34,6 +34,8 @@ export type FilesGridProps = {
   onFileMenu: (file: FileRow, action: FileAction) => void
   /** (REG-664) While searching: where each hit lives ("Kitchen" · "All Files") — a search reaches every folder. */
   placeOf?: (f: FileRow) => string
+  /** (F095) The file menu's AI Visualizer item for a picture — "Open this version in AI Visualizer" for a filed render; null hides it. */
+  visualizeLabel?: (f: FileRow) => string | null
 }
 
 /** The tile's kind glyph: "image" 20/Regular red, "picture_as_pdf" for a PDF (931:39125 caption). */
@@ -55,7 +57,26 @@ const kindIcon = (f: FileRow) => (f.kind === 'pdf' || f.mime === 'application/pd
  * every row (files-table.tsx "Cell / Selection"). The checkbox is not rendered at all above 767 (`display: none`), so the
  * desktop mock is untouched; `useMediaQuery` only swaps what the tap DOES, which no stylesheet can express.
  */
-export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf }: FilesGridProps) {
+/** (audit 2026-09-26, round 3) A long name gives way in the middle — what tells files apart is often its end ("Render - Living room - V2.jpg"
+    and "… - V3.jpg"), so the version and the extension always show and the start takes the ellipsis. A render's name splits at its
+    version: on a phone's narrow card the room keeps the first line and the version the second. */
+const nameParts = (name: string): { start: string; sep: string; tail: string } => {
+  const v = /^(.*?)( - )(V\d+\.[a-z0-9]{1,5})$/i.exec(name)
+  if (v) return { start: v[1]!, sep: v[2]!, tail: v[3]! }
+  const e = /\.[a-z0-9]{1,5}$/i.exec(name)
+  return e && e.index > 0 ? { start: name.slice(0, e.index), sep: '', tail: e[0] } : { start: name, sep: '', tail: '' }
+}
+
+function FileName({ name }: { name: string }) {
+  const { start, sep, tail } = nameParts(name)
+  return (
+    <span className={styles.tileName} title={name} data-two={sep ? '' : undefined}>
+      <span className={styles.nameStart}>{start}</span>{sep ? <span className={styles.nameSep}>{sep}</span> : null}<span className={styles.nameEnd}>{tail}</span>
+    </span>
+  )
+}
+
+export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf, visualizeLabel }: FilesGridProps) {
   const [menu, setMenu] = useState<string | null>(null)
   /* (REG-664) The folder card is the shared one (components/om/folders); its menu opens through the portal, anchored to the kebab. */
   const [folderMenu, setFolderMenu] = useState<string | null>(null)
@@ -146,7 +167,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                       <span className={styles.caption}>
                         <span className={styles.nameGroup}>
                           <Icon name={kindIcon(f)} size={20} className={styles.kindIcon} />
-                          <span className={styles.tileName}>{f.name}</span>
+                          <FileName name={f.name} />
                         </span>
                       </span>
                     </button>
@@ -173,7 +194,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                           <Icon name="more_vert" size={24} weight={300} />
                         </button>
                       </Tooltip>
-                      <FileMenu open={open} onClose={() => setMenu(null)} name={f.name} onPick={(a) => { setMenu(null); onFileMenu(f, a) }} />
+                      <FileMenu open={open} onClose={() => setMenu(null)} name={f.name} visualize={visualizeLabel?.(f) ?? null} onPick={(a) => { setMenu(null); onFileMenu(f, a) }} />
                     </span>
                   </div>
                 )
@@ -201,10 +222,13 @@ export function FolderMenu({ open, onClose, onPick, side = 'down', name }: { ope
 }
 
 /** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared with the list's file rows. */
-export function FileMenu({ open, onClose, onPick, side = 'down', name }: { open: boolean; onClose: () => void; onPick: (a: FileAction) => void; side?: 'down' | 'up'; name?: string }) {
+export function FileMenu({ open, onClose, onPick, side = 'down', name, visualize = null }: { open: boolean; onClose: () => void; onPick: (a: FileAction) => void; side?: 'down' | 'up'; name?: string
+  /** (REG-675, AI Visualizer Q-31) the item's words: a photo opens as a room of the lead's design, a filed render as its own version (F095); null hides it */
+  visualize?: string | null }) {
   return (
     <Dropdown open={open} onClose={onClose} align="right" side={side} sheetTitle={name ?? 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
+      {visualize ? <DropdownItem onSelect={() => onPick('visualize')}>{visualize}</DropdownItem> : null}
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('duplicate')}>Duplicate</DropdownItem>
       <DropdownItem onSelect={() => onPick('download')}>Download</DropdownItem>

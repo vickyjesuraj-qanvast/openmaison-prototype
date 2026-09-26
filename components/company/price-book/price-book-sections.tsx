@@ -13,7 +13,7 @@ import { SECTION_RULE } from '@/lib/company/price-book-rules'
 import type { PriceBookData, PriceBookSectionRow } from '@/lib/company/price-book'
 import type { SavedLine } from '@/lib/quotes/items-model'
 import { createPriceBookSection, deletePriceBookSections, deletePriceBookSectionsForever, duplicatePriceBookSection, emptyPriceBookSectionTrash, renamePriceBookSection, restorePriceBookSections, updatePriceBookSection } from '@/app/company/price-book-actions'
-import { LibraryGallery, type LibraryItem } from '@/components/company/templates/library-gallery'
+import { LibraryGallery, settle, type LibraryItem } from '@/components/company/templates/library-gallery'
 import gallery from '@/components/company/templates/library-gallery.module.css'
 import { SectionDialog } from './section-dialog'
 import styles from './price-book.module.css'
@@ -68,7 +68,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
         { key: 'used', label: 'Used by', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>Not on a quote yet</span>) },
       ]}
       onOpen={(t) => setEdit({ open: true, section: t })}
-      onDuplicate={async (t) => { await duplicatePriceBookSection(t.id); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}
+      onDuplicate={async (t) => { await settle(duplicatePriceBookSection(t.id)); snackbar({ message: `${t.name} duplicated` }); router.refresh() }}   /* (wave E, E7) a refusal throws its rule for the gallery to say */
       onRename={(t, name) => renamePriceBookSection(t.id, name)}
       onDelete={(t) => deletePriceBookSections([t.id])}
       deleteMessage={(t) => (t.usedBy ? `The ${t.usedBy === 1 ? 'quote' : `${t.usedBy} quotes`} already carrying it ${t.usedBy === 1 ? 'keeps' : 'keep'} the lines. You can restore the section from Deleted Sections.` : 'You can restore it from Deleted Sections.')}
@@ -76,7 +76,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
       deletedMeta={{ label: 'Items', value: (t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'}` }}
       empty={{ title: 'No saved sections yet', help: runsBook ? 'In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote — or start one from New.' : 'An Owner or an Admin saves sections here; you add them to your quotes from the Add Item box.' }}>   {/* (sweep S5 #22) */}
       <SectionDialog open={edit.open} section={edit.section} onClose={() => setEdit({ open: false, section: null })} readOnly={block()}
-                     onSave={async (input) => { const cur = edit.section; const ok = await run('save the section', async () => { if (cur) await updatePriceBookSection(cur.id, input); else await createPriceBookSection(input); router.refresh() }, cur ? 'Section saved' : `${input.name} added to My Sections`); if (ok) setEdit({ open: false, section: null }) }} />   {/* (sweep S5 #3) closed once saved — a failure keeps what was typed */}
+                     onSave={async (input) => { const cur = edit.section; const ok = await run('save the section', async () => { if (cur) await settle(updatePriceBookSection(cur.id, input)); else await settle(createPriceBookSection(input)); router.refresh() }, cur ? 'Section saved' : `${input.name} added to My Sections`); if (ok) setEdit({ open: false, section: null }) }} />   {/* (sweep S5 #3) closed once saved — a failure keeps what was typed */}
     </LibraryGallery>
   )
 }

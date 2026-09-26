@@ -167,3 +167,7 @@
 .outlineDrawer { display: flex; flex-direction: column; min-width: 0; }
 .doc:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 8px; border-radius: var(--om-radius-1); }   /* (sweep S2 #10) a keyboard sees where it is */
 .menuMeta { margin-left: auto; padding-left: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (sweep S2 #16 · #23) a greyed row's reason, in the row */
+
+/* (audit 2026-09-26, round 3) a greyed row whose reason is a whole sentence: the label, then the rule under it, wrapping */
+.menuStack { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.menuRule { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }

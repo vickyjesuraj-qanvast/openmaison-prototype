@@ -186,3 +186,6 @@
 .uploadRow > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .uploadMore, .uploadHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .uploadRow { grid-template-columns: minmax(0, 1fr) 96px; } .uploadRow > span:nth-child(1), .uploadRow > span:nth-child(3), .uploadRow > span:nth-child(4) { display: none; } }
+/* (verify round 3 · the sweep's rule, REG-656) A tile menu row that waits says why under its label — Company › Templates' .menuRow · .menuMeta. */
+.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }

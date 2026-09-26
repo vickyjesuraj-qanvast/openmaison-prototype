@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { fetchSigning } from '@/lib/contracts/queries'
-import { fetchQuotePreview } from '@/lib/templates/queries'
+import { fetchBrand, fetchQuotePreview } from '@/lib/templates/queries'
 import { SignQuoteView } from '@/components/contracts/sign/sign-quote-view'
+import { LinkGone } from '@/components/contracts/sign/link-gone'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function SignQuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const data = await fetchSigning(id)
-  if (!data) notFound()
+  if (!data) {
+    const brand = await fetchBrand()
+    return <LinkGone studio={brand.details.name} brand={brand.kit} />   /* (F111, wave E) a contract deleted for good, or never made: the house notice, as /sign/[id] says it — never a bare 404 */
+  }
   const quoteId = data.state === 'open' || data.state === 'signed' ? data.contract.fromQuoteId : null
   const preview = quoteId ? await fetchQuotePreview(quoteId) : null
   return <SignQuoteView contractId={id} issuer={data.letterhead.name} logo={data.letterhead.logo ?? data.brand.logo} data={preview} state={data.state} />

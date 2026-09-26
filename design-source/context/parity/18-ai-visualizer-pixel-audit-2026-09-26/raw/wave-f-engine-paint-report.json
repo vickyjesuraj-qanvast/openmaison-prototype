@@ -1,0 +1,120 @@
+{
+ "done": [
+  {
+   "ids": [
+    "desktop-r3-1",
+    "surfaces-5 (style transfer floor depth)"
+   ],
+   "what": "Owner call applied: a style transfer's floor takes the reference wood's depth, not only its hue. Transfer floor jobs lay the role colour as the surface's WELL-LIT level (new RecolorOpts.anchor 'lit': the colour is set against the floor's upper-quartile lightness instead of its mean), keep the photo's light modulation and grain, and How far thins a floor's colour less (floor strength ≥ 0.9). The living-room floor from the UAT mood board goes from honey oak (lit L≈74) to a walnut-dark floor (lit L≈63, shade L≈22; a Materials 'Walnut Engineered' pick reads lit L≈69, shade L≈22), in the reference's own hue; the kitchen tile floor becomes a mid walnut brown. Paint, joinery and stone roles unchanged.",
+   "files": [
+    "lib/visualizer/engine/recolor.ts",
+    "lib/visualizer/engine/run.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-r3-2",
+    "surfaces-12 (new issue: slivers outside the sofa)"
+   ],
+   "what": "A whole piece's outline (edgeMatte) is rebuilt: cutouts are subtracted by area (no half-covered hairline along an edge a cutout shares), slivers thinner than 3 px and scraps are dropped, inside the traced line the trace is the piece (no unpicking of a lit cushion top into pale flecks), the colour only ADDS outside the line — read over 3×3, against each side's colour just by the line (near read, wider fallback), joining by how much of the pixel is the piece and never for something darker than the piece (a metal leg, the shade under the sofa) — and an added pixel must hold on to the trace (no specks in the shade). Sofa: new Customize-only cutouts for its left metal leg and the lit floor a hair inside the trace along its left end and rounded lower corner. The hairline up the beige cushion, the fleck on the armchair seat, the arc along the grey cushion and the pale flecks on the back cushion's top edge are gone (sofa navy and V2 emerald, 1× and 2–12×); the base rail and arm end stay painted.",
+   "files": [
+    "lib/visualizer/engine/segment.ts",
+    "lib/visualizer/engine/run.ts",
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-r3-3",
+    "surfaces-16 (new issue: corner cabinet wedge)"
+   ],
+   "what": "Charcoal lower cabinets: the hull runs up to the worktop's front edge along the angled corner cabinet, so Sage Laminate covers the charcoal wedge under the worktop (checked with Granite Black worktops too). Also: the concrete bowl of lemons on the back run is a worktop cutout, so a new worktop no longer runs up its pale foot.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-r3-4",
+    "surfaces-4 (console-top flecks)"
+   ],
+   "what": "The console top's back edge beside the vase and from the cup to the TV's foot is now a traced wall cutout (replacing the keyed bands): the wall's shaded foot is painted down to the oak line and the oak stays oak — no grey flecks or stair-step between the cup and the TV foot, the vase handle and the cup kept.",
+   "files": [
+    "lib/visualizer/samples.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-r3-5",
+    "surfaces-20 (Present's 'Navy Matte pot')"
+   ],
+   "what": "composeCustomizeDesc reads in sentence case after a colour: 'Navy matte pot', 'Emerald velvet', 'Tan frame'; a finish alone keeps its words ('Matte black pot', 'Velvet'). This is the text a version records, so Present, the moodboard and the Now line follow.",
+   "files": [
+    "lib/visualizer/furniture.ts"
+   ]
+  },
+  {
+   "ids": [
+    "desktop-r3-6",
+    "surfaces-26 / versions-6 (piece captions)"
+   ],
+   "what": "Owner call applied: version captions / the stage chip / the activity line (model.ts descriptor) name a piece by its kind word, never the photo's description — new furniture.ts pieceKind(label, part): 'Sofa', 'Armchair', 'Coffee table', 'TV console', 'Rug', 'Curtains', 'Bar stool', 'Pendant light', unknown kinds keep their naming word ('Chopping board', 'Basil plant'); a Customize that landed on a part names it ('Planter' for the fig's pot, 'Art frame', 'Lamp shade'); a Remove says so ('Sofa taken out'); the list is joined as before ('Walls, Sofa'). Applied.furniture entries carry the part (optional `part`, written by the engine). Same rule for a lone changed surface named by its label: its leading finish words go ('Back Wall', not 'White Painted Back Wall'; 'Lower Cabinets', 'Worktops').",
+   "files": [
+    "lib/visualizer/furniture.ts",
+    "lib/visualizer/model.ts",
+    "lib/visualizer/engine/run.ts"
+   ]
+  }
+ ],
+ "notDone": [
+  {
+   "ids": [
+    "surfaces-3 polish"
+   ],
+   "why": "The 2×4 px pale fleck at the waterfall's inner foot was listed as polish, not in this round's list; left."
+  },
+  {
+   "ids": [
+    "surfaces-7 polish",
+    "surfaces-2",
+    "coffee-table skirting patch"
+   ],
+   "why": "Remove/mend artefacts (rebuilt chair's pale 3 px sliver, rug seam, the pale block left of the console) are engine-remove's."
+  }
+ ],
+ "crossFileRequests": [
+  {
+   "file": "public/visualizer/demo/living-room-edit.jpg (+ -golden-hour) · db:baseline",
+   "change": "engine-remove: re-render the demo now — V2's sofa loses its stray slivers and flecks. Note the recorded Customize words change from 'Emerald Velvet' to 'Emerald velvet' (composeCustomizeDesc, used by repair R61); the demo's stored rows keep the old words until the repair/baseline rewrites them.",
+   "ids": [
+    "desktop-r3-2",
+    "desktop-r3-5"
+   ]
+  },
+  {
+   "file": "components/visualizer/editor/dialogs/version-facts.ts (canvas)",
+   "change": "Optional: Present's piece lines could use pieceKind from lib/visualizer/furniture for the same words as the captions; not required.",
+   "ids": [
+    "desktop-r3-6"
+   ]
+  }
+ ],
+ "iconsNeeded": [],
+ "registerLines": [
+  "REG-nnn (wave F, desktop-r3-1) Style transfer lays the reference wood's depth on the floor (a walnut reference gives a walnut-dark floor, its sunlit boards the swatch) — owner call (integrator)",
+  "REG-nnn (wave F, desktop-r3-2) Sofa Customize: no stray lines outside the sofa (beige cushion, armchair seat, grey cushion) and no pale flecks on the back cushions' tops; the sofa's left leg stays metal — bug fix (Kevin Ng's V2 re-rendered)",
+  "REG-nnn (wave F, desktop-r3-3) Kitchen: new cabinet finishes cover the corner cabinet under the worktop; a new worktop leaves the lemon bowl's foot — bug fix",
+  "REG-nnn (wave F, desktop-r3-4) Living room walls: the console top's line beside the cup is clean — bug fix",
+  "REG-nnn (wave F, desktop-r3-5) Customize words in sentence case after the colour ('Navy matte pot', 'Emerald velvet') — bug fix",
+  "REG-nnn (wave F, desktop-r3-6) Version captions name a piece by its kind ('Sofa', 'Planter', 'Coffee table', 'Sofa taken out') and a surface without its old finish words ('Back Wall') — owner call (integrator); invented copy: 'taken out' suffix"
+ ],
+ "verification": "npx tsc --noEmit -p . clean; npx eslint on lib/visualizer/engine, samples.ts, furniture.ts, model.ts, panels/furniture-panel.tsx clean; scripts/viz/render-test.mts all checks pass. Looked at every render at full size and zoomed (2–37×): sofa Customize Navy and V2 Emerald (/private/tmp/claude-501/-Users-vicky-Documents-GitHub-openmaison-prototype/d609322b-8974-4014-b669-93cdc7e7cc7c/scratchpad/waveE/engine-paint/out/final-f-v2.jpg, g5-stack.png, g5-v2-specks.png vs the verifier's kev-v2, rim contours f8-rim.png / f9-rim-leg.png / rim-notch3.png), every living-room piece customized navy (g1-sheet-living.png) and the armchair (g1-arm.png, g2-arm-rim.png), the style transfer on living room and kitchen (trF-v1.jpg, trkF-v1.jpg, trF-vs-walnut.png floor vs a Materials walnut pick), kitchen Sage lower cabinets with and without Granite worktops (g2-cab-z.png, g2-cab-both-z.png, g3-top-z.png), living-room walls Navy at the console (g3-cup.png, g3-console.png), and the caption/words table (kinds.mts output).",
+ "checkOnBuild": [
+  "The demo V2 CHANGES again (Kevin Ng's favourite): engine-remove re-renders after this; check V2's sofa has no emerald hairline up the beige cushion, no fleck on the armchair seat, no arc on the grey cushion, clean back-cushion tops, metal left leg.",
+  "Living room › Style › the UAT mood board › Style transfer: the floor reads walnut-dark (not honey oak) and Present / the moodboard still say 'close to Walnut Engineered'.",
+  "Kitchen › Charcoal Lower Cabinets › Sage Laminate: no charcoal wedge under the worktop at the corner; Countertops → Granite Black leaves the lemon bowl's foot pale.",
+  "Living room › Walls → Navy at 6×: console-top line from the cup to the TV foot clean.",
+  "Fig › Customize › Planter Matte black pot + Navy › Generate: Present reads 'Navy matte pot'; the strip caption reads 'V… · Planter'; Remove the sofa → 'Sofa taken out'; a lone back wall reads 'Back Wall'.",
+  "Existing stored versions keep the words they were made with (e.g. 'Emerald Velvet') — only new renders use the new words; captions recompute from Applied, so older versions also show kind words."
+ ]
+}

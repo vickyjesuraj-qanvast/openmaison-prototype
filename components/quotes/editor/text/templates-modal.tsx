@@ -73,7 +73,7 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
     const e = editing
     if (!e || !e.title.trim()) return
     void run('save the template', async () => {
-      const row = e.id ? await updateTextTemplate(e.id, e.title, e.body) : await createTextTemplate(kind, e.title, e.body, browse.finding ? null : browse.openAt)
+      const row = e.id ? await updateTextTemplate(e.id, { title: e.title, body: e.body }) : await createTextTemplate(kind, { title: e.title, body: e.body }, browse.finding ? null : browse.openAt)
       onTemplates(e.id ? templates.map((t) => (t.id === row.id ? row : t)) : [...templates, row])
       setEditing(null)
       if (andAdd) { onAdd(row); onClose() }
@@ -81,8 +81,10 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   }
   const remove = (t: QuoteTextTemplate) => {
     setRemoving(null)
+    const before = templates
     onTemplates(templates.filter((x) => x.id !== t.id))
-    void run('delete the template', () => deleteTextTemplate(t.id), 'Template deleted')
+    /* (wave E, E7) the action answers its rule ("only its author, an Owner or an Admin …"); a refused delete puts the card back */
+    void run('delete the template', () => deleteTextTemplate(t.id), 'Template deleted').then((ok) => { if (!ok) onTemplates(before) })
   }
 
   if (editing) {

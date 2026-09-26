@@ -160,6 +160,8 @@
 }
 .termsTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }   /* "Term of service" 20/Semi Bold #1a1a1a */
 .termsText { margin: 0; padding: 0 var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }   /* 14/Regular centred, p0/20 (60 tall = 3 lines) */
+/* (wave E, E8) "Its n client render links stop working." — the delete dialog's helper voice (12/Regular secondary), under the terms. */
+.termsNote { margin: 0; padding: 0 var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* Footer 68 (H g12 p16/24, top rule): Cancel 80×36 · Submit / Next / Confirm 120×36 right; Back 66×36 = its natural width */
 .footer {
@@ -216,7 +218,7 @@
   .form, .tips { width: 100%; }
   /* 4) Step 2's terms card follows the same 24 → 16 and drops the 20px inset on its centred sentence. */
   .terms { padding: var(--om-spacing-4); }
-  .termsText { padding: 0; }
+  .termsText, .termsNote { padding: 0; }
 }
 
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */

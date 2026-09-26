@@ -259,6 +259,9 @@ export function ItemsTable({
   }, [display, found])
   /* (sweep S1) while Find is on, the Sum row adds up what it shows — never every line beside two rows */
   const sums = useMemo(() => sumLines(found ? items.filter((i) => found.has(i.id)) : items), [items, found])
+  /* (wave E, desktop-6) "priced" means a line with a price: a counted line still at S$0 (a finish the Price book couldn't price, a floor
+     waiting for its measured quantity) is counted but not priced — the row said "2 priced items" over a S$0.00 total. */
+  const priced = useMemo(() => { const lines = countedLines(found ? items.filter((i) => found.has(i.id)) : items); return { n: lines.filter((l) => lineTotalMinor(l) !== 0).length, of: lines.length } }, [items, found])
   // Content-fit, measured after layout in the cells' own fonts (the head's caption, the body's 14/400) — see columnTexts.
   useLayoutEffect(() => {
     const head = headRef.current
@@ -374,7 +377,8 @@ export function ItemsTable({
       <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
         <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
                    items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} commentCounts={commentCounts} />
-        <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
+        {/* (wave E, phone-4) no "#n" before the field on a phone — the cards carry their own numbers, and a lone "2" floated at the edge */}
+        <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
       </div>
     )
   }
@@ -421,7 +425,7 @@ export function ItemsTable({
                      showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} />
           ))}
           {found && !shown.some((d) => d.kind === 'row') ? <div className={styles.findEmpty} role="row" data-testid="find-empty"><span role="cell">No items match “{query.trim()}”</span></div> : null}   {/* (sweep S1) */}
-          <SumRow sums={sums} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
+          <SumRow sums={sums} priced={priced} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />
           <AddItemRow number={nextNumber} autonumber={details.autonumber} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
         </div>
       </div>
@@ -485,12 +489,12 @@ function SideScrollbar({ scroller }: { scroller: React.RefObject<HTMLDivElement 
 }
 
 /** The sum row (REG-477): the number columns' totals over the lines that price — a spreadsheet's SUM line under the table. */
-function SumRow({ sums, columns, colW, colStyle, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
+function SumRow({ sums, priced, columns, colW, colStyle, autonumber, itemStyle }: { sums: ReturnType<typeof sumLines>; priced: { n: number; of: number }; columns: ColumnKey[]; colW: ColWidths; colStyle: (key: ColumnKey) => CSSProperties | undefined; autonumber: boolean; itemStyle?: CSSProperties }) {
   return (
     <div className={styles.sumRow} role="row" aria-label="Sum">
       <div role="cell" className={`${styles.cell} ${styles.colSel}`} />
       {autonumber ? <div role="cell" className={`${styles.cell} ${styles.colNum}`} /> : null}
-      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle}>Sum · {sums.count} priced {sums.count === 1 ? 'item' : 'items'}</div>   {/* (REG-576) "priced": the title's count is every line; this one is the lines that price */}
+      <div role="cell" className={`${styles.cell} ${styles.colItem}`} style={itemStyle} data-testid="sum-label">Sum · {priced.n === priced.of ? `${priced.n} priced ${priced.n === 1 ? 'item' : 'items'}` : `${priced.n} of ${priced.of} priced`}</div>   {/* (REG-576) "priced": the title's count is every line; this one is the lines that carry a price — (wave E, desktop-6) "0 of 2 priced" while lines wait at S$0 */}
       {columns.map((c) => <div key={c} role="cell" className={`${styles.cell} ${COL_CLASS[c]}`} style={{ ...(colW[c] ? { width: colW[c] } : {}), ...colStyle(c) }}><span className={styles.sum}>{sumText(c, sums)}</span></div>)}
       <div role="cell" className={`${styles.cell} ${styles.colAdd}`} />
       <div role="cell" className={`${styles.cell} ${styles.colTotal}`}><span className={styles.sum}>{money2(sums.totalMinor)}</span></div>

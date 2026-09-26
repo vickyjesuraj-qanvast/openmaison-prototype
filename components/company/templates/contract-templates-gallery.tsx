@@ -8,21 +8,20 @@ import { useRun } from '@/components/leads/tasks/use-run'
 import { PickLeadDialog } from '@/components/contracts/pick-lead-dialog'
 import { ContractPaper } from '@/components/contracts/render/contract-paper'
 import { excerptOf, outlineOf } from '@/lib/contracts/tokens'
-import { withFrom } from '@/lib/nav'
 import { templateKind } from '@/lib/company/sections'
 import type { ContractTemplateRow, ContractTemplatesData } from '@/lib/contracts/queries'
 import { contractFromTemplate, createContractTemplate, deleteContractTemplate, deleteContractTemplatesForever, duplicateContractTemplate, emptyContractTemplateTrash, renameContractTemplate, restoreContractTemplates, setDefaultContractTemplate } from '@/app/company/contract-templates-actions'
 import { MetaChip } from '@/components/om/meta-chip'
-import { canDeleteTemplateForever } from '@/lib/contracts/policy'
 import { fetchContractOptionsAction } from '@/app/contracts/read-actions'
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
 import type { TokenValues } from '@/lib/contracts/tokens'
-import { LibraryGallery } from './library-gallery'
+import { LibraryGallery, newIdOf, reasonOf } from './library-gallery'
 import { PickOneDialog, type PickOption } from './pick-one-dialog'
 import styles from './library-gallery.module.css'
 import own from './contract-templates-gallery.module.css'
-import { templateChangeBlock, templateDefaultBlock } from '@/lib/company/template-rules'
+import { templateChangeBlock, templateDefaultBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { useHere } from '@/components/om/use-here'
 
 /**
  * Company › Templates › Contracts (REG-534 → REG-538): the shared library gallery with the contract kind's pieces — a paper
@@ -47,9 +46,10 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
   const [pickFor, setPickFor] = useState<string | null>(null)
   const [fromContract, setFromContract] = useState(false)
   const kind = templateKind('contracts')!
-  const here = '/company/templates/contracts'
-  const open = useCallback((id: string) => router.push(`/templates/contracts/${id}?from=${encodeURIComponent(withFrom(here, from))}`), [router, from])
-  const create = async (fn: () => Promise<string>, what: string) => { try { open(await fn()) } catch { fail(what) } }
+  const here = useHere('/company/templates/contracts')   // (round 3) the open folder and search ride along
+  const open = useCallback((id: string) => router.push(`/templates/contracts/${id}?from=${encodeURIComponent(here)}`), [router, here])
+  /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
+  const create = async (fn: () => Promise<unknown>, what: string) => { try { open(await newIdOf(fn())) } catch (e) { fail(what, reasonOf(e)) } }
   const loadContracts = useCallback(async (): Promise<PickOption[]> => (await fetchContractOptionsAction()).map((c) => ({ id: c.id, label: c.title, sub: c.leadName })), [])
 
   return (
@@ -80,11 +80,15 @@ export function ContractTemplatesGallery({ data, brand, studio, values, from, fo
       deleteMessage={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract keeps its' : 'contracts keep their'} own copy of the document. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.')}
       onRestore={(ids) => restoreContractTemplates(ids)} onDeleteForever={(ids) => deleteContractTemplatesForever(ids)} onEmptyTrash={() => emptyContractTemplateTrash()}
       deletedMeta={{ label: 'Starts with', value: (t) => excerptOf(t.body, 40) || '—' }}
-      keepReason={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract names' : 'contracts name'} it — kept while they do` : canDeleteTemplateForever(data.viewer, t) ? null : 'Only its creator, an Owner or an Admin')}   /* (REG-634, parity Q-21 · Q-24) */
+      keepReason={(t) => (t.usedBy ? `${t.usedBy} ${t.usedBy === 1 ? 'contract names' : 'contracts name'} it — kept while they do` : null)}   /* (REG-634, parity Q-21 · Q-24) */
+      /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a template the viewer wrote (or
+         any, for an Owner or an Admin; lib/contracts/policy canDeleteTemplateForever is the same rule), said in the row as a whole sentence
+         with its author's name (it read "Only its creator, an Owner or an Admin"); its person column is whoever saved it last */
+      restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.maker)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.maker)} deletedByLabel="Updated by"
       empty={{ title: 'No contract templates yet', help: 'Start from the studio agreement, or save any contract as a template from its editor.' }}>
-      <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} onPick={(leadId) => { const id = pickFor; setPickFor(null); if (id && leadId) void contractFromTemplate(id, leadId).then((cid) => router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`), () => fail('create the contract')) }} />
+      <PickLeadDialog open={!!pickFor} onClose={() => setPickFor(null)} leads={leads} onPick={(leadId) => { const id = pickFor; setPickFor(null); if (id && leadId) void run('create the contract', async () => { const cid = await newIdOf(contractFromTemplate(id, leadId)); router.push(`/contracts/${cid}?from=${encodeURIComponent(here)}`) }) }} />
       <PickOneDialog open={fromContract} onClose={() => setFromContract(false)} title="Start from a contract" label="Contract" load={loadContracts} confirmLabel="Create template"
-                     onPick={(id) => { setFromContract(false); void run('create the template', async () => open(await createContractTemplate({ source: { kind: 'contract', contractId: id } }))) }} />
+                     onPick={(id) => { setFromContract(false); void run('create the template', async () => open(await newIdOf(createContractTemplate({ source: { kind: 'contract', contractId: id } })))) }} />
     </LibraryGallery>
   )
 }

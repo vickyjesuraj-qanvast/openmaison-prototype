@@ -25,6 +25,8 @@ import type { Member, Tag } from '@/lib/db/schema'
 import type { TaskTemplateEditorData, TaskTemplateStep } from '@/lib/company/task-templates'
 import { addTaskTemplateToLead, deleteTaskTemplate, duplicateTaskTemplate, saveTaskTemplate } from '@/app/company/task-templates-actions'
 import { LibraryHeader } from '../library-header'
+import { isRefusal } from '@/lib/company/template-rules'
+import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import page from '@/components/contracts/editor/contract-editor.module.css'
 import styles from './library-editor.module.css'
 
@@ -112,7 +114,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
                         onPick={(leadId) => { setAddOpen(false); void flushRef.current().then(() => addTaskTemplateToLead(template.id, leadId)).then((n) => snackbar({ message: `${n} ${n === 1 ? 'task' : 'tasks'} added`, actionLabel: 'Open', onAction: () => router.push(leadId ? `/leads/${leadId}/tasks` : '/tasks') }), () => snackbar({ message: 'Couldn’t add the tasks — please try again' })) }} />
         <ConfirmDialog open={deleteOpen} title={`Delete ${name.trim() || 'this template'}?`} confirmLabel="Delete" tone="danger"
                        message={usedBy ? `The tasks it already added to ${usedBy} ${usedBy === 1 ? 'lead stay' : 'leads stay'}. You can restore the template from Deleted Templates.` : 'You can restore it from Deleted Templates.'}
-                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTaskTemplate(template.id).then(() => { snackbar({ message: 'Template deleted' }); router.push('/company/templates/tasks') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
+                       onCancel={() => setDeleteOpen(false)} onConfirm={() => { setDeleteOpen(false); void deleteTaskTemplate(template.id).then((r) => { if (isRefusal(r)) { snackbar({ message: couldnt('delete the template', refusalOf(r.error)) }); return } snackbar({ message: 'Template deleted' }); router.push('/company/templates/tasks') }, () => snackbar({ message: 'Couldn’t delete the template — please try again' })) }} />
         <AiSheet open={aiOpen} suggestions={[]} onSelect={() => { setAiOpen(false); comingSoon() }} onClose={() => setAiOpen(false)} />
         <MaisonFab onPress={() => setAiOpen((o) => !o)} />
       </div>

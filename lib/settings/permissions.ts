@@ -11,7 +11,8 @@ import { approves, changesPayments, type LeadVisibility, type QuoteApproval, typ
 import type { Member } from '@/lib/db/schema'
 import { addBlock } from '@/lib/company/member-rules'
 import { runsBook } from '@/lib/company/price-book-rules'
-import { folderBlock } from '@/lib/company/folder-libraries'
+import { folderBlock, folderChangeBlockFor } from '@/lib/company/folder-libraries'
+import { designChangeBlock, materialChangeBlock, roomDeleteBlock } from '@/lib/visualizer/policy'
 import { templateChangeBlock } from '@/lib/company/template-rules'
 
 export const ROLE_COLUMNS = ['Owner', 'Admin', 'Manager', 'Designer'] as const
@@ -66,6 +67,11 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
        may rename it — a template by its author (a quote template, which keeps no author, by an Owner or an Admin). */
     row('folders', 'Make, rename, move and delete folders in Templates and the Price book', (r) => (folderBlock({ role: r }) === null ? 'yes' : 'no')),
     row('file-template', 'Move a template into a folder', (r) => own(templateChangeBlock({ id: ME, role: r }, OTHER) === null, templateChangeBlock({ id: ME, role: r }, ME) === null)),
+    /* (REG-673, audit 2026-09-26 F076 · F124) The AI Visualizer and Company › Materials: whoever made it, an Owner or an Admin. */
+    row('viz-design', 'Rename or delete an AI Visualizer design', (r) => own(designChangeBlock({ id: ME, role: r }, OTHER) === null, designChangeBlock({ id: ME, role: r }, ME) === null)),
+    row('viz-room', 'Rename, change the photo of or delete a room in an AI Visualizer design', (r) => own(roomDeleteBlock({ id: ME, role: r }, OTHER, OTHER) === null, roomDeleteBlock({ id: ME, role: r }, ME, OTHER) === null)),
+    row('viz-folder', 'Rename, move or delete an AI Visualizer folder', (r) => own(folderChangeBlockFor('visualizer', { id: ME, role: r }, OTHER) === null, folderChangeBlockFor('visualizer', { id: ME, role: r }, ME) === null)),
+    row('materials', 'Change or delete a studio material', (r) => own(materialChangeBlock({ id: ME, role: r }, OTHER) === null, materialChangeBlock({ id: ME, role: r }, ME) === null)),
   )
   return rows
 }

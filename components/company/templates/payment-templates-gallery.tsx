@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { MetaChip } from '@/components/om/meta-chip'
-import { withFrom } from '@/lib/nav'
 import { templateKind } from '@/lib/company/sections'
 import { DEFAULT_SPLIT_ID, splitWord, sumPct } from '@/lib/quotes/payments'
 import type { PaymentTemplateRow, PaymentTemplatesData } from '@/lib/company/payment-templates'
 import { createPaymentTemplate, deletePaymentTemplate, deletePaymentTemplatesForever, duplicatePaymentTemplate, emptyPaymentTemplateTrash, renamePaymentTemplate, restorePaymentTemplates } from '@/app/company/payment-templates-actions'
-import { LibraryGallery, type LibraryItem } from './library-gallery'
+import { LibraryGallery, newIdOf, reasonOf, type LibraryItem } from './library-gallery'
 import styles from './library-gallery.module.css'
-import { templateChangeBlock } from '@/lib/company/template-rules'
+import { templateChangeBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { useHere } from '@/components/om/use-here'
 
 type Row = PaymentTemplateRow & LibraryItem
 const toRow = (t: PaymentTemplateRow): Row => ({ ...t, title: t.name })
@@ -28,9 +28,10 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
   const router = useRouter()
   const { fail } = useRun()
   const kind = templateKind('payments')!
-  const here = '/company/templates/payments'
-  const open = useCallback((id: string) => router.push(`/templates/payments/${id}?from=${encodeURIComponent(withFrom(here, from))}`), [router, from])
-  const create = async (fn: () => Promise<string>, what: string) => { try { open(await fn()) } catch { fail(what) } }
+  const here = useHere('/company/templates/payments')   // (round 3) the open folder and search ride along
+  const open = useCallback((id: string) => router.push(`/templates/payments/${id}?from=${encodeURIComponent(here)}`), [router, here])
+  /* (wave E, E7) a refusal answers { error: the rule } — said after "Couldn’t …", never an editor opened on "[object Object]" */
+  const create = async (fn: () => Promise<unknown>, what: string) => { try { open(await newIdOf(fn())) } catch (e) { fail(what, reasonOf(e)) } }
   const balanced = (t: PaymentTemplateRow) => Math.abs(sumPct(t.rows) - 100) < 0.005
 
   return (
@@ -64,6 +65,9 @@ export function PaymentTemplatesGallery({ data, from, folders = [] }: { data: Pa
       onDelete={(t) => { if (t.id === DEFAULT_SPLIT_ID) throw new Error('default'); return deletePaymentTemplate(t.id) }}
       deleteMessage={(t) => (t.id === DEFAULT_SPLIT_ID ? 'The studio default cannot be deleted — every quote that names no split falls back to it.' : t.usedBy ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — new quotes from them fall back to the studio default until you pick another. Quotes already on this split keep their schedule.` : 'Quotes already on this split keep their schedule. You can restore it from Deleted Templates.')}
       onRestore={(ids) => restorePaymentTemplates(ids)} onDeleteForever={(ids) => deletePaymentTemplatesForever(ids)} onEmptyTrash={() => emptyPaymentTemplateTrash()}
+      /* (verify round 3) the Deleted sheet offers only what the server allows — Restore and Delete Forever on a split the viewer made (or any,
+         for an Owner or an Admin), the rule said in the row with its author's name — a preset, which no one wrote, an Owner's or an Admin's */
+      restoreBlock={(t) => templateRestoreBlock(data.viewer, t.createdBy, t.author)} purgeRule={(t) => templatePurgeBlock(data.viewer, t.createdBy, t.author)}
       keepReason={(t) => (t.usedBy > 0 ? `${t.usedBy} quote ${t.usedBy === 1 ? 'template names' : 'templates name'} it — restore it instead` : null)}
       deletedMeta={{ label: 'Split', value: (t) => splitWord(t.rows) }}
       empty={{ title: 'No payment templates yet', help: 'Save a quote’s schedule as a template from its Payment Schedule, or start a split here.' }} />

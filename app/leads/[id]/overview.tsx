@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
@@ -18,6 +18,7 @@ import { useMaisonAi } from '@/lib/maison-ai'
 import { AssignPopover } from '@/components/leads/assign-popover'
 import { DeleteLeadDialog } from '@/components/leads/delete-dialog'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { useSheetLayout } from '@/components/om/sheet'
 import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { LostDialog, OnHoldDialog } from '@/components/leads/move-stage/dialogs'
 import { AskClientDialog } from '@/components/leads/questionnaire/ask-client-dialog'
@@ -54,6 +55,7 @@ import { displayDateTimeDot, isOverdue, moneyCompact, phoneDigits, phoneDisplay,
 import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { liveReasonNames } from '@/lib/settings/types'
+import { openLeadDesign } from '@/app/visualizer/actions'
 import styles from './overview.module.css'
 
 type Anchored = { el: HTMLElement; top: number; left: number } | null
@@ -144,6 +146,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
 
   /* ── popovers, dialogs ── */
   const [kebabOpen, setKebabOpen] = useState(false)
+  /* (audit 2026-09-26, D7) ≤767 the Create quick links are gone (quick-links.module.css), so the kebab's sheet carries the lead's way
+     into its AI Visualizer design — as Quote X-Ray reached the phone through the quote rows' menu (REG-639, E-81). */
+  const phoneSheet = useSheetLayout()
   const [assign, setAssign] = useState<Anchored>(null)
   const [tasksFor, setTasksFor] = useState<({ el: HTMLElement } & TasksPos) | null>(null)
   const [leadForm, setLeadForm] = useState<LeadFormOpen | null>(null)
@@ -195,6 +200,21 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     const parts = [query, origin ? `from=${encodeURIComponent(origin)}` : undefined].filter(Boolean)
     return parts.length ? `${detailHref(lead.id, slug)}?${parts.join('&')}` : detailHref(lead.id, slug)
   }
+  /* (REG-673, Q-02) AI Visualizer: the lead's design — made on first open — and Back returns to the very page the link was pressed on:
+     (F110) the URL as it stands, so a Files folder (`?folder=`) or any other state of the tab comes back with it. Read at the press. */
+  /* (wave E, tablet-11) The action that makes / finds the design runs ~1 s before the editor's ghost can show: it runs in a transition that
+     also holds the navigation, so the quick link spins (aria-busy) from the press until the editor takes over, and a second press waits. */
+  const [openingDesign, startOpeningDesign] = useTransition()
+  const openVisualizer = () => {
+    if (openingDesign) return
+    const here = `${window.location.pathname}${window.location.search}`
+    startOpeningDesign(async () => {
+      const r = await openLeadDesign(lead.id).catch(() => ({ error: 'Couldn’t open the design — please try again' }))
+      if ('error' in r) { snackbar({ message: r.error }); return }
+      startOpeningDesign(() => router.push(withFrom(`/visualizer/${r.id}`, here)))
+    })
+  }
+
   const goTab = (slug: DetailTabSlug) => router.push(href(slug))
   /* The tab window events come from CREATE_EVENTS, the map the listening tabs already read (REG-286) — these three
      dispatchers used to hard-code the same strings, so a rename on one side broke the quick link in silence. */
@@ -274,6 +294,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                   The mock menus carry no Edit; the built overview keeps it first (its only editor entry besides the info column). */}
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle={lead.name}>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }}>Edit</DropdownItem>
+                {phoneSheet ? <DropdownItem onSelect={() => { setKebabOpen(false); openVisualizer() }}>AI Visualizer</DropdownItem> : null}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Invite to Portal</DropdownItem>
                 {canReturn ? (
                   <DropdownItem onSelect={() => { setKebabOpen(false); setReturnOpen(true) }}>Return Lead</DropdownItem>
@@ -371,7 +392,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             )}
           </div>
 
-          <QuickLinks
+          <QuickLinks busy={openingDesign ? 'AI Visualizer' : null}
             /* Same shape as Quote / Note / Question above: in place on its own tab, otherwise land on the Tasks tab
                with the add row already open. It used to open the MY TASKS popover, whose anchor only exists on the
                Overview — so from Quotes, Files, Notes … the link did nothing at all (user 2026-08-30). */
@@ -379,7 +400,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             onQuote={onNewQuote}
             onCallLog={onNewContactLog}
             onNote={onNewNote}
-            onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(href(tab))}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else comingSoon() }}   /* (REG-529, REG-534; REG-639: back to the tab it was pressed on) */
+            onOther={(label) => { if (label === 'Quote X-Ray') router.push(`/quote-x-ray?lead=${lead.id}&from=${encodeURIComponent(window.location.pathname + window.location.search)}`); else if (label === 'Contract') router.push(href('contracts', 'new=1')); else if (label === 'AI Visualizer') openVisualizer(); else comingSoon() }}   /* (REG-529, REG-534; REG-639 · F110: back to the tab as it stood — a Files folder included — read at the press) */
           />
         </div>
       </div>

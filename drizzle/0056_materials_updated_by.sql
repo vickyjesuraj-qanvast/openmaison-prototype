@@ -1,0 +1,1 @@
+ALTER TABLE `studio_materials` ADD `updated_by` text;

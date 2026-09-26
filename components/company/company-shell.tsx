@@ -8,6 +8,7 @@ import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { Tabs } from '@/components/om/tabs'
 import { Bone, GhostSheet } from '@/components/shell/skeleton'
+import { LibraryGalleryGhost } from '@/components/company/templates/library-gallery.skeleton'
 import { TEMPLATE_KINDS, tabBones } from '@/lib/company/sections'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './company-shell.module.css'
@@ -58,14 +59,16 @@ export function CompanyShell({ title, tabs, actions, from, activeHref, crumb = '
 export const templateTabs = () => TEMPLATE_KINDS.map((k) => ({ label: k.label, href: k.href }))
 
 /** The route's ghost (loading.tsx + PageReveal): header, the tab strip, a grid of card bones. */
-export function CompanySkeleton({ tabs = true, form = false, tabWidths = tabBones(TEMPLATE_KINDS.map((k) => k.label)) }: { tabs?: boolean; form?: boolean; /** (REG-653, Q-18) one bone per tab the section has */ tabWidths?: number[] }) {
+export function CompanySkeleton({ tabs = true, form = false, gallery = false, tabWidths = tabBones(TEMPLATE_KINDS.map((k) => k.label)) }: { tabs?: boolean; form?: boolean; /** (audit 2026-09-26, round 3) a library tab: the gallery's own toolbar, Folders row and cards */ gallery?: boolean; /** (REG-653, Q-18) one bone per tab the section has */ tabWidths?: number[] }) {
   return (
-    <GhostSheet label="Loading company">
+    <GhostSheet label="Loading company" l1>
       <div className={styles.ghostHead}><Bone w={160} h={28} /></div>
       {tabs ? <div className={styles.ghostTabs} aria-hidden>{tabWidths.map((w, i) => <Bone key={i} w={w} h={14} />)}</div> : null}
       <div className={pageStyles.content} aria-hidden>
         {/* (sweep S4 #26) a form page is one column of cards, as the page draws it — never the gallery's grid */}
-        {form ? <div className={styles.ghostForm}>{[0, 1].map((i) => <Bone key={i} w="100%" h={360} r={8} />)}</div> : <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>}
+        {form ? <div className={styles.ghostForm}>{[0, 1].map((i) => <Bone key={i} w="100%" h={360} r={8} />)}</div>
+          : gallery ? <LibraryGalleryGhost pill folders={1} cards={8} />
+          : <div className={styles.ghostGrid}>{[0, 1, 2, 3].map((i) => <Bone key={i} w="100%" h={280} r={8} />)}</div>}
       </div>
     </GhostSheet>
   )

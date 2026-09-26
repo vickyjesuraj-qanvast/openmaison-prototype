@@ -41,7 +41,7 @@ type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { ki
  * (REG-518); making a template is Company › Templates' job — no New template here (REG-519).
  * Upload and Draft answer coming soon until their flows exist. ≤767 it is the canvas' bottom sheet (REG-353).
  */
-export function CreateQuoteModal({ open, leadName, templates, now, onClose, onStart, onSetDefault, clients, priceBookCount, render, preselect, onUpload }: {
+export function CreateQuoteModal({ open, leadName, templates, now, onClose, onStart, onSetDefault, defaultBlock = null, clients, priceBookCount, render, preselect, onUpload }: {
   open: boolean
   /** The lead the quote is for; '' when the modal opens studio-wide and the Client field decides (REG-422). */
   leadName: string
@@ -51,6 +51,9 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   /** A template's id, or null for Blank Quote; `clientId` = the Client field's lead when the modal carries one. */
   onStart: (templateId: string | null, clientId: string | null) => void
   onSetDefault: (templateId: string) => void
+  /** (REG-646 · verify round 3) Why this viewer may not set the studio's default (an Owner or an Admin may), else null — the tile's
+      Set as default then waits with the rule in its row, as Company › Templates says it, rather than refusing after the press. */
+  defaultBlock?: string | null
   /** Tools › Quotes (REG-422): the studio's leads — the modal opens with a Client field on top and a tile waits for a pick. */
   clients?: { id: string; name: string }[]
   /** The studio's My Items count — the 1.0 row's "your 8-item price book" (REG-412), from the record. */
@@ -108,6 +111,9 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   const forName = clients ? client?.name ?? '' : leadName
   const title = forName ? `Start a quote for ${forName}` : 'Start a quote'
   const pickedId = mode.kind === 'all' && picker ? defaultPick(picker, mode.selectedId) : null   /* (REG-518) the picker's selection; the footer acts on it */
+  /* (verify round 3 · the sweep's rule, REG-656) Set as default waits with its reason in the row — the viewer's rule first, as Company ›
+     Templates' row says it — never a native title, never a refusal after the press. */
+  const defaultWhy = (t: { isDefault: boolean }) => defaultBlock ?? (t.isDefault ? 'Already the default' : null)
   const meta = (t: { version: number; lastUsedAt: number | Date | null }) => [`v${t.version}`, t.lastUsedAt ? `used ${ago(t.lastUsedAt instanceof Date ? t.lastUsedAt.getTime() : t.lastUsedAt, now)}` : null].filter(Boolean).join(' · ')
   return (
     <AnimatePresence>
@@ -215,7 +221,9 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                             </Tooltip>
                             <Dropdown open={menuFor === t.id} onClose={() => setMenuFor(null)} align="right" sheetTitle={t.name}>
                               <DropdownItem onSelect={() => { setMenuFor(null); if (picker) setMode({ kind: 'all', selectedId: t.id }); else comingSoon() }}>Preview</DropdownItem>
-                              <DropdownItem onSelect={() => { setMenuFor(null); onSetDefault(t.id) }} disabled={t.isDefault} title={t.isDefault ? 'Already the default' : undefined}>Set as default</DropdownItem>
+                              <DropdownItem onSelect={() => { setMenuFor(null); onSetDefault(t.id) }} disabled={!!defaultWhy(t)}>
+                                {defaultWhy(t) ? <span className={styles.menuRow}>Set as default<span className={styles.menuMeta}>{defaultWhy(t)}</span></span> : 'Set as default'}
+                              </DropdownItem>
                             </Dropdown>
                           </span>
                         </div>
