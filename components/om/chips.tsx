@@ -1,6 +1,6 @@
 'use client'
 
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react'
 import styles from './chips.module.css'
 
 /**
@@ -10,7 +10,12 @@ import styles from './chips.module.css'
 export type ChipOption = string | { value: string; label: string; disabled?: boolean; swatch?: string | null }
 const norm = (o: ChipOption) => (typeof o === 'string' ? { value: o, label: o } : o)
 
-type Single = { multiple?: false; value: string | null; onChange: (value: string) => void }
+type Single = {
+  multiple?: false; value: string | null; onChange: (value: string) => void
+  /** (REG-719) An action that belongs to one chip, drawn inside it after its words — the AI Visualizer's rooms: each room's ⋯ in its own
+   *  chip. The chip becomes a box holding its radio and this; `on` says whether the chip is the picked one. */
+  trail?: (value: string, on: boolean) => ReactNode
+}
 type Multi = { multiple: true; value: readonly string[]; onChange: (values: string[]) => void }
 type Common = {
   options: readonly ChipOption[]
@@ -60,13 +65,20 @@ export function Chips(props: Common & (Single | Multi)) {
   const dot = (o: { swatch?: string | null }) => (o.swatch ? <span className={styles.swatch} style={{ ['--chip-sw' as string]: o.swatch } as CSSProperties} aria-hidden /> : null)
   return (
     <div className={className ? `${styles.chips} ${className}` : styles.chips} role={props.multiple ? 'group' : 'radiogroup'} aria-label={label} aria-disabled={disabled || undefined} data-testid={testId}
-         onKeyDown={props.multiple ? undefined : (e) => { rovingKey(e, ':scope > [role=radio]') }}>
+         onKeyDown={props.multiple ? undefined : (e) => { rovingKey(e, ':scope > [role=radio], :scope > [data-chip-box] > [role=radio]') }}>
       {list.map((o) => {
         const on = picked.has(o.value), off = disabled || !!o.disabled
         return props.multiple ? (
           <button key={o.value} type="button" className={styles.chip} data-selected={on || undefined} aria-pressed={on} disabled={off} onClick={() => press(o.value)}>{dot(o)}{o.label}</button>
         ) : (
-          <button key={o.value} type="button" role="radio" aria-checked={on} className={styles.chip} data-selected={on || undefined} disabled={off} tabIndex={o.value === stop ? 0 : -1} onClick={() => press(o.value)}>{dot(o)}{o.label}</button>
+          props.trail ? (
+            <span key={o.value} className={styles.chipBox} data-chip-box="" data-selected={on || undefined} data-disabled={off || undefined}>
+              <button type="button" role="radio" aria-checked={on} className={`${styles.chip} ${styles.chipIn}`} data-selected={on || undefined} disabled={off} tabIndex={o.value === stop ? 0 : -1} onClick={() => press(o.value)}>{dot(o)}{o.label}</button>
+              {props.trail(o.value, on)}
+            </span>
+          ) : (
+            <button key={o.value} type="button" role="radio" aria-checked={on} className={styles.chip} data-selected={on || undefined} disabled={off} tabIndex={o.value === stop ? 0 : -1} onClick={() => press(o.value)}>{dot(o)}{o.label}</button>
+          )
         )
       })}
     </div>

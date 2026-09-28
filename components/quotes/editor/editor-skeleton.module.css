@@ -1,11 +1,6 @@
-/* Ghost for the quote editor (page 1260:31139): header 76 · tabs 48 · the General Info card (383) and the Items card's
-   head, beside the 72px strip — the page's own layout (page-checklist › Load & refresh). */
+/* Ghost for the quote editor (page 1260:31139): header 76 (the editors' shared header ghost, REG-708) · tabs 48 · the General Info
+   card (383) and the Items card's head, beside the 72px strip — the page's own layout (page-checklist › Load & refresh). */
 .page { min-height: 100dvh; background: var(--om-color-surface-bg); display: flex; flex-direction: column; }
-.header { display: flex; align-items: center; gap: var(--om-spacing-3); height: 76px; padding: var(--om-spacing-4) var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
-.titleCol { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.chips { display: flex; align-items: center; gap: var(--om-spacing-2); }
-.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; overflow: hidden; }
 .body { flex: 1; display: flex; align-items: stretch; }
 .main { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
@@ -14,10 +9,7 @@
 .card[data-open] .cardHead { box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
 .strip { width: 72px; flex-shrink: 0; border-left: var(--om-border-1) solid var(--om-color-surface-variant); background: var(--om-color-surface-default); padding: var(--om-spacing-6); display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); }
-@media (max-width: 1024px) { .chips { display: none; } }
 @media (max-width: 767px) {
-  .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); }
-  .actions { flex-basis: 100%; }
   .main { padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .grid { grid-template-columns: 1fr; padding: var(--om-spacing-4); gap: var(--om-spacing-4); }
   .strip { display: none; }

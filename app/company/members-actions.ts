@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { members, settings } from '@/lib/db/schema'
+import { members, settings, studioMemberCreditCaps } from '@/lib/db/schema'
 import { isRole, type Role } from '@/lib/leads/enums'
 import { fetchViewer } from '@/lib/leads/visibility'
 import { runsStudio } from '@/lib/leads/assign-policy'
@@ -83,6 +83,10 @@ export async function addMember(input: { name: string; phone: string; email: str
   if (email && team.some((m) => (m.email ?? '').toLowerCase() === email)) return { error: 'Another member has that email' }
   const id = randomUUID()
   await db.insert(members).values({ id, name, role, color: nextTint(team.map((m) => m.color)), isYou: false, email: email || null, phone: phone || null, isActive: true })
+  /* (REG-704, AI credits Q-25 · integration B-16) the studio's monthly amount for new members, when the Owner set one — a cap row as 1.0 writes it */
+  const [defaults] = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, 'credit_defaults'))
+  const amount = defaults ? (JSON.parse(defaults.value) as { monthlyAmount?: number | null }).monthlyAmount ?? null : null
+  if (amount != null && amount > 0) await db.insert(studioMemberCreditCaps).values({ memberId: id, monthlyCap: Math.round(amount), updatedBy: viewer.id, updatedAt: new Date() }).onConflictDoNothing()
   touch()
   return { ok: true, id }
 }

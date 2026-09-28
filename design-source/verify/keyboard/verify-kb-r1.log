@@ -1,0 +1,37 @@
+✓ the rail’s AI credits token draws its ring — 2 circles
+✓ the ring is 30 across on the 36 tile — 32px
+✓ ? opens the Keyboard shortcuts panel
+✓ it opens on this page — Keyboard shortcuts | ? | close | On this page
+✓ the listing’s keys, in the page’s words
+✓ and the keys that work everywhere
+✓ the page makes room for the panel at 1440 — page ends 1072 · panel starts 1080
+✓ the page’s own controls wear their keys — ⌘K G T G L G N G S C F V
+✓ Esc closes the panel
+✓ J draws the cursor on a lead
+✓ X ticks the lead under the cursor
+✓ ⌫ opens the delete question — it asks first
+✓ Esc clears the cursor, then the selection
+✓ ↵ opens the lead under the cursor — /leads/plead-hangout
+✓ 2 opens the lead’s Tasks tab
+✓ J on a lead goes to the next lead of the list — /leads/plead-hangout → /leads/9b9eb718-4be6-4cf2-9ab6-017bba61f57a
+✓ and keeps the way back to the list
+✓ E opens Edit lead
+✓ A opens Assign
+✓ M opens the stage menu
+✓ Esc, with nothing open, goes back to the list — /leads
+✓ G shows the places after a beat
+✓ G then T goes to Tasks
+✓ the search’s Go to offers Keyboard shortcuts
+✓ its footer names the key for all shortcuts
+✓ picking it opens the panel over the page you are on
+✓ C opens Create New Lead
+✓ the Filters tooltip names its key — Filters F
+✓ the empty search box shows "/"
+✓ the third press with the mouse earns a tip — Next time, press F for Filters. All shortcuts close
+✓ ⌘/ opens the panel too
+✓ switched off, the single keys read “off”
+✓ with single keys off, J does nothing
+✓ but ↓ still moves
+✓ no page errors
+
+35 passed, 0 failed

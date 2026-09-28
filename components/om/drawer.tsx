@@ -17,7 +17,7 @@ import styles from './drawer.module.css'
  * (non-modal). Spec: design-source/context/lead-tasks/03-panel-tags.txt · 04-comments-attach.txt.
  */
 export function Drawer({
-  open, title, crumb, onBack, actions, footer, onClose, children, width = 400, label,
+  open, title, crumb, onBack, actions, footer, onClose, children, width = 400, label, kbPanel = false,
 }: {
   open: boolean
   title: string
@@ -31,6 +31,8 @@ export function Drawer({
   children: ReactNode
   width?: number
   label?: string
+  /** (REG-711) The ? panel: keys pressed inside it still reach the page, so they can be tried with the list open. */
+  kbPanel?: boolean
 }) {
   const panel = useRef<HTMLElement>(null)
   useEscapeLayer(open, panel, onClose)
@@ -57,6 +59,7 @@ export function Drawer({
           style={sheet ? undefined : { width }}
           role="dialog"
           aria-label={label ?? title}
+          data-kb-panel={kbPanel || undefined}
           tabIndex={-1}
           variants={sheet ? bottomSheet : slide}
           initial="initial" animate="animate" exit="exit"

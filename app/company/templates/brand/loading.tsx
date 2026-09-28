@@ -1,6 +1,6 @@
-import { CompanySkeleton } from '@/components/company/company-shell'
+import { BrandKitGhost } from '@/components/company/company-ghosts'
 
-/** (sweep S4 #26) The brand kit's ghost: the L1 head, Templates' six tabs and the kit's form cards — not the galleries' grid. */
+/** Templates › Brand kit's own ghost (REG-708): the lead line, Logo and marks, Colours, and the preview at the right. */
 export default function Loading() {
-  return <CompanySkeleton form />
+  return <BrandKitGhost />
 }

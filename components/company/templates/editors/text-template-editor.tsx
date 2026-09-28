@@ -8,7 +8,7 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { EditorSkeleton } from '@/components/quotes/editor/editor-skeleton'
+import { LibraryEditorGhost } from './library-editor-ghost'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
@@ -65,7 +65,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
   const close = () => { void flushRef.current(); router.push(backHref) }
 
   return (
-    <PageReveal skeleton={<EditorSkeleton />}>
+    <PageReveal skeleton={<LibraryEditorGhost kind="terms" />}>
       <div className={page.page} data-testid="text-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'T&Cs & Notes', href: '/company/templates/terms' }]} title={title.trim() || 'Untitled template'}
                        chips={<><MetaChip>{label}</MetaChip><MetaChip>{template.usedBy === 0 ? 'Not a default yet' : `Default on ${template.usedBy} quote ${template.usedBy === 1 ? 'template' : 'templates'}`}</MetaChip></>}

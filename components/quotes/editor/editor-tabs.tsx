@@ -42,7 +42,7 @@ export function EditorTabs({ items, active, onSelect, className }: {
     list.scrollLeft = Math.max(0, Math.min(target, list.scrollWidth - list.clientWidth))
   }, [active])
   return (
-    <div ref={listRef} role="tablist" aria-label="Quote sections" className={className ? `${tabs.tabs} ${className}` : tabs.tabs} onKeyDown={onKeyDown}>
+    <div ref={listRef} role="tablist" aria-label="Quote sections" data-kb-tabs="" className={className ? `${tabs.tabs} ${className}` : tabs.tabs} onKeyDown={onKeyDown}>
       {items.map((t) => {
         const selected = t.key === active
         return (

@@ -240,6 +240,7 @@ function KanbanCard({
       ref={cardEl}
       layoutId={lead.id}
       className={styles.card}
+      data-kb-row data-kb-id={lead.id} data-kb-href={`/leads/${lead.id}`}
       data-lifted={lifted || undefined}
       data-unseen={unseen || undefined}
       transition={spring.settle}
@@ -252,7 +253,7 @@ function KanbanCard({
     >
       <div className={styles.cardData}>
       <div className={styles.cardHead}>
-        <span className={styles.cardName} role="link" tabIndex={0}
+        <span className={styles.cardName} role="link" tabIndex={0} data-kb-open
               onClick={() => onNameClick(lead)}
               onKeyDown={(e) => e.key === 'Enter' && onNameClick(lead)}
               style={{ cursor: 'pointer' }}>
@@ -368,7 +369,7 @@ export function KanbanBoard({
 
   return (
     <div className={styles.boardWrap}>
-    <motion.div ref={boardRef} className={styles.board} layoutScroll>
+    <motion.div ref={boardRef} className={styles.board} layoutScroll data-kb-list="lead">   {/* (REG-713) J / K walk the cards column by column */}
       {BANDS.filter((b) => !stageScope || b.stages.includes(stageScope))
         .map((b) => (stageScope ? { ...b, stages: [stageScope] as readonly Stage[] } : b))
         .map((band) => {

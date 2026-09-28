@@ -95,6 +95,7 @@ DS library components (OpenMaison Components): Text Field set key `35b2a7b3a07d5
 Validation (`lib/forms.ts`): "This field is required" · "Choose a date and time" · "Enter a valid date (d/m/yyyy)" · "Enter a valid email address" · "Enter an 8-digit phone number" · "Enter an amount" · "Enter a number" · "Attach at least one file" · "Choose an option" · "Milestones must add up to 100%" · "Assign at least one member".
 Stage flow: "Complete {Stage} first" · "Assign a member first" · "{Stage} is already completed — stages don't move back" · "Resume at {Stage}?" · "{Stage} details" · "Save changes" · "Other reason" · "Moved to {Stage}" + Undo.
 Settings: page copy under Leads › Stage movement (`lib/settings/types.ts`). Reset: "Reset prototype to base" / "Reset the prototype?".
+AI credits (REG-699…705, audit 19 §5.9): the unit is "AI credits" on first mention · balance "11,610 AI credits" · "AI credits left" · a member's "115 of your 600" / "420 used this month" · time "Refreshes 10 Oct · in 12 days" · plain terms "about 1,161 renders" · cost "✦ 20" on a button (Maison AI's spark, REG-706), "20 AI credits" in a line, "… left after" · refund "your 20 AI credits are back" / "Stopped — nothing was kept or charged" · a member's cap is their "monthly amount" · asking "Ask Dane for more" → "Asked Dane" · buying "Buy 1,000 AI credits · S$20" → "1,000 AI credits added" (· "— carrying on") · short "Needs 20 — you can use 15" · Plans "Your plan" · "Fits your team of 7" · "Start the free trial" · "Talk to us".
 
 ## 5b · Lead Details (phase 2)
 
@@ -133,7 +134,7 @@ Settings: page copy under Leads › Stage movement (`lib/settings/types.ts`). Re
 
 ## 6 · Designed later (invented placeholders in the build)
 
-Time picker row + Today · Settings page layout · Contacted "Other reason" field · log delete control · stage-move Undo snackbar · review-queue twin comparison · the "stamp card" stage flow (ideation only, not built — see the three claude.ai artifacts noted in `/CLAUDE.md`).
+AI credits & plans — the rail's credits row and card, Plans (Choose · Review · Pay · Done), the moments, Company › Plan & AI credits (REG-701…705; the approved proposal, no Figma frames) · Time picker row + Today · Settings page layout · Contacted "Other reason" field · log delete control · stage-move Undo snackbar · review-queue twin comparison · the "stamp card" stage flow (ideation only, not built — see the three claude.ai artifacts noted in `/CLAUDE.md`).
 
 ## 7 · Where things live
 

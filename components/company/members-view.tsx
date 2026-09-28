@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { Icon } from '@/components/om/icon'
 import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell } from './company-shell'
+import { MembersGhost } from './company-ghosts'
 import { ROLES, isRole, type Role } from '@/lib/leads/enums'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { addBlock, deactivateBlock, reactivateBlock, roleChangeBlock } from '@/lib/company/member-rules'
@@ -131,7 +132,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     catch { setRows(prev); snackbar({ message: `Couldn’t change who ${m.name} reports to — please try again` }) }
   }
   return (
-    <CompanyShell title="Members" from={from} form
+    <CompanyShell title="Members" from={from} skeleton={<MembersGhost />}
                   actions={canEdit ? <Button iconStart={<Icon name="person_add" size={20} />} onPress={() => setAdding({ name: '', phone: '', email: '', role: 'Designer', tried: false })}>Add member</Button> : null}>
       <div className={styles.layout} data-testid="members">
         {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins add members and change roles or reporting lines." />}   {/* (sweep S4 #16) */}

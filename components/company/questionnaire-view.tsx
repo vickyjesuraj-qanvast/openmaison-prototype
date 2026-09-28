@@ -12,6 +12,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell } from './company-shell'
+import { QuestionnaireGhost } from './company-ghosts'
 import { ReadOnlyNote } from './read-only-note'
 import { runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import type { StudioScopeQuestion } from '@/lib/db/schema'
@@ -52,7 +53,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
     void run('move the question', () => moveScopeQuestion(q.id, dir), 'Order saved', prev)
   }
   return (
-    <CompanyShell title="Questionnaire" from={from} form>
+    <CompanyShell title="Questionnaire" from={from} skeleton={<QuestionnaireGhost />}>
       <div className={styles.layout} data-testid="questionnaire-bank">
         {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins change the question bank." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="bank-title">

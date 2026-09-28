@@ -56,9 +56,19 @@
 
 .head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
 
-.hCell { position: relative; }
+/* (REG-723, owner 2026-09-28: "check the table header alignments and looks different compared to the leads table header") The head
+   cell is the listing's (components/leads/table.module.css .hCell): 16/24/16/16 like the cells under it, the label centred in the 56
+   in the head's grey. The copy of the Qanvast Ops card took only the first of its two .hCell rules, so each label sat in the top-left
+   corner of its track, in black, 16px left of its column's values. */
+.hCell {
+  position: relative;   /* the column-resize handle (REG-427) */
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
 
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .hSort {
   border: 0; background: none; padding: 0; cursor: pointer;
@@ -95,3 +105,7 @@
 .head .pin { z-index: 3; }
 
 .row:hover .pin { background: var(--om-color-primary-variant); }
+/* (REG-723) The frozen Member column's edge, as every table's: the 1px rule at rest, the shadow only while the card is scrolled sideways
+   (`data-scrolled` from the card's own scroll handler) — also lost in the copy. */
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }

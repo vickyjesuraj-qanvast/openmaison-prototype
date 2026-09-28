@@ -1341,3 +1341,132 @@ export const studioMaterials = sqliteTable('studio_materials', {
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
 })
 export type StudioMaterial = typeof studioMaterials.$inferSelect
+
+/* ── AI credits & plans (REG-699…; audit design-source/context/parity/19-…, integration map 20-…) ────────────────────────────────────
+   1.0's own tables and column names (qanvast-id-tool feat/om-ui-port: 002 · 009 · 317 · 318 · 321 · 326 · 328), so the developers'
+   port is a mapping, not a rename (integration A-19). 2.0 is one studio, so 1.0's `studio_id` is left out, as on every 2.0 table.
+   Dates are unix seconds, as everywhere in 2.0. Dodo's ids, `actual_cost_usd` and the webhook log are Platform (never shown). */
+
+/** 1.0's `plans` (002 + 317 + 326; `trial_period_days` from the live plans API): free · pro_freelance · pro_studio · max. Prices in SGD
+    cents; `credit_allowance` is per seat per month; a studio's month is `credit_allowance × seats`. */
+export const plans = sqliteTable('plans', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  monthlyPrice: integer('monthly_price').notNull().default(0),
+  yearlyPrice: integer('yearly_price').notNull().default(0),
+  maxMembers: integer('max_members'),                              // Freelance = 1 (a person, not a team)
+  creditAllowance: integer('credit_allowance').notNull().default(0),
+  signupCreditGrant: integer('signup_credit_grant').notNull().default(0),
+  featureFlags: text('feature_flags').notNull().default('{}'),     // JSON — the plan locks (Q-40 · later)
+  minSeats: integer('min_seats').notNull().default(1),
+  extraSeatPriceCents: integer('extra_seat_price_cents'),
+  isContactSales: integer('is_contact_sales', { mode: 'boolean' }).notNull().default(false),
+  trialPeriodDays: integer('trial_period_days').notNull().default(0),
+  isHighlighted: integer('is_highlighted', { mode: 'boolean' }).notNull().default(false),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+})
+export type Plan = typeof plans.$inferSelect
+
+/** 1.0's `subscriptions` (009 + 321): the studio's plan. `status` active · trialing · past_due · cancelled; `billing_cycle` monthly · yearly.
+    2.0 adds `trial_ends_at` and `cancel_at_period_end` (1.0 keeps them on Dodo's side) so the prototype can show them. */
+export const subscriptions = sqliteTable('subscriptions', {
+  id: text('id').primaryKey(),
+  planId: text('plan_id').notNull(),
+  billingCycle: text('billing_cycle').notNull().default('monthly'),
+  status: text('status').notNull().default('active'),
+  seats: integer('seats').notNull().default(1),
+  currentPeriodStart: integer('current_period_start', { mode: 'timestamp' }).notNull(),
+  currentPeriodEnd: integer('current_period_end', { mode: 'timestamp' }).notNull(),
+  trialEndsAt: integer('trial_ends_at', { mode: 'timestamp' }),
+  cancelAtPeriodEnd: integer('cancel_at_period_end', { mode: 'boolean' }).notNull().default(false),
+  cancelledAt: integer('cancelled_at', { mode: 'timestamp' }),
+  graceUntil: integer('grace_until', { mode: 'timestamp' }),
+  createdBy: text('created_by'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+export type Subscription = typeof subscriptions.$inferSelect
+
+/** 1.0's `studio_credit_balances` (318): the two buckets — this month's `plan_credits` (spent first, refreshed each period, never carried)
+    and `topup_credits` (bought, welcome and refunds — never expire). One row. `enforcement_enabled` is 1.0's shadow switch; 2.0 adds
+    `enforcement_starts_at` for the notice before credits count (integration B-32, Q-46). */
+export const studioCreditBalances = sqliteTable('studio_credit_balances', {
+  id: text('id').primaryKey(),                                     // 'studio' — one row
+  planCredits: integer('plan_credits').notNull().default(0),
+  topupCredits: integer('topup_credits').notNull().default(0),
+  periodStart: integer('period_start', { mode: 'timestamp' }).notNull(),
+  periodEnd: integer('period_end', { mode: 'timestamp' }).notNull(),
+  enforcementEnabled: integer('enforcement_enabled', { mode: 'boolean' }).notNull().default(true),
+  enforcementStartsAt: integer('enforcement_starts_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+export type StudioCreditBalance = typeof studioCreditBalances.$inferSelect
+
+/** 1.0's `credit_ledger` (318): append-only. `reason` spend · refund · topup · refresh · grant · adjust · shadow_spend; `credits` signed;
+    `ref_id` ties a charge to its work — `render:<job id>` · `quote:<quote id>` (integration B-12 · B-27: stable, so By lead reads it). */
+export const creditLedger = sqliteTable('credit_ledger', {
+  id: text('id').primaryKey(),
+  memberId: text('member_id'),
+  actionKey: text('action_key').notNull(),
+  credits: integer('credits').notNull(),
+  balanceAfter: integer('balance_after').notNull(),
+  reason: text('reason').notNull(),
+  refId: text('ref_id'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (t) => [index('credit_ledger_at_idx').on(t.createdAt), index('credit_ledger_ref_idx').on(t.actionKey, t.refId)])
+export type CreditLedgerRow = typeof creditLedger.$inferSelect
+
+/** 1.0's `studio_member_credit_caps` (318): a member's monthly amount — null or no row = no limit. Only the Owner sets it (1.0's rule). */
+export const studioMemberCreditCaps = sqliteTable('studio_member_credit_caps', {
+  memberId: text('member_id').primaryKey(),
+  monthlyCap: integer('monthly_cap'),
+  updatedBy: text('updated_by'),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+export type StudioMemberCreditCap = typeof studioMemberCreditCaps.$inferSelect
+
+/** 1.0's `billing_checkout_sessions` (321 + 328): each checkout — a plan or a top-up. The prototype's demo checkout writes it as Dodo's
+    webhook would (status pending → completed). */
+export const billingCheckoutSessions = sqliteTable('billing_checkout_sessions', {
+  id: text('id').primaryKey(),
+  memberId: text('member_id'),
+  kind: text('kind').notNull(),                                    // topup | plan
+  planId: text('plan_id'),
+  seats: integer('seats').notNull().default(1),
+  period: text('period').notNull().default('monthly'),
+  status: text('status').notNull().default('pending'),             // pending | completed | failed | expired
+  creditsGranted: integer('credits_granted'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+})
+export type BillingCheckoutSession = typeof billingCheckoutSessions.$inferSelect
+
+/** 1.0's `invoices` (009): the studio's tax invoices from the platform — a plan period or a top-up. */
+export const invoices = sqliteTable('invoices', {
+  id: text('id').primaryKey(),
+  subscriptionId: text('subscription_id'),
+  invoiceNumber: text('invoice_number').notNull(),
+  planName: text('plan_name').notNull(),                           // what it was for: "Pro — Studio · 7 seats" · "1,000 AI credits"
+  amount: integer('amount').notNull(),                             // SGD cents
+  currency: text('currency').notNull().default('SGD'),
+  billingPeriodStart: integer('billing_period_start', { mode: 'timestamp' }).notNull(),
+  billingPeriodEnd: integer('billing_period_end', { mode: 'timestamp' }).notNull(),
+  status: text('status').notNull().default('paid'),                // paid | unpaid | void | refunded
+  issuedAt: integer('issued_at', { mode: 'timestamp' }).notNull(),
+  paidAt: integer('paid_at', { mode: 'timestamp' }),
+}, (t) => [uniqueIndex('invoices_number_uq').on(t.invoiceNumber)])
+export type Invoice = typeof invoices.$inferSelect
+
+/** 2.0 only (integration B-19): a member asks the Owner for more AI credits — the studio is out (`pool`), or their monthly amount is
+    reached (`monthly`). Answered by raising the amount (1.0's caps) or by buying (1.0's checkout). 1.0's "Request more" did nothing. */
+export const creditRequests = sqliteTable('credit_requests', {
+  id: text('id').primaryKey(),
+  memberId: text('member_id').notNull(),
+  kind: text('kind').notNull(),                                    // pool | monthly
+  needed: integer('needed').notNull().default(0),
+  status: text('status').notNull().default('open'),                // open | granted | declined
+  answeredBy: text('answered_by'),
+  answeredAt: integer('answered_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (t) => [index('credit_requests_status_idx').on(t.status, t.createdAt)])
+export type CreditRequest = typeof creditRequests.$inferSelect

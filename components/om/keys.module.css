@@ -1,0 +1,18 @@
+/* (REG-711) A shortcut's keys — the search footer's chip (global-search.module.css `.kbd`, REG-709) as the one look for every key hint. */
+.keys { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.group { display: inline-flex; align-items: center; gap: 2px; }
+.group + .group { margin-left: 2px; }
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 var(--om-spacing-1);
+  font: var(--om-type-caption-xs); font-family: inherit; color: var(--om-color-on-surface-secondary);
+  background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1);
+}
+.word { font: var(--om-type-caption-xs); color: var(--om-color-on-surface-secondary); margin: 0 2px; }
+.keys[data-tone='inverse'] .kbd {
+  color: var(--om-color-on-inverse-surface-default);
+  background: color-mix(in srgb, var(--om-color-on-inverse-surface-default) 14%, transparent);
+  border-color: color-mix(in srgb, var(--om-color-on-inverse-surface-default) 26%, transparent);
+}
+.keys[data-tone='inverse'] .word { color: color-mix(in srgb, var(--om-color-on-inverse-surface-default) 70%, transparent); }
+/* No keyboard, no keys (Q-21): a touch screen draws none until a real keyboard has pressed one (the key layer marks the page). */
+@media (hover: none) { :global(html:not([data-hw-keyboard])) .keys { display: none; } }

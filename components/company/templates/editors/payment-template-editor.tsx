@@ -11,7 +11,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { EditorSkeleton } from '@/components/quotes/editor/editor-skeleton'
+import { LibraryEditorGhost } from './library-editor-ghost'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
@@ -69,7 +69,7 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
   const close = () => { void flushRef.current(); router.push(backHref) }
 
   return (
-    <PageReveal skeleton={<EditorSkeleton />}>
+    <PageReveal skeleton={<LibraryEditorGhost kind="payments" />}>
       <div className={page.page} data-testid="payment-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Payments', href: '/company/templates/payments' }]} title={name.trim() || 'Untitled split'}
                        chips={<><MetaChip>{splitWord(rows)}</MetaChip>{isDefault ? <MetaChip>Studio default</MetaChip> : null}{template.usedBy ? <MetaChip>Default on {template.usedBy} quote {template.usedBy === 1 ? 'template' : 'templates'}</MetaChip> : null}</>}

@@ -7,7 +7,6 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { LibraryGallery, type LibraryItem } from '@/components/company/templates/library-gallery'
 import { ago } from '@/lib/templates/ago'
 import { folderBlockFor } from '@/lib/company/folder-libraries'
-import { foldersIn, liveFolder } from '@/lib/folders'
 import { GENERIC_CATEGORIES } from '@/lib/visualizer/catalogue'
 import type { MaterialRow, MaterialsData } from '@/lib/visualizer/queries'
 import { createStudioMaterial, deleteStudioMaterials, deleteStudioMaterialsForever, duplicateStudioMaterial, emptyMaterialTrash, renameStudioMaterial, restoreStudioMaterials, updateStudioMaterial, type MaterialInput } from '@/app/company/materials-actions'
@@ -45,10 +44,11 @@ const purgeRule = (t: Row) => `Only ${t.author ?? 'whoever added it'}, an Owner 
  */
 export function MaterialsView({ data, from }: { data: MaterialsData; from?: string }) {
   const router = useRouter()
-  const params = useSearchParams()
   const snack = useSnackbar()
   /* (verify round 1) a new material lands in the folder that was open when New ▾ was pressed (F118's rule, the designs' twin) */
-  const [edit, setEdit] = useState<{ open: boolean; m: MaterialRow | null; folderId: string | null }>({ open: false, m: null, folderId: null })
+  /* (REG-709) `?open=<id>` — a material the global search found — opens its dialog on arrival */
+  const opening = useSearchParams().get('open')
+  const [edit, setEdit] = useState<{ open: boolean; m: MaterialRow | null; folderId: string | null }>(() => { const it = opening ? data.items.find((x) => x.id === opening) ?? null : null; return { open: !!it, m: it, folderId: null } })
   /* (verify round 1) one label per Price book item wherever a material names it — the dialog's, so two "Homogeneous tiles…" rows read as two */
   const book = useMemo(() => bookLabels(data.bookItems).toLabel, [data.bookItems])
   const quotedAs = (t: MaterialRow) => (t.priceBookItemId ? book.get(t.priceBookItemId) ?? null : null)
@@ -65,12 +65,8 @@ export function MaterialsView({ data, from }: { data: MaterialsData; from?: stri
   const catOrder = (c: string) => { const i = (GENERIC_CATEGORIES as readonly string[]).indexOf(c); return i < 0 ? GENERIC_CATEGORIES.length : i }
   const categories = [...new Set(items.map((t) => t.category))].sort((a, b) => catOrder(a) - catOrder(b) || a.localeCompare(b))
   const finishes = Object.keys(FINISH).filter((f) => items.some((t) => t.finish === f)).map(finishWord)
-  /* (verify round 1) the reveal's ghost: the folders at the level the page opens on, and its cards (two rows at most) */
-  const open = liveFolder(data.folders, params.get('folder'))?.id ?? null
-  const ghostFolders = foldersIn(data.folders, open).length
-  const ghostCards = Math.min(8, items.filter((t) => (t.folderId && data.folders.some((f) => f.id === t.folderId) ? t.folderId : null) === open).length)
   return (
-    <LibraryGallery<Row> kind={KIND} shell={{ title: 'Materials', skeleton: <MaterialsGhost folders={ghostFolders} cards={ghostCards} scoped={!!from} /> }} noun={{ one: 'material', many: 'materials' }} nameLabel="Material" deletedLabel="Deleted Materials"
+    <LibraryGallery<Row> kind={KIND} shell={{ title: 'Materials', skeleton: <MaterialsGhost /> }} noun={{ one: 'material', many: 'materials' }} nameLabel="Material" deletedLabel="Deleted Materials"
       /* (F132) the card's words are the menu's: Edit for whoever may change it, Open for everyone else (the dialog then reads) */
       openLabel={(t) => (t.mayChange ? 'Open' : 'Edit')} nameMax={NAME_MAX}
       /* (F123) the Deleted sheet names whoever added it, and the Price book link it had */

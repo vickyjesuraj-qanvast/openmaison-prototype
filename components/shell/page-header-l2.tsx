@@ -45,8 +45,9 @@ export function PageHeaderL2({
   return (
     <header className={styles.header} data-scrolled={(scrollShadow && scrolled) || undefined}
             data-owns-shadow={scrollShadow || undefined}>
-      <Tooltip label={`Back to ${crumbText}`}>
-        <Link href={backHref} className={styles.back} aria-label={`Back to ${crumbText}`}>
+      <Tooltip label={`Back to ${crumbText}`} shortcut="back">
+        {/* (REG-713) Esc goes back here once nothing is open — the key layer presses this link */}
+        <Link href={backHref} className={styles.back} aria-label={`Back to ${crumbText}`} data-kb="back">
           <Icon name="arrow_back" size={24} weight={300} />
         </Link>
       </Tooltip>

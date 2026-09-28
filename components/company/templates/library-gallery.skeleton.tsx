@@ -8,6 +8,23 @@ import styles from './library-gallery.module.css'
 const Box = ({ cls }: { cls: string }) => <span className={`${styles.gBox} ${cls}`}><Bone w="100%" style={{ height: '100%' }} /></span>
 
 /**
+ * (REG-708) The Folders group's ghost on the house folder card's own classes (components/om/folders/folder-card): the group's head (the
+ * select-all box and "Folders" — `check`), then the folder cards on the host's track (`min`: the galleries' 248, the Files tab's 299).
+ */
+export function GhostFolderGroup({ count, min, check = false }: { count: number; /** the host's track; none = the card's own (299, 220 narrow) */ min?: number; check?: boolean }) {
+  return (
+    <div className={folderStyles.group}>
+      <div className={folderStyles.groupHead}>{check ? <><Bone w={18} h={18} style={{ margin: 3 }} /><Bone w={50} h={14} /></> : <Bone w={64} h={16} className={styles.gLine} />}</div>
+      <div className={folderStyles.row} style={min ? ({ '--folder-min': `${min}px`, '--folder-min-narrow': `${min}px` } as CSSProperties) : undefined}>
+        {Array.from({ length: Math.min(count, 12) }, (_, i) => (
+          <div key={i} className={`${folderStyles.folder} ${styles.gFolder}`}><span className={styles.gPick}><Bone w={24} h={24} /></span><Bone w={24} h={24} /><span className={styles.gFolderText}><Bone w="60%" h={14} /><Bone w="36%" h={10} /></span></div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
  * (verify round 1, F166 · the Materials ghost) The house library gallery's ghost body — its toolbar, its Folders row and its cards — drawn on
  * the gallery's OWN classes (the toolbar, the folder group and row, the card grid, the 220 / 160 thumb band, the card body), so at every width
  * the bones stand where the page lands: two cards a row at 390, one at 320, the kebab-free body a phone gets. The host draws its header (and
@@ -44,16 +61,7 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
         </div>
       </div>
       <div className={styles.gridStack} aria-hidden>
-        {folders > 0 ? (
-          <div className={folderStyles.group}>
-            <div className={folderStyles.groupHead}><Bone w={64} h={16} className={styles.gLine} /></div>
-            <div className={folderStyles.row} style={{ '--folder-min': '248px', '--folder-min-narrow': '248px' } as CSSProperties}>
-              {Array.from({ length: Math.min(folders, 12) }, (_, i) => (
-                <div key={i} className={`${folderStyles.folder} ${styles.gFolder}`}><span className={styles.gPick}><Bone w={24} h={24} /></span><Bone w={24} h={24} /><span className={styles.gFolderText}><Bone w="60%" h={14} /><Bone w="36%" h={10} /></span></div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        {folders > 0 ? <GhostFolderGroup count={folders} min={248} /> : null}
         {cards > 0 ? (
           <div className={`${gallery.grid} ${styles.cards}`}>
             {Array.from({ length: cards }, (_, i) => (

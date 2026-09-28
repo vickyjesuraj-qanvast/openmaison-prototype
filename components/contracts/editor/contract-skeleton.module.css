@@ -6,13 +6,23 @@
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .meta { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding: var(--om-spacing-3) var(--om-spacing-6); background: var(--om-color-surface-default); }
 .metaEnd { display: flex; gap: var(--om-spacing-3); }
+/* (REG-708) The meta row's three controls — the recipient, the quote, the date — at their desk widths; ≤767 the recipient spans the row and
+   the quote and the date wrap under it, 44 tall, as contract-editor.module.css lays them out. */
+.mRec, .mQuote, .mDate { display: inline-flex; height: 36px; }
+.mRec { width: 261px; }
+.mQuote { width: 247px; }
+.mDate { width: 200px; }
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 52px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
 .barEnd { margin-left: auto; }
 .signTop { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
 .stage { flex: 1; display: flex; justify-content: center; align-items: flex-start; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }
+/* (REG-708) The editors' body (contract-editor.module.css .body): the Outline card at the left, 264 wide, the paper centred in the rest. */
+.stage[data-outline] { justify-content: flex-start; }
+.outline { width: 264px; flex-shrink: 0; display: flex; flex-direction: column; padding: 0 var(--om-spacing-4) var(--om-spacing-3); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.paperWrap { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .paper { width: min(100%, 816px); min-height: 720px; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); padding: 56px 64px; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .letterhead { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--om-spacing-4); padding-bottom: var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); margin-bottom: var(--om-spacing-4); }
 .lines { display: flex; flex-direction: column; align-items: flex-end; gap: var(--om-spacing-2); }
 .card { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-@media (max-width: 1024px) { .stage { flex-direction: column-reverse; align-items: stretch; } .card { width: auto; } .actions > :nth-child(n+3) { display: none; } .bar > :nth-child(n+4) { display: none; } }
-@media (max-width: 767px) { .paper { padding: 24px; min-height: 480px; } .stage { padding: var(--om-spacing-4); } .meta { padding: var(--om-spacing-3) var(--om-spacing-4); } .metaEnd { display: none; } }
+@media (max-width: 1024px) { .stage { flex-direction: column-reverse; align-items: stretch; } .card { width: auto; } .actions > :nth-child(n+3) { display: none; } .bar > :nth-child(n+4) { display: none; } .outline { display: none; } }
+@media (max-width: 767px) { .paper { padding: 24px; min-height: 480px; } .stage { padding: var(--om-spacing-4); } .meta { padding: var(--om-spacing-3) var(--om-spacing-4); flex-wrap: wrap; } .metaEnd { flex: 1 1 100%; flex-wrap: wrap; } .mRec { width: 100%; } .mDate { width: 168px; } .mRec, .mQuote, .mDate { height: 44px; } }

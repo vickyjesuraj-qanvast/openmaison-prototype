@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useShortcutsHere } from '@/lib/keys/store'
+import { TEMPLATE_KEYS } from '@/lib/keys/registry'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -54,6 +56,7 @@ const ZOOMS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5]
  * read only (REG-493).
  */
 export function TemplateEditor({ data, initialPreview = false, origin = null }: { data: TemplateEditorData; initialPreview?: boolean; /** (REG-495) where the editor was opened from: a quote or a lead's Create Quote */ origin?: EditorOrigin | null }) {
+  useShortcutsHere(TEMPLATE_KEYS)   // (REG-714) the ? panel lists the template editor's own keys
   const { template, brand, studio, sample, quotes, textTemplates, paymentPresets } = data
   const router = useRouter()
   const snackbar = useSnackbar()

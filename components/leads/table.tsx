@@ -220,7 +220,7 @@ export function LeadsTable({
             {/* Accent bar + selection checkbox are children of the pinned cell so they stay put on horizontal scroll. */}
             <span className={styles.accent} />
             {selectable ? (
-              <span className={styles.selBox}>
+              <span className={styles.selBox} data-kb-select>
                 <Checkbox
                   isSelected={selected.has(row.id)}
                   onChange={() => onToggleSelect(row.id)}
@@ -230,6 +230,7 @@ export function LeadsTable({
             ) : null}
             <span
               className={styles.name}
+              data-kb-open
               role="link"
               tabIndex={0}
               onClick={() => onNameClick(row)}
@@ -258,7 +259,7 @@ export function LeadsTable({
         // (REG-332, user 2026-09-04) The whole cell opens the stage menu, and the cell is the menu's anchor (780:86452).
         // The button inside stays for the keyboard — its click bubbles up to the cell, so nothing fires twice.
         return (
-          <div key={col.key} {...cellProps(col, `${styles.cell} ${styles.stageCell}`)} data-open={row.id === openStageId || undefined}
+          <div key={col.key} {...cellProps(col, `${styles.cell} ${styles.stageCell}`)} data-kb="move-stage" data-open={row.id === openStageId || undefined}
                data-stage-anchor={row.id === openStageId || undefined}
                onClick={(e) => onStageClick(row, e.currentTarget)}>
             {/* (REG-329) An On Hold row names its follow-up in the DS tooltip; it used to be the browser's own title bubble. */}
@@ -298,7 +299,7 @@ export function LeadsTable({
       }
       case 'assignees':
         return (
-          <div key={col.key} {...cellProps(col, styles.cell)}>
+          <div key={col.key} {...cellProps(col, styles.cell)} data-kb="assign">
             {row.assignees.length === 0 ? (
               <button type="button" className={styles.assignLink} onClick={(e) => onAssignClick(row, e.currentTarget)}>
                 <Icon name="person_add" size={20} />
@@ -366,7 +367,7 @@ export function LeadsTable({
   return (
     <div className={styles.card}>
       <div className={styles.scroller} data-scroll-box onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-        <div ref={tableEl} className={styles.table} role="table" data-drag-root="" aria-label="Leads" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
+        <div ref={tableEl} className={styles.table} role="table" data-drag-root="" aria-label="Leads" data-kb-list="lead" data-selectable={selectable || undefined} data-selecting={selected.size > 0 || undefined}
              style={{ minWidth: minWidth + band }}>
           <div className={styles.headRow} role="row">
             {visible.map((col, i) => (
@@ -379,7 +380,7 @@ export function LeadsTable({
                 style={{ ...cellProps(col, styles.hCell).style, ...D.style(col.key) }}
               >
                 {i === 0 && selectable ? (
-                  <span className={styles.headSelBox}>
+                  <span className={styles.headSelBox} data-kb-select-all>
                     <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && rows.some((r) => selected.has(r.id))} onChange={onToggleSelectAll} aria-label="Select all leads" />
                   </span>
                 ) : null}
@@ -400,6 +401,7 @@ export function LeadsTable({
               key={row.id}
               className={styles.row}
               role="row"
+              data-kb-row data-kb-id={row.id} data-kb-href={`/leads/${row.id}`}
               data-highlight={unseenIds?.has(row.id) || undefined}
               data-selected={selected.has(row.id) || undefined}
               onPointerDownCapture={unseenIds?.has(row.id) ? () => onRowSeen?.(row) : undefined}

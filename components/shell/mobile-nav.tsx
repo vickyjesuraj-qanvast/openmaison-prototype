@@ -10,11 +10,13 @@ import { ToolsPopover } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { ViewAsPopover } from './view-as-popover'
 import type { SessionMember } from '@/lib/db/session'
+import type { CreditsChrome } from '@/lib/credits/chrome'
+import { CreditsSheet, MoreCredits } from './rail-credits'
 import { IconButton } from '@/components/om/icon-button'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
-import { requestSearchFocus } from './search-focus'
+import { openGlobalSearch } from './global-search'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { duration, ease } from '@/lib/motion'
 import styles from './mobile-nav.module.css'
@@ -48,7 +50,7 @@ const MORE_BOTTOM = [{ icon: 'settings', label: 'Settings', href: '/settings' }]
  * Nothing here renders ≥768 (CSS) so tablet and desktop are untouched. The sheet keeps the dialog contract
  * (REG-286: focus in, Tab cycles, focus back on close), the scroll lock (REG-287) and the Esc layer.
  */
-export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
+export function MobileChrome({ team = [], credits = null }: { team?: SessionMember[]; credits?: CreditsChrome | null } = {}) {
   const [open, setOpen] = useState(false)
   const layer = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
@@ -56,6 +58,7 @@ export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
   const [toolsOpen, setToolsOpen] = useState(false)   // (REG-422) Tools › the tile sheet
   const [companyOpen, setCompanyOpen] = useState(false)   // (REG-646, settings parity Q-11) More › Company — the rail's panel as a bottom sheet
   const [viewAsOpen, setViewAsOpen] = useState(false)   // (REG-667) More › View as — Demo Studio's menu as a bottom sheet
+  const [creditsOpen, setCreditsOpen] = useState(false)   // (REG-701, Q-39) More › the credits card as a sheet
   const viewer = team.find((m) => m.isYou) ?? null
   const pathname = usePathname()
   /* (REG-287) The sheet only exists ≤767 — leaving mobile closes it (render-phase adjust on the house hook). */
@@ -95,7 +98,7 @@ export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
           <img className={styles.wordmark} src="/figma-assets/logo-wordmark.svg" alt="OpenMaison" />
         </span>
         <div className={styles.barActions}>
-          <button type="button" className={styles.barIcon} aria-label="Search" onClick={requestSearchFocus}>
+          <button type="button" className={styles.barIcon} aria-label="Search" onClick={openGlobalSearch}>   {/* (REG-709) the studio-wide search, as a sheet */}
             <Icon name="search" size={24} weight={300} />
           </button>
           <button type="button" className={styles.barIcon} aria-label="Chat" onClick={comingSoon}>
@@ -135,6 +138,7 @@ export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
         <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
         <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} />
         <ViewAsPopover open={viewAsOpen} anchor={null} onClose={() => setViewAsOpen(false)} team={team} />
+        {credits ? <CreditsSheet initial={credits.summary} gstLine={credits.gstLine} open={creditsOpen} onClose={() => setCreditsOpen(false)} /> : null}
         <button type="button" className={styles.dockItem} data-active={open || undefined}
                 aria-label="More" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} /></span>
@@ -164,6 +168,13 @@ export function MobileChrome({ team = [] }: { team?: SessionMember[] } = {}) {
                 <IconButton icon="close" label="Close" variant="bare" size={24} iconSize={24} onClick={close} />
               </div>
               <div className={styles.sheetList}>
+                {/* (REG-701, Q-39) The rail's Upgrade slot on a phone: Upgrade on Free, the studio's AI credits once it pays. */}
+                {credits ? (
+                  <div className={styles.sheetGroup}>
+                    <MoreCredits initial={credits.summary} onOpen={() => { close(); setCreditsOpen(true) }} onUpgrade={close}
+                                 rowClass={styles.sheetItem} iconClass={styles.sheetIcon} labelClass={styles.sheetLabel} metaClass={styles.sheetMeta} />
+                  </div>
+                ) : null}
                 <div className={styles.sheetGroup}>{MORE_TOP.map(moreItem)}</div>
                 <hr className={styles.sheetRule} />
                 <div className={styles.sheetGroup}>{MORE_BOTTOM.map(moreItem)}</div>

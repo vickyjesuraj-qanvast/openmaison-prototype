@@ -1,0 +1,31 @@
+✓ Files: J puts the cursor on the first file or folder
+✓ X ticks the file
+✓ ⌫ opens the trash question — it asks first — Move to Trash Folder?
+✓ ⌘↵ answers the dialog with its primary button — trashed 0 → 1
+✓ the snackbar offers Undo
+✓ ⌘Z presses the snackbar’s Undo — the file is back — trashed 0
+✓ Tasks: ↵ opens the task’s panel
+✓ C opens Add Task
+✓ Quotes: ↵ opens the quote — /quotes/d751c689-287e-4e9c-aeb3-0db38219fda1?from=%2Fleads%2Fbb054aa5-7284-492e-b232-607bd4cfb0f6%2Fquotes
+✓ the editor’s panel lists its own keys: the Items table, Preview, its sections
+✓ …and ⌘S
+✓ ⌘S says it is saved, not the browser’s Save page
+✓ ⌘F opens the Items table’s Find
+✓ ⌘K opens the search inside the editor too
+✓ P opens Preview — /quotes/39e4c832-bf4a-409e-bf41-bfc8d19b4340/preview
+✓ G then L leaves the editor for Leads
+✓ the contract editor’s P opens its Preview
+✓ Templates: J walks the gallery
+✓ ↵ opens the template — /templates/7ab7bfe7-3d8b-4e3c-a6ec-0285274c1de6?from=%2Fcompany%2Ftemplates%2Fquotes
+✓ P previews the template
+✓ Almost out: the ring is a short amber arc, the spark unchanged
+✓ G then N opens the bell, with the keyboard’s note
+✓ the note opens the panel
+✓ Maison AI offers Keyboard shortcuts for this page
+✓ and opens the panel
+✓ a phone draws no key chips — 0 shown
+✓ Windows: the rail’s chip reads Ctrl+K — Ctrl+K
+✓ the search footer shows Ctrl, never ⌘ — to open Ctrl Enter in a new tab ? all shortcuts
+✓ no page errors
+
+29 passed, 0 failed

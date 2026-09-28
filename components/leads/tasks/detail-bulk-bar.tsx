@@ -53,13 +53,15 @@ export function DetailBulkBar({ count, actions, onClear, inset = false }: Detail
         >
           <span className={styles.count}>{count}</span>
           {actions.map((a) => (
-            <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={a.onClick}>
+            /* (REG-713) ⌫ presses Delete — it asks first, as the press does; Delete Forever never gets a key (Q-19) */
+            <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={a.onClick}
+                    data-kb={a.tone === 'danger' && /^Delete( All)?$/.test(a.label) ? 'delete' : undefined}>
               {a.label}
             </button>
           ))}
           <span className={styles.rule} aria-hidden />
-          <Tooltip label="Clear selection" side="top">
-            <button type="button" className={styles.close} aria-label="Clear selection" onClick={onClear}>
+          <Tooltip label="Clear selection" side="top" shortcut="clear">
+            <button type="button" className={styles.close} aria-label="Clear selection" data-kb="clear" onClick={onClear}>
               <Icon name="close" size={24} />
             </button>
           </Tooltip>

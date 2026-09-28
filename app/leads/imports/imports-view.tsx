@@ -7,6 +7,7 @@ import { PageReveal } from '@/components/shell/page-reveal'
 import { ImportsSkeleton } from '@/components/shell/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
+import { SlashSlot } from '@/components/om/slash-slot'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -131,12 +132,12 @@ function View({ imports }: { imports: ImportBatch[] }) {
                       The box matches the file name, the displayed date, both row counts and the error text
                       (REG-275); the placeholder names them and the aria-label stays plain. */}
                   <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
-                    <SearchBar
+                    <SlashSlot empty={query === ''}><SearchBar
                       appearance="outlined" size="md"
                       placeholder="Search file name, date, rows…" aria-label="Search imports"
                       value={query} onChange={setQuery}
                       className={styles.search}
-                    />
+                    /></SlashSlot>
                   </span>
                   <Tooltip label="Filters"><IconButton icon="filter_list" label="Filter imports" onClick={comingSoon} /></Tooltip>
                 </div>

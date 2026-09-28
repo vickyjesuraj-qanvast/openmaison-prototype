@@ -383,7 +383,7 @@ export function ItemsTable({
     )
   }
   return (
-    <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root=""
+    <div ref={wrap} className={styles.wrap} role="table" aria-label="Quote items" data-kb-own data-nonum={details.autonumber ? undefined : ''} data-cols={ITEMS_TABLE} data-drag-root=""
          data-more={more || undefined} data-scrolled={scrolled || undefined} onKeyDown={onGridKey} onPaste={onPaste}>
       <div ref={sentinel} className={styles.sentinel} aria-hidden />
       {/* (REG-570) The column heads: a sticky bar above the body's scroller, scrolled sideways in step with it. */}

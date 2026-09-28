@@ -5,6 +5,7 @@ import { SearchBar } from '@/components/ds'
 import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
+import { SlashSlot } from '@/components/om/slash-slot'
 import styles from './toolbar-search.module.css'
 
 /**
@@ -42,8 +43,8 @@ export function ToolbarSearch({
             data-open={open || query !== '' || undefined}
             data-om-search-open={open || query !== '' || undefined}
             onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false) }}>
-        <SearchBar appearance="outlined" size="md" placeholder={placeholder} aria-label={label}
-                   value={query} onChange={onQuery} className={styles.field} />
+        <SlashSlot empty={query === ''}><SearchBar appearance="outlined" size="md" placeholder={placeholder} aria-label={label}
+                   value={query} onChange={onQuery} className={styles.field} /></SlashSlot>
       </span>
     </>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Link } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
@@ -77,7 +77,9 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   /* ── items ── */
   // A lead with no notes opens on a blank note draft (frame 79); `now` is the loader's clock — no clock read in render.
   const [draft, setDraft] = useState<DraftItem | null>(() => (notes.length ? null : freshDraft('note', now)))
-  const [selectedId, setSelectedId] = useState<string | null>(() => (notes.length ? notes[0]!.id : DRAFT_ID))   // the top item — newest first (REG-262)
+  /* (REG-709) `?open=<id>` — a note or a log the global search found — opens on it; otherwise the top item, newest first (REG-262) */
+  const opening = useSearchParams().get('open')
+  const [selectedId, setSelectedId] = useState<string | null>(() => (opening && notes.some((n) => n.id === opening) ? opening : notes.length ? notes[0]!.id : DRAFT_ID))
   const [filter, setFilter] = useState<NoteFilter>('all')
   const [query, setQuery] = useState('')   // the list's search (REG-275) — matched against what an item shows, below
   const [edits, setEdits] = useState<Record<string, NoteDraft>>({})
@@ -90,7 +92,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const [carried, setCarried] = useState<{ id: string; key: string } | null>(null)
   /* Mobile master-detail push (REG-269): ≤767 the list is the screen; selecting shows the pane full-width with
      a back affordance. Back never clears selectedId — the CSS just swaps which half shows; inert ≥768. */
-  const [mobilePane, setMobilePane] = useState(false)
+  const [mobilePane, setMobilePane] = useState(() => !!opening && notes.some((n) => n.id === opening))   // (REG-709) a found note shows at once
   /* (REG-380, canvas 3e) ≤767 a CONTACT LOG opens as a bottom sheet, not the master-detail push: the pane put its
      Cancel / Save far below the fold. Notes keep the push (they autosave and have no footer). False at ≥768 by
      construction — the primitive's own query is (max-width: 767px) — so the desktop pane is untouched. */

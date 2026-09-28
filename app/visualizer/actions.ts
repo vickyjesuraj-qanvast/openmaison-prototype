@@ -433,7 +433,10 @@ export async function saveRoomAsset(roomId: string, o: { dataUrl: string }): Pro
 }
 
 /* ── renders ── */
-export type NewRender = { kind: PassKind; model: 'fast' | 'high'; parentKey: string; variants: { image: string; applied: Applied; finishes: Finishes; materials: { label: string; material: string }[] }[] }
+export type NewRender = { kind: PassKind; model: 'fast' | 'high'; parentKey: string; variants: { image: string; applied: Applied; finishes: Finishes; materials: { label: string; material: string }[] }[]
+  /** (REG-704, AI credits B-12) The job's id, chosen by the editor before the work — its charge is keyed `render:<jobId>`, so Usage ties
+      the credits to this job, its room and its lead. */
+  jobId?: string }
 /** Keep a Generate: one job, its variants V-numbered after every version the room ever had (1.0 wrote the row only after the image
     existed, C-34 — so does this). (F213) Each picture is stored beside the job; the job keeps its address. */
 export async function saveRender(roomId: string, input: NewRender): Promise<{ jobId: string; keys: string[]; ns: number[] } | Err> {
@@ -443,7 +446,7 @@ async function keepRender(roomId: string, input: NewRender): Promise<{ jobId: st
   const got = await roomFor(roomId); if (!got) return { error: 'That room is gone.' }
   const images = input.variants.slice(0, 3).map((v) => cleanImage(v.image))
   if (!images.length || images.some((i) => !i)) return { error: 'Couldn’t keep this render — the picture didn’t come through.' }
-  const id = randomUUID(), at = now(), me = await actingMember()
+  const id = input.jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(input.jobId) ? input.jobId : randomUUID(), at = now(), me = await actingMember()
   const pics = images.flatMap((img, i) => (isDataImage(img) ? [{ jobId: id, variantId: i + 1, data: img }] : []))
   const jobs = await db.select({ variantsJson: renderJobs.variantsJson }).from(renderJobs).where(eq(renderJobs.roomId, roomId))
   let n = jobs.reduce((m, j) => Math.max(m, ...parseVariants(j.variantsJson).map((v) => v.n)), 0)

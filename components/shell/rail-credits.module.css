@@ -1,0 +1,31 @@
+/* (REG-701 · REG-706) The rail's credits row — the rail's own item box (app-rail.module.css `.item`: 36 tall, r8, 6 padding, 10 gap, the
+   label's crossfade on expand) on Free's warm tile (`.upgrade`), plus what the row carries: the spark, the number, its unit, and the lift a
+   spend leaves. */
+.row.row { position: relative; overflow: visible; }   /* doubled: the rail's `.item` (overflow: hidden) loads after this sheet; the spend's lift rises above the row */
+.row.row[data-open] { background: linear-gradient(90deg, rgba(214, 97, 66, 0.2), rgba(189, 58, 95, 0.2)); }   /* doubled: outranks the rail's `.item:hover`, which loads after this sheet; (REG-706) open, the warm tile deepens — the Upgrade row's literals, logged with them */
+.glyph { position: relative; display: inline-flex; width: 24px; height: 24px; flex-shrink: 0; }
+.label { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; pointer-events: none; }   /* the row is `overflow: visible` for the lift; the label never takes a press outside the 36px box */
+.n { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; transition: color var(--motion-toggle); }
+.n[data-tone='low'], .n[data-tone='capped'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.n[data-tone='empty'] { color: var(--om-color-tertiary-red-default); }
+.unit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Free: the balance sits quiet at the Upgrade row's end (Q-05) — only while the rail is wide (it rides the label's crossfade) */
+.quiet.quiet { margin-left: auto; padding-right: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
+/* a spend lifts its difference off the token and fades (the one ambient number motion, §5.4) */
+.float { position: absolute; left: 14px; top: -6px; font: var(--om-type-caption-xs); font-weight: var(--om-font-weight-semibold); color: var(--om-color-tertiary-red-default); white-space: nowrap; pointer-events: none; animation: lift 900ms cubic-bezier(0, 0, 0.2, 1) forwards; }
+.float[data-up] { color: var(--om-color-tertiary-green-default); }
+@keyframes lift { 0% { opacity: 0; transform: translateY(4px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-12px); } }
+@media (prefers-reduced-motion: reduce) { .float { animation: none; opacity: 0; } }
+
+/* (Q-39) More's first row on a phone: a small credits card (the approved proposal's phone frame) — 36 token, the figure, its refresh line */
+.more { display: flex; align-items: center; gap: var(--om-spacing-3); width: calc(100% - 2 * var(--om-spacing-4)); margin: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-2); padding: var(--om-spacing-3); min-height: 60px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); text-align: left; cursor: pointer; font: inherit; }
+.more:active { background: var(--om-color-hover-04p); }
+.more:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.moreText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.moreN { font: var(--om-type-subheading-l); font-variant-numeric: tabular-nums; }
+.moreN[data-tone='low'], .moreN[data-tone='capped'] { color: var(--om-color-on-tertiary-yellow-variant); }
+.moreN[data-tone='empty'] { color: var(--om-color-tertiary-red-default); }
+.moreLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
+.moreChevron { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+/* the gem on More's Upgrade row — the rail's gradient (779:19690's literals, logged with the rail's) */
+.gem { background: linear-gradient(180deg, #b42c69, #eb802b); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-flex; }

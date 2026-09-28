@@ -1,0 +1,354 @@
+[
+ {
+  "key": "CR",
+  "id": "CR-01",
+  "area": "Plans and prices",
+  "feature": "The four plans, prices, allowances, seats, annual = 11 × monthly, the 14-day Pro trial",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "CR-02",
+  "area": "Plans and prices",
+  "feature": "Two buckets: plan credits first, top-ups never expire, refunds into top-ups",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "CR-03",
+  "area": "Plans and prices",
+  "feature": "The price list (render 10 · pro render 20 · defurnish 10 · digitize 5 …)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "CR-04",
+  "area": "Plans and prices",
+  "feature": "Variants × price in one charge",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "CR-05",
+  "area": "Plans and prices",
+  "feature": "Charge first, refund on every failure",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "CR-06",
+  "area": "Plans and prices",
+  "feature": "Top-up 1,000 for S$20",
+  "now": "Built",
+  "why": "One pack, as 1.0 sells it (Q-21); packs of 2,000 / 5,000 later."
+ },
+ {
+  "key": "CR",
+  "id": "CR-07",
+  "area": "Plans and prices",
+  "feature": "Tax (Dodo as merchant of record)",
+  "now": "Built",
+  "why": "The studio's own GST line under every price (Q-15); finance to confirm the words."
+ },
+ {
+  "key": "CR",
+  "id": "RL-01",
+  "area": "The rail and the card",
+  "feature": "Upgrade in the rail",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "RL-02",
+  "area": "The rail and the card",
+  "feature": "The credits pill and its states",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "RL-03",
+  "area": "The rail and the card",
+  "feature": "The collapsed tile",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "RL-04",
+  "area": "The rail and the card",
+  "feature": "The hover popover",
+  "now": "Built",
+  "why": "A press opens the card; hover gives the tooltip (Q-07)."
+ },
+ {
+  "key": "CR",
+  "id": "RL-05",
+  "area": "The rail and the card",
+  "feature": "The popover's lines and buy block",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "RL-06",
+  "area": "The rail and the card",
+  "feature": "The balance in the rail-less AI Visualizer",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-01",
+  "area": "Plans in the app",
+  "feature": "/pricing and /upgrade",
+  "now": "Built",
+  "why": "Plans opens inside the app (Q-10)."
+ },
+ {
+  "key": "CR",
+  "id": "PL-02",
+  "area": "Plans in the app",
+  "feature": "Cards, toggles, allowance table, comparison, FAQ",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-03",
+  "area": "Plans in the app",
+  "feature": "Current plan, seats, the suggested plan",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-04",
+  "area": "Plans in the app",
+  "feature": "The Dodo overlay checkout",
+  "now": "Built",
+  "why": "A labelled demo stand-in in the prototype (Q-14)."
+ },
+ {
+  "key": "CR",
+  "id": "PL-05",
+  "area": "Plans in the app",
+  "feature": "The checkout's status line",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-06",
+  "area": "Plans in the app",
+  "feature": "Success: the credits count in; the rail's upgrade moment",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-07",
+  "area": "Plans in the app",
+  "feature": "The 14-day Pro trial",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-08",
+  "area": "Plans in the app",
+  "feature": "Max: Talk to us",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PL-09",
+  "area": "Plans in the app",
+  "feature": "Change plan, cancel",
+  "now": "Built",
+  "why": "Through Manage billing (Dodo's portal in the live app, Q-19)."
+ },
+ {
+  "key": "CR",
+  "id": "PM-01",
+  "area": "Costs and moments",
+  "feature": "The cost on metered buttons",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-02",
+  "area": "Costs and moments",
+  "feature": "Out of credits: buy and carry on",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-03",
+  "area": "Costs and moments",
+  "feature": "A member's amount reached: Request more",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-04",
+  "area": "Costs and moments",
+  "feature": "Plan-locked features",
+  "now": "Later",
+  "why": "Their own round, R6 (Q-40)."
+ },
+ {
+  "key": "CR",
+  "id": "PM-05",
+  "area": "Costs and moments",
+  "feature": "Refunds said at the failure",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-06",
+  "area": "Costs and moments",
+  "feature": "Low-balance warning",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-07",
+  "area": "Costs and moments",
+  "feature": "Payment failed",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PM-08",
+  "area": "Costs and moments",
+  "feature": "Auto top-up",
+  "now": "Later",
+  "why": "Needs a saved card, off-session charging and a threshold job in 1.0 (Q-36, B-29)."
+ },
+ {
+  "key": "CR",
+  "id": "US-01",
+  "area": "Usage and billing",
+  "feature": "Settings › Usage & credits",
+  "now": "Built",
+  "why": "Company › Plan & AI credits (Q-22)."
+ },
+ {
+  "key": "CR",
+  "id": "US-02",
+  "area": "Usage and billing",
+  "feature": "Period chips",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-03",
+  "area": "Usage and billing",
+  "feature": "The headline card",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-04",
+  "area": "Usage and billing",
+  "feature": "By member with caps",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-05",
+  "area": "Usage and billing",
+  "feature": "Recent activity",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-06",
+  "area": "Usage and billing",
+  "feature": "Where your credits went (without the US$ cost)",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-07",
+  "area": "Usage and billing",
+  "feature": "By lead, won vs lost",
+  "now": "2.0 only",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-08",
+  "area": "Usage and billing",
+  "feature": "Export",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "US-09",
+  "area": "Usage and billing",
+  "feature": "Plan & billing: plan, seats, card, details, invoices",
+  "now": "Built",
+  "why": "Auto top-up waits (PM-08)."
+ },
+ {
+  "key": "CR",
+  "id": "RO-01",
+  "area": "Rules, bell, phone, data",
+  "feature": "Owner-only buying, caps and plan; pool for Owner and Admins",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "NT-01",
+  "area": "Rules, bell, phone, data",
+  "feature": "Credit notifications",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "PH-01",
+  "area": "Rules, bell, phone, data",
+  "feature": "Credits on a phone",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "DA-01",
+  "area": "Rules, bell, phone, data",
+  "feature": "The tables under 1.0's names",
+  "now": "Built",
+  "why": ""
+ },
+ {
+  "key": "CR",
+  "id": "EX-01",
+  "area": "Rules, bell, phone, data",
+  "feature": "/admin/plans, the visitor trial, sign-up gates",
+  "now": "Excluded",
+  "why": ""
+ }
+]

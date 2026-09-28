@@ -165,7 +165,7 @@ export function LeadQuotes({ leadId, leadName, data, approval, canApprove = true
         onStart={(templateId) => { void startQuote(templateId) }}
         onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
         defaultBlock={viewer ? templateDefaultBlock(viewer) : null}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */
-        onUpload={(read) => { void run('create the quote', async () => { const id = await createQuoteFromUpload(leadId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }}   /* (REG-627, parity Q-16) */
+        onUpload={(read, _client, quoteId) => { void run('create the quote', async () => { const id = await createQuoteFromUpload(leadId, null, read.groups, quoteId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, here)) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }}   /* (REG-627, parity Q-16) */
       />
       <DeleteQuotesDialog
         open={!!deleting} count={deleting?.length ?? 1}

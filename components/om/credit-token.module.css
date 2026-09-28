@@ -1,0 +1,16 @@
+/* (REG-701 · REG-706 · REG-710) The AI credit's glyph — Maison AI's spark at the Free gem's size, always in full colour, and the level as a
+   ring round it: the spark's gradient while there is plenty, amber when low, a red track when the studio is out, an amber track when a
+   member's monthly amount is used. The ring lies inside the box, the whole mark an icon's size (REG-718); the arc moves on the
+   sheet timing (a spend, a top-up, the month's refresh, the upgrade moment). */
+.token { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; vertical-align: middle; overflow: visible; }
+.sparkBox { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.spark { display: block; flex-shrink: 0; pointer-events: none; user-select: none; }
+.ring { position: absolute; display: block; max-width: none; overflow: visible; pointer-events: none; }   /* the global svg max-width would squeeze it into the box */
+/* the track: the spark's magenta, faint — a literal, as the rail's Upgrade gradients are (779:19690, logged with REG-710) */
+.track { stroke: rgba(171, 37, 118, 0.16); }
+.token[data-tone='empty'] .track { stroke: color-mix(in srgb, var(--om-color-tertiary-red-default) 50%, transparent); }
+.token[data-tone='capped'] .track { stroke: color-mix(in srgb, var(--om-color-tertiary-yellow-default) 65%, transparent); }
+.arc { transition: stroke-dasharray 280ms cubic-bezier(0, 0, 0.2, 1); }
+.token[data-tone='low'] .arc { stroke: var(--om-color-tertiary-yellow-default); }
+.solid { display: block; flex-shrink: 0; background: currentColor; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+@media (prefers-reduced-motion: reduce) { .arc { transition: none; } }

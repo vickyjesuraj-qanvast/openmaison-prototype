@@ -28,9 +28,9 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   await block.click()
   const menu = page.getByRole('menu', { name: 'View as' })
   await menu.waitFor()
-  const items = menu.getByRole('menuitemradio')
+  const items = menu.getByRole('group', { name: 'Members' }).getByRole('menuitemradio')   // (REG-705) the menu also holds the Studio plan group
   ok((await items.count()) === 7, `menu lists ${await items.count()} members (7 expected, Hui Min included)`)
-  ok(await menu.getByText('Demo only').isVisible(), 'Demo only pill')
+  ok(await menu.getByText('Demo only', { exact: true }).isVisible(), 'Demo only pill')
   ok((await items.filter({ hasText: 'Dane' }).getAttribute('aria-checked')) === 'true', 'Dane is ticked')
   ok(await items.filter({ hasText: 'Hui Min' }).getByText('Admin', { exact: true }).isVisible(), 'Hui Min · Admin')
   ok(await items.filter({ hasText: 'Sarah' }).getByText('Designer · reports to James').isVisible(), 'Sarah · Designer · reports to James')
@@ -97,7 +97,7 @@ const ok = (c, m) => { if (c) { pass++; console.log('  ok  ', m) } else { fail++
   await phone.screenshot({ path: `${OUT}/va-07-phone-more.png` })
   await row.click()
   await phone.getByRole('menuitemradio').first().waitFor()
-  ok((await phone.getByRole('menuitemradio').count()) === 7, 'the sheet lists the 7 members')
+  ok((await phone.getByRole('group', { name: 'Members' }).getByRole('menuitemradio').count()) === 7, 'the sheet lists the 7 members')   // (REG-705) the Studio plan group follows them
   await phone.screenshot({ path: `${OUT}/va-08-phone-sheet.png` })
 
   console.log('Overflow at 320')

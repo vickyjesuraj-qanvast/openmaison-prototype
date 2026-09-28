@@ -96,12 +96,12 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
   return (
-    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Files" data-cols="lead-files" data-overflow={overflowing || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Files" data-kb-list="file" data-cols="lead-files" data-overflow={overflowing || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 56 (931:40168 Type=HD): Selection p16/0/16/16 + six sortable heads p16/24/16/16. */}
       <div ref={headRow} className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={someSelected} isDisabled={rows.length === 0} onChange={toggleAll} aria-label="Select all files" />
         </div>
         {columns.map((c) => (
@@ -173,9 +173,9 @@ function FileRowView({
   const pick = (action: FileAction | FolderAction) => { onMenuClose(); onRowMenu(row, action) }
 
   return (
-    <div className={styles.row} role="row" data-selected={isSelected || undefined} data-kind={folder ? 'folder' : 'file'}>
+    <div className={styles.row} role="row" data-kb-row data-kb-id={row.id} data-selected={isSelected || undefined} data-kind={folder ? 'folder' : 'file'}>
       {/* Selection cell 40×60 (931:40181 "Cell / Selection" H g12 p12/0/12/16, top rule). */}
-      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-kb-select data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={isSelected} onChange={onToggle} aria-label={`Select ${row.name}`} />
       </div>
 
@@ -195,10 +195,10 @@ function FileRowView({
         </span>
         {place !== undefined ? (
           <span className={styles.nameStack}>
-            <button type="button" className={styles.name} onClick={open}>{row.name}</button>
+            <button type="button" className={styles.name} onClick={open} data-kb-open>{row.name}</button>
             <span className={styles.place}><Icon name="folder" size={14} weight={300} />{place}</span>
           </span>
-        ) : <button type="button" className={styles.name} onClick={open}>{row.name}</button>}
+        ) : <button type="button" className={styles.name} onClick={open} data-kb-open>{row.name}</button>}
         {/* The chip opens the viewer's comments panel straight away — the Tasks title cell's interaction (REG-253). */}
         {row.commentCount > 0 ? (
           <Tooltip label="Open comments">

@@ -81,7 +81,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
   const [frame, overflowing] = useOverflowX()   // REG-430: the card scrolls sideways only once its tracks run past it
 
   return (
-    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-cols="lead-contracts" data-overflow={overflowing || undefined} data-lead={columns.some((c) => c.key === 'lead') || undefined}
+    <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-kb-list="contract" data-cols="lead-contracts" data-overflow={overflowing || undefined} data-lead={columns.some((c) => c.key === 'lead') || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       {/* Head row 48 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
@@ -151,11 +151,11 @@ function ContractRowView({
   const kebab = useRef<HTMLSpanElement>(null)
 
   return (
-    <div className={styles.row} role="row">
+    <div className={styles.row} role="row" data-kb-row data-kb-id={contract.id}>
       {/* Title cell "Cell / Two line" 557×68 p24/24/24/16 (931:38692): ONE line — "General Contract Agreement" 14/Medium
           (subtitle-m); the mock's Two-line cell carries no secondary text. */}
       <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
-        <button type="button" className={styles.title} onClick={() => onView(contract)}>{contract.title}</button>
+        <button type="button" className={styles.title} onClick={() => onView(contract)} data-kb-open>{contract.title}</button>
       </div>
 
       {/* (REG-534) Tools › Contracts: the lead, a link to its Contracts tab — the quotes list's Client column (REG-422). */}

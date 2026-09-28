@@ -19,3 +19,5 @@
   border-radius: var(--om-radius-1);
   white-space: nowrap;
 }
+/* (REG-715) A control with a shortcut shows its keys after the label, on the bubble's own dark (Keys tone="inverse"). */
+.bubble[data-keys] { display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding: 2px 4px 2px 8px; }

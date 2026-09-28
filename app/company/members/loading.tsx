@@ -1,6 +1,6 @@
-import { CompanySkeleton } from '@/components/company/company-shell'
+import { MembersGhost } from '@/components/company/company-ghosts'
 
-/** Members' ghost: the L1 head and a form card — no tab strip. */
+/** Company › Members' own ghost (REG-708): Add member, then the People and roles card, a row per member. */
 export default function Loading() {
-  return <CompanySkeleton tabs={false} form />
+  return <MembersGhost />
 }

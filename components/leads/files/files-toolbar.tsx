@@ -85,16 +85,16 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
           {sheet ? (
-            <Tooltip label="New File">
+            <Tooltip shortcut="create" label="New File">
               <IconButton icon="upload_file" label="New File" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New File"
                           onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined"
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New File"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
               New File
@@ -111,8 +111,8 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain name. */}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />
         {/* (REG-273) `touchBtn` / `viewToggle` grow these 36px boxes to 40 at ≤767 — the icons keep their size. */}
-        <Tooltip label="Filters">
-          <IconButton icon="filter_list" label="Filters" className={styles.touchBtn} onClick={onFilter} />
+        <Tooltip label="Filters" shortcut="filters">
+          <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label="Filters" className={styles.touchBtn} onClick={onFilter} />
         </Tooltip>
         {onColumns ? (
           /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
@@ -121,7 +121,7 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
           </Tooltip>
         ) : null}
         {/* Segmented Icon Button 931:40165: Start = view_list (frames 87/90 selected), End = view_kanban (frame 85 selected → grid). */}
-        <span className={styles.viewToggle}>
+        <span className={styles.viewToggle} data-kb="view">   {/* (REG-713) V presses the view you are not on */}
           <SegmentedIconToggle
             label="View"
             value={view}

@@ -1,0 +1,54 @@
+/* (REG-711…715) The keyboard's surfaces: the ? panel's body (the house Drawer carries its head, width and foot), the list cursor, the
+   keys lit on the page while the panel is out, and the G then … hint (the snackbar's inverse surface). */
+.panelBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.headKeys { margin-right: var(--om-spacing-2); }
+.find { width: 100%; }
+.progress { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.progress > span:first-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bar { flex: 1; height: 4px; border-radius: 2px; background: var(--om-color-surface-variant); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 2px; background: var(--om-color-primary-default); transition: width var(--motion-toggle); }
+.group { display: flex; flex-direction: column; }
+.groupHead { margin: var(--om-spacing-2) 0 var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.row {
+  display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px;
+  padding: var(--om-spacing-1) var(--om-spacing-2); margin: 0 calc(-1 * var(--om-spacing-2)); border-radius: var(--om-radius-1);
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
+}
+.tick { flex-shrink: 0; color: var(--om-color-primary-default); visibility: hidden; }
+.row[data-used] .tick { visibility: visible; }
+.label { flex: 1; min-width: 0; }
+.row[data-off] { color: var(--om-color-on-surface-disabled); }
+.row[data-off] > :last-child { opacity: .5; }
+.off { color: var(--om-color-on-surface-disabled); }
+.row[data-flash] { animation: flash 1.1s ease-out; }
+@keyframes flash { 0%, 30% { background: var(--om-color-primary-variant); } 100% { background: transparent; } }
+.empty { margin: var(--om-spacing-4) 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; overflow-wrap: anywhere; }
+.switches { display: flex; flex-direction: column; gap: var(--om-spacing-3); width: 100%; }
+.switchRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
+.switchText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.switchName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.switchHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* the row J / K stand on — an outline drawn over the page, so every list (rows, cards, a board) shows it the same way */
+.cursor { position: fixed; z-index: 20; display: none; pointer-events: none; border-radius: var(--om-radius-1); box-shadow: inset 0 0 0 2px var(--om-color-primary-default); }
+
+/* the page's own controls wear their keys while the panel is out (Office's KeyTips) */
+.tips { position: fixed; inset: 0; z-index: 125; pointer-events: none; }
+.tips > span {
+  position: fixed; display: none; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px;
+  translate: -65% -45%; border-radius: var(--om-radius-1); white-space: nowrap;
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
+  font: var(--om-type-caption-xs); font-weight: var(--om-font-weight-semibold); box-shadow: 0 0 0 2px var(--om-color-surface-default);
+}
+
+/* G then … — the places, after a beat, on the snackbar's surface */
+.chord {
+  position: fixed; left: 50%; bottom: var(--om-spacing-6); translate: -50% 0; z-index: 130;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-3); width: max-content; max-width: calc(100vw - 32px);
+  padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2);
+  background: var(--om-color-inverse-surface-default); color: var(--om-color-on-inverse-surface-default); font: var(--om-type-body-s);
+  box-shadow: var(--om-elevation-level-3);
+}
+.then { margin-left: calc(-1 * var(--om-spacing-2)); color: color-mix(in srgb, var(--om-color-on-inverse-surface-default) 70%, transparent); }
+.place { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .row[data-flash] { animation: none; } .bar > i { transition: none; } }

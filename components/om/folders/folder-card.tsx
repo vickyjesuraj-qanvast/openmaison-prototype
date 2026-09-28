@@ -56,9 +56,9 @@ export function FolderCard({ name, count, selected, onToggle, onOpen, onMenu, me
   menuOpen?: boolean
 }) {
   return (
-    <div className={styles.folder} data-testid="folder-card" data-selected={selected || undefined}>
-      {onToggle ? <span className={styles.pick}><Checkbox isSelected={!!selected} onChange={onToggle} aria-label={`Select ${name}`} /></span> : null}
-      <button type="button" className={styles.folderMain} aria-label={`Open ${name}`} onClick={onOpen}>
+    <div className={styles.folder} data-testid="folder-card" data-selected={selected || undefined} data-kb-row data-kb-id={`folder:${name}`}>
+      {onToggle ? <span className={styles.pick} data-kb-select><Checkbox isSelected={!!selected} onChange={onToggle} aria-label={`Select ${name}`} /></span> : null}
+      <button type="button" className={styles.folderMain} aria-label={`Open ${name}`} onClick={onOpen} data-kb-open>
         <Icon name="folder" size={24} className={styles.folderIcon} />
         <span className={styles.folderTexts}>
           <span className={styles.folderName}>{name}</span>

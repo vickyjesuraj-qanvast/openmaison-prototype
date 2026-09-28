@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
-import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { ContractsListGhost } from '@/components/shell/list-ghosts'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { useRun } from '@/components/leads/tasks/use-run'
@@ -123,7 +123,7 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const loadTemplates = useCallback(() => fetchContractTemplateOptionsAction(), [])
 
   return (
-    <PageReveal skeleton={<LeadsSkeleton label="Loading contracts" />}>
+    <PageReveal skeleton={<ContractsListGhost />}>   {/* (REG-708) the page's own ghost, as its loading.tsx */}
       <div className={pageStyles.body} style={{ position: 'relative' }} data-testid="contracts-workspace">
         <PageHeader title="Contracts" />
         <div className={styles.frame}>

@@ -400,6 +400,13 @@
       "when": 1790398425451,
       "tag": "0056_materials_updated_by",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1790590194817,
+      "tag": "0057_ai_credits",
+      "breakpoints": true
     }
   ]
 }

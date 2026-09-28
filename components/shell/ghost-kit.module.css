@@ -1,0 +1,96 @@
+/* (REG-708) The ghost kit: the pieces every page's ghost is built from — the page header, the tab strip, a line of text, a control's box,
+   a table — each drawn to the live piece's own geometry at every width, so a page's ghost is its own layout with bones for the words. */
+
+/* The L1 page header (page-header.module.css): 68 tall, p16/24, the title then the actions; the 1px inside stroke at rest. ≤767 it is 60
+   tall at p12/16 and the actions wrap to their own row when they do not fit beside the title — the header's own rule. */
+.head { position: relative; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 68px; padding: var(--om-spacing-4) var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.headTitle { flex: 1; display: flex; align-items: center; min-width: 0; min-height: 36px; }
+.headActions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+/* The L2 header (page-header-l2.module.css): back · crumb over the title · actions, 72 tall — detail-skeleton.module.css draws the same. */
+.head2 { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 72px; padding: var(--om-spacing-4) var(--om-spacing-6); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.head2Title { flex: 1; min-width: 0; display: flex; flex-direction: column; }   /* (REG-724) no gap, as the L2 header's title block: crumb 16 + title 24 in the 72 — a 4px gap made the ghost's head 76 and every block under it rose 4px at the hand-off */
+
+/* The om Tabs strip (components/om/tabs.module.css): 48, g24 p0/24, level-1; ≤1024 g20 p0/16 and it scrolls. */
+.tabs { position: relative; z-index: 1; flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); overflow: hidden; }
+
+/* A line of text: the line's own box with the bone centred in it, so stacked lines keep the page's rhythm. */
+.line { display: flex; align-items: center; flex-shrink: 0; max-width: 100%; }
+.line > * { max-width: 100%; }
+
+/* A control's box — the stylesheet owns the height, per width and pointer, as the control's own stylesheet does. */
+.slot { display: inline-flex; flex-shrink: 0; max-width: 100%; width: var(--slot-w, auto); }
+.field { height: 48px; width: 100%; }                 /* the outlined TextField (text-field.module.css .box) */
+.fieldS { height: 36px; }                             /* size s — 44 where a finger drives it (text-field.module.css) */
+.btn { height: 36px; }                                /* a DS button: drawn 36 everywhere, the 44 target is an overlay (globals.css) */
+.icon { width: 36px; height: 36px; }
+.chip { height: 20px; }                               /* MetaChip */
+.check { width: 18px; height: 18px; margin: 3px; }    /* the checkbox glyph at its drawn 18 (globals.css) */
+.avatar { width: 24px; height: 24px; border-radius: var(--om-radius-full); overflow: hidden; }
+.avatar40 { width: 40px; height: 40px; border-radius: var(--om-radius-full); overflow: hidden; }
+.switch { width: 32px; height: 20px; border-radius: var(--om-radius-full); overflow: hidden; }   /* the DS switch at sm (REG-460) */
+.tile { height: 100%; width: 100%; }
+.pill { height: 32px; }                               /* a house chip (components/om/chips) — 44 where a finger drives it */
+.search { height: 36px; width: 280px; }               /* ToolbarSearch's box */
+.btnFold { height: 36px; }
+.iconTouch { width: 36px; height: 36px; }
+/* Words: the letters hidden, each line a bar of the bone colour over the middle of the line (the text's own box decides where lines break). */
+.words.words { color: transparent; user-select: none; pointer-events: none; text-decoration: none; }
+.wordBars { background: linear-gradient(to bottom, transparent 22%, var(--om-color-surface-variant) 22%, var(--om-color-surface-variant) 78%, transparent 78%); border-radius: var(--om-radius-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.fieldCol { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; width: 100%; }
+
+/* A table on the listing's model (REG-430): the frame, a head row, rows; ≤1024 the tracks hold and the box scrolls sideways. */
+.table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; background: var(--om-color-surface-default); }
+.tHead, .tRow { display: flex; align-items: center; }
+.tRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tCell { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-4); min-width: 0; }
+.tStack { flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
+
+/* The Add row under a table (the tasks tables' "+ Add Task"): p0/24, the line in the middle. */
+.tFoot { display: flex; align-items: center; padding: 0 var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* A table's phone form: the rows as cards (quotes · contracts: cards 12 apart) or as one framed list (tasks: rows under rules). */
+.pList { display: none; flex-direction: column; gap: var(--om-spacing-3); }
+.pList[data-framed] { gap: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.pCard { display: flex; flex-direction: column; justify-content: center; gap: var(--om-spacing-1); padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.pList[data-framed] .pCard { border: 0; border-radius: 0; }
+.pList[data-framed] .pCard + .pCard { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.pFoot { display: flex; align-items: center; padding: 0 var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+
+/* A toolbar: a title or a scope pill at the left, the tools at the right (the tabs' and the lists' toolbars). */
+.toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); min-height: 36px; }
+.toolbarStart { margin-right: auto; display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.toolbarEnd { display: flex; align-items: center; gap: var(--om-spacing-3); }
+
+@media (max-width: 1024px) {
+  .tabs { padding: 0 var(--om-spacing-4); gap: var(--om-spacing-5); }
+  .table { overflow-x: auto; }
+  .tHead, .tRow { width: max-content; min-width: 100%; }
+}
+@media (max-width: 1024px) {
+  .search { width: 36px; }                            /* folded into its glyph through the tablet band too (REG-384) */
+}
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .fieldS { height: 44px; }
+  .pill { height: 44px; }
+}
+@media (max-width: 767px) {
+  .desk.desk { display: none; }
+  .fill.fill { width: 100%; }
+  .btnFold { width: 36px; }
+  .iconTouch { width: 44px; height: 44px; }
+}
+@media (max-width: 767px) {
+  .pList { display: flex; }
+  .table.hasPhone { display: none; }
+  .head { flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); min-height: 60px; }
+  .headActions { flex-wrap: wrap; }
+  /* the header owns the block's lift on a phone unless a tab strip follows it (page-header.module.css ≤767, REG-369) */
+  .head:not(:has(+ .tabs)) { box-shadow: var(--om-elevation-level-1); }
+  .head2 { flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); min-height: 0; }
+  /* (REG-724) the page's L2 header gives its actions the whole second line on a phone (page-header-l2.module.css .actions ≤767) —
+     the ghost kept them beside the title, 36px short of the page (Profile opened from Plan & billing) */
+  .head2 .headActions { order: 2; flex: 1 1 100%; justify-content: flex-start; }
+  .crumb { display: none; }
+  .toolbar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .toolbarEnd { flex-wrap: wrap; }
+}

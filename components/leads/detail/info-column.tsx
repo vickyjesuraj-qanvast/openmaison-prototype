@@ -153,8 +153,8 @@ export function InfoColumn({
         <div className={styles.nameRow}>
           <p className={styles.name}>{lead.name}</p>
           <span className={styles.nameActions}>
-            <Tooltip label="Edit lead">
-              <button type="button" className={styles.iconBtn} aria-label="Edit lead" onClick={onEdit}>
+            <Tooltip label="Edit lead" shortcut="edit">
+              <button type="button" className={styles.iconBtn} aria-label="Edit lead" data-kb="edit" onClick={onEdit}>
                 <Icon name="edit" size={20} weight={300} />
               </button>
             </Tooltip>
@@ -216,7 +216,7 @@ export function InfoColumn({
       {expanded && !mobile ? (<>
       <div className={styles.rule} />
 
-      <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
+      <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign, kb: 'assign' } : undefined}>
         <KVList>
           <Row k="Owner" text={owner} />
           <Row k="Members">
@@ -236,7 +236,7 @@ export function InfoColumn({
                 ))}
               </div>
             ) : (
-              <LinkButton label="Assign Member" onClick={onAssign} />
+              <LinkButton label="Assign Member" onClick={onAssign} kb="assign" />
             )}
           </Row>
         </KVList>
@@ -295,7 +295,7 @@ export function InfoColumn({
             <Button variant="secondary" appearance="outlined" onPress={() => setInfoOpen(true)}>View Client Info</Button>
           </div>
           <Sheet open={infoOpen} onClose={() => setInfoOpen(false)} title="Client Info" bodyClassName={styles.infoSheet}>
-            <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign } : undefined}>
+            <Section title="Collaborators" link={assignees.length ? { label: 'Add', onClick: onAssign, kb: 'assign' } : undefined}>
               <KVList>
                 <Row k="Owner" text={owner} />
                 <Row k="Members">
@@ -315,7 +315,7 @@ export function InfoColumn({
                       ))}
                     </div>
                   ) : (
-                    <LinkButton label="Assign Member" onClick={onAssign} />
+                    <LinkButton label="Assign Member" onClick={onAssign} kb="assign" />
                   )}
                 </Row>
               </KVList>
@@ -358,7 +358,8 @@ export function InfoColumn({
 /* ── Section: 20px head (title · optional link · chevron), body hidden while collapsed (858:25171) ───────────── */
 function Section({ title, link, children }: {
   title: string
-  link?: { label: string; onClick: (anchor: HTMLElement) => void }
+  /** `kb` (REG-713): the key that presses the link — 'assign' for A on a lead */
+  link?: { label: string; onClick: (anchor: HTMLElement) => void; kb?: string }
   children: ReactNode
 }) {
   // Collapsed sections are remembered per browser, like the listing's table/kanban choice (lib/prefs.ts).
@@ -372,7 +373,7 @@ function Section({ title, link, children }: {
         {blockIcon ? <Icon name={blockIcon} size={20} weight={300} className={styles.sectionIcon} /> : null}
         <h2 className={styles.sectionTitle}>{title}</h2>
         {link ? (
-          <button type="button" className={styles.headLink} onClick={(e) => link.onClick(e.currentTarget)}>{link.label}</button>
+          <button type="button" className={styles.headLink} data-kb={link.kb} onClick={(e) => link.onClick(e.currentTarget)}>{link.label}</button>
         ) : null}
         <Tooltip label={open ? 'Collapse' : 'Expand'}>
           <button type="button" className={styles.iconBtn} aria-label={`${open ? 'Collapse' : 'Expand'} ${title}`}
@@ -401,9 +402,9 @@ function Row({ k, text, children }: { k: string; text?: string; children?: React
 }
 
 /** "Assign Member ›" / "Add ›" — 14/600 primary + keyboard_arrow_right 20 Regular, 4 apart (CellDataGroup link). */
-function LinkButton({ label, onClick }: { label: string; onClick: (anchor: HTMLElement) => void }) {
+function LinkButton({ label, onClick, kb }: { label: string; onClick: (anchor: HTMLElement) => void; kb?: string }) {
   return (
-    <button type="button" className={styles.link} onClick={(e) => onClick(e.currentTarget)}>
+    <button type="button" className={styles.link} data-kb={kb} onClick={(e) => onClick(e.currentTarget)}>
       {label}
       <Icon name="keyboard_arrow_right" size={20} weight={400} />
     </button>

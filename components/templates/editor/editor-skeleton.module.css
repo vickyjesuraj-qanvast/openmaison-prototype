@@ -1,12 +1,36 @@
-/* The template editor's ghost — the editor's own frame (template-editor.module.css): bar 56, left 300, right 320. */
+/* The template editor's ghost — the editor's own frame (template-editor.module.css): bar 56, the hint 44, left 300, right 320, the stage's
+   page at 756 (A4 at the editor's 95%) 32 from its edges. */
 .page { display: flex; flex-direction: column; min-height: 100dvh; background: var(--om-color-surface-bg); }
-.bar { display: flex; align-items: center; gap: var(--om-spacing-3); height: 56px; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.bar { display: flex; align-items: center; gap: var(--om-spacing-3); height: 56px; flex-shrink: 0; padding: 0 var(--om-spacing-4); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
 .grow { flex: 1; }
+.group { display: inline-flex; align-items: center; gap: var(--om-spacing-4); padding: 0 var(--om-spacing-2); }
+.hint { display: flex; align-items: center; gap: var(--om-spacing-3); height: 44px; flex-shrink: 0; padding: 0 var(--om-spacing-4); background: var(--om-color-primary-variant); }
+.hint[data-seen] { display: none; }
+.name, .chips, .desk { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
 .body { flex: 1; display: flex; min-height: 0; }
-.side { width: 300px; flex-shrink: 0; background: var(--om-color-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-4) var(--om-spacing-4); }
+.side { width: 300px; flex-shrink: 0; background: var(--om-color-surface-default); display: flex; flex-direction: column; }
 .side:last-child { width: 320px; border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
 .side:first-child { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
-.tabs { display: flex; gap: var(--om-spacing-6); height: 44px; align-items: center; margin-bottom: var(--om-spacing-2); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
-.row { display: flex; align-items: center; gap: var(--om-spacing-3); height: 40px; }
-.stage { flex: 1; display: flex; justify-content: center; padding: var(--om-spacing-8); }
-@media (max-width: 1024px) { .side { display: none; } }
+.tabs { display: flex; height: 45px; padding: 0 var(--om-spacing-2); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.tab { flex: 1; display: flex; align-items: center; justify-content: center; }
+.setup { display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 44px; padding: var(--om-spacing-1) var(--om-spacing-4) var(--om-spacing-1) 36px; }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.stage { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: var(--om-spacing-8); min-width: 0; }
+.paper { width: min(756px, 100%); aspect-ratio: 210 / 297; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); padding: 48px 64px; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.letterhead { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--om-spacing-4); }
+.kv { display: flex; gap: var(--om-spacing-4); min-width: 0; overflow: hidden; }
+.inspectorHead { display: flex; align-items: center; height: 56px; padding: 0 var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.inspectorBody { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-12) var(--om-spacing-4) var(--om-spacing-4); }
+.step { display: flex; align-items: center; gap: var(--om-spacing-3); width: 100%; }
+@media (max-width: 1024px) { .side { display: none; } .group { display: none; } }
+/* ≤767 the editor is a view (the page's own rule): the name over its chips (72 tall), the tools gone, the note always there, the pages 16 in */
+@media (max-width: 767px) {
+  .bar { height: 72px; flex-wrap: wrap; align-content: center; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-4); }
+  .name { flex: 1 1 calc(100% - 40px); }
+  .chips { margin-left: 44px; }
+  .desk { display: none; }
+  .hint, .hint[data-seen] { display: flex; height: 48px; }
+  .stage { padding: var(--om-spacing-4); }
+  .paper { width: calc(100% - 32px); padding: 24px; }
+}

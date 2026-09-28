@@ -27,11 +27,11 @@ export function LibraryNewButton({ open, onOpenChange, children, sheetTitle = 'N
   return (
     <span className={styles.newAnchor}>
       {phone ? (
-        <Tooltip label="New" disabled={open}>
-          <IconButton icon="add" label="New" variant="primary" aria-haspopup="menu" aria-expanded={open} onClick={() => onOpenChange(!open)} data-testid="new-template" />
+        <Tooltip label="New" disabled={open} shortcut="create">
+          <IconButton icon="add" label="New" variant="primary" aria-haspopup="menu" aria-expanded={open} onClick={() => onOpenChange(!open)} data-testid="new-template" data-kb="create" data-kb-label="New" />
         </Tooltip>
       ) : (
-        <Button variant="primary" appearance="outlined" aria-haspopup="menu" aria-expanded={open} onPress={() => onOpenChange(!open)} data-testid="new-template"
+        <Button variant="primary" appearance="outlined" aria-haspopup="menu" aria-expanded={open} onPress={() => onOpenChange(!open)} data-testid="new-template" data-kb="create" data-kb-label="New"
                 iconEnd={<span className={styles.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}>
           New
         </Button>

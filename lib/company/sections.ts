@@ -14,6 +14,7 @@ export const COMPANY_GROUPS: CompanyGroup[] = [
     { key: 'templates', icon: 'style', label: 'Templates', help: 'Brand kit, quotes, contracts and more', href: '/company/templates/quotes' },
     { key: 'price-book', icon: 'list_alt', label: 'Price book', help: 'My Items and My Sections — what quote lines start from', href: '/company/price-book' },   /* (REG-653, Q-18) the quote's Create strip wears list_alt for My Items and menu_book for Brand Catalog (the mock) — one glyph per meaning · (REG-594) */
     { key: 'materials', icon: 'texture', label: 'Materials', help: 'Your own finishes for the AI Visualizer', href: '/company/materials' },   /* (REG-677, AI Visualizer Q-18) 1.0's studio library, now managed */
+    { key: 'plan', icon: 'diamond', label: 'Plan & AI credits', help: 'Your plan, the AI credits the team uses, invoices', href: '/company/plan' },   /* (REG-704, AI credits Q-22) 1.0's Usage & credits, on Company's frame */
   ] },
   { title: 'Operations', items: [
     { key: 'finance', icon: 'finance', label: 'Finance', help: 'Invoices, payments and GST' },
@@ -35,6 +36,15 @@ export const TEMPLATE_KINDS: TemplateKind[] = [
 ]
 export const templateKind = (key: string) => TEMPLATE_KINDS.find((k) => k.key === key)
 
+/** (REG-721) The Company section a path is in — '/company/plan/billing' → 'Plan & AI credits', '/company/templates/brand' → 'Templates'.
+    What a Company page's crumb calls the Company page it was opened from, so the crumb never reads "Company / Company". */
+export function companySectionOf(path: string): string | undefined {
+  const seg = path.split('?')[0]!.split('/')[2]
+  if (!seg) return undefined
+  for (const g of COMPANY_GROUPS) for (const s of g.items) if (s.href?.split('/')[2] === seg) return s.label
+  return undefined
+}
+
 /** (REG-594) Company › Price book: the two libraries a quote line can start from, as the section's tab strip. */
 export const PRICE_BOOK_TABS = [{ label: 'My Items', href: '/company/price-book' }, { label: 'My Sections', href: '/company/price-book/sections' }] as const
 export const PRICE_BOOK_KINDS: Record<'items' | 'sections', TemplateKind> = {
@@ -45,3 +55,6 @@ export const PRICE_BOOK_KINDS: Record<'items' | 'sections', TemplateKind> = {
 /** (sweep S4 #26) One ghost bone per tab, as wide as its label reads — the route's loading.tsx (a server component) and CompanyShell's reveal
     draw the same strip. Here, not in the client shell: a server component cannot call a function from a 'use client' module. */
 export const tabBones = (labels: string[]) => labels.map((l) => Math.max(32, Math.round(l.length * 7.4)))
+
+/** (REG-704, AI credits Q-22) Company › Plan & AI credits: Usage · Plan & billing. */
+export const PLAN_TABS = [{ label: 'Usage', href: '/company/plan' }, { label: 'Plan & billing', href: '/company/plan/billing' }] as const

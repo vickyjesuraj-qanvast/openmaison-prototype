@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import Link from 'next/link'
+import { Tooltip } from './tooltip'
 import styles from './tabs.module.css'
 
 /**
@@ -55,11 +56,13 @@ export function Tabs({
   }, [activeHref])
 
   return (
-    <div ref={listRef} role="tablist" aria-label={ariaLabel} className={className ? `${styles.tabs} ${className}` : styles.tabs} onKeyDown={onKeyDown}>
+    /* (REG-713) `data-kb-tabs`: the numbers 1–9 switch these tabs (the key layer presses the tab), and each tab's tooltip names its number */
+    <div ref={listRef} role="tablist" aria-label={ariaLabel} className={className ? `${styles.tabs} ${className}` : styles.tabs} onKeyDown={onKeyDown} data-kb-tabs="">
       {items.map((t, i) => {
         const selected = t.href === activeHref
         if (t.soon) return <button key={t.href} type="button" role="tab" aria-selected={false} tabIndex={-1} className={styles.tab} onClick={onSoon}>{t.label}</button>
         return (
+          <Tooltip key={t.href} label={t.label} keys={i < 9 ? `#${i + 1}` : undefined} disabled={i >= 9}>
           <Link
             key={t.href}
             href={t.href}
@@ -76,6 +79,7 @@ export function Tabs({
             {t.label}
             {selected ? <span className={styles.ink} aria-hidden /> : null}
           </Link>
+          </Tooltip>
         )
       })}
     </div>

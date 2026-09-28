@@ -4,10 +4,18 @@ Standing rule from the designer (2026-08-27): "whenever you build a screen remem
 generic stuffs and never miss." Tick every line before a screen is reported as done.
 
 ## Load & refresh
-- Every route ships a `loading.tsx` ghost (`LeadsSkeleton`, `ImportsSkeleton`, `SettingsSkeleton`) and wraps its view in `PageReveal`.
-- [ ] `loading.tsx` next to the route renders a skeleton from `components/shell/skeleton.tsx`
-      that mirrors the screen's own layout (header, toolbar, table/cards — same heights and
-      column widths as the real components, so the crossfade lands in place).
+- Every route ships a `loading.tsx` ghost and wraps its view in `PageReveal` — **the same ghost in both** (REG-708).
+- [ ] **One ghost per page, drawn by `loading.tsx` AND handed to the page's `PageReveal`** — the same component, never a variant or a
+      count only the page knows (a loader always paints first, and a differently shaped reveal is a second, visible change). What the page
+      reads from the address (`?section=`, `?view=`, `?from=`, the tab slug) the ghost reads too, in a client component. (REG-708)
+- [ ] The ghost is the page's own layout: its containers keep the page's own classes, the pieces come from the ghost kit
+      (`components/shell/ghost-kit.tsx` — headers, tab strip, `Line`, `Slot`, `GhostField`, `GhostTable`, `Words`), fixed copy (a card's
+      title and help) is `Words` so it wraps as the page wraps, and controls fold as the real ones fold (the search at ≤1024, New ▾ and
+      desk-only tools on a phone). Same heights and column widths as the real components, so the crossfade lands in place.
+- [ ] **A `loading.tsx` wraps its own page only.** A page with child routes keeps itself and its loader in a route group
+      (`app/leads/(list)`, `app/company/plan/(usage)` …) — a parent's loader paints before a child's own on every full load.
+- [ ] Checked the way REG-708 was: the loader (the streamed HTML, scripts removed), the held reveal, the page, and the ghost laid over the
+      page at 50%, at 1440 and 390 touch; and a filmed full load shows one ghost, then the page.
 - [ ] The page's client view is wrapped in `<PageReveal skeleton={<…Skeleton />}>`
       (`components/shell/page-reveal.tsx`): min hold `GHOST_MIN_MS` then crossfade.
 - [ ] The ghost's minimum hold applies ONLY when `loading.tsx` actually painted (`ghostClock.shownAt`): a warm
@@ -38,11 +46,30 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] `disabled` passed while the control's own menu/popover is open or its label is visible.
 - [ ] Side: rail → `right`; FAB → `left`; everything else → `bottom` (auto-clamped to viewport).
 
+## Keys (REG-711…717 — `lib/keys/registry.ts`, `components/shell/shortcuts/`)
+- [ ] **No key handler of your own.** A page's keys go through the one keyboard: mark the control a key should press with
+      `data-kb="create" | "filters" | "view" | "delete" | "clear" | "move-stage" | "assign" | "edit" | "back" | "preview"` (on the
+      button itself — the DS Button passes `data-*` through; add `data-kb-label` when its accessible name carries a count) and the
+      key does what the press does, with its checks and refusals. Where no single control fits, `useShortcut(id, run, true, words)`.
+- [ ] **Lists are walkable:** `data-kb-list="<noun>"` round the rows (header included), `data-kb-row data-kb-id` on each row or card,
+      `data-kb-open` on what opens it (`="dblclick"` where a double-click opens), `data-kb-select` / `data-kb-select-all` on the boxes.
+- [ ] **Tab rows** are the house `Tabs` (numbers switch them); an editor's own keys are listed with `useShortcutsHere([...])` and its
+      zone that answers letters itself is marked `data-kb-own`.
+- [ ] **Every control with a key says it:** `<Tooltip shortcut="…">` (or `keys="mod+z"`), a menu row `shortcut` / `keys`, a new
+      search box inside `SlashSlot`. Keys are drawn only by `components/om/keys.tsx` — never type ⌘ into copy (Ctrl on Windows).
+- [ ] **Nothing that reaches a client, publishes or deletes forever gets a key**; ⌫ only presses a Delete that asks first.
+- [ ] A new key goes into the registry first, then the ? panel lists it by itself — check it there.
+
 ## Surfaces
 - Modal widths come from the scale only: s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`), or xxl = fluid with a 48px margin on every side; height follows content, capped to the viewport; radius 12; centred overlay. Full-page overlays are not used — Review imported leads is an XXL modal.
 - [ ] Closing a multi-step flow or discarding edits asks first via the shared `ConfirmDialog` (`components/om/confirm-dialog.tsx`).
+- [ ] **A confirm's answers fit its 400 alert on one row** — short verb phrases ("Delete", "Stop sharing", "Cancel the plan"); the message carries the detail (a date, a count). No button breaks its label; a footer of buttons that still runs out of room wraps to a second row, never clips (REG-720).
 - [ ] Modals / sheets / dialogs call `useScrollLock(open)` and their overlays contain overscroll; any table inside a scrolling surface has a sticky header.
 - [ ] A modal footer keeps its top rule; its shadow appears only while the body scrolls — attach `useOverflow` (components/om/use-overflow.ts) to the scrolling body and give the footer `data-shadow` (REG-322).
+
+- [ ] **Cards side by side are stacks, not rows** — two columns, each a stack with its own gap, as the lead Overview's card grid (858:24888, `app/leads/[id]/overview.module.css`; Plan & billing, REG-722): a grid of rows leaves a short card's neighbour's height as a hole under it. At one column the stacks dissolve (`display: contents`) and `order` keeps the reading order.
+- [ ] **A new table's head is the listing's** — `.hCell` 16/24/16/16, the label centred in the 56, grey 12/500 uppercase with an ellipsis, and every column's floor holds its label; a frozen column draws the 1px rule at rest and the shadow only while scrolled. Copying a table's stylesheet, take every `.hCell` rule — some are split in two (REG-723).
+- [ ] **A crumb never repeats itself** — a page opened from another page of its own frame names that page, not the frame twice ("Plan & AI credits / Company", REG-721).
 
 ## Rows that can overflow
 - Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).
@@ -168,3 +195,4 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 - [ ] **A Company section is a page with its peers as a tab strip (REG-484 / REG-498).** New sections go through `CompanyShell` and `lib/company/sections.ts`; an unbuilt kind still gets a tab and a page that says "Coming soon in OpenMaison 2.0".
 - [ ] **Only published versions reach a quote (REG-501).** Pickers, `createQuote` and the Preview read `status = 'published'` designs; a submission awaiting approval never changes what prints. A new publish path must clear `submitted_*` and honour `template_approval`.
 - [ ] **Delete is soft and reads Delete (REG-502).** A template, like a lead or a quote, gets `deleted_at`, an Undo, and a Deleted sheet with Restore; Delete forever only when nothing references it. Never an Archive.
+- [ ] **An AI press says its price first and is charged at the work (REG-704).** A metered action shows `costOf(...)` from `lib/credits/schedule.ts` on the button before the press, charges through `chargeAI` (`components/credits/credits-client.ts`) with a ref keyed to the work it makes (`render:<job>` · `quote:<id>`), and gives the credits back with `refundAIWork` on a failure or a Cancel — saying so in the same message. A free AI action shows nothing (Q-32).

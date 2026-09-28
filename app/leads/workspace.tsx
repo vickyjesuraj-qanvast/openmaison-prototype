@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AutoHideChrome } from '@/components/shell/auto-hide-chrome'
 import { rememberView, useStoredView, type ListingView } from '@/lib/leads/view-pref'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { LeadsSkeleton } from '@/components/shell/skeleton'
-import { KanbanSkeleton } from '@/components/leads/kanban/skeleton'
+import { ListingGhost } from '@/components/leads/listing-ghost'
 import { Tooltip } from '@/components/om/tooltip'
 import { PageHeader } from '@/components/shell/page-header'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -18,6 +17,7 @@ import { LeadsToolbar } from '@/components/leads/toolbar'
 import { LeadsTable, DEFAULT_COLUMNS, type ColumnConfig } from '@/components/leads/table'
 import { assignableIds, assignHint, runsStudio, type Viewer } from '@/lib/leads/assign-policy'
 import { LeadCards } from '@/components/leads/lead-cards'
+import { useShortcut } from '@/lib/keys/store'
 import { MOBILE, usableViewportHeight, useMediaQuery } from '@/lib/breakpoint'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/leads/dropdown'
 import { AssignPopover } from '@/components/leads/assign-popover'
@@ -226,18 +226,10 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const liveSelected = useMemo(() => new Set([...selected].filter((id) => filtered.some((r) => r.id === id))), [selected, filtered])
   const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleSelectAll = () => setSelected((prev) => (filtered.length > 0 && filtered.every((r) => prev.has(r.id)) ? new Set() : new Set(filtered.map((r) => r.id))))
-  /* (REG-610, parity L-16) 1.0's "C" opens New Lead from anywhere on the listing — not while typing, not over an open surface. */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.key !== 'c' && e.key !== 'C') || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
-      const t = e.target as HTMLElement | null
-      if (t?.closest('input, textarea, select, [contenteditable="true"]')) return
-      if (document.querySelector('[role="dialog"], [role="menu"], [role="listbox"]')) return
-      e.preventDefault(); setLeadForm({ mode: 'create' })
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  /* (REG-610, parity L-16 · REG-713) 1.0's "C" opens New Lead — now through the shared keyboard (components/shell/shortcuts), which
+     answers it only when nothing is typed into and no dialog or menu is open, and obeys the single-key switch. */
+  const openCreate = useCallback(() => setLeadForm({ mode: 'create' }), [])
+  useShortcut('create', openCreate, true, 'Create New Lead')
   // Selection follows the pipeline: ids hidden by scope / filters / search drop out (render-phase adjust).
   const stageCounts = useMemo(() => {
     const c: Record<string, number> & { all: number } = { all: effectiveRows.length }
@@ -323,7 +315,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   /* The header's two menus, shared by the desktop and the mobile action sets (REG-299). */
   const addMenu = (
     <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="right" sheetTitle="Add Lead">
-      <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }}>Create New Lead</DropdownItem>
+      <DropdownItem onSelect={() => { setAddOpen(false); setLeadForm({ mode: 'create' }) }} shortcut="create">Create New Lead</DropdownItem>
       <DropdownItem onSelect={() => { setAddOpen(false); setImportOpen(true) }}>Import from File</DropdownItem>
       <DropdownDivider />
       <DropdownItem onSelect={() => { setAddOpen(false); router.push('/company/integrations#email') }}>Link to Email</DropdownItem>   {/* (REG-602) the website's intake address */}
@@ -341,7 +333,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   )
 
   return (
-    <PageReveal skeleton={view === 'kanban' && !mobile ? <KanbanSkeleton /> : <LeadsSkeleton />}>
+    <PageReveal skeleton={<ListingGhost />}>   {/* (REG-708) the view's ghost, the one loading.tsx drew */}
         {/* (REG-401) The listing is the one surface that asked for it: ≤767 the chrome slides away as the list
             scrolls down and comes back on the way up. Renders nothing; inert at every wider width. */}
         <AutoHideChrome />
@@ -373,7 +365,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             ) : (
               /* (REG-305, user 2026-09-02) Add Lead first, then Insights — the order the mobile mock draws (1082:25131). */
               <>
-                <div ref={addRef} style={{ position: 'relative' }}>
+                <div ref={addRef} style={{ position: 'relative' }} data-kb="create" data-kb-label="Create New Lead">   {/* (REG-713) C: lit here, answered by the create handler */}
                   <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={addOpen} onPress={() => setAddOpen((o) => !o)}>
                     Add Lead
                   </Button>
@@ -523,7 +515,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         <BulkBar count={liveSelected.size} onClear={() => setSelected(new Set())}
                  actions={[
                    ...(assignHintText ? [] : [{ label: 'Assign', onClick: (e: React.MouseEvent<HTMLButtonElement>) => setAssign({ id: BULK, ...anchorRect(e.currentTarget) }) }]),
-                   ...(canDelete ? [{ label: 'Delete', tone: 'danger' as const, onClick: () => openDelete([...liveSelected]) }] : []),
+                   ...(canDelete ? [{ label: 'Delete', tone: 'danger' as const, kb: 'delete', onClick: () => openDelete([...liveSelected]) }] : []),
                  ]} />
       ) : null}
       <ConfirmDialog

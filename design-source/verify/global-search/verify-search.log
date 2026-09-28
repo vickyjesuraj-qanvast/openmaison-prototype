@@ -1,0 +1,29 @@
+✓ the rail’s Search tile opens the search
+✓ it opens beside the rail, 560 wide — x 68 (rail ends 60) w 560
+✓ the field takes the caret
+✓ before anything is typed it offers Go to
+✓ the tile’s hint is no longer "/"
+✓ "kevin" finds Kevin Ng under Leads
+✓ the matched word is marked
+✓ the lead carries its stage
+✓ the group with the best answer leads
+✓ a long group ends in "Show all n"
+✓ ↓ moves the highlight — request_quote
+✓ ↵ opens the quote with ?from=/leads — /quotes/bc1e58ca-6d72-4119-aae3-b76cd0e031b5?from=%2Fleads
+✓ ⌘K opens it
+✓ what was searched comes back under Recent searches
+✓ what was opened comes back under Recently opened
+✓ the Tasks scope shows tasks only — Tasks
+✓ Esc clears the field first
+✓ a second Esc closes it
+✓ ⌘K again closes it
+✓ a task opens with its panel — /leads/1f12cbd1-b09b-47f4-89e4-454a1a5e333b/tasks?open=69274cd1-cb57-4e24-be3d-6cc5cd8ec6b1&from=%2Ftasks
+✓ a note opens on itself — Customer has 10 cats
+✓ a Price book item opens on its dialog — /company/price-book?open=99f1bb1b-4d7b-47ae-aafb-732231981717&from=%2Fleads%2F2bc08444-0409-47c3-9675-0750977c5838%2Fnotes%3Fopen%3Def025df4-5e18-4861-8114-3d0c1bd76af3%26from%3D%252Fleads%252F1f12cbd1-b09b-47f4-89e4-454a1a5e333b%252Ftasks%253Fopen%253D69274cd1-cb57-4e24-be3d-6cc5cd8ec6b1%2526from%253D%25252Ftasks
+✓ a material opens on its dialog — /company/materials?open=sm-oak-veneer&from=%2Fcompany%2Fprice-book%3Fopen%3D99f1bb1b-4d7b-47ae-aafb-732231981717%26from%3D%252Fleads%252F2bc08444-0409-47c3-9675-0750977c5838%252Fnotes%253Fopen%253Def025df4-5e18-4861-8114-3d0c1bd76af3%2526from%253D%25252Fleads%25252F1f12cbd1-b09b-47f4-89e4-454a1a5e333b%25252Ftasks%25253Fopen%25253D69274cd1-cb57-4e24-be3d-6cc5cd8ec6b1%252526from%25253D%2525252Ftasks
+✓ on a phone the bar’s search glyph opens the search as a sheet
+✓ the sheet finds Olivia Martinez
+✓ Sarah does not find Kevin Ng, not one of Sarah’s leads
+✓ Sarah finds Farah Ahmad, one of Sarah’s leads
+
+27 passed, 0 failed

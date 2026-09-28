@@ -7,6 +7,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Sheet } from '@/components/om/sheet'
 import { Tooltip } from '@/components/om/tooltip'
+import { CreditToken } from '@/components/om/credit-token'
 import type { Intent, Quality } from '@/lib/visualizer/model'
 import chips from '@/components/om/chips.module.css'
 import styles from './rail.module.css'
@@ -22,6 +23,17 @@ export const MODES: { key: Mode; label: string; icon: string }[] = [
 /** (E3) The compact button's verb where the go line is narrow — only the labels longer than it ("Furnish the room" → "Furnish"); a
     label not listed keeps its words (cut with "…" if it must). */
 const GO_SHORT: Record<string, string> = { 'Furnish the room': 'Furnish', 'Empty the room': 'Empty', 'Style transfer': 'Transfer', 'Render from sketch': 'Render', 'Generate from note': 'Generate' }
+/**
+ * (REG-704, AI credits Q-29 · E-02) What a Generate costs, said before the press: `cost` rides on the button, `left` (what the viewer can
+ * still spend after it, when they may know) on the options line, `short` replaces that line when it can't be afforded — with the cheaper
+ * way when there is one — and `per` prices one version of each quality on the Quality switch (null where quality doesn't change the price).
+ */
+export type FootPrice = { cost: number; left: number | null; short: string | null; per: { fast: number; high: number } | null }
+const fmtN = (n: number) => n.toLocaleString('en-SG')
+/** The cost on the button: a white token and the number (the approved proposal's chip). */
+function CostChip({ n }: { n: number }) {
+  return <span className={styles.cost} data-testid="viz-cost"><CreditToken size={16} level={1} tone="current" />{fmtN(n)}</span>
+}
 /** A change waiting (the model's `changeList` item, with its ×): `id` is the ChangeItem's, so `intent.ignored` finds it. */
 export type Change = { id: string; label: string; onRemove: () => void; needs?: string | null }
 
@@ -91,7 +103,7 @@ function ChangeChips({ changes, ignored, capped }: { changes: Change[]; ignored:
  * `changeList` (the intent's `total`); what the next pass leaves for later is muted with the intent's `ignoredNote` (F052).
  * (F066 · F144) ≤1024 the count opens the changes in a sheet, each with its ×, and Clear all.
  */
-export function GenerateFooter({ changes, onClear, intent, variants, onVariants, quality, onQuality, onGenerate, busy, error, compact = false, disabled = false, describe = null, reasonLink = null }: {
+export function GenerateFooter({ changes, onClear, intent, variants, onVariants, quality, onQuality, onGenerate, busy, error, compact = false, disabled = false, describe = null, reasonLink = null, price = null }: {
   changes: Change[]; onClear: () => void; intent: Intent
   variants: 1 | 2 | 3; onVariants: (n: 1 | 2 | 3) => void; quality: Quality; onQuality: (q: Quality) => void
   onGenerate: () => void; busy: boolean; error: string | null
@@ -103,6 +115,8 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
   /** (new:fresh-desktop:Furnish says empty first) Why Generate waits, when the way on is one press away — e.g. Furnish on a version that
       isn't emptied while the room has one that is: "Furnish works on an emptied version — open V4". Replaces the intent's reason. */
   reasonLink?: { text: string; label: string; onPress: () => void } | null
+  /** (REG-704) The price of this Generate — null where nothing is charged. */
+  price?: FootPrice | null
 }) {
   const many = intent.kind === 'edit' || intent.kind === 'restyle' || intent.kind === 'transfer'
   /* (UAT walk) only a pass that can make one version holds the choice at 1 — with nothing waiting, the choice stays the studio's own to set
@@ -134,16 +148,22 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
         <span className={styles.knob}>
           <span className={styles.knobLabel}>Quality</span>
           <SegmentedButton aria-label="Quality" selectedKeys={[quality]} onSelectionChange={(k) => { const v = [...k][0]; if (v === 'fast' || v === 'high') onQuality(v) }}>
-            <SegmentedButtonItem id="fast">Fast</SegmentedButtonItem><SegmentedButtonItem id="high">High</SegmentedButtonItem>
+            {/* (REG-704) the price of one version of each, where quality sets the price */}
+            <SegmentedButtonItem id="fast">{price?.per ? `Fast · ${fmtN(price.per.fast)}` : 'Fast'}</SegmentedButtonItem><SegmentedButtonItem id="high">{price?.per ? `High · ${fmtN(price.per.high)}` : 'High'}</SegmentedButtonItem>
           </SegmentedButton>
         </span>
       </Tooltip>
     </div>
   )
   const errorLine = error ? <span className={styles.error} role="alert" data-testid="viz-error"><Icon name="error" size={16} weight={300} />{error}</span> : null
+  /* (REG-704) the chip rides on the button while it can run; the words say the price for a screen reader (the chip is decorative) */
+  const priced = !!price && !!intent.kind && !busy
+  const chip = priced ? <CostChip n={price.cost} /> : undefined
+  const priceWords = priced ? ` · ${fmtN(price.cost)} AI credits` : ''
+  const shortLine = priced && price.short && !error ? <span className={styles.short} role="status" data-testid="viz-short">{price.short}</span> : null
   if (compact) {
     /* what went wrong, or why Generate waits: beside the button when nothing is picked, else on its own line under the row */
-    const status = errorLine ?? (reason && !intent.kind ? <span className={styles.compactText}>{reason}</span> : null)
+    const status = errorLine ?? shortLine ?? (reason && !intent.kind ? <span className={styles.compactText}>{reason}</span> : null)
     return (
       /* (new:style-light-tools:FAB over the knobs) data-viz-knobs tells the frame the switches are up — the Maison AI button steps aside */
       <div className={styles.foot} data-compact="" data-viz-knobs={opts || undefined}>
@@ -157,7 +177,7 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
           <span className={styles.compactStatus}>{changes.length ? null : status}</span>
           <Tooltip label={`Makes ${oneOnly ? 1 : variants} · ${quality === 'high' ? 'High quality' : 'Fast'}`}><IconButton icon="tune" label="Versions and quality" size={36} variant="bare" iconSize={20} iconWeight={300} selected={opts} aria-expanded={opts} onClick={() => setOpts((o) => !o)} /></Tooltip>
           {/* (F158) the count lives in the text beside it — the button says only what it does (its full words stay its name) */}
-          <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.goCompact} aria-label={busy ? intent.busy : intent.label} iconStart={<Icon name="wand_shine" size={20} weight={300} />} data-testid="viz-generate">
+          <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.goCompact} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate">
             <span className={styles.goText}>{busy ? intent.busy : intent.kind === 'edit' ? 'Generate' : intent.kind === 'restyle' ? 'Restyle' : intent.label}</span>
             {/* (E3) the verb alone, where the go line is too narrow for the words (the CSS picks one) */}
             {!busy && GO_SHORT[intent.label] ? <span className={styles.goShort} aria-hidden>{GO_SHORT[intent.label]}</span> : null}
@@ -183,11 +203,12 @@ export function GenerateFooter({ changes, onClear, intent, variants, onVariants,
           {note ? <span className={styles.note} data-testid="viz-ignored">{note}</span> : null}
         </div>
       ) : null}
-      <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.go} iconStart={<Icon name="wand_shine" size={20} weight={300} />} data-testid="viz-generate">{busy ? intent.busy : intent.label}</Button>
+      <Button onPress={onGenerate} isDisabled={!intent.kind || busy || disabled} className={styles.go} data-priced={priced || undefined} aria-label={busy ? intent.busy : `${intent.label}${priceWords}`} iconStart={<Icon name="wand_shine" size={20} weight={300} />} iconEnd={chip} data-testid="viz-generate"><span className={styles.goLabel}>{busy ? intent.busy : intent.label}</span></Button>
       {errorLine ?? (reason ? <span className={styles.hint} data-idle={!intent.total || undefined}>{reason}</span> : null)}
-      {/* (simplicity pass) how many versions and how fine: one quiet line, the two switches only on Change */}
+      {/* (simplicity pass) how many versions and how fine: one quiet line, the two switches only on Change; (REG-704) the price and what's
+          left after it on the same line — or, when it can't be afforded, what it needs and the cheaper way */}
       <div className={styles.opts}>
-        <span className={styles.optsText} data-testid="viz-options">Makes {!oneOnly ? `${variants} ${variants === 1 ? 'version' : 'versions'}` : '1 version'} · {quality === 'high' ? 'High quality' : 'Fast'}</span>
+        {shortLine ?? <span className={styles.optsText} data-testid="viz-options">Makes {!oneOnly ? `${variants} ${variants === 1 ? 'version' : 'versions'}` : '1 version'} · {quality === 'high' ? 'High quality' : 'Fast'}{priced ? ` · ${fmtN(price.cost)} AI credits${price.left != null ? ` · ${fmtN(price.left)} left after` : ''}` : ''}</span>}
         <button type="button" className={styles.link} aria-expanded={opts} onClick={() => setOpts((o) => !o)} data-testid="viz-options-toggle">{opts ? 'Done' : 'Change'}</button>
       </div>
       {opts ? knobs : null}

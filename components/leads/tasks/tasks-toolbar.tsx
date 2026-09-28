@@ -43,17 +43,17 @@ export function AddTaskButton({ onAdd, header = false }: { onAdd: (kind: 'new' |
   return (
     <span className={styles.menuWrap}>
       {sheet ? (
-        <Tooltip label="Add Task" disabled={open}>
-          <IconButton icon="add" label="Add Task" variant={header ? 'filled' : 'primary'} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
+        <Tooltip label="Add Task" disabled={open} shortcut="create">
+          <IconButton icon="add" label="Add Task" variant={header ? 'filled' : 'primary'} aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="Add Task" onClick={() => setOpen((o) => !o)} />
         </Tooltip>
       ) : header ? (
-        <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={open} onPress={() => setOpen((o) => !o)}>Add Task</Button>
+        <Button iconStart={<Icon name="add" size={20} />} aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="Add Task" onPress={() => setOpen((o) => !o)}>Add Task</Button>
       ) : (
         /* touchTarget: the 36px DS/om controls take a ≥40 target below 768 (REG-273), drawn unchanged. */
         <Button
           variant="primary" appearance="outlined" className={styles.touchTarget}
           iconEnd={<span className={styles.chev} data-open={open || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-          aria-haspopup="menu" aria-expanded={open}
+          aria-haspopup="menu" aria-expanded={open} data-kb="create" data-kb-label="Add Task"
           onPress={() => setOpen((o) => !o)}
         >
           Add Task
@@ -118,8 +118,8 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
         {inHeader ? null : <AddTaskButton onAdd={onAdd} />}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder ?? 'Search title, member, tag…'} label="Search tasks" />
         <span className={styles.filterWrap}>
-          <Tooltip label="Filters">
-            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
+          <Tooltip label="Filters" shortcut="filters">
+            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchTarget}
                         onClick={onFilter} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}

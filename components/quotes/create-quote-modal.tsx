@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -22,6 +22,8 @@ import { pickerTemplates, type PickerData, type PickerExtras } from '@/lib/templ
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import { isSheet, readDocument, readRows, UPLOAD_ACCEPT, type UploadRead } from '@/lib/quotes/upload'
+import { chargeAI, refundAIWork } from '@/components/credits/credits-client'
+import { costOf } from '@/lib/credits/schedule'
 import { parseXlsx } from '@/lib/xlsx'
 import { parseCsv } from '@/lib/csv'
 import { money2 } from '@/lib/quotes/math'
@@ -30,7 +32,7 @@ import styles from './create-quote-modal.module.css'
 /** "used 2w ago" (the 1.0 card's meta): days under a week, weeks under a month, then the date. */
 /** The rail shows the default and the most recently used; the rest sit behind View all (design reference). */
 const RAIL_MAX = 3
-type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { kind: 'upload'; name: string; read: UploadRead | null }
+type Mode = { kind: 'rail' } | { kind: 'all'; selectedId: string | null } | { kind: 'upload'; name: string; read: UploadRead | null; quoteId: string; refunded: number }
 
 /**
  * Create Quote modal (REG-412 — the 1.0 "Start a quote for {lead}" screen on the 2.0 DS, chosen from the design
@@ -62,8 +64,9 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   render?: { brand: BrandKit; sample: DocData; extras?: PickerExtras }
   /** (REG-495) Opened from a template ("Start a quote with this template"): the picker opens on it. */
   preselect?: string | null
-  /** (REG-627, parity Q-16) Upload a quote: the lines read from the file, for the page to create the quote with. Absent = coming soon. */
-  onUpload?: (read: Extract<UploadRead, { ok: true }>, clientId: string | null) => void
+  /** (REG-627, parity Q-16) Upload a quote: the lines read from the file, for the page to create the quote with. Absent = coming soon.
+   *  (REG-704) `quoteId` — the id the read was charged to (`quote:<id>`); the page creates the quote under it. */
+  onUpload?: (read: Extract<UploadRead, { ok: true }>, clientId: string | null, quoteId: string) => void
 }) {
   useScrollLock(open)
   const comingSoon = useComingSoon()
@@ -82,8 +85,15 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
   }
   /* (REG-627, parity Q-16) Upload a quote: pick a file, read it here, show the lines, then the page creates the quote with them. */
   const fileRef = useRef<HTMLInputElement>(null)
+  /* the press again once credits are in (the top-up's `then`) — through a ref, so the read never names itself */
+  const again = useRef<(file: File) => void>(() => {})
   const pickFile = async (file: File) => {
-    setMode({ kind: 'upload', name: file.name, read: null })
+    /* (REG-704, AI credits T-26 · Q-29) reading a quote is Digitize quote in 1.0 — 5 AI credits, taken at the read and keyed by the quote
+       it becomes; a refusal opens its moment and nothing is read; a file that can't be read gives them back */
+    const quoteId = crypto.randomUUID(), ref = `quote:${quoteId}`
+    const charged = await chargeAI({ action: 'quote_digitize', ref, what: 'quote', needed: costOf('quote_digitize'), retry: () => again.current(file) })
+    if (charged === false) return
+    setMode({ kind: 'upload', name: file.name, read: null, quoteId, refunded: 0 })
     const started = Date.now()
     let read: UploadRead
     try {
@@ -91,14 +101,16 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
         ? readRows(/\.csv$/i.test(file.name) ? parseCsv(await file.text()) : await parseXlsx(await file.arrayBuffer()), file.name)
         : readDocument(file.name)
     } catch { read = { ok: false, reason: 'unreadable' } }
+    const refunded = !read.ok && charged > 0 ? await refundAIWork(ref) : 0
     const wait = 700 - (Date.now() - started)   // "Reading…" stays long enough to be read
     if (wait > 0) await new Promise((r) => setTimeout(r, wait))
-    setMode((m) => (m.kind === 'upload' && m.name === file.name ? { ...m, read } : m))
+    setMode((m) => (m.kind === 'upload' && m.quoteId === quoteId ? { ...m, read, refunded } : m))
   }
+  useEffect(() => { again.current = (file) => { void pickFile(file) } })
   const createFromUpload = () => {
     if (mode.kind !== 'upload' || !mode.read?.ok || !onUpload) return
     if (clients && !clientId) { setClientError(true); return }
-    onUpload(mode.read, clientId)
+    onUpload(mode.read, clientId, mode.quoteId)
   }
   /* A template's kebab menu and the chooser dialogs render over this panel, and the surface policy skips descendants (REG-287),
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
@@ -159,7 +171,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                     </>
                   ) : (
                     <>
-                      <p className={styles.uploadNote} role="status" data-tone="error"><Icon name="error" size={20} weight={300} /><span>We couldn’t read {mode.name}.</span></p>
+                      <p className={styles.uploadNote} role="status" data-tone="error"><Icon name="error" size={20} weight={300} /><span>We couldn’t read {mode.name}.{mode.refunded > 0 ? ` Your ${mode.refunded} AI credits are back.` : ''}</span></p>
                       <p className={styles.uploadHelp}>{mode.read.reason === 'empty' ? 'The file has no lines we could use.' : 'Upload a spreadsheet (XLSX · CSV) of the quote’s lines, or start from a blank quote.'}</p>
                       <span><Button variant="secondary" appearance="outlined" iconStart={<Icon name="upload_file" size={20} />} onPress={() => fileRef.current?.click()}>Choose another file</Button></span>
                     </>
@@ -237,7 +249,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                       <button type="button" className={styles.row} data-testid="upload-quote-row" onClick={onUpload ? () => fileRef.current?.click() : comingSoon}>
                         <span className={styles.glyph}><Icon name="upload_file" size={20} weight={300} /></span>
                         <span className={styles.rowText}>
-                          <span className={styles.rowTitle}>Upload a quote <MetaChip>PDF · XLS · JPG</MetaChip></span>
+                          <span className={styles.rowTitle}>Upload a quote <MetaChip>{`PDF · XLS · JPG · ${costOf('quote_digitize')} AI credits`}</MetaChip></span>
                           <span className={styles.rowDesc}>Digitize an existing quote — we scan it into editable line items</span>
                         </span>
                         <span className={styles.trail}><Icon name="chevron_right" size={24} /></span>

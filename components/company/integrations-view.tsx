@@ -14,6 +14,7 @@ import { connectGmail, createWebhook, disconnectGmail, regenerateWebhook, revoke
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useCopy } from '@/components/om/use-copy'
 import { CompanyShell } from './company-shell'
+import { IntegrationsGhost } from './company-ghosts'
 import { ReadOnlyNote } from './read-only-note'
 import { intakeAddress, type LeadCapture } from '@/lib/settings/types'
 import { setLeadCapture, simulateArrival } from '@/app/leads/capture-actions'
@@ -113,7 +114,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
   const addDomain = () => { const d = domain.trim().toLowerCase().replace(/^@?/, '@'); if (d.length < 2 || email.custom.includes(d)) return; setDomain(''); void save({ email: { ...email, custom: [...email.custom, d] } }, `${d} monitored`) }
   const last = (list: Arrival[]) => (list.length ? `${list.length} ${list.length === 1 ? 'lead' : 'leads'} so far · last ${displayDateTimeDot(new Date(Math.max(...list.map((a) => a.at))))}` : 'Nothing has arrived yet')
   return (
-    <CompanyShell title="Integrations" from={from} form>
+    <CompanyShell title="Integrations" from={from} skeleton={<IntegrationsGhost />}>
       <div className={styles.layout} data-testid="integrations">
         {canManage ? null : <ReadOnlyNote text="Only Owners and Admins connect, generate or change integrations." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="int-qanvast">

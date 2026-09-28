@@ -8,10 +8,14 @@
 .ghost {
   position: absolute; inset: 0; z-index: 5;
   display: flex;
+  overflow: hidden;   /* (REG-708) the ghost keeps its own height (below) and is cut at the page's */
   opacity: 1;
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ghost[data-leaving] { opacity: 0; pointer-events: none; }
-.ghost > * { flex: 1; min-width: 0; }
+/* (REG-708) The ghost is at least the page's height — its sheet runs to the bottom, as loading.tsx's does in the shell — and grows with its
+   own content past it, as it does in loading.tsx's flow: held to the page's height exactly, a column page squeezed its rows to their
+   minimums (a template editor's name row collapsed under its card on a phone) and the reveal no longer matched the loader. */
+.ghost > * { flex: 1; min-width: 0; align-self: flex-start; min-height: 100%; }
 /* (sweep S1) a ghost is never printed: printing during the beat prints the page itself */
 @media print { .ghost { display: none; } .content { opacity: 1 !important; } }

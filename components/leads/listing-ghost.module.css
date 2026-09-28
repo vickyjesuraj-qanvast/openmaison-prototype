@@ -1,0 +1,10 @@
+/* (REG-708) The kanban's ghost by width, as REG-309 draws the listing's: loading.tsx is streamed before any script knows the width, so a
+   kanban load ships both ghosts and CSS picks — the board from 768 up, the phone's cards below (the listing is cards on a phone whatever
+   the view). */
+.byWidth { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.desk, .phone { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.phone { display: none; }
+@media (max-width: 767px) {
+  .desk { display: none; }
+  .phone { display: flex; }
+}

@@ -145,7 +145,7 @@ export function EditorHeader({
           </span>
         ) : null}
         <span className={styles.foldable}>
-          <Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')}>Preview</Button>
+          <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')} data-kb="preview">Preview</Button></Tooltip>
         </span>
         <span className={styles.foldable}>
           <Tooltip label="Comments">

@@ -8,13 +8,17 @@ import { usePathname } from 'next/navigation'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
-import { requestSearchFocus } from './search-focus'
+import { openGlobalSearch } from './global-search'
 import { ToolsPopover } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { openNotifications } from '@/components/shell/notifications-panel'
 import { ViewAsPopover } from './view-as-popover'
 import { Avatar } from '@/components/om/avatar'
 import type { SessionMember } from '@/lib/db/session'
+import type { CreditsChrome } from '@/lib/credits/chrome'
+import { RailCredits } from './rail-credits'
+import { usePlatform } from '@/components/om/keys'
+import { keysPlain } from '@/lib/keys/spec'
 import styles from './app-rail.module.css'
 
 /**
@@ -39,10 +43,15 @@ const BOTTOM_ITEMS = [
   { icon: 'settings', label: 'Settings', href: '/settings' },
 ]
 /** `badges`: a count drawn on an item's glyph — today the Tasks item's overdue tasks (REG-466), keyed by href.
- *  `team`: the studio's members for Demo Studio › View as (REG-667). */
-export function AppRail({ badges, team = [] }: { badges?: Record<string, number>; team?: SessionMember[] } = {}) {
+ *  `team`: the studio's members for Demo Studio › View as (REG-667).
+ *  `credits`: the studio's plan and AI credits for the Upgrade slot (REG-701) — Upgrade on Free, the balance on a paid plan. */
+/** (REG-715) The rail's places the G then … keys go to (`lib/keys/registry.ts` GO). */
+const GO_BY_HREF: Record<string, string> = { '/tasks': 'go.tasks', '/leads': 'go.leads', '/settings': 'go.settings' }
+
+export function AppRail({ badges, team = [], credits = null }: { badges?: Record<string, number>; team?: SessionMember[]; credits?: CreditsChrome | null } = {}) {
   const comingSoon = useComingSoon()
   const pathname = usePathname()
+  const platform = usePlatform()
   /* Pinned open stays pinned open. AppShell is mounted by each route group's layout, so crossing from Leads to
      Settings or Qanvast Ops remounted the rail and dropped the choice (user 2026-08-31). `animate` keeps the width
      transition for the viewer's own toggle and suppresses it on load, so a remembered rail never plays an entrance. */
@@ -74,6 +83,8 @@ export function AppRail({ badges, team = [] }: { badges?: Record<string, number>
   // Collapsed rail: every control gets the shared tooltip (789:83369) to its right.
   // Items with an href are real destinations (Leads, Settings) and light up for their route; the rest answer "coming soon".
   const navItem = (it: { icon: string; label: string; href?: string; panel?: string }, extra?: string) => {
+    /* (REG-715) G then … — the key shows in the item's tooltip, collapsed or wide, and the ? panel lights it */
+    const shortcut = it.href ? GO_BY_HREF[it.href] : it.label === 'Notifications' ? 'go.notifications' : undefined
     const active = (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel))
     const className = extra ? `${styles.item} ${extra}` : styles.item
     const inner = (
@@ -112,14 +123,14 @@ export function AppRail({ badges, team = [] }: { badges?: Record<string, number>
       )
     }
     return (
-      <Tooltip key={it.label} label={it.label} side="right" disabled={expanded}>
+      <Tooltip key={it.label} label={it.label} side="right" disabled={expanded && !shortcut} shortcut={shortcut}>
         {it.href ? (
-          <Link href={it.href} className={className} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
+          <Link href={it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
                 aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>
         ) : (
-          <button type="button" className={className} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
+          <button type="button" className={className} data-kb={shortcut} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
             {inner}
           </button>
         )}
@@ -167,18 +178,22 @@ export function AppRail({ badges, team = [] }: { badges?: Record<string, number>
         <div className={styles.scroller} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}>
         <div className={styles.top}>
           <div className={styles.searchBlock}>
-            <Tooltip label="Search" side="right" disabled={expanded}>
-              <button type="button" className={styles.searchTile} aria-label="Search" onClick={requestSearchFocus}>
+            <Tooltip label="Search" side="right" disabled={expanded} shortcut="search">
+              <button type="button" className={styles.searchTile} aria-label="Search" aria-keyshortcuts="Meta+K Control+K" data-search-tile data-kb="search" onClick={openGlobalSearch}>   {/* (REG-709) the studio-wide search; "/" still finds on the page */}
                 <Icon name="search" size={expanded ? 20 : 24} weight={300} family={expanded ? 'outlined' : undefined} />
                 <span className={styles.searchLabel}>Search</span>
               </button>
             </Tooltip>
-            <span className={styles.kbd} aria-hidden>/</span>
+            <span className={styles.kbd} aria-hidden>{keysPlain('mod+k', platform)}</span>   {/* (REG-717) Ctrl+K on Windows */}
           </div>
           <div className={styles.items}>{TOP_ITEMS.map((it) => navItem(it))}</div>
         </div>
         <div className={styles.bottom}>
-          {navItem({ icon: 'diamond', label: 'Upgrade' }, styles.upgrade)}
+          {/* (REG-701) One slot, two states: Upgrade on Free (as drawn, 779:19690), the studio's AI credits once it pays. */}
+          {credits ? (
+            <RailCredits initial={credits.summary} gstLine={credits.gstLine} expanded={expanded} tabletDown={tabletDown}
+                         itemClass={styles.item} upgradeClass={styles.upgrade} labelClass={styles.label} gemTurnClass={styles.gemTurn} gemClass={styles.upgradeGlyph} />
+          ) : navItem({ icon: 'diamond', label: 'Upgrade' }, styles.upgrade)}
           {BOTTOM_ITEMS.map((it) => navItem(it))}
         </div>
         {/* (REG-667) The Demo Studio block opens View as — the member the prototype is being seen as. Anyone but Dane
@@ -201,7 +216,7 @@ export function AppRail({ badges, team = [] }: { badges?: Record<string, number>
       </nav>
       <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
       <ViewAsPopover open={viewAsOpen} anchor={studioRef} onClose={() => setViewAsOpen(false)} team={team} />
-      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} />
+      <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
     </div>
   )
 }

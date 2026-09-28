@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { SearchBar } from '@/components/ds'
 import { useSearchTarget } from '@/components/shell/search-focus'
+import { SlashSlot } from '@/components/om/slash-slot'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { displayDateLong, displayTime } from '@/lib/format'
 import type { LeadActivityData } from '@/lib/leads/activity'
@@ -36,12 +37,12 @@ export function LeadActivity({ data }: { data: LeadActivityData }) {
         <span ref={(el) => { searchInput.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}>
           {/* (REG-275) The box matches the sentence each row prints, so what a reader actually types is a
               person, a task or a file name — the placeholder says so. The aria-label stays the plain name. */}
-          <SearchBar
+          <SlashSlot empty={query === ''}><SearchBar
             appearance="outlined" size="md"
             placeholder="Search people, tasks, files…" aria-label="Search activities"
             value={query} onChange={setQuery}
             className={styles.search}
-          />
+          /></SlashSlot>
         </span>
       </div>
 

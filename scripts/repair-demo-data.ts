@@ -1622,8 +1622,101 @@ async function main() {
     console.log(`  ${inline.length} jobs’ pictures moved beside them · ${linked} filed renders linked to their version · ${owned} given their own picture · ${sized} sized · ${lifted} rooms’ picks lifted · ${bells} bell entries pointed at their version`)
   }
 
+  /* ── R63 · AI credits and the plan (REG-700, owner 2026-09-28: "go ahead and build it perfectly") ─────────────────────────────────────
+     The studio's credits as records (REG-343), on 1.0's tables and rules: the four plans (1.0's rows); the studio on Free from 1 Aug with
+     its 150 welcome credits (with the top-ups — they never expire, integration B-08) and 30 a month; every demo render charged to its maker
+     at its time (a Fast version 10, a High one 20, Empty the room 10 — Q-29; X-Ray readings are free, Q-30); Dane's 1,000 top-up on 20 Aug
+     with its checkout and tax invoice; the upgrade to Pro — Studio with 7 seats on 10 Sep (its checkout and invoice; Free's unused month
+     ends, the 10,500 arrive); Sarah's monthly amount of 600. The balance is the ledger replayed with 1.0's bucket rules, so the two always
+     agree. Written once (when the studio has no plan yet); after that the app keeps the ledger. */
+  console.log('\nR63 AI credits and the plan')
+  {
+    const { PLAN_ROWS, allowanceFor, planRow, priceFor } = await import('../lib/credits/plans')
+    for (const p of PLAN_ROWS) {
+      await client.execute({ sql: `INSERT INTO plans (id, name, monthly_price, yearly_price, max_members, credit_allowance, signup_credit_grant, feature_flags, min_seats, extra_seat_price_cents, is_contact_sales, trial_period_days, is_highlighted, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ON CONFLICT(id) DO UPDATE SET name = excluded.name, monthly_price = excluded.monthly_price, yearly_price = excluded.yearly_price, max_members = excluded.max_members,
+        credit_allowance = excluded.credit_allowance, signup_credit_grant = excluded.signup_credit_grant, feature_flags = excluded.feature_flags, min_seats = excluded.min_seats, extra_seat_price_cents = excluded.extra_seat_price_cents,
+        is_contact_sales = excluded.is_contact_sales, trial_period_days = excluded.trial_period_days, is_highlighted = excluded.is_highlighted`,
+        args: [p.id, p.name, p.monthlyPrice, p.yearlyPrice, p.maxMembers, p.creditAllowance, p.signupCreditGrant, JSON.stringify(p.featureFlags), p.minSeats, p.extraSeatPriceCents, p.isContactSales ? 1 : 0, p.trialPeriodDays, p.isHighlighted ? 1 : 0] })
+    }
+    const had = rows<{ id: string }>(await client.execute(`SELECT id FROM subscriptions LIMIT 1`)).length > 0
+    if (had) console.log('  the studio already has its plan — the app keeps the ledger from here')
+    else {
+      const at = (y: number, m: number, d: number, h: number, mi = 0) => Math.floor(new Date(y, m - 1, d, h, mi).getTime() / 1000)
+      const addMonth = (t: number) => { const d = new Date(t * 1000), day = d.getDate(); const x = new Date(d.getFullYear(), d.getMonth() + 1, 1, d.getHours(), d.getMinutes()); x.setDate(Math.min(day, new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate())); return Math.floor(x.getTime() / 1000) }
+      const START = at(2026, 8, 1, 10), TOPUP = at(2026, 8, 20, 11, 30), UPGRADE = at(2026, 9, 10, 15, 20), CAP = at(2026, 9, 12, 9)
+      const team = rows<{ id: string; role: string }>(await client.execute(`SELECT id, role FROM members WHERE is_active = 1`))
+      const seats = Math.max(3, team.length)
+      const pro = planRow('pro_studio')
+      type Ev = { at: number; memberId: string | null; action: string; credits: number; reason: string; ref: string | null }
+      const ev: Ev[] = [
+        { at: START, memberId: null, action: 'welcome', credits: planRow('free').signupCreditGrant, reason: 'grant', ref: 'welcome' },
+        { at: START, memberId: null, action: 'plan_change', credits: allowanceFor(planRow('free'), 1), reason: 'refresh', ref: `plan:${sid('credits', 'sub-free')}` },
+        { at: TOPUP, memberId: 'dane', action: 'topup', credits: 1000, reason: 'topup', ref: `topup:${sid('credits', 'topup-aug')}` },
+        { at: addMonth(START), memberId: null, action: 'plan_allowance', credits: 30, reason: 'refresh', ref: `period:${addMonth(START)}` },
+        { at: UPGRADE, memberId: 'dane', action: 'plan_change', credits: allowanceFor(pro, seats), reason: 'refresh', ref: `plan:${sid('credits', 'sub-pro')}` },
+      ]
+      /* every render the demo holds, charged to its maker at its time (Q-29) */
+      for (const j of rows<{ id: string; model: string; kind: string; created_by: string | null; created_at: number; n: number }>(await client.execute(`SELECT id, model, kind, created_by, created_at, json_array_length(variants_json) AS n FROM render_jobs`))) {
+        if (j.created_at < START) continue
+        const action = j.kind === 'empty' ? 'render_defurnish' : j.model === 'high' ? 'render_pro' : 'render_fast'
+        const unit = action === 'render_pro' ? 20 : 10
+        ev.push({ at: j.created_at, memberId: j.created_by, action, credits: -unit * Math.max(1, Math.min(3, Number(j.n) || 1)), reason: 'spend', ref: `render:${j.id}` })
+      }
+      ev.sort((a, b) => a.at - b.at || (a.reason === 'refresh' ? -1 : 1))
+      /* replay with 1.0's buckets: welcome, top-ups and refunds are top-up credits; a month's end takes the unused plan credits */
+      let plan = 0, topup = 0, n = 0
+      const ledger: InStatement[] = []
+      const push = (e: Ev, credits: number, action = e.action) => {
+        ledger.push({ sql: `INSERT OR IGNORE INTO credit_ledger (id, member_id, action_key, credits, balance_after, reason, ref_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, args: [sid(`credits:${n++}`, `${e.ref}:${action}`), e.memberId, action, credits, plan + topup, e.reason, e.ref, e.at] })
+      }
+      for (const e of ev) {
+        if (e.reason === 'grant' || e.reason === 'topup') { topup += e.credits; push(e, e.credits) }
+        else if (e.reason === 'refresh') {
+          if (plan > 0) { const gone = plan; plan = 0; push({ ...e, memberId: e.action === 'plan_change' ? e.memberId : null }, -gone, 'plan_expired') }
+          plan = e.credits; push(e, e.credits)
+        } else if (e.reason === 'spend') { const cost = -e.credits, fromPlan = Math.min(plan, cost); plan -= fromPlan; topup -= cost - fromPlan; push(e, e.credits) }
+      }
+      const freeId = sid('credits', 'sub-free'), proId = sid('credits', 'sub-pro')
+      const periodEnd = addMonth(UPGRADE)
+      await client.batch([
+        ...ledger,
+        { sql: `INSERT OR IGNORE INTO subscriptions (id, plan_id, billing_cycle, status, seats, current_period_start, current_period_end, trial_ends_at, cancel_at_period_end, cancelled_at, grace_until, created_by, created_at, updated_at) VALUES (?, 'free', 'monthly', 'cancelled', 1, ?, ?, NULL, 0, ?, NULL, NULL, ?, ?)`, args: [freeId, addMonth(START), addMonth(addMonth(START)), UPGRADE, START, UPGRADE] },
+        { sql: `INSERT OR IGNORE INTO subscriptions (id, plan_id, billing_cycle, status, seats, current_period_start, current_period_end, trial_ends_at, cancel_at_period_end, cancelled_at, grace_until, created_by, created_at, updated_at) VALUES (?, 'pro_studio', 'monthly', 'active', ?, ?, ?, NULL, 0, NULL, NULL, 'dane', ?, ?)`, args: [proId, seats, UPGRADE, periodEnd, UPGRADE, UPGRADE] },
+        { sql: `INSERT OR IGNORE INTO studio_credit_balances (id, plan_credits, topup_credits, period_start, period_end, enforcement_enabled, enforcement_starts_at, updated_at) VALUES ('studio', ?, ?, ?, ?, 1, NULL, ?)`, args: [plan, topup, UPGRADE, periodEnd, NOW] },
+        { sql: `INSERT OR IGNORE INTO billing_checkout_sessions (id, member_id, kind, plan_id, seats, period, status, credits_granted, created_at, completed_at) VALUES (?, 'dane', 'topup', NULL, 1, 'monthly', 'completed', 1000, ?, ?)`, args: [sid('credits', 'checkout-topup'), TOPUP - 90, TOPUP] },
+        { sql: `INSERT OR IGNORE INTO billing_checkout_sessions (id, member_id, kind, plan_id, seats, period, status, credits_granted, created_at, completed_at) VALUES (?, 'dane', 'plan', 'pro_studio', ?, 'monthly', 'completed', ?, ?, ?)`, args: [sid('credits', 'checkout-pro'), seats, allowanceFor(pro, seats), UPGRADE - 120, UPGRADE] },
+        { sql: `INSERT OR IGNORE INTO invoices (id, subscription_id, invoice_number, plan_name, amount, currency, billing_period_start, billing_period_end, status, issued_at, paid_at) VALUES (?, NULL, 'INV-202608-0001', '1,000 AI credits', 2000, 'SGD', ?, ?, 'paid', ?, ?)`, args: [sid('credits', 'invoice-topup'), TOPUP, TOPUP, TOPUP, TOPUP] },
+        { sql: `INSERT OR IGNORE INTO invoices (id, subscription_id, invoice_number, plan_name, amount, currency, billing_period_start, billing_period_end, status, issued_at, paid_at) VALUES (?, ?, 'INV-202609-0002', ?, ?, 'SGD', ?, ?, 'paid', ?, ?)`, args: [sid('credits', 'invoice-pro'), proId, `${pro.name} · ${seats} seats`, priceFor(pro, seats, 'monthly'), UPGRADE, periodEnd, UPGRADE, UPGRADE] },
+        { sql: `INSERT OR IGNORE INTO studio_member_credit_caps (member_id, monthly_cap, updated_by, updated_at) VALUES ('sarah', 600, 'dane', ?)`, args: [CAP] },
+      ], 'write')
+      console.log(`  Free from ${fmt(START)} → Pro — Studio · ${seats} seats on ${fmt(UPGRADE)} · ${ev.filter((e) => e.reason === 'spend').length} renders charged · balance ${plan} this month + ${topup} top-up`)
+    }
+  }
+
+  /* ── R64 · the keyboard's arrival note (REG-715, Q-10: "a bell note the day it ships … once, for everyone") ──────────────────────────
+     One stored note per active member — stored, so each member's read mark holds — of its own kind (not a Settings › Notifications event:
+     it is news, not a rule a studio switches). Its link opens the ? panel over the page it is read on (notifications-panel.tsx). */
+  console.log('\nR64 the keyboard shortcuts note')
+  {
+    const at = Math.floor(Date.UTC(2026, 8, 28, 1, 0, 0) / 1000)   // 28 Sep 2026, 09:00 in Singapore
+    const r = await client.execute(`INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, channels, created_at)
+      SELECT 'nt-keys-' || m.id, m.id, 'shortcuts_ready', 'Keyboard shortcuts are here', 'Press ? on any page to see them', '#shortcuts', 'in_app', ${at}
+      FROM members m WHERE coalesce(m.is_active, 1) = 1`)
+    console.log(`  ${r.rowsAffected} note${r.rowsAffected === 1 ? '' : 's'} written`)
+  }
+
   const checks: [string, string][] = [
+    ['a member without the keyboard shortcuts note (REG-715)', `SELECT m.id FROM members m WHERE coalesce(m.is_active, 1) = 1 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.id = 'nt-keys-' || m.id)`],
     /* (audit 2026-09-26) the AI Visualizer's audit fixes */
+    /* (REG-700) AI credits: the balance is its ledger, one live plan, a paid plan has its invoice */
+    ['AI credits: the four plans (REG-700)', `SELECT 'plans' WHERE (SELECT count(*) FROM plans WHERE id IN ('free','pro_freelance','pro_studio','max')) <> 4`],
+    ['AI credits: no plan on record, or more than one live (REG-700)', `SELECT 'subscriptions' WHERE (SELECT count(*) FROM subscriptions WHERE cancelled_at IS NULL) <> 1`],
+    ['AI credits: balance disagrees with its ledger (REG-700)', `SELECT 'studio' FROM studio_credit_balances b WHERE b.plan_credits + b.topup_credits <> (SELECT coalesce(sum(credits), 0) FROM credit_ledger WHERE reason <> 'shadow_spend')`],
+    ['AI credits: a bucket below zero (REG-700)', `SELECT 'studio' FROM studio_credit_balances WHERE plan_credits < 0 OR topup_credits < 0`],
+    ['AI credits: a paid plan with no tax invoice (REG-700)', `SELECT s.plan_id FROM subscriptions s WHERE s.plan_id <> 'free' AND s.status = 'active' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.subscription_id = s.id)`],
+    ['AI credits: a monthly amount for someone not on the team (REG-700)', `SELECT c.member_id FROM studio_member_credit_caps c WHERE NOT EXISTS (SELECT 1 FROM members m WHERE m.id = c.member_id)`],
+    ['AI credits: an Owner asking the Owner (REG-703)', `SELECT r.member_id FROM credit_requests r JOIN members m ON m.id = r.member_id WHERE r.status = 'open' AND m.role = 'Owner'`],
     ['render picture still inside its job (F213)', `SELECT id FROM render_jobs WHERE variants_json LIKE '%"imageUrl":"data:%'`],
     ['render picture stored for a version its job does not have (F213)', `SELECT i.job_id FROM render_images i WHERE NOT EXISTS (SELECT 1 FROM render_jobs j, json_each(j.variants_json) v WHERE j.id = i.job_id AND json_extract(v.value, '$.id') = i.variant_id)`],
     ['saved render showing a picture that lives in the design (F093)', `SELECT name FROM lead_files WHERE thumb LIKE '/visualizer/img/%'`],

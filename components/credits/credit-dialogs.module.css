@@ -1,0 +1,43 @@
+/* (REG-702 · 703) The credits dialogs — house Dialog chrome; what's inside, on DS tokens. */
+.muted { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: inline-flex; align-items: center; gap: 4px; }
+.full { width: 100%; }
+.p { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.meta { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.error { margin: 0; font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
+.foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--om-spacing-2); width: 100%; }
+
+/* the demo checkout — Dodo's overlay stand-in */
+.checkout { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-3); overflow: hidden; background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); width: 100%; max-width: 440px; margin: 0 auto; }
+.checkoutHead { display: flex; align-items: center; justify-content: space-between; padding: var(--om-spacing-3) var(--om-spacing-4); background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-subheading-m); }
+.checkoutHead span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.checkoutBody { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
+.amount { font: var(--om-type-heading-h1); font-variant-numeric: tabular-nums; }
+.billTo { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--om-spacing-3); margin: 0; font: var(--om-type-body-s); }
+.billTo dt { color: var(--om-color-on-surface-secondary); }
+.billTo dd { margin: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.demo { margin: 0; display: flex; gap: var(--om-spacing-2); align-items: flex-start; padding: 10px var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-on-tertiary-yellow-variant); font: var(--om-type-body-s); }
+.status { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin-right: auto; }
+.status[data-tone='ok'] { color: var(--om-color-tertiary-green-default); }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--om-color-primary-variant); border-top-color: var(--om-color-primary-default); animation: spin 800ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2400ms; } }
+
+/* the moments */
+.block { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.meter { height: 6px; border-radius: 3px; background: var(--om-color-surface-variant); overflow: hidden; }
+.meter i { display: block; height: 100%; }
+.meter i[data-tone='bad'] { background: var(--om-color-tertiary-red-default); }
+.meter i[data-tone='warn'] { background: var(--om-color-tertiary-yellow-default); }
+.asked { margin: 0; display: flex; align-items: center; gap: 6px; font: var(--om-type-body-s); color: var(--om-color-tertiary-green-default); }
+
+/* the billing page stand-in */
+.portal { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.portalRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding: var(--om-spacing-3) 0; border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.portalRow > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.portalRow b { font: var(--om-type-subheading-m); }
+.warn { margin: 0; display: flex; gap: var(--om-spacing-2); align-items: flex-start; padding: 10px var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); font: var(--om-type-body-s); }
+.form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.doneToken { margin: 0 auto; }
+@media (max-width: 767px) {
+  .portalRow { flex-direction: column; align-items: stretch; }
+}

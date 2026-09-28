@@ -27,7 +27,7 @@
     "scene": "Her photo, in the AI Visualizer",
     "module": "AI Visualizer",
     "try": "Check the room’s menu and mark the lamp it missed",
-    "how": "1. Click \"Room options\" (⋯ by the room chip), read the menu, press Esc\n2. Open \"Furniture\", press \"Add furniture\": \"Piece\" Floor lamp, then the chip \"Lighting\"\n3. Press \"Click where it is\", then click the lamp’s yellow shade on the photo\n4. On the \"Floor Lamp\" row press ✕ (\"Take off the list …\"), then \"Undo\" in the message",
+    "how": "1. Click the ⋯ inside the room's chip (\"Room options\"), read the menu, press Esc\n2. Open \"Furniture\", press \"Add furniture\": \"Piece\" Floor lamp, then the chip \"Lighting\"\n3. Press \"Click where it is\", then click the lamp’s yellow shade on the photo\n4. On the \"Floor Lamp\" row press ✕ (\"Take off the list …\"), then \"Undo\" in the message",
     "expect": "The menu offers \"Rename\", \"Change photo\", \"Delete room\"; \"Floor Lamp\" joins the furniture list; Undo restores it after \"… taken off the list\".",
     "in10": "Different from 1.0: taking a mark off has Undo",
     "as": "Dane",
@@ -48,7 +48,7 @@
     "module": "AI Visualizer",
     "try": "Pick a sage paint for the walls and a walnut floor",
     "how": "1. Open \"Surfaces\", click the \"Walls\" row (or the square on a wall) — it starts on \"As in the photo\"\n2. Search sage and click \"Sage Green\"\n3. Press \"All surfaces\", click \"Floor\", chip \"Flooring\" › \"Walnut Engineered\"\n4. Read the foot of the panel",
-    "expect": "The picked wall lights up on the photo; \"Recent\" holds Sage Green; the foot lists both changes; the button reads \"Generate · 2 changes\".",
+    "expect": "The picked wall lights up on the photo; \"Recent\" holds Sage Green; the foot lists both changes; the button reads \"Generate · 2 changes\" with its price, 10, on its chip.",
     "in10": "Different from 1.0: the picked surface lights up on the photo",
     "as": "Dane",
     "covers": [
@@ -70,7 +70,7 @@
     "module": "AI Visualizer",
     "try": "Generate, stop one midway, then compare before and after",
     "how": "1. Beside \"Makes 1 version · Fast\" press \"Change\", pick Quality \"High\", press \"Done\"\n2. Press \"Generate · 2 changes\", then \"Cancel\" on the card at once\n3. Press \"Generate · 2 changes\" again and wait\n4. Press \"Compare\" under the photo and drag the line across",
-    "expect": "\"Stopped — nothing was kept\"; then \"Reading the photo\"…, \"V1 is ready\", a \"V1 · Walls, Floor\" tile, and a slider \"Original\" | \"V1\".",
+    "expect": "\"Stopped — nothing was kept or charged\"; then \"Reading the photo\"…, \"V1 is ready\", a \"V1 · Walls, Floor\" tile, and a slider \"Original\" | \"V1\".",
     "in10": "Different from 1.0: compare right on the photo, one press",
     "as": "Dane",
     "covers": [

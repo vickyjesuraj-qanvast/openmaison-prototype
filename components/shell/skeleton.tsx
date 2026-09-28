@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './skeleton.module.css'
 
@@ -40,7 +40,7 @@ export function Bone({ w, h = 16, r, className, style }: { w: number | string; h
 }
 
 /* Deterministic "text" widths so rows read as real data, not a grid. Eight of each — the mock's rows; longer
-   sheets cycle through them (see `useRowCount`). */
+   sheets cycle through them (SHEET_ROWS below). */
 const NAME_W = [128, 96, 148, 112, 136, 104, 120, 156]
 const STAGE_W = [32, 32, 32, 32, 70, 70, 70, 34]
 const TASK_W = [180, 140, 210, 160, 190, 120, 170, 200]
@@ -50,6 +50,10 @@ const FILE_W = [168, 132, 190, 150, 176, 140]
 const ERR_W = [72, 210, 72, 168, 72, 240]
 
 /*
+ * (REG-708) The sheet's rows and cards are fixed counts — enough to run past the fold on any screen, as the real listing does (36 leads in the
+ * base state). They used to be counted from the viewport through a store whose server snapshot was the mock's eight: a load streamed eight
+ * rows and hydration grew them to twelve — the ghost changed shape under the eye. The notes below are the geometry that count was built on.
+ *
  * How many table rows the sheet has room for. The mock draws eight because eight is what fits its frame — the real
  * listing renders every lead (36 in the base state), so the bones should reach the fold at any viewport height.
  * The first row starts TABLE_TOP down and the table ends --fab-clearance above the bottom, so at the demo's 1024
@@ -68,25 +72,9 @@ const ERR_W = [72, 210, 72, 168, 72, 240]
  * bottom clearance is 150 there (globals.css). At 390×844 that is three cards, so MIN_CARDS = 4 keeps the last one
  * running under the fold as the real column does; the server snapshot draws that floor.
  */
-const ROW_H = 64
-const TABLE_TOP = 217
-const FAB_CLEARANCE = 88
-const MOCK_ROWS = 8
-const CARDS_TOP = 188
-const CARD_H = 199
-const CARD_GAP = 16
-const FAB_CLEARANCE_MOBILE = 150
-const MIN_CARDS = 4
-const subscribeViewport = (cb: () => void) => {
-  window.addEventListener('resize', cb)
-  return () => window.removeEventListener('resize', cb)
-}
-const viewportRows = () => Math.max(1, Math.ceil((window.innerHeight - TABLE_TOP - FAB_CLEARANCE) / ROW_H))
-const mockRows = () => MOCK_ROWS
-const useRowCount = () => useSyncExternalStore(subscribeViewport, viewportRows, mockRows)
-const viewportCards = () => Math.max(MIN_CARDS, Math.ceil((window.innerHeight - CARDS_TOP - FAB_CLEARANCE_MOBILE) / (CARD_H + CARD_GAP)))
-const minCards = () => MIN_CARDS
-const useCardCount = () => useSyncExternalStore(subscribeViewport, viewportCards, minCards)
+/** 20 rows of 64 from TABLE_TOP (217) run past a 1440-tall screen; 6 cards of 199 + 16 from CARDS_TOP (188) past a tall phone. */
+const SHEET_ROWS = 20
+const SHEET_CARDS = 6
 
 /**
  * Leads listing (779:19690 table variant): header · toolbar · table with the default columns — and, ≤767, the mock's
@@ -95,8 +83,8 @@ const useCardCount = () => useSyncExternalStore(subscribeViewport, viewportCards
  * differently-shaped page is the REG-74 failure. ≥768 nothing here differs from the table-only ghost.
  */
 export function LeadsSkeleton({ label = 'Loading leads', l1 = true }: { label?: string; /** (wave E, gallery-5) the listing, Tasks, Tools › Quotes and Contracts are level-1; Insights (level 2) passes false */ l1?: boolean } = {}) {   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
-  const rows = useRowCount()
-  const cards = useCardCount()
+  const rows = SHEET_ROWS
+  const cards = SHEET_CARDS
   return (
     <GhostSheet label={label} l1={l1}>
       <div className={`${styles.header} ${styles.headerPlate}`}>
@@ -296,25 +284,3 @@ export function ImportsSkeleton() {
   )
 }
 
-/** Settings (Account setup): header · section rail · one setting card with two option rows. */
-export function SettingsSkeleton() {
-  return (
-    <GhostSheet label="Loading settings" l1>
-      <div className={styles.header}>
-        <Bone w={96} h={28} />
-      </div>
-      {/* (REG-645) Settings on Company's frame: the modules' tab strip, then the module's cards at full width. */}
-      <div className={styles.tabs} aria-hidden>{[48, 112, 108, 88, 56, 52].map((w, i) => <Bone key={i} w={w} h={14} />)}</div>
-      <div className={styles.settingsBody}>
-        <div className={styles.settingsHead}><Bone w={96} h={20} /><Bone w={420} h={14} style={{ maxWidth: '100%' }} /></div>
-        {[0, 1].map((i) => (
-          <div key={i} className={styles.settingsCard}>
-            <div className={styles.settingsHead}><Bone w={128} h={16} /><Bone w={360} h={12} style={{ maxWidth: '100%' }} /></div>   {/* (round 3) a phone's card is narrower than the line */}
-            <Bone w="100%" h={72} r="var(--om-radius-1)" />
-            <Bone w="100%" h={72} r="var(--om-radius-1)" />
-          </div>
-        ))}
-      </div>
-    </GhostSheet>
-  )
-}

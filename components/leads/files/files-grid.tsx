@@ -106,7 +106,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
   }
 
   return (
-    <div className={styles.groups}>
+    <div className={styles.groups} data-kb-list="file">
       {folders.length > 0 ? (
         /* Folders group (931:39084, V g16): head H g8 (checkbox 24 + "Folders" 14/Semi Bold) + cards row H g16 — the shared pieces. */
         <FolderGroup ids={folders.map((f) => f.id)} selected={selected} onSelect={onSelect}>
@@ -143,14 +143,14 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                   /* Tile 299×262 (931:39125): V p4, fill #f2f2f2 r4 → image 291×200 r2 (cover) · caption 291×54
                      (H g8 p16/8/12/8): kind icon 20 red + name 14/Semi Bold · comment chip 36×26 · more_vert 24/Light.
                      Selected (frame 96): the whole tile fills #eee5ff. */
-                  <div key={f.id} className={styles.tile} data-testid="file-tile" data-selected={isOn || undefined}
+                  <div key={f.id} className={styles.tile} data-testid="file-tile" data-kb-row data-kb-id={f.id} data-selected={isOn || undefined}
                        data-chip={f.commentCount > 0 || undefined}>
                     {/* (REG-273) ≤767 only: the tile's selection affordance over the image's top-left, so the tap opens. */}
-                    <span className={styles.tilePick}>
+                    <span className={styles.tilePick} data-kb-select>
                       <Checkbox isSelected={isOn} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
                     </span>
                     <button
-                      type="button" className={styles.tileMain}
+                      type="button" className={styles.tileMain} data-kb-open="dblclick"
                       aria-pressed={touch ? undefined : isOn}
                       aria-label={touch ? `Open ${f.name}` : `${isOn ? 'Deselect' : 'Select'} ${f.name} (double-click opens)`}
                       onClick={() => (touch ? onOpenFile(f) : toggle(f.id))}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -23,6 +23,7 @@ import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import styles from './price-book.module.css'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { PriceBookGhost } from '@/components/company/company-ghosts'
 
 type Row = PriceBookItemRow & LibraryItem
 const toRow = (i: PriceBookItemRow): Row => ({ ...i, title: i.name, updatedAt: i.updatedAt ?? i.createdAt })
@@ -32,7 +33,7 @@ const toDeletedRow = (i: PriceBookItemRow): Row => ({ ...toRow(i), author: i.mak
 const inUseReason = (t: PriceBookItemRow) => (t.usedBy > 0 ? `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'} — restore it instead` : null)
 const kindOf = (i: PriceBookItemRow): ItemKind => (isItemKind(i.kind) ? i.kind : 'purchase')
 const unitPrice = (i: PriceBookItemRow) => i.costMinor + i.markupMinor
-const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS] }
+const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookGhost /> }   /* (REG-708) the ghost its loading.tsx draws */
 
 /**
  * Company › Price book › My Items (REG-594; Mavid / Urban Home: "a price book page", "import our item list", "the same item
@@ -49,7 +50,9 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   const router = useRouter()
   const snackbar = useSnackbar()
   const { run } = useRun()
-  const [edit, setEdit] = useState<{ open: boolean; item: PriceBookItemRow | null }>({ open: false, item: null })
+  /* (REG-709) `?open=<id>` — an item the global search found — opens its dialog on arrival */
+  const opening = useSearchParams().get('open')
+  const [edit, setEdit] = useState<{ open: boolean; item: PriceBookItemRow | null }>(() => { const it = opening ? items.find((i) => i.id === opening) ?? null : null; return { open: !!it, item: it } })
   const [importOpen, setImportOpen] = useState(false)
   const [exportShown, setExportShown] = useState<PriceBookItemRow[] | null>(null)
   /* (REG-627, parity Q-18) The export's sheet: the list's own columns plus the description, money with its two decimals.

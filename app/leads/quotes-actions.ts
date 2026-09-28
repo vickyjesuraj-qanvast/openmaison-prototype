@@ -57,7 +57,8 @@ async function nextNumber(creator?: { name: string } | null, at = new Date(), pr
  * (910:36324 shows the lead's name as the row title), total S$0, remembering the design template it started from —
  * and stamping that template's "used n ago". A template id that is not the studio's is refused.
  */
-export async function createQuote(leadId: string, templateId: string | null = null): Promise<string> {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+export async function createQuote(leadId: string, templateId: string | null = null, opts: { id?: string } = {}): Promise<string> {
   const [lead] = await db.select({ name: leads.name, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate, icNumber: leads.icNumber, customerId: leads.customerId }).from(leads).where(eq(leads.id, leadId))
   if (!lead) throw new Error('lead not found')
   // (REG-489) The template's Defaults tab decides what the quote starts with; the quote pins the template's current version.
@@ -79,7 +80,11 @@ export async function createQuote(leadId: string, templateId: string | null = nu
   // (REG-403) The editor's General Info opens filled from the records that exist: the lead's property type and address,
   // and the signed-in member as "Prepared by". The section order / state stays null = the default (lib/quotes/sections.ts).
   const [me] = await db.select({ id: members.id, name: members.name }).from(members).where(eq(members.isYou, true))
-  const id = randomUUID(); const now = new Date()
+  /* (REG-704, AI credits B-12) a quote read from a file is created under the id its read was charged to (`quote:<id>`), so Usage ties
+     the 5 AI credits to this quote and its lead; an id already taken falls back to a fresh one */
+  const asked = opts.id && UUID.test(opts.id) ? opts.id : null
+  const taken = asked ? (await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.id, asked))).length > 0 : true
+  const id = asked && !taken ? asked : randomUUID(); const now = new Date()
   const studio = await fetchStudio()
   const tokens = { client: lead.name, studio: studio.name, studioPhone: studio.phone, member: me?.name ?? '' }
   const textOf = async (textId: string | null) => { if (!textId) return null; const [t] = await db.select().from(quoteTextTemplates).where(and(eq(quoteTextTemplates.id, textId), isNull(quoteTextTemplates.deletedAt))); return t ? resolveTokens(t.body, tokens) : null }   // (REG-581) a deleted text never seeds
@@ -207,8 +212,8 @@ export async function duplicateQuote(quoteId: string): Promise<string> {
  * upload read them — each group into the template's starter section of that name when there is one, else a new section at the end; lines
  * with no group at the top level. Every line goes through the paste path's own bounds (`createQuoteItems`). Returns the new quote's id.
  */
-export async function createQuoteFromUpload(leadId: string, templateId: string | null, groups: { name: string | null; lines: BulkLine[] }[]): Promise<string> {
-  const id = await createQuote(leadId, templateId)
+export async function createQuoteFromUpload(leadId: string, templateId: string | null, groups: { name: string | null; lines: BulkLine[] }[], quoteId?: string): Promise<string> {
+  const id = await createQuote(leadId, templateId, { id: quoteId })
   const tops = (await db.select().from(quoteItems).where(and(eq(quoteItems.quoteId, id), isNull(quoteItems.parentId)))).filter((i) => i.kind === 'group')
   for (const g of groups.slice(0, 60)) {
     const lines = g.lines.slice(0, 500)

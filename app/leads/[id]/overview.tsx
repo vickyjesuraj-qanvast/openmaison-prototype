@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
@@ -12,6 +12,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
+import { useShortcut } from '@/lib/keys/store'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { DetailSkeleton } from '@/components/shell/detail-skeleton'
 import { useMaisonAi } from '@/lib/maison-ai'
@@ -181,6 +182,16 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     setAssign((a) => (a?.el === anchor ? null : anchorRect(anchor)))
     setTasksFor(null); setStageMenu(null)
   }
+  /* (REG-713) E edits the lead and A opens Assign — also while the info column is folded to its strip: Assign then hangs under the
+     stage button, the header's nearest control, instead of the column's Collaborators link. */
+  const editLead = useCallback(() => setLeadForm({ mode: 'edit', lead }), [lead])
+  useShortcut('edit', editLead, true, 'Edit the lead')
+  const assignByKey = useCallback(() => {
+    const link = Array.from(document.querySelectorAll<HTMLElement>('[data-kb="assign"]')).find((el) => el.getClientRects().length > 0)
+    const anchor = link ?? stagePillRef.current
+    if (anchor) { setAssign(anchorRect(anchor)); setTasksFor(null); setStageMenu(null) }
+  }, [])
+  useShortcut('assign', assignByKey, true, 'Assign')
   // Popovers follow their anchor while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(stageMenu || assign || tasksFor)
   useEffect(() => {
@@ -239,7 +250,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   useMaisonAi(aiSuggestions)   /* (REG-507) the shell's FAB + sheet */
 
   return (
-    <PageReveal skeleton={<DetailSkeleton wide={wide} />}>
+    <PageReveal skeleton={<DetailSkeleton wide={wide} tab={tab} />}>   {/* (REG-708) the tab's own body — the ghost its [tab]/loading.tsx drew */}
       <div className={styles.body}>
         <PageHeaderL2
           scrollShadow={false}   /* the sticky tab strip below carries the block's level-1 (REG-331 · REG-369) */
@@ -265,11 +276,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           }
           actions={
             <>
-              <span className={`${styles.anchor} ${styles.stageAction}`} ref={stagePillRef}>
+              <span className={`${styles.anchor} ${styles.stageAction}`} ref={stagePillRef} data-kb="move-stage">
+                <Tooltip label="Move stage" shortcut="move-stage" disabled={!!stageMenu}>
                 <Button variant="secondary" appearance="outlined" iconEnd={<Icon name="keyboard_arrow_down" size={20} />} aria-haspopup="menu" aria-expanded={!!stageMenu}
                         onPress={() => { const el = stagePillRef.current; if (!el) return; setStageMenu((s) => (s ? null : { el, ...stagePos(el) })) }}>
                   Stage: {lead.stage}
                 </Button>
+                </Tooltip>
               </span>
               {/* (REG-469, user feedback 2026-09-16: "shouldn't we allow someone to do that and automatically change the stage to Won?")
                   Convert to Project IS winning the lead: where the policy lets this lead reach Won, the button opens the Move stage
@@ -293,7 +306,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
               {/* Kebab menu per 931:49039 (Qanvast: Invite to Portal · Return Lead · Copy Link · Delete) / 931:49047 (others, no Return Lead).
                   The mock menus carry no Edit; the built overview keeps it first (its only editor entry besides the info column). */}
               <Dropdown open={kebabOpen} onClose={() => setKebabOpen(false)} align="right" sheetTitle={lead.name}>
-                <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }}>Edit</DropdownItem>
+                <DropdownItem onSelect={() => { setKebabOpen(false); setLeadForm({ mode: 'edit', lead }) }} shortcut="edit">Edit</DropdownItem>
                 {phoneSheet ? <DropdownItem onSelect={() => { setKebabOpen(false); openVisualizer() }}>AI Visualizer</DropdownItem> : null}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setInviteOpen(true) }}>Invite to Portal</DropdownItem>
                 {canReturn ? (

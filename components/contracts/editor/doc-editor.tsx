@@ -1,6 +1,8 @@
 'use client'
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { useShortcutsHere } from '@/lib/keys/store'
+import { DOC_KEYS } from '@/lib/keys/registry'
 import { isBlankDoc } from '@/lib/contracts/tokens'
 import styles from './contract-editor.module.css'
 
@@ -41,6 +43,7 @@ export const DocEditor = forwardRef<DocEditorHandle, {
   readOnly?: boolean
 }>(function DocEditor({ value, onChange, onState, placeholder, label, readOnly }, ref) {
   const body = useRef<HTMLDivElement>(null)
+  useShortcutsHere(readOnly ? [] : DOC_KEYS)   // (REG-714) the ? panel lists the paper's keys while it is open
   const [, setTick] = useState(0)
 
   useEffect(() => {
@@ -121,6 +124,7 @@ export const DocEditor = forwardRef<DocEditorHandle, {
          aria-readonly={readOnly || undefined} data-placeholder={placeholder} data-testid="contract-doc"
          onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState}
          onKeyDown={(e) => {
+           if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); document.execCommand('redo'); return }   // (REG-714) ⌘Y redoes, as in the other editors
            /* Cmd/Ctrl+B/I/U are the browser's. (sweep S2 #10) Tab indents a list item and Shift+Tab brings it back; anywhere else Tab moves
               on, as on every other field — it inserted spaces, and a keyboard could never leave the page. */
            if (e.key === 'Tab') {

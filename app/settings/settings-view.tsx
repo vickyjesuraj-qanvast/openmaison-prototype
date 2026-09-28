@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ds'
-import { SettingsSkeleton } from '@/components/shell/skeleton'
+import { SettingsGhost } from './settings-ghost'
 import { CompanyShell } from '@/components/company/company-shell'
 import { ChoiceCard } from '@/components/om/choice-card'
 import { ReadOnlyScope } from '@/components/om/read-only'
@@ -308,7 +308,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
   const fromHere = (key: string) => withFrom(settingsHref(key), from)   // a Company page opened from a module comes back to it
   const tabs = SETTINGS_MODULES.map((m) => ({ label: m.label, href: settingsHref(m.key), soon: !m.live }))
   return (
-    <CompanyShell title="Settings" tabs={tabs} activeHref={settingsHref(section)} from={from} crumb="Settings" skeleton={<SettingsSkeleton />} onSoon={comingSoon}>
+    <CompanyShell title="Settings" tabs={tabs} activeHref={settingsHref(section)} from={from} crumb="Settings" skeleton={<SettingsGhost />} onSoon={comingSoon}>
           {section === 'studio' ? (
             <StudioSettings studioName={short} team={team} entities={entities} backupName={team.find((m) => m.id === rulesState.backupApproverId)?.name ?? null}
                             rules={{ visibility: vis, quoteApproval: approval, templateApproval: tApproval, paymentLock: rulesState.paymentLock }} />

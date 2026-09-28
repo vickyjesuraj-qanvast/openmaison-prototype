@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ds'
 import { Chips } from '@/components/om/chips'
 import { ChipRail } from '@/components/om/chip-rail'
@@ -20,11 +20,12 @@ const SNUG = '(max-width: 1280px)'
  * with client · the design's ⋯. (audit 2026-09-26) The room on screen is always scrolled into view (F004 · F149); a long name reads in
  * full on its tooltip (F013); ≤1280 Add room and Share are their icons (F004); compact, the title takes the free width (F148).
  */
-export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, onRoom, onRoomMenu, roomMenuOpen, onAddRoom, saving, savedLabel, savedTone = 'ok', canUndo, canRedo, onUndo, onRedo, onShare, shareDisabled, onMenu, menuOpen, compact, short = false }: {
+export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, onRoom, onRoomMenu, roomMenuOpen, onAddRoom, saving, savedLabel, savedTone = 'ok', canUndo, canRedo, onUndo, onRedo, onShare, shareDisabled, onMenu, menuOpen, compact, short = false, credits = null }: {
   backLabel: string; onBack: () => void
   title: string; chip: string | null
   rooms: { id: string; name: string }[]; roomId: string | null; onRoom: (id: string) => void
-  onRoomMenu: (el: HTMLElement) => void; roomMenuOpen: boolean
+  /** (REG-719) a room's ⋯, inside its chip — the menu is that room's */
+  onRoomMenu: (id: string, el: HTMLElement) => void; roomMenuOpen: boolean
   onAddRoom: () => void
   saving: boolean; savedLabel: string | null
   /** `warn` — the label says the work isn't saved (retrying, or changed elsewhere). */
@@ -35,6 +36,8 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
   compact: boolean
   /** (wave E, E3) a phone on its side: the same bar, 44 tall — the photo gets the height. */
   short?: boolean
+  /** (REG-701, Q-09) The balance chip — the editor has no rail, and this is where most credits go. */
+  credits?: ReactNode
 }) {
   const snug = useMediaQuery(SNUG)
   const suffix = / \(\d+\)$/.exec(title)?.[0] ?? null
@@ -54,11 +57,11 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
           {rooms.length ? (
             <div ref={roomsRef} className={styles.railWrap}>
               <ChipRail label="Rooms" className={styles.rail}>
-                <Chips className={styles.roomChips} label="Rooms" options={rooms.map((r) => ({ value: r.id, label: r.name }))} value={roomId} onChange={onRoom} testId="viz-rooms" />
+                <Chips className={styles.roomChips} label="Rooms" options={rooms.map((r) => ({ value: r.id, label: r.name }))} value={roomId} onChange={onRoom} testId="viz-rooms"
+                       trail={(id, on) => <RoomMore name={rooms.find((r) => r.id === id)?.name ?? ''} on={on} open={on && roomMenuOpen} className={styles.roomMore} onPress={(el) => onRoomMenu(id, el)} />} />
               </ChipRail>
             </div>
           ) : null}
-          {roomId ? <Tooltip label="Room options" disabled={roomMenuOpen}><IconButton icon="more_horiz" label="Room options" size={36} variant="bare" iconSize={20} aria-haspopup="menu" aria-expanded={roomMenuOpen} onClick={(e) => onRoomMenu(e.currentTarget)} /></Tooltip> : null}
           {snug ? <Tooltip label="Add room"><IconButton icon="add_photo_alternate" label="Add room" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onAddRoom} data-testid="viz-add-room" /></Tooltip>
             : <Button variant="secondary" appearance="outlined" onPress={onAddRoom} iconStart={<Icon name="add_photo_alternate" size={20} weight={300} />} data-testid="viz-add-room">Add room</Button>}
         </div>
@@ -67,11 +70,12 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
         <span className={styles.saved} data-tone={savedTone} aria-live="polite" data-testid="viz-saved">{saved}</span>
         {!compact ? (
           <>
-            <Tooltip label="Undo (⌘Z)"><IconButton icon="undo" label="Undo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canUndo} onClick={onUndo} /></Tooltip>
-            <Tooltip label="Redo (⇧⌘Z)"><IconButton icon="redo" label="Redo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canRedo} onClick={onRedo} /></Tooltip>
+            <Tooltip label="Undo" keys="mod+z"><IconButton icon="undo" label="Undo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canUndo} onClick={onUndo} /></Tooltip>
+            <Tooltip label="Redo" keys="mod+shift+z"><IconButton icon="redo" label="Redo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canRedo} onClick={onRedo} /></Tooltip>
             <span className={styles.rule} />
           </>
         ) : null}
+        {credits}
         <Tooltip label={shareDisabled ?? 'Send the client a link to these renders'}>
           <span>{compact || snug ? <IconButton icon="send" label="Share with client" size={36} variant="bare" iconSize={20} disabled={!!shareDisabled} onClick={onShare} data-testid="viz-share" />
             : <Button onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} data-testid="viz-share">Share with client</Button>}</span>
@@ -117,4 +121,19 @@ function showActiveChip(row: HTMLElement, behavior: ScrollBehavior) {
   const pad = 44, c = chip.getBoundingClientRect(), r = scroller.getBoundingClientRect()
   const dx = c.left < r.left + pad ? c.left - r.left - pad : c.right > r.right - pad ? c.right - r.right + pad : 0
   if (Math.abs(dx) >= 1) scroller.scrollTo({ left: scroller.scrollLeft + dx, behavior })
+}
+
+/**
+ * (REG-719, owner 2026-09-28: "this contextual menu popover is confusing since it's placed outside the each room container … better to move
+ * inside the container for each room") A room's ⋯, inside the room's own chip: the menu it opens is that room's (Rename · Change photo ·
+ * Delete room); pressing it on another room picks that room first. The picked room's ⋯ is the one Tab stop; the others are reached
+ * through their chips.
+ */
+export function RoomMore({ name, on, open, className, onPress }: { name: string; on: boolean; open: boolean; className?: string; onPress: (el: HTMLElement) => void }) {
+  return (
+    <Tooltip label="Room options" disabled={open}>
+      <IconButton icon="more_horiz" label={`Options for ${name}`} size={24} variant="bare" iconSize={20} className={className}
+                  aria-haspopup="menu" aria-expanded={open} tabIndex={on ? 0 : -1} onClick={(e) => onPress(e.currentTarget)} />
+    </Tooltip>
+  )
 }

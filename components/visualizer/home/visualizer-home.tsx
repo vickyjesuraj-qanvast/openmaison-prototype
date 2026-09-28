@@ -16,7 +16,6 @@ import { useFlagPref } from '@/lib/prefs'
 import { useMaisonAi } from '@/lib/maison-ai'
 import { withFrom } from '@/lib/nav'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
-import { foldersIn } from '@/lib/folders'
 import type { DesignCard, VisualizerHome as HomeData } from '@/lib/visualizer/queries'
 import { createDesign, deleteDesigns, deleteDesignsForever, duplicateDesign, emptyDesignTrash, openLeadDesign, renameDesign, restoreDesigns } from '@/app/visualizer/actions'
 import { designKindLabel } from './kind-label'
@@ -95,10 +94,6 @@ export function VisualizerHome({ data }: { data: HomeData }) {
     if ('error' in d) throw new Error(d.error)
     router.push(withFrom(`/visualizer/${d.id}`, place.here))
   }
-  /* (F166) the reveal's ghost: the folders at the level the page opens on, and the cards it shows there (two rows at most) */
-  const openFolder = params.get('folder')
-  const ghostFolders = foldersIn(data.folders, data.folders.some((f) => f.id === openFolder) ? openFolder : null).length
-  const ghostCards = Math.min(8, items.filter((t) => (openFolder && data.folders.some((f) => f.id === openFolder) ? t.folderId === openFolder : !t.folderId || !data.folders.some((f) => f.id === t.folderId))).length)
   /* (F130) the picker says which leads already have a design — the one the landing shows (a lead's design shows once it has a room) */
   const shownIds = new Set(data.designs.map((d) => d.id))
   const loadLeads = useCallback(async () => data.leads.map((l) => ({ id: l.id, label: l.name, sub: [l.stage, l.propertyType, l.hasDesign && shownIds.has(l.hasDesign) ? 'Has a design' : null].filter(Boolean).join(' · ') })), [data.leads, data.designs])   // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,7 +104,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         kind={KIND}
         /* (F166) the ghost the reveal crossfades from is drawn with what the page knows: the intro if it shows, the folders at the level
            the page opens on, as many cards as it has (up to two rows) */
-        page={{ title: 'AI Visualizer', skeleton: <VisualizerHomeGhost intro={!introHidden} hasDesigns={items.length > 0} folders={ghostFolders} cards={ghostCards} /> }}
+        page={{ title: 'AI Visualizer', skeleton: <VisualizerHomeGhost /> }}   /* (REG-708) the ghost its loading.tsx drew — the usual page, the member's own intro */
         intro={introHidden ? null : (
           <VisualizerIntro hasDesigns={items.length > 0} dismiss={<Tooltip label="Dismiss"><IconButton icon="close" label="Dismiss" size={24} variant="bare" iconSize={20} onClick={() => setIntroHidden(true)} /></Tooltip>} />
         )}

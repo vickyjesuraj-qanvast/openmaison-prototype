@@ -1,0 +1,1271 @@
+=== API calls seen:
+   401 https://openmaison-plg.vercel.app/api/auth/me
+   200 https://openmaison-plg.vercel.app/api/config/pages
+   200 https://openmaison-plg.vercel.app/api/reference/plans
+
+=== <title>: Pricing — OpenMaison | OpenMaison
+=== meta description: Start free with no card. AI runs on tokens with a published price per action, so you can see what each render, quote or meeting costs before you spend it.
+
+=== HEADER (desktop) innerText:
+Platform
+Story
+Resources
+Book a demo
+=== header links:
+[{"tag":"A","text":"","aria":"OpenMaison, home","href":"/"},{"tag":"BUTTON","text":"Platform","aria":null,"href":null},{"tag":"A","text":"Story","aria":null,"href":"/story"},{"tag":"A","text":"Resources","aria":null,"href":"/blog"},{"tag":"BUTTON","text":"Book a demo","aria":null,"href":null},{"tag":"A","text":"","aria":"Sign in","href":"/login"}]
+
+=== MEGA MENU (Platform hover):
+Platform
+Story
+Resources
+Book a demo
+
+CLIENTS & PROJECTS
+
+Leads
+All prospects, prioritized by AI
+Projects
+Automated project plans
+Meeting Co-Pilot
+Convert better with AI
+mAIson Bot
+Instant answers across studio
+
+FINANCE
+
+Quote Digitizer
+Margin check before signing
+Finance & Margins
+Live per-project P&L
+
+DESIGN MEETINGS
+
+AI Visualiser
+Photorealistic renders
+3D Space Planner
+Layout planning simplified
+See the whole platform
+
+=== STATE: Monthly + Pro Freelance (default)
+--- toggles: ["Monthly [pressed=true]","Annual · 1 month free [pressed=false]","Freelance [pressed=true]","Studio [pressed=false]"]
+--- card 1:
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+   CTA attrs: {"data-cta":"pricing_free","data-period":"monthly","href":"/login?redirectTo=%2Fdashboard"}
+--- card 2:
+MOST POPULAR
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$35
+/month
+
+14-day free trial · card required. You won't be charged if you cancel before day 15.
+
+1 seat
+
+Get started
+
+1,500 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_pro_freelance","data-period":"monthly","href":"/login?redirectTo=%2Fupgrade%3Fplan%3Dpro_freelance%26period%3Dmonthly","data-plan":"pro_freelance"}
+--- card 3:
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_max","data-period":"monthly","href":"/contact?plan=max","data-plan":"max"}
+--- card 4:
+Skip to content
+Platform
+Story
+Resources
+Book a demo
+PRICING
+Pricing that respects your margins.
+
+Start free with no card. AI runs on tokens, so you pay for what you use — and you can see exactly what each action costs before you spend it.
+
+Monthly
+Annual · 1 month free
+
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+
+MOST POPULAR
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$35
+/month
+
+14-day free trial · card required. You won't be charged if you cancel before day 15.
+
+1 seat
+
+Get started
+
+1,500 tokens a month, per seat
+
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+
+No card to start
+Cancel anytime, no lock-in
+TOKENS
+A token is a unit of AI, not a mystery.
+
+Every AI action has a published price, and the button tells you what it costs before you press it. Here is what each month's allowance comes to in real work.
+
+ALLOWANCE	RENDERS	QUOTES DIGITIZED	CO-PILOT
+150 · Free, to start	15	30	1 h
+1,500 · Pro Freelance	150	300	10 h
+4,500 · Pro Studio	450	900	30 h
+3,000 · Max, per seat	300	600	20 h
+
+Monthly tokens reset at the end of each period. Tokens you top up never expire, and your plan's are always spent first so you never lose ones you paid for.
+
+COMPARE PLANS
+Everything, side by side.
+Free
+Pro
+Max
+LEADS & CRM
+Manual lead uploads
+Email lead syncing
+Roles, access & permissions
+WhatsApp notifications
+Custom stage definitions
+Webhooks, API & custom integrations
+QUOTES
+Quote builder & margin calculator
+Quote templates
+Package creation
+Template editor
+Internal approvals
+Quote X-Ray
+Custom price book & catalogue
+Remove OpenMaison branding
+PROJECTS & TASKS
+Gantt tracking & homeowner portal
+Floor plan coordination
+Task templates
+Custom invoice templates
+FINANCE
+Project & studio-level reporting
+Expense management
+Purchase orders
+Xero, MYOB & ZohoBooks
+AI TOOLS
+AI Visualizer, renders & restyling
+Tokens
+Tokens
+Tokens
+Quote digitizer
+Tokens
+Tokens
+Tokens
+Meeting Co-Pilot
+1 meeting
+Tokens
+Tokens
+mAIson Bot
+Tokens
+Tokens
+Tokens
+TEAM
+Seats
+1
+1, or 3+ on Studio
+Per seat
+Onboarding
+Self-serve
+Guided
+Small-group & on demand
+QUESTIONS
+Before you ask.
+What is a token?
+
+A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+
+Do I need a card to start?
+Is there a free trial of Pro?
+What happens when I run out of tokens?
+Why is Studio three seats?
+Can I change plans later?
+Do you support my region?
+Try it before you decide.
+
+The tools run without an account. Open one, use it on a real quote, and sign up only if it earned it.
+
+Get started
+See pricing
+
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+   CTA attrs: {"data-cta":"pricing_free_bottom","href":"/login?redirectTo=%2Fdashboard"}
+
+=== STATE: Monthly + Pro Studio
+--- toggles: ["Monthly [pressed=true]","Annual · 1 month free [pressed=false]","Freelance [pressed=false]","Studio [pressed=true]"]
+--- card 1:
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+   CTA attrs: {"data-cta":"pricing_free","data-period":"monthly","href":"/login?redirectTo=%2Fdashboard"}
+--- card 2:
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$100
+/month
+
+14-day free trial · card required. You won't be charged if you cancel before day 15.
+
+For 3 seats · S$35 per extra seat/month
+
+Get started
+
+4,500 tokens a month, pooled across 3 seats
+   CTA attrs: {"data-cta":"pricing_pro_studio","data-period":"monthly","href":"/login?redirectTo=%2Fupgrade%3Fplan%3Dpro_studio%26period%3Dmonthly%26seats%3D3","data-plan":"pro_studio"}
+--- card 3:
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_max","data-period":"monthly","href":"/contact?plan=max","data-plan":"max"}
+--- card 4:
+Skip to content
+Platform
+Story
+Resources
+Book a demo
+PRICING
+Pricing that respects your margins.
+
+Start free with no card. AI runs on tokens, so you pay for what you use — and you can see exactly what each action costs before you spend it.
+
+Monthly
+Annual · 1 month free
+
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$100
+/month
+
+14-day free trial · card required. You won't be charged if you cancel before day 15.
+
+For 3 seats · S$35 per extra seat/month
+
+Get started
+
+4,500 tokens a month, pooled across 3 seats
+
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+
+No card to start
+Cancel anytime, no lock-in
+TOKENS
+A token is a unit of AI, not a mystery.
+
+Every AI action has a published price, and the button tells you what it costs before you press it. Here is what each month's allowance comes to in real work.
+
+ALLOWANCE	RENDERS	QUOTES DIGITIZED	CO-PILOT
+150 · Free, to start	15	30	1 h
+1,500 · Pro Freelance	150	300	10 h
+4,500 · Pro Studio	450	900	30 h
+3,000 · Max, per seat	300	600	20 h
+
+Monthly tokens reset at the end of each period. Tokens you top up never expire, and your plan's are always spent first so you never lose ones you paid for.
+
+COMPARE PLANS
+Everything, side by side.
+Free
+Pro
+Max
+LEADS & CRM
+Manual lead uploads
+Email lead syncing
+Roles, access & permissions
+WhatsApp notifications
+Custom stage definitions
+Webhooks, API & custom integrations
+QUOTES
+Quote builder & margin calculator
+Quote templates
+Package creation
+Template editor
+Internal approvals
+Quote X-Ray
+Custom price book & catalogue
+Remove OpenMaison branding
+PROJECTS & TASKS
+Gantt tracking & homeowner portal
+Floor plan coordination
+Task templates
+Custom invoice templates
+FINANCE
+Project & studio-level reporting
+Expense management
+Purchase orders
+Xero, MYOB & ZohoBooks
+AI TOOLS
+AI Visualizer, renders & restyling
+Tokens
+Tokens
+Tokens
+Quote digitizer
+Tokens
+Tokens
+Tokens
+Meeting Co-Pilot
+1 meeting
+Tokens
+Tokens
+mAIson Bot
+Tokens
+Tokens
+Tokens
+TEAM
+Seats
+1
+1, or 3+ on Studio
+Per seat
+Onboarding
+Self-serve
+Guided
+Small-group & on demand
+QUESTIONS
+Before you ask.
+What is a token?
+
+A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+
+Do I need a card to start?
+Is there a free trial of Pro?
+What happens when I run out of tokens?
+Why is Studio three seats?
+Can I change plans later?
+Do you support my region?
+Try it before you decide.
+
+The tools run without an account. Open one, use it on a real quote, and sign up only if it earned it.
+
+Get started
+See pricing
+
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+   CTA attrs: {"data-cta":"pricing_free_bottom","href":"/login?redirectTo=%2Fdashboard"}
+
+=== STATE: Annual + Pro Studio
+--- toggles: ["Monthly [pressed=false]","Annual · 1 month free [pressed=true]","Freelance [pressed=false]","Studio [pressed=true]"]
+--- card 1:
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+   CTA attrs: {"data-cta":"pricing_free","data-period":"yearly","href":"/login?redirectTo=%2Fdashboard"}
+--- card 2:
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$1,100
+/year
+
+For 3 seats · S$35 per extra seat/month
+
+Get started
+
+4,500 tokens a month, pooled across 3 seats
+   CTA attrs: {"data-cta":"pricing_pro_studio","data-period":"yearly","href":"/login?redirectTo=%2Fupgrade%3Fplan%3Dpro_studio%26period%3Dyearly%26seats%3D3","data-plan":"pro_studio"}
+--- card 3:
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_max","data-period":"yearly","href":"/contact?plan=max","data-plan":"max"}
+--- card 4:
+Skip to content
+Platform
+Story
+Resources
+Book a demo
+PRICING
+Pricing that respects your margins.
+
+Start free with no card. AI runs on tokens, so you pay for what you use — and you can see exactly what each action costs before you spend it.
+
+Monthly
+Annual · 1 month free
+
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$1,100
+/year
+
+For 3 seats · S$35 per extra seat/month
+
+Get started
+
+4,500 tokens a month, pooled across 3 seats
+
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+
+No card to start
+Cancel anytime, no lock-in
+TOKENS
+A token is a unit of AI, not a mystery.
+
+Every AI action has a published price, and the button tells you what it costs before you press it. Here is what each month's allowance comes to in real work.
+
+ALLOWANCE	RENDERS	QUOTES DIGITIZED	CO-PILOT
+150 · Free, to start	15	30	1 h
+1,500 · Pro Freelance	150	300	10 h
+4,500 · Pro Studio	450	900	30 h
+3,000 · Max, per seat	300	600	20 h
+
+Monthly tokens reset at the end of each period. Tokens you top up never expire, and your plan's are always spent first so you never lose ones you paid for.
+
+COMPARE PLANS
+Everything, side by side.
+Free
+Pro
+Max
+LEADS & CRM
+Manual lead uploads
+Email lead syncing
+Roles, access & permissions
+WhatsApp notifications
+Custom stage definitions
+Webhooks, API & custom integrations
+QUOTES
+Quote builder & margin calculator
+Quote templates
+Package creation
+Template editor
+Internal approvals
+Quote X-Ray
+Custom price book & catalogue
+Remove OpenMaison branding
+PROJECTS & TASKS
+Gantt tracking & homeowner portal
+Floor plan coordination
+Task templates
+Custom invoice templates
+FINANCE
+Project & studio-level reporting
+Expense management
+Purchase orders
+Xero, MYOB & ZohoBooks
+AI TOOLS
+AI Visualizer, renders & restyling
+Tokens
+Tokens
+Tokens
+Quote digitizer
+Tokens
+Tokens
+Tokens
+Meeting Co-Pilot
+1 meeting
+Tokens
+Tokens
+mAIson Bot
+Tokens
+Tokens
+Tokens
+TEAM
+Seats
+1
+1, or 3+ on Studio
+Per seat
+Onboarding
+Self-serve
+Guided
+Small-group & on demand
+QUESTIONS
+Before you ask.
+What is a token?
+
+A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+
+Do I need a card to start?
+Is there a free trial of Pro?
+What happens when I run out of tokens?
+Why is Studio three seats?
+Can I change plans later?
+Do you support my region?
+Try it before you decide.
+
+The tools run without an account. Open one, use it on a real quote, and sign up only if it earned it.
+
+Get started
+See pricing
+
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+   CTA attrs: {"data-cta":"pricing_free_bottom","href":"/login?redirectTo=%2Fdashboard"}
+
+=== STATE: Annual + Pro Freelance
+--- toggles: ["Monthly [pressed=false]","Annual · 1 month free [pressed=true]","Freelance [pressed=true]","Studio [pressed=false]"]
+--- card 1:
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+   CTA attrs: {"data-cta":"pricing_free","data-period":"yearly","href":"/login?redirectTo=%2Fdashboard"}
+--- card 2:
+MOST POPULAR
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$385
+/year
+
+1 seat
+
+Get started
+
+1,500 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_pro_freelance","data-period":"yearly","href":"/login?redirectTo=%2Fupgrade%3Fplan%3Dpro_freelance%26period%3Dyearly","data-plan":"pro_freelance"}
+--- card 3:
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+   CTA attrs: {"data-cta":"pricing_max","data-period":"yearly","href":"/contact?plan=max","data-plan":"max"}
+--- card 4:
+Skip to content
+Platform
+Story
+Resources
+Book a demo
+PRICING
+Pricing that respects your margins.
+
+Start free with no card. AI runs on tokens, so you pay for what you use — and you can see exactly what each action costs before you spend it.
+
+Monthly
+Annual · 1 month free
+
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+
+MOST POPULAR
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$385
+/year
+
+1 seat
+
+Get started
+
+1,500 tokens a month, per seat
+
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+
+No card to start
+Cancel anytime, no lock-in
+TOKENS
+A token is a unit of AI, not a mystery.
+
+Every AI action has a published price, and the button tells you what it costs before you press it. Here is what each month's allowance comes to in real work.
+
+ALLOWANCE	RENDERS	QUOTES DIGITIZED	CO-PILOT
+150 · Free, to start	15	30	1 h
+1,500 · Pro Freelance	150	300	10 h
+4,500 · Pro Studio	450	900	30 h
+3,000 · Max, per seat	300	600	20 h
+
+Monthly tokens reset at the end of each period. Tokens you top up never expire, and your plan's are always spent first so you never lose ones you paid for.
+
+COMPARE PLANS
+Everything, side by side.
+Free
+Pro
+Max
+LEADS & CRM
+Manual lead uploads
+Email lead syncing
+Roles, access & permissions
+WhatsApp notifications
+Custom stage definitions
+Webhooks, API & custom integrations
+QUOTES
+Quote builder & margin calculator
+Quote templates
+Package creation
+Template editor
+Internal approvals
+Quote X-Ray
+Custom price book & catalogue
+Remove OpenMaison branding
+PROJECTS & TASKS
+Gantt tracking & homeowner portal
+Floor plan coordination
+Task templates
+Custom invoice templates
+FINANCE
+Project & studio-level reporting
+Expense management
+Purchase orders
+Xero, MYOB & ZohoBooks
+AI TOOLS
+AI Visualizer, renders & restyling
+Tokens
+Tokens
+Tokens
+Quote digitizer
+Tokens
+Tokens
+Tokens
+Meeting Co-Pilot
+1 meeting
+Tokens
+Tokens
+mAIson Bot
+Tokens
+Tokens
+Tokens
+TEAM
+Seats
+1
+1, or 3+ on Studio
+Per seat
+Onboarding
+Self-serve
+Guided
+Small-group & on demand
+QUESTIONS
+Before you ask.
+What is a token?
+
+A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+
+Do I need a card to start?
+Is there a free trial of Pro?
+What happens when I run out of tokens?
+Why is Studio three seats?
+Can I change plans later?
+Do you support my region?
+Try it before you decide.
+
+The tools run without an account. Open one, use it on a real quote, and sign up only if it earned it.
+
+Get started
+See pricing
+
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+   CTA attrs: {"data-cta":"pricing_free_bottom","href":"/login?redirectTo=%2Fdashboard"}
+
+=== MAIN innerText (Monthly + Freelance), in order:
+PRICING
+Pricing that respects your margins.
+
+Start free with no card. AI runs on tokens, so you pay for what you use — and you can see exactly what each action costs before you spend it.
+
+Monthly
+Annual · 1 month free
+
+Free
+
+Everything you need to see if this fits.
+
+S$0
+forever
+
+Start free
+
+150 tokens to start, then 30 a month
+
+MOST POPULAR
+
+Pro
+
+For a working studio that bills clients.
+
+Freelance
+Studio
+S$35
+/month
+
+14-day free trial · card required. You won't be charged if you cancel before day 15.
+
+1 seat
+
+Get started
+
+1,500 tokens a month, per seat
+
+Max
+
+For firms that need it bent to their shape.
+
+Let's talk
+
+Priced per seat, against a signed agreement.
+
+Talk to us
+
+3,000 tokens a month, per seat
+
+No card to start
+Cancel anytime, no lock-in
+TOKENS
+A token is a unit of AI, not a mystery.
+
+Every AI action has a published price, and the button tells you what it costs before you press it. Here is what each month's allowance comes to in real work.
+
+ALLOWANCE	RENDERS	QUOTES DIGITIZED	CO-PILOT
+150 · Free, to start	15	30	1 h
+1,500 · Pro Freelance	150	300	10 h
+4,500 · Pro Studio	450	900	30 h
+3,000 · Max, per seat	300	600	20 h
+
+Monthly tokens reset at the end of each period. Tokens you top up never expire, and your plan's are always spent first so you never lose ones you paid for.
+
+COMPARE PLANS
+Everything, side by side.
+Free
+Pro
+Max
+LEADS & CRM
+Manual lead uploads
+Email lead syncing
+Roles, access & permissions
+WhatsApp notifications
+Custom stage definitions
+Webhooks, API & custom integrations
+QUOTES
+Quote builder & margin calculator
+Quote templates
+Package creation
+Template editor
+Internal approvals
+Quote X-Ray
+Custom price book & catalogue
+Remove OpenMaison branding
+PROJECTS & TASKS
+Gantt tracking & homeowner portal
+Floor plan coordination
+Task templates
+Custom invoice templates
+FINANCE
+Project & studio-level reporting
+Expense management
+Purchase orders
+Xero, MYOB & ZohoBooks
+AI TOOLS
+AI Visualizer, renders & restyling
+Tokens
+Tokens
+Tokens
+Quote digitizer
+Tokens
+Tokens
+Tokens
+Meeting Co-Pilot
+1 meeting
+Tokens
+Tokens
+mAIson Bot
+Tokens
+Tokens
+Tokens
+TEAM
+Seats
+1
+1, or 3+ on Studio
+Per seat
+Onboarding
+Self-serve
+Guided
+Small-group & on demand
+QUESTIONS
+Before you ask.
+What is a token?
+
+A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+
+Do I need a card to start?
+Is there a free trial of Pro?
+What happens when I run out of tokens?
+Why is Studio three seats?
+Can I change plans later?
+Do you support my region?
+Try it before you decide.
+
+The tools run without an account. Open one, use it on a real quote, and sign up only if it earned it.
+
+Get started
+See pricing
+
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+
+=== TOKEN TABLE (html table):
+[["ALLOWANCE","RENDERS","QUOTES DIGITIZED","CO-PILOT"],["150 · Free, to start","15","30","1 h"],["1,500 · Pro Freelance","150","300","10 h"],["4,500 · Pro Studio","450","900","30 h"],["3,000 · Max, per seat","300","600","20 h"]]
+
+=== COMPARISON MATRIX rows (svg aria-labels resolved):
+HEAD |  | Free | Pro | Max
+GROUP: LEADS & CRM
+  Manual lead uploads | [Included] | [Included] | [Included]
+  Email lead syncing | [Included] | [Included] | [Included]
+  Roles, access & permissions | [Included] | [Included] | [Included]
+  WhatsApp notifications | [Not included] | [Included] | [Included]
+  Custom stage definitions | [Not included] | [Included] | [Included]
+  Webhooks, API & custom integrations | [Not included] | [Not included] | [Included]
+GROUP: QUOTES
+  Quote builder & margin calculator | [Included] | [Included] | [Included]
+  Quote templates | [Included] | [Included] | [Included]
+  Package creation | [Not included] | [Included] | [Included]
+  Template editor | [Not included] | [Included] | [Included]
+  Internal approvals | [Not included] | [Included] | [Included]
+  Quote X-Ray | [Not included] | [Included] | [Included]
+  Custom price book & catalogue | [Not included] | [Not included] | [Included]
+  Remove OpenMaison branding | [Not included] | [Not included] | [Included]
+GROUP: PROJECTS & TASKS
+  Gantt tracking & homeowner portal | [Included] | [Included] | [Included]
+  Floor plan coordination | [Included] | [Included] | [Included]
+  Task templates | [Not included] | [Included] | [Included]
+  Custom invoice templates | [Not included] | [Included] | [Included]
+GROUP: FINANCE
+  Project & studio-level reporting | [Included] | [Included] | [Included]
+  Expense management | [Not included] | [Included] | [Included]
+  Purchase orders | [Not included] | [Not included] | [Included]
+  Xero, MYOB & ZohoBooks | [Not included] | [Not included] | [Included]
+GROUP: AI TOOLS
+  AI Visualizer, renders & restyling | Tokens | Tokens | Tokens
+  Quote digitizer | Tokens | Tokens | Tokens
+  Meeting Co-Pilot | 1 meeting | Tokens | Tokens
+  mAIson Bot | Tokens | Tokens | Tokens
+GROUP: TEAM
+  Seats | 1 | 1, or 3+ on Studio | Per seat
+  Onboarding | Self-serve | Guided | Small-group & on demand
+
+=== FAQ:
+Q1 [default expanded=true]: What is a token?
+A: A unit of AI. One render is 10 tokens, digitizing a quote is 5, ten minutes of Meeting Co-Pilot is 25. Every button shows its cost before you press it, so nothing is spent by surprise. Everything that is not AI — leads, projects, quotes, finance — is unmetered on every plan.
+Q2 [default expanded=false]: Do I need a card to start?
+A: No. You get 150 tokens on signup and 30 a month after that, with no card and no expiry date on the account. The tools also run before you sign up at all. Pro's free trial does take a card, because it continues as a paid plan unless you cancel.
+Q3 [default expanded=false]: Is there a free trial of Pro?
+A: Yes — 14 days on monthly Pro, Freelance or Studio. We take a card up front and charge only after the trial ends; cancel before then and you pay nothing. You get the full Pro token allowance during the trial. It's one trial per studio, and annual plans don't include one.
+Q4 [default expanded=false]: What happens when I run out of tokens?
+A: The AI actions pause; nothing else does. Your leads, quotes, projects and finance keep working exactly as before. You can top up 1,000 tokens for S$20, or move up a plan — and topped-up tokens never expire.
+Q5 [default expanded=false]: Why is Studio three seats?
+A: Studio is priced for a team, so it starts at three licences and pools 4,500 tokens across them — any designer can draw from the same allowance. Extra seats are S$35 each per month. If you work alone, Freelance is the same product at one seat.
+Q6 [default expanded=false]: Can I change plans later?
+A: Anytime, in either direction. Upgrades take effect immediately; downgrades at the end of your billing period, so you keep what you have already paid for.
+Q7 [default expanded=false]: Do you support my region?
+A: OpenMaison is built for Singapore, Malaysia, the UAE and India, with local taxes, phone formats and property types inside the product. Prices are published in Singapore dollars.
+
+=== CLOSING CTA links:
+[{"text":"Get started","data-cta":"pricing_free_bottom","href":"/login?redirectTo=%2Fdashboard"},{"text":"See pricing","href":"/pricing"}]
+
+=== FOOTER innerText:
+One platform for your entire studio, powered by AI.
+
+Encrypted by default. Your data stays yours.
+
+Email address
+Subscribe
+
+PLATFORM
+
+AI Visualiser
+3D Space Planner
+Quote Digitizer
+Finance & Margins
+Leads
+Projects
+Meeting Co-Pilot
+mAIson Bot
+Platform overview
+
+COMPANY
+
+Story
+Trust & Security
+What's New
+Resources
+Careers
+Contact
+
+LEGAL
+
+Terms of Service
+Privacy Policy
+Cookie Policy
+
+© 2026 OpenMaison · Built by the team behind Qanvast.
+
+🇸🇬
+🇲🇾
+🇦🇪
+🇮🇳
+🇪🇬
+=== footer links:
+["OpenMaison, home -> /","AI Visualiser -> /platform/visualiser","3D Space Planner -> /platform/space-planner","Quote Digitizer -> /platform/quote-digitizer","Finance & Margins -> /platform/finance","Leads -> /platform/leads","Projects -> /platform/projects","Meeting Co-Pilot -> /platform/co-pilot","mAIson Bot -> /platform/maison-bot","Platform overview -> /platform","Story -> /story","Trust & Security -> /trust","What's New -> /changelog","Resources -> /blog","Careers -> /careers","Contact -> /contact","Terms of Service -> /terms","Privacy Policy -> /privacy","Cookie Policy -> /cookies","Instagram -> https://www.instagram.com/openmaison.sg/","LinkedIn -> https://www.linkedin.com/company/openmaison/"]
+=== footer flags aria: Available in Singapore, Malaysia, UAE, India, Egypt
+
+=== MOBILE bottom nav:
+PlatformStoryResources || Home / Platform / Demo / Resources / Story

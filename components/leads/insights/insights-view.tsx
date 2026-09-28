@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { InsightsGhost } from './insights-ghost'
 import { ChipRail } from '@/components/om/chip-rail'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Avatar } from '@/components/om/avatar'
@@ -35,10 +35,10 @@ const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
 const MEMBER_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'member', label: 'Member', track: 'minmax(220px, 220fr)', locked: true },
   { key: 'leads', label: 'Leads', track: 'minmax(96px, 96fr)' },
-  { key: 'outreach', label: 'Assign → First outreach', track: 'minmax(210px, 210fr)' },
-  { key: 'won', label: 'First outreach → Won', track: 'minmax(190px, 190fr)' },
+  { key: 'outreach', label: 'Assign → First outreach', track: 'minmax(220px, 220fr)' },
+  { key: 'won', label: 'First outreach → Won', track: 'minmax(200px, 200fr)' },
   { key: 'wonCount', label: 'Won', track: 'minmax(88px, 88fr)' },
-  { key: 'awaiting', label: 'Awaiting outreach', track: 'minmax(170px, 170fr)' },
+  { key: 'awaiting', label: 'Awaiting outreach', track: 'minmax(180px, 180fr)' },   /* (REG-723) each floor holds its label with the listing's 16 + 24 of padding */
 ]
 
 export function InsightsView({ data, from }: { data: InsightsData | null; from?: string }) {
@@ -50,7 +50,7 @@ export function InsightsView({ data, from }: { data: InsightsData | null; from?:
   useMaisonAi(AI_SUGGESTIONS)
 
   return (
-    <PageReveal skeleton={<LeadsSkeleton />}>
+    <PageReveal skeleton={<InsightsGhost />}>
       <div className={pageStyles.body}>
         <PageHeaderL2 backHref={from ?? '/leads'} crumb="Leads" title="Insights" />
         <div className={pageStyles.content}>

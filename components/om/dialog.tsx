@@ -84,7 +84,7 @@ export function Dialog({
               </Tooltip>
             </div>
             <div ref={scrollRef} className={styles.body}>{children}</div>
-            {footer !== undefined ? <div className={styles.foot} data-shadow={bodyScrolls || undefined}>{footer}</div> : null}
+            {footer !== undefined ? <div className={styles.foot} data-shadow={bodyScrolls || undefined} data-dialog-foot>{footer}</div> : null}
           </motion.div>
         </motion.div>
       ) : null}

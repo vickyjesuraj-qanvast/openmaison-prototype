@@ -29,6 +29,8 @@
   .item:hover { background: var(--om-color-hover-04p); }
   .item[aria-disabled='true']:hover { background: none; }
 }
+/* (REG-715) a row's shortcut, at its right end in the secondary colour — as desktop menus show them */
+.itemKeys { margin-left: auto; padding-left: var(--om-spacing-4); }
 .item[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
 .item[data-tone='danger'] { color: var(--om-color-tertiary-red-default); }
 .item[data-tone='danger'][aria-disabled='true'] { color: var(--om-color-on-surface-disabled); }   /* a locked Delete reads disabled, not dangerous (REG-265) */

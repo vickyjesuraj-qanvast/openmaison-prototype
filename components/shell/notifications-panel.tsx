@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { openShortcuts } from '@/lib/keys/store'
 import { usePathname, useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
@@ -52,6 +53,7 @@ export function NotificationsPanel() {
       setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: Date.now() } : x)) ?? rs)
       void markNotificationRead(r.id).then(() => router.refresh(), () => setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: null } : x)) ?? rs))   // (sweep S4 #10) a refused mark stays unread
     }
+    if (r.href === '#shortcuts') { setOpen(false); openShortcuts(); return }   // (REG-715) the keyboard's arrival note opens the ? panel here
     if (r.href) router.push(r.href)
   }
   /* (sweep S4 #8) Mark all as read reads the notices; a follow-up that is due is work, not a notice — it stays until the work is done, and the
@@ -89,7 +91,7 @@ export function NotificationsPanel() {
               return (
                 <li key={r.id} className={styles.row} data-unread={r.readAt === null || undefined} data-derived={r.derived || undefined} data-testid="notification-row">
                   <button type="button" className={styles.rowBtn} onClick={() => openRow(r)}>
-                    <span className={styles.glyph} data-kind={r.kind}><Icon name={def?.icon ?? 'notifications'} size={20} weight={300} /></span>
+                    <span className={styles.glyph} data-kind={r.kind}><Icon name={def?.icon ?? ((r.kind as string) === 'shortcuts_ready' ? 'keyboard' : 'notifications')} size={20} weight={300} /></span>
                     <span className={styles.text}>
                       <span className={styles.title}>{r.title}</span>
                       {r.body ? <span className={styles.sub}>{r.body}</span> : null}

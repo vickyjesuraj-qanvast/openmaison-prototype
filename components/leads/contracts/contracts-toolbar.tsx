@@ -46,16 +46,16 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
           {sheet ? (
-            <Tooltip label="New Contract">
+            <Tooltip shortcut="create" label="New Contract">
               <IconButton icon="add" label="New Contract" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New Contract"
                           onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined"
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New Contract"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
               New Contract
@@ -70,8 +70,8 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
         </span>
         <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search title, status, date…" label="Search contracts" />
         <span className={styles.filterWrap}>
-          <Tooltip label="Filters">
-            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
+          <Tooltip label="Filters" shortcut="filters">
+            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>

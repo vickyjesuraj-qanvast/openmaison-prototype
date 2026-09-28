@@ -8,6 +8,7 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { CompanyShell, templateTabs } from '../company-shell'
+import { BrandKitGhost } from '@/components/company/company-ghosts'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './refusal'
@@ -78,7 +79,7 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
   }, [dirty])
 
   return (
-    <CompanyShell title="Templates" tabs={templateTabs()} from={from} form actions={!canRun ? null : <>
+    <CompanyShell title="Templates" tabs={templateTabs()} from={from} skeleton={<BrandKitGhost />} actions={!canRun ? null : <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </>}>

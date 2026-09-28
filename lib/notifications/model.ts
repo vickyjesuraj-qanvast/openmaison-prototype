@@ -11,6 +11,7 @@ export type Channel = 'in_app' | 'email' | 'whatsapp'
 export const CHANNELS: { key: Channel; label: string }[] = [{ key: 'in_app', label: 'In app' }, { key: 'email', label: 'Email' }, { key: 'whatsapp', label: 'WhatsApp' }]
 
 export type EventKey = 'new_lead' | 'assigned' | 'untouched' | 'quote_approval' | 'quote_approved' | 'quote_changes' | 'quote_confirmed' | 'contract_sent' | 'quote_signed' | 'task_due' | 'stage_changed' | 'task_assigned' | 'task_due_soon' | 'hold_due' | 'question_answered' | 'price_book_proposed' | 'price_book_answered' | 'render_feedback'
+  | 'credits_low' | 'credits_out' | 'credit_request' | 'credit_request_answered' | 'credit_amount_reached' | 'credits_renewed' | 'payment_failed' | 'credit_receipt'
 export type EventDef = { key: EventKey; label: string; help: string; who: string; icon: string }
 export const EVENTS: EventDef[] = [
   { key: 'new_lead', label: 'A new lead arrives', help: 'From the form, an import, the website or Meta.', who: 'Owners and Admins', icon: 'person_add' },
@@ -36,6 +37,16 @@ export const EVENTS: EventDef[] = [
   { key: 'price_book_answered', label: 'Your proposed item is answered', help: 'Approved into My Items, or sent back with a note.', who: 'Whoever proposed it', icon: 'verified' },
   /* (REG-676, AI Visualizer Q-34) The client answers on a render link: a favourite, a note, a pin, a call back. */
   { key: 'render_feedback', label: 'A client responds to shared renders', help: 'A favourite, a note, a pin or a call back on the renders link.', who: 'The lead’s members and whoever shared the link', icon: 'wand_shine' },
+  /* (REG-703, AI credits Q-35 · Q-38) The heads-up and the asks: steps at 75% and 90% of the month and at 0, a member's ask and its answer,
+     the month's credits, a failed payment and a receipt. None of them existed in 1.0 (B §6). */
+  { key: 'credits_low', label: 'AI credits are running low', help: 'At 75% and 90% of the month’s AI credits, with the date they run out at this pace.', who: 'Owners and Admins', icon: 'hourglass_top' },
+  { key: 'credits_out', label: 'The studio is out of AI credits', help: 'AI tools pause until you top up or the month refreshes.', who: 'Owners and Admins', icon: 'warning' },
+  { key: 'credit_request', label: 'A member asks for more AI credits', help: 'The studio is out, or their monthly amount is used.', who: 'The Owner', icon: 'person' },
+  { key: 'credit_request_answered', label: 'Your ask for AI credits is answered', help: 'Credits added, or your monthly amount raised.', who: 'Whoever asked', icon: 'verified' },
+  { key: 'credit_amount_reached', label: 'A member uses their monthly AI credits', help: 'Their monthly amount is reached; the studio’s credits are untouched.', who: 'The Owner', icon: 'hourglass_top' },
+  { key: 'credits_renewed', label: 'This month’s AI credits are in', help: 'The plan’s credits refresh on its date each month.', who: 'Owners and Admins', icon: 'diamond' },
+  { key: 'payment_failed', label: 'A payment for the plan doesn’t go through', help: 'The plan stays until the grace date; update the card before then.', who: 'The Owner', icon: 'credit_card' },
+  { key: 'credit_receipt', label: 'A receipt for a purchase', help: 'A plan, a seat or a top-up — with its tax invoice.', who: 'Whoever bought it, and the Owner', icon: 'receipt_long' },
 ]
 export const eventDef = (key: string): EventDef | undefined => EVENTS.find((e) => e.key === key)
 
@@ -49,7 +60,7 @@ export type NotificationRules = {
 export const UNTOUCHED_OPTIONS: { minutes: number; label: string }[] = [{ minutes: 15, label: '15 minutes' }, { minutes: 30, label: '30 minutes' }, { minutes: 60, label: '1 hour' }, { minutes: 240, label: '4 hours' }, { minutes: 1440, label: '1 day' }]
 const on = (in_app: boolean, email: boolean, whatsapp: boolean): Record<Channel, boolean> => ({ in_app, email, whatsapp })
 export const DEFAULT_RULES: NotificationRules = {
-  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false), render_feedback: on(true, false, true) },
+  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false), render_feedback: on(true, false, true), credits_low: on(true, true, false), credits_out: on(true, true, true), credit_request: on(true, true, false), credit_request_answered: on(true, false, false), credit_amount_reached: on(true, false, false), credits_renewed: on(true, false, false), payment_failed: on(true, true, true), credit_receipt: on(true, true, false) },
   untouchedMinutes: 30,
   stopWhenClosed: true,
 }
@@ -71,6 +82,7 @@ export const FIELDS: { key: string; label: string }[] = [
   { key: '{source}', label: 'The lead’s source' }, { key: '{quote_number}', label: 'The quote’s number' }, { key: '{link}', label: 'The record’s link' },
   { key: '{stage}', label: 'The lead’s new stage' }, { key: '{task}', label: 'The task’s title' },   /* (REG-608) */
   { key: '{item}', label: 'The price book item' },   /* (REG-652) */
+  { key: '{credits}', label: 'The AI credits' }, { key: '{amount}', label: 'The amount paid' },   /* (REG-703) */
 ]
 const T = (event: EventKey, channel: 'email' | 'whatsapp', subject: string, body: string): MessageTemplate => ({ event, channel, subject, body })
 export const DEFAULT_TEMPLATES: MessageTemplate[] = [
@@ -114,6 +126,23 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('price_book_answered', 'whatsapp', '', '{actor} answered your proposal “{item}”: {link}'),
   T('render_feedback', 'whatsapp', '', '{lead_name} responded to the renders you shared from {studio}: {link}'),
   T('render_feedback', 'email', '{lead_name} responded to your renders', 'Hi {member},\n\n{lead_name} responded to the renders you shared. Open the design to see what they said: {link}\n\n{studio}'),
+  /* (REG-703) */
+  T('credits_low', 'email', 'AI credits are running low at {studio}', 'Hi {member},\n\n{studio} has {credits} AI credits left this month. Top up or change the plan before they run out: {link}\n\n{studio}'),
+  T('credits_low', 'whatsapp', '', '{studio} has {credits} AI credits left this month: {link}'),
+  T('credits_out', 'email', '{studio} is out of AI credits', 'Hi {member},\n\nThe AI tools are paused until you top up or the month refreshes — nothing else stops. Add AI credits: {link}\n\n{studio}'),
+  T('credits_out', 'whatsapp', '', '{studio} is out of AI credits. AI tools are paused — top up here: {link}'),
+  T('credit_request', 'email', '{actor} asks for more AI credits', 'Hi {member},\n\n{actor} asked for more AI credits. Raise their monthly amount or top up: {link}\n\n{studio}'),
+  T('credit_request', 'whatsapp', '', '{actor} asks for more AI credits at {studio}: {link}'),
+  T('credit_request_answered', 'email', 'More AI credits', 'Hi {member},\n\n{actor} answered your ask for AI credits. Press Generate again when you’re ready: {link}\n\n{studio}'),
+  T('credit_request_answered', 'whatsapp', '', '{actor} answered your ask for AI credits at {studio}.'),
+  T('credit_amount_reached', 'email', '{actor} used their monthly AI credits', 'Hi {member},\n\n{actor} has used their monthly AI credits. The studio’s credits are untouched. Raise their amount if they need more: {link}\n\n{studio}'),
+  T('credit_amount_reached', 'whatsapp', '', '{actor} used their monthly AI credits at {studio}: {link}'),
+  T('credits_renewed', 'email', 'This month’s AI credits are in', 'Hi {member},\n\n{studio}’s {credits} AI credits for this month are in. See the month: {link}\n\n{studio}'),
+  T('credits_renewed', 'whatsapp', '', '{studio}’s {credits} AI credits for this month are in.'),
+  T('payment_failed', 'email', 'The payment for {studio}’s plan didn’t go through', 'Hi {member},\n\nWe couldn’t take the payment for {studio}’s plan. It stays on until the grace date — update the card before then: {link}\n\n{studio}'),
+  T('payment_failed', 'whatsapp', '', 'The payment for {studio}’s plan didn’t go through. Update the card: {link}'),
+  T('credit_receipt', 'email', 'Your receipt · {amount}', 'Hi {member},\n\nThanks — {amount} was paid for {credits}. The tax invoice is in Company › Plan & AI credits: {link}\n\n{studio}'),
+  T('credit_receipt', 'whatsapp', '', 'Receipt from {studio}: {amount} for {credits}. The tax invoice: {link}'),
 ]
 export function parseTemplates(v: unknown): MessageTemplate[] {
   const list = Array.isArray(v) ? v : []
@@ -128,7 +157,7 @@ export const templateFor = (list: MessageTemplate[], event: EventKey, channel: '
 export function renderTemplate(text: string, fields: Record<string, string>): string {
   return text.replace(/\{[a-z_]+\}/g, (k) => fields[k] ?? k)
 }
-export const SAMPLE_FIELDS: Record<string, string> = { '{lead_name}': 'Farah Ahmad', '{studio}': 'Demo Studio', '{member}': 'Sarah', '{actor}': 'Dane', '{source}': 'Website', '{quote_number}': 'OM-10008', '{link}': 'https://app.openmaison.sg/leads/farah-ahmad', '{stage}': 'Met', '{task}': 'Follow up with Farah Ahmad', '{item}': 'Skirting, PVC' }
+export const SAMPLE_FIELDS: Record<string, string> = { '{lead_name}': 'Farah Ahmad', '{studio}': 'Demo Studio', '{member}': 'Sarah', '{actor}': 'Dane', '{source}': 'Website', '{quote_number}': 'OM-10008', '{link}': 'https://app.openmaison.sg/leads/farah-ahmad', '{stage}': 'Met', '{task}': 'Follow up with Farah Ahmad', '{item}': 'Skirting, PVC', '{credits}': '1,000', '{amount}': 'S$20.00' }
 
 /** A feed row — a stored notification or a derived one (a due follow-up). */
 export type FeedRow = { id: string; kind: EventKey; title: string; body: string | null; href: string | null; at: number; readAt: number | null; channels: Channel[]; derived: boolean }

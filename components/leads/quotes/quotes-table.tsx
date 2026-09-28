@@ -110,10 +110,10 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
   return (
     <div ref={frame} className={styles.frame} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-    <div className={styles.card} role="table" data-drag-root="" aria-label="Quotes" data-cols="lead-quotes" style={{ '--tracks': tracks } as React.CSSProperties}>
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Quotes" data-kb-list="quote" data-cols="lead-quotes" style={{ '--tracks': tracks } as React.CSSProperties}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div ref={headRow} className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && quotes.some((q) => selected.has(q.id))} isDisabled={quotes.length === 0} onChange={toggleAll} aria-label="Select all quotes" />
         </div>
         {columns.map((c) => (
@@ -197,16 +197,16 @@ function QuoteRowView({
   const pickStatus = (status: QuoteStatus) => () => { onStatusClose(); onStatus(quote, status) }
 
   return (
-    <div className={styles.row} role="row" data-selected={selected ? '' : undefined}>
+    <div className={styles.row} role="row" data-kb-row data-kb-id={quote.id} data-selected={selected ? '' : undefined}>
       {/* Selection cell 40: checkbox 24/Light secondary → check_box 24 primary when selected. */}
-      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-kb-select data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
         <Checkbox isSelected={selected} onChange={onToggleSelect} aria-label={`Select ${quote.title}`} />
       </div>
 
       {/* Title cell "Cell / Two line" (V g4): Name 14/Bold + "OM-10001 · Private" 12/Regular secondary (H g8). */}
       <div className={`${styles.cell} ${styles.colTitle} ${L.pinned('title') ? styles.pin : ''}`} role="cell" data-col="title" data-pin-edge={L.edge('title') || undefined} style={L.style('title')}>
         <div className={styles.titleData}>
-          <button type="button" className={styles.title} onClick={() => onView(quote)}>{quote.title}</button>
+          <button type="button" className={styles.title} onClick={() => onView(quote)} data-kb-open>{quote.title}</button>
           <span className={styles.sub}>
             <span>{quote.number}</span>
             <span>·</span>

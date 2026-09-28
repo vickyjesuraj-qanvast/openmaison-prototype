@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -18,6 +18,7 @@ import gallery from '@/components/company/templates/library-gallery.module.css'
 import { SectionDialog } from './section-dialog'
 import styles from './price-book.module.css'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
+import { PriceBookGhost } from '@/components/company/company-ghosts'
 
 type Row = PriceBookSectionRow & LibraryItem
 const toRow = (s: PriceBookSectionRow): Row => ({ ...s, title: s.name, updatedAt: s.updatedAt ?? s.createdAt })
@@ -26,7 +27,7 @@ const inUseReason = (t: PriceBookSectionRow) => (t.usedBy > 0 ? `On ${t.usedBy} 
 const lineTotal = (l: SavedLine) => Math.round(l.qty * (l.costMinor + l.markupMinor) * (1 - l.discountPct / 100))
 const total = (s: PriceBookSectionRow) => (s.body ? s.body.lines.reduce((n, l) => n + lineTotal(l), 0) + s.body.subs.reduce((n, g) => n + g.lines.reduce((x, l) => x + lineTotal(l), 0), 0) : 0)
 const names = (s: PriceBookSectionRow) => (s.body ? [...s.body.lines.map((l) => l.name), ...s.body.subs.flatMap((g) => g.lines.map((l) => l.name))] : [])
-const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS] }
+const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookGhost sections /> }   /* (REG-708) the ghost its loading.tsx draws */
 
 /**
  * Company › Price book › My Sections (REG-594 on REG-566): the whole sections saved from quotes ("Save section to My Sections"),
@@ -41,7 +42,9 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
   const router = useRouter()
   const snackbar = useSnackbar()
   const { run } = useRun()
-  const [edit, setEdit] = useState<{ open: boolean; section: PriceBookSectionRow | null }>({ open: false, section: null })
+  /* (REG-709) `?open=<id>` — a section the global search found — opens its dialog on arrival */
+  const opening = useSearchParams().get('open')
+  const [edit, setEdit] = useState<{ open: boolean; section: PriceBookSectionRow | null }>(() => { const it = opening ? sections.find((x) => x.id === opening) ?? null : null; return { open: !!it, section: it } })
   return (
     <LibraryGallery<Row> kind={PRICE_BOOK_KINDS.sections} shell={SHELL} noun={{ one: 'section', many: 'sections' }} nameLabel="Section" deletedLabel="Deleted Sections" openLabel={runsBook ? 'Edit' : 'Open'}
       byColumn mayChange={block} duplicateBlock={block} restoreBlock={block} purgeBlock={block()}

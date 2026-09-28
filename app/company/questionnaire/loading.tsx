@@ -1,6 +1,6 @@
-import { CompanySkeleton } from '@/components/company/company-shell'
+import { QuestionnaireGhost } from '@/components/company/company-ghosts'
 
-/** The Questionnaire's ghost: the L1 head and the bank's card — no tab strip. */
+/** Company › Questionnaire's own ghost (REG-708): the Question bank card and its table. */
 export default function Loading() {
-  return <CompanySkeleton tabs={false} form />
+  return <QuestionnaireGhost />
 }

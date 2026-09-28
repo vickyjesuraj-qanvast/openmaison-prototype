@@ -1,6 +1,7 @@
 'use client'
 
 import { useId, useState, useRef } from 'react'
+import { FORMAT_KEYS } from '@/lib/keys/registry'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -45,7 +46,7 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
   const fileId = useId()   // the hidden file input is found by id: a ref read inside the `tool()` helper reads as a render-time ref access to the compiler
   const keep = (e: React.MouseEvent) => e.preventDefault()   // the selection survives the press
   const tool = (icon: string, label: string, onClick: () => void, active = false, weight: 300 | 400 = 300) => (
-    <Tooltip key={label} label={label}>
+    <Tooltip key={label} label={label} keys={FORMAT_KEYS[label]}>
       <button type="button" className={tools.tool} aria-label={label} aria-pressed={active} data-active={active || undefined} disabled={disabled}
               onMouseDown={keep} onClick={onClick}><Icon name={icon} size={24} weight={weight} /></button>
     </Tooltip>

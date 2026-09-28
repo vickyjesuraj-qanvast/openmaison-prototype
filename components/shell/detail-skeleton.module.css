@@ -7,6 +7,11 @@
    flex items of .titleRow — while giving the ≤767 rule below something to move. (REG-269) */
 .chips { display: contents; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.convert { display: inline-flex; width: 180px; }
+.kebabDesk { display: inline-flex; }
+.kebabPhone { display: none; }
+.infoPhone { display: none; }
+.infoRest { display: contents; }
 .tabs { display: flex; align-items: center; gap: var(--om-spacing-6); height: 48px; padding: 0 var(--om-spacing-6); box-shadow: var(--om-elevation-level-1); }
 .row { display: flex; align-items: stretch; flex: 1; min-height: calc(100dvh - 16px - 72px - 48px); }
 .info { width: 360px; flex-shrink: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
@@ -63,6 +68,13 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
   .header { height: auto; flex-wrap: wrap; padding: var(--om-spacing-4); row-gap: var(--om-spacing-3); }
   .titleRow { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .crumb, .chips { display: none; }
+  /* (REG-708) the kebab on the title's line, the stage pill and Convert to Project filling the row under it (page-header-l2 ≤767) */
+  .kebabPhone { display: inline-flex; }
+  .infoPhone { display: flex; }
+  .infoRest { display: none; }
+  .kebabDesk { display: none; }
+  .actions { flex: 1 1 100%; }
+  .convert { flex: 1; width: auto; }
   /* The strip is the one shrinkable child of an absolutely-positioned ghost whose row keeps a min-height that does
      not subtract the header, so flex crushed it from 48 to 28 — the height the user actually looks at for the
      ghost beat. It never shrinks. */

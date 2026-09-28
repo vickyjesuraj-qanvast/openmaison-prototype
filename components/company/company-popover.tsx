@@ -18,7 +18,7 @@ import styles from './company-popover.module.css'
  * shell (REG-422) with the company's sections in two groups; Profile and Templates are pages, the rest answer coming
  * soon. The section you are on is marked. ≤767 (REG-353) it is a bottom sheet titled Company.
  */
-export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed = 0 }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number }) {
+export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed = 0, asks = 0 }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (REG-501) templates awaiting approval — on the Templates row */ awaiting?: number; /** (REG-652) proposed items for an Owner or an Admin — on the Price book row */ proposed?: number; /** (REG-703) members waiting for AI credits, for the Owner — on the Plan & AI credits row */ asks?: number }) {
   const router = useRouter()
   const pathname = usePathname()
   const comingSoon = useComingSoon()
@@ -69,6 +69,7 @@ export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed =
               </span>
               {s.key === 'templates' && awaiting > 0 ? <span className={styles.await}>{awaiting} awaiting</span> : null}
               {s.key === 'price-book' && proposed > 0 ? <span className={styles.await}>{proposed} proposed</span> : null}
+              {s.key === 'plan' && asks > 0 ? <span className={styles.await}>{asks} {asks === 1 ? 'ask' : 'asks'}</span> : null}
               {s.href ? null : <span className={styles.soon}>Soon</span>}
             </button>
           ))}

@@ -86,8 +86,8 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
             <Tooltip label="Zoom in"><IconButton icon="zoom_in" label="Zoom in" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => onZoom('in')} /></Tooltip>
           </span>
           <span className={styles.rule} />
-          <Tooltip label="Undo (⌘Z)"><IconButton icon="undo" label="Undo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canUndo} onClick={onUndo} /></Tooltip>
-          <Tooltip label="Redo (⇧⌘Z)"><IconButton icon="redo" label="Redo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canRedo} onClick={onRedo} /></Tooltip>
+          <Tooltip label="Undo" keys="mod+z"><IconButton icon="undo" label="Undo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canUndo} onClick={onUndo} /></Tooltip>
+          <Tooltip label="Redo" keys="mod+shift+z"><IconButton icon="redo" label="Redo" size={36} variant="bare" iconSize={20} iconWeight={300} disabled={!canRedo} onClick={onRedo} /></Tooltip>
           <Tooltip label="History"><IconButton icon="history" label="History" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onHistory} /></Tooltip>
           <span className={styles.anchor}>
             <Tooltip label="More options" disabled={menu === 'more'}><IconButton icon="more_vert" label="More options" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} /></Tooltip>
@@ -103,7 +103,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
             </Dropdown>
           </span>
           {!compact ? <span className={styles.rule} /> : null}
-          {!compact ? <Button appearance="outlined" variant="secondary" onPress={() => onPreview(true)}>Preview</Button> : null}
+          {!compact ? <Tooltip label="Preview" shortcut="preview"><Button appearance="outlined" variant="secondary" onPress={() => onPreview(true)} data-kb="preview">Preview</Button></Tooltip> : null}
           <Button onPress={onPublish} isDisabled={!canPublish}>{publishLabel}</Button>
         </div>
       )}

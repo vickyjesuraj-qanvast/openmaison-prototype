@@ -1,6 +1,9 @@
 'use client'
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
+import { useShortcutsHere } from '@/lib/keys/store'
+import { DOC_KEYS } from '@/lib/keys/registry'
+import { FORMAT_KEYS } from '@/lib/keys/registry'
 import { Button } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
@@ -52,6 +55,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
   minHeight?: number
 }>(function RichEditor({ value, onChange, placeholder, label, right, framed, fill, minHeight = 361 }, ref) {
   const body = useRef<HTMLDivElement>(null)
+  useShortcutsHere(DOC_KEYS)   // (REG-714) the ? panel lists the text editor's keys while it is open
   const [active, setActive] = useState<Partial<Record<Cmd, boolean>>>({})
   const [linkOpen, setLinkOpen] = useState(false)
   const [url, setUrl] = useState('')
@@ -128,7 +132,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
             <span key={gi} className={styles.group}>
               {gi > 0 ? <span className={styles.rule} aria-hidden /> : null}
               {g.map((t) => (
-                <Tooltip key={t.cmd} label={t.label}>
+                <Tooltip key={t.cmd} label={t.label} keys={FORMAT_KEYS[t.label]}>
                   <button type="button" className={styles.tool} aria-label={t.label} aria-pressed={!!active[t.cmd]} data-active={active[t.cmd] || undefined}
                           onMouseDown={(e) => e.preventDefault()} onClick={() => run(t.cmd)}>
                     <Icon name={t.icon} size={24} weight={t.weight ?? 300} />
@@ -148,6 +152,7 @@ export const RichEditor = forwardRef<RichEditorHandle, {
       </div>
       <div ref={body} className={styles.body} style={{ minHeight: fill ? 0 : minHeight }} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
            data-placeholder={placeholder}
+           onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); document.execCommand('redo') } }}   /* (REG-714) ⌘Y redoes, as in the other editors */
            onInput={emit} onBlur={readActive}
            onPaste={(e) => { e.preventDefault(); document.execCommand('insertText', false, e.clipboardData.getData('text/plain')) }} />
       <Dialog open={linkOpen} onClose={() => setLinkOpen(false)} title="Add link" size="form" width={400}

@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useShortcutsHere } from '@/lib/keys/store'
+import { VISUALIZER_KEYS } from '@/lib/keys/registry'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/ds'
@@ -19,6 +21,10 @@ import { Tooltip } from '@/components/om/tooltip'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { VisualizerEditorSkeleton } from '@/components/visualizer/skeletons'
+import { CreditsChip } from '@/components/credits/credits-chip'
+import { chargeAI, refundAIWork, useCredits } from '@/components/credits/credits-client'
+import { fmtCredits, spendable } from '@/lib/credits/model'
+import { costOf, renderAction } from '@/lib/credits/schedule'
 import { designKindLabel } from '@/components/visualizer/home/kind-label'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { duration, ease } from '@/lib/motion'
@@ -29,7 +35,7 @@ import { readFileAsDataUrl } from '@/lib/templates/files'
 import { COLOUR_HEX, composeCustomizeDesc, FINISH_HEX, KEEP, type FurniturePick } from '@/lib/visualizer/furniture'
 import { lightingSet, presetById } from '@/lib/visualizer/lighting'
 import { resolveMaterial } from '@/lib/visualizer/materials'
-import { afterRender, changeList, descriptor, emptyPending, fallbackDetection, intentFor, neutralKnobs, newId, NO_FINISHES, ORIGINAL, readingFor, tappedSurface, toolAvailability, unlitSource, litAncestor, type Detection, type FurnitureDef, type PassKind, type Pending, type Slot, type SurfaceDef, type VersionView } from '@/lib/visualizer/model'
+import { afterRender, changeList, descriptor, emptyPending, fallbackDetection, intentFor, neutralKnobs, newId, NO_FINISHES, ORIGINAL, readingFor, tappedSurface, toolAvailability, unlitSource, litAncestor, type Detection, type FurnitureDef, type PassKind, type Pending, type Quality, type Slot, type SurfaceDef, type VersionView } from '@/lib/visualizer/model'
 import { originalFileName, quoteGroupName, quoteLines, renderFileName } from '@/lib/visualizer/outputs'
 import { LEAD_CLOSED_SHARE, LEAD_DELETED_ROW, leadDeletedNote, PHOTO_ACCEPT } from '@/lib/visualizer/policy'
 import type { Pin, VisualizerEditorData } from '@/lib/visualizer/queries'
@@ -46,8 +52,8 @@ import { createStudioMaterial } from '@/app/company/materials-actions'
 import { useEditorState } from './use-editor-state'
 import { roomNameFromFile } from '@/lib/visualizer/room-name'
 import { beforeKeyOf, boxAround, effectiveDetection, isHeic, lastTouched, onPicture, UPLOAD_MAX_BYTES, versionRange, WIDE_TAP, type MarkedOn } from './editor-model'
-import { EditorTopbar, useRoomInView } from './topbar'
-import { GenerateFooter, ModeTabs, PanelClose, type Change, type Mode } from './rail'
+import { EditorTopbar, RoomMore, useRoomInView } from './topbar'
+import { GenerateFooter, ModeTabs, PanelClose, type Change, type FootPrice, type Mode } from './rail'
 import { Stage, type Marker, type StageMode } from './stage'
 import { carriesClientInput, VersionsStrip, type Badge } from './versions-strip'
 import { DraftPin, PinThread } from './pin-card'
@@ -124,6 +130,7 @@ export function VisualizerEditor({ data, from, initialRoom, initialVersion = nul
   /** (Q-31) a lead photo to add as a room on arrival */
   initialFile?: { id: string; name: string; url: string } | null
 }) {
+  useShortcutsHere(VISUALIZER_KEYS)   // (REG-714) the ? panel lists the design editor's own keys
   return (
     <PageReveal skeleton={<VisualizerEditorSkeleton />}>
       <Editor data={data} from={from} initialRoom={initialRoom} initialVersion={initialVersion} initialPin={initialPin} initialNotice={initialNotice} initialFile={initialFile} />
@@ -253,6 +260,10 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   /* ── Generate ── */
   const runRef = useRef(0)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  /* (REG-704) the run's charge — given back if it's stopped before it's kept; `charging` holds a second press while the charge is taken */
+  const chargeRef = useRef<{ ref: string; charged: number } | null>(null)
+  const charging = useRef(false)
+  const credits = useCredits(null)
   const roomIdRef = useRef(roomId)
   const focusNext = useRef<'tile' | 'generate' | null>(null)
   useEffect(() => { roomIdRef.current = roomId })
@@ -270,11 +281,35 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     const u = litFrom.unlitKey === ORIGINAL ? room?.imageUrl ?? null : (() => { const x = all.find((y) => y.key === litFrom.unlitKey); return x ? urlOf(x) : null })()
     return l && u ? { lit: urlOf(l), unlit: u } : null
   })() : null
-  const generate = async () => {
-    if (!room || !intent.kind || running || readOnly || !imageUrl || !detection) return
+  const generate = async (over?: { variants?: 1 | 2 | 3; quality?: Quality }) => {
+    if (!room || !intent.kind || running || readOnly || !imageUrl || !detection || charging.current) return
     /* (F003 · F052) the picks as the render starts — what it spends; a pick made while it runs stays for the next one */
-    const used = pending, kind = intent.kind, token = ++runRef.current, r0 = room, consumes = intent.consumes
+    const used: Pending = over ? { ...pending, ...over } : pending, kind = intent.kind, r0 = room, consumes = intent.consumes
     const count = kind === 'edit' || kind === 'restyle' || kind === 'transfer' ? used.variants : 1
+    /* (REG-704, AI credits A-05 · B-12) the charge is taken before the work, keyed by the job's own id (so a retry can't charge twice);
+       a refusal opens its moment and nothing starts. The cheaper way (Q-33): one version, or Fast, when that one fits. */
+    const jobId = crypto.randomUUID(), ref = `render:${jobId}`, action = renderAction(kind, used.quality), need = costOf(action, count)
+    const can = credits ? spendable(credits) : null
+    const fits = (n: number) => can == null || n <= can
+    const smaller = count > 1 && fits(costOf(action, 1))
+      ? { label: `Make 1 version · ${fmtCredits(costOf(action, 1))}`, run: () => { patch((p) => ({ ...p, variants: 1 }), { history: false }); void generate({ ...over, variants: 1 }) } }
+      : used.quality === 'high' && kind !== 'empty' && fits(costOf(renderAction(kind, 'fast'), count))
+        ? { label: `Fast instead · ${fmtCredits(costOf(renderAction(kind, 'fast'), count))}`, run: () => { patch((p) => ({ ...p, quality: 'fast' }), { history: false }); void generate({ ...over, quality: 'fast' }) } }
+        : null
+    charging.current = true
+    const charged = await chargeAI({ action, count, ref, what: 'render', needed: need, retry: () => { void generate(over) }, smaller }).finally(() => { charging.current = false })
+    if (charged === false) return
+    const token = ++runRef.current
+    chargeRef.current = { ref, charged }
+    /* (Q-31) the credits go back when the work fails or isn't kept — the failure's own words say so */
+    const giveBack = async (why: string) => {
+      chargeRef.current = null
+      const back = charged > 0 ? await refundAIWork(ref) : 0
+      if (!back) return why
+      /* T-24: "Couldn’t render this one — your 20 AI credits are back. Please try again." */
+      const plain = / — please try again\.$/.exec(why)
+      return plain ? `${why.slice(0, plain.index)} — your ${fmtCredits(back)} AI credits are back. Please try again.` : `${why} Your ${fmtCredits(back)} AI credits are back.`
+    }
     /* (F071) several versions are kept together — the last step says so */
     const steps = count > 1 ? [...STEPS[kind].slice(0, -1), 'Keeping the versions'] : STEPS[kind]
     const priorN = all.reduce((m, v) => Math.max(m, v.n), 0)
@@ -300,13 +335,14 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       leadStyle: leadStyle || null, unlit: unlit && unlitUrl ? { key: unlit.key, url: unlitUrl } : null, underLight,
     }).catch(() => ({ error: 'Couldn’t render this one — please try again.' })), wait(min)])
     if (token !== runRef.current) { clearInterval(tick); return }
-    if ('error' in out) { stop(out.error); return }
+    if ('error' in out) { stop(await giveBack(out.error)); return }
     /* keeping the version: no Cancel from here (F211) */
     setRunning((r) => (r ? { ...r, step: r.steps.length - 1, saving: true } : r))
-    const saved = await saveRender(r0.id, { kind, model: used.quality, parentKey: viewKey, variants: out.variants.map((v) => ({ image: v.dataUrl, applied: v.applied, finishes: v.finishes, materials: v.materials })) })
+    const saved = await saveRender(r0.id, { jobId, kind, model: used.quality, parentKey: viewKey, variants: out.variants.map((v) => ({ image: v.dataUrl, applied: v.applied, finishes: v.finishes, materials: v.materials })) })
       .catch(() => ({ error: 'Couldn’t keep this render — please try again.' }))
-    /* (critic 10) a save that failed takes its tiles away and leaves every pick where it was */
-    if ('error' in saved) { stop(saved.error); return }
+    /* (critic 10) a save that failed takes its tiles away and leaves every pick where it was — (Q-31) and gives the credits back */
+    if ('error' in saved) { stop(await giveBack(saved.error)); return }
+    chargeRef.current = null
     const ns = (saved as { ns?: number[] }).ns   // (F211) the numbers the server gave, when it says them
     const made: VersionView[] = out.variants.map((v, i) => {
       const key = saved.keys[i]!, d = descriptor(v.applied), n = ns?.[i] ?? priorN + i + 1
@@ -336,7 +372,10 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     runRef.current++
     if (tickRef.current) clearInterval(tickRef.current)
     setRunning(null); focusNext.current = 'generate'
-    snack({ message: 'Stopped — nothing was kept' })
+    /* (REG-704, Q-31) stopped before it was kept: the charge goes back */
+    const c = chargeRef.current; chargeRef.current = null
+    if (c && c.charged > 0) void refundAIWork(c.ref)
+    snack({ message: c && c.charged > 0 ? 'Stopped — nothing was kept or charged' : 'Stopped — nothing was kept' })
   }
   /* (F162) after a run the keyboard lands on the new version (or back on Generate), not on the page */
   useEffect(() => {
@@ -827,6 +866,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const [menu, setMenu] = useState<Menu>(null)
   const menuAnchor = useRef<HTMLElement | null>(null)
   const openMenu = (m: NonNullable<Menu>, el: HTMLElement) => { menuAnchor.current = el; setMenu(m) }
+  /* (REG-719) a room's ⋯ sits in its own chip: pressing it on another room picks that room, and the menu (which acts on the picked room) is its */
+  const openRoomMenu = (id: string, el: HTMLElement) => { if (id !== roomId) { setRoomPick(id); setTray(false) } openMenu({ kind: 'room' }, el) }
   const versionOf = (key: string) => all.find((v) => v.key === key) ?? null
   const download = (key: string) => {
     const v = key === ORIGINAL ? null : versionOf(key)
@@ -951,6 +992,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       /* (F061) a slider, a switch or a button keeps ⌘Z for the room; only text entry keeps its own undo */
       const textEntry = typing && !(t instanceof HTMLInputElement && /^(range|checkbox|radio|button)$/.test(t.type))
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !textEntry) { e.preventDefault(); if (!roomId) return; if (e.shiftKey) ed.redo(roomId); else ed.undo(roomId); return }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y' && !textEntry) { e.preventDefault(); if (roomId) ed.redo(roomId); return }   // (REG-714) ⌘Y redoes, as in the other editors
       if (typing) return
       if (e.key === 'Escape') {
         if (placing) { setPlacing(null); return }
@@ -1042,9 +1084,22 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   /* the footer speaks for the run in this room (its own busy word, F003); another room's run waits with where it is (F196) */
   const footIntent = hereRun ? { ...intent, busy: hereRun.title } : running ? { ...intent, kind: null, reason: `Rendering in ${running.roomName}…` } : intent
   const shownError = runError && runError.roomId === roomId ? runError.text : null
+  /* (REG-704, Q-29) what this Generate costs, before the press — from the one price list, so every number agrees (E-02) */
+  const footPrice = ((): FootPrice | null => {
+    if (!credits || !credits.provisioned || !footIntent.kind) return null
+    const kind = footIntent.kind, many = kind === 'edit' || kind === 'restyle' || kind === 'transfer', n = many ? pending.variants : 1
+    const action = renderAction(kind, pending.quality), cost = costOf(action, n)
+    const can = spendable(credits)
+    let short: string | null = null
+    if (can != null && cost > can) {
+      const ways = [...(n > 1 && costOf(action, 1) <= can ? ['make 1 version'] : []), ...(pending.quality === 'high' && kind !== 'empty' && costOf(renderAction(kind, 'fast'), n) <= can ? ['pick Fast'] : [])]
+      short = `Needs ${fmtCredits(cost)} — you can use ${fmtCredits(can)}${ways.length ? ` · ${ways.join(' or ')}` : ''}`
+    }
+    return { cost, left: can != null && !short ? can - cost : null, short, per: kind === 'empty' ? null : { fast: costOf('render_fast'), high: costOf('render_pro') } }
+  })()
   const footer = (compact: boolean) => (
     <GenerateFooter compact={compact} describe={compact ? null : describeBox(false)} changes={changes} onClear={clearAll} intent={footIntent} variants={pending.variants} onVariants={(n) => patch((p) => ({ ...p, variants: n }), { history: false })}
-                    quality={pending.quality} onQuality={(q) => patch((p) => ({ ...p, quality: q }), { history: false })} onGenerate={() => { void generate() }} busy={!!hereRun} error={shownError} disabled={readOnly}
+                    quality={pending.quality} onQuality={(q) => patch((p) => ({ ...p, quality: q }), { history: false })} onGenerate={() => { void generate() }} busy={!!hereRun} error={shownError} disabled={readOnly} price={footPrice}
                     reasonLink={pending.tool === 'furnish' && emptiedLink && !footIntent.kind ? { text: 'Furnish works on an emptied version —', label: `open V${emptiedLink.n}`, onPress: emptiedLink.onOpen } : null} />
   )
 
@@ -1102,7 +1157,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const roomsRowRef = useRoomInView(roomId)
   const roomChips = rooms.length ? (
     <div ref={roomsRowRef} className={styles.roomRailWrap}>
-      <ChipRail label="Rooms" className={styles.roomRail}><Chips className={styles.roomChips} label="Rooms" options={rooms.map((r) => ({ value: r.id, label: r.name }))} value={roomId} onChange={(id) => { setRoomPick(id); setTray(false) }} testId="viz-rooms" /></ChipRail>
+      <ChipRail label="Rooms" className={styles.roomRail}><Chips className={styles.roomChips} label="Rooms" options={rooms.map((r) => ({ value: r.id, label: r.name }))} value={roomId} onChange={(id) => { setRoomPick(id); setTray(false) }} testId="viz-rooms"
+        trail={(id, on) => <RoomMore name={rooms.find((r) => r.id === id)?.name ?? ''} on={on} open={on && menu?.kind === 'room'} className={styles.roomMore} onPress={(el) => openRoomMenu(id, el)} />} /></ChipRail>
     </div>
   ) : null
 
@@ -1248,10 +1304,10 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   return (
     <div ref={rootRef} className={styles.editor} data-narrow={narrow || undefined} data-tray={(narrow && tray) || undefined} data-tray-leaving={(narrow && trayLeaving && !tray) || undefined} data-rail={hasRail || undefined} data-short={short || undefined} data-testid="viz-editor">
       <EditorTopbar backLabel={backLabel} onBack={() => { void leave(back) }} title={title} chip={designKindLabel(data.design.kind, data.lead?.stage)} rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} roomId={roomId} onRoom={(id) => setRoomPick(id)}
-                    onRoomMenu={(el) => openMenu({ kind: 'room' }, el)} roomMenuOpen={menu?.kind === 'room'} onAddRoom={() => setAddRoomOpen(true)}
+                    onRoomMenu={openRoomMenu} roomMenuOpen={menu?.kind === 'room'} onAddRoom={() => setAddRoomOpen(true)}
                     saving={!conflict && !ed.save.error && (ed.save.saving || ed.dirty)} savedLabel={savedLabel} savedTone={conflict || ed.save.error ? 'warn' : 'ok'}
                     canUndo={ed.canUndo(roomId)} canRedo={ed.canRedo(roomId)} onUndo={() => { if (roomId) ed.undo(roomId) }} onRedo={() => { if (roomId) ed.redo(roomId) }}
-                    onShare={() => setShare(view ? [view.key] : live.slice(-1).map((v) => v.key))} shareDisabled={readOnly ? 'This design is deleted' : leadDeleted ? LEAD_DELETED_ROW : leadClosed ? LEAD_CLOSED_SHARE : anyLive ? null : 'Generate a version first'} onMenu={(el) => openMenu({ kind: 'design' }, el)} menuOpen={menu?.kind === 'design'} compact={narrow} short={short} />
+                    onShare={() => setShare(view ? [view.key] : live.slice(-1).map((v) => v.key))} shareDisabled={readOnly ? 'This design is deleted' : leadDeleted ? LEAD_DELETED_ROW : leadClosed ? LEAD_CLOSED_SHARE : anyLive ? null : 'Generate a version first'} onMenu={(el) => openMenu({ kind: 'design' }, el)} menuOpen={menu?.kind === 'design'} compact={narrow} short={short} credits={<CreditsChip />} />
       {readOnly ? (
         <div className={styles.note} data-testid="viz-deleted"><Icon name="delete" size={16} weight={300} />
           {/* (F204) Restore only for who may — anyone else reads who can */}
@@ -1279,7 +1335,6 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
               <motion.div key="rooms" className={styles.fold} {...unfold}>
                 <div className={styles.roomsRow}>
                   {roomChips}
-                  {room ? <IconButton icon="more_horiz" label="Room options" size={36} variant="bare" iconSize={20} aria-haspopup="menu" aria-expanded={menu?.kind === 'room'} onClick={(e) => openMenu({ kind: 'room' }, e.currentTarget)} /> : null}
                   <Tooltip label="Add room"><IconButton icon="add_photo_alternate" label="Add room" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setAddRoomOpen(true)} data-testid="viz-add-room" /></Tooltip>
                 </div>
               </motion.div>

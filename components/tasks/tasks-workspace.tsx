@@ -2,7 +2,7 @@
 
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
-import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { TasksListGhost } from '@/components/shell/list-ghosts'
 import { LeadTasks } from '@/components/leads/tasks/lead-tasks'
 import type { StudioTasksData } from '@/lib/leads/tasks'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -14,7 +14,7 @@ import pageStyles from '@/app/leads/leads.module.css'
  */
 export function TasksWorkspace({ data }: { data: StudioTasksData }) {
   return (
-    <PageReveal skeleton={<LeadsSkeleton />}>
+    <PageReveal skeleton={<TasksListGhost />}>   {/* (REG-708) the page's own ghost, as its loading.tsx */}
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         {/* The Leads header's shape (owner 2026-09-16): the primary Add Task with the plus, then the kebab, in the header itself. */}
         <LeadTasks leadId={null} data={data} header={(c) => <PageHeader title="Tasks" actions={<>{c.add}{c.more}</>} />} />

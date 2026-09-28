@@ -145,13 +145,13 @@ export function TasksTable({
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
   const [frame, overflowing] = useOverflowX()
   return (
-    <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
+    <div className={styles.card} role="table" data-drag-root="" aria-label="Tasks" data-kb-list="task" data-cols="lead-tasks" style={{ ...(colVars ?? {}), '--table-min': `${floor}px` } as React.CSSProperties}>
     <div ref={frame} className={styles.scroller} data-overflow={overflowing || undefined}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
     <div className={styles.table}>
       {/* Head row — selection head = a real select-all checkbox (check_box_outline_blank 24/Light in the mock). */}
       <div ref={headRow} className={styles.head} role="row">
-        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
+        <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader" data-col="sel" data-kb-select-all data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}>
           <Checkbox isSelected={allSelected} isIndeterminate={!allSelected && tasks.some((t) => selected.has(t.id))} isDisabled={tasks.length === 0} onChange={toggleAll} aria-label="Select all tasks" />
         </div>
         {columns.map((c) => (
@@ -382,11 +382,12 @@ function TaskRowView({
   const pick = (action: TaskRowAction) => () => { onMenuClose(); onRowMenu(task, action) }
 
   return (
-    <div className={styles.row} role="row" data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined}>
+    <div className={styles.row} role="row" data-kb-row data-kb-id={task.id} data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined}>
       {/* Selection cell: checkbox 24/Light secondary → check_box 24 primary when selected.
           The DS Checkbox reports the next checked state, not the event, so Shift is read off the click on its way
           down (capture runs before the input's own change) and handed to the range selector. */}
       <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell" data-col="sel" data-pin-edge={L.edge('sel') || undefined} style={L.style('sel')}
+           data-kb-select
            onClickCapture={(e) => { shiftHeld.current = e.shiftKey }}
            onKeyDownCapture={(e) => { shiftHeld.current = e.shiftKey }}>
         <Checkbox isSelected={selected} onChange={() => onToggleSelect(shiftHeld.current)} aria-label={`Select ${task.title}`} />
@@ -549,7 +550,7 @@ function TaskRowView({
           <span className={styles.float}>
             {/* rowEdit / rowKebab: the 36px controls take a ≥40 touch target below 768 (REG-273) — a transparent
                 overlay, so the mock's pill is drawn exactly as it is on desktop. */}
-            <Button variant="primary" appearance="outlined" className={styles.rowEdit} onPress={() => onEdit(task)}>Edit</Button>
+            <Button variant="primary" appearance="outlined" className={styles.rowEdit} onPress={() => onEdit(task)} data-kb-open>Edit</Button>
           </span>
           <span className={styles.menuWrap}>
             <span className={styles.float}>

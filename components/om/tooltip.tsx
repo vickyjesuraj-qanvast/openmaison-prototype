@@ -3,6 +3,9 @@
 import { useEffect, useId, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { duration, ease } from '@/lib/motion'
+import { Keys } from './keys'
+import { keysOf } from '@/lib/keys/registry'
+import { ariaKeys } from '@/lib/keys/spec'
 import styles from './tooltip.module.css'
 
 /**
@@ -17,7 +20,7 @@ import styles from './tooltip.module.css'
  * property so the motion transform can't knock it off-centre.
  */
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
-type TipState = { owner: string; label: string; side: TooltipSide; top: number; left: number } | null
+type TipState = { owner: string; label: string; keys?: string; side: TooltipSide; top: number; left: number } | null
 
 const SHOW_DELAY_MS = 150
 const WARM_WINDOW_MS = 400
@@ -61,15 +64,29 @@ export function Tooltip({
   label,
   side = 'bottom',
   disabled = false,
+  keys,
+  shortcut,
   children,
 }: {
   label: string
   side?: TooltipSide
+  /** (REG-715) The control's keyboard shortcut, drawn after the label ("New lead  C") — a spec ('mod+z') … */
+  keys?: string
+  /** … or its id in the one list (`lib/keys/registry.ts`), which keeps the hint and the key in step. */
+  shortcut?: string
   /** Hide and never show — e.g. rail items once their labels are visible, a kebab while its menu is open. */
   disabled?: boolean
   children: ReactNode
 }) {
   const owner = useId()
+  /* (REG-715) the control's keys reach screen readers too — on the control itself, from the same spec as the bubble */
+  const anchor = useRef<HTMLSpanElement | null>(null)
+  const spec = keys ?? (shortcut ? keysOf(shortcut) : undefined)
+  useEffect(() => {
+    const el = anchor.current?.firstElementChild
+    const aria = spec ? ariaKeys(spec) : undefined
+    if (el && aria && !el.hasAttribute('aria-keyshortcuts')) el.setAttribute('aria-keyshortcuts', aria)
+  }, [spec])
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clear = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null } }
 
@@ -78,7 +95,7 @@ export function Tooltip({
     if (disabled) return
     clear()
     const el = (wrapper.firstElementChild as HTMLElement | null) ?? wrapper
-    const next = { owner, label, ...place(el, side) }
+    const next = { owner, label, keys: keys ?? (shortcut ? keysOf(shortcut) : undefined), ...place(el, side) }
     if (state || Date.now() - lastHiddenAt < WARM_WINDOW_MS) commit(next)
     else timer.current = setTimeout(() => commit(next), SHOW_DELAY_MS)
   }
@@ -90,7 +107,7 @@ export function Tooltip({
   useEffect(() => () => { clear(); if (state?.owner === owner) commit(null) }, [owner])
 
   return (
-    <span className={styles.anchor}
+    <span ref={anchor} className={styles.anchor}
           onPointerEnter={(e) => { if (e.pointerType !== 'touch') show(e.currentTarget) }}   // no hover on touch — a tap must not leave a bubble behind
           onPointerLeave={hide}
           onPointerDown={hide}                                                            // a press cancels a pending show, so nothing pops over what the press opened
@@ -132,7 +149,7 @@ function Bubble({ tip }: { tip: Tip }) {
                 exit={{ opacity: 0, transition: { duration: duration.menuExit } }}
                 transition={{ duration: duration.menu, ease: ease.standard }}>
       <Marker side={tip.side} />
-      <span className={styles.bubble}>{tip.label}</span>
+      <span className={styles.bubble} data-keys={tip.keys ? '' : undefined}>{tip.label}{tip.keys ? <Keys spec={tip.keys} tone="inverse" /> : null}</span>
     </motion.div>
   )
 }

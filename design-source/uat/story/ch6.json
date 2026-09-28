@@ -671,7 +671,7 @@
   "module": "Quotes",
   "try": "Upload Gerald Tan’s old spreadsheet quote",
   "how": "1. On Tools › Quotes click \"Create Quote\" and pick \"Gerald Tan\" in \"Client\"\n2. Click \"Upload a quote\" and choose uat-files/kitchen-moodboard.jpg\n3. Click \"Choose another file\" and choose uat-files/gerald-tan-old-quote.xlsx\n4. Click \"Create the quote\"",
-  "expect": "The photo is refused (\"We couldn’t read…\"); the sheet shows \"6 lines read … · S$14,880.00\"; the new quote opens with a section per trade.",
+  "expect": "The tile reads \"PDF · XLS · JPG · 5 AI credits\"; the photo is refused (\"We couldn’t read … Your 5 AI credits are back.\"); the sheet shows \"6 lines read … · S$14,880.00\"; the new quote opens with a section per trade.",
   "in10": "Different from 1.0: spreadsheets are read for real, no AI scan",
   "as": "Dane",
   "covers": [

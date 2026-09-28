@@ -1,0 +1,105 @@
+/* (REG-702) Plans — the xxl modal's inside, on DS tokens (the approved proposal's §3 frame). */
+.m { color: var(--om-color-on-surface-secondary); font-weight: 400; }
+.full { width: 100%; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); width: 100%; min-height: 36px; }
+.sum { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+
+/* the head's step line: Choose · Review · Pay · Done */
+.steps { display: inline; font: var(--om-type-caption-s); color: var(--om-color-on-surface-disabled); }   /* inline: a flex item drops the space before its " · " */
+.steps [data-on] { color: var(--om-color-primary-default); font-weight: 600; }
+.sep { color: var(--om-color-on-surface-disabled); font-weight: 400; }
+
+/* Choose */
+.choose { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.context { margin: 0; display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.context b { color: var(--om-color-on-surface-default); font-weight: 600; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.tax { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
+.card { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-5); display: flex; flex-direction: column; gap: 10px; background: var(--om-color-surface-default); min-width: 0; }
+.card > [role='radiogroup'], .card > [role='group'] { align-self: flex-start; }
+.sel { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); }
+.cardTop { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-height: 24px; }
+.cardTop h3 { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--om-spacing-2); border-radius: 999px; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); white-space: nowrap; }
+.fit { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--om-spacing-2) 0 6px; border-radius: 999px; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-caption-s); white-space: nowrap; }
+.tagline { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-height: 32px; }
+.price { display: flex; align-items: baseline; gap: 6px; min-height: 52px; }
+.v { font: var(--om-type-hero-hero1); letter-spacing: -0.01em; color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.talk { font-size: 34px; }
+.per { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+.note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-height: 16px; }
+.allow { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-2) 10px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default); }
+.allow > :first-child { flex-shrink: 0; margin-top: 1px; }
+.why { margin: 0; padding: var(--om-spacing-2) 10px; border-radius: var(--om-radius-1); background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-on-tertiary-yellow-variant); font: var(--om-type-body-s); }
+.cta { margin-top: auto; padding-top: 6px; }
+.selected { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: var(--om-radius-1); border: var(--om-border-1) solid var(--om-color-primary-default); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-subheading-m); }
+.few { margin: 0; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* tables: what credits buy · compare everything */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.section h4, .faq h4 { margin: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); }
+.section > p { margin: 0; font: var(--om-type-body-s); }
+.tableBox { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
+.table th { text-align: left; padding: var(--om-spacing-2) var(--om-spacing-3); background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.table th[data-pro] { color: var(--om-color-primary-default); }
+.table td { padding: 9px var(--om-spacing-3); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font-variant-numeric: tabular-nums; vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tr[data-on] td, .table td[data-pro] { background: color-mix(in srgb, var(--om-color-primary-variant) 45%, var(--om-color-surface-default)); }
+.table td :global(.msr), .table td :global(.mso) { vertical-align: -4px; }
+.table .group { background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.wide { width: 44%; }
+.no { color: var(--om-color-on-surface-disabled); }
+
+/* accordions: Compare everything · Questions */
+.acc { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.acc > .tableBox { margin: 0 var(--om-spacing-4) var(--om-spacing-4); }
+.accHead { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); cursor: pointer; border-radius: var(--om-radius-2); }
+.accHead:focus-visible { outline: 2px solid var(--om-color-primary-default); outline-offset: -2px; }
+.accHead > :last-child { transition: transform var(--motion-toggle, 150ms ease); flex-shrink: 0; }
+.acc[data-open] > .accHead > :last-child { transform: rotate(180deg); }
+.faq { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.answer { margin: 0; padding: 0 var(--om-spacing-4) 14px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 72ch; }
+
+/* Review */
+.review { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+.box { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-5); display: flex; flex-direction: column; }
+.box h3 { margin: 0 0 4px; font: var(--om-type-heading-h3); }
+.box .tagline { min-height: 0; margin-bottom: var(--om-spacing-2); }
+.field { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding: 14px 0; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.field > div:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; font: var(--om-type-body-s); }
+.field b { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.stepper { display: inline-flex; align-items: center; height: 36px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); flex-shrink: 0; }
+.stepper b { width: 40px; text-align: center; font: var(--om-type-subheading-m); font-variant-numeric: tabular-nums; }
+.switch { display: inline-flex; flex-shrink: 0; }
+.changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
+.changes li { display: flex; gap: 10px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.changes li > :first-child { color: var(--om-color-primary-default); flex-shrink: 0; }
+.money { margin-top: var(--om-spacing-4); background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); padding: 14px var(--om-spacing-4); display: flex; flex-direction: column; gap: 2px; }
+.money > div { display: flex; justify-content: space-between; gap: var(--om-spacing-3); font: var(--om-type-body-m); line-height: 22px; }
+.money > div > span:last-child { text-align: right; }
+.money b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.money > p { margin: 6px 0 0; font: var(--om-type-body-s); }
+.readOnly { margin: var(--om-spacing-3) 0 0; display: flex; align-items: center; gap: 6px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+
+/* Pay · Done */
+.payStep { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: var(--om-spacing-6) 0; }
+.done { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: var(--om-spacing-6) 0; }
+.done h3 { margin: 18px 0 4px; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.count { font: var(--om-type-hero-hero1); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
+.done > p { margin: 0; font: var(--om-type-body-m); }
+.done ul { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
+
+/* ≤1024 the cards stack in two, then one; the review's two columns become one */
+@media (max-width: 1024px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .review { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .toolbar { flex-direction: column; align-items: flex-start; }
+  .foot { flex-wrap: wrap; }
+  .foot > .sum { flex-basis: 100%; }
+  .field { flex-wrap: wrap; }
+}

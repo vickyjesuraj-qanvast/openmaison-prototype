@@ -19,7 +19,8 @@ export function BulkBar({
 }: {
   count: number
   /** (REG-610) The press carries its event: the listing's Assign anchors a popover to the button. */
-  actions: { label: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; tone?: 'danger' }[]
+  /** `kb` (REG-713): the key that presses the action — 'delete' for ⌫, which asks first as the press does. */
+  actions: { label: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; tone?: 'danger'; kb?: string }[]
   onClear: () => void
   /** Render inside a modal panel (absolute, bottom 24) instead of fixed to the viewport. */
   inset?: boolean
@@ -55,12 +56,12 @@ export function BulkBar({
           {actions.map((a, i) => (
             <span key={a.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
               {i > 0 ? <span className={styles.divider} /> : null}
-              <button type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={a.onClick}>{a.label}</button>
+              <button type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} data-kb={a.kb} onClick={a.onClick}>{a.label}</button>
             </span>
           ))}
           <span className={styles.divider} />
-          <Tooltip label="Clear selection">
-            <button type="button" className={styles.close} aria-label="Clear selection" onClick={onClear}>
+          <Tooltip label="Clear selection" shortcut="clear">
+            <button type="button" className={styles.close} aria-label="Clear selection" data-kb="clear" onClick={onClear}>
               <Icon name="close" size={20} />
             </button>
           </Tooltip>

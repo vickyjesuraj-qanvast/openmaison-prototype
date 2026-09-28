@@ -12,14 +12,13 @@ import { ReadOnlyScope } from '@/components/om/read-only'
 import { ReadOnlyNote } from './read-only-note'
 import { MetaChip } from '@/components/om/meta-chip'
 import { CompanyShell } from './company-shell'
-import { TemplateThumb } from '@/components/templates/render/document'
+import { ProfileGhost } from './company-ghosts'
 import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './templates/refusal'
 import { couldnt } from '@/components/leads/tasks/use-run'
-import { EMPTY_ENTITY, SOCIAL_LABEL, type IssuingEntity, type SocialKey, type StudioDetails, type TemplateDesign } from '@/lib/templates/model'
+import { EMPTY_ENTITY, SOCIAL_LABEL, type IssuingEntity, type SocialKey, type StudioDetails } from '@/lib/templates/model'
 import { readFileAsDataUrl } from '@/lib/templates/files'
 import type { BrandSetting } from '@/lib/templates/brand'
-import type { DocData } from '@/lib/templates/data'
 import { EMAIL_RE, MSG } from '@/lib/forms'
 import { isSgPhone, phoneDigits } from '@/lib/format'
 import styles from './profile-view.module.css'
@@ -43,10 +42,10 @@ const ENTITY_FIELDS: { key: 'bankName' | 'accountName' | 'accountNo' | 'swift' |
  * (REG-562, the testers' ask): the studio itself and any other company it quotes under, each with its bank, account and
  * PayNow plus a PayNow QR; the quote's Issuing Entity picks one and the template's Bank details block prints it. The brand
  * kit (logo, stamp, badges, colours, type) lives beside the templates it serves: Company › Templates › Brand kit (owner
- * 2026-09-23, "inside the template is better"). Both save the one `brand` record; the default template's first page on the
- * right redraws as you edit.
+ * 2026-09-23, "inside the template is better"). Both save the one `brand` record. (REG-707) No template preview here — it
+ * belongs to the kit, which keeps its own.
  */
-export function ProfileView({ brand, previewDesign, previewName, sample, from, canRun = true, usage = {} }: { brand: BrandSetting; previewDesign: TemplateDesign | null; previewName: string | null; sample: DocData; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean
+export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand: BrandSetting; from?: string; /** (REG-646, settings parity Q-07) */ canRun?: boolean
   /** (REG-647, settings parity Q-10) How many live quotes and contracts name each entity (by its saved name) — an entity in use is retired, not removed. */
   usage?: Record<string, number> }) {
   const snackbar = useSnackbar()
@@ -104,7 +103,7 @@ export function ProfileView({ brand, previewDesign, previewName, sample, from, c
   }
 
   return (
-    <CompanyShell title="Profile" from={from} form actions={canRun ? <>
+    <CompanyShell title="Profile" from={from} skeleton={<ProfileGhost />} actions={canRun ? <>
       <Button variant="secondary" appearance="outlined" onPress={discard} isDisabled={!dirty || busy}>Discard</Button>
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </> : null}>
@@ -183,15 +182,6 @@ export function ProfileView({ brand, previewDesign, previewName, sample, from, c
             <Icon name="chevron_right" size={24} weight={300} />
           </Link>
         </div>
-        <aside className={styles.preview} aria-label="Preview">
-          <span className={styles.previewLabel}>{previewName ? `Default template · ${previewName}` : 'Sample quote'}</span>
-          <div className={styles.previewPage}>
-            {previewDesign ? <TemplateThumb design={previewDesign} brand={brand.kit} data={{ ...sample, studio: details }} width={276} /> : <span className={styles.cardHelp}>Publish a template to see it here.</span>}
-          </div>
-          <Tooltip label="The first page of the studio's default template, drawn with these details as you edit them">
-            <span className={styles.previewHint}><Icon name="info" size={16} weight={300} /> Redraws as you edit</span>
-          </Tooltip>
-        </aside>
       </div>
       </ReadOnlyScope>
     </CompanyShell>

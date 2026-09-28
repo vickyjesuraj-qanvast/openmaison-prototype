@@ -14,6 +14,7 @@ import { runsBook } from '@/lib/company/price-book-rules'
 import { folderBlock, folderChangeBlockFor } from '@/lib/company/folder-libraries'
 import { designChangeBlock, materialChangeBlock, roomDeleteBlock } from '@/lib/visualizer/policy'
 import { templateChangeBlock } from '@/lib/company/template-rules'
+import { mayBuyCredits, mayChangePlan, maySetAmounts, usageReach } from '@/lib/credits/policy'
 
 export const ROLE_COLUMNS = ['Owner', 'Admin', 'Manager', 'Designer'] as const
 export type RoleColumn = (typeof ROLE_COLUMNS)[number]
@@ -72,6 +73,13 @@ export function permissionRows(rules: StudioRules): PermissionRow[] {
     row('viz-room', 'Rename, change the photo of or delete a room in an AI Visualizer design', (r) => own(roomDeleteBlock({ id: ME, role: r }, OTHER, OTHER) === null, roomDeleteBlock({ id: ME, role: r }, ME, OTHER) === null)),
     row('viz-folder', 'Rename, move or delete an AI Visualizer folder', (r) => own(folderChangeBlockFor('visualizer', { id: ME, role: r }, OTHER) === null, folderChangeBlockFor('visualizer', { id: ME, role: r }, ME) === null)),
     row('materials', 'Change or delete a studio material', (r) => own(materialChangeBlock({ id: ME, role: r }, OTHER) === null, materialChangeBlock({ id: ME, role: r }, ME) === null)),
+    /* (REG-700, AI credits Q-23 · Q-24 — integration A-18: 1.0's rules as they are) Everyone uses AI within their monthly amount; the Owner
+       buys, sets the amounts and changes the plan; the Owner and Admins see the studio's usage, everyone else their own. */
+    row('ai-use', 'Use AI tools, within their monthly amount', () => 'yes'),
+    row('ai-buy', 'Buy AI credits', (r) => (mayBuyCredits(r) ? 'yes' : 'no')),
+    row('ai-amounts', 'Set members’ monthly AI credits', (r) => (maySetAmounts(r) ? 'yes' : 'no')),
+    row('ai-plan', 'Change the plan, seats and billing', (r) => (mayChangePlan(r) ? 'yes' : 'no')),
+    row('ai-usage', 'See the studio’s AI usage', (r) => (usageReach(r) === 'studio' ? 'yes' : 'own')),
   )
   return rows
 }

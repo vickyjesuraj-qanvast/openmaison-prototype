@@ -19,13 +19,14 @@ import { Dropzone, FieldError } from '@/components/leads/move-stage/fields'
 import { useFlagPref } from '@/lib/prefs'
 import { fromLabel, withFrom } from '@/lib/nav'
 import { useSearchTarget } from '@/components/shell/search-focus'
+import { SlashSlot } from '@/components/om/slash-slot'
 import { displayDate } from '@/lib/format'
 import { money } from '@/lib/xray/compare'
 import { FILE_GLYPH, fileKind, readSide, XRAY_ACCEPT, XRAY_MAX_BYTES, type SideRead } from '@/lib/xray/reading'
 import { deleteComparison, runComparison } from '@/app/quote-x-ray/actions'
 import type { XrayData } from '@/lib/xray/queries'
 import { COMPARISON_DELETE_RULE } from '@/lib/xray/policy'
-import { XraySetupSkeleton } from './xray-skeletons'
+import { XraySetupGhost } from './xray-setup-ghost'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './xray-workspace.module.css'
 
@@ -213,7 +214,7 @@ export function XrayWorkspace({ data, leadId: initialLead, quoteId: initialQuote
   )
 
   return (
-    <PageReveal skeleton={<XraySetupSkeleton scoped={!!scoped} intro={!introHidden} />}>
+    <PageReveal skeleton={<XraySetupGhost />}>   {/* (REG-708) the ghost its loading.tsx drew */}
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         {scoped ? (
           <PageHeaderL2 backHref={from ?? `/leads/${scoped.id}`} crumbs={from?.startsWith('/quotes/') && scopedQuote ? [{ label: 'Quotes', href: '/quotes' }, { label: scopedQuote.number, href: from }]
@@ -372,5 +373,5 @@ function RecentSearch({ query, onQuery, inputRef }: { query: string; onQuery: (v
   const wrap = useRef<HTMLSpanElement>(null)
   useEffect(() => { inputRef.current = wrap.current?.querySelector('input') ?? null })
   useSearchTarget(inputRef)
-  return <span ref={wrap} className={styles.recentsSearch}><SearchBar appearance="outlined" size="md" placeholder="Search by lead, quote or studio" aria-label="Search comparisons" value={query} onChange={onQuery} /></span>
+  return <span ref={wrap} className={styles.recentsSearch}><SlashSlot empty={query === ''}><SearchBar appearance="outlined" size="md" placeholder="Search by lead, quote or studio" aria-label="Search comparisons" value={query} onChange={onQuery} /></SlashSlot></span>
 }

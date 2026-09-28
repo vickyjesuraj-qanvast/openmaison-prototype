@@ -233,7 +233,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                         savedLabel={savedLabel(updatedAt, clock)} statusSlot={statusPill}
                         primary={{ label: 'Send', onPress: () => { if (blockIssue) { sayBlocked(); return } setSendOpen(true) }, disabled: !canSend, hint: sendHint }}
                         actions={<>
-                          <Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')}>Preview</Button>
+                          <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')} data-kb="preview">Preview</Button></Tooltip>
                           <span className={quoteStyles.anchor}>
                             <Tooltip label="Automation" disabled={autoOpen}><IconButton icon="notifications" label="Automation" selected={autoOpen || auto.reminders || auto.thankYou} aria-haspopup="menu" aria-expanded={autoOpen} onClick={() => onMenu('auto')} /></Tooltip>
                             <AutomationPopover open={autoOpen} onClose={() => setAutoOpen(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
@@ -241,7 +241,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                           <Tooltip label={copied ? 'Copied' : 'Copy signing link'}><IconButton icon="link" label="Copy signing link" onClick={() => onMenu('copy')} /></Tooltip>
                         </>}
                         foldedItems={<>
-                          <DropdownItem onSelect={() => onMenu('preview')}>Preview</DropdownItem>
+                          <DropdownItem onSelect={() => onMenu('preview')} shortcut="preview">Preview</DropdownItem>
                           <DropdownItem onSelect={() => onMenu('copy')}>Copy signing link</DropdownItem>
                           <DropdownItem onSelect={() => setAutoDialog(true)}>Automation</DropdownItem>
                           <DropdownDivider />

@@ -43,16 +43,16 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
       <div className={styles.actions}>
         {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon. */}
         {sheet ? (
-          <Tooltip label="Create Quote">
-            <IconButton icon="add" label="Create Quote" variant="primary" onClick={onCreate} />
+          <Tooltip label="Create Quote" shortcut="create">
+            <IconButton icon="add" label="Create Quote" variant="primary" onClick={onCreate} data-kb="create" />
           </Tooltip>
         ) : (
-          <Button variant="primary" appearance="outlined" onPress={onCreate}>Create Quote</Button>
+          <Button variant="primary" appearance="outlined" onPress={onCreate} data-kb="create">Create Quote</Button>
         )}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder={searchPlaceholder} label="Search quotes" />
         <span className={styles.filterWrap}>
-          <Tooltip label="Filters">
-            <IconButton icon="filter_list" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
+          <Tooltip label="Filters" shortcut="filters">
+            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} onClick={onFilter} selected={filterCount > 0} />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>

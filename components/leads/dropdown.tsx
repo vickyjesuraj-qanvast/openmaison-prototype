@@ -5,6 +5,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import { anchoredSurface } from '@/lib/motion'
 import { useMenuKeyboard } from '@/components/om/surface'
 import { Sheet, sheetMenuBody, useSheetLayout } from '@/components/om/sheet'
+import { Keys } from '@/components/om/keys'
+import { ariaKeys } from '@/lib/keys/spec'
+import { keysOf } from '@/lib/keys/registry'
 import styles from './menus.module.css'
 
 /**
@@ -102,7 +105,7 @@ export function Dropdown({
   )
 }
 
-export function DropdownItem({ children, onSelect, tone, disabled, title, role = 'menuitem', checked, submenu }: {
+export function DropdownItem({ children, onSelect, tone, disabled, title, role = 'menuitem', checked, submenu, keys, shortcut }: {
   children: ReactNode
   onSelect: () => void
   /** Destructive item (Delete) — red text, as om/menu's `tone`. */
@@ -116,6 +119,9 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, role =
   checked?: boolean
   /** The row opens a further level in place (aria-haspopup="menu"). */
   submenu?: boolean
+  /** (REG-715) The row's keyboard shortcut at its right end, as desktop menus show it — a spec, or an id in `lib/keys/registry.ts`. */
+  keys?: string
+  shortcut?: string
 }) {
   /* (audit 2026-09-26, fresh-phone 10) A radio / checkbox row whose label is plain text drew nothing for its checked state, so a scope
      pill's sheet ("Kind: All ▾") could not say which choice was current. It now wears the DS menu item's Selected state (primary/variant
@@ -125,9 +131,10 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, role =
   return (
     <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
             aria-checked={role === 'menuitem' ? undefined : !!checked} aria-haspopup={submenu ? 'menu' : undefined}
-            data-selected={selected || undefined}
+            data-selected={selected || undefined} data-kb={shortcut} aria-keyshortcuts={keys || shortcut ? ariaKeys(keys ?? keysOf(shortcut!) ?? '') : undefined}
             onClick={disabled ? undefined : onSelect}>
       {children}
+      {keys || shortcut ? <Keys spec={keys} shortcut={shortcut} className={styles.itemKeys} /> : null}
     </button>
   )
 }

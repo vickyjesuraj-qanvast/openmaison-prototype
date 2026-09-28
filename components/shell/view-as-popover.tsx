@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation'
 import { anchoredSurface } from '@/lib/motion'
 import type { SessionMember } from '@/lib/db/session'
 import { viewAs } from '@/app/view-as-actions'
+import { setDemoPlan, type DemoPlan } from '@/app/credits/actions'
+import { refreshCredits, useCredits } from '@/components/credits/credits-client'
+import type { CreditSummary } from '@/lib/credits/model'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { useSnackbar } from '@/components/om/snackbar'
@@ -15,6 +18,17 @@ import { useMenuKeyboard } from '@/components/om/surface'
 import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './view-as-popover.module.css'
+
+/** (REG-705, AI credits Q-41) The studio's plan, for a demo — Upgrade and the upgrade moment, a trial, a failed payment, a studio not counted yet. */
+const DEMO_PLANS: { key: DemoPlan; label: string; help: string }[] = [
+  { key: 'free', label: 'Free', help: 'Upgrade in the rail · 30 AI credits a month' },
+  { key: 'trial', label: 'Pro — Studio · trial', help: '14 days free, then monthly' },
+  { key: 'pro', label: 'Pro — Studio', help: 'The base plan · AI credits in the rail' },
+  { key: 'low', label: 'Almost out', help: 'Pro with 15 AI credits left · the warnings' },
+  { key: 'past_due', label: 'Payment failed', help: 'Pro in its 14 days of grace' },
+  { key: 'not_counting', label: 'Not counted yet', help: 'AI tools free for a month’s notice' },
+]
+const demoPlanOf = (s: CreditSummary | null): DemoPlan | null => (!s ? null : !s.counting ? 'not_counting' : s.status === 'past_due' ? 'past_due' : s.planId === 'free' ? 'free' : s.status === 'trialing' ? 'trial' : s.planId === 'pro_studio' ? (s.poolState === 'ok' ? 'pro' : 'low') : null)
 
 /** "Designer · reports to James" — the second line of a member's row. */
 export const memberLine = (m: SessionMember): string => (m.reportsTo ? `${m.role} · reports to ${m.reportsTo}` : m.role)
@@ -69,6 +83,35 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
     })
   })
   const pick = (m: SessionMember) => { onClose(); if (!m.isYou) become(m, current) }
+  /* (REG-705) the studio's plan, demo only — the whole prototype follows (the rail's slot plays the upgrade moment on Free → Pro) */
+  const credits = useCredits(null)
+  const plan = demoPlanOf(credits)
+  const pickPlan = (k: DemoPlan) => {
+    onClose()
+    if (k === plan) return
+    startTransition(async () => {
+      const r = await setDemoPlan(k)
+      if ('error' in r) { snackbar({ message: r.error }); return }
+      await refreshCredits()
+      router.refresh()
+      snackbar({ key: 'demo-plan', message: `Studio plan: ${r.label} (demo)` })
+    })
+  }
+  const plans = (
+    <div className={panel.group} role="group" aria-label="Studio plan (demo only)" data-testid="demo-plan">
+      <span className={panel.eyebrow}>Studio plan · demo only</span>
+      {DEMO_PLANS.map((p) => (
+        <button key={p.key} type="button" role="menuitemradio" aria-checked={plan === p.key} className={panel.row} data-on={plan === p.key || undefined} onClick={() => pickPlan(p.key)}>
+          <span className={panel.glyph}><Icon name="diamond" size={20} weight={300} /></span>
+          <span className={panel.text}>
+            <span className={panel.label}>{p.label}</span>
+            <span className={panel.help}>{p.help}</span>
+          </span>
+          {plan === p.key ? <Icon name="check" size={20} weight={300} /> : null}
+        </button>
+      ))}
+    </div>
+  )
 
   const list = (
     <div className={panel.group} role="group" aria-label="Members">
@@ -93,7 +136,7 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
   if (sheet) {
     return (
       <Sheet open={open} onClose={onClose} title="View as" label="View as" role="menu">
-        <div className={panel.sheetBody}>{head}{list}</div>
+        <div className={panel.sheetBody}>{head}{list}{plans}</div>
       </Sheet>
     )
   }
@@ -108,6 +151,7 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
           </span>
           {head}
           {list}
+          {plans}
         </motion.div>
       ) : null}
     </AnimatePresence>,

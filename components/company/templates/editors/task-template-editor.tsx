@@ -13,7 +13,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
-import { EditorSkeleton } from '@/components/quotes/editor/editor-skeleton'
+import { LibraryEditorGhost } from './library-editor-ghost'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { AssignPopover } from '@/components/leads/assign-popover'
@@ -78,7 +78,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
   const usedBy = template.usedBy
 
   return (
-    <PageReveal skeleton={<EditorSkeleton />}>
+    <PageReveal skeleton={<LibraryEditorGhost kind="tasks" />}>
       <div className={page.page} data-testid="task-template-editor">
         <LibraryHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Tasks', href: '/company/templates/tasks' }]} title={name.trim() || 'Untitled template'}
                        chips={<><MetaChip>{steps.length} {steps.length === 1 ? 'step' : 'steps'}</MetaChip><MetaChip>{usedBy === 0 ? 'Not used yet' : `Added to ${usedBy} ${usedBy === 1 ? 'lead' : 'leads'}`}</MetaChip></>}

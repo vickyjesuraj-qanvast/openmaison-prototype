@@ -1,7 +1,6 @@
-import { CompanySkeleton } from '@/components/company/company-shell'
-import { PRICE_BOOK_TABS, tabBones } from '@/lib/company/sections'
+import { PriceBookGhost } from '@/components/company/company-ghosts'
 
-/** The Price book's ghost: the L1 head, the two-tab strip, card bones. */
+/** Price book › My Sections' own ghost (REG-708): no pill and no Filters on its toolbar. */
 export default function Loading() {
-  return <CompanySkeleton tabWidths={tabBones(PRICE_BOOK_TABS.map((t) => t.label))} />
+  return <PriceBookGhost sections />
 }

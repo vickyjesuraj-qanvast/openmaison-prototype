@@ -19,7 +19,7 @@
   "module": "Shell",
   "try": "Find your way around the side navigation",
   "how": "1. Point at the logo, top left, and click \"Expand navigation\"\n2. Read the items from top to bottom\n3. Click \"Collapse navigation\"",
-  "expect": "Search (\"/\"), Dashboard, Tasks, Projects, Leads, Marketplace, Company, Qanvast Ops; then Upgrade, Tools, Chat, Notifications, Settings; Demo Studio at the bottom.",
+  "expect": "Search (\"⌘K\"), Dashboard, Tasks, Projects, Leads, Marketplace, Company, Qanvast Ops; then the studio’s AI credits (Maison AI’s spark on a warm tile, the number; \"AI credits\" when expanded), Tools, Chat, Notifications, Settings; Demo Studio at the bottom.",
   "in10": "Different from 1.0: Settings in the side navigation, not the profile menu",
   "as": "Dane",
   "covers": [

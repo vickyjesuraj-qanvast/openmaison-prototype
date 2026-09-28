@@ -7,7 +7,7 @@ import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
 import { Icon } from '@/components/om/icon'
 import { Button } from '@/components/ds'
-import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { QuotesListGhost } from '@/components/shell/list-ghosts'
 import { DatePicker } from '@/components/om/date-picker'
 import { useSnackbar } from '@/components/om/snackbar'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
@@ -113,7 +113,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
   const selectedIds = [...selected]
 
   return (
-    <PageReveal skeleton={<LeadsSkeleton label="Loading quotes" />}>
+    <PageReveal skeleton={<QuotesListGhost />}>   {/* (REG-708) the page's own ghost, as its loading.tsx */}
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title="Quotes" />
         <div className={styles.frame}>
@@ -153,7 +153,7 @@ export function QuotesWorkspace({ data, newTemplateId, templateId }: { data: Stu
                           onStart={(templateId, clientId) => { void startQuote(templateId, clientId) }}
                           onSetDefault={(id) => { void run('set the default template', () => setDefaultTemplate(id), 'Default template updated', { refresh: true }) }}
                           defaultBlock={templateDefaultBlock(data.viewer)}   /* (REG-646 · verify round 3) an Owner's or an Admin's — the row says so */
-                          onUpload={(read, clientId) => { if (!clientId) return; void run('create the quote', async () => { const id = await createQuoteFromUpload(clientId, null, read.groups); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }} />
+                          onUpload={(read, clientId, quoteId) => { if (!clientId) return; void run('create the quote', async () => { const id = await createQuoteFromUpload(clientId, null, read.groups, quoteId); setCreateOpen(false); router.push(withFrom(`/quotes/${id}`, '/quotes')) }, `Quote created with ${read.count} lines from ${read.source}`, { guard: 'create' }) }} />
         <DeleteQuotesDialog open={!!deleting} count={deleting?.length ?? 1} onNo={() => setDeleting(null)}
                             onYes={() => { const ids = deleting; setDeleting(null); if (!ids) return; setSelected(new Set()); removeQuotes(ids) }} />
       </div>

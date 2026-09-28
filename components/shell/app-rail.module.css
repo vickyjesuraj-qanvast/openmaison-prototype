@@ -102,7 +102,7 @@
 .panel[data-expanded] .searchLabel { opacity: 1; }
 .kbd {
   position: absolute; right: var(--om-spacing-2); top: 8px;
-  width: 20px; height: 20px;
+  min-width: 20px; height: 20px; padding: 0 var(--om-spacing-1);   /* (REG-709) ⌘K — the global search's key; it was "/" (the page's own search keeps "/") */
   display: none; align-items: center; justify-content: center;
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
   border-radius: var(--om-radius-1); background: var(--om-color-surface-default);

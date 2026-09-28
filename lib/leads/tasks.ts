@@ -99,11 +99,20 @@ export async function countOverdueTasks(): Promise<number> {
 
 /** What the rail draws on its items (REG-466): the Tasks item's overdue count, keyed by href; nothing when there is nothing to say. */
 export async function railBadges(): Promise<Record<string, number>> {
-  const [overdue, pending, unread, proposed] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount(), countProposalsToReview()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell · (REG-652) proposed items
+  const [overdue, pending, unread, proposed, asks] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount(), countProposalsToReview(), countCreditAsks()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell · (REG-652) proposed items · (REG-703) asks for AI credits
   return {
-    ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending + proposed > 0 ? { '/company': pending + proposed } : {}), ...(unread > 0 ? { notifications: unread } : {}),
-    ...(pending > 0 ? { 'company:templates': pending } : {}), ...(proposed > 0 ? { 'company:price-book': proposed } : {}),   // the Company panel's rows
+    ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending + proposed + asks > 0 ? { '/company': pending + proposed + asks } : {}), ...(unread > 0 ? { notifications: unread } : {}),
+    ...(pending > 0 ? { 'company:templates': pending } : {}), ...(proposed > 0 ? { 'company:price-book': proposed } : {}), ...(asks > 0 ? { 'company:plan': asks } : {}),   // the Company panel's rows
   }
+}
+/** (REG-703, AI credits Q-34) Members waiting on the Owner for AI credits — the Owner's queue only (1.0: only the Owner buys or raises). */
+async function countCreditAsks(): Promise<number> {
+  const { fetchViewer } = await import('@/lib/leads/visibility')
+  const { ownerRole } = await import('@/lib/credits/policy')
+  const { creditRequests } = await import('@/lib/db/schema')
+  if (!ownerRole((await fetchViewer()).role)) return 0
+  const [row] = await db.select({ n: sql<number>`count(*)` }).from(creditRequests).where(sql`${creditRequests.status} = 'open'`)
+  return Number(row?.n ?? 0)
 }
 /** (REG-652, price book parity Q-04) Proposed items an Owner or an Admin has to answer — nobody else's queue. */
 async function countProposalsToReview(): Promise<number> {

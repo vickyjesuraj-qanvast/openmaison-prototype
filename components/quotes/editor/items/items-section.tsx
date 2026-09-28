@@ -1,6 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { markUsed, useShortcutsHere } from '@/lib/keys/store'
+import { GRID_KEYS } from '@/lib/keys/registry'
 import { withFrom } from '@/lib/nav'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -643,6 +645,17 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   /* Find (REG-477): a search glyph that opens the DS SearchBar and folds back when left empty (Escape clears it). The tab toolbars' box
      (components/om/toolbar-search.tsx) stands open on desktop; the mock's Items toolbar has no room for a standing box. */
   const [findOpen, setFindOpen] = useState(false)
+  /* (REG-714) ⌘F (Ctrl+F) in the quote opens this Find — the lines', not the browser's — while the Items card is open; a modal keeps its own */
+  useEffect(() => {
+    if (!(open || expanded)) return
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'f' || document.querySelector('[aria-modal="true"]')) return
+      e.preventDefault(); markUsed('grid.find'); setFindOpen(true)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, expanded])
+  useShortcutsHere(GRID_KEYS)
   const findRef = useRef<HTMLSpanElement>(null)
   useEffect(() => { if (findOpen) findRef.current?.querySelector('input')?.focus() }, [findOpen])
   const find = findOpen || query !== '' ? (
@@ -652,7 +665,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <SearchBar appearance="outlined" size="md" placeholder="Find items" aria-label="Find items" value={query} onChange={setQuery} />
     </span>
   ) : (
-    <Tooltip label="Find items"><IconButton icon="search" label="Find items" onClick={() => setFindOpen(true)} /></Tooltip>
+    <Tooltip label="Find items" keys="mod+f"><IconButton icon="search" label="Find items" onClick={() => setFindOpen(true)} /></Tooltip>
   )
 
   /* The radio rows View by / density share one rendering between the wide toolbar's menus and the folded kebab's levels. */
@@ -699,8 +712,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                 {view === 'category' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'category' }) }}>Add Category</DropdownItem> : null}
                 {view === 'section' ? <DropdownItem onSelect={() => { closeMenus(); setNaming({ kind: 'section' }) }}>Add Section label</DropdownItem> : null}
                 <DropdownItem onSelect={() => { closeMenus(); createGroup(selectedList) }}><span className={styles.menuIcon}><Icon name="create_new_folder" size={20} /></span>New section</DropdownItem>
-                <DropdownItem disabled={history.past.length === 0} onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
-                <DropdownItem disabled={history.future.length === 0} onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
+                <DropdownItem disabled={history.past.length === 0} keys="mod+z" onSelect={() => { closeMenus(); undo() }}><span className={styles.menuIcon}><Icon name="undo" size={20} /></span>Undo</DropdownItem>
+                <DropdownItem disabled={history.future.length === 0} keys="mod+shift+z" onSelect={() => { closeMenus(); redo() }}><span className={styles.menuIcon}><Icon name="redo" size={20} /></span>Redo</DropdownItem>
                 <DropdownDivider />
                 <DropdownItem onSelect={() => { closeMenus(); setExpanded((x) => !x) }}><span className={styles.menuIcon}><Icon name={expanded ? 'collapse_content' : 'expand_content'} size={20} /></span>{expanded ? 'Collapse' : 'Expand'}</DropdownItem>
                 <DropdownItem onSelect={() => { closeMenus(); setSettingsOpen(true) }}><span className={styles.menuIcon}><Icon name="tune" size={20} /></span>Column settings</DropdownItem>
@@ -720,8 +733,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       {view === 'section' ? <Button variant="secondary" appearance="text" onPress={() => setNaming({ kind: 'section' })}>Add Section label</Button> : null}
       <Button variant="secondary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />} onPress={() => createGroup(selectedList)}>New section</Button>   {/* (REG-567) the mock's "Create Group" */}
       <span className={styles.seg}>
-        <Tooltip label="Undo"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
-        <Tooltip label="Redo"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
+        <Tooltip label="Undo" keys="mod+z"><IconButton icon="undo" label="Undo" disabled={history.past.length === 0} onClick={undo} /></Tooltip>
+        <Tooltip label="Redo" keys="mod+shift+z"><IconButton icon="redo" label="Redo" disabled={history.future.length === 0} onClick={redo} /></Tooltip>
       </span>
       <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setSettingsOpen(true)} /></Tooltip>
       <span ref={densityRef} className={styles.anchor}>

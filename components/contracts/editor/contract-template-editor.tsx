@@ -84,7 +84,7 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
   const close = () => { void flushRef.current(); router.push(backHref) }
 
   return (
-    <PageReveal skeleton={<ContractSkeleton />}>
+    <PageReveal skeleton={<ContractSkeleton kind="template" />}>
       <div className={styles.page} data-testid="contract-template-editor">
         <ContractHeader crumbs={[{ label: 'Company', href: '/company/profile' }, { label: 'Templates', href: '/company/templates/quotes' }, { label: 'Contracts', href: '/company/templates/contracts' }]} title={title.trim() || 'Untitled template'}
                         chips={<><MetaChip>Template</MetaChip><MetaChip>{usedBy === 0 ? 'Not used yet' : `Used by ${usedBy} ${usedBy === 1 ? 'contract' : 'contracts'}`}</MetaChip></>}

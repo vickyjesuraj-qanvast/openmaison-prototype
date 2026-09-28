@@ -1,0 +1,12 @@
+/* (REG-701) The editors' balance chip — the approved proposal's 32px pill: a 20 token, the figure; calm at rest, the figure takes the state's colour. */
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 6px; flex-shrink: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: 999px; background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color var(--motion-hover); }
+.chip:hover { background: var(--om-color-hover-04p); }
+.chip[data-open] { background: var(--om-color-hover-08p); }
+.chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.chip[data-tone='low'] .n, .chip[data-tone='capped'] .n { color: var(--om-color-on-tertiary-yellow-variant); }
+.chip[data-tone='empty'] .n { color: var(--om-color-tertiary-red-default); }
+/* touch: a 44 target around the 32 pill (REG-344) */
+@media (max-width: 767px), (hover: none) {
+  .chip { position: relative; }
+  .chip::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 44px; }
+}

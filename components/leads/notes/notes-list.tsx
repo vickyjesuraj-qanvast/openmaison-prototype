@@ -99,13 +99,13 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
           )}
         </div>
       ) : (
-        <div className={styles.items} role="list" aria-label="Notes">
+        <div className={styles.items} role="list" aria-label="Notes" data-kb-list="note">
           {items.map((it) => {
             const selected = it.id === selectedId
             const open = menu?.kind === 'item' && menu.id === it.id
             return (
-              <div key={it.id} role="listitem" className={styles.item} data-testid="note-item" data-selected={selected || undefined} data-draft={it.draft || undefined}>
-                <button type="button" className={styles.itemMain} aria-pressed={selected} onClick={() => onSelect(it.id)}>
+              <div key={it.id} role="listitem" className={styles.item} data-testid="note-item" data-kb-row data-kb-id={it.id} data-selected={selected || undefined} data-draft={it.draft || undefined}>
+                <button type="button" className={styles.itemMain} aria-pressed={selected} onClick={() => onSelect(it.id)} data-kb-open>
                   <Icon name={it.kind === 'contact' ? 'call_log' : 'sticky_note_2'} size={20} className={styles.itemIcon} />
                   <span className={styles.cellData}>
                     <span className={styles.titleBlock}>

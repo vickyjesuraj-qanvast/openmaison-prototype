@@ -46,16 +46,16 @@ export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
           {sheet ? (
-            <Tooltip label="New">
+            <Tooltip shortcut="create" label="New">
               <IconButton icon="add" label="New" variant="primary"
-                          aria-haspopup="menu" aria-expanded={menu === 'new'}
+                          aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New"
                           onClick={() => setMenu((m) => (m === 'new' ? null : 'new'))} />
             </Tooltip>
           ) : (
             <Button
               variant="primary" appearance="outlined" className={styles.touchTarget}
               iconEnd={<span className={styles.chev} data-open={menu === 'new' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-              aria-haspopup="menu" aria-expanded={menu === 'new'}
+              aria-haspopup="menu" aria-expanded={menu === 'new'} data-kb="create" data-kb-label="New"
               onPress={() => setMenu((m) => (m === 'new' ? null : 'new'))}
             >
               New

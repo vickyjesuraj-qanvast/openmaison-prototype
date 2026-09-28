@@ -1,0 +1,4 @@
+/* (REG-715) "/" at the empty search box's right end — the house key chip, out of the pointer's way, gone on focus. */
+.slot { position: relative; display: inline-flex; min-width: 0; }
+.hint { position: absolute; right: var(--om-spacing-2); top: 50%; translate: 0 -50%; pointer-events: none; }
+.slot:focus-within .hint { display: none; }

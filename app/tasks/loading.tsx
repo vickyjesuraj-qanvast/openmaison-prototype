@@ -1,6 +1,6 @@
-import { LeadsSkeleton } from '@/components/shell/skeleton'
+import { TasksListGhost } from '@/components/shell/list-ghosts'
 
-/** Streams instantly while the tasks load; PageReveal takes over the same skeleton (a table under a header, as Tools › Quotes). */
+/** Streams instantly while the tasks load; PageReveal takes over the same ghost — (REG-708) the page's own: Add Task, the scope chip, the tasks table with its Lead column. */
 export default function Loading() {
-  return <LeadsSkeleton />
+  return <TasksListGhost />
 }

@@ -64,10 +64,6 @@
   .sheet::after { animation: none; opacity: 0; }
 }
 
-/* Mirrors the Settings page: 240px section rail, 720px panel, card-framed setting group. */
-.settingsBody { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); }   /* (REG-645) the modules' page (leads.module.css .content) */
-.settingsHead { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.settingsCard { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 
 /* ── Responsive ghosts (REG-269) ────────────────────────────────────────────────────────────────────────
    The bones mirror the RESPONSIVE screen at each breakpoint, not the desktop one — a ghost that fades into a
@@ -113,8 +109,6 @@
   .toolbar, .toolbarRight { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .toolbarRight { flex: 1 1 100%; }
   .searchGrow { flex: 1 1 auto; min-width: 0; }
-  .settingsBody { padding: var(--om-spacing-4); }
-  .settingsCard { padding: var(--om-spacing-4); }
 }
 
 /* ── The listing's mobile cards (REG-309: 1082:23305 → "Card / Desktop / Leads" 1082:25585, lead-cards.module.css) ──

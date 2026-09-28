@@ -58,3 +58,6 @@
   .page { padding: 0; }
   .main { gap: 0; }
 }
+/* (REG-711, Q-01) The ? panel sits beside the page: from 1280 the page narrows by the panel's width, so the keys it lights stay in view;
+   narrower, the panel lies over the page's right side, as the Task panel does. */
+@media (min-width: 1280px) { :global(html[data-kb-open]) .content { padding-right: 360px; } }

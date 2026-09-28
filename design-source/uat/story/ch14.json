@@ -1,0 +1,272 @@
+[
+  {
+    "step": "14.01",
+    "chapter": 14,
+    "scene": "The studio's AI credits",
+    "module": "AI credits",
+    "try": "Read the studio's AI credits in the side navigation",
+    "how": "1. Point at the spark above \"Tools\" in the side navigation and read the tooltip\n2. Expand the navigation (the logo, top left) and read the row\n3. Click the row and read the card, then press Esc",
+    "expect": "The spark stays in full colour with a thin ring round it: how much of the month is left. The row reads the studio's balance and \"AI credits\"; the card shows \"AI credits left\", \"Refreshes … · in N days · about … renders\", this month's credits and the top-ups (\"never expire\"), \"Buy 1,000 AI credits · S$20\", \"See usage\" and \"Change plan\".",
+    "in10": "Different from 1.0: the balance is where Upgrade was, and a click (not a hover) opens its card",
+    "as": "Dane",
+    "covers": [
+      "CR:RL-01",
+      "CR:RL-02",
+      "CR:RL-03",
+      "CR:RL-04",
+      "CR:RL-05",
+      "CR:CR-02"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.02",
+    "chapter": 14,
+    "scene": "Plans, without leaving the page",
+    "module": "AI credits",
+    "try": "Look at the plans from inside the app",
+    "how": "1. Open the AI credits card and press \"Change plan\"\n2. Read the three cards; switch to \"Annual · 1 month free\", then back to \"Monthly\"\n3. Switch Pro to \"Freelance\", read why, then back to \"Studio\"\n4. Open \"Compare everything\" and one of the Questions; close Plans with ✕",
+    "expect": "Plans opens over the page you were on; Pro says \"Your plan\"; \"S$240 /month\" for 7 seats; annual shows \"S$2,640 /year\" with \"S$220 a month, saves S$240\"; Freelance says \"Freelance is for one person — you have 7 members.\"; prices say \"Prices in S$\" with your GST line.",
+    "in10": "Different from 1.0: the pricing page opens inside the app",
+    "as": "Dane",
+    "covers": [
+      "CR:PL-01",
+      "CR:PL-02",
+      "CR:PL-03",
+      "CR:CR-01",
+      "CR:CR-07"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.03",
+    "chapter": 14,
+    "scene": "The upgrade, played from Free",
+    "module": "AI credits",
+    "try": "Put the studio on Free for a demo",
+    "how": "1. Click \"Demo Studio\" at the bottom of the side navigation\n2. Under \"Studio plan · demo only\" choose \"Free\"\n3. Read the side navigation (expanded and collapsed)",
+    "expect": "\"Studio plan: Free (demo)\"; the slot reads \"Upgrade\" with the gem, the Free balance quiet at its end (expanded) and in its tooltip (collapsed).",
+    "in10": "New in 2.0 (demo only)",
+    "as": "Dane",
+    "covers": [
+      "CR:RL-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.04",
+    "chapter": 14,
+    "scene": "The upgrade, played from Free",
+    "module": "AI credits",
+    "try": "Upgrade to Pro with the 14-day trial",
+    "how": "1. Click \"Upgrade\"\n2. Keep Pro · Studio · Monthly; press \"Continue\"\n3. In Review switch on \"Start with 14 days free\"; read Today and Then\n4. Press \"Start the free trial\", then \"Start the demo trial\"\n5. On Done read the count, then press \"Back to work\" and watch the side navigation",
+    "expect": "Review: \"Seats 7\", \"Today S$0.00\", \"Then S$240 after the 14 days, unless you cancel\", your UEN and GST number; the demo checkout has no card fields and says it is the prototype; Done counts the credits in; on closing, the gem turns once more and becomes the AI credits row, counting up.",
+    "in10": "Different from 1.0: upgrading happens inside the app, with the trial and the price said before paying",
+    "as": "Dane",
+    "covers": [
+      "CR:PL-04",
+      "CR:PL-05",
+      "CR:PL-06",
+      "CR:PL-07"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.05",
+    "chapter": 14,
+    "scene": "The price before the press",
+    "module": "AI Visualizer",
+    "try": "See what a render costs before you press",
+    "how": "1. Open Sophia Wong's lead and click the \"AI Visualizer\" quick link\n2. Click a square on a wall and pick any finish\n3. Read Generate and the line under it; press \"Change\"\n4. Set Versions to 2 and Quality to High, read the price, then set 1 and Fast again",
+    "expect": "Generate carries its price on a chip (10 for one Fast version, 40 for two High); the line reads \"Makes 1 version · Fast · 10 AI credits · … left after\"; Quality reads \"Fast · 10\" and \"High · 20\"; the top bar's balance chip matches the side navigation.",
+    "in10": "Different from 1.0: every metered button shows its price, on the phone too",
+    "as": "Dane",
+    "covers": [
+      "CR:PM-01",
+      "CR:RL-06",
+      "CR:CR-03",
+      "CR:CR-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.06",
+    "chapter": 14,
+    "scene": "The price before the press",
+    "module": "AI Visualizer",
+    "try": "Render, then stop one halfway",
+    "how": "1. Press Generate and watch the balance chip\n2. Pick another finish, press Generate, then \"Cancel\" on the progress card",
+    "expect": "The chip drops by the price as the render starts; a one-time tip explains AI credits (\"A render that fails costs nothing\"); Cancel says \"Stopped — nothing was kept or charged\" and the chip goes back.",
+    "in10": "Different from 1.0: a stopped or failed render says its credits are back",
+    "as": "Dane",
+    "covers": [
+      "CR:CR-05",
+      "CR:PM-05"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.07",
+    "chapter": 14,
+    "scene": "Running out",
+    "module": "AI credits",
+    "try": "Run out, buy, and let the render carry on",
+    "how": "1. Demo Studio › \"Studio plan · demo only\" › \"Almost out\"\n2. In the AI Visualizer pick a finish and set 2 versions; read the line under Generate\n3. Press Generate; in \"Out of AI credits\" press \"Buy 1,000 and render · S$20\"\n4. Press \"Complete demo payment\"",
+    "expect": "With Almost out, the ring round the spark shrinks to a short amber arc and the number turns amber. Before the press: \"Needs 20 — you can use 15 · make 1 version\"; the dialog offers \"Make 1 version · 10\", \"See plans\" and \"Buy 1,000 and render · S$20\"; after paying, \"1,000 AI credits added — carrying on\" and the render starts by itself.",
+    "in10": "Different from 1.0: buying happens in the dialog and the work carries on",
+    "as": "Dane",
+    "covers": [
+      "CR:PM-02",
+      "CR:CR-06"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.08",
+    "chapter": 14,
+    "scene": "Reading a quote",
+    "module": "Quotes",
+    "try": "Read an old quote from a spreadsheet",
+    "how": "1. Open Gerald Tan's lead › \"Quotes\" › \"Create Quote\"\n2. Read the \"Upload a quote\" tile, click it and choose uat-files/gerald-tan-old-quote.xlsx\n3. Watch the side navigation's balance, then press \"Cancel\"",
+    "expect": "The tile reads \"PDF · XLS · JPG · 5 AI credits\"; \"6 lines read … · S$14,880.00\"; the balance is 5 lower (reading a quote is 5).",
+    "in10": "Same as 1.0 (Digitize quote, 5), now shown on the tile",
+    "as": "Dane",
+    "covers": [
+      "CR:PM-01"
+    ],
+    "files": [
+      "uat-files/gerald-tan-old-quote.xlsx"
+    ]
+  },
+  {
+    "step": "14.09",
+    "chapter": 14,
+    "scene": "Where the credits went",
+    "module": "Company",
+    "try": "Read the studio's usage",
+    "how": "1. Rail › Company › \"Plan & AI credits\"\n2. Read the three tiles\n3. Change \"Period: This month\" to \"Last month\", then back\n4. In Activity search \"render\"; click one row's \"For\" link, come back; press \"Export\" and export a CSV",
+    "expect": "\"AI credits left\", \"Used · this month\" (with its S$ at the top-up price), \"At this pace\"; By member lists every active member; By tool (no US$ cost); By lead with \"Won … of the … leads with renders\"; each render links its design; the CSV downloads.",
+    "in10": "Different from 1.0: Company › Plan & AI credits replaces Settings › Usage & credits; no provider cost",
+    "as": "Dane",
+    "covers": [
+      "CR:US-01",
+      "CR:US-02",
+      "CR:US-03",
+      "CR:US-05",
+      "CR:US-06",
+      "CR:US-07",
+      "CR:US-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.10",
+    "chapter": 14,
+    "scene": "Where the credits went",
+    "module": "Company",
+    "try": "Give Sarah a monthly amount, and new members a default",
+    "how": "1. In By member press Sarah's \"600 a month ▾\" and choose \"1,000 a month\"\n2. Press \"Undo\" in the message\n3. Press \"New members: No limit ▾\" and choose \"300 a month\"",
+    "expect": "\"Sarah can use 1,000 AI credits a month\" with Undo; Undo puts 600 back; \"New members start with 300 AI credits a month\".",
+    "in10": "Different from 1.0: every member listed, quick picks, Undo, a default for new members",
+    "as": "Dane",
+    "covers": [
+      "CR:US-04"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.11",
+    "chapter": 14,
+    "scene": "Asking for more",
+    "module": "AI credits",
+    "try": "Sarah runs short and asks Dane",
+    "how": "1. In By member set Sarah to \"Another amount…\" 10 and Save\n2. Demo Studio › View as › Sarah\n3. Open Tools › \"AI Visualizer\" and a design (or New ▾ › \"From a sample room…\"), pick a finish, set 2 versions and press Generate\n4. Press \"Ask Dane for more\"",
+    "expect": "\"Needs 20 — you can use 10\"; after asking, \"Asked Dane · we’ll tell you when it’s answered. Your changes are kept.\" Sarah's side navigation shows only the amount Sarah has left, never the studio's balance.",
+    "in10": "Different from 1.0: \"Request more\" now sends a real request",
+    "as": "Sarah",
+    "covers": [
+      "CR:PM-03",
+      "CR:RO-01"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.12",
+    "chapter": 14,
+    "scene": "Asking for more",
+    "module": "Notifications",
+    "try": "Answer Sarah's ask",
+    "how": "1. Demo Studio › View as › Dane\n2. Open the bell and click \"Sarah asks for more AI credits…\"\n3. On Plan & AI credits press \"Raise to …\"",
+    "expect": "The ask waits at the top of Usage with \"Raise to …\" and \"Another amount\"; Company's panel row shows \"1 ask\" until it is answered; after raising, the ask is gone, and Sarah's bell (View as › Sarah) says \"Dane raised your monthly AI credits to …\".",
+    "in10": "New in 2.0",
+    "as": "Dane",
+    "covers": [
+      "CR:NT-01",
+      "CR:PM-03"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.13",
+    "chapter": 14,
+    "scene": "The plan and the bills",
+    "module": "Company",
+    "try": "Read Plan & billing; cancel and keep the plan",
+    "how": "1. Plan & AI credits › \"Plan & billing\"\n2. Download one invoice's PDF\n3. Press \"Manage billing\" › \"Cancel at the period’s end\" and confirm\n4. Press \"Keep Pro — Studio\"",
+    "expect": "The plan with seats, price and the next date; top-ups that never expire; the demo card; billing details from Profile; invoices with a PDF each; cancelling says when it ends and that top-ups stay; Keep puts it back.",
+    "in10": "Different from 1.0: Change plan and cancel work (1.0's were disabled)",
+    "as": "Dane",
+    "covers": [
+      "CR:US-09",
+      "CR:PL-09"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.14",
+    "chapter": 14,
+    "scene": "The plan and the bills",
+    "module": "Company",
+    "try": "See a failed payment",
+    "how": "1. Demo Studio › \"Studio plan · demo only\" › \"Payment failed\"\n2. Read the bell and Plan & billing\n3. Press \"Update the card\", then \"Update the card and pay S$240\"",
+    "expect": "The bell and a red banner: the payment didn't go through, Pro stays until a date 14 days on, then Free with the top-ups kept; after updating, \"Card updated — the payment went through\".",
+    "in10": "New in 2.0 (1.0's lapse is silent)",
+    "as": "Dane",
+    "covers": [
+      "CR:PM-07"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.15",
+    "chapter": 14,
+    "scene": "Rules and the phone",
+    "module": "Settings",
+    "try": "Check who may do what, and the new notices",
+    "how": "1. Settings › Studio › \"Who may do what\": read the AI rows\n2. Settings › Notifications: find the AI credits events\n3. Plans › Max › \"Talk to us\": type a phone number and press Send",
+    "expect": "Rows \"Buy AI credits\" and \"Change the plan, seats and billing\" (the Owner only), \"Set members’ monthly AI credits\", \"See the studio’s AI usage\" (Owner and Admins; everyone else their own); eight AI credits events; \"Sent — our team will call you within a working day\".",
+    "in10": "Same rules as 1.0: only the Owner buys and changes the plan",
+    "as": "Dane",
+    "covers": [
+      "CR:RO-01",
+      "CR:NT-01",
+      "CR:PL-08"
+    ],
+    "files": []
+  },
+  {
+    "step": "14.16",
+    "chapter": 14,
+    "scene": "Rules and the phone",
+    "module": "Phone",
+    "try": "The credits on a phone, then back to the base plan",
+    "how": "1. On a phone (or a 390-wide window) open More: read the first row and tap it\n2. Press \"Change plan\" and scroll Plans; close it\n3. Demo Studio › View as › \"Pro — Studio\"",
+    "expect": "More's first row is the AI credits card (\"… AI credits · Refreshes …\"); the card opens as a sheet; Plans rises as the tallest sheet; \"Studio plan: Pro — Studio (demo)\" and a full month's credits again.",
+    "in10": "Different from 1.0: 1.0 shows no credits below 1024",
+    "as": "Dane",
+    "covers": [
+      "CR:PH-01"
+    ],
+    "files": []
+  }
+]

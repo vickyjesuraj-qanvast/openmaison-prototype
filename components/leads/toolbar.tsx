@@ -8,6 +8,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
+import { SlashSlot } from '@/components/om/slash-slot'
 import styles from './toolbar.module.css'
 
 export function LeadsToolbar({
@@ -69,18 +70,18 @@ export function LeadsToolbar({
         <span ref={(el) => { searchRef.current = el?.querySelector('input') ?? null }} className={styles.searchWrap}
               data-open={searchOpen || query !== '' || undefined}
               onBlurCapture={(e) => { if (query === '' && !e.currentTarget.contains(e.relatedTarget as Node | null)) setSearchOpen(false) }}>
-          <SearchBar
+          <SlashSlot empty={query === ''}><SearchBar
             appearance="outlined" size="md"
             placeholder="Search name, phone, email…"
             aria-label="Search leads"
             value={query}
             onChange={onQueryChange}
             className={styles.search}
-          />
+          /></SlashSlot>
         </span>
         <span className={styles.filterWrap}>
-          <Tooltip label={filterLabel}>
-            <IconButton icon="filter_list" label={filterLabel} onClick={onFilterClick} selected={filterCount > 0} />
+          <Tooltip label={filterLabel} shortcut="filters">
+            <IconButton icon="filter_list" label={filterLabel} onClick={onFilterClick} selected={filterCount > 0} data-kb="filters" data-kb-label="Filters" />
           </Tooltip>
           {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
         </span>
@@ -91,7 +92,7 @@ export function LeadsToolbar({
           </Tooltip>
         ) : null}
         {/* (REG-299) ≤767 there is one view — the mock's cards — so the toggle leaves the row. */}
-        <span className={styles.viewWrap}>
+        <span className={styles.viewWrap} data-kb="view">   {/* (REG-713) V presses the view you are not on */}
           <SegmentedIconToggle
             label="View"
             value={view}

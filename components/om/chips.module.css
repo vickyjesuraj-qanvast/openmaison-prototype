@@ -21,5 +21,19 @@
 .chip:disabled { cursor: default; color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); background: var(--om-color-surface-default); }
 .chip:disabled .swatch { opacity: 0.5; }
 .chip[data-selected]:disabled { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+/* (REG-719) A chip that carries an action of its own (a room's ⋯): the box is the chip — its stroke, fill and picked state — and holds
+   the radio (its words) and the action; neither paints a box of its own. */
+.chipBox {
+  display: inline-flex; align-items: center; flex-shrink: 0; height: 32px;
+  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default); color: var(--om-color-on-surface-default);
+  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
+}
+.chipBox[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
+.chipBox > .chipIn, .chipBox > .chipIn[data-selected] { height: 100%; border: 0; background: none; color: inherit; padding-right: var(--om-spacing-1); }
+@media (hover: hover) {
+  .chipBox:not([data-selected]):not([data-disabled]):hover { background: var(--om-color-hover-04p); }
+  .chipBox > .chipIn:hover:not(:disabled) { background: none; }
+}
 /* (REG-273 / REG-307) A finger's 44px floor. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .chip { height: auto; min-height: 44px; } }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) { .chip { height: auto; min-height: 44px; } .chipBox { height: auto; min-height: 44px; } }

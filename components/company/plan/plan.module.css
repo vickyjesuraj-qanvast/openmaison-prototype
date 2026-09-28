@@ -1,0 +1,110 @@
+/* (REG-704) Company › Plan & AI credits — Usage and Plan & billing on the house pieces: the scope pill, StatTiles, tables on the listing's
+   model (the Qanvast Ops card's rules, copied as Insights did), form cards for the plan and the billing details. */
+.page { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.barStart { display: flex; align-items: center; gap: var(--om-spacing-3); flex-wrap: wrap; min-width: 0; }
+.caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); }
+.tileBar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--om-color-surface-variant); margin-top: var(--om-spacing-2); }
+.tileBar i { display: block; height: 100%; }
+.barPlan { background: var(--om-color-primary-default); }
+.barTop { background: var(--om-primitive-primary-l30); }
+.tileNote { margin-top: var(--om-spacing-1); }
+.m { color: var(--om-color-on-surface-secondary); }
+.num { font-variant-numeric: tabular-nums; }
+.link { color: var(--om-color-primary-default); text-decoration: none; font: inherit; }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+
+/* the asks waiting for the Owner (Q-34) */
+.asks { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.ask { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); flex-wrap: wrap; }
+.askText { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; }
+.askText b { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.askText span { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.askActions { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; }
+
+/* sections */
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
+.sectionHead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.sectionTitles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sectionTitle { margin: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
+.sectionHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.sectionTools { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.empty { margin: 0; padding: var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
+.foot { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.more { align-self: center; }
+
+/* the table (the Qanvast Ops card's rules) */
+.card { display: grid; grid-template-columns: var(--tracks); width: 100%; overflow-x: auto; overflow-y: hidden; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+.hCell { position: relative; display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4); color: var(--om-color-on-surface-secondary); }
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }
+.row { display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1; height: 64px; position: relative; transition: background-color var(--motion-hover); }
+.row:hover { background: var(--om-color-primary-variant); }
+.row[data-focus] { animation: focusRow 1600ms ease-out 1; }
+@keyframes focusRow { 0%, 60% { background: var(--om-color-primary-variant); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .row[data-focus] { animation: none; background: var(--om-color-primary-variant); } }
+.cell { display: flex; align-items: center; min-width: 0; min-height: 0; grid-row: 1; padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }
+.head .pin { z-index: 3; }
+.row:hover .pin { background: var(--om-color-primary-variant); }
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+@media (max-width: 1024px) { .card { -webkit-overflow-scrolling: touch; } }
+.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* cells */
+.who { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
+.whoText { display: flex; flex-direction: column; min-width: 0; }
+.whoName { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.whoRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.used { display: flex; flex-direction: column; gap: 6px; min-width: 0; width: 100%; }
+.meter { width: 100%; max-width: 200px; height: 6px; border-radius: 3px; background: var(--om-color-surface-variant); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--om-color-primary-default); }
+.meter i[data-tone='warn'] { background: var(--om-color-tertiary-yellow-default); }
+.meter i[data-tone='bad'] { background: var(--om-color-tertiary-red-default); }
+.usedLine { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.amount { display: inline-flex; align-items: center; gap: 2px; height: 32px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
+.amount:hover { border-color: var(--om-color-on-surface-secondary); }
+.amount[data-open] { border-color: var(--om-color-primary-default); }
+.amount:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+.amount[data-none] { color: var(--om-color-on-surface-secondary); }
+.credit { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.credit[data-tone='in'] { color: var(--om-color-tertiary-green-default); }
+.credit[data-tone='zero'] { color: var(--om-color-on-surface-secondary); }
+
+/* Plan & billing — form cards */
+/* (REG-722, owner 2026-09-28: "right side cards vertical spacing issue compared to the cards on the left") Two stacks, as the lead
+   Overview's card grid (858:24888): each column keeps its own 16 between cards, so a short card no longer leaves a hole under it
+   the height of its taller neighbour — the plan and its card on the left, the top-ups and the billing details on the right. */
+.cards { display: flex; gap: var(--om-spacing-4); align-items: flex-start; }
+.cardCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.box { display: flex; flex-direction: column; gap: var(--om-spacing-3); padding: var(--om-spacing-5); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); min-width: 0; }
+.boxHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); flex-wrap: wrap; }
+.boxTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; }
+.boxLine { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.boxMeta { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+.boxActions { display: flex; gap: var(--om-spacing-2); flex-wrap: wrap; margin-top: var(--om-spacing-1); }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--om-spacing-2) var(--om-spacing-4); margin: 0; font: var(--om-type-body-m); }
+.facts dt { color: var(--om-color-on-surface-secondary); }
+.facts dd { margin: 0; color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
+.warn { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-tertiary-red-variant2); color: var(--om-color-on-tertiary-red-variant); font: var(--om-type-body-m); flex-wrap: wrap; }
+.warn > span { flex: 1; min-width: 200px; }
+.info { margin: 0; display: flex; align-items: flex-start; gap: var(--om-spacing-2); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m); }
+
+@media (max-width: 1024px) {
+  /* one column: the stacks dissolve and the cards keep the page's order — plan · top-ups · card · billing details */
+  .cards { flex-direction: column; align-items: stretch; }
+  .cardCol { display: contents; }
+  .cards [data-card='plan'] { order: 1; }
+  .cards [data-card='topups'] { order: 2; }
+  .cards [data-card='card'] { order: 3; }
+  .cards [data-card='billing'] { order: 4; }
+}
+@media (max-width: 767px) {
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .bar { align-items: flex-start; }
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .facts dd { margin-bottom: var(--om-spacing-2); }
+}

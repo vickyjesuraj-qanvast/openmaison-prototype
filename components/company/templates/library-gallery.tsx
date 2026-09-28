@@ -35,7 +35,8 @@ import { createLibraryFolder, deleteLibraryFolder, moveToLibraryFolder, renameLi
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { Refused, settle, newIdOf } from './refusal'
-import { CompanyShell, CompanySkeleton, templateTabs } from '@/components/company/company-shell'
+import { CompanyShell, templateTabs } from '@/components/company/company-shell'
+import { TemplateLibraryGhost } from '@/components/company/company-ghosts'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PageHeader } from '@/components/shell/page-header'
 import pageStyles from '@/app/leads/leads.module.css'
@@ -159,7 +160,7 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   deletedByLabel?: string
   deletedUsageLabel?: string
   /** (REG-673) A Tools page on the same gallery (Tools › AI Visualizer): the L1 page header in place of Company's frame and tab strip. */
-  page?: { title: string; skeleton?: ReactNode }
+  page?: { title: string; skeleton: ReactNode }
   /** (REG-673) A card above the toolbar — what the page does, dismissible (Quote X-Ray's intro). */
   intro?: ReactNode
   /** (audit 2026-09-26, F119 · critic 14) Why this entry is never filed nor renamed here (a lead's design is its lead's, named after it), else
@@ -475,13 +476,13 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
 
   const shellTitle = p.shell?.title ?? 'Templates'   // (F123) a one-page section (Materials) is not crumbed "Materials / Materials"
   const frame = (children: ReactNode) => (p.page ? (
-    <PageReveal skeleton={p.page.skeleton ?? <CompanySkeleton tabs={false} />}>
+    <PageReveal skeleton={p.page.skeleton}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title={p.page.title} />
         <div className={pageStyles.content}>{children}</div>
       </div>
     </PageReveal>
-  ) : <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell ? p.shell.tabs : templateTabs()} from={p.from} skeleton={p.shell?.skeleton}>{children}</CompanyShell>)
+  ) : <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell ? p.shell.tabs : templateTabs()} from={p.from} skeleton={p.shell?.skeleton ?? <TemplateLibraryGhost />}>{children}</CompanyShell>)   /* (REG-708) Templates' galleries: the ghost (libraries)/loading.tsx draws */
   return frame(
     <>
       {p.intro}
@@ -542,9 +543,9 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {/* (verify round 3) the search's slot — on a narrow desk the box gives first (280 → 200) so ⋮ stays in the frame; below 1025 it is no box */}
           <span className={styles.searchSlot}><ToolbarSearch query={query} onQuery={setQuery} placeholder={openFolderRow ? `Search ${openFolderRow.name}` : `Search ${noun.many}`} label={`Search ${noun.many}`} /></span>
           {/* (sweep S5 #15) the listing's Filters: the count rides the button as a badge (REG-69 · REG-295) */}
-          {p.facets?.length ? <span className={styles.filterWrap}><Tooltip label="Filters"><IconButton icon="filter_list" label={activeFacets.length ? `Filters (${activeFacets.length} active)` : 'Filters'} onClick={() => setFacetsOpen(true)} selected={activeFacets.length > 0} /></Tooltip>{activeFacets.length ? <span className={styles.filterBadge} aria-hidden>{activeFacets.length}</span> : null}</span> : null}
+          {p.facets?.length ? <span className={styles.filterWrap}><Tooltip label="Filters" shortcut="filters"><IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={activeFacets.length ? `Filters (${activeFacets.length} active)` : 'Filters'} onClick={() => setFacetsOpen(true)} selected={activeFacets.length > 0} /></Tooltip>{activeFacets.length ? <span className={styles.filterBadge} aria-hidden>{activeFacets.length}</span> : null}</span> : null}
           {view === 'list' ? <span className={styles.columnsTool}><Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setColumnsOpen(true)} /></Tooltip></span> : null}
-          <span className={gallery.viewToggle}>
+          <span className={gallery.viewToggle} data-kb="view">
             <SegmentedIconToggle label="View" value={view} options={[{ value: 'list', icon: 'view_list', label: 'List view' }, { value: 'grid', icon: 'view_kanban', label: 'Grid view' }]} onChange={(v) => setListPref(v === 'list')} />
           </span>
           <LibraryKebab open={kebabOpen} onOpenChange={setKebabOpen} deletedCount={deleted.length} onDeleted={() => setDeletedOpen(true)} label={p.deletedLabel} sheetTitle={p.shell?.title}>
@@ -573,13 +574,13 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           <span className={gallery.emptyHelp}>{p.empty.help}</span>
         </div>
       ) : view === 'list' ? (
-        <LibraryTable rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
+        <LibraryTable kbNoun={noun.one} rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
                       sort={sort} sortable={(k) => sortValue(k) !== null} onSort={onSort} openLabel={openLabel}
                       place={F && finding ? placeText : undefined}
                       folders={shownFolders} folderCount={folderCount} onOpenFolder={(f) => go(f.id)} folderMenuFor={folderMenu} onFolderMenu={openFolderMenu}
                       selection={selectable ? { selected: liveSelected, toggle: toggleOne, all: (on) => setSelected(on ? new Set([...listed.map((t) => t.id), ...shownFolders.map((f) => f.id)]) : new Set()) } : undefined} />
       ) : (
-        <div className={styles.gridStack}>
+        <div className={styles.gridStack} data-kb-list={noun.one}>
           {shownFolders.length ? (
             <FolderGroup ids={shownFolders.map((f) => f.id)} selected={liveSelected} onSelect={selectable ? (next) => setSelected(next) : undefined} min={248}>
               {shownFolders.map((f) => (
@@ -591,10 +592,10 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {listed.length ? (
             <div className={`${gallery.grid} ${styles.cards}`} role="list" aria-label={p.ariaLabel}>
               {listed.map((t) => (
-                <div key={t.id} className={gallery.card} role="listitem" data-testid="library-card" data-selected={liveSelected.has(t.id) || undefined} data-selectable={selectable || undefined}>
+                <div key={t.id} className={gallery.card} role="listitem" data-testid="library-card" data-kb-row data-kb-id={t.id} data-selected={liveSelected.has(t.id) || undefined} data-selectable={selectable || undefined}>
                   {/* (sweep S5 #7) the selection rides the card too — the bulk bar was list-only, so a phone (always the grid) could never use it */}
-                  {selectable ? <span className={styles.cardSel}><Checkbox isSelected={liveSelected.has(t.id)} onChange={() => toggleOne(t.id)} aria-label={`Select ${t.title}`} /></span> : null}
-                  <button type="button" className={gallery.open} onClick={() => p.onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`}>   {/* (REG-653, Q-18) the card's words are the menu's */}
+                  {selectable ? <span className={styles.cardSel} data-kb-select><Checkbox isSelected={liveSelected.has(t.id)} onChange={() => toggleOne(t.id)} aria-label={`Select ${t.title}`} /></span> : null}
+                  <button type="button" className={gallery.open} onClick={() => p.onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>   {/* (REG-653, Q-18) the card's words are the menu's */}
                     <span className={gallery.thumb}>{p.thumb(t)}</span>
                     <span className={`${gallery.body} ${styles.cardBody}`}>
                       <span className={`${gallery.nameRow} ${styles.cardNameRow}`}><span className={`${gallery.name} ${styles.cardName}`} title={t.title}>{t.title}</span>{p.chips?.(t)}</span>
@@ -695,7 +696,9 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
 
 /** The list view (REG-537 / REG-538): the quote templates list's stylesheet on the listing's table model — head 56, rows 60, frozen Template, resizable, draggable, the row kebab on hover with its side measured.
     (REG-653, price book parity Q-15) Sortable heads sort (↑ · ↓ · off); a list with bulk actions carries its selection in the frozen name cell — the listing's box (REG-614). */
-function LibraryTable<T extends LibraryItem>({ rows, now, tableKey, columns, extra, onReorder, glyph, chips, onOpen, menuFor, onMenu, ariaLabel, sort, sortable, onSort, openLabel, selection, place, folders = [], folderCount, onOpenFolder, folderMenuFor = null, onFolderMenu }: {
+function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, columns, extra, onReorder, glyph, chips, onOpen, menuFor, onMenu, ariaLabel, sort, sortable, onSort, openLabel, selection, place, folders = [], folderCount, onOpenFolder, folderMenuFor = null, onFolderMenu }: {
+  /** (REG-713) the J / K list's noun ("Next template") */
+  kbNoun?: string
   rows: T[]; now: number; tableKey: string; columns: readonly TableColumn[]; extra: LibraryColumn<T>[]; onReorder: (keys: string[]) => void
   glyph: (t: T) => ReactNode; chips?: (t: T) => ReactNode; onOpen: (t: T) => void
   menuFor: string | null; onMenu: (t: T, el: HTMLElement) => void; ariaLabel: string
@@ -717,13 +720,13 @@ function LibraryTable<T extends LibraryItem>({ rows, now, tableKey, columns, ext
   const allOn = !!selection && ids.length > 0 && ids.every((id) => selection.selected.has(id))
   const someOn = !!selection && ids.some((id) => selection.selected.has(id))
   return (
-    <div ref={frame} className={table.card} role="table" data-drag-root="" aria-label={ariaLabel} data-cols={tableKey} data-overflow={overflowing || undefined} data-testid="library-table"
+    <div ref={frame} className={table.card} role="table" data-drag-root="" aria-label={ariaLabel} data-cols={tableKey} data-kb-list={kbNoun ?? 'item'} data-overflow={overflowing || undefined} data-testid="library-table"
          style={{ '--tracks': tracks } as React.CSSProperties} onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
       <div ref={headRow} className={table.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${table.hCell} ${c.key === 'name' ? table.colName : ''} ${c.pinned ? table.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}
                aria-sort={sort?.key === c.key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}>
-            {c.key === 'name' && selection ? <span className={styles.selBox}><Checkbox isSelected={allOn} isIndeterminate={!allOn && someOn} isDisabled={ids.length === 0} onChange={(on: boolean) => selection.all(on)} aria-label="Select all" /></span> : null}
+            {c.key === 'name' && selection ? <span className={styles.selBox} data-kb-select-all><Checkbox isSelected={allOn} isIndeterminate={!allOn && someOn} isDisabled={ids.length === 0} onChange={(on: boolean) => selection.all(on)} aria-label="Select all" /></span> : null}
             {sortable(c.key) ? <button type="button" className={`${table.hSort} ${styles.hSort}`} onClick={() => onSort(c.key)} data-sorted={sort?.key === c.key || undefined}><span className={table.hLabel}>{c.label}</span><Icon name={sort?.key === c.key ? (sort.dir === 1 ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'} size={16} /></button> : <span className={table.hLabel}>{c.label}</span>}
             <ColumnResizer table={tableKey} column={c.key} label={c.label} min={c.key === 'name' ? 160 : 72} />
           </div>
@@ -736,12 +739,12 @@ function LibraryTable<T extends LibraryItem>({ rows, now, tableKey, columns, ext
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox}><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={`${table.thumb} ${styles.folderGlyph}`} aria-hidden><Icon name="folder" size={20} /></span><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`}>{f.name}</button><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={`${table.thumb} ${styles.folderGlyph}`} aria-hidden><Icon name="folder" size={20} /></span><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`} data-kb-open>{f.name}</button><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
           if (key === 'updated') return cell('updated', ago(f.updatedAt, now))
           return cell(key, '')
         }
         return (
-          <div key={f.id} className={table.row} role="row" data-testid="library-folder-row" data-selected={selection?.selected.has(f.id) || undefined}>
+          <div key={f.id} className={table.row} role="row" data-testid="library-folder-row" data-kb-row data-kb-id={f.id} data-selected={selection?.selected.has(f.id) || undefined}>
             {columns.map((c) => <Fragment key={c.key}>{render(c.key)}</Fragment>)}
             {onFolderMenu ? (
               <span className={table.actions} data-open={open || undefined}>
@@ -766,14 +769,14 @@ function LibraryTable<T extends LibraryItem>({ rows, now, tableKey, columns, ext
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox}><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`}>{t.title}</button>{chips?.(t)}{place ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>{t.title}</button>{chips?.(t)}{place ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
           if (key === 'updated') return cell('updated', ago(t.updatedAt.getTime(), now))
           if (key === 'by') return cell('by', t.author ? <><Avatar name={t.author} color={t.authorColor ?? 'var(--om-color-on-surface-secondary)'} size={24} tooltip={false} /><span className={table.oneLine}>{t.author}</span></> : '--', table.colBy)
           const c = extra.find((x) => x.key === key)
           return c ? cell(key, c.cell(t)) : null
         }
         return (
-          <div key={t.id} className={table.row} role="row" data-testid="library-row" data-selected={selection?.selected.has(t.id) || undefined}>
+          <div key={t.id} className={table.row} role="row" data-testid="library-row" data-kb-row data-kb-id={t.id} data-selected={selection?.selected.has(t.id) || undefined}>
             {columns.map((c) => <Fragment key={c.key}>{render(c.key)}</Fragment>)}
             <span className={table.actions} data-open={open || undefined}>
               <span className={table.actionsInner}>

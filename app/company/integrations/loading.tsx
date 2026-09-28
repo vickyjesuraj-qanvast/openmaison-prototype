@@ -1,6 +1,6 @@
-import { CompanySkeleton } from '@/components/company/company-shell'
+import { IntegrationsGhost } from '@/components/company/company-ghosts'
 
-/** (sweep S4 #26) Integrations' ghost: the L1 head and a column of cards — no tab strip, no gallery grid. */
+/** Company › Integrations' own ghost (REG-708): the cards in the page's order. */
 export default function Loading() {
-  return <CompanySkeleton tabs={false} form />
+  return <IntegrationsGhost />
 }
