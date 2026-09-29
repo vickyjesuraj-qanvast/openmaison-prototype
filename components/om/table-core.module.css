@@ -61,10 +61,11 @@
 /* ---- Rows: 64 by default (a mock that sets its own height says so on the table's .row) ---- */
 .row {
   display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* grid-auto-rows 100%: cells fit the row (REG-431) */
-  height: 64px; position: relative;
-  transition: background-color var(--motion-hover);
+  height: 64px; position: relative;   /* (REG-734) no fade: the hover fill lands with the pointer — see .pin */
 }
 .row:hover { background: var(--om-color-primary-variant); }
+/* (REG-733) The actions trail (gridTemplateFor's `trail`) has no cell: the row's 1px top rule runs on across it, as the cells draw theirs. */
+.row::after { content: ''; grid-column: -2 / -1; grid-row: 1; border-top: var(--om-border-1) solid var(--om-color-surface-variant); pointer-events: none; }
 .row[data-selected] { background: var(--om-color-primary-variant); }
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }   /* (REG-449) a selected row still answers the pointer */
 .cell {
@@ -79,7 +80,12 @@
 }
 
 /* ---- Frozen columns (REG-430 · REG-454): every pinned cell wears .pin; the layout hook sets its `left` ---- */
-.pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row */
+.pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle); }
+/* (REG-734, owner 2026-09-29: "while i hover and move the mouse pointer fast down, there is a delay in the hover state … because of the
+   frozen and unfrozen columns") A row's hover fill never fades — not the row, not a cell, not a frozen cell. A 50ms fade trailed a fast
+   pointer (the row under it still pale, the two it had left still tinted), and every table that let one cell's own transition replace
+   the fade (the listing's frozen edge) split the row in two while it ran; REG-509 · REG-514 chased that per table. With no fade the
+   whole row is one colour in every frame, under the pointer, as the Items table always was. The design lint's `row-fade` keeps it. */
 .head .pin { z-index: 3; }
 .row:hover .pin { background: var(--om-color-primary-variant); }
 .row[data-selected] .pin { background: var(--om-color-primary-variant); }

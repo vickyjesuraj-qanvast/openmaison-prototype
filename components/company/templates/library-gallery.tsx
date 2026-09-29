@@ -6,7 +6,7 @@ import { Button, Checkbox } from '@/components/ds'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
-import { gridTemplateFor, useColumnLayout, useTableColumns, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, useTableColumns, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
@@ -712,7 +712,7 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
   folders?: Folder[]; folderCount?: (f: Folder) => string; onOpenFolder?: (f: Folder) => void; folderMenuFor?: string | null; onFolderMenu?: (f: Folder, el: HTMLElement) => void
 }) {
   const colWidths = useColumnWidths(tableKey)
-  const tracks = gridTemplateFor(columns, colWidths)
+  const tracks = gridTemplateFor(columns, colWidths, undefined, ACTIONS_TRAIL.kebab)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)

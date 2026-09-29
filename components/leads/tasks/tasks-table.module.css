@@ -210,6 +210,12 @@ button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--o
   flex-shrink: 0;
 }
 .actionsInner { composes: actionsInner from '../../om/table-core.module.css'; }
+/* (REG-733) The actions band: an empty end to every row and to the head (ACTIONS_TRAIL.pair in components/om/table-columns.ts), so Edit
+   + kebab float over it at rest, never over the last column's value — the Items table's Total (REG-446). The row's fill is the row's. */
+@media (hover: hover) {
+  .head::after { content: ''; order: 99; flex: 0 0 128px; }
+  .row::after { content: ''; order: 99; flex: 0 0 128px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+}
 .float { composes: float from '../../om/table-core.module.css'; }   /* white fill + level-1 shadow on a wrapper, so the DS button / om icon button keep their own hover states */
 .menuWrap { position: relative; display: inline-flex; }
 

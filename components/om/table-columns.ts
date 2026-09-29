@@ -35,8 +35,16 @@ export function useTableColumns(table: string, defs: readonly TableColumnDef[], 
 }
 
 /** The grid template of the visible columns — a dragged width replaces the mocked track — after an optional leading track (the selection column). */
-export function gridTemplateFor(columns: readonly TableColumn[], widths: ColumnWidths, leading?: string): string {
-  return [leading, ...columns.map((c) => (widths[c.key] ? `${widths[c.key]}px` : c.track))].filter(Boolean).join(' ')
+/**
+ * (REG-733, owner 2026-09-29: "the buttons are hovering over the cell data … i like the way you have done in the quote editor >
+ * items table total") `trail` = an empty last track as wide as the row's parked actions need, so at rest and scrolled to the end
+ * they float over it, never over the last column's value (the Items table's Total, REG-446). `ACTIONS_TRAIL` has the two sizes.
+ */
+/** (REG-733) 24 inset + the controls + 12 clear − the last cell's own 24 padding: a button + kebab pair, or the kebab alone. */
+export const ACTIONS_TRAIL = { pair: 128, kebab: 48 } as const
+
+export function gridTemplateFor(columns: readonly TableColumn[], widths: ColumnWidths, leading?: string, trail?: number): string {
+  return [leading, ...columns.map((c) => (widths[c.key] ? `${widths[c.key]}px` : c.track)), trail ? `${trail}px` : undefined].filter(Boolean).join(' ')
 }
 
 /**

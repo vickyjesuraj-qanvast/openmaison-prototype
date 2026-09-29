@@ -52,7 +52,7 @@
 /* Sticky header: casts the level-1 shadow once the table has scrolled down (same as the import wizard's tables). */
 .headRow { position: sticky; top: 0; z-index: 3; transition: box-shadow var(--motion-toggle); }
 .tableWrap[data-scrolled-y] .headRow { box-shadow: var(--om-elevation-level-1); }
-.row { height: 64px; transition: background-color var(--motion-hover); }   /* the 1px rule between rows is each cell's top rule (the core's .cell) */
+.row { height: 64px; }   /* (REG-734) the hover fill lands with the pointer, no fade */   /* the 1px rule between rows is each cell's top rule (the core's .cell) */
 .row:hover { background: var(--om-color-primary-variant); }   /* row hover as every other table (frame 195), audit 2026-08-30 */
 .row[data-selected] { background: var(--om-color-primary-variant); }
 .hCell { composes: hCell from '../om/table-core.module.css'; flex-shrink: 0; overflow: hidden; white-space: nowrap; }   /* (REG-727) the table core: p16/24/16/16, the grey ink, the column-resize handle's anchor (REG-427) */

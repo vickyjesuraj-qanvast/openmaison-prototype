@@ -62,8 +62,7 @@
   background: var(--om-color-surface-default);
   font: var(--om-type-body-m);
   color: var(--om-color-on-surface-default);
-  overflow: hidden;
-  transition: background-color var(--motion-hover);
+  overflow: hidden;   /* (REG-734) no background fade: the row's hover lands in one frame, frozen cells and all (table-core.module.css .pin) */
 }
 /* Row hover = surface-bg, the fill the Lead Details tables draw from frame 195 (audit 2026-08-30; was REG-10's 4% tint, mocked nowhere). */
 .row:hover .cell { background: var(--om-color-primary-variant); }
@@ -162,6 +161,18 @@
   transition: opacity var(--motion-hover);
 }
 .row:hover .rowActions, .rowActions[data-open], .rowActions:focus-within { opacity: 1; pointer-events: auto; }
+/* (REG-733) The actions band (table.tsx ACTIONS_BAND): an empty end to every row and to the head, wearing the row's fill, so the
+   hover pair floats over it and never over the last column's value — the Items table's Total (REG-446). */
+@media (hover: hover) {
+  .headRow::after { content: ''; flex: 0 0 116px; align-self: stretch; }
+  .row::after {
+    content: ''; flex: 0 0 116px;
+    border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+    background: var(--om-color-surface-default);
+  }
+  .row:hover::after, .row[data-selected='true']::after { background: var(--om-color-primary-variant); }
+  .rowActions { order: 1; }   /* after the band, so the pair parks on it */
+}
 .rowActionsInner {
   position: absolute; right: 16px; top: 50%;   /* 606:75167: 16 in from the visible edge */
   transform: translateY(-50%);

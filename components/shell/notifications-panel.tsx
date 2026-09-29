@@ -1,11 +1,16 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'motion/react'
+import { anchoredSurface } from '@/lib/motion'
 import { openShortcuts } from '@/lib/keys/store'
 import { usePathname, useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
 import { Button } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
+import { SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
+import { useSheetLayout } from '@/components/om/sheet'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
@@ -26,6 +31,8 @@ const CHANNEL_WORD: Record<string, string> = { email: 'email', whatsapp: 'WhatsA
  * stored rows (a lead arrived, one was assigned, a quote needs approval, a client confirmed or signed) and the follow-ups due
  * now (a New lead untouched past the delay, an overdue task), newest first. A row opens its record and is marked read; "also by
  * WhatsApp" says which channels the rules sent it on. Mark all as read clears the badge.
+ * (REG-731, owner 2026-09-29) Beside the rail, level with the bell, as Search and Company open — never across the screen; a phone
+ * keeps the Drawer's bottom sheet. Closed by a press outside it, Esc, a new page or a change of width.
  */
 export function NotificationsPanel() {
   const router = useRouter()
@@ -42,10 +49,38 @@ export function NotificationsPanel() {
     catch { setFailed(true); snackbar({ message: 'Couldn’t load the notifications — please try again' }) }
   }, [snackbar])
   useEffect(() => {
-    const onOpen = () => { setOpen(true); void load() }
+    const onOpen = () => { if (open) setOpen(false); else { setOpen(true); void load() } }   // (REG-731) the bell toggles, as the Search tile does
     window.addEventListener(OPEN_NOTIFICATIONS, onOpen)
     return () => window.removeEventListener(OPEN_NOTIFICATIONS, onOpen)
-  }, [load])
+  }, [load, open])
+  const sheet = useSheetLayout()
+  const panel = useRef<HTMLDivElement | null>(null)
+  const close = useCallback(() => setOpen(false), [])
+  const [shownFor, setShownFor] = useState(pathname)
+  if (shownFor !== pathname) { setShownFor(pathname); if (open) setOpen(false) }
+  const place = useCallback((el: HTMLDivElement | null) => {
+    panel.current = el
+    if (!el) return
+    const bell = document.querySelector<HTMLElement>('[data-notifications-tile]')
+    const rail = bell?.closest('nav')
+    const h = Math.min(640, window.innerHeight - 16)
+    const left = rail ? rail.getBoundingClientRect().right + 8 : Math.max(16, (window.innerWidth - el.offsetWidth) / 2)
+    const top = Math.min(Math.max(8, bell ? bell.getBoundingClientRect().top : 72), window.innerHeight - h - 8)
+    el.style.left = `${left}px`
+    el.style.top = `${top}px`
+    el.style.height = `${h}px`
+  }, [])
+  useEffect(() => {
+    if (!open || sheet) return
+    const onDown = (e: MouseEvent) => { const t = e.target as Node; if (panel.current?.contains(t) || (t instanceof Element && t.closest('[data-notifications-tile], [data-om-snackbar], [role="dialog"]'))) return; close() }
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); close() } }
+    let lastW = window.innerWidth
+    const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; close() } }
+    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('resize', onResize)
+    return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); window.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize) }
+  }, [open, sheet, close])
   const unread = rows?.filter((r) => r.readAt === null).length ?? 0
   const openRow = (r: FeedRow) => {
     setOpen(false)
@@ -66,14 +101,12 @@ export function NotificationsPanel() {
       () => { router.refresh(); snackbar({ message: due ? `All read — ${due} ${due === 1 ? 'follow-up is' : 'follow-ups are'} due and ${due === 1 ? 'stays' : 'stay'} until done` : 'All caught up' }) },
       () => { setRows(prev); snackbar({ message: 'Couldn’t mark the notifications as read — please try again' }) })
   }
-  return (
-    /* (F109) Notification settings sits in the Drawer's own footer, below the scrolling list — it was drawn over the rows of a long feed */
-    <Drawer open={open} onClose={() => setOpen(false)} title="Notifications" label="Notifications" width={400}
-            footer={<div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button></div>}
-            actions={unread > 0 && rows?.some((r) => !r.derived && r.readAt === null) ? (
-              <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
-            ) : undefined}>
-      <div className={styles.body} data-testid="notifications-panel">
+  const footer = <div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button></div>
+  const actions = unread > 0 && rows?.some((r) => !r.derived && r.readAt === null) ? (
+    <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
+  ) : undefined
+  const content = (
+    <div className={styles.body} data-testid="notifications-panel">
         {rows === null ? (
           failed ? <p className={styles.empty} role="status">Couldn’t load the notifications — <button type="button" className={styles.retry} onClick={() => { void load() }}>try again</button></p>
             : <p className={styles.empty}>Loading…</p>
@@ -105,6 +138,27 @@ export function NotificationsPanel() {
           </ul>
         )}
       </div>
-    </Drawer>
+  )
+  /* (F109) Notification settings sits in the surface's own footer, below the scrolling list — it was drawn over the rows of a long feed */
+  if (sheet) {
+    return (
+      <Drawer open={open} onClose={close} title="Notifications" label="Notifications" width={400} footer={footer} actions={actions}>
+        {content}
+      </Drawer>
+    )
+  }
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <AnimatePresence>
+      {open ? (
+        <motion.div ref={place} className={styles.panel} role="dialog" aria-label="Notifications" data-om-menu
+                    variants={anchoredSurface} initial="initial" animate="animate" exit="exit" style={{ position: 'fixed', zIndex: 130, transformOrigin: 'top left' }}>
+          <SurfaceHead title="Notifications" actions={actions} onClose={close} />
+          <div className={styles.scroll}>{content}</div>
+          <SurfaceFoot>{footer}</SurfaceFoot>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>,
+    document.body,
   )
 }

@@ -30,7 +30,7 @@
 .table { display: flex; flex-direction: column; width: 100%; min-width: var(--imports-min, 1314px); }   /* 141+285+118+142+396+232 (779:20147 less the border); columns grow pro rata beyond that; a dragged column raises the floor (REG-430) */
 .headRow, .row { display: flex; align-items: stretch; }
 .headRow { height: 56px; }
-.row { height: 44px; transition: background-color var(--motion-hover); }   /* 44, the mock's row; the 1px rule between rows is each cell's top rule (the core's .cell) */
+.row { height: 44px; }   /* (REG-734) the hover fill lands with the pointer, no fade */   /* 44, the mock's row; the 1px rule between rows is each cell's top rule (the core's .cell) */
 .hCell, .cell { flex: var(--col) 0 calc(var(--col) * 1px); }
 .hCell, .cell { flex-shrink: 0; gap: var(--om-spacing-1); overflow: hidden; white-space: nowrap; }
 .hCell { composes: hCell from '../../../components/om/table-core.module.css'; }   /* (REG-727) the table core: p16/24/16/16, the grey ink, the column-resize handle's anchor (REG-427) */

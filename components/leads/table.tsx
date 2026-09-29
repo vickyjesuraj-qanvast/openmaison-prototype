@@ -53,6 +53,9 @@ const EMPTY_SELECTION = new Set<string>()
 
 /** Fluid columns (user request 2026-08-27): mock width is the floor; spare container width is shared pro rata — unless the
     user dragged the column (REG-427), which fixes it at that width. */
+/** (REG-733) The mouse's actions band: 16 inset + Edit 64 + 12 + kebab 36 + 12 clear − the last cell's own 24 padding. */
+const ACTIONS_BAND = 116
+
 const colStyle = (key: ColumnKey, dragged: number | undefined) => (dragged ? { flex: `0 0 ${dragged}px` } : { flex: `${WIDTHS[key]} 0 ${WIDTHS[key]}px` })
 
 /** (REG-608) The earliest dated open task — the listing's tasks are already ordered by due date, nulls last. */
@@ -173,7 +176,10 @@ export function LeadsTable({
   /* (REG-310) On a touch tablet the hover actions are an in-flow last cell (table.module.css, `hover: none`), 134 wide:
      the table's floor grows by that band so every row — and the head's spacer — has room for it, and the column scale
      below is still measured off the columns alone. Server snapshot = no band, as the mock. */
-  const band = useMediaQuery(TOUCH_TABLET) ? 134 : 0
+  /* (REG-733, owner 2026-09-29: "the buttons are hovering over the cell data … i like the way you have done in the quote editor > items
+     table total") With a mouse the row ends on a band as wide as the hover pair needs (Edit + kebab, 16 in, 12 clear of the data), so
+     at rest and scrolled to the end the pair floats over that band, never over the last column's value; nothing moves on hover. */
+  const band = useMediaQuery(TOUCH_TABLET) ? 134 : ACTIONS_BAND
   // Pinned columns stack from the left; only the LAST one carries the 2px divider + shadow (user rule 2026-08-27).
   const pinOffset: Partial<Record<ColumnKey, number>> = {}
   let pinAcc = 0

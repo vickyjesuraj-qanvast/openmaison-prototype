@@ -24,6 +24,7 @@
 .title { margin: 0; min-width: 0; font: var(--om-type-heading-h3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chev { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }
+.chev.onFill { color: inherit; }   /* (REG-732) inside the filled Send the chevron takes the label's white, never the secondary grey */
 .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
 /* check_circle 20 tertiary-green + "Saved 2 mins ago" 12/400 secondary, g4 (1201:33809). */
 .saved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

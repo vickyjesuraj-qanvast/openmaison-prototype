@@ -112,7 +112,7 @@ export function EditorHeader({
           {canSend && sendKind === 'client' ? (
             <>
               {/* (REG-587) Send ▾: the client can confirm on a link first (Mavid's flow), or get the agreement for signature straight away. */}
-              <Button variant="primary" iconEnd={<span className={styles.chev} data-open={menu === 'send' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
+              <Button variant="primary" iconEnd={<span className={`${styles.chev} ${styles.onFill}`} data-open={menu === 'send' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                       aria-haspopup="menu" aria-expanded={menu === 'send'} onPress={() => setMenu((m) => (m === 'send' ? null : 'send'))}>Send</Button>
               {/* (REG-728) Rows with a description: the 320 width, the description as the house row's second line. */}
               <Dropdown open={menu === 'send'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Send">

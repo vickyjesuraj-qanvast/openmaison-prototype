@@ -130,7 +130,7 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
             {inner}
           </Link>
         ) : (
-          <button type="button" className={className} data-kb={shortcut} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
+          <button type="button" className={className} data-kb={shortcut} data-notifications-tile={it.label === 'Notifications' || undefined} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
             {inner}
           </button>
         )}

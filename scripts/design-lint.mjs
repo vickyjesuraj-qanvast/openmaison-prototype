@@ -45,6 +45,9 @@ const isCss = (p) => p.endsWith('.module.css')
 const isTsx = (p) => p.endsWith('.tsx') || p.endsWith('.ts')
 const inOm = (p) => p.startsWith('components/om/') || p.startsWith('components/ds/')
 
+/** (REG-734) The stylesheets that draw a table's rows without composing the table core. */
+const TABLE_SHEETS = ['components/om/table-core.module.css', 'components/leads/table.module.css', 'components/quotes/editor/payments/payments-section.module.css', 'components/quotes/editor/items/items-table.module.css']
+
 /** The rules. `fix` is what the message tells the person who broke it — the house piece to use instead. */
 const RULES = [
   {
@@ -96,6 +99,24 @@ const RULES = [
     fix: "Import from '@/components/ds', never '@openmaison/react' directly.",
     applies: (p) => isTsx(p) && !p.startsWith('components/ds/'),
     find: (t) => linesOf(t, /from\s+['"]@openmaison\/react['"]/),
+  },
+  {
+    id: 'row-fade',
+    title: 'A table row\'s hover fill never fades',
+    fix: 'Drop the background transition from the row, its cells and its frozen cells (REG-734): a fade trails a fast pointer and splits a row whose frozen cell transitions on its own. A table\'s hover is instant, as the table core draws it.',
+    /* a table's stylesheet: the core, the listing, the Payment Schedule, and every sheet that composes the core */
+    applies: (p) => isCss(p) && (TABLE_SHEETS.includes(p) || readFileSync(join(ROOT, p), 'utf8').includes('table-core.module.css')),
+    find: (t) => {
+      const out = []
+      const re = /([^{}]*)\{([^{}]*)\}/g
+      let m
+      while ((m = re.exec(t))) {
+        const sel = m[1].split(/[;\n]/).pop() ?? ''
+        if (!/\.(row|cell|pin)(?![\w-])/.test(sel)) continue
+        if (/transition\s*:[^;]*\b(background|all)\b/.test(m[2])) out.push(t.slice(0, m.index + m[0].indexOf('{')).split('\n').length)
+      }
+      return out
+    },
   },
   {
     id: 'copied-table',

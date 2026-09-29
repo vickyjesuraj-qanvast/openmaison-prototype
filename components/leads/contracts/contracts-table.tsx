@@ -6,7 +6,7 @@ import { Button } from '@/components/ds'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
-import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { useRef } from 'react'
@@ -72,7 +72,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [statusRow, setStatusRow] = useState<string | null>(null)
   const colWidths = useColumnWidths('lead-contracts')
-  const tracks = gridTemplateFor(columns, colWidths)
+  const tracks = gridTemplateFor(columns, colWidths, undefined, ACTIONS_TRAIL.pair)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */

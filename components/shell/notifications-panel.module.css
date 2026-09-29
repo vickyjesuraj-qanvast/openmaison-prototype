@@ -25,3 +25,7 @@
 .glyph[data-kind='task_due_soon'], .glyph[data-kind='hold_due'] { background: var(--om-color-tertiary-yellow-variant2); color: var(--om-color-tertiary-yellow-default); }
 .glyph[data-kind='question_answered'], .glyph[data-kind='render_feedback'] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
 .retry { composes: link from '../om/text-link.module.css'; }   /* (sweep S4 #10 · REG-729) the house text link — not underlined at rest */
+
+/* (REG-731) Beside the rail, in the Search popover's frame (global-search.module.css .panel); head and foot are the house surface's */
+.panel { width: 400px; max-width: calc(100vw - 96px); display: flex; flex-direction: column; overflow: hidden; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-3); }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--om-spacing-4); }

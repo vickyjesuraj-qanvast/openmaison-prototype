@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { useColumnDrag } from '@/components/om/column-drag'
-import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { MetaChip } from '@/components/om/meta-chip'
 import { IconButton } from '@/components/om/icon-button'
@@ -56,7 +56,7 @@ function RowMenu({ name, actions }: { name: string; actions: RowAction[] }) {
  */
 export function XrayTable({ rows, otherStudio, columns, onReorder, rowActions }: { rows: XrayRow[]; otherStudio: string; columns: readonly TableColumn[]; onReorder: (keys: string[]) => void; rowActions?: (row: XrayRow) => RowAction[] }) {
   const colWidths = useColumnWidths('xray-items')
-  const tracks = gridTemplateFor(columns, colWidths)
+  const tracks = gridTemplateFor(columns, colWidths, undefined, ACTIONS_TRAIL.kebab)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)

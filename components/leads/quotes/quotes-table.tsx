@@ -6,7 +6,7 @@ import { Button, Checkbox } from '@/components/ds'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
-import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { useRef } from 'react'
@@ -91,7 +91,7 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
      the setting was switched off keeps its date visible — the same courtesy the row menu pays a retired status. */
   const showApproval = quoteShowApproval(quotes, approval)
   const colWidths = useColumnWidths('lead-quotes')
-  const tracks = gridTemplateFor(columns, colWidths, '40px')
+  const tracks = gridTemplateFor(columns, colWidths, '40px', ACTIONS_TRAIL.pair)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow, { leading: 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */

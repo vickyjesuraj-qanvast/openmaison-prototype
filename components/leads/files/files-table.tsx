@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
-import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
+import { ACTIONS_TRAIL, gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
 import { useOverflowX } from '@/components/om/use-overflow-x'
 import { useRef } from 'react'
@@ -86,7 +86,7 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
      column's shadow — the listing's one-liner (components/leads/table.tsx .scroller); at rest the 1px edge
      is all that shows, and no React state is touched on scroll. */
   const colWidths = useColumnWidths('lead-files')
-  const tracks = gridTemplateFor(columns, colWidths, '40px')
+  const tracks = gridTemplateFor(columns, colWidths, '40px', ACTIONS_TRAIL.kebab)
   const headRow = useRef<HTMLDivElement>(null)
   const L0 = useColumnLayout(columns, headRow, { leading: 40 })
   const D = useColumnDrag(columns, onReorder)   /* drag a head to reorder (REG-462) */
