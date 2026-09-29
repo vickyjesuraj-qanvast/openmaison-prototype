@@ -31,6 +31,8 @@ export function fromLabel(from: string | undefined): string | undefined {
   /* (REG-538) The Company pages honour `from` too, so every origin an editor can send names itself. */
   if (p.startsWith('/contracts')) return 'Contracts'
   if (p.startsWith('/tasks')) return 'Tasks'
+  if (p.startsWith('/leads/insights')) return 'Insights'   // (REG-730) a Leads page, not a lead
+  if (p.startsWith('/leads/imports')) return 'Import History'
   if (p.startsWith('/leads/') ) return 'Lead'
   if (p.startsWith('/leads')) return 'Leads'
   if (p.startsWith('/templates/')) return 'Template editor'

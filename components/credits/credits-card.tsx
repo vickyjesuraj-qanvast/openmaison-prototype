@@ -13,7 +13,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { askForCredits, keepPlan } from '@/app/credits/actions'
 import { aboutRenders, dayMonth, fmtCredits, levelOf, refreshLine, runOutAt, toneOf, type CreditSummary } from '@/lib/credits/model'
 import { sgd, TOPUP_CREDITS, TOPUP_PRICE } from '@/lib/credits/plans'
-import { openManageBilling, openPlans, openTopUp, planHref, refreshCredits } from './credits-client'
+import { openManageBilling, openPlans, openTopUp, refreshCredits } from './credits-client'
 import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './credits-card.module.css'
@@ -116,7 +116,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
           <p className={styles.note} data-tone="info"><Icon name="event" size={18} weight={300} /><span>Pro trial · ends {dayMonth(s.trialEndsAt)}. It carries on as Pro unless you cancel.</span></p>
         ) : null}
         {s.viewer.canBuy && s.asks > 0 ? (
-          <button type="button" className={styles.asks} onClick={() => go(planHref())}><Icon name="person" size={18} weight={300} /><span>{s.asks} {s.asks === 1 ? 'member is' : 'members are'} waiting for AI credits</span><Icon name="chevron_right" size={18} weight={300} /></button>
+          <button type="button" className={styles.asks} onClick={() => go('/company/plan')}><Icon name="person" size={18} weight={300} /><span>{s.asks} {s.asks === 1 ? 'member is' : 'members are'} waiting for AI credits</span><Icon name="chevron_right" size={18} weight={300} /></button>
         ) : null}
         <div className={styles.rule} />
         {s.viewer.canBuy ? (
@@ -131,7 +131,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
           </>
         )}
         <div className={styles.links}>
-          <Button appearance="text" onPress={() => go(planHref())}>See usage</Button>
+          <Button appearance="text" onPress={() => go('/company/plan')}>See usage</Button>
           <Button appearance="text" onPress={() => { onClose(); openPlans() }}>{s.viewer.canChangePlan ? 'Change plan' : 'See plans'}</Button>
         </div>
       </div>
@@ -169,7 +169,7 @@ function CardBody({ summary: s, gstLine, onClose }: { summary: CreditSummary; gs
         <p className={styles.line}>{s.owner.name} can add AI credits or change your monthly amount.</p>
       )}
       <div className={styles.links}>
-        <Button appearance="text" onPress={() => go(planHref())}>See my usage</Button>
+        <Button appearance="text" onPress={() => go('/company/plan')}>See my usage</Button>
         <Button appearance="text" onPress={() => { onClose(); openPlans() }}>See plans</Button>
       </div>
     </div>
