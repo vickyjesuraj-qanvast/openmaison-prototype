@@ -415,7 +415,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                   <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} onPress={() => router.push(withFrom('/company/integrations', fromHere('leads')))}>Integrations</Button>
                 </div>
                 {/* (REG-647, settings parity Q-12 · E-101) Every way in — the website form, Meta, each webhook, the email lead sources — with what arrived. */}
-                <div className={`${styles.eventTable} ${styles.captureTable}`} role="table" aria-label="Ways in" data-testid="ways-in">
+                <div className={`${styles.eventTable} ${styles.captureTable}`} role="table" aria-label="Ways in" data-testid="ways-in" data-card-table="">
                   <div className={styles.eventHead} role="row"><span role="columnheader">Way in</span><span role="columnheader">Status</span><span role="columnheader">Arrived</span></div>
                   {[
                     { key: 'website', icon: 'input', name: 'Website form', status: 'Ready — the address above', arrived: arrivedLine(arrivals.filter((a) => a.fileName.startsWith('Website form'))) },

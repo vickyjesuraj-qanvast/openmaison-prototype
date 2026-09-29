@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -14,7 +14,8 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { useSheetLayout } from '@/components/om/sheet'
 import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import type { QuoteTemplate } from '@/lib/db/schema'
 import { TemplateThumb } from '@/components/templates/render/document'
@@ -223,19 +224,11 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                               <span className={styles.meta}>{meta(t)}</span>
                             </span>
                           </button>
-                          <span className={styles.kebab}>
-                            <Tooltip label="More options" disabled={menuFor === t.id}>
-                              <IconButton icon="more_vert" label={`More options for ${t.name}`} size={24} variant="bare" iconSize={24} iconWeight={300}
-                                          aria-haspopup="menu" aria-expanded={menuFor === t.id}
-                                          onClick={() => setMenuFor((m) => (m === t.id ? null : t.id))} />
-                            </Tooltip>
-                            <Dropdown open={menuFor === t.id} onClose={() => setMenuFor(null)} align="right" sheetTitle={t.name}>
-                              <DropdownItem onSelect={() => { setMenuFor(null); if (picker) setMode({ kind: 'all', selectedId: t.id }); else comingSoon() }}>Preview</DropdownItem>
-                              <DropdownItem onSelect={() => { setMenuFor(null); onSetDefault(t.id) }} disabled={!!defaultWhy(t)}>
-                                {defaultWhy(t) ? <span className={styles.menuRow}>Set as default<span className={styles.menuMeta}>{defaultWhy(t)}</span></span> : 'Set as default'}
-                              </DropdownItem>
-                            </Dropdown>
-                          </span>
+                          <TileMenu name={t.name} open={menuFor === t.id} onToggle={() => setMenuFor((m) => (m === t.id ? null : t.id))} onClose={() => setMenuFor(null)}>
+                            <DropdownItem onSelect={() => { setMenuFor(null); if (picker) setMode({ kind: 'all', selectedId: t.id }); else comingSoon() }}>Preview</DropdownItem>
+                            {/* (REG-728) a waiting row's reason prints under its label — the house row's own second line */}
+                            <DropdownItem onSelect={() => { setMenuFor(null); onSetDefault(t.id) }} disabled={!!defaultWhy(t)} title={defaultWhy(t) ?? undefined}>Set as default</DropdownItem>
+                          </TileMenu>
                         </div>
                       ))}
                     </div>
@@ -284,5 +277,22 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
         </motion.div>
       ) : null}
     </AnimatePresence>
+  )
+}
+
+/** (REG-728) A template tile's kebab: its menu opens through the body portal (PortalMenu), as every row menu does, at the scale's 240 —
+ *  a waiting Set as default carries its reason on a second line. */
+function TileMenu({ name, open, onToggle, onClose, children }: { name: string; open: boolean; onToggle: () => void; onClose: () => void; children: ReactNode }) {
+  const anchor = useRef<HTMLSpanElement>(null)
+  return (
+    <span ref={anchor} className={styles.kebab}>
+      <Tooltip label="More options" disabled={open}>
+        <IconButton icon="more_vert" label={`More options for ${name}`} size={24} variant="bare" iconSize={24} iconWeight={300}
+                    aria-haspopup="menu" aria-expanded={open} onClick={onToggle} />
+      </Tooltip>
+      <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={name}>
+        {children}
+      </PortalMenu>
+    </span>
   )
 }

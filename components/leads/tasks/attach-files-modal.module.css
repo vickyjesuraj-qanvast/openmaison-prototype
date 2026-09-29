@@ -54,7 +54,7 @@
 .chip:hover { background: var(--om-color-hover-04p); }
 .chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; }
 /* The quote's chip (1238:30353): 12/600, pl12 pr8, expand_more 16 — 93 wide. */
-.chip[data-chrome='quote'] { font: var(--om-type-caption-s); font-weight: 600; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); }
+.chip[data-chrome='quote'] { font: var(--om-type-subheading-s); padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); }   /* (REG-729) 12/16/600 from the token it re-typed */
 
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-10); }
 .group { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
@@ -122,13 +122,14 @@
 .kind { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .kindIcon { color: var(--om-color-tertiary-red-default); }
 
-/* Empty state (frame 64) — components/leads/detail/card.module.css CardEmpty, centred in the block, no actions. */
+/* Empty state (frame 64) — centred in the block, no actions. (REG-729) The house empty card's content (components/om/empty-card.module.css):
+   the title 20/24/600 = subheading-xl, no longer heading-h3 re-typed by hand. */
 .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--om-spacing-8); }
-.emptyInner { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); width: 100%; }
-.emptyArt { display: block; max-width: 100%; }
-.emptyText { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); width: 100%; }
-.emptyTitle { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
-.emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }
+.emptyInner { composes: inner from '../../om/empty-card.module.css'; width: 100%; }
+.emptyArt { composes: art from '../../om/empty-card.module.css'; }
+.emptyText { composes: texts from '../../om/empty-card.module.css'; width: 100%; }
+.emptyTitle { composes: title from '../../om/empty-card.module.css'; }
+.emptyBody { composes: body from '../../om/empty-card.module.css'; }
 
 /* Uploading toast (902:28261): 360×200, white, 1px #e5e5e5, r4, at right 16 / bottom 76 of the modal. */
 .toast {

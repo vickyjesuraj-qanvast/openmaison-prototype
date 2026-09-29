@@ -34,14 +34,7 @@
 .banner:hover .open { background: var(--om-color-hover-04p); }
 .lead { display: flex; align-items: center; gap: var(--om-spacing-4); }
 .title { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; }
-.tag {
-  display: inline-flex; align-items: center;
-  padding: var(--om-spacing-1) var(--om-spacing-2);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-tertiary-yellow-default);
-  color: var(--om-color-on-tertiary-yellow-default);
-  font: var(--om-type-caption-xs); text-transform: uppercase; white-space: nowrap;
-}
+/* The duplicates count is the DS Tag, filled yellow (REG-729): yellow-default fill, 10/500 uppercase in its own ink, p4/8, r4. */
 .spacer { flex: 1; }
 .open {
   width: 24px; height: 24px;
@@ -70,5 +63,5 @@
      accessible name) and the title keeps to its line — the banner is the desktop's 50 again. */
   .lead { flex-wrap: nowrap; min-width: 0; }
   .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .tag { display: none; }
+  .lead .tag { display: none; }   /* 0,2,0: over the DS Tag's own display, whichever sheet loads first */
 }

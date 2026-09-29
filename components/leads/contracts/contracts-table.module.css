@@ -1,6 +1,7 @@
 /*
  * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
- * 01-listing-empty.txt. Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 48 · rows 68. No bottom bar,
+ * 01-listing-empty.txt. Container: fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 (the mock's 48 — the owner,
+ * 2026-09-29: 56 as every table, REG-727) · rows 68 (the mock, REG-177). No bottom bar,
  * no selection column. Columns 557 · 128 · 120 · 142 · 140 · 157 (= 1244): Title fills, the others are fixed.
  * Copied from components/leads/quotes/quotes-table.module.css (the Quotes twin) — the card deliberately does NOT clip
  * (no overflow hidden): the row kebab menu and the status menu must be able to hang below a short table.
@@ -9,59 +10,25 @@
  * while the head and Draft / Signed rows stayed at 128, shifting Created · Signed Copy · Sent · Updated on that row.
  */
 .card {
-  display: grid;
+  composes: frame card from '../../om/table-core.module.css';   /* (REG-727) the table core: a real border outside the scrollport (REG-430), r8, the corner ring drawn over the frozen cells (REG-431), the sideways scroller once the tracks run past the card (use-overflow-x.ts) — Title freezes on the left and the actions park at the visible edge; one grid, the head and rows its subgrids (REG-180) */
   /* Title fluid (absorbs what Status needs, the quotes rule) · Status 128 at rest, grows to its widest content
      ("Sent to Client") for EVERY row at once · Created 120 · Signed Copy 142 · Sent 140 · Updated 157 (spec 01).
      Floors + mocked maxima, not frozen px (the quotes twin): free space fills every track to its mocked width before the
      fluid Title takes the rest, so the mock's 1244 card still resolves to 557 · 128 · 120 · 142 · 140 · 157 — and a
      narrower frame (rail pinned + quick links expanded) squeezes the row instead of overflowing the body's `overflow: clip`. */
   grid-template-columns: var(--tracks, minmax(555px, 1fr) minmax(128px, max-content) 120px 142px 140px 157px);   /* the mock's px are floors (REG-430), Title's 557 less the card's 2px of border; --tracks: the user's dragged widths (REG-427) */
-  width: 100%;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
-  border-radius: var(--om-radius-2);
 }
-/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
-   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
-   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
-.card { position: relative; }
-.card:not([data-overflow])::after {
-  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
-  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
-}
-
-/* The card scrolls sideways only once its tracks run past it (REG-430, use-overflow-x.ts) — while the rows fit it does not
-   clip, so a short table's row menu can hang below it. Title freezes on the left and the actions park at the visible edge. */
-.card[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
 
 /* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
    `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */   /* 0,2,0 — outranks the head cell's own `position: relative` */
-.head .pin { z-index: 3; }
-.row:hover .pin { background: var(--om-color-primary-variant); }
-.row[data-selected] .pin { background: var(--om-color-primary-variant); }
-.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+.pin { composes: pin from '../../om/table-core.module.css'; }   /* (REG-727) the table core: sticky, the row's fill (REG-509), the 1px edge at rest (REG-144), the shadow while scrolled */
 
-/* ---- Head row 1244×48 (931:38691) ---- */
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 48px; }   /* shares the card's tracks */
-.hCell { position: relative; }   /* the column-resize handle (REG-427) */
-.hCell {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
-  color: var(--om-color-on-surface-secondary);
-}
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* 12/Medium #666666, caps as the listing head (REG-243; the mock types "Title") */
-/* Sort is inert (coming soon) — the head keeps the quotes / tasks table's sort-button look. */
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
+/* ---- Head row 1244×56 (931:38691 drew 48; the owner, 2026-09-29: 56 as every table — Contracts follows the listing's model, REG-430) ---- */
+.head { composes: head from '../../om/table-core.module.css'; }   /* (REG-727) the table core: 56, sharing the card's tracks */
+.hCell { composes: hCell from '../../om/table-core.module.css'; }   /* p16/24/16/16; relative for the column-resize handle (REG-427) */
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }   /* 12/Medium #666666, caps as the listing head (REG-243; the mock types "Title") */
+/* Sort is inert (coming soon) — the head keeps the listing's sort-button look. */
+.hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
 /* Title 557 fluid — NO right rule: the head has none and the row cell's stroke is w1/0/0/0 (top only), spec 01. */
@@ -77,23 +44,12 @@
 
 /* ---- Rows 1244×68 (931:38692) ---- */
 .row {
-  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift; auto-rows 100%: cells fit the 68 (REG-431) */
-  height: 68px; position: relative;                                      /* relative: the absolute .actions hang off the row */
-  transition: background-color var(--motion-hover);
+  composes: row from '../../om/table-core.module.css';   /* (REG-727) the table core: the card's tracks, cells fit the row (REG-431); hover (the Quotes hover row — not mocked for Contracts) */
+  height: 68px;   /* the mock's 68 (931:38692, REG-177) */
 }
-.row:hover { background: var(--om-color-primary-variant); }   /* hover row fill #f2f2f2 — the Quotes hover row copied (not mocked for Contracts) */
 .card > .row:last-child, .card > .row:last-child .colTitle { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* the fill's corners follow the card's (REG-431) */
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
-.cell {
-  display: flex; align-items: center;
-  min-width: 0;
-  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
-  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
+.cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) the table core: "Cell / One line" p12/24/12/16, the cell stroke w1/0/0/0, body-m */
 /* Title cell "Cell / Two line" p24/24/24/16 H g12 — declared after .cell so it wins the cascade. */
 .cell.colTitle { gap: var(--om-spacing-3); padding: calc(var(--om-spacing-6) - var(--om-border-1)) var(--om-spacing-6) var(--om-spacing-6) var(--om-spacing-4); }   /* p24/24/24/16 — the 1px top rule is a CSS border (Figma's is inside), so 23 + 1 lands the title at y+24 in the 68 row */
 /* ONE line: "General Contract Agreement" — 931:38692 drew it 14/Medium; it is 14 bold now, the listing's name (REG-450). */
@@ -119,31 +75,13 @@
 /* Chevron points up while the menu is open — every menu trigger does this (tasks-toolbar.module.css .chev). */
 .chev { display: inline-flex; transition: transform var(--motion-toggle); }
 .chev[data-open] { transform: rotate(180deg); }
-/* Current status marked as stage-dropdown.module.css marks the lead's stage: "current" 12px secondary meta (836:23422 pattern). */
-.itemText { flex: 1; min-width: 0; }
-.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* ---- Row hover actions (Quotes "Hover button" 910:36644 / 910:36709 copied): View + kebab, H g12, level-1 shadow, right 24. ----
-   Only `top` changes from the quotes twin: (68 − 36) / 2 = 16. */
-.actions {
-  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
-  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
-  width: 0; height: 0; overflow: visible;
-  z-index: 4;
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--motion-hover);
-}
-.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
-.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
-/* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
-.float {
-  display: inline-flex;
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  box-shadow: var(--om-elevation-level-1);
-}
+   Centred on the row, so in the 68 row they sit (68 − 36) / 2 = 16 down. */
+.actions { composes: actions from '../../om/table-core.module.css'; }   /* (REG-727) the table core: parked at the visible right edge (REG-430), 24 in */
+.actionsInner { composes: actionsInner from '../../om/table-core.module.css'; }
+.float { composes: float from '../../om/table-core.module.css'; }   /* white fill + level-1 shadow on a wrapper, so the DS button / om icon button keep their own hover states */
 .menuWrap { position: relative; display: inline-flex; }
-.danger { color: var(--om-color-tertiary-red-default); }   /* quotes 910:36723 Delete #db382a */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    ≤1024 the grid keeps its tracks and the card scrolls sideways (clipped by the page sheet otherwise).
@@ -162,13 +100,11 @@
    The Quotes twin's rule (components/leads/quotes/quotes-table.module.css), with this table's two
    measurements. Below 768 the head's Sort buttons and the row's Status trigger — both drawn as bare text,
    ~20px tall — grow their BOX to 44; the mark never moves, because the horizontal padding is handed back
-   as a negative margin. The 68px row already leaves exactly 44 between its 12px cell paddings; the head is the
-   one row that has to grow, from the mock's 48 to 56 (6 + 44 + 6), which is the brief's "where 44px
-   boxes would collide, the row grows".
+   as a negative margin. The 68px row already leaves exactly 44 between its 12px cell paddings; the head keeps
+   its 56 (6 + 44 + 6) — the mock's 48 had to grow to it here until every head became 56 (REG-727).
    (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .head { height: auto; min-height: 56px; }
-  .head .hCell { padding-block: 6px; }   /* 16/16 → 6/6: 6 + 44 + 6 = the 56 above */
+  .head .hCell { padding-block: 6px; }   /* 16/16 → 6/6: a 44px sort button still lands the head on 56 */
   .hSort, .statusBtn {
     min-height: 44px;
     padding-inline: var(--om-spacing-2);
@@ -253,8 +189,6 @@
     padding-inline: var(--om-spacing-3);
   }
 }
-
-/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 
 /* (REG-534) The Lead link (Tools › Contracts) — the quotes list's client link. */
 .leadLink { font: var(--om-type-body-m); color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--om-radius-1); }

@@ -9,13 +9,13 @@
 /* Comments body (931:39928) V g24 p24; scrolls between head and footer. */
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 
-/* Empty state: centred both ways; illustration 180×180 → 24 → texts (V g12). */
+/* Empty state: centred both ways; illustration 180×180 → 24 → texts (V g12). (REG-729) The texts are the house empty card's
+   (components/om/empty-card.module.css): "Add your first comment" 20/24/600 = subheading-xl, no longer heading-h3 re-typed by hand. */
 .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-6); text-align: center; }
 .art { display: block; width: 180px; height: 180px; }
-.texts { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
-/* "Add your first comment" 20/Semi Bold — heading-h3 is 700 in the tokens; weight overridden as components/leads/detail/card.module.css .emptyTitle does. */
-.emptyTitle { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); }
-.emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }   /* "Your comments will show up here." 14/Regular */
+.texts { composes: texts from '../../om/empty-card.module.css'; }
+.emptyTitle { composes: title from '../../om/empty-card.module.css'; }
+.emptyBody { composes: body from '../../om/empty-card.module.css'; }   /* "Your comments will show up here." 14/Regular */
 
 /* ── thread: copied from components/leads/tasks/comments-panel.module.css (902:28619) ── */
 .thread { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
@@ -23,19 +23,13 @@
 /* Comment = "Two Line": H g12 → avatar 36 + text column (V g4). */
 .comment { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
 .textCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; kebab 20 at the right edge. */
+/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; the kebab at the right edge — (REG-729) the house
+   IconButton 24 bare (the heads' kebab), centred on the 20 line, so the row keeps its height. */
 .meta { display: flex; align-items: center; gap: var(--om-spacing-1); height: 20px; }
 .author { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .time { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.kebabWrap { margin-left: auto; position: relative; display: inline-flex; }
-.kebab {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
-  transition: background-color var(--motion-hover);
-}
-.kebab:hover, .kebab[aria-expanded='true'] { background: var(--om-color-hover-08p); }
-.danger { color: var(--om-color-tertiary-red-default); }
+.kebabWrap { margin-left: auto; display: inline-flex; }
+.kebabBtn[aria-expanded='true'] { background: var(--om-color-hover-08p); }   /* the wash stays while its menu is open */
 /* Comment text 14/Regular on-surface, wraps. */
 .commentBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; white-space: pre-wrap; }
 /* Edit state: the field then a 24px row, Cancel · Save right-aligned 8 apart. */
@@ -85,12 +79,8 @@
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
-     Each comment's more_horiz (20) at the right of its 20px meta line grows its box to 44 and keeps its
-     glyph. The extra comes back as margin, so the meta line's baseline is untouched — the kebab simply
-     overlaps the (non-interactive) comment text band by 12px on either side. The head's close is the house
-     IconButton, which carries its own 44 target on a touch pointer (REG-725). */
-  .kebab { width: 44px; height: 44px; margin: -12px; }
-  /* The inline editor's Cancel / Save are DS `size="sm"` (24 tall) — a text button's box IS its mark, so
+     Each comment's kebab and the head's close are the house IconButton, which carries its own 44 target on a touch pointer
+     (REG-725, REG-729). The inline editor's Cancel / Save are DS `size="sm"` (24 tall) — a text button's box IS its mark, so
      here the whole control grows to 44 and its row grows with it (spacing follows the target, not the mock). */
   .editRow { height: auto; min-height: 44px; }
   .editRow button { min-height: 44px; }

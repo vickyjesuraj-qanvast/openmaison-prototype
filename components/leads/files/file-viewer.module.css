@@ -45,7 +45,7 @@
 /* "Generic file name" 20/Bold on-surface, fills the row, ellipsised. */
 .title {
   flex: 1; min-width: 0; margin: 0;
-  font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px;
+  font: var(--om-type-heading-h3);   /* 20/24 bold — (REG-729) the token already is the 20/24 it re-typed */
   color: var(--om-color-on-surface-default);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -63,7 +63,6 @@
 /* The icon whose panel is open reads on-surface (the mock shows no pressed state — the drawer head's crumb-icon rule). */
 .iconBtn[aria-pressed='true'] { color: var(--om-color-on-surface-default); }
 .iconBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.danger { color: var(--om-color-tertiary-red-default); }
 
 /* Section container (931:39853): fills the viewport under the header (shell gutters 8+8, header 56); H → canvas + panel.
    `flex: none` + a fixed height: the shell column is only min-height: 100dvh, so a `flex: 1` stage (basis 0%) would size to

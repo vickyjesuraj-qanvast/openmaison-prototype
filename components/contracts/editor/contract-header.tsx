@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs, type CrumbItem } from '@/components/om/crumbs'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import styles from '@/components/quotes/editor/editor-header.module.css'
 import own from './contract-editor.module.css'
@@ -50,8 +50,9 @@ export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, c
                 <span className={styles.chev} data-open={open === 'switch' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
               </button>
             ) : <h1 className={styles.title}>{title}</h1>}
+            {/* (REG-728) the editor switchers' width */}
             {canSwitch ? (
-              <Dropdown open={open === 'switch'} onClose={() => setOpen(null)} align="left" width={320} sheetTitle="Contracts">
+              <Dropdown open={open === 'switch'} onClose={() => setOpen(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Contracts">
                 {siblings!.map((s) => (
                   <DropdownItem key={s.id} role="menuitemradio" checked={s.id === currentId} onSelect={() => { setOpen(null); if (s.id !== currentId) onSwitch!(s.id) }}>
                     <span className={styles.menuTitle}>{s.title}</span>
@@ -86,7 +87,8 @@ export function ContractHeader({ crumbs, title, siblings, currentId, onSwitch, c
           <Tooltip label="More options" disabled={open === 'more'}>
             <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={open === 'more'} onClick={() => setOpen((m) => (m === 'more' ? null : 'more'))} />
           </Tooltip>
-          <Dropdown open={open === 'more'} onClose={() => setOpen(null)} align="right" width={264} sheetTitle={title}>
+          {/* (REG-728) 240: rows with a second line (a locked row's rule) or a key hint */}
+          <Dropdown open={open === 'more'} onClose={() => setOpen(null)} align="right" width={MENU_WIDTH.wide} sheetTitle={title}>
             {/* (sweep S2 #23) a greyed row stays put — its press closed the menu with nothing done; an enabled row still closes it */}
             <span onClick={(e) => { const item = (e.target as HTMLElement).closest('[role^="menuitem"]'); if (item && item.getAttribute('aria-disabled') !== 'true' && !item.hasAttribute('aria-haspopup')) setOpen(null) }} style={{ display: 'contents' }}>
               {folded ? foldedItems : null}

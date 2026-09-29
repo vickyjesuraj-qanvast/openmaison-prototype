@@ -74,9 +74,6 @@
   .chips { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; overflow: visible; row-gap: var(--om-spacing-1); padding-right: 0; -webkit-mask-image: none; mask-image: none; }
   .foldable { display: none; }
 }
-/* (REG-587) The Send menu's two-line items: the action, then what it means in one line. */
-.menuText { display: flex; flex-direction: column; gap: 2px; min-width: 0; white-space: normal; }
-.menuHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* (REG-632, contracts parity Q-09) The contract raised from this quote — a chip that opens it. */
 .chipLink { display: inline-flex; border-radius: var(--om-radius-1); text-decoration: none; }
 .chipLink:hover > span { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }

@@ -77,7 +77,7 @@ export function PaymentTemplateEditor({ data, from }: { data: PaymentTemplateEdi
                        menu={<>
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicatePaymentTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/payments/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                          <DropdownDivider />
-                         <DropdownItem tone="danger" disabled={isDefault} title={isDefault ? 'The studio default cannot be deleted' : undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
+                         <DropdownItem tone="danger" disabled={isDefault} help={isDefault ? 'The studio default cannot be deleted' : undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>   {/* (REG-728) the reason in the row */}
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
           <input className={page.titleInput} value={name} placeholder="Split name" aria-label="Split name" maxLength={80} onChange={(e) => { setName(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />

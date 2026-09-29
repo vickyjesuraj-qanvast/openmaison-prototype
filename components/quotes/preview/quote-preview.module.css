@@ -1,14 +1,17 @@
 /* Preview (REG-490): the quote editor's header language over the surface-bg canvas, the pages centred, an optional 360 panel on the right. */
 .page { flex: 1; min-width: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--om-color-surface-bg); }   /* flex 1 · min-width 0: PageReveal's row (sweep S1 #27) */
-.bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 76px; padding: var(--om-spacing-3) var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
+.bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 76px; padding: var(--om-spacing-4) var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }   /* (REG-729) the editor header's 16/24 */
 .titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .titleRow { display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 .title { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.templateChip { display: inline-flex; align-items: center; gap: 2px; height: 22px; padding: 0 6px 0 8px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-default); cursor: pointer; }
-.templateChip:hover { background: var(--om-color-hover-04p); }
-.templateChip { white-space: nowrap; flex-shrink: 0; max-width: 100%; min-width: 0; }   /* (REG-569) it broke into three lines at 768; capped at the row's width, its name ellipsizes — a long template name overflowed a 320 phone by 57px */
-.chipText { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* (REG-729) The template chip is the house tag (MetaChip) in a button — the editor header's contract chip (.chipLink): its hover, its ring.
+   (REG-569) Capped at the row's width, its name ellipsizes — a long template name overflowed a 320 phone by 57px. */
+.chipBtn { display: inline-flex; flex-shrink: 0; max-width: 100%; min-width: 0; padding: 0; border: 0; background: none; border-radius: var(--om-radius-1); cursor: pointer; }
+.chipBtn:hover > .templateChip { background: var(--om-color-hover-04p); color: var(--om-color-on-surface-default); }
+.chipBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.chipBtn > .templateChip { flex-shrink: 1; max-width: 100%; min-width: 0; }
+.chipBtn > .templateChip > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 1024px) { .bar { flex-wrap: wrap; } .actions { flex: 1 1 100%; min-width: 0; } }
 .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; min-width: 0; flex: 1 1 auto; }   /* min-width 0: beside the title, its automatic minimum was its widest chip — a long template name pushed a 320 phone 57px wide */
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
@@ -26,7 +29,7 @@
 .issueText { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .issueDetail { color: var(--om-color-on-surface-secondary); }
 .internalCard { max-width: 900px; width: 100%; align-self: center; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-2); padding: var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-3); background: var(--om-color-surface-default); }
-.internalEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-tertiary-red-default); }
+.internalEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-tertiary-red-default); }   /* (REG-729) no letter-spacing */
 .internalGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--om-spacing-4); }
 .internalGrid > span { display: flex; flex-direction: column; gap: 2px; }
 .internalLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
@@ -37,7 +40,7 @@
 .panelBody { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-4) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
 .panelNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .group { display: flex; flex-direction: column; gap: 2px; }
-.groupTitle { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); padding-bottom: var(--om-spacing-1); }
+.groupTitle { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); padding-bottom: var(--om-spacing-1); }   /* (REG-729) no letter-spacing */
 .row { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 40px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
 .rowText { display: flex; flex-direction: column; min-width: 0; }
 .rowHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }

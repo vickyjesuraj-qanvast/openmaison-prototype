@@ -14,7 +14,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { PriceBookDialog, type PriceBookPick, type PriceBookTab } from './price-book-dialog'
@@ -672,7 +672,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
   const densityRows = DENSITIES.map((d) => <DropdownItem key={d} role="menuitemradio" checked={d === density} onSelect={() => chooseDensity(d)}><span className={styles.menuIcon} data-on={d === density || undefined}><Icon name={d === density ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{DENSITY_LABEL[d]}</DropdownItem>)
   const viewRows = ITEM_VIEWS.map((v) => <DropdownItem key={v} role="menuitemradio" checked={v === view} onSelect={() => chooseView(v)}><span className={styles.menuIcon} data-on={v === view || undefined}><Icon name={v === view ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} /></span>{ITEM_VIEW_LABEL[v]}</DropdownItem>)
   const createMenu = (
-    <PortalMenu open={menu === 'create'} anchor={createRef} onClose={closeMenus} role="menu" width={200} align="right" sheetTitle="Create">
+    <PortalMenu open={menu === 'create'} anchor={createRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle="Create">
       <DropdownItem onSelect={() => { closeMenus(); void create({}, true) }}>New Item</DropdownItem>
       <DropdownItem onSelect={() => { closeMenus(); createGroup([]) }}>New section</DropdownItem>
       <DropdownDivider />
@@ -695,7 +695,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <Tooltip label="More options" disabled={menu === 'more'}>
           <IconButton icon="more_vert" label="More options for Items" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} />
         </Tooltip>
-        <PortalMenu open={menu === 'more'} anchor={moreRef} onClose={closeMenus} role="menu" width={240} align="right" sheetTitle="Items">
+        {/* (REG-728) 240: rows with a key hint (Undo · Redo) */}
+        <PortalMenu open={menu === 'more'} anchor={moreRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Items">
           <div ref={moreLevel}>
             {moreSub === 'density' ? (
               <>
@@ -741,7 +742,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
         <Tooltip label="Row density" disabled={menu === 'density'}>
           <IconButton icon="format_line_spacing" label="Row density" aria-haspopup="menu" aria-expanded={menu === 'density'} onClick={() => setMenu((m) => (m === 'density' ? null : 'density'))} />
         </Tooltip>
-        <PortalMenu open={menu === 'density'} anchor={densityRef} onClose={closeMenus} role="menu" width={200} align="right">
+        <PortalMenu open={menu === 'density'} anchor={densityRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right">
           {densityRows}
         </PortalMenu>
       </span>
@@ -752,7 +753,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
                 onPress={() => setMenu((m) => (m === 'view' ? null : 'view'))}>
           View by: {ITEM_VIEW_LABEL[view]}
         </Button>
-        <PortalMenu open={menu === 'view'} anchor={viewRef} onClose={closeMenus} role="menu" width={200} align="right">
+        <PortalMenu open={menu === 'view'} anchor={viewRef} onClose={closeMenus} role="menu" width={MENU_WIDTH.standard} align="right">
           {viewRows}
         </PortalMenu>
       </span>

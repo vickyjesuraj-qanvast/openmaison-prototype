@@ -1,0 +1,29 @@
+/*
+ * (REG-729) The tab toolbar — the row over every list on a lead's tabs and in Tools (Tasks · Quotes · Contracts · Files · Notes ·
+ * Activity), written ONCE: "Section items" 36 tall, H g16 (902:26378) — the title 16/700 (heading-h4) filling, the actions H g12 on
+ * the right, the active-filter count badge on the Filters button, and every menu trigger's chevron turning while its menu is open.
+ * A toolbar's stylesheet composes these classes and keeps only what it adds. Five copies of this row drifted apart before
+ * (design-source/context/consistency/01-consistency-audit-2026-09-29.md, round 5).
+ */
+@layer om-tab-toolbar {
+.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
+.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+.menuWrap { position: relative; display: inline-flex; }
+.chev { display: inline-flex; transition: transform var(--motion-toggle); }
+.chev[data-open] { transform: rotate(180deg); }
+/* The active-filter count on the Filters button (the listing toolbar's, components/leads/toolbar.module.css) */
+.filterWrap { position: relative; display: inline-flex; }
+.filterBadge {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 16px; height: 16px; padding: 0 4px; box-sizing: content-box;
+  border-radius: var(--om-radius-full); border: 2px solid var(--om-color-surface-default);
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
+  font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
+}
+/* (REG-269) ≤767 the row wraps, so no control is clipped */
+@media (max-width: 767px) {
+  .bar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
+  .actions { flex-wrap: wrap; }
+}
+}

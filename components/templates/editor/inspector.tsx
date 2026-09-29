@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { BANK_ROW_LABEL, BANK_ROWS, BLOCK_ICON, BLOCK_LABEL, ELEMENT_LABEL, ITEM_COLUMN_LABEL, isCanvas, newId, SINGLETON_KINDS, SOCIAL_KEYS, SOCIAL_LABEL, type Align, type Block, type BrandKit, type CanvasBlock, type CanvasElement, type ItemsBlock, type KVRow, type SignatureColumn, type TemplateDesign, type TextStyle } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { readFileAsDataUrl } from '@/lib/templates/files'
@@ -227,7 +227,7 @@ function CanvasFields({ block: b, brand, upd, onDesign, onSelect, onReset }: { b
       </Field>
       <span className={styles.addRow}>
         <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add to the {BLOCK_LABEL[b.kind].toLowerCase()}</Button>
-        <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" width={200} sheetTitle={`Add to the ${BLOCK_LABEL[b.kind].toLowerCase()}`}>
+        <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" width={MENU_WIDTH.standard} sheetTitle={`Add to the ${BLOCK_LABEL[b.kind].toLowerCase()}`}>
           {ELEMENT_KINDS.map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); const el = defaultElement(k); onDesign((d) => patchBlock(d, b.id, (x) => (isCanvas(x) ? { ...x, elements: [...x.elements, el] } : x))); onSelect({ blockId: b.id, elementId: el.id }) }}>{ELEMENT_LABEL[k]}</DropdownItem>)}
         </Dropdown>
       </span>

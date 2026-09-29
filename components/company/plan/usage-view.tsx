@@ -7,7 +7,7 @@ import { Button } from '@/components/ds'
 import { CompanyShell } from '@/components/company/company-shell'
 import { UsageGhost } from '@/components/company/company-ghosts'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { Avatar } from '@/components/om/avatar'
 import { Dialog } from '@/components/om/dialog'
@@ -17,6 +17,8 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { ScopePill } from '@/components/om/scope-pill'
 import { useSnackbar } from '@/components/om/snackbar'
 import { StatTile } from '@/components/om/stat-tile'
+import { SelectTrigger } from '@/components/om/select-trigger'
+import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { TextField } from '@/components/om/text-field'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { openTopUp, refreshCredits, useCredits } from '@/components/credits/credits-client'
@@ -174,10 +176,9 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
       }
       case 'credits': return <span className={styles.credit}>{fmtCredits(m.used)}</span>
       case 'amount': return owner ? (
-        <button type="button" className={styles.amount} data-none={cap == null || undefined} data-open={menu?.memberId === m.id || undefined} aria-haspopup="menu" aria-expanded={menu?.memberId === m.id}
-                aria-label={`${m.name}’s monthly amount: ${amountWords(cap)}`} onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: m.id, el: e.currentTarget }) }} data-testid="member-amount">
-          {amountWords(cap)}<Icon name="keyboard_arrow_down" size={20} />
-        </button>
+        /* (REG-729) the house compact select trigger, its cell size (28) */
+        <SelectTrigger size="s" className={styles.amount} data-none={cap == null || undefined} label={`${m.name}’s monthly amount`} value={amountWords(cap)} open={menu?.memberId === m.id}
+                       onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: m.id, el: e.currentTarget }) }} data-testid="member-amount" />
       ) : <span className={cap == null ? styles.m : undefined}>{amountWords(cap)}</span>
       case 'state': {
         const ask = asks.find((a) => a.memberId === m.id && a.kind === 'monthly')
@@ -227,7 +228,7 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
         <div className={styles.bar}>
           <div className={styles.barStart}>
             <ScopePill ref={rangeRef} label={`Period: ${rangeLabel}`} short={rangeLabel} open={rangeOpen} scoped={usage.range !== 'this'} onClick={() => setRangeOpen((o) => !o)} />
-            <PortalMenu open={rangeOpen} anchor={rangeRef} onClose={() => setRangeOpen(false)} align="left" width={220} role="menu" sheetTitle="Period">
+            <PortalMenu open={rangeOpen} anchor={rangeRef} onClose={() => setRangeOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Period">   {/* (REG-728) standard rows: 200 */}
               {RANGES.map((r) => <DropdownItem key={r.key} role="menuitemradio" checked={usage.range === r.key} onSelect={() => { setRangeOpen(false); go(() => router.replace(here(r.key), { scroll: false })) }}>{r.label}</DropdownItem>)}
             </PortalMenu>
             <span className={styles.caption} data-testid="usage-window">{dayMonth(usage.from)} – {dayMonth(usage.to - 1)}</span>
@@ -285,10 +286,9 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
                         rowAttrs={(m) => ({ 'data-member': m.id, 'data-focus': focus === m.id ? '' : undefined })}
                         help={owner ? 'A monthly amount keeps one person from using the studio’s month. Every active member is listed.' : `${s.owner.name} sets each person’s monthly amount.`}
                         actions={owner ? (
-                          <button type="button" className={styles.amount} data-none={defaultAmount == null || undefined} data-open={menuTarget === 'default' || undefined} aria-haspopup="menu" aria-expanded={menuTarget === 'default'}
-                                  onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: 'default', el: e.currentTarget }) }} data-testid="default-amount">
-                            New members: {amountWords(defaultAmount)}<Icon name="keyboard_arrow_down" size={20} />
-                          </button>
+                          /* (REG-729) the house compact select trigger, its toolbar size (36) */
+                          <SelectTrigger className={styles.amount} data-none={defaultAmount == null || undefined} label={`New members: ${amountWords(defaultAmount)}`} value={<>New members: {amountWords(defaultAmount)}</>} open={menuTarget === 'default'}
+                                         onClick={(e) => { menuRef.current = e.currentTarget; setMenu({ memberId: 'default', el: e.currentTarget }) }} data-testid="default-amount" />
                         ) : null}
                         empty="No members yet." />
         ) : null}
@@ -305,11 +305,14 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
         <CreditsTable table="credits-activity" title="Activity" testId="usage-activity" defs={trusted ? ACTIVITY_DEFS : ACTIVITY_DEFS.filter((d) => d.key !== 'balance')} rows={rows.slice(0, shown)} rowKey={(r) => r.id} cell={rowCell}
                       help={trusted ? 'Every charge, refund, top-up and refresh, newest first' : 'Your charges and refunds, newest first'}
                       actions={<ToolbarSearch query={query} onQuery={(q) => { setQuery(q); setShown(PAGE) }} placeholder="Search activity" label="Search activity" />}
-                      empty={query ? `Nothing matches “${query}”.` : 'Nothing in this period.'} />
+                      empty="Nothing in this period."
+                      /* (REG-729) a search that finds nothing: the house no-results state, as every searchable list */
+                      noResults={query.trim() ? <TabSearchEmpty noun="activity" searching onClearAll={() => { setQuery(''); setShown(PAGE) }} /> : undefined} />
         {rows.length > shown ? <span className={styles.more}><Button appearance="text" onPress={() => setShown((n) => n + PAGE)}>{`Show ${Math.min(PAGE, rows.length - shown)} more`}</Button></span> : null}
       </div>
 
-      <PortalMenu open={!!menu} anchor={menuRef} onClose={() => setMenu(null)} align="left" width={220} role="menu" sheetTitle={menuTarget === 'default' ? 'New members start with' : menuTarget ? `${nameOf(menuTarget)}’s monthly amount` : ''}>
+      {/* (REG-728) standard rows: 200 */}
+      <PortalMenu open={!!menu} anchor={menuRef} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={menuTarget === 'default' ? 'New members start with' : menuTarget ? `${nameOf(menuTarget)}’s monthly amount` : ''}>
         {menuTarget ? (
           <>
             <DropdownItem role="menuitemradio" checked={current(menuTarget) == null} onSelect={() => pick(menuTarget, null)}>No limit</DropdownItem>

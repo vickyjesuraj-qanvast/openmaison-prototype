@@ -12,7 +12,7 @@ import { ReadOnlyScope } from '@/components/om/read-only'
 import { ModuleHead } from './module-head'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import styles from './settings.module.css'
 
 /**
@@ -79,7 +79,7 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
           <span className={styles.settingTitle}>Events and channels</span>
           <span className={styles.settingHelp}>Who receives each event is fixed by the event; the channels are yours to switch.</span>
         </div>
-        <div className={styles.eventTable} role="table" aria-label="Events and channels">
+        <div className={styles.eventTable} role="table" aria-label="Events and channels" data-card-table="">
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Event</span><span role="columnheader">Who</span>
             {CHANNELS.map((c) => <span key={c.key} role="columnheader" className={styles.eventCol}>{c.label}</span>)}
@@ -156,7 +156,7 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
             <div ref={boxRef} className={styles.messageBox} onSelect={noteCaret} onKeyUp={noteCaret} onClick={noteCaret}><TextArea label="Message" value={draft.body} onChange={(v: string) => setDraft({ ...draft, body: v })} maxLength={2000} /></div>
             <span ref={fieldsAnchor} className={styles.fieldsAnchor}>
               <Button appearance="text" iconStart={<Icon name="data_object" size={20} weight={300} />} aria-haspopup="menu" aria-expanded={fieldsOpen} onPress={() => setFieldsOpen((o) => !o)}>Insert a field</Button>
-              <PortalMenu open={fieldsOpen} anchor={fieldsAnchor} onClose={() => setFieldsOpen(false)} align="left" width={280} role="menu" sheetTitle="Insert a field">
+              <PortalMenu open={fieldsOpen} anchor={fieldsAnchor} onClose={() => setFieldsOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Insert a field">   {/* (REG-728) every insert-field menu is 240 */}
                 {FIELDS.map((f) => <DropdownItem key={f.key} onSelect={() => insertField(f.key)}>{f.label}</DropdownItem>)}
               </PortalMenu>
             </span>

@@ -3,31 +3,33 @@
  * with the comparison's columns, sized to the 960 reading column: Item fluid ≥258 · Trade 128 · Yours 118 · Theirs 118 · Difference 118 · Status 150 (= 890). Each row
  * carries a 3px status band on its left edge: green = only in yours, red = only in theirs, grey = no price given.
  */
-.card { display: grid; grid-template-columns: var(--tracks, minmax(258px, 1fr) 128px 118px 118px 118px 150px); width: 100%; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); position: relative; }
-.card:not([data-overflow])::after { content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.card[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }
-.head .pin { z-index: 3; }
-@media (hover: hover) { .row:hover .pin { background: var(--om-color-primary-variant); } .row:hover { background: var(--om-color-primary-variant); } }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
-.hCell { position: relative; display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4); color: var(--om-color-on-surface-secondary); }
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card {
+  composes: frame card from '../om/table-core.module.css';   /* (REG-727) the table core: the frame (border, r8, the corner ring, the sideways scroller) and one grid, the head and rows its subgrids */
+  grid-template-columns: var(--tracks, minmax(258px, 1fr) 128px 118px 118px 118px 184px);   /* (REG-727) Status 184: its widest chip (96) + the 16 lead + the kebab's reserved 72, so the hover kebab never covers a chip */
+}
+.pin { composes: pin from '../om/table-core.module.css'; }   /* (REG-727) the table core: sticky, the row's fill, the 1px edge at rest, the shadow while scrolled */
+/* A touch pointer never lights a row (the table's own rule, once a `hover: hover` gate on its hover fill): the resting fill holds. */
+@media (hover: none) { .row:hover, .row:hover .pin { background: var(--om-color-surface-default); } }
+.head { composes: head from '../om/table-core.module.css'; }   /* (REG-727) the table core: 56, the listing's head cells and label */
+.hCell { composes: hCell from '../om/table-core.module.css'; }
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }
 .colItem { grid-column: 1; }
 .colTrade { grid-column: 2; }
 .colYours { grid-column: 3; }
 .colTheirs { grid-column: 4; }
 .colDiff { grid-column: 5; }
 .colStatus { grid-column: 6; }
-.row { display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1; min-height: 60px; position: relative; transition: background-color var(--motion-hover); }
+.row {
+  composes: row from '../om/table-core.module.css';   /* (REG-727) the table core: the card's tracks, hover */
+  height: auto; min-height: 60px;   /* this table's rows grow with a second line (the other side's name, a quantity) from a 60 floor */
+}
 .row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: 4; pointer-events: none; }
 .row[data-status='yours-only']::before { background: var(--om-color-tertiary-green-default); }
 .row[data-status='theirs-only']::before { background: var(--om-color-tertiary-red-default); }
 .row[data-status='unpriced']::before { background: var(--om-color-on-surface-border); }
 .card > .row:last-child, .card > .row:last-child .colItem { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
-.cell { display: flex; align-items: center; min-width: 0; min-height: 0; grid-row: 1; padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.cell { composes: cell from '../om/table-core.module.css'; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
 .itemText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .theirName { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -41,16 +43,14 @@
 /* (REG-640 → sweep S3) The row's kebab is parked at the VISIBLE right edge, the listing's way (quotes-table.module.css .actions,
    REG-430): a zero-width sticky item laid over the row's tracks, its float hanging to the left — shown on hover or focus, always
    on touch. The Status column keeps room for it (REG-446: a hover control never covers the value the row exists to show). */
-.actions { grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center; position: sticky; right: 0; width: 0; height: 0; overflow: visible; z-index: 4; opacity: 0; pointer-events: none; transition: opacity var(--motion-hover); }
-.actionsInner { position: absolute; right: var(--om-spacing-4); top: 50%; transform: translateY(-50%); display: flex; }
-.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
-.row:hover .actions, .row:focus-within .actions, .actions[data-open] { opacity: 1; pointer-events: auto; }
+.actions { composes: actions from '../om/table-core.module.css'; }   /* (REG-727) the table core: 24 in from the visible right edge, as every table (it sat 16 in) */
+.actionsInner { composes: actionsInner from '../om/table-core.module.css'; }
+.float { composes: float from '../om/table-core.module.css'; }
 @media (hover: none) { .actions { opacity: 1; pointer-events: auto; } }
-.card[data-actions] .cell.colStatus { padding-right: calc(var(--om-spacing-4) + 36px + var(--om-spacing-3)); }
+.card[data-actions] .cell.colStatus { padding-right: calc(var(--om-spacing-6) + 36px + var(--om-spacing-3)); }   /* the kebab's 24 inset + its 36 + a 12 gap */
 @media (max-width: 1024px) {
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
-  .pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
 }
 /* ≤767 each row is a card (REG-520: `!important` beats the layout hook's inline placement): the item, then yours · theirs · status. */
 @media (max-width: 767px) {

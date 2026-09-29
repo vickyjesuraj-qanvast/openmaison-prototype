@@ -120,7 +120,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     await page.getByTestId('folder-card').filter({ hasText: 'HDB' }).getByRole('button', { name: 'Actions for HDB' }).click(); await page.waitForTimeout(300)
     await page.getByRole('menuitem', { name: 'Delete' }).click(); await page.waitForTimeout(300)
     const confirm = await page.getByRole('dialog').filter({ hasText: 'HDB' }).last().innerText()
-    ok('Delete says what happens to what it holds', /The 1 folder inside move up to Quotes\. Nothing in it is deleted/.test(confirm.replace(/\n/g, ' ')), confirm.replace(/\n/g, ' ').slice(0, 120))
+    ok('Delete says what happens to what it holds', /The 1 folder inside moves? up to Quotes\. Nothing in it is deleted/.test(confirm.replace(/\n/g, ' ')), confirm.replace(/\n/g, ' ').slice(0, 120))
     await page.getByRole('button', { name: 'Delete', exact: true }).last().click(); await page.waitForTimeout(1300)
     ok('the folder goes; what it held moves up', !folderId('quotes', 'HDB') && sql(`select coalesce(parent_id,'') from library_folders where id='${BTO}'`) === '')
     await page.locator('[role="status"][aria-live="polite"]').getByRole('button', { name: 'Undo' }).click(); await page.waitForTimeout(1300)
@@ -140,7 +140,7 @@ const card = (page, name) => page.getByTestId('library-card').filter({ has: page
     ok('nor select quote templates — there is nothing they may do with them', await page.getByTestId('library-card').first().getByRole('checkbox').count() === 0)
     await page.getByTestId('folder-card').first().getByRole('button', { name: /^Actions for/ }).click(); await page.waitForTimeout(300)
     const dis = await page.getByRole('menuitem').evaluateAll((els) => els.map((e) => `${e.textContent}:${e.getAttribute('aria-disabled')}`))
-    ok('a Designer opens folders but may not move, rename or delete them', dis.some((d) => /^Open:(null|false)/.test(d)) && ['Move', 'Rename', 'Delete'].every((l) => dis.some((d) => d.startsWith(`${l}:true`))), dis.join(' '))
+    ok('a Designer opens folders but may not move, rename or delete them', dis.some((d) => /^Open:(null|false)/.test(d)) && ['Move', 'Rename', 'Delete'].every((l) => dis.some((d) => d.startsWith(l) && d.endsWith(':true')))   /* (REG-728) a disabled row's reason prints in the row */, dis.join(' '))
     await ctx.close()
   })
 

@@ -1,27 +1,18 @@
 /*
  * Lead Details › Files toolbar — "Section items" 1244×36, H g16 (931:40157, spec design-source/context/lead-files/
  * 01-toolbar-empty-list.txt "Toolbar row"). Left: "All Files" 16/Bold (heading-h4 = 16/700/24) fills. Right: actions H g12
- * (New File 114×36 · Search 280 · filter_list 36 · segmented 71 · more_vert 36).
- * Copied from components/leads/contracts/contracts-toolbar.module.css — the geometry is identical; the breadcrumb row
- * (frame 91, 931:39719) is added for an open folder.
+ * (New File 114×36 · Search 280 · filter_list 36 · segmented 71 · more_vert 36); the breadcrumb row (frame 91, 931:39719) for an
+ * open folder. (REG-729) The row itself — bar, title, actions, menu anchors, the turning chevron — is the house tab toolbar
+ * (components/om/tab-toolbar.module.css); what stays here is this toolbar's own.
  */
-.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
-.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.actions { display: flex; align-items: center; gap: var(--om-spacing-3); flex-shrink: 0; }
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; flex-shrink: 0; }
+.menuWrap { composes: menuWrap from '../../om/tab-toolbar.module.css'; }   /* New File button · header kebab */
+.chev { composes: chev from '../../om/tab-toolbar.module.css'; }
 
 /* Breadcrumb row (931:39719): the shared crumb lives in components/om/folders/folder-crumbs (REG-664); this box keeps its place in the bar. */
 .crumbRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }
-
-/* Menu anchors (New File button · folder kebab · header kebab) — the Dropdown positions itself against these. */
-.menuWrap { position: relative; display: inline-flex; }
-/* Chevron points up while the menu is open — every menu trigger does this (listing toolbar rule, user 2026-08-28). */
-.chev { display: inline-flex; transition: transform var(--motion-toggle); }
-.chev[data-open] { transform: rotate(180deg); }
-
-/* Search Bar 36 Outlined (931:40163) — 280 wide in the mock; the DS component is fluid so the width is set here. */
-.search { width: 280px; }
-
-.danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */
 
 /* Touch hooks (REG-273) — inert until the ≤767 block at the foot of this file. `.touchBtn` repeats the om icon
    button's own `flex-shrink: 0`, and `.viewToggle` generates no box at all, so the desktop row is byte-identical. */
@@ -30,21 +21,18 @@
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────
    Tablet and down: the bar may wrap (the ~585px actions cluster drops under the title once the row
-   runs short) and the search gives up its fixed 280 so the cluster can shrink. Desktop ≥1025 keeps
-   the base one-line row untouched. */
+   runs short). Desktop ≥1025 keeps the base one-line row untouched. */
 @media (max-width: 1024px) {
   .bar { flex-wrap: wrap; height: auto; min-height: 36px; row-gap: var(--om-spacing-3); }
   .actions { flex-wrap: wrap; max-width: 100%; row-gap: var(--om-spacing-3); }
-  .search { width: auto; flex: 1 1 200px; min-width: 160px; }
 }
 /* (REG-354) The mobile canvas' toolbar is ONE row — "All Files" and the glyphs (3f). The 280px search box folds
    into one of those glyphs (components/om/toolbar-search.tsx) and takes the row on its own when it is asked for. */
 @media (max-width: 767px) {
-  .bar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
   .crumbRow { flex-basis: 100%; }
   /* (REG-377) The glyph cluster is content-sized: `flex: 1 1 auto` let it claim half the row and ellipsised the
      section title ("All Cont…" at 390, "All …" at 320) even though the row had space for both. */
-  .actions { flex: 0 0 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .actions { flex: 0 0 auto; min-width: 0; justify-content: flex-end; }
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
   /* (REG-354, following REG-299) One view on a phone — the canvas' 3f is the grid, folders two-up over the file

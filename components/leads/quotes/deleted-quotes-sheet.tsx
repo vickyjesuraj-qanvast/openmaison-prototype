@@ -17,6 +17,8 @@ import styles from '@/components/contracts/deleted-contracts-sheet.module.css'
  * (REG-625, quote editor parity Q-27 · Q-28) Deleted Quotes — Deleted Contracts' twin on its stylesheet (the Deleted sheets' shell, REG-511):
  * Quote · Lead (Tools › Quotes) · Status · Deleted · Actions, Restore and Delete Forever per row, Empty Trash. A quote someone else created
  * waits for its creator, an Owner or an Admin; a quote a live contract reads stays until the contract goes. Loads when opened.
+ * (REG-727) The Deleted trio's shape (REG-513): Empty Trash in the head, no Close foot, height to content with a 480 floor; the table on
+ * the table core (the listing's head, rows and cells).
  */
 export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRestore, onDeleteForever, onEmptyTrash }: {
   open: boolean; onClose: () => void
@@ -59,20 +61,18 @@ export function DeletedQuotesSheet({ open, onClose, load, crumb, showLead, onRes
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
     <>
-      <Dialog open={open} onClose={onClose} title="Deleted Quotes" eyebrow={crumb} size="modal" width={1200} height={640} portal
-              footer={<Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>}>
-        <div className={styles.head}>
-          <span className={styles.note}>Deleted quotes stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a quote.</span>
-          <DangerButton onClick={() => setConfirm({ kind: 'empty' })} disabled={!emptiable || busy}>Empty Trash</DangerButton>
-        </div>
+      {/* (REG-727) The trio's head: the crumb as the eyebrow, Empty Trash the one action before the close; no foot. */}
+      <Dialog open={open} onClose={onClose} title="Deleted Quotes" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal
+              actions={<Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={!emptiable || busy}>Empty Trash</Button>}>
+        <span className={styles.note}>Deleted quotes stay here until they are deleted forever. Restore puts one back on its lead. Only its creator, an Owner or an Admin restores or deletes a quote.</span>
         <div className={styles.table} role="table" aria-label="Deleted quotes" data-testid="deleted-quotes" data-lead={showLead || undefined} data-select="">
-          <div className={styles.row} role="row" data-head="">
-            <span role="columnheader" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label="Select all deleted quotes" /></span>
-            <span role="columnheader" className={styles.cell}>Quote</span>
-            {showLead ? <span role="columnheader" className={styles.cell}>Lead</span> : null}
-            <span role="columnheader" className={styles.cell}>Status</span>
-            <span role="columnheader" className={styles.cell}>Deleted</span>
-            <span role="columnheader" className={`${styles.cell} ${styles.actions}`}>Actions</span>
+          <div className={styles.head} role="row">
+            <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!pickable.length} onChange={() => setSelected(allOn ? new Set() : new Set(pickable.map((r) => r.id)))} aria-label="Select all deleted quotes" /></span>
+            <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Quote</span></span>
+            {showLead ? <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Lead</span></span> : null}
+            <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Status</span></span>
+            <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Deleted</span></span>
+            <span role="columnheader" className={`${styles.hCell} ${styles.actions}`}><span className={styles.hLabel}>Actions</span></span>
           </div>
           {rows === null ? <div className={styles.empty}>Loading…</div>
             : failed ? <div className={styles.empty} role="status">Couldn’t load the deleted quotes — <button type="button" className={styles.retry} onClick={() => { setRows(null); setTick((t) => t + 1) }}>try again</button></div>

@@ -87,7 +87,7 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
           </div>
           <Button variant="secondary" appearance="outlined" iconStart={<Icon name="store" size={20} />} onPress={() => router.push(`${profileHref}#entities`)}>Manage entities</Button>
         </div>
-        <div className={`${styles.eventTable} ${styles.entityTable}`} role="table" aria-label="Issuing entities">
+        <div className={`${styles.eventTable} ${styles.entityTable}`} role="table" aria-label="Issuing entities" data-card-table="">
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Entity</span><span role="columnheader">UEN</span><span role="columnheader">GST</span><span role="columnheader">Bank</span>
           </div>
@@ -107,7 +107,7 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
           <span className={styles.settingTitle}>Who may do what</span>
           <span className={styles.settingHelp}>What each role may do, as the app checks it. The rows follow this studio’s settings — quote and template approval, the payment schedule and who sees leads. Roles are fixed; a member’s role is set under Company › Members.</span>
         </div>
-        <div className={`${styles.eventTable} ${styles.roleTable}`} role="table" aria-label="Who may do what">
+        <div className={`${styles.eventTable} ${styles.roleTable}`} role="table" aria-label="Who may do what" data-card-table="">
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Action</span>
             {ROLE_COLUMNS.map((r) => <span key={r} role="columnheader" className={styles.eventCol}>{r}{counts[r] ? ` · ${counts[r]}` : ''}</span>)}

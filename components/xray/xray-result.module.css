@@ -44,8 +44,9 @@
 .swatch[data-status='theirs-only'] { background: var(--om-color-tertiary-red-default); }
 .swatch[data-status='unpriced'] { background: var(--om-color-on-surface-border); }
 .foot { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); text-align: center; }
-.link { color: var(--om-color-primary-default); text-decoration: none; }
-.link:hover { text-decoration: underline; }
+/* (REG-729) the house text link (the DS Link look — primary, 600, no underline), in the line's 12px size (inline, a DS Link takes the
+   copy's size) */
+.link { composes: link from '../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 @media (max-width: 767px) {
   .banner { width: auto; margin: var(--om-spacing-4) var(--om-spacing-4) 0; }
   .column { padding: var(--om-spacing-4) var(--om-spacing-4) var(--fab-clearance); gap: var(--om-spacing-4); }

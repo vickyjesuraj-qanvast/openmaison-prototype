@@ -28,10 +28,8 @@
   text-align: center; color: var(--om-color-on-surface-secondary); font: var(--om-type-body-m);
   padding: var(--om-spacing-8);
 }
-.soonTitle { font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); }
+.soonTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }   /* (REG-729) the token, not heading-h3 re-typed to 20/24/600 */
 .anchor { position: relative; display: inline-flex; }
-.menuText { flex: 1; min-width: 0; }
-.menuCurrent { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }   /* the tab's status menu meta (910:36673) */
 /* Touch (REG-273 / REG-312): the status pill is a 36px DS Button; the invisible ::after grows its box to 44 without moving the mark. */
 @media (hover: none) and (max-width: 1024px), (max-width: 767px) {
   .anchor > button { position: relative; }

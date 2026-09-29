@@ -151,7 +151,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
                 {canManage ? <Button variant="secondary" appearance="outlined" onPress={() => { void save({ meta: { ...capture.meta, connected: false } }, 'Meta Lead Ads disconnected') }}>Disconnect</Button> : null}   {/* (REG-646, Q-07) Owners and Admins */}
               </div>
               {/* (sweep S4 #20) the house list of switches — Settings' event table: a caption head, 56px rows, the switch under its column */}
-              <div className={styles.formTable} role="table" aria-label="Lead forms">
+              <div className={styles.formTable} role="table" aria-label="Lead forms" data-card-table="">
                 <div className={styles.formHead} role="row"><span role="columnheader">Lead form</span><span role="columnheader" className={styles.formCol}>Sends leads</span></div>
                 {capture.meta.forms.map((f) => (
                   <label key={f.id} className={styles.formRow} role="row">

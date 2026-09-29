@@ -10,8 +10,7 @@
 .head {
   display: flex; align-items: center; gap: var(--om-spacing-2);
   padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-2);
-  font: var(--om-type-caption-s);
-  letter-spacing: 0.04em;
+  font: var(--om-type-caption-s);   /* (REG-729) no letter-spacing on an uppercase caption — the type tokens carry none */
   text-transform: uppercase;
   color: var(--om-color-on-surface-secondary);
 }

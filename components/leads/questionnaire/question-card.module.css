@@ -31,10 +31,9 @@
 
 /* Option menu host (Multi 931:47054 · Single 931:47069): the Dropdown positions itself under the field. */
 .multi { position: relative; }
-/* Menu row (931:47484-style): 36 tall H g8 p8/12/8/8 — the menu's .item with the mock's 8 left. */
-.option { padding: var(--om-spacing-2) var(--om-spacing-3) var(--om-spacing-2) var(--om-spacing-2); }
+/* Menu row (931:47484-style): 36 tall H g8 — (REG-728) the house row and its 12px padding (the glyph-led rows' rule). */
 .check { display: inline-flex; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }   /* check_box_outline_blank / radio_button_unchecked 20 #666666 */
-.option[aria-checked='true'] .check { color: var(--om-color-primary-default); }                 /* check_box / radio_button_checked 20/Light #5500ff */
+[aria-checked='true'] > .check { color: var(--om-color-primary-default); }                     /* check_box / radio_button_checked 20/Light #5500ff */
 .optionLabel { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Answered block (931:47006): fill #f2f2f2, H g16 p24 → 24 + 20 + 24 = 68. */
@@ -84,7 +83,7 @@
   .iconBtn::after { content: ''; position: absolute; inset: -12px; }   /* 20 → 44 */
   .actions button { position: relative; }
   .actions button::after { content: ''; position: absolute; inset: -4px; }   /* 36 → 44 */
-  .option { min-height: 44px; }
+  .multi [role^='menuitem'] { min-height: 44px; }   /* the option rows, on any touch screen (the house menu lifts them to 1024) */
 }
 
 /* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. the question card's inline glyphs draws at 20px. */

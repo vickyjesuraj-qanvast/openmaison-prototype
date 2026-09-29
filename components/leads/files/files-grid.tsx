@@ -1,8 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type RefObject } from 'react'
 import { Checkbox } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { FolderCard, FolderGroup } from '@/components/om/folders/folder-card'
 import { countLine } from '@/lib/folders'
@@ -77,7 +77,12 @@ function FileName({ name }: { name: string }) {
 }
 
 export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onFolderMenu, onFileMenu, placeOf, visualizeLabel }: FilesGridProps) {
+  /* (REG-728) The tile's menu opens through the body portal, anchored to the pressed kebab, as the folder card's (REG-664) — an
+     inline menu hung inside the tile's row. One menu at a time, so one instance serves every tile. */
   const [menu, setMenu] = useState<string | null>(null)
+  const fileAnchor = useRef<HTMLElement | null>(null)
+  const menuFile = menu ? groups.flatMap((g) => g.files).find((f) => f.id === menu) ?? null : null
+  const pickFile = (a: FileAction) => { const f = menuFile; setMenu(null); if (f) onFileMenu(f, a) }
   /* (REG-664) The folder card is the shared one (components/om/folders); its menu opens through the portal, anchored to the kebab. */
   const [folderMenu, setFolderMenu] = useState<string | null>(null)
   const folderAnchor = useRef<HTMLElement | null>(null)
@@ -117,13 +122,8 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
           ))}
         </FolderGroup>
       ) : null}
-      <PortalMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} align="right" width={200} role="menu" sheetTitle={menuFolder?.name ?? ''}>
-        {/* Folder kebab menu 931:40130 (200×154) — verbatim order; Delete #db382a. */}
-        <DropdownItem onSelect={() => pickFolder('open')}>Open</DropdownItem>
-        <DropdownItem onSelect={() => pickFolder('move')}>Move</DropdownItem>
-        <DropdownItem onSelect={() => pickFolder('rename')}>Rename</DropdownItem>
-        <DropdownItem onSelect={() => pickFolder('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-      </PortalMenu>
+      <FolderMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} name={menuFolder?.name ?? ''} onPick={pickFolder} />
+      <FileMenu open={!!menuFile} anchor={fileAnchor} onClose={() => setMenu(null)} name={menuFile?.name} visualize={menuFile ? visualizeLabel?.(menuFile) ?? null : null} onPick={pickFile} />
 
       {groups.map((g) => {
         const ids = g.files.map((f) => f.id)
@@ -189,12 +189,11 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
                           type="button" className={styles.kebab}
                           aria-label={`Actions for ${f.name}`}
                           aria-haspopup="menu" aria-expanded={open}
-                          onClick={() => setMenu((m) => (m === f.id ? null : f.id))}
+                          onClick={(e) => { fileAnchor.current = e.currentTarget; setMenu((m) => (m === f.id ? null : f.id)) }}
                         >
                           <Icon name="more_vert" size={24} weight={300} />
                         </button>
                       </Tooltip>
-                      <FileMenu open={open} onClose={() => setMenu(null)} name={f.name} visualize={visualizeLabel?.(f) ?? null} onPick={(a) => { setMenu(null); onFileMenu(f, a) }} />
                     </span>
                   </div>
                 )
@@ -209,31 +208,33 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
 
 /* ---------------------------------------------------------------------------------------------- */
 
-/** Folder kebab menu 931:40130 (200×154) — verbatim order; Delete #db382a. Shared with the list's folder rows. */
-export function FolderMenu({ open, onClose, onPick, side = 'down', name }: { open: boolean; onClose: () => void; onPick: (a: FolderAction) => void; side?: 'down' | 'up'; name?: string }) {
+/** Folder kebab menu 931:40130 (200×154) — verbatim order; Delete #db382a. Shared by the grid's folder cards and the list's folder rows.
+ *  (REG-728) Through the body portal, anchored to the kebab (`anchor` must hold it, so a second press on it toggles). */
+export function FolderMenu({ open, anchor, onClose, onPick, name }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FolderAction) => void; name?: string }) {
   return (
-    <Dropdown open={open} onClose={onClose} align="right" side={side} sheetTitle={name ?? 'Folder'}>
+    <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name || 'Folder'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('rename')}>Rename</DropdownItem>
-      <DropdownItem onSelect={() => onPick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-    </Dropdown>
+      <DropdownItem tone="danger" onSelect={() => onPick('delete')}>Delete</DropdownItem>
+    </PortalMenu>
   )
 }
 
-/** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared with the list's file rows. */
-export function FileMenu({ open, onClose, onPick, side = 'down', name, visualize = null }: { open: boolean; onClose: () => void; onPick: (a: FileAction) => void; side?: 'down' | 'up'; name?: string
+/** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared by the grid's tiles and the list's file rows.
+ *  (REG-728) Through the body portal, anchored to the kebab (`anchor` must hold it, so a second press on it toggles). */
+export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FileAction) => void; name?: string
   /** (REG-675, AI Visualizer Q-31) the item's words: a photo opens as a room of the lead's design, a filed render as its own version (F095); null hides it */
   visualize?: string | null }) {
   return (
-    <Dropdown open={open} onClose={onClose} align="right" side={side} sheetTitle={name ?? 'File'}>
+    <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name || 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
       {visualize ? <DropdownItem onSelect={() => onPick('visualize')}>{visualize}</DropdownItem> : null}
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('duplicate')}>Duplicate</DropdownItem>
       <DropdownItem onSelect={() => onPick('download')}>Download</DropdownItem>
       <DropdownItem onSelect={() => onPick('rename')}>Rename</DropdownItem>
-      <DropdownItem onSelect={() => onPick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-    </Dropdown>
+      <DropdownItem tone="danger" onSelect={() => onPick('delete')}>Delete</DropdownItem>
+    </PortalMenu>
   )
 }

@@ -6,8 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { DateField } from '@/components/om/date-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown } from '@/components/leads/dropdown'
-import menuStyles from '@/components/leads/menus.module.css'
+import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import type { Question } from '@/lib/db/schema'
 import { QUESTION_TYPE_LABELS, answerText, parseMulti, parseOptions, validateAnswer } from '@/lib/leads/question-model'
 import { relativeTime } from '@/lib/format'
@@ -123,8 +122,9 @@ function AnswerInput({ question, value, onChange, error, today }: {
     default:
       // components/om/text-field.tsx has no multiline mode, so the Text answer is the DS TextArea (52 tall per 931:47090,
       // see question-card.module.css .textArea); it carries its own error line (DS FieldError) in the TextField's style.
+      // (REG-729) Labelled like its siblings — the Question Types name — as every DS TextArea is; the placeholder shows once it has focus.
       return (
-        <TextArea aria-label="Answer" placeholder="Enter your answer" value={str} onChange={onChange}
+        <TextArea label={QUESTION_TYPE_LABELS.text} placeholder="Enter your answer" value={str} onChange={onChange}
                   isInvalid={!!error} errorMessage={error} className={styles.textArea} />
       )
   }
@@ -132,9 +132,9 @@ function AnswerInput({ question, value, onChange, error, today }: {
 
 /**
  * Option menu field (931:47054 Multi select · 931:47069 Single select): a select-styled trigger (TextField mode="trigger",
- * expand_more) opening a Dropdown of icon + label rows in the 931:47484-style list — `DropdownItem` is hard-wired to
- * role="menuitem" with no checked state, so the rows are plain role="menuitemcheckbox" / "menuitemradio" buttons in the
- * menu's own `.item` style. The Dropdown only closes on presses outside it, so the multi menu stays open while toggling
+ * expand_more) opening a Dropdown of icon + label rows in the 931:47484-style list — (REG-728) the house `DropdownItem` rows as
+ * role="menuitemcheckbox" / "menuitemradio" with their `checked` state, each drawing its own mark (the glyph), so no Selected fill.
+ * The Dropdown only closes on presses outside it, so the multi menu stays open while toggling
  * (REG-189); the single menu closes itself on a pick, as a select does. The plan (00-build-plan.md) had the single select
  * on `TextField mode="select"`, whose rows carry no glyph — the measured spec 02 draws radio_button_checked 20/Light
  * primary (on) / radio_button_unchecked 20 secondary, so it takes this menu (review fix, REG-187).
@@ -167,11 +167,10 @@ function OptionMenuField({ label, options, display, error, role, icons, isOn, on
         {options.map((o) => {
           const on = isOn(o)
           return (
-            <button key={o} type="button" role={role} aria-checked={on} className={`${menuStyles.item} ${styles.option}`}
-                    onClick={() => { onPick(o); if (closeOnPick) setOpen(false) }}>
+            <DropdownItem key={o} role={role} checked={on} onSelect={() => { onPick(o); if (closeOnPick) setOpen(false) }}>
               <span className={styles.check}><Icon name={on ? icons[0] : icons[1]} size={20} weight={on ? 300 : 400} /></span>
               <span className={styles.optionLabel}>{o}</span>
-            </button>
+            </DropdownItem>
           )
         })}
       </Dropdown>

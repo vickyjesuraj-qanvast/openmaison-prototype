@@ -1,18 +1,13 @@
-.card {
-  flex: 1;
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
-  border-radius: var(--om-radius-2);
-  background: var(--om-color-surface-default);
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--om-spacing-6);
-  min-height: 0;
-}
-.stack { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); }
-.illo { width: 180px; height: 137px; }
-.text { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); color: var(--om-color-on-surface-default); }
-.title { font: var(--om-type-subheading-xl); }
-.sub { font: var(--om-type-body-m); }
-.ctas { display: flex; gap: var(--om-spacing-3); }
+/* "No leads yet" (frame 116, 780:94126). (REG-729) The house empty card (components/om/empty-card.module.css): the white card with its
+   1px stroke and r8, the art, 24, the texts 12 apart (20/24/600 title, 14/20 body), 24, the buttons 12 apart — written once. Kept here:
+   the listing's own 24 padding and no floor of its own (the card takes the body's height), the mock's 180×137 art. */
+.card { composes: card from '../om/empty-card.module.css'; min-height: 0; padding: var(--om-spacing-6); }
+.stack { composes: inner from '../om/empty-card.module.css'; }
+.illo { composes: art from '../om/empty-card.module.css'; width: 180px; height: 137px; }
+.text { composes: texts from '../om/empty-card.module.css'; }
+.title { composes: title from '../om/empty-card.module.css'; }
+.sub { composes: body from '../om/empty-card.module.css'; }
+.ctas { composes: buttons from '../om/empty-card.module.css'; }
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    The mock's two side-by-side CTAs are ~350px wide — more than a phone's content box, so they stack (primary

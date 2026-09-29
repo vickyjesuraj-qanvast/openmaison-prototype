@@ -14,6 +14,8 @@ import styles from '@/components/contracts/deleted-contracts-sheet.module.css'
 /**
  * (sweep S2 · U-07) Archived Contracts — Archived Quotes' twin (components/leads/quotes/archived-quotes-sheet.tsx) on the Deleted sheets'
  * stylesheet: Contract · Lead (Tools › Contracts) · Status · Archived · Actions, Unarchive per row and for a selection. Loads when opened.
+ * (REG-727) The Deleted trio's shape (REG-513): no Close foot, height to content with a 480 floor; the table on the table core (the
+ * listing's head, rows and cells).
  */
 export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, onUnarchive }: {
   open: boolean; onClose: () => void
@@ -47,19 +49,16 @@ export function ArchivedContractsSheet({ open, onClose, load, crumb, showLead, o
   const allOn = all.length > 0 && all.every((r) => selected.has(r.id))
   const toggle = (id: string) => setSelected((cur) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
-    <Dialog open={open} onClose={onClose} title="Archived Contracts" eyebrow={crumb} size="modal" width={1200} height={640} portal
-            footer={<Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>}>
-      <div className={styles.head}>
-        <span className={styles.note}>Archived contracts leave the contract lists and keep everything they hold — a signed one keeps its signed copy. Unarchive puts one back on its lead.</span>
-      </div>
+    <Dialog open={open} onClose={onClose} title="Archived Contracts" eyebrow={crumb} size="modal" width={1200} minHeight={480} phoneFull portal>
+      <span className={styles.note}>Archived contracts leave the contract lists and keep everything they hold — a signed one keeps its signed copy. Unarchive puts one back on its lead.</span>
       <div className={styles.table} role="table" aria-label="Archived contracts" data-testid="archived-contracts" data-lead={showLead || undefined} data-select="" data-kind="archived">
-        <div className={styles.row} role="row" data-head="">
-          <span role="columnheader" className={`${styles.cell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!all.length} onChange={() => setSelected(allOn ? new Set() : new Set(all.map((r) => r.id)))} aria-label="Select all archived contracts" /></span>
-          <span role="columnheader" className={styles.cell}>Contract</span>
-          {showLead ? <span role="columnheader" className={styles.cell}>Lead</span> : null}
-          <span role="columnheader" className={styles.cell}>Status</span>
-          <span role="columnheader" className={styles.cell}>Archived</span>
-          <span role="columnheader" className={`${styles.cell} ${styles.actions}`}>Actions</span>
+        <div className={styles.head} role="row">
+          <span role="columnheader" className={`${styles.hCell} ${styles.sel}`}><Checkbox isSelected={allOn} isIndeterminate={!allOn && live.length > 0} isDisabled={!all.length} onChange={() => setSelected(allOn ? new Set() : new Set(all.map((r) => r.id)))} aria-label="Select all archived contracts" /></span>
+          <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Contract</span></span>
+          {showLead ? <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Lead</span></span> : null}
+          <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Status</span></span>
+          <span role="columnheader" className={styles.hCell}><span className={styles.hLabel}>Archived</span></span>
+          <span role="columnheader" className={`${styles.hCell} ${styles.actions}`}><span className={styles.hLabel}>Actions</span></span>
         </div>
         {rows === null ? <div className={styles.empty}>Loading…</div>
           : failed ? <div className={styles.empty} role="status">Couldn’t load the archived contracts — <button type="button" className={styles.retry} onClick={() => { setRows(null); setTick((t) => t + 1) }}>try again</button></div>

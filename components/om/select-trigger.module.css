@@ -1,0 +1,30 @@
+/*
+ * (REG-729) The compact select trigger — the one button that opens a list of values where a full TextField is too big: a toolbar's
+ * source or kind picker, a cell's lead or amount, a recipient, an import column. The scope pill's anatomy (components/om/scope-pill)
+ * in the value's own weight: 36 tall in a toolbar (m), 28 inside a table cell (s); 1px on-surface-border, r4, body-m, the chevron
+ * turning while the list is open. Seven hand-rolled triggers (28 · 32 · 36 tall, two strokes, three chevrons) became this one.
+ */
+@layer om-select-trigger {
+.trigger {
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; max-width: 100%;
+  height: 36px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3);
+  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
+  background: var(--om-color-surface-default); cursor: pointer;
+  font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: left;
+  transition: background-color var(--motion-hover);
+}
+.trigger[data-size='s'] { height: 28px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); }
+@media (hover: hover) { .trigger:hover { background: var(--om-color-hover-04p); } }
+.trigger:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.trigger:disabled { color: var(--om-color-on-surface-disabled); border-color: var(--om-color-surface-variant); cursor: default; }
+.trigger[data-invalid] { border-color: var(--om-color-tertiary-red-default); }
+.value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.placeholder { color: var(--om-color-on-surface-secondary); }
+.chev { flex-shrink: 0; display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
+.trigger[data-open] .chev { transform: rotate(180deg); }
+/* (REG-273) touch: a 44 target without growing the box */
+@media (hover: none) {
+  .trigger { position: relative; }
+  .trigger::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: max(100%, 44px); }
+}
+}

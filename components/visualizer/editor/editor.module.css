@@ -25,21 +25,20 @@
 /* What the canvas shows, top-left (1.0's version badge). */
 .stageChip { display: inline-flex; align-items: center; gap: 4px; max-width: 360px; height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stageChip b { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
-/* No room yet: the add-room choices on the canvas itself. */
-.empty { width: min(760px, calc(100% - 48px)); max-height: calc(100% - 48px); overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-6); border-radius: var(--om-radius-3); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); text-align: center; }
-.emptyGlyph { width: 64px; height: 64px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
+/* No room yet: the add-room choices on the canvas itself. (REG-729) On the house empty recipe (the library galleries' and FolderEmpty's:
+   the glyph in a 72 r8 surface-bg well, the h4 title, the body-m help) as a card's r8 — not FolderEmpty itself: its title is fixed ("This
+   folder is empty") and this one holds the Add-room choices, floating on the grey stage (so it keeps its fill and its lift). */
+.empty { width: min(760px, calc(100% - 48px)); max-height: calc(100% - 48px); overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-6); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-2); text-align: center; }
+.emptyGlyph { width: 72px; height: 72px; flex-shrink: 0; border-radius: var(--om-radius-2); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
 .emptyTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .emptyText { margin: 0; max-width: 520px; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .emptyOptions { align-self: stretch; text-align: left; margin-top: var(--om-spacing-2); }
-.compareBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.compareBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }   /* (REG-729) the DS button's 600 */
 /* (F152) the wash only where there is a pointer to hover — a tap never leaves it stuck */
 @media (hover: hover) { .compareBtn:hover:not(:disabled) { background: var(--om-color-hover-08p); } }
 .compareBtn[aria-pressed='true'] { background: var(--om-color-primary-variant); color: var(--om-color-primary-default); }
 .compareBtn:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }
 .compareBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
-/* A menu row that says why it waits (sweep S1: the reason sits in the row, not in a native title). */
-.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 /* The FAB keeps clear of the rail and the versions (the house FAB sits bottom-right, which the rail's Generate owns here). With no rail
    (no room yet, a deleted design) it keeps the house corner (F008). */
 .editor[data-rail] .fab { right: calc(var(--viz-rail) + 20px + env(safe-area-inset-right, 0px)); bottom: 36px; }

@@ -4,7 +4,7 @@
   left: calc(var(--rail-w, 52px) + 32px);   /* rail width + 32px page padding — follows the rail like the review banner strip (REG-73/87) */
   bottom: calc(24px + var(--bottom-dock, 0px));
   transition: bottom var(--motion-toggle), left var(--motion-modal);
-  z-index: 120;
+  z-index: 125;   /* (REG-728) above every dialog, a nested one (120) included — a message raised from inside it stays readable */
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -33,7 +33,7 @@
 .eyebrowRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 36px; }
 .eyebrowRow .eyebrow { flex: 1; min-width: 0; }
 /* "FROM A DESIGN TEMPLATE · 3 SAVED" — caption-s uppercase secondary; the count in the same colour (AA at 12px). */
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); letter-spacing: .02em; }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on a caption */
 .eyebrowActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
 
 /* Tile rail: the attach-files tile module — 276 wide, 16 apart (four across 1152); more wrap. */
@@ -155,11 +155,8 @@
 .uploadTable { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
 .uploadRow { display: grid; grid-template-columns: minmax(96px, 160px) minmax(0, 1fr) 56px 72px 112px; gap: var(--om-spacing-3); align-items: center; min-height: 40px; padding: 0 var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .uploadRow + .uploadRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-.uploadRow[data-head] { min-height: 36px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.uploadRow[data-head] { min-height: 36px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
 .uploadRow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uploadRow > span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .uploadMore, .uploadHelp { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 767px) { .uploadRow { grid-template-columns: minmax(0, 1fr) 96px; } .uploadRow > span:nth-child(1), .uploadRow > span:nth-child(3), .uploadRow > span:nth-child(4) { display: none; } }
-/* (verify round 3 · the sweep's rule, REG-656) A tile menu row that waits says why under its label — Company › Templates' .menuRow · .menuMeta. */
-.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }

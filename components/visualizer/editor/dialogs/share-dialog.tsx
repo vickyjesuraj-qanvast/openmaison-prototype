@@ -137,7 +137,7 @@ export function ShareDialog({ open, onClose, rooms, initial, lead, studio, sende
         {made ? (
           <div className={styles.stack}>
             <div className={styles.link}><Icon name="link" size={20} weight={300} /><span className={styles.linkUrl} data-testid="viz-share-url">{made.url}</span><Button appearance="text" iconStart={copied('link') ? <Icon name="check" size={18} /> : undefined} onPress={() => { void copy('link', made.url, LINK_FAILED).then((ok) => { if (ok) onSent(made.id, 'copy') }) }} data-testid="viz-copy-link">{copyLabel('link', 'Copy link', 'Link copied')}</Button></div>
-            <div className={styles.box}><TextArea aria-label="Message to the client" value={text} onChange={(v: string) => setText(v)} /></div>
+            <div className={styles.box}><TextArea label="Message to the client" value={text} onChange={(v: string) => setText(v)} /></div>   {/* (REG-729) a multi-line field carries its label */}
             <div className={styles.under}><Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => setText(draft(made.url))} isDisabled={text === draft(made.url)}>Reset to draft</Button><span className={styles.count}>{text.length} characters · the link lives 7 days</span></div>
           </div>
         ) : (

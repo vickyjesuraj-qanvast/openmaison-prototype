@@ -11,7 +11,7 @@ import { useSheetLayout } from '@/components/om/sheet'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -147,7 +147,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 </button>
               </Tooltip>
               {/* Frame 95 (931:39889): Move · Duplicate · Rename · Delete, 200 wide under the kebab */}
-              <PortalMenu open={kebabOpen} anchor={kebabRef} onClose={closeKebab} align="right" width={200} role="menu" sheetTitle={file.name}>
+              <PortalMenu open={kebabOpen} anchor={kebabRef} onClose={closeKebab} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={file.name}>
                 {/* (REG-269) Mobile only: the header's Download folds in here. (audit 2026-09-26) A row of the sheet itself, not one wrapped
                     in a `display: contents` span — the sheet's 16px row gutter is `.menuBody > button`, and the wrapper left it at 12. */}
                 {sheet ? <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem> : null}
@@ -155,9 +155,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); void run('duplicate the file', () => duplicateFiles([file.id]), 'File duplicated', REFRESH) }}>Duplicate</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); setRenaming(true) }}>Rename</DropdownItem>
-                <DropdownItem onSelect={() => { setKebabOpen(false); setTrashing(true) }}>
-                  <span className={styles.danger}>Delete</span>
-                </DropdownItem>
+                <DropdownItem tone="danger" onSelect={() => { setKebabOpen(false); setTrashing(true) }}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
               </PortalMenu>
             </span>
           </div>

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, Switch } from '@/components/ds'
+import { Button, Switch, Tag } from '@/components/ds'
+import { Chips } from '@/components/om/chips'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { overlayFade, modalPanel } from '@/lib/motion'
@@ -39,6 +40,8 @@ const FIELDS: { label: string; key: string; leadKey: MergeKey; radio: boolean }[
   { label: 'Remarks', key: 'Remarks', leadKey: 'notes', radio: false },
 ]
 const fmtBudget = (v: string) => { const d = v.replace(/\D/g, ''); return d ? Number(d).toLocaleString('en-SG') : '' }
+/** The "All" chip's value — no source is ever called this. */
+const ALL_SOURCES = '__all__'
 
 export function ReviewSheet({
   open, rows, now, onClose, onApprove, onReject, onMerge,
@@ -137,12 +140,11 @@ export function ReviewSheet({
 
             <div className={styles.toolbar}>
               <ChipRail label="Filter by source">
-                <button type="button" className={styles.chip} data-selected={activeSource === null || undefined} onClick={() => setSource(null)}>All</button>
-                {sources.map(([s, n]) => (
-                  <button key={s} type="button" className={styles.chip} data-selected={activeSource === s || undefined} onClick={() => setSource(source === s ? null : s)}>
-                    {s} ({n})
-                  </button>
-                ))}
+                {/* (REG-729) The house chips (components/om/chips.tsx): one pick, arrow keys between them; pressing the picked source
+                    again lets go of it, back to All, as it always did. */}
+                <Chips label="Filter by source" value={activeSource ?? ALL_SOURCES}
+                       options={[{ value: ALL_SOURCES, label: 'All' }, ...sources.map(([s, n]) => ({ value: s, label: `${s} (${n})` }))]}
+                       onChange={(v) => setSource(v === ALL_SOURCES || v === source ? null : v)} />
               </ChipRail>
               <span className={styles.vdivider} />
               <Switch size="sm" isSelected={effectiveDupOnly} onChange={setDupOnly} aria-label="Show only duplicates" />
@@ -177,7 +179,8 @@ export function ReviewSheet({
                       </div>
                       {isDup ? <span className={styles.matchBox}>Matches: {r.existing ? r.existing.name : r.twin ? `${r.twin.data['Lead Name'] || 'a row'} (${r.twin.sameFile ? 'in this file' : 'in the queue'})` : 'another lead in this file'}</span> : null}
                       <div className={styles.cardFoot}>
-                        <span className={styles.tag} data-tone={isDup ? 'duplicate' : 'pending'}>{isDup ? 'Duplicate' : 'Pending'}</span>
+                        {/* (REG-729) the DS Tag, outlined: yellow for a duplicate, the default tone for one pending */}
+                        <Tag appearance="outlined" color={isDup ? 'yellow' : 'default'}>{isDup ? 'Duplicate' : 'Pending'}</Tag>
                         <span className={styles.cardActions}>
                           {canMerge ? (
                             <button type="button" className={styles.link} data-tone="primary" onClick={(e) => { e.stopPropagation(); setSelectedId(r.row.id) }}>View &amp; Merge</button>

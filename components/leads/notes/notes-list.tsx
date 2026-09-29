@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { useRef, useState } from 'react'
+import { DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import emptyStyles from '@/components/leads/search-empty.module.css'
@@ -61,6 +63,9 @@ type OpenMenu = { kind: 'item'; id: string } | null
 export function NotesList({ items, searching, onClearAll, selectedId, onSelect, onItemMenu, filter, onFilter, onNew }: NotesListProps) {
   const [menu, setMenu] = useState<OpenMenu>(null)
   const close = () => setMenu(null)
+  /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab — inline, it hung inside the scrolling list. */
+  const kebab = useRef<HTMLElement | null>(null)
+  const menuItem = menu?.kind === 'item' ? items.find((i) => i.id === menu.id) ?? null : null
 
   return (
     <div className={styles.column}>
@@ -117,31 +122,28 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
                     <span className={styles.date}>{displayDateTimeDot(it.createdAt)}</span>
                   </span>
                 </button>
-                {/* Kebab sits in the title row (H g4: title 256 · more_vert 20) — placed beside the select button, never inside it. */}
+                {/* Kebab sits in the title row (H g4: title · more_vert) — placed beside the select button, never inside it.
+                    (REG-729) The house kebab in a head: IconButton 24 bare, a 24 glyph (it was a 20 box). */}
                 <span className={styles.kebabWrap}>
                   <Tooltip label={it.kind === 'contact' ? 'Contact log actions' : 'Note actions'} disabled={open}>
-                    <button
-                      type="button" className={styles.kebab}
-                      aria-label={`Actions for ${it.title}`}
-                      aria-haspopup="menu" aria-expanded={open}
-                      onClick={() => setMenu((m) => (m?.kind === 'item' && m.id === it.id ? null : { kind: 'item', id: it.id }))}
-                    >
-                      <Icon name="more_vert" size={20} weight={300} />
-                    </button>
+                    <IconButton icon="more_vert" label={`Actions for ${it.title}`} size={24} variant="bare" iconSize={24} iconWeight={300}
+                                aria-haspopup="menu" aria-expanded={open}
+                                onClick={(e) => { kebab.current = e.currentTarget; setMenu((m) => (m?.kind === 'item' && m.id === it.id ? null : { kind: 'item', id: it.id })) }} />
                   </Tooltip>
-                  <Dropdown open={open} onClose={close} align="right" width={140} sheetTitle="Note">
-                    {/* A stage-logged record keeps its items visible but inert (REG-265) — the title says why. */}
-                    <DropdownItem disabled={it.locked} title={it.locked ? 'Logged by the Contacted stage — edit it in the Move stage window' : undefined}
-                                  onSelect={() => { close(); onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>
-                    <DropdownItem tone="danger" disabled={it.locked} title={it.locked ? 'Logged by the Contacted stage — it cannot be deleted here' : undefined}
-                                  onSelect={() => { close(); onItemMenu(it.id, 'delete') }}><span className={it.locked ? undefined : styles.danger}>Delete</span></DropdownItem>
-                  </Dropdown>
                 </span>
               </div>
             )
           })}
         </div>
       )}
+      {/* 931:45488 — Edit · Delete, the notes family's mocked 140. A stage-logged record keeps its items visible but inert (REG-265);
+          (REG-728) the reason prints in the row, under its words — a native title never shows on touch. */}
+      <PortalMenu open={!!menuItem} anchor={kebab} onClose={close} align="right" width={140} role="menu" sheetTitle="Note">
+        <DropdownItem disabled={menuItem?.locked} title={menuItem?.locked ? 'Logged by the Contacted stage — edit it in the Move stage window' : undefined}
+                      onSelect={() => { const it = menuItem; close(); if (it) onItemMenu(it.id, 'edit') }}>Edit</DropdownItem>
+        <DropdownItem tone="danger" disabled={menuItem?.locked} title={menuItem?.locked ? 'Logged by the Contacted stage — it cannot be deleted here' : undefined}
+                      onSelect={() => { const it = menuItem; close(); if (it) onItemMenu(it.id, 'delete') }}>Delete</DropdownItem>
+      </PortalMenu>
     </div>
   )
 }

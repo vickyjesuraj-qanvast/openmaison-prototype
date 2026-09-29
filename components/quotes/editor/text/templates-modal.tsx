@@ -11,7 +11,8 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { QuoteTextTemplate } from '@/lib/db/schema'
 import { TEXT_LABEL, TOKENS, textPreview, tokenText, type TextKind } from '@/lib/quotes/text'
@@ -101,10 +102,9 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
           <RichEditor ref={editor} framed fill value={editing.body} onChange={(html) => setEditing((e) => (e ? { ...e, body: html } : e))} placeholder={`Add your ${label}.`} label={`${label} template`} minHeight={359}
                       right={
                         <span className={styles.tokenAnchor}>
-                          <button ref={tokenRef} type="button" className={styles.tokenBtn} aria-haspopup="menu" aria-expanded={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)}>
-                            Insert Token<span className={styles.tokenChev} data-open={tokenOpen || undefined}><Icon name="expand_more" size={20} /></span>
-                          </button>
-                          <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={200} align="right" sheetTitle="Insert Token">
+                          {/* (REG-729) The house compact select (m); (REG-728) the insert-field list's 240. */}
+                          <SelectTrigger ref={tokenRef} label="Insert Token" value={<span>Insert Token</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />   {/* the words in ink (1238:33173), named once for a screen reader */}
+                          <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert Token">
                             {TOKENS.map((t) => <DropdownItem key={t.key} onSelect={() => { setTokenOpen(false); editor.current?.insertText(tokenText(t.key)) }}>{t.label}</DropdownItem>)}
                           </PortalMenu>
                         </span>
@@ -143,13 +143,8 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
                 </div>
                 <div className={styles.cardActions}>
                   <Button variant="primary" appearance="outlined" onPress={() => { onAdd(t); onClose() }}>Add</Button>
-                  <Tooltip label="More options" disabled={menuFor === t.id}>
-                    <IconButton icon="more_vert" label={`More options for ${t.title}`} aria-haspopup="menu" aria-expanded={menuFor === t.id} onClick={() => setMenuFor((m) => (m === t.id ? null : t.id))} />
-                  </Tooltip>
-                  <Dropdown open={menuFor === t.id} onClose={() => setMenuFor(null)} align="right" sheetTitle={t.title}>
-                    <DropdownItem onSelect={() => { setMenuFor(null); setEditing({ id: t.id, title: t.title, body: t.body }) }}>Edit Template</DropdownItem>
-                    <DropdownItem tone="danger" onSelect={() => { setMenuFor(null); setRemoving(t) }}>Delete</DropdownItem>
-                  </Dropdown>
+                  <CardMenu title={t.title} open={menuFor === t.id} onToggle={() => setMenuFor((m) => (m === t.id ? null : t.id))} onClose={() => setMenuFor(null)}
+                            onEdit={() => { setMenuFor(null); setEditing({ id: t.id, title: t.title, body: t.body }) }} onDelete={() => { setMenuFor(null); setRemoving(t) }} />
                 </div>
               </div>
             ))}
@@ -159,5 +154,22 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
       <ConfirmDialog open={!!removing} title="Delete this template?" message={removing ? `“${removing.title}” leaves the library. Quotes that already use it keep their text.` : ''} confirmLabel="Delete"
                      onConfirm={() => { if (removing) remove(removing) }} onCancel={() => setRemoving(null)} />
     </>
+  )
+}
+
+/** (REG-728) A template card's kebab: its menu opens through the body portal (PortalMenu) — the inline one lived inside the modal's
+ *  scroller, where a card low in the list had its menu clipped. */
+function CardMenu({ title, open, onToggle, onClose, onEdit, onDelete }: { title: string; open: boolean; onToggle: () => void; onClose: () => void; onEdit: () => void; onDelete: () => void }) {
+  const anchor = useRef<HTMLSpanElement>(null)
+  return (
+    <span ref={anchor} className={styles.menuWrap}>
+      <Tooltip label="More options" disabled={open}>
+        <IconButton icon="more_vert" label={`More options for ${title}`} aria-haspopup="menu" aria-expanded={open} onClick={onToggle} />
+      </Tooltip>
+      <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={title}>
+        <DropdownItem onSelect={onEdit}>Edit Template</DropdownItem>
+        <DropdownItem tone="danger" onSelect={onDelete}>Delete</DropdownItem>
+      </PortalMenu>
+    </span>
   )
 }

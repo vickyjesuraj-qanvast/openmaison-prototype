@@ -67,7 +67,7 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
           {rows.length === 0 ? (
             <p className={styles.empty} data-testid="bank-empty">No questions yet — add the first one, and every new lead will start with it.</p>
           ) : (
-            <div className={styles.table} role="table" aria-label="Questions">
+            <div className={styles.table} role="table" aria-label="Questions" data-card-table="">
               {/* (REG-614) The Notifications settings' event table: a bordered list under a caption head, every switch under its own
                   column name, the actions (order · edit · delete) at the row's end. The rows used to carry ad-hoc switch labels. */}
               <div className={styles.thead} role="row">
@@ -90,8 +90,9 @@ export function QuestionnaireView({ questions: initial, viewer, from }: { questi
                     <span className={styles.actions} role="cell">
                       {canEdit ? (
                         <>
-                          <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move “${q.question}” up`} size={24} variant="bare" iconSize={16} disabled={i === 0} onClick={() => move(q, 'up')} /></Tooltip>
-                          <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move “${q.question}” down`} size={24} variant="bare" iconSize={16} disabled={i === rows.length - 1} onClick={() => move(q, 'down')} /></Tooltip>
+                          {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
+                          <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move “${q.question}” up`} size={24} variant="bare" iconSize={18} disabled={i === 0} onClick={() => move(q, 'up')} /></Tooltip>
+                          <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move “${q.question}” down`} size={24} variant="bare" iconSize={18} disabled={i === rows.length - 1} onClick={() => move(q, 'down')} /></Tooltip>
                           <Tooltip label="Edit"><IconButton icon="edit" label={`Edit “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={() => setEditing({ q })} /></Tooltip>
                           <Tooltip label="Delete"><IconButton icon="delete" label={`Delete “${q.question}”`} size={24} variant="bare" iconSize={18} onClick={() => setDeleting(q)} /></Tooltip>
                         </>

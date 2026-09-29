@@ -1,129 +1,33 @@
-/* Contracts filters modal — no Contracts mock (931-38609); a copy of the Quotes filters modal
-   (910:36338 = the listing FiltersModal shell 600×600: rail 160 + "Filter content" 440) —
-   components/leads/quotes/quotes-filters-modal.module.css, panes measured in design-source/context/lead-quotes/03-filters.txt.
-   Only the Sort · Date · Status panes are used (no Due pane); REG-178. */
-.overlay {
-  overscroll-behavior: contain;
-  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the house layer */
-  background: var(--om-color-overlay-60p);
-  display: flex; align-items: safe center; justify-content: center;
-  padding: 48px 0; overflow-y: auto;
-}
-/* (REG-725) The look (surface, r12, level 5, the column) is the shared panel's (surfaceClasses.panel); the head 64 ("Filters", the
-   close, the rule) and the foot 68 are the house's (SurfaceHead / SurfaceFoot, components/om/dialog.tsx). */
-.panel { width: var(--om-modal-m); height: 600px; max-height: calc(100vh - 96px); }
-
-.body { flex: 1; min-height: 0; display: flex; }
-/* Rail 160, fill surface-bg; options 52 tall (p16/16/16/24, 14/Semi Bold), the active one fill #fff */
-.rail { width: 160px; flex-shrink: 0; background: var(--om-color-surface-bg); display: flex; flex-direction: column; }
-.tab {
-  display: flex; align-items: center; gap: var(--om-spacing-2);
-  padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6);
-  border: 0; background: none; cursor: pointer; text-align: left; width: 100%;
-  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
-  transition: background var(--motion-hover);
-}
-.tab:hover { background: var(--om-color-hover-04p); }
-.tab[data-active] { background: var(--om-color-surface-default); }
-.tab span:first-child { flex: 1; }
-/* "Filter Option with Dot" — the listing's dot (6px primary) */
-/* The listing's copy (components/leads/filters-modal.module.css) moved to the radius token and the copies did
-   not; on a 6px box 999px and 50% draw the same circle, so this only puts the copies back in step (REG-286). */
-.tabDot { width: 6px; height: 6px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); }
-
-/* "Filter content" 440×536, V g16 p24 */
-.content { flex: 1; min-width: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); overflow-y: auto; overscroll-behavior: contain; }
-.sectionTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-/* Status (quotes 910:36518, V g8): the list starts 8 below the title (title → list = g16 - 8) */
-.list { display: flex; flex-direction: column; margin-top: -8px; }
-
-/* Sort (quotes 910:36380) options 44 tall (p12/0): Radio 24 + label 14/Regular */
-.sortRow { display: flex; align-items: center; gap: var(--om-spacing-2); height: 44px; padding: var(--om-spacing-3) 0; }
-
-/* "One Line" rows 392×44 (p12/0): label 14/Regular + Checkbox right */
-.row { display: flex; align-items: center; gap: var(--om-spacing-3); height: 44px; padding: var(--om-spacing-3) 0; cursor: pointer; }
-.row:hover span:first-child { color: var(--om-color-primary-default); }
-.row span:first-child { flex: 1; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
-
-/* Date (quotes 910:36448): chips row (y60) → fields (y104) = g12; the fields show only for "Custom" */
-.dateGroup { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-/* "Choice" chips 32 tall (p8/12, stroke #cccccc, r4, 12/Semi Bold), 12 apart — single-select
-   (selected: fill primary-variant #eee5ff, stroke primary #5500ff, text on-primary-variant #4400cc) */
-.chips { display: flex; gap: var(--om-spacing-3); flex-wrap: wrap; }
-.chip {
-  display: inline-flex; align-items: center; height: 32px;
-  padding: 0 var(--om-spacing-3);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  font: var(--om-type-subheading-s); color: var(--om-color-on-surface-default);
-  cursor: pointer; white-space: nowrap;
-  transition: background var(--motion-hover), border-color var(--motion-hover), color var(--motion-hover);
-}
-.chip:hover { background: var(--om-color-surface-bg); }
-.chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
-
-/* Custom: "From date" · "To date" Text Fields 188×36 side by side, 16 apart (392 = the pane width) */
-.dateRow { display: flex; gap: var(--om-spacing-4); }
-.dateRow > * { flex: 1; min-width: 0; }
-
-/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
-   The Quotes twin's block, which is itself the listing filters modal's (components/leads/filters-modal.module.css)
-   — the same 600×600 shell with its own overlay instead of components/om/dialog: clamped to the viewport
-   tablet-and-down, a full-screen sheet at mobile (600px on a 390 screen put Clear All / Apply off-screen).
-   The 160px tab rail stays — it is the mock's navigation — and the group side takes the mobile content
-   padding (24 → 16) plus the two rows drawn at a fixed width: the sort row and the two-up date range. */
-@media (max-width: 1024px) {
-  .panel { max-width: calc(100vw - 48px); }
-}
-@media (max-width: 767px) {
-  /* (REG-360) The rail is the Tasks sheet's — 40% of the screen before its mocked 160. All four filter sheets read the same. */
-  .rail { width: min(160px, 40%); }
-  /* (REG-353) The mobile canvas' bottom sheet: full width on the bottom edge, rounded on top, as tall as its
-     content up to 88dvh, with the grabber above the heading — not the whole screen. */
-  .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
-  .panel.panel {   /* doubled: beats the shared panel's r12 whichever sheet loads last */
-    width: 100vw; max-width: 100vw;
-    height: auto; max-height: min(88dvh, calc(100dvh - 56px));
-    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
-  }
-  .content { padding: var(--om-spacing-4); }
-  .sortRow { width: 100%; }
-  .dateRow { flex-direction: column; }
-  .dateRow.dateRow > * { flex: 0 0 auto; }   /* the two-up `flex: 1` shares width, never height (doubled class beats the DS field's own `flex: 1`) */
-  .panel .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
-}
+/* Contracts filters modal — no Contracts mock (931-38609); the Quotes filters modal (910:36338 = the listing FiltersModal shell 600×600:
+   rail 160 + "Filter content" 440) with the Sort · Date · Status panes (no Due pane); REG-178. (REG-729) The shell is the shared one
+   (components/om/filters-modal.module.css, one for the four Filters modals); the Date chips are the house chip group (REG-614), as the
+   Quotes twin's. What stays here is this modal's touch rule, the Quotes twin's. */
+.overlay { composes: overlay from '../../om/filters-modal.module.css'; }
+.panel { composes: panel from '../../om/filters-modal.module.css'; }
+.body { composes: body from '../../om/filters-modal.module.css'; }
+.rail { composes: rail from '../../om/filters-modal.module.css'; }
+.tab { composes: tab from '../../om/filters-modal.module.css'; }
+.tabDot { composes: tabDot from '../../om/filters-modal.module.css'; }
+.content { composes: content from '../../om/filters-modal.module.css'; }
+.sectionTitle { composes: sectionTitle from '../../om/filters-modal.module.css'; }
+.list { composes: list from '../../om/filters-modal.module.css'; }   /* Status (quotes 910:36518, V g8) */
+.sortRow { composes: sortRow from '../../om/filters-modal.module.css'; }   /* Sort (quotes 910:36380) */
+.row { composes: row from '../../om/filters-modal.module.css'; }
+.dateGroup { composes: dateGroup from '../../om/filters-modal.module.css'; }   /* Date (quotes 910:36448) */
+.dateRow { composes: dateRow from '../../om/filters-modal.module.css'; }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The Quotes twin's rule. Each control keeps its drawn size and grows only its BOX, so the mock's 44px rows
-   and 32px chips all still measure the same:
-   · Choice chips (32 tall) and the footer's 36px DS buttons: a transparent ring, which takes no space;
+   The Quotes twin's rule. Each control keeps its drawn size and grows only its BOX, so the mock's 44px rows still measure the same:
+   · the footer's 36px DS buttons: a transparent ring, which takes no space;
    · the Sort radios — a DS Radio's label is only as big as its mark plus its text, so it is stretched
      over the whole 44px row (the row's padding moves onto the label; nothing shifts).
    The status rows already answer a press anywhere on their 44px box; they only stop clamping their
    checkbox, which globals grows to 44 on touch. A mouse never sees any of this. (REG-725) The close is the
-   house head's, with its own target. */
+   house head's; (REG-729) the Date chips are the house chip group's, each with its own target. */
 @media (hover: none) {
-  .chip, .foot button { position: relative; }
-  .chip::after { content: ''; position: absolute; inset: -6px 0; }         /* 32 → 44 tall, same width */
+  .foot button { position: relative; }
   .foot button::after { content: ''; position: absolute; inset: -4px; }   /* 36 → 44 */
   .sortRow { padding-block: 0; }
   .sortRow label { min-block-size: 44px; inline-size: 100%; }
   .row { height: auto; min-height: 44px; }
-}
-
-/* (REG-353) The sheet starts below the status bar, so the head gives up the clearance it took as a
-   full-screen surface and the grabber (surfaceClasses.grabber) sits in that space. */
-@media (max-width: 767px) {
-  .panel .head { padding-top: var(--om-spacing-3); }
-}
-
-/* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
-   (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
-   footer … looks like this padding issue across the bottom sheets, please keep it absolutely consistent")
-   Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
-   DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
-   with each other. Vertical padding is untouched. */
-@media (max-width: 767px) {
-  .panel .head, .content, .panel .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

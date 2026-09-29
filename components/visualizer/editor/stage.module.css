@@ -32,8 +32,9 @@
 .banner { position: absolute; top: var(--om-spacing-4); left: var(--om-spacing-4); right: var(--om-spacing-4); margin-inline: auto; width: max-content; max-width: calc(100% - 32px); box-sizing: border-box; z-index: 4; display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-inverse-surface-default); color: var(--om-color-surface-default); font: var(--om-type-body-m); box-shadow: var(--om-elevation-level-3); pointer-events: none; }
 .banner > :global(.msr), .banner > span:first-child { flex-shrink: 0; }
 .banner > span:nth-child(2) { min-width: 0; }
-.bannerCancel { flex-shrink: 0; pointer-events: auto; border: 0; background: none; color: #CCB2FF; font: var(--om-type-subtitle-m); cursor: pointer; padding: var(--om-spacing-1) var(--om-spacing-2); border-radius: var(--om-radius-1); }
-.bannerCancel:focus-visible { outline: var(--om-border-2) solid #CCB2FF; }
+/* (REG-729) Cancel is the snackbar's own action (the DS text button in the inverse primary, 36 tall — components/om/snackbar.module.css),
+   composed, not a copy at 500; it gives 4 back above and below, so the banner keeps its height. */
+.bannerCancel { composes: action from '../../om/snackbar.module.css'; flex-shrink: 0; pointer-events: auto; margin-block: calc(-1 * var(--om-spacing-1)); }
 /* Markers: a 16 px shape with a 36 px hit area (1.0's rule, B-46); selected grows with a ring; a picked finish fills a surface's square.
    `scale` undoes the stage's zoom, so a marker (and a pin) stays its own size at 200 % and its hit area with it. */
 .dot { position: absolute; z-index: 2; translate: -50% -50%; scale: calc(1 / var(--z, 1)); width: 16px; height: 16px; padding: 0; border: 2px solid var(--om-color-surface-default); background: var(--fill, var(--om-color-primary-default)); box-shadow: 0 0 0 1px var(--om-color-overlay-20p), var(--om-elevation-level-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--om-color-surface-default); transition: width var(--motion-toggle), height var(--motion-toggle), box-shadow var(--motion-toggle); }
@@ -82,7 +83,7 @@
 .toolbar { position: absolute; left: 50%; bottom: var(--om-spacing-4); translate: -50% 0; z-index: 5; max-width: calc(100% - 2 * var(--om-spacing-2)); box-sizing: border-box; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-3); }
 .toolbar::-webkit-scrollbar { display: none; }
 .toolbar > * { flex-shrink: 0; }
-.zoomLabel { min-width: 52px; height: 36px; border: 0; background: none; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); cursor: pointer; }
+.zoomLabel { min-width: 52px; height: 36px; border: 0; background: none; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); cursor: pointer; }   /* (REG-729) the DS button's 600 */
 @media (hover: hover) { .zoomLabel:hover { background: var(--om-color-hover-08p); } }
 .zoomLabel:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: -2px; }
 .rule { width: 1px; height: 24px; margin: 0 var(--om-spacing-1); background: var(--om-color-surface-variant); }
@@ -106,11 +107,11 @@
 .area[data-fit='over'] .toolbar[data-top] { bottom: auto; top: var(--edge, var(--om-spacing-2)); }   /* (round 3) a pin under it at the foot: the bar takes the top edge */
 /* (wave E · E3) `side`: the bar stands on end, a column beside the photo at the stage's right edge, centred on its height */
 .area[data-fit='side'] .toolbar { left: auto; right: calc(var(--edge, var(--om-spacing-2)) + var(--viz-inset-r, 0px)); top: 50%; bottom: auto; translate: 0 -50%; flex-direction: column; gap: var(--om-spacing-1); max-width: none; max-height: calc(100% - 8px); overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; padding: var(--om-spacing-1); }
-.area[data-fit='side'] .zoomLabel { min-width: 0; width: 36px; font: var(--om-type-caption-s); font-weight: 600; }
+.area[data-fit='side'] .zoomLabel { min-width: 0; width: 36px; font: var(--om-type-subheading-s); }   /* (REG-729) 12/600 as a token */
 .area[data-fit='side'] .rule { width: 24px; height: 1px; margin: var(--om-spacing-1) 0; }
 .chip[data-off] { visibility: hidden; }
 .area[data-fit='side'] .banner { border-radius: var(--om-radius-2); font: var(--om-type-body-s); }
 /* (surfaces-28) a sideways phone's banner is small: the short line, one row, in the photo's top-left corner (stage.tsx places it) */
 .area[data-sideways] .banner { width: max-content; border-radius: var(--om-radius-2); font: var(--om-type-body-s); gap: var(--om-spacing-1); padding: 2px 2px 2px var(--om-spacing-2); box-shadow: var(--om-elevation-level-2); }
 .area[data-sideways] .banner > span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.area[data-sideways] .bannerCancel { font: var(--om-type-subtitle-s); font-weight: 600; }
+.area[data-sideways] .bannerCancel { font: var(--om-type-subheading-s); }   /* (REG-729) 12/600 as a token */

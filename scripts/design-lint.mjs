@@ -99,10 +99,21 @@ const RULES = [
   },
   {
     id: 'copied-table',
-    title: 'A table uses the listing\'s model, not a copy of its stylesheet',
-    fix: 'Build tables on the listing\'s table model (components/leads/table.module.css) — a copied .hCell drifts (REG-723).',
-    applies: (p) => isCss(p) && p !== 'components/leads/table.module.css',
-    find: (t) => linesOf(t, /^\s*\.hCell\s*[{,]/).slice(0, 1),
+    title: 'A table uses the table core, not a copy of its stylesheet',
+    fix: 'Compose the table core (components/om/table-core.module.css, REG-727): `.hCell { composes: hCell from \'…/om/table-core.module.css\'; }` — a copied .hCell drifts (REG-723).',
+    applies: (p) => isCss(p) && p !== 'components/leads/table.module.css' && p !== 'components/om/table-core.module.css',
+    /* a head cell's rule that declares anything beyond `composes` (and a local override or two) is a copy; one that only composes is fine */
+    find: (t) => {
+      const out = []
+      const re = /(^|\n)(\s*)\.hCell\s*\{([^}]*)\}/g
+      let m
+      while ((m = re.exec(t))) {
+        const body = m[3].replace(/composes:[^;]*;/g, '').trim()
+        const decls = body.split(';').map((d) => d.trim()).filter(Boolean)
+        if (decls.some((d) => /^(padding|color|display|font)\b/.test(d))) out.push(t.slice(0, m.index + m[1].length).split('\n').length)
+      }
+      return out.slice(0, 1)
+    },
   },
 ]
 

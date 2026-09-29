@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { AiSheet } from '@/components/leads/ai-sheet'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Chips } from '@/components/om/chips'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
@@ -1124,7 +1124,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
            chip={room && !stageCompare ? <span className={styles.stageChip} data-testid="viz-stage-chip">{view ? <><b>V{view.n}</b> · {view.descriptor}</> : <b>Original</b>}</span> : null}
            empty={
              <div className={styles.empty} data-testid="viz-empty">
-               <span className={styles.emptyGlyph}><Icon name="add_photo_alternate" size={32} weight={300} /></span>
+               <span className={styles.emptyGlyph}><Icon name="add_photo_alternate" size={40} weight={300} /></span>   {/* (REG-729) the house empty glyph: 40 in a 72 well */}
                <h2 className={styles.emptyTitle}>Add the first room</h2>
                <p className={styles.emptyText}>A photo of the room — its surfaces and furniture are marked for you. Then pick finishes, a style or a light, and Generate.</p>
                <div className={styles.emptyOptions}><AddRoomOptions onFile={(f) => { void addPhotoRoom(f) }} onFiles={(fs) => { void addPhotoRooms(fs) }} onLeadFile={(f) => { void addLeadFileRoom(f) }} onSample={(k, s) => { void addSampleRoom(k, s) }} leadImages={data.leadImages} leadName={data.lead?.name ?? null} busy={roomBusy} /></div>
@@ -1379,7 +1379,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       <input ref={refInput} type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void addReference(f) }} />
       <input ref={pieceInput} type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void addPiecePhoto(f) }} />
 
-      <PortalMenu open={menu?.kind === 'version' && !!mv} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={240} role="menu" sheetTitle={mv ? `V${mv.n} · ${mv.descriptor}` : ''}>
+      {/* (REG-728) the ⋯ menus: rows with a second line (why one waits) — the width scale's 240, all three */}
+      <PortalMenu open={menu?.kind === 'version' && !!mv} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={mv ? `V${mv.n} · ${mv.descriptor}` : ''}>
         {mv ? (
           <>
             {/* (surfaces-27) with the Original on screen, a version's own ⋯ offers its before and after — never a dead Compare */}
@@ -1391,30 +1392,30 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
             <DropdownItem onSelect={() => { setMenu(null); download(mv.key) }}>Download</DropdownItem>
             <DropdownDivider />
             {/* (files-9) a deleted lead takes nothing more from its design — the rows say why */}
-            {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void toFiles(mv) }} disabled={leadDeleted}><span className={styles.menuRow}>Save to Files{leadDeleted ? <span className={styles.menuMeta}>{LEAD_DELETED_ROW}</span> : null}</span></DropdownItem> : null}
-            {data.lead ? <DropdownItem onSelect={() => { setMenu(null); setQuoteFor(mv) }} disabled={leadDeleted || !mvLines.length}><span className={styles.menuRow}>Add to a quote…{leadDeleted ? <span className={styles.menuMeta}>{LEAD_DELETED_ROW}</span> : !mvLines.length ? <span className={styles.menuMeta}>{noQuoteReason(mv)}</span> : null}</span></DropdownItem> : null}
-            <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed}><span className={styles.menuRow}>Share with the client…{leadClosed && !readOnly ? <span className={styles.menuMeta}>{leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE}</span> : null}</span></DropdownItem>
+            {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void toFiles(mv) }} disabled={leadDeleted} help={leadDeleted ? LEAD_DELETED_ROW : undefined}>Save to Files</DropdownItem> : null}
+            {data.lead ? <DropdownItem onSelect={() => { setMenu(null); setQuoteFor(mv) }} disabled={leadDeleted || !mvLines.length} help={leadDeleted ? LEAD_DELETED_ROW : !mvLines.length ? noQuoteReason(mv) : undefined}>Add to a quote…</DropdownItem> : null}
+            <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem>
             <DropdownDivider />
             <DropdownItem tone="danger" onSelect={() => { setMenu(null); askRemoveVersion(mv) }} disabled={readOnly}>Delete</DropdownItem>
           </>
         ) : null}
       </PortalMenu>
       {/* (E12 · surfaces-9) Rename and Change photo follow the Delete-room rule; one sentence names all three, said once under the rows it greys */}
-      <PortalMenu open={menu?.kind === 'room' && !!room} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={260} role="menu" sheetTitle={room?.name ?? ''}>
-        <DropdownItem onSelect={() => { setMenu(null); if (room) setRename({ kind: 'room', value: room.name }) }} disabled={readOnly || !!roomRule}><span className={styles.menuRow}>Rename{roomRule && !ruleOnce ? <span className={styles.menuMeta}>{roomRule}</span> : null}</span></DropdownItem>
-        <DropdownItem onSelect={() => { setMenu(null); photoInput.current?.click() }} disabled={readOnly || !!roomRule || live.length > 0}><span className={styles.menuRow}>Change photo{roomRule ? (!ruleOnce ? <span className={styles.menuMeta}>{roomRule}</span> : null) : live.length ? <span className={styles.menuMeta}>Its versions were made of this photo — add a new room instead</span> : null}</span></DropdownItem>
+      <PortalMenu open={menu?.kind === 'room' && !!room} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={room?.name ?? ''}>
+        <DropdownItem onSelect={() => { setMenu(null); if (room) setRename({ kind: 'room', value: room.name }) }} disabled={readOnly || !!roomRule} help={roomRule && !ruleOnce ? roomRule : undefined}>Rename</DropdownItem>
+        <DropdownItem onSelect={() => { setMenu(null); photoInput.current?.click() }} disabled={readOnly || !!roomRule || live.length > 0} help={roomRule ? (!ruleOnce ? roomRule : undefined) : live.length ? 'Its versions were made of this photo — add a new room instead' : undefined}>Change photo</DropdownItem>
         <DropdownDivider />
-        <DropdownItem tone="danger" onSelect={() => { setMenu(null); void removeRoom() }} disabled={readOnly || !!room?.mayDelete}><span className={styles.menuRow}>Delete room{room?.mayDelete ? <span className={styles.menuMeta}>{room.mayDelete}</span> : null}</span></DropdownItem>
+        <DropdownItem tone="danger" onSelect={() => { setMenu(null); void removeRoom() }} disabled={readOnly || !!room?.mayDelete} help={room?.mayDelete || undefined}>Delete room</DropdownItem>
       </PortalMenu>
-      <PortalMenu open={menu?.kind === 'design'} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={260} role="menu" sheetTitle={title}>
+      <PortalMenu open={menu?.kind === 'design'} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={title}>
         {/* (round 3) a deleted lead has no page to open — the row says so, as Share and Save to Files do */}
-        {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void leave(withFrom(`/leads/${data.lead!.id}`, here())) }} disabled={leadDeleted}><span className={styles.menuRow}>Open the lead{leadDeleted ? <span className={styles.menuMeta}>{LEAD_DELETED_ROW} — restore it from Leads › Deleted Leads</span> : null}</span></DropdownItem>
-          : <DropdownItem onSelect={() => { setMenu(null); setRename({ kind: 'design', value: data.design.name }) }} disabled={!!data.design.mayChange || readOnly}><span className={styles.menuRow}>Rename{data.design.mayChange ? <span className={styles.menuMeta}>{data.design.mayChange}</span> : null}</span></DropdownItem>}
+        {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void leave(withFrom(`/leads/${data.lead!.id}`, here())) }} disabled={leadDeleted} help={leadDeleted ? `${LEAD_DELETED_ROW} — restore it from Leads › Deleted Leads` : undefined}>Open the lead</DropdownItem>
+          : <DropdownItem onSelect={() => { setMenu(null); setRename({ kind: 'design', value: data.design.name }) }} disabled={!!data.design.mayChange || readOnly} help={data.design.mayChange || undefined}>Rename</DropdownItem>}
         {narrow ? <DropdownItem onSelect={() => { setMenu(null); if (roomId) ed.undo(roomId) }} disabled={!ed.canUndo(roomId)}>Undo</DropdownItem> : null}
         {narrow ? <DropdownItem onSelect={() => { setMenu(null); if (roomId) ed.redo(roomId) }} disabled={!ed.canRedo(roomId)}>Redo</DropdownItem> : null}
         <DropdownItem onSelect={() => { setMenu(null); setHintSeen(false) }}>Show the tips again</DropdownItem>
         <DropdownDivider />
-        <DropdownItem tone="danger" onSelect={() => { setMenu(null); setConfirmDelete(true) }} disabled={!!data.design.mayChange || readOnly}><span className={styles.menuRow}>Delete design{data.design.mayChange ? <span className={styles.menuMeta}>{data.design.mayChange}</span> : null}</span></DropdownItem>
+        <DropdownItem tone="danger" onSelect={() => { setMenu(null); setConfirmDelete(true) }} disabled={!!data.design.mayChange || readOnly} help={data.design.mayChange || undefined}>Delete design</DropdownItem>
       </PortalMenu>
 
       <AddRoomDialog open={addRoomOpen} onClose={() => { if (!roomBusy) setAddRoomOpen(false) }} onFile={(f) => { void addPhotoRoom(f) }} onFiles={(fs) => { void addPhotoRooms(fs) }} onLeadFile={(f) => { void addLeadFileRoom(f) }} onSample={(k, s) => { void addSampleRoom(k, s) }} leadImages={data.leadImages} leadName={data.lead?.name ?? null} busy={roomBusy} />

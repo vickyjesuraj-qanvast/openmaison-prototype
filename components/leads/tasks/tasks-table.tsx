@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { Button, Checkbox, Link, Tag } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { menuSideFor } from '@/components/leads/menu-side'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, flexVars, useColumnWidths } from '@/components/om/column-resize'
 import { useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
@@ -100,8 +101,6 @@ export function TasksTable({
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
-  /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
-  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')
 
   const allSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id))
   const toggleAll = () => onSelect(allSelected ? new Set() : new Set(tasks.map((t) => t.id)))
@@ -188,16 +187,8 @@ export function TasksTable({
           onRenameSubmit={(title) => onRenameSubmit(task.id, title)}
           onRenameCancel={onRenameCancel}
           menuOpen={menuRow === task.id}
-          onMenuToggle={(trigger) => {
-            /* (REG-286) This table still counted rows: with three tasks the last two kebabs opened UPWARD, over the
-               toolbar and the tab strip, with half a screen free below them. The side is now measured off the
-               trigger and this menu's real height (components/leads/menu-side.ts) — five items, four once the task
-               is done and "Mark as Completed" drops out. */
-            if (menuRow !== task.id) setMenuSide(menuSideFor(trigger, task.done ? 4 : 5))
-            setMenuRow((m) => (m === task.id ? null : task.id))
-          }}
+          onMenuToggle={() => setMenuRow((m) => (m === task.id ? null : task.id))}
           onMenuClose={() => setMenuRow(null)}
-          menuSide={menuSide}
           onOpen={onOpen} onOpenComments={onOpenComments} onToggleDone={onToggleDone} onAssign={onAssign} onDue={onDue} onAddTags={onAddTags}
           onRowMenu={onRowMenu} onEdit={onEdit}
         />
@@ -219,7 +210,7 @@ export function TasksTable({
 
 /* ---------------------------------------------------------------------------------------------- */
 
-/** The title cell as the active field (frame 194): bare input + ✕ (secondary outlined 24) + ✓ (primary filled 24). */
+/** The title cell as the active field (frame 194): bare input + ✕ (secondary outlined 24) + ✓ (primary filled 24) — (REG-729) the house IconButton. */
 function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { initial: string; onSubmit: (title: string) => void; onCancel: () => void; closeOnBlur?: boolean }) {
   const [value, setValue] = useState(initial)
   /* Settled once — Enter, Escape or a button ends the edit, and the blur the unmount then fires must not act again. */
@@ -262,10 +253,10 @@ function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { init
           swallowed so the field keeps focus until the click lands. */}
       <span className={styles.confirm}>
         <Tooltip label="Cancel">
-          <button type="button" className={styles.cancelBtn} aria-label="Cancel" onMouseDown={(e) => e.preventDefault()} onClick={cancel}><Icon name="close" size={20} /></button>
+          <IconButton icon="close" label="Cancel" size={24} className={styles.confirmBtn} onMouseDown={(e) => e.preventDefault()} onClick={cancel} />
         </Tooltip>
         <Tooltip label="Save">
-          <button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={submit}><Icon name="done" size={20} /></button>
+          <IconButton icon="done" label="Save" size={24} variant="filled" className={styles.confirmBtn} onMouseDown={(e) => e.preventDefault()} onClick={submit} />
         </Tooltip>
       </span>
     </>
@@ -284,22 +275,22 @@ function AddTagsLink({ inert = false }: { inert?: boolean }) {
 /** Inline add row (frame 194 "Type=RW-New, State=Input"): band, disabled checkbox, the field, inert placeholders. */
 export type LeadPicker = { leads: TaskLead[]; value: string | null; onChange: (id: string | null) => void }
 
-/** The add row's Lead cell on the rail's Tasks page (REG-466): "Studio" until a lead is picked; the menu lists the live leads. */
+/** The add row's Lead cell on the rail's Tasks page (REG-466): "Studio" until a lead is picked; the menu lists the live leads.
+ *  (REG-729) The house compact select at its cell size (28), the chevron turning while open; (REG-728) its list through the portal,
+ *  so the table's sideways scroller can't clip it, at the standard 200 (the trigger hugs its value, too narrow to set the width). */
 function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLSpanElement>(null)
   const current = picker.value ? picker.leads.find((l) => l.id === picker.value) : null
   return (
-    <span className={styles.menuWrap}>
-      <button type="button" className={styles.leadPick} aria-haspopup="menu" aria-expanded={open} aria-label={`Lead for the new task: ${current?.name ?? 'Studio'}`} onClick={() => setOpen((o) => !o)}>
-        <span className={styles.leadPickName}>{current?.name ?? 'Studio'}</span>
-        <Icon name="keyboard_arrow_down" size={20} />
-      </button>
-      <Dropdown open={open} onClose={() => setOpen(false)} align="left" width={280} sheetTitle="Lead">
+    <span className={styles.menuWrap} ref={anchor}>
+      <SelectTrigger size="s" label="Lead for the new task" value={current?.name ?? 'Studio'} open={open} onClick={() => setOpen((o) => !o)} />
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Lead">
         <DropdownItem role="menuitemradio" checked={!picker.value} onSelect={() => { setOpen(false); picker.onChange(null) }}>Studio (no lead)</DropdownItem>
         {picker.leads.map((l) => (
           <DropdownItem key={l.id} role="menuitemradio" checked={picker.value === l.id} onSelect={() => { setOpen(false); picker.onChange(l.id) }}>{l.name}</DropdownItem>
         ))}
-      </Dropdown>
+      </PortalMenu>
     </span>
   )
 }
@@ -346,7 +337,7 @@ function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: strin
 function TaskRowView({
   task, now, unseen, descriptionMatch, selected, onToggleSelect,
   renaming, onRenameStart, onRenameSubmit, onRenameCancel,
-  menuOpen, onMenuToggle, onMenuClose, menuSide,
+  menuOpen, onMenuToggle, onMenuClose,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
 }: {
   task: TaskRow
@@ -362,10 +353,8 @@ function TaskRowView({
   onRenameSubmit: (title: string) => void
   onRenameCancel: () => void
   menuOpen: boolean
-  /** (REG-286) Hands the kebab up so the parent can measure which way its menu fits (menu-side.ts). */
-  onMenuToggle: (trigger: HTMLElement) => void
+  onMenuToggle: () => void
   onMenuClose: () => void
-  menuSide: 'up' | 'down'
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
   onOpenComments: (task: TaskRow) => void
   onToggleDone: (task: TaskRow) => void
@@ -380,6 +369,9 @@ function TaskRowView({
   const touch = useMediaQuery(NO_HOVER)   /* (REG-472) which of the two the title cell does */
   const inert = renaming ? '' : undefined
   const pick = (action: TaskRowAction) => () => { onMenuClose(); onRowMenu(task, action) }
+  /* (REG-728) The row menu opens through the body portal, as the Quotes / Contracts twins' (REG-639): an inline menu inside the card's
+     sideways scroller was clipped, and the side it opened on had to be measured (REG-286) — the portal flips on the viewport itself. */
+  const kebab = useRef<HTMLSpanElement>(null)
 
   return (
     <div className={styles.row} role="row" data-kb-row data-kb-id={task.id} data-unseen={unseen ? '' : undefined} data-selected={selected ? '' : undefined}>
@@ -552,21 +544,21 @@ function TaskRowView({
                 overlay, so the mock's pill is drawn exactly as it is on desktop. */}
             <Button variant="primary" appearance="outlined" className={styles.rowEdit} onPress={() => onEdit(task)} data-kb-open>Edit</Button>
           </span>
-          <span className={styles.menuWrap}>
+          <span className={styles.menuWrap} ref={kebab}>
             <span className={styles.float}>
               <Tooltip label="More actions" disabled={menuOpen}>
                 <IconButton icon="more_vert" label={`More actions for ${task.title}`} variant="primary" className={styles.rowKebab}
-                            aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
+                            aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
               </Tooltip>
             </span>
-            <Dropdown open={menuOpen} onClose={onMenuClose} align="right" side={menuSide} sheetTitle={task.title}>
+            <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={task.title}>
               {/* "Mark as Completed" only — the mock has no reopen item, so it is hidden for completed tasks. */}
               {task.done ? null : <DropdownItem onSelect={pick('complete')}>Mark as Completed</DropdownItem>}
               <DropdownItem onSelect={pick('rename')}>Rename</DropdownItem>
               <DropdownItem onSelect={pick('template')}>Save as Template</DropdownItem>
               <DropdownItem onSelect={pick('duplicate')}>Duplicate</DropdownItem>
-              <DropdownItem onSelect={pick('delete')}><span className={styles.danger}>Delete</span></DropdownItem>
-            </Dropdown>
+              <DropdownItem tone="danger" onSelect={pick('delete')}>Delete</DropdownItem>
+            </PortalMenu>
           </span>
           </span>
         </span>

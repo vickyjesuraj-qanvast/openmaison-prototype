@@ -4,7 +4,8 @@
 .bar { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-3); height: calc(56px + env(safe-area-inset-top, 0px)); margin: 0 calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px)); padding: env(safe-area-inset-top, 0px) calc(var(--om-spacing-3) + env(safe-area-inset-right, 0px)) 0 calc(var(--om-spacing-3) + env(safe-area-inset-left, 0px)); background: var(--om-color-surface-default); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 /* (F013) the name gets the room it needs, up to a quarter of the bar; the tooltip reads it in full */
 .titles { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; max-width: min(360px, 26vw); flex-shrink: 1; }
-.title { margin: 0; min-width: 0; font: var(--om-type-subheading-m); font-size: 18px; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* (REG-729) the name is a type token — heading-h4, the name's on the template editor's 56 bar this bar is built on (REG-542) — not 18px */
+.title { margin: 0; min-width: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* (phone-5) a numbered name ("Design · 26 Sep (2)"): the stem takes the ellipsis, the number stays whole */
 .title[data-split] { display: flex; }
 .titleStem { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -32,9 +33,8 @@
 @media (max-width: 767px) { .whose { display: none; } }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) { .roomChips > [role='radio'] { line-height: 42px; } }
 /* (wave E, E3) A phone on its side: the same bar at 44 — the photo is the hero. The room chips drop to the 36 px touch floor (REG-307)
-   so they sit inside it, the name to 16 px. */
+   so they sit inside it; the name keeps its 16 px (heading-h4, above). */
 .bar[data-short] { height: calc(44px + env(safe-area-inset-top, 0px)); gap: var(--om-spacing-2); }
-.bar[data-short] .title { font-size: 16px; }
 .bar[data-short] .rooms { gap: var(--om-spacing-1); padding-left: var(--om-spacing-2); }
 .bar[data-short] .roomChips > [role='radio'] { line-height: 34px; }
 .bar[data-short] .rule { margin: 0 var(--om-spacing-1); }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useId, useState, type ReactNode } from 'react'
-import { Button, Tag as TagChip } from '@/components/ds'
+import { useState, type ReactNode } from 'react'
+import { Button, Tag as TagChip, TextArea } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { DateField } from '@/components/om/date-field'
 import { Drawer, DrawerAction, DrawerRule } from '@/components/om/drawer'
@@ -11,7 +11,7 @@ import { withFrom } from '@/lib/nav'
 import type { TaskLead } from '@/lib/leads/tasks'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { FileTile } from '@/components/leads/move-stage/fields'
 import { displayDate, inputDate, parseInputDate } from '@/lib/format'
 import type { Member, Tag } from '@/lib/db/schema'
@@ -21,30 +21,6 @@ import styles from './task-panel.module.css'
 
 export type TaskPatch = { title?: string; description?: string; dueAt?: Date | null }
 export type TaskPanelMenuAction = 'template' | 'delete'
-
-/**
- * DS Text Area (64 / 112) with the Material label: rests inside while empty, floats to the top border on focus / value
- * (components/om/text-field behaviour on a textarea). Commits on blur — the panel has no Save button (902:27363).
- */
-function AreaField({
-  label, value, onChange, onCommit, height, resizable,
-}: { label: string; value: string; onChange: (v: string) => void; onCommit: () => void; height: number; resizable?: boolean }) {
-  const id = useId()
-  const [focused, setFocused] = useState(false)
-  const floated = focused || value !== ''
-  return (
-    <div className={styles.area} data-floated={floated || undefined} data-active={focused || undefined}>
-      <textarea
-        id={id} className={styles.areaControl} style={{ height, minHeight: height }} data-resize={resizable || undefined}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => { setFocused(false); onCommit() }}
-      />
-      <label htmlFor={id} className={styles.areaLabel}>{label}</label>
-    </div>
-  )
-}
 
 /**
  * Task side panel (902:27363 — frames 53 · 54 · 59 · 63 · 160 · 190): a Drawer titled "Task" with comment · attach_file ·
@@ -112,9 +88,9 @@ export function TaskPanel({
       <span className={styles.menuHost}>
         <DrawerAction icon="more_vert" label="More" expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)} />
         {/* Panel kebab (frame 160): 200-wide menu → "Save as Template" · "Delete" (red). One phrase everywhere (build plan). */}
-        <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={200} sheetTitle="Task">
+        <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" width={MENU_WIDTH.standard} sheetTitle="Task">
           <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('template') }}>Save as Template</DropdownItem>
-          <DropdownItem onSelect={() => { setMenuOpen(false); onMenu('delete') }}><span className={styles.danger}>Delete</span></DropdownItem>
+          <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onMenu('delete') }}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
         </Dropdown>
       </span>
     </>
@@ -154,12 +130,14 @@ export function TaskPanel({
         <dd className={styles.value}>{displayDate(task.createdAt)}</dd>
       </dl>
 
-      {/* Fields: Task name (Text Area 64) · Due date (DateField, picker only — REG-119) · Description (Text Area 112) */}
+      {/* Fields: Task name (Text Area 64) · Due date (DateField, picker only — REG-119) · Description (Text Area 112).
+          (REG-729) The DS TextArea with its own label — rests inside while empty, floats to the top border on focus or a value — where a
+          local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
       <div className={styles.fields}>
-        <AreaField label="Task name" value={title} onChange={setTitle} onCommit={commitTitle} height={64} />
+        <TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} />
         <DateField label="Due date" today={today} value={task.dueAt ? inputDate(task.dueAt) : ''}
                    onChange={(v) => { const d = parseInputDate(v); if (d) onChange({ dueAt: d }) }} />
-        <AreaField label="Description" value={description} onChange={setDescription} onCommit={commitDescription} height={112} resizable />
+        <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />
       </div>
 
       <DrawerRule />

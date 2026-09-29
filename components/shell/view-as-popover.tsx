@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useTransition, type RefObject } from 'react'
+import { useTransition, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
@@ -14,10 +14,10 @@ import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { useSnackbar } from '@/components/om/snackbar'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
-import { useMenuKeyboard } from '@/components/om/surface'
 import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './view-as-popover.module.css'
+import { useRailPopover } from '@/components/shell/rail-popover'
 
 /** (REG-705, AI credits Q-41) The studio's plan, for a demo — Upgrade and the upgrade moment, a trial, a failed payment, a studio not counted yet. */
 const DEMO_PLANS: { key: DemoPlan; label: string; help: string }[] = [
@@ -43,34 +43,7 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
   const snackbar = useSnackbar()
   const sheet = useSheetLayout()
   const [, startTransition] = useTransition()
-  const menuRef = useRef<HTMLDivElement | null>(null)
-  const anchorRef = useRef(anchor); useEffect(() => { anchorRef.current = anchor })
-  useMenuKeyboard(open && !sheet, menuRef, onClose)
-
-  /* Beside the rail, bottom-aligned with the Demo Studio block (it sits at the rail's foot). */
-  const place = useCallback((el: HTMLDivElement | null) => {
-    menuRef.current = el
-    const a = anchorRef.current?.current
-    if (!el || !a) return
-    const r = a.getBoundingClientRect()
-    const EDGE = 8
-    const rail = a.closest('nav') ?? a
-    el.style.left = `${rail.getBoundingClientRect().right + 8}px`
-    el.style.top = `${Math.max(EDGE, Math.min(r.bottom, window.innerHeight - EDGE) - el.offsetHeight)}px`
-    el.style.transformOrigin = 'bottom left'
-  }, [])
-
-  useEffect(() => {
-    if (!open || sheet) return
-    const onDown = (e: MouseEvent) => { const t = e.target as Node; if (anchor?.current?.contains(t) || menuRef.current?.contains(t)) return; onClose() }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }
-    let lastW = window.innerWidth
-    const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; onClose() } }
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    document.addEventListener('keydown', onKey, true)
-    window.addEventListener('resize', onResize)
-    return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize) }
-  }, [open, onClose, anchor, sheet])
+  const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'bottom' })   // (REG-728) the rail's popovers open one way
 
   const current = team.find((m) => m.isYou) ?? null
   const become = (m: SessionMember, back: SessionMember | null) => startTransition(async () => {
@@ -99,7 +72,7 @@ export function ViewAsPopover({ open, anchor, onClose, team }: { open: boolean; 
   }
   const plans = (
     <div className={panel.group} role="group" aria-label="Studio plan (demo only)" data-testid="demo-plan">
-      <span className={panel.eyebrow}>Studio plan · demo only</span>
+      <span className={panel.eyebrow} data-menu-label="" role="presentation">Studio plan · demo only</span>   {/* (REG-728) the house group title */}
       {DEMO_PLANS.map((p) => (
         <button key={p.key} type="button" role="menuitemradio" aria-checked={plan === p.key} className={panel.row} data-on={plan === p.key || undefined} onClick={() => pickPlan(p.key)}>
           <span className={panel.glyph}><Icon name="diamond" size={20} weight={300} /></span>

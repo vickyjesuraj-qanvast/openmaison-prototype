@@ -17,8 +17,8 @@
 }
 .headText { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-1); }
 .title { font: var(--om-type-subheading-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* 12/Semi Bold/16 (858:24893) = subheading-s */
-.meta { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.metaRight { margin-left: auto; padding-left: var(--om-spacing-2); font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metaRight { margin-left: auto; padding-left: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 /* Head link ("Ask Client"): subheading-s primary; hover = "Link text" of interaction-states.md (#4400cc). */
 .link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-s); text-transform: none; color: var(--om-color-primary-default); white-space: nowrap; transition: color var(--motion-hover); }
 .link:hover { color: var(--om-color-on-primary-variant); }
@@ -35,14 +35,16 @@
 .open:hover { color: var(--om-color-on-primary-variant); background: var(--om-color-hover-08p); }
 .open:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 
-/* Empty state (858:24171 …): 32 padding, centred column. */
+/* Empty state (858:24171 …): 32 padding, centred column. (REG-729) Inside the card, the house empty card's own anatomy
+   (components/om/empty-card.module.css): the art, 24, the texts 12 apart (20/24/600 title, 14/20 body), 24, the buttons 12 apart —
+   written once; the card around it is this Overview card, so only the inner pieces are composed. */
 .empty { display: flex; flex-direction: column; align-items: center; padding: var(--om-spacing-8); }
-.emptyInner { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); width: 100%; }
-.emptyArt { display: block; max-width: 100%; }
-.emptyText { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); width: 100%; }
-.emptyTitle { margin: 0; font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); text-align: center; }   /* 20/Semi Bold/24 = subheading-xl */
-.emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }
-.emptyActions { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }
+.emptyInner { composes: inner from '../../om/empty-card.module.css'; width: 100%; }
+.emptyArt { display: block; max-width: 100%; }   /* each card's art at its mock's own width × height (CardEmpty's attributes) */
+.emptyText { composes: texts from '../../om/empty-card.module.css'; width: 100%; }
+.emptyTitle { composes: title from '../../om/empty-card.module.css'; }
+.emptyBody { composes: body from '../../om/empty-card.module.css'; }
+.emptyActions { composes: buttons from '../../om/empty-card.module.css'; }
 
 .rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
 

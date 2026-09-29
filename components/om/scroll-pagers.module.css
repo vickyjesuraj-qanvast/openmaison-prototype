@@ -8,7 +8,7 @@
   width: 28px; height: 28px;
   display: inline-flex; align-items: center; justify-content: center;
   border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-full);
+  border-radius: var(--om-radius-1);   /* (REG-729) r4, as every icon button — it was round */
   background: var(--om-color-surface-default);
   color: var(--om-color-on-surface-secondary);
   box-shadow: var(--om-elevation-level-1);

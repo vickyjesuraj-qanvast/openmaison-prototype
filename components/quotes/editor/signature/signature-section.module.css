@@ -11,9 +11,7 @@
 .who { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding-top: var(--om-spacing-3); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the rule 12 above the name (1263:35910) */
 .whoRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .name { flex: 1; min-width: 0; font: var(--om-type-subheading-l); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 16/600 */
-.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); border-radius: var(--om-radius-1); }
-.link:hover { color: var(--om-color-on-primary-variant); }
-.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.link { composes: link from '../../../om/text-link.module.css'; }   /* (REG-729) the house text link */
 .meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .metaLabel { font-weight: 400; }   /* "NRIC:" regular (1263:35952) */
 .pending { font-style: italic; }
@@ -29,8 +27,7 @@
 .modeLabel { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
 .preview { position: relative; height: 140px; border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--om-color-on-surface-default); }
 .canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-.clear { position: absolute; top: 20px; right: 20px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }
-.clear:disabled { color: var(--om-color-on-surface-disabled); cursor: default; }
+.clear { composes: link from '../../../om/text-link.module.css'; position: absolute; top: 20px; right: 20px; }   /* (REG-729) the house text link (its disabled look too) */
 
 /* ── Tablet / phone: the panes stack; the panes' 36 gutter becomes 24 / 16. */
 @media (max-width: 1024px) { .pane { padding: 20px 24px; } }

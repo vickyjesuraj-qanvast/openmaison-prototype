@@ -43,7 +43,7 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
       {fields.length === 0 ? (
         <span className={styles.settingHelp} data-testid="custom-fields-empty">No custom fields yet.</span>
       ) : (
-        <div className={`${styles.eventTable} ${styles.fieldTable}`} role="table" aria-label="Custom fields">
+        <div className={`${styles.eventTable} ${styles.fieldTable}`} role="table" aria-label="Custom fields" data-card-table="">
           {/* (REG-614) The Notifications module's event table, so every settings list of switches reads the same. */}
           <div className={styles.eventHead} role="row">
             <span role="columnheader">Field</span>
@@ -62,8 +62,9 @@ export function CustomFieldsCard({ fields: initial, canManage }: { fields: Custo
               <span className={styles.fieldActions} role="cell">
                 {canManage ? (
                   <>
-                    <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move ${f.label} up`} size={24} variant="bare" iconSize={16} disabled={i === 0} onClick={() => move(f, 'up')} /></Tooltip>
-                    <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move ${f.label} down`} size={24} variant="bare" iconSize={16} disabled={i === fields.length - 1} onClick={() => move(f, 'down')} /></Tooltip>
+                    {/* (REG-729) one glyph size in the row: 18 in the 24 bare buttons */}
+                    <Tooltip label="Move up"><IconButton icon="arrow_upward" label={`Move ${f.label} up`} size={24} variant="bare" iconSize={18} disabled={i === 0} onClick={() => move(f, 'up')} /></Tooltip>
+                    <Tooltip label="Move down"><IconButton icon="arrow_downward" label={`Move ${f.label} down`} size={24} variant="bare" iconSize={18} disabled={i === fields.length - 1} onClick={() => move(f, 'down')} /></Tooltip>
                     <Tooltip label="Edit"><IconButton icon="edit" label={`Edit ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setEditing({ f })} /></Tooltip>
                     <Tooltip label="Delete"><IconButton icon="delete" label={`Delete ${f.label}`} size={24} variant="bare" iconSize={18} onClick={() => setDeleting(f)} /></Tooltip>
                   </>

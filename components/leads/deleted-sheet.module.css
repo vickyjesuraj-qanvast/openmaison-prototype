@@ -2,7 +2,10 @@
    (REG-725) The panel's look and the head are the house's (surfaceClasses.panel · SurfaceHead, components/om/dialog.tsx): r12 at
    level 5, the 80 crumb head with its rule inside — the mock's heading shadow is gone. What stays here is the sheet's own — its
    size, its body, its phone layout. Moves in step with its twins, components/leads/files/deleted-files-sheet.module.css and
-   components/company/templates/deleted-templates-sheet.module.css. */
+   components/company/templates/deleted-templates-sheet.module.css.
+   (REG-727) The table sits on the table core (components/om/table-core.module.css) — the frame, the head cells and their caption,
+   the sort button, the cells and their top rule, the frozen cells and their 1px edge — the leads listing's rules, written once. Its
+   head and rows are FLEX rows with the widths set inline, so the row layout and the row fills stay here. */
 .overlay {
   overscroll-behavior: contain;
   position: fixed; inset: 0; z-index: 110;   /* (REG-725) the dialogs' layer; the nested confirms open above it (120) */
@@ -40,10 +43,8 @@
 /* The table is its own scroller on both axes (height to content, capped by the panel) so the
    head row can stick to its top and the frozen columns to its left edge. */
 .tableWrap {
-  width: 100%;
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
-  border-radius: var(--om-radius-2);
-  overflow: auto; overscroll-behavior: contain;
+  composes: frame scroller from '../om/table-core.module.css';   /* (REG-727) the table core: the border outside the scrollport, the radius, the fill; always a scroller (no corner ring) */
+  overflow: auto; overscroll-behavior: contain;   /* both axes, not only the core scroller's sideways one */
   flex: 0 1 auto; min-height: 0;
 }
 .table { display: flex; flex-direction: column; width: max-content; min-width: 100%; }
@@ -51,41 +52,25 @@
 /* Sticky header: casts the level-1 shadow once the table has scrolled down (same as the import wizard's tables). */
 .headRow { position: sticky; top: 0; z-index: 3; transition: box-shadow var(--motion-toggle); }
 .tableWrap[data-scrolled-y] .headRow { box-shadow: var(--om-elevation-level-1); }
-.row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); height: 64px; transition: background-color var(--motion-hover); }
+.row { height: 64px; transition: background-color var(--motion-hover); }   /* the 1px rule between rows is each cell's top rule (the core's .cell) */
 .row:hover { background: var(--om-color-primary-variant); }   /* row hover as every other table (frame 195), audit 2026-08-30 */
 .row[data-selected] { background: var(--om-color-primary-variant); }
-/* Selection + pinned name column stay fixed while the row h-scrolls. Frozen-column edge rule (REG-144):
-   the last frozen column shows a 1px inner edge at rest and its shadow only while scrolled sideways. */
-.selCell {
+.hCell { composes: hCell from '../om/table-core.module.css'; flex-shrink: 0; overflow: hidden; white-space: nowrap; }   /* (REG-727) the table core: p16/24/16/16, the grey ink, the column-resize handle's anchor (REG-427) */
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }   /* (REG-727) the table core: caption-s, uppercase */
+.hSort { composes: hSort from '../om/table-core.module.css'; }   /* (REG-727) the table core: the sort button, its hover and its sorted ink */
+.cell { composes: cell from '../om/table-core.module.css'; gap: var(--om-spacing-3); flex-shrink: 0; overflow: hidden; white-space: nowrap; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule */
+/* Selection + pinned name column stay fixed while the row h-scrolls. Frozen-column edge rule (REG-144): the last frozen column —
+   Lead Name, [data-pin-edge] — shows a 1px inner edge at rest and its shadow only while scrolled sideways (the core's .pin). Both carry
+   the flex row's own fill (`inherit`): the core's row fills reach only its subgrid rows. */
+.selCell {   /* a row's selection cell also wears .cell, for the row's top rule; declared after .cell so its padding and overflow hold */
+  composes: pin from '../om/table-core.module.css';   /* (REG-727) the table core: sticky, above the cells that scroll under it */
+  left: 0;
   display: flex; align-items: center;
   padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4);
-  flex-shrink: 0;
-  position: sticky; left: 0; z-index: 2; background: inherit;
+  flex-shrink: 0; overflow: visible;
+  background: inherit;
 }
-.pin { position: sticky; left: 40px; z-index: 2; background: inherit; }
-.hCell, .cell {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);
-  flex-shrink: 0; overflow: hidden; white-space: nowrap;
-}
-.cell { gap: var(--om-spacing-3); padding-top: var(--om-spacing-3); padding-bottom: var(--om-spacing-3); }
-.pin {
-  border-right: var(--om-border-1) solid var(--om-color-surface-variant);
-  clip-path: inset(0 -6px 0 0);   /* the shadow only falls to the right */
-  transition: box-shadow var(--motion-toggle);
-}
-.tableWrap[data-scrolled] .pin { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
-.hCell { color: var(--om-color-on-surface-secondary); }
-.hCell:not(.pin) { position: relative; }   /* the column-resize handle (REG-427); the pinned head is already positioned (sticky) */
-.hSort {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  border: 0; background: none; padding: 0; cursor: pointer;
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
-.hSort[data-sorted] { color: var(--om-color-primary-default); }
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; }
+.pin { composes: pin from '../om/table-core.module.css'; left: 40px; background: inherit; }   /* (REG-727) the table core: sticky, the 1px edge at rest and the shadow while scrolled */
 .plain { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; }
 .twoLine { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
 .name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; }
@@ -145,9 +130,9 @@
      356px window and freezes the Lead Name column at `left: 40px`; at maximum horizontal scroll the frozen column
      still covered the row's actions, so there was no offset at which Restore was on screen. Unfreezing it lets the
      row be panned until the actions clear the left edge — the sheet is untouched at ≥768, where the frozen column
-     has room to do its job. */
+     has room to do its job. (REG-727) The shadow rule matches the core's own reach ([data-pin-edge]) to outrank it. */
   .pin { position: static; box-shadow: none; }
-  .tableWrap[data-scrolled] .pin { box-shadow: none; }
+  .tableWrap[data-scrolled] .pin[data-pin-edge] { box-shadow: none; }
 }
 
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
@@ -156,7 +141,7 @@
      Three controls sit under the touch floor and all three take an invisible ::after instead of a new size (the head's
      close is the house IconButton, which carries its own 44 overlay — REG-344):
        · the banner's 20px dismiss — 44×44;
-       · every column's sort button (12px caption + 16px glyph): 44 tall inside the 48px head cell, 4px
+       · every column's sort button (12px caption + 16px glyph): 44 tall inside the 56px head cell, 4px
          either side inside its 16/24 padding — so no two heads' targets can meet, and the head row keeps
          its height and its sticky shadow;
        · each row's Restore / Delete Forever: 44 tall inside the 64px row, 8px either side, which is exactly
@@ -171,5 +156,5 @@
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
-/* (REG-525) A finger cannot hover: the row keeps its fill after a tap. */
-@media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .colSel, .row:hover .colTitle, .row:hover .pin, .row:hover .selCell { background: var(--om-color-surface-default); } .row[data-selected]:hover, .row[data-selected]:hover .colSel, .row[data-selected]:hover .colTitle { background: var(--om-color-primary-variant); } }
+/* (REG-525) A finger cannot hover: the row keeps its fill after a tap — the frozen cells inherit it, a selected row's included. */
+@media (hover: none) and (max-width: 1024px) { .row:hover { background: var(--om-color-surface-default); } .row[data-selected]:hover { background: var(--om-color-primary-variant); } }

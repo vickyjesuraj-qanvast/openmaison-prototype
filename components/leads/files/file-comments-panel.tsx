@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
 import { useOverflow } from '@/components/om/use-overflow'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { relativeTime } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
 import type { FileViewData } from '@/lib/leads/files'
@@ -33,6 +34,9 @@ export function FileCommentsPanel({
 }) {
   const [draft, setDraft] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab. */
+  const kebab = useRef<HTMLElement | null>(null)
+  const menuComment = menuFor ? comments.find((c) => c.id === menuFor) ?? null : null
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null)
   const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the composer's shadow only while the thread scrolls under it
   const count = comments.length
@@ -82,26 +86,12 @@ export function FileCommentsPanel({
                       <span className={styles.author}>{mine ? 'You' : c.author?.name ?? 'Member'}</span>
                       <span className={styles.time}>{relativeTime(c.createdAt, new Date(now))}</span>
                       <div className={styles.kebabWrap}>
+                        {/* (REG-729) The house kebab in a head: IconButton 24 bare, a 24 glyph (it was a 20 box) */}
                         <Tooltip label="Comment actions" disabled={menuFor === c.id}>
-                          <button
-                            type="button"
-                            className={styles.kebab}
-                            aria-label="Comment actions"
-                            aria-haspopup="menu"
-                            aria-expanded={menuFor === c.id}
-                            onClick={() => setMenuFor((m) => (m === c.id ? null : c.id))}
-                          >
-                            <Icon name="more_horiz" size={20} />
-                          </button>
+                          <IconButton icon="more_horiz" label="Comment actions" size={24} variant="bare" iconSize={24} className={styles.kebabBtn}
+                                      aria-haspopup="menu" aria-expanded={menuFor === c.id}
+                                      onClick={(e) => { kebab.current = e.currentTarget; setMenuFor((m) => (m === c.id ? null : c.id)) }} />
                         </Tooltip>
-                        <Dropdown open={menuFor === c.id} onClose={() => setMenuFor(null)} align="right" sheetTitle="Comment">
-                          {mine ? (
-                            <DropdownItem onSelect={() => { setMenuFor(null); setEditing({ id: c.id, body: c.body }) }}>Edit</DropdownItem>
-                          ) : null}
-                          <DropdownItem onSelect={() => { setMenuFor(null); onDelete(c.id) }}>
-                            <span className={styles.danger}>Delete</span>
-                          </DropdownItem>
-                        </Dropdown>
                       </div>
                     </div>
                     {isEditing && editing ? (
@@ -133,6 +123,12 @@ export function FileCommentsPanel({
           </div>
         )}
       </div>
+      <PortalMenu open={!!menuComment} anchor={kebab} onClose={() => setMenuFor(null)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Comment">
+        {menuComment && menuComment.author?.id === me.id ? (
+          <DropdownItem onSelect={() => { setMenuFor(null); setEditing({ id: menuComment.id, body: menuComment.body }) }}>Edit</DropdownItem>
+        ) : null}
+        <DropdownItem tone="danger" onSelect={() => { const c = menuComment; setMenuFor(null); if (c) onDelete(c.id) }}>Delete</DropdownItem>
+      </PortalMenu>
 
       {/* Footer (931:39946) 400×88, V g12 p16/24, top rule: Avatar 36 + [V g8] field 36 + caption 12. Enter posts (no Submit button in this mock). */}
       <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>

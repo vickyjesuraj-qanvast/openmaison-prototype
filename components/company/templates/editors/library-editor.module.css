@@ -6,7 +6,6 @@
 .cardTitle { flex: 1; min-width: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .cardHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .cardBody { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-6); }
-.kindChip { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-caption-s); white-space: nowrap; }
 .switches { display: flex; align-items: center; gap: var(--om-spacing-5); flex-wrap: wrap; }
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
@@ -20,10 +19,8 @@
 .stepNo { height: 36px; display: inline-flex; align-items: center; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); font-variant-numeric: tabular-nums; }
 .stepFields { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
 .stepPick { position: relative; display: inline-flex; }
-.chipBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; transition: background-color var(--motion-hover); }
-.chipBtn:hover { background: var(--om-color-hover-04p); }
-.chipBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.chipBtn[data-on] { border-color: var(--om-color-primary-default); }
+/* (REG-729) The Members and Tags pickers are the house SelectTrigger (components/om/select-trigger); the members' faces ride its value. */
+.pickValue { display: inline-flex; align-items: center; gap: var(--om-spacing-1); vertical-align: middle; }
 .avatars { display: inline-flex; }
 .avatars > * + * { margin-left: -6px; }
 .addRow { align-self: flex-start; }
@@ -31,7 +28,7 @@
 
 /* Milestones (payments): the Payment Schedule's table language — name · description · share · due · delete; a total row. */
 .milestones { display: grid; grid-template-columns: 24px minmax(160px, 1fr) minmax(160px, 1fr) 120px 150px 36px; column-gap: var(--om-spacing-3); row-gap: var(--om-spacing-2); align-items: center; }
-.mHead { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); padding: 0 var(--om-spacing-1); }
+.mHead { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); padding: 0 var(--om-spacing-1); }   /* (REG-729) no letter-spacing */
 .mRow { display: contents; }
 .mDue { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .mTotal { grid-column: 2 / 4; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); padding-top: var(--om-spacing-2); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

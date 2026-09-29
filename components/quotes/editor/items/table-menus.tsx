@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type RefObject 
 import { BOOK_RULE, SECTION_RULE } from '@/lib/company/price-book-rules'
 import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import type { QuoteItem } from '@/lib/db/schema'
 import { HIGHLIGHTS, HIGHLIGHT_LABEL, isHighlight, isPrintAs, ITEM_KINDS, ITEM_KIND_ICON, ITEM_KIND_LABEL, PRINT_AS, PRINT_AS_HELP, PRINT_AS_LABEL, printAsWord, UNITS, VISIBILITIES, VISIBILITY_LABEL, type Highlight, type ItemKind, type PrintAs, type RowMenuAction, type Visibility } from '@/lib/quotes/items-model'
 import { ancestorIds } from '@/lib/quotes/math'
@@ -30,7 +30,7 @@ export function useLevelFocus(level: unknown) {
 /** Unit picker (1271:40890 "Add Unit Type"): the studio's unit types; "Clear unit" removes. */
 export function UnitMenu({ open, anchor, value, onClose, onPick }: { open: boolean; anchor: Anchor; value: string | null; onClose: () => void; onPick: (u: string | null) => void }) {
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={200} sheetTitle="Unit">
+    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={MENU_WIDTH.standard} sheetTitle="Unit">
       {UNITS.map((u) => <DropdownItem key={u} role="menuitemradio" checked={u === value} onSelect={() => { onClose(); onPick(u) }}>{u}</DropdownItem>)}
       {value ? <><DropdownDivider /><DropdownItem onSelect={() => { onClose(); onPick(null) }}>Clear unit</DropdownItem></> : null}
     </PortalMenu>
@@ -41,8 +41,9 @@ export function UnitMenu({ open, anchor, value, onClose, onPick }: { open: boole
 export function LabelMenu({ open, anchor, options, value, onClose, onPick, addLabel, onAdd, title }: {
   open: boolean; anchor: Anchor; options: string[]; value: string | null; onClose: () => void; onPick: (v: string | null) => void; addLabel: string; onAdd: () => void; title: string
 }) {
+  /* (REG-728) the standard 200 */
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={220} sheetTitle={title}>
+    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={MENU_WIDTH.standard} sheetTitle={title}>
       {options.map((o) => <DropdownItem key={o} role="menuitemradio" checked={o === value} onSelect={() => { onClose(); onPick(o) }}>{o}</DropdownItem>)}
       {options.length ? <DropdownDivider /> : null}
       <DropdownItem onSelect={() => { onClose(); onAdd() }}><span className={styles.menuIcon}><Icon name="add" size={20} /></span>{addLabel}</DropdownItem>
@@ -51,10 +52,11 @@ export function LabelMenu({ open, anchor, options, value, onClose, onPick, addLa
   )
 }
 
-/** Client visibility (1271:40931): "Customize visibility for your client" over three radio rows. */
+/** Client visibility (1271:40931): "Customize visibility for your client" over three radio rows. (REG-728) 240 on the scale, the
+ *  instruction line in the menus' one style. */
 export function VisibilityMenu({ open, anchor, value, onClose, onPick }: { open: boolean; anchor: Anchor; value: Visibility; onClose: () => void; onPick: (v: Visibility) => void }) {
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={280} sheetTitle="Client visibility">
+    <PortalMenu open={open} anchor={anchor} onClose={onClose} role="menu" width={MENU_WIDTH.wide} sheetTitle="Client visibility">
       <div className={styles.menuHead}>Customize visibility for your client</div>
       {VISIBILITIES.map((v) => (
         <DropdownItem key={v} role="menuitemradio" checked={v === value} onSelect={() => { onClose(); onPick(v) }}>
@@ -75,8 +77,9 @@ export function ThumbMenu({ open, anchor, icon, onClose, onUpload, onIcon, onLog
   const [sub, setSub] = useState<'icons' | null>(null)
   const level = useLevelFocus(sub)
   const close = () => { setSub(null); onClose() }
+  /* (REG-728) One width for both levels: the icon grid (3 × 52 + 2 × 8 + 24 = 196) fits the standard 200. */
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub ? 204 : 200} sheetTitle="Image">
+    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={MENU_WIDTH.standard} sheetTitle="Image">
       <div ref={level}>
         {sub === 'icons' ? (
           <>
@@ -135,8 +138,10 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
   const back = (label: string) => <DropdownItem onSelect={() => setSub(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{label}</DropdownItem>
   const printAs = isPrintAs(item.printAs) ? item.printAs : null
   const highlight = isHighlight(item.highlight) ? item.highlight : null
+  /* (REG-728) The scale's two widths: 240 for the row menu (key hints, a locked save's rule under it), 320 for Print as — its rows carry a
+     description. A section or a highlight picked wears the Selected fill: those rows lead with a glyph, so `checked` alone drew nothing. */
   return (
-    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? 300 : 240} align="right" sheetTitle={item.name}>
+    <PortalMenu open={open} anchor={anchor} onClose={close} role="menu" width={sub === 'printAs' ? MENU_WIDTH.detail : MENU_WIDTH.wide} align="right" sheetTitle={item.name}>
       <div ref={level}>
         {sub === 'add' ? (
           <>
@@ -156,12 +161,12 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
           <>
             {back('Move to section')}
             {targets.map((g) => (
-              <DropdownItem key={g.id} role="menuitemradio" checked={g.id === item.parentId} onSelect={() => { close(); onChooseGroup(g.id) }}>
+              <DropdownItem key={g.id} role="menuitemradio" checked={g.id === item.parentId} selected={g.id === item.parentId} onSelect={() => { close(); onChooseGroup(g.id) }}>
                 <span className={styles.menuIcon} data-sub={g.parentId ? '' : undefined}><Icon name="folder" size={20} weight={g.parentId ? 300 : 400} /></span>{g.name}
               </DropdownItem>
             ))}
             {item.parentId ? <><DropdownDivider /><DropdownItem onSelect={() => { close(); onChooseGroup(null) }}>No section</DropdownItem></> : null}
-            {targets.length === 0 && !item.parentId ? <div className={styles.popEmpty}>No sections yet</div> : null}
+            {targets.length === 0 && !item.parentId ? <div className={styles.menuHead}>No sections yet</div> : null}   {/* (REG-728) the menus' one note line, on the rows' 12 */}
           </>
         ) : sub === 'printAs' ? (
           <>
@@ -181,11 +186,11 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
         ) : sub === 'highlight' ? (
           <>
             {back('Highlight')}
-            <DropdownItem role="menuitemradio" checked={!highlight} onSelect={() => { close(); onHighlight(null) }}>
+            <DropdownItem role="menuitemradio" checked={!highlight} selected={!highlight} onSelect={() => { close(); onHighlight(null) }}>
               <span className={styles.menuIcon}><span className={styles.swatch} data-none="" /></span>None
             </DropdownItem>
             {HIGHLIGHTS.map((k) => (
-              <DropdownItem key={k} role="menuitemradio" checked={highlight === k} onSelect={() => { close(); onHighlight(k) }}>
+              <DropdownItem key={k} role="menuitemradio" checked={highlight === k} selected={highlight === k} onSelect={() => { close(); onHighlight(k) }}>
                 <span className={styles.menuIcon}><span className={styles.swatch} style={{ background: brandColors[k] }} /></span>{HIGHLIGHT_LABEL[k]}
               </DropdownItem>
             ))}

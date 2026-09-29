@@ -76,7 +76,7 @@ export function SettingsGhost() {
               <Choices options={STAGE_MOVEMENT_OPTIONS} />
             </Setting>
             <Setting title="Lead sources" help="Where a lead can come from — the Lead source field, the import mapping and the Source filter offer these. Retire a source to keep its leads and stop offering it; a source with no leads can be removed.">
-              <ul className={styles.trades}>{Array.from({ length: 18 }, (_, i) => <li key={i}><Bone w={cycle([74, 92, 80, 70, 88, 76, 84, 78, 66], i)} h={32} r={16} /></li>)}</ul>
+              <ul className={styles.trades}>{Array.from({ length: 18 }, (_, i) => <li key={i}><Bone w={cycle([74, 92, 80, 70, 88, 76, 84, 78, 66], i)} h={32} r={4} /></li>)}</ul>   {/* (REG-729) the tokens are r4 now */}
             </Setting>
           </>
         ) : open === 'quotes' ? (

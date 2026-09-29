@@ -1,20 +1,12 @@
 /*
- * Lead Details › Tasks — empty state: the Quotes tab's empty card verbatim (components/leads/quotes/quotes-empty.module.css,
- * 910:36266): card 1244×784 fill #fff stroke #e5e5e5 (inside) r8, content centred; illustration → 24 → texts (V g12) → 24 → buttons (H g12).
+ * Lead Details › Tasks — empty state: the Quotes tab's empty card (910:36266) — illustration → 24 → texts (V g12) → 24 → buttons (H g12).
+ * (REG-729) The card is the house empty card (components/om/empty-card.module.css); empty-tasks.svg is 140×107 at the MY WORK card,
+ * scaled to the 180 width of the sibling cards.
  */
-/* Height follows the tab body, not the mock's literal 784: the tab pads 88px for the FAB where the mock frame (910:36266)
-   padded 24, so the frozen number overflowed short viewports and stopped short on tall ones. Same rule as the tab's
-   other empty card, components/leads/search-empty.module.css. */
-.card {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; flex: 1; min-height: 480px;
-  background: var(--om-color-surface-default);
-  box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
-  border-radius: var(--om-radius-2);
-}
-.inner { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-6); }
-.art { display: block; max-width: 100%; height: auto; }   /* empty-tasks.svg is 140×107 at the MY WORK card — scaled to the 180 width of the sibling cards */
-.texts { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); }
-.title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
-.body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }
-.buttons { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-3); }
+.card { composes: card from '../../om/empty-card.module.css'; }
+.inner { composes: inner from '../../om/empty-card.module.css'; }
+.art { composes: art from '../../om/empty-card.module.css'; }
+.texts { composes: texts from '../../om/empty-card.module.css'; }
+.title { composes: title from '../../om/empty-card.module.css'; }   /* 20/24/600 = subheading-xl, no longer heading-h3 re-typed by hand */
+.body { composes: body from '../../om/empty-card.module.css'; }
+.buttons { composes: buttons from '../../om/empty-card.module.css'; }

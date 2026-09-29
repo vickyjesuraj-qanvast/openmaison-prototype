@@ -7,7 +7,7 @@
 .name:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); background: var(--om-color-surface-default); }
 .chips { display: flex; align-items: center; gap: var(--om-spacing-2); flex: 0 0 auto; min-width: 0; }   /* the chips never shrink: the name gives way first (its 120 floor), then the bar wraps below 1320 */   /* (REG-569) the saved stamp sits after the chips and keeps its width; below 1320 the chips wrap under the name instead of clipping mid-word */
 .chips > * { flex-shrink: 0; }
-.origin { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-primary-variant); background: var(--om-color-primary-variant); border-radius: var(--om-radius-full); padding: 2px 10px 2px 8px; white-space: nowrap; }
+.originChip { display: inline-flex; }   /* (REG-729) the origin as the house tag (MetaChip, r4) — it was a lavender pill */
 .saved { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .savedIcon { color: var(--om-color-tertiary-green-default); }
 .spin { animation: spin 1s linear infinite; }
@@ -15,17 +15,17 @@
 @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
 .anchor { position: relative; display: inline-flex; }
-.sourceBtn { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 36px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); cursor: pointer; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); max-width: 320px; }
-.sourceBtn { transition: background-color var(--motion-hover); }
-.sourceBtn:hover { background: var(--om-color-hover-04p); }
+/* (REG-729) "Preview with ▾" is the house compact select (components/om/select-trigger): its value is the glyph, the caption and the source. */
+.sourceBtn { max-width: 320px; }
+.sourceValue { display: flex; align-items: center; gap: var(--om-spacing-1); min-width: 0; }
 .sourceCaption { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .sourceLabel { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.menuLabel { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.menuSub { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .zoom { display: inline-flex; align-items: center; }
-.zoomLabel { min-width: 48px; height: 32px; border: 0; background: none; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
+/* (REG-729) The zoom figure: the bare icon button's look at 36 with the DS text button's subheading-m — the Visualizer's zoom label. */
+.zoomLabel { min-width: 52px; height: 36px; padding: 0 var(--om-spacing-1); border: 0; background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); border-radius: var(--om-radius-1); }
 .zoomLabel { transition: background-color var(--motion-hover); }
-.zoomLabel:hover { background: var(--om-color-hover-04p); }
+@media (hover: hover) { .zoomLabel:hover { background: var(--om-color-hover-08p); } }
+.zoomLabel:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .rule { width: 1px; height: 24px; background: var(--om-color-surface-variant); }
 .pages { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 1319px) { .bar { height: auto; min-height: 56px; padding-top: var(--om-spacing-1); padding-bottom: var(--om-spacing-1); } .titleBlock { flex-wrap: wrap; row-gap: 2px; } .name { flex-basis: 100%; max-width: none; } .chips { overflow: visible; flex-wrap: wrap; } }

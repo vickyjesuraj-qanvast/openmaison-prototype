@@ -5,7 +5,7 @@
 /* (phone-2) the band's top rule runs on into the notch's inset beside it (the slot pads the inset; 0 wide everywhere else) */
 .strip::before { content: ''; position: absolute; top: calc(-1 * var(--om-border-1)); left: calc(-1 * env(safe-area-inset-left, 0px)); width: env(safe-area-inset-left, 0px); height: var(--om-border-1); background: var(--om-color-surface-variant); pointer-events: none; }
 .head { flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; width: 72px; }
-.title { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.title { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
 .count { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 /* (tablet-14) 6px of room round the tiles (the -4px margin keeps the row where it was), so a focus ring 4px off the on-screen tile's own
    ring is never clipped by the scroller */
@@ -49,9 +49,7 @@
 .spin { position: relative; animation: spin 1s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
-.deleted { align-self: flex-start; padding: 0; border: 0; background: none; font: var(--om-type-body-s); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; }
-@media (hover: hover) { .deleted:hover { text-decoration: underline; } }   /* no stuck underline after a tap (F152's rule) */
-.deleted:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.deleted { composes: link from '../../om/text-link.module.css'; align-self: flex-start; white-space: nowrap; }   /* (REG-729) the house text link (the DS Link look) — no underline, so nothing sticks after a tap */
 .none { align-self: center; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); padding-left: var(--om-spacing-2); }
 /* (verify round 1) A phone has no room for the sentence beside the Original: the hint is the empty slot where V1 will land — a dashed
    tile the thumbnails' size, its first words inside — and the rest of the sentence steps aside. */

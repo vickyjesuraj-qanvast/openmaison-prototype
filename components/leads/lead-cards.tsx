@@ -1,9 +1,11 @@
 'use client'
 
+import { useRef } from 'react'
 import { Tag } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
+import { ScopePill } from '@/components/om/scope-pill'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
 import { isOverdue, moneySGD, relativeTime, phoneLocal } from '@/lib/format'
@@ -33,6 +35,13 @@ export type LeadCardsProps = {
  * policy, Suggested tasks and the assign rules are one code path. Not mocked and therefore absent: the unseen band,
  * row selection / the bulk bar, and the row kebab (Edit / Delete / Return live on the lead's own page).
  */
+/** (REG-729) The card's stage (1082:25603 — h36, pl16 pr12, gap 8, subheading/m, the chevron turning while its menu is open) is the house
+ *  ScopePill, the anatomy it was drawn from; it hands its own box to the stage menu as the anchor, as the table's cell does. */
+function StagePill({ row, open, onStageClick }: { row: LeadRow; open: boolean; onStageClick: (row: LeadRow, anchor: HTMLElement) => void }) {
+  const pill = useRef<HTMLButtonElement>(null)
+  return <ScopePill ref={pill} label={row.stage} open={open} onClick={() => { if (pill.current) onStageClick(row, pill.current) }} />
+}
+
 export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick, onTaskClick, onAssignClick }: LeadCardsProps) {
   const nowDate = new Date(now)
   return (
@@ -94,12 +103,7 @@ export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick,
                   </>
                 )}
               </div>
-              <button type="button" className={styles.stageBtn} data-open={row.id === openStageId || undefined}
-                      aria-haspopup="menu" aria-expanded={row.id === openStageId}
-                      onClick={(e) => onStageClick(row, e.currentTarget)}>
-                {row.stage}
-                <span className={styles.chev}><Icon name="keyboard_arrow_down" size={20} /></span>
-              </button>
+              <StagePill row={row} open={row.id === openStageId} onStageClick={onStageClick} />
             </div>
           </article>
         )

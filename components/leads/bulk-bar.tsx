@@ -2,14 +2,17 @@
 
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { snackbarRise } from '@/lib/motion'
 import styles from './bulk-bar.module.css'
 
 /**
- * B1 bulk-action bar — visual pattern lifted from the Deleted Leads sheet's
- * floating selection bar (count chip · actions · divider · close).
+ * B1 bulk-action bar — the listing's selection bar (and the Deleted Leads sheet's).
+ * (REG-729) One bulk bar: the owner's pick is the Lead Details bar (902:26567, components/leads/tasks/detail-bulk-bar.tsx) — count
+ * box in subheading-m · the actions 24 apart · a 1×24 rule · the house 24 close — so this bar wears its anatomy, through its
+ * stylesheet (bulk-bar.module.css composes it). It keeps its own API: a press carries its event (the Assign popover anchors to the
+ * button) and each action names its key.
  */
 export function BulkBar({
   count,
@@ -48,22 +51,18 @@ export function BulkBar({
           ref={bar}
           className={styles.bar}
           data-inset={inset || undefined}
+          role="toolbar" aria-label={`${count} selected`}
           variants={snackbarRise}
           initial="initial" animate="animate" exit="exit"
           style={{ x: '-50%' }}
         >
           <span className={styles.count}>{count}</span>
-          {actions.map((a, i) => (
-            <span key={a.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
-              {i > 0 ? <span className={styles.divider} /> : null}
-              <button type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} data-kb={a.kb} onClick={a.onClick}>{a.label}</button>
-            </span>
+          {actions.map((a) => (
+            <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} data-kb={a.kb} onClick={a.onClick}>{a.label}</button>
           ))}
-          <span className={styles.divider} />
-          <Tooltip label="Clear selection" shortcut="clear">
-            <button type="button" className={styles.close} aria-label="Clear selection" data-kb="clear" onClick={onClear}>
-              <Icon name="close" size={20} />
-            </button>
+          <span className={styles.rule} aria-hidden />
+          <Tooltip label="Clear selection" side="top" shortcut="clear">
+            <IconButton icon="close" label="Clear selection" size={24} variant="bare" iconSize={24} iconFamily="outlined" data-kb="clear" onClick={onClear} />
           </Tooltip>
         </motion.div>
       ) : null}

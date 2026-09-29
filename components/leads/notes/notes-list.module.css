@@ -78,26 +78,15 @@
 .itemIcon { color: var(--om-color-on-surface-default); flex-shrink: 0; }   /* sticky_note_2 / list_alt 20/Regular #1a1a1a */
 .cellData { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }   /* 931:44884 Cell Data V g8 */
 .titleBlock { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }         /* title block V g4 */
-/* Title row H g4: title 256 + more_vert 20 → the right 24 is reserved for the absolutely placed kebab. */
-.titleRow { display: flex; align-items: center; min-width: 0; padding-right: calc(20px + var(--om-spacing-1)); }
+/* Title row H g4: title + the kebab → the right 28 is reserved for the absolutely placed 24 kebab. */
+.titleRow { display: flex; align-items: center; min-width: 0; padding-right: calc(24px + var(--om-spacing-1)); }
 .title { min-width: 0; font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Bold #1a1a1a */
 .secondary { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 14/Regular #1a1a1a */
 .date { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* "17 Jul ‘26・12:34 PM" 12/Regular #666666 */
 
-/* Kebab anchor: the title row's right end — top = item padding 16, right = item padding 24. */
-.kebabWrap { position: absolute; top: var(--om-spacing-4); right: var(--om-spacing-6); display: inline-flex; }
-/* Kebab: bare more_vert 20/Light #666666 — components/leads/files/files-grid.module.css .kebab at 20. */
-.kebab {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
-  color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1); flex-shrink: 0;
-  transition: background-color var(--motion-hover);
-}
-.kebab:hover { background: var(--om-color-hover-08p); }
-.kebab:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-
-/* Menu Delete #db382a — every kebab's destructive item (files-grid.module.css .danger; the Figma menu 931:45488 paints it red). */
-.danger { color: var(--om-color-tertiary-red-default); }
+/* Kebab anchor: the title row's right end — (REG-729) the house IconButton 24 bare (more_vert 24/Light), centred on the 20px title line
+   the mock's 20 glyph sat on: top = item padding 16 − 2, right = item padding 24 − 2. */
+.kebabWrap { position: absolute; top: calc(var(--om-spacing-4) - 2px); right: calc(var(--om-spacing-6) - 2px); display: inline-flex; }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    The column is the list HALF of the card, whatever width that half is given — 280 at tablet, the whole
@@ -111,15 +100,8 @@
    mock's sizes. Desktop (≥1025) never sees any of it.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  /* The item kebab's menu draws 36px rows, and a menu on a phone is a list of finger targets. menus.module.css
-     is the owner's file, so the rows take the target from here for this surface. (The chip / New ▾ / search
-     targets moved to notes-toolbar.module.css with their controls in REG-293.) */
-  .kebabWrap :global([role='menuitem']) { min-height: 44px; }
-  /* The item kebab is a 20px mark in a 20px button. The button becomes a 44px target and the wrap moves out
-     by the same 12px each way, so the mark stays exactly where the mock puts it (its centre 26 down / 34 in
-     from the item's top-right). The title's reserved right padding grows to clear the wider box. */
-  .kebabWrap { top: 4px; right: 12px; }
-  .kebab { width: 44px; height: 44px; }
+  /* The item kebab is the house IconButton, whose own overlay takes the 44 target on a touch pointer (the menu's rows are the house
+     menu's 44); the title's reserved right padding grows to clear that target. */
   .titleRow { padding-right: 34px; }
 }
 

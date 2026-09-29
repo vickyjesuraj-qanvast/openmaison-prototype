@@ -4,12 +4,15 @@
    other tabs); the toolbar is the tabs' shared bar. */
 .tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
 
-/* Toolbar (the questionnaire / files bar): "All Activities" heading-h4 fills · DS SearchBar 280. */
-.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
-.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.search { width: 280px; }
-/* The SearchBar's ref wrapper (lead-activity.tsx) — was an inline display:inline-flex; a class so mobile can widen it (REG-269). */
-.searchWrap { display: inline-flex; }
+/* (REG-729) Toolbar: the house tab toolbar (components/om/tab-toolbar.module.css) — "All Activities" heading-h4 fills · the house
+   ToolbarSearch 280, folded to a glyph at ≤1024 like every sibling tab's (REG-384), the title stepping aside while it is open. */
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .title { display: none; }
+  .bar:has([data-om-search-open]) .actions { flex: 1 1 auto; flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
+}
 
 .list { display: flex; flex-direction: column; }
 
@@ -54,15 +57,12 @@
 .textLink:hover { text-decoration: underline; }
 .textLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
 
-/* Responsive (REG-269): mobile — the toolbar wraps (the search drops to its own full-width row under the
-   title) and each timeline row becomes rail 24 + ONE content column: the when-line sits ABOVE the sentence.
+/* Responsive (REG-269): mobile — each timeline row becomes rail 24 + ONE content column: the when-line sits ABOVE the sentence.
    The rail cell spans both rows (grid-row: span 2) so the 1px stroke stays unbroken, and the when-line keeps
    its 12px top pad so the dot's 18px alignment on the first text line holds untouched. Tablet keeps the
-   desktop three-column row (the audit measured it fine from 768 up). */
+   desktop three-column row (the audit measured it fine from 768 up). (REG-729) The toolbar's own ≤767 rules are the house tab
+   toolbar's. */
 @media (max-width: 767px) {
-  .bar { flex-wrap: wrap; height: auto; min-height: 36px; row-gap: var(--om-spacing-3); }
-  .searchWrap { width: 100%; }
-  .search { width: 100%; }
   .row { grid-template-columns: 24px minmax(0, 1fr); }
   .rail { grid-row: span 2; }
   .when { padding-block: var(--om-spacing-3) 0; white-space: normal; }

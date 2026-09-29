@@ -1,0 +1,16 @@
+/*
+ * (REG-729) The text link — the DS Link's primary look, for a link or a text button that is not the DS Link component itself: 14/600
+ * (subheading-m), primary, no underline, the primary hover ink; a focus ring. Written once — about fifty hand-typed copies drifted
+ * (13 underlined on hover instead, three underlined at rest, three other fonts). Compose it: `.retry { composes: link from '…/om/text-link.module.css'; }`.
+ */
+@layer om-text-link {
+.link {
+  display: inline; padding: 0; border: 0; background: none; cursor: pointer; text-align: inherit;
+  font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none;
+  border-radius: var(--om-radius-1);
+  transition: color var(--motion-hover);
+}
+.link:hover { color: var(--om-color-primary-hover); }
+.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.link:disabled, .link[aria-disabled='true'] { color: var(--om-color-on-surface-disabled); cursor: default; }
+}

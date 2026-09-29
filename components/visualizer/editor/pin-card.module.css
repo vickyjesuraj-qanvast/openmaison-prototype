@@ -6,9 +6,11 @@
 .card:focus { outline: none; }
 @keyframes rise { from { opacity: 0; translate: 0 4px; } }
 .head { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1); padding: var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-3); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
-.num { flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 5px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-default); color: var(--om-color-surface-default); font: var(--om-type-caption-s); font-weight: 700; }
-.num[data-role='client'] { background: var(--om-color-tertiary-blue-default); }
-.num[data-resolved] { background: var(--om-color-tertiary-green-default); }
+/* (REG-729) The house number disc (X-Ray's Say this): a 24 circle, the caption-s number in primary on the primary-variant; a client's pin
+   and a resolved one keep their hue (the photo's pin is blue / green) in the same anatomy — the hue's variant fill, its ink. */
+.num { flex-shrink: 0; box-sizing: border-box; min-width: 24px; height: 24px; padding: 0 var(--om-spacing-1); border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-caption-s); }
+.num[data-role='client'] { background: var(--om-color-tertiary-blue-variant2); color: var(--om-color-tertiary-blue-default); }
+.num[data-resolved] { background: var(--om-color-tertiary-green-variant2); color: var(--om-color-tertiary-green-default); }
 .who { flex: 1; min-width: 0; display: flex; flex-direction: column; margin-left: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .who b { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The note and the replies scroll; the head and the reply box stay put, and the body never shrinks below a readable few lines. */

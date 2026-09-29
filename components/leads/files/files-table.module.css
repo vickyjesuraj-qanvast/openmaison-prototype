@@ -7,57 +7,21 @@
  * the row kebab menu must be able to hang below a short table.
  */
 .card {
-  display: grid;
+  composes: frame card from '../../om/table-core.module.css';   /* (REG-727) the table core: a real border outside the scrollport (REG-430), r8, the corner ring drawn over the frozen cells (REG-431), the sideways scroller once the tracks run past the card (use-overflow-x.ts); one grid, the head and rows its subgrids (REG-180) */
   grid-template-columns: var(--tracks, 40px minmax(418px, 1fr) 240px 116px 119px 114px 195px);   /* the mock's px are floors (REG-430), Title's 420 less the card's 2px of border; --tracks: the user's dragged widths (REG-427) */
-  width: 100%;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
-  border-radius: var(--om-radius-2);
 }
-/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
-   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
-   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
-.card { position: relative; }
-.card:not([data-overflow])::after {
-  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
-  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
-}
-
-/* The card scrolls sideways only once its tracks run past it (REG-430, use-overflow-x.ts) — while the rows fit it does not
-   clip, so a short table's row menu can hang below it. Selection + Title freeze on the left (the listing's .pin): they carry
-   the row's own fill so the scrolled columns pass underneath, and Title — the last frozen cell — draws the group's rightward
-   shadow only while the card is scrolled. */
-.card[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
 
 /* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
    `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */   /* 0,2,0 — outranks the head cell's own `position: relative` */
-.head .pin { z-index: 3; }
-.row:hover .pin { background: var(--om-color-primary-variant); }
-.row[data-selected] .pin { background: var(--om-color-primary-variant); }
-.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }   /* app/globals.css, same value (REG-286) */
+.pin { composes: pin from '../../om/table-core.module.css'; }   /* (REG-727) the table core: sticky, the row's fill (REG-509), the 1px edge at rest (REG-144), the shadow while scrolled (REG-286) */
 
 /* ---- Head row 1244×56 (931:40168) ---- */
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
-.hCell { position: relative; }   /* the column-resize handle (REG-427) */
-.hCell {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* "Header" H g4 p16/24/16/16 */
-  color: var(--om-color-on-surface-secondary);
-}
+.head { composes: head from '../../om/table-core.module.css'; }   /* (REG-727) the table core: 56, sharing the card's tracks */
+.hCell { composes: hCell from '../../om/table-core.module.css'; }   /* "Header" H g4 p16/24/16/16; relative for the column-resize handle (REG-427) */
 .hCell.colSel { padding: var(--om-spacing-4) 0 var(--om-spacing-4) var(--om-spacing-4); }   /* "Header / Selection" H g8 p16/0/16/16 */
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* "TITLE" 12/Medium #666666 — caps as the mock (931:40167) and every other listing head (REG-430) */
-/* Sort is inert (coming soon) — the head keeps the quotes / contracts table's sort-button look. */
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }   /* "TITLE" 12/Medium #666666 — caps as the mock (931:40167) and every other listing head (REG-430) */
+/* Sort is inert (coming soon) — the head keeps the listing's sort-button look. */
+.hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns: widths live on the card's grid-template-columns above; each class pins its cell to its track ---- */
 .colSel { grid-column: 1; }
@@ -71,24 +35,12 @@
 
 /* ---- Rows 1244×60 (931:40181 / 931:40194) ---- */
 .row {
-  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift; auto-rows 100%: cells fit the 60 (REG-431) */
-  height: 60px; position: relative;                                      /* relative: the absolute .actions hang off the row */
-  transition: background-color var(--motion-hover);
+  composes: row from '../../om/table-core.module.css';   /* (REG-727) the table core: the card's tracks, cells fit the row (REG-431); hover (not mocked) · selected (frames 96/97, frame 104 rows) · selected + hover (REG-449) */
+  height: 60px;   /* the mock's 60 */
 }
-.row:hover { background: var(--om-color-primary-variant); }                    /* hover not mocked — the Quotes / Tasks hover row #f2f2f2 */
 .card > .row:last-child, .card > .row:last-child .colSel { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }   /* the fill's corners follow the card's (REG-431) */
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
-.row[data-selected] { background: var(--om-color-primary-variant); }     /* selected fill #eee5ff (frames 96/97, frame 104 rows) */
-.cell {
-  display: flex; align-items: center;
-  min-width: 0;
-  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
-  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
+.cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) the table core: "Cell / One line" p12/24/12/16, the cell stroke w1/0/0/0, body-m */
 .cell.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }   /* "Cell / Selection" H g12 p12/0/12/16 */
 /* Title cell "Cell / Two line" H g12 p12/24/12/16 (931:40181) — declared after .cell so it wins the cascade. */
 .cell.colTitle { gap: var(--om-spacing-3); }
@@ -132,23 +84,9 @@
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Row hover kebab (Quotes "Hover button" 910:36709 copied, kebab only): level-1 shadow, right 24, top (60 − 36) / 2 = 12. ---- */
-.actions {
-  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
-  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
-  width: 0; height: 0; overflow: visible;
-  z-index: 4;
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--motion-hover);
-}
-.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430) */
-.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
-/* White fill + level-1 shadow live on a wrapper so the om icon button keeps its own hover state. */
-.float {
-  display: inline-flex;
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  box-shadow: var(--om-elevation-level-1);
-}
+.actions { composes: actions from '../../om/table-core.module.css'; }   /* (REG-727) the table core: parked at the visible right edge (REG-430), 24 in, centred on the row */
+.actionsInner { composes: actionsInner from '../../om/table-core.module.css'; }
+.float { composes: float from '../../om/table-core.module.css'; }   /* white fill + level-1 shadow on a wrapper, so the om icon button keeps its own hover state */
 .menuWrap { position: relative; display: inline-flex; }
 /* Touch hook (REG-273) — inert until the ≤767 block at the foot of this file; repeats the om icon button's
    own `flex-shrink: 0` so the desktop row is byte-identical. */
@@ -162,7 +100,6 @@
 @media (max-width: 1024px) {
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
-  .pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* the frozen edge at rest on a tablet, where the card always scrolls */
 }
 /* ≤767 the frozen band has to leave something to scroll: 40 + 420 is wider than a 358px card, so the Title
    track takes 200 (thumb 48 + name + comment chip) and ~118 of the metadata columns stay in view. */
@@ -203,9 +140,6 @@
      60px row — `min-*` beats the DS `width/height: 36px` whatever the selector's specificity. */
   .touchBtn { min-width: 44px; min-height: 44px; }   /* the parked box centres its content on the row itself, so no `top` correction is needed for the grown button (REG-430) */
 }
-
-/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
-.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
 
 /* (REG-664) While searching, a second line under the name says where the hit lives. */
 .nameStack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }

@@ -6,7 +6,7 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { resolveFields } from '@/lib/templates/fields'
 import { COLOR_KEYS, COLOR_LABEL, FONT_FAMILIES, FONT_ROLE_LABEL, FONT_ROLES, isColorKey, type Align, type BrandKit, type TextStyle } from '@/lib/templates/model'
@@ -78,10 +78,12 @@ export function Txt({ label, value, onChange, multiline, fields = true, wide = t
   const preview = values && /\{[a-z_]+\}/.test(value) ? resolveFields(value, values).replace(/\s+/g, ' ').trim() : null
   const helper = preview !== null ? (preview ? `Prints as: ${preview}` : 'Prints as: nothing on this quote') : undefined
   return (
-    <Field wide={wide} label={multiline ? label : undefined}>   {/* (REG-542) a paragraph field keeps its label above it — a placeholder vanished as soon as one typed */}
+    <Field wide={wide}>
       <div className={styles.txt}>
+        {/* (REG-542) a paragraph field keeps its label — a placeholder vanished as soon as one typed. (REG-729) The DS TextArea's own label,
+            inside the box while it is empty and on its top edge once it holds text, as every single-line field's. */}
         {multiline ? (
-          <span className={styles.txtGrow}><TextArea aria-label={label} placeholder={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />{helper ? <span className={styles.helper}>{helper}</span> : null}</span>
+          <span className={styles.txtGrow}><TextArea label={label} value={value} onChange={(v: string) => onChange(v)} className={styles.area} />{helper ? <span className={styles.helper}>{helper}</span> : null}</span>
         ) : (
           <span className={styles.txtGrow}><TextField label={label} value={value} onChange={onChange} helper={helper} /></span>
         )}
@@ -90,10 +92,11 @@ export function Txt({ label, value, onChange, multiline, fields = true, wide = t
             <Tooltip label="Insert a field — the client’s name, the date, the quote number…" disabled={open}>
               <IconButton icon="data_object" label="Insert a field" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} />
             </Tooltip>
-            <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={260} role="menu" sheetTitle="Insert a field">
+            {/* (REG-728) An insert-field list: 240; each group under the house group title. */}
+            <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle="Insert a field">
               {FIELD_GROUPS.map((g) => (
                 <div key={g.label}>
-                  <span className={styles.menuGroup}>{g.label}</span>
+                  <DropdownLabel>{g.label}</DropdownLabel>
                   {g.fields.map((f) => <DropdownItem key={f.key} onSelect={() => { setOpen(false); onChange(value ? `${value}${value.endsWith(' ') || value.endsWith('\n') ? '' : ' '}{${f.key}}` : `{${f.key}}`) }}>{f.label}</DropdownItem>)}
                 </div>
               ))}

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Checkbox, Tag } from '@/components/ds'
-import { menuSideFor } from '@/components/leads/menu-side'
 import { Avatar } from '@/components/om/avatar'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
@@ -65,8 +64,6 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
 export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile, onOpenComments, onRowMenu, columns, onReorder, placeOf, visualizeLabel }: FilesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
-  /* (REG-286) Measured on open, exactly as the Quotes / Contracts twins do — only one row menu is open at a time. */
-  const [menuSide, setMenuSide] = useState<'up' | 'down'>('down')
 
   const ids = rows.map((r) => r.id)
   const on = ids.filter((id) => selected.has(id)).length
@@ -127,16 +124,8 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
           isSelected={selected.has(row.id)}
           onToggle={() => toggle(row.id)}
           menuOpen={menuRow === row.id}
-          onMenuToggle={(trigger) => {
-            /* (REG-286) This table still counted rows: with three files the last two kebabs opened UPWARD, over the
-               toolbar and the tab strip, with half a screen free below them. The side is now measured off the
-               trigger and this menu's real height (components/leads/menu-side.ts) — six items for a file, four for
-               a folder. */
-            if (menuRow !== row.id) setMenuSide(menuSideFor(trigger, isFolder(row) ? 4 : visualizeLabel?.(row) ? 7 : 6))
-            setMenuRow((m) => (m === row.id ? null : row.id))
-          }}
+          onMenuToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))}
           onMenuClose={() => setMenuRow(null)}
-          menuSide={menuSide}
           onOpenFolder={onOpenFolder} onOpenFile={onOpenFile} onOpenComments={onOpenComments} onRowMenu={onRowMenu}
           place={placeOf?.(row)} visualize={visualizeLabel?.(row) ?? null}
         />
@@ -149,17 +138,15 @@ export function FilesTable({ rows, selected, onSelect, onOpenFolder, onOpenFile,
 
 function FileRowView({
   row, isSelected, onToggle,
-  menuOpen, onMenuToggle, onMenuClose, menuSide,
+  menuOpen, onMenuToggle, onMenuClose,
   onOpenFolder, onOpenFile, onOpenComments, onRowMenu, L, place, visualize,
 }: {
   row: FileRow
   isSelected: boolean
   onToggle: () => void
   menuOpen: boolean
-  /** (REG-286) Hands the kebab up so the parent can measure which way its menu fits (menu-side.ts). */
-  onMenuToggle: (trigger: HTMLElement) => void
+  onMenuToggle: () => void
   onMenuClose: () => void
-  menuSide: 'up' | 'down'
   onOpenFolder: (folder: FileRow) => void
   onOpenFile: (file: FileRow) => void
   onOpenComments: (file: FileRow) => void
@@ -171,6 +158,9 @@ function FileRowView({
   const folder = isFolder(row)
   const open = () => (folder ? onOpenFolder(row) : onOpenFile(row))
   const pick = (action: FileAction | FolderAction) => { onMenuClose(); onRowMenu(row, action) }
+  /* (REG-728) The row menu opens through the body portal, as the Quotes / Contracts twins' (REG-639): an inline menu inside the card's
+     sideways scroller was clipped, and the side it opened on had to be measured (REG-286) — the portal flips on the viewport itself. */
+  const kebab = useRef<HTMLSpanElement>(null)
 
   return (
     <div className={styles.row} role="row" data-kb-row data-kb-id={row.id} data-selected={isSelected || undefined} data-kind={folder ? 'folder' : 'file'}>
@@ -238,17 +228,17 @@ function FileRowView({
           kebab only, no View): right 24, top (60 − 36) / 2 = 12. */}
       <span className={styles.actions} data-open={menuOpen || undefined}>
         <span className={styles.actionsInner}>
-        <span className={styles.menuWrap}>
+        <span className={styles.menuWrap} ref={kebab}>
           <span className={styles.float}>
             {/* (REG-273) `touchBtn` takes this 36px button to a 40px box at ≤767; the glyph keeps its size. */}
             <Tooltip label={folder ? 'Folder actions' : 'File actions'} disabled={menuOpen}>
               <IconButton icon="more_vert" label={`Actions for ${row.name}`} variant="primary" className={styles.touchBtn}
-                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
+                          aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
             </Tooltip>
           </span>
           {folder
-            ? <FolderMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} />
-            : <FileMenu open={menuOpen} onClose={onMenuClose} onPick={pick} side={menuSide} name={row.name} visualize={visualize} />}
+            ? <FolderMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} />
+            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} />}
         </span>
         </span>
       </span>

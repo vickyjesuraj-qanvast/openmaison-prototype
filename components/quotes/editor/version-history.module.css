@@ -10,7 +10,7 @@
 .row[data-current] .dot { background: var(--om-color-primary-default); }
 .text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .title { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); display: inline-flex; align-items: center; gap: var(--om-spacing-2); }
-.tag { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-primary-default); }
+.tag { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-primary-default); }   /* (REG-729) no letter-spacing */
 .meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* (REG-625) Open · Bring back on a kept version, side by side at the row's end. */

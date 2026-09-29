@@ -6,7 +6,7 @@
 .panel { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .sectionHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .sectionTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); margin: 0; }
-.sectionHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }
+.sectionHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }   /* (REG-729) the help line: body-s grey */
 
 .setting {
   border: var(--om-border-1) solid var(--om-color-surface-variant);
@@ -15,7 +15,7 @@
   display: flex; flex-direction: column; gap: var(--om-spacing-4);
 }
 .settingHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.settingTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
+.settingTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }   /* (REG-729) a Company / Settings card title: heading-h4 (16/24 bold) */
 .settingHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); max-width: 72ch; }
 .choices { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 
@@ -31,7 +31,7 @@
 .exampleNo { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .settingActions { display: flex; justify-content: flex-end; gap: var(--om-spacing-2); }
 .trades { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
-.trade { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 32px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-full); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.trade { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 32px; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }   /* (REG-729) a token is r4, as the DS Tag (with its remove) — not a pill */
 /* (REG-617, parity Q-08) A trade's name opens its note; a trade with a note carries the note glyph. */
 .tradeName { display: inline-flex; align-items: center; gap: var(--om-spacing-1); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: var(--om-radius-1); }
 .tradeName:hover > span { text-decoration: underline; }
@@ -54,15 +54,17 @@
 .captureMeta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-2) var(--om-spacing-5); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* (REG-604) Settings › Notifications: the events × channels table, the follow-up rule, the messages. */
-.eventTable { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
-.eventHead, .eventRow { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) repeat(3, 88px); align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); }
-.eventHead { min-height: 40px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
-.eventRow { min-height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (REG-727) The event table is the card table (components/om/card-table.module.css), composed once here for every Settings list
+   on it — Notifications, custom fields, entities, Who may do what, ways in. What stays: the tracks, the cells, the phone's stack. */
+.eventTable { composes: table from '../../components/om/card-table.module.css'; }
+.eventHead { composes: head from '../../components/om/card-table.module.css'; }
+.eventRow { composes: row from '../../components/om/card-table.module.css'; }
+.eventCol { composes: col from '../../components/om/card-table.module.css'; }   /* a switch or a mark, centred under its column name */
+.eventHead, .eventRow { grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 1fr) repeat(3, 88px); }
 .eventName { display: inline-flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .eventName > span { display: flex; flex-direction: column; gap: 1px; }
 .eventHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .eventWho { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.eventCol { display: flex; justify-content: center; }
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
 .messages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: var(--om-spacing-3); }   /* (sweep S4 #9) at 320 a card is the column's width, never past it */
 .message { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); background: var(--om-color-surface-default); }
@@ -75,7 +77,7 @@
 .messageBox textarea { min-height: 140px; }
 .fieldsAnchor { display: inline-flex; align-self: flex-start; }   /* (sweep S4 #21) the Insert a field menu's anchor */
 .preview { display: flex; flex-direction: column; gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }
-.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 @media (max-width: 767px) {
   .eventHead { display: none; }
   .eventRow { grid-template-columns: 1fr; gap: var(--om-spacing-2); }
@@ -86,7 +88,7 @@
 
 /* (REG-607) Reasons: two chip lists under one card, a gate suffix on a Lost reason, the gate field beside the add row. */
 .reasonGroup { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.reasonLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.reasonLabel { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; }   /* (REG-729) no letter-spacing on an uppercase caption */
 .reasonGate { color: var(--om-color-on-surface-secondary); }
 .gateField { flex: 0 0 200px; }
 @media (max-width: 767px) {   /* (sweep S4 #4) the Lost add row wraps: the name takes the line, the gate field and Add share the next */
@@ -99,19 +101,19 @@
 /* (REG-614) The list is the Notifications module's event table above, with its own tracks: field · Required · Active · actions. */
 .fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(200px, 1fr) 96px 96px 120px; }
 .fieldTable .eventRow:not([data-active]) .fieldLabel { color: var(--om-color-on-surface-secondary); }
+.fieldActionsHead { composes: actionsHead from '../../components/om/card-table.module.css'; }   /* (REG-727) the actions' blank head, gone on a phone */
+.fieldActions { composes: actions from '../../components/om/card-table.module.css'; }   /* (REG-727) order · edit · delete at the row's end, a line of their own on a phone */
 @media (max-width: 767px) {
   .fieldTable .eventHead, .fieldTable .eventRow { grid-template-columns: minmax(0, 1fr) 56px 56px; }
-  .fieldActionsHead { display: none; }
-  .fieldTable .fieldActions { grid-column: 1 / -1; justify-content: flex-start; }
   /* (sweep S4 #5) the bank's way: the head stays and names the two switch columns — a ::before label in a 56px track put a switch under the other label */
   .fieldTable .eventHead { display: grid; }
   .fieldTable .eventCol { justify-content: center; }
   .fieldTable .eventCol::before { content: none; }
+  .fieldTable .eventRow { gap: var(--om-spacing-3); }   /* (REG-727) the head's 12, so each switch stands under its label (the stack's 8 put it off by 4) */
 }
 .fieldText { display: flex; flex-direction: column; gap: var(--om-spacing-1); min-width: 0; }
 .fieldLabel { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
 .fieldMeta { display: flex; align-items: center; gap: var(--om-spacing-2); flex-wrap: wrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.fieldActions { display: inline-flex; gap: var(--om-spacing-1); justify-content: flex-end; }
 .fieldError { font: var(--om-type-caption-s); color: var(--om-color-tertiary-red-default); }
 .optionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .optionRow { display: flex; align-items: center; gap: var(--om-spacing-2); }
@@ -130,12 +132,12 @@
 .person { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .entityTable .eventHead, .entityTable .eventRow { grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(180px, 1.4fr); }
 .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(240px, 1.6fr) repeat(4, minmax(96px, 1fr)); }
-.roleTable .eventRow { min-height: 48px; }
 .reachYes { color: var(--om-color-primary-default); }
 .reachNo { color: var(--om-color-on-surface-secondary); }
 .reachText { font: var(--om-type-body-s); color: var(--om-color-on-surface-default); text-align: center; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-@media (max-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1024px) {   /* (REG-727) a tablet's only: written as ≤1024 it came after the phone's stack and
+     won there too, so on a phone the five tracks stayed and the In app · Email · WhatsApp switches were cut off by the frame */
   /* (sweep S4 #2) Notifications' own tracks fit 768–1024 — WhatsApp was clipped by the table's overflow at 768–880 */
   .eventHead, .eventRow { grid-template-columns: minmax(150px, 1.4fr) minmax(96px, 1fr) repeat(3, 72px); }
   /* Tablet: the five tracks fit the card at 768 (≈ 594 of table) — the action column and the role columns give way first. */
@@ -144,9 +146,9 @@
 }
 @media (max-width: 767px) {
   .roleRow { grid-template-columns: minmax(0, 1fr); gap: var(--om-spacing-2); }
-  /* Phone: the event table's own rule (head hidden, one column, each cell labelled) — restated at these tables' specificity. */
+  /* Phone: the event table's stack (head hidden, one column, each cell labelled) — its one column restated at these tables'
+     specificity; the labels are the stack's own (.eventWho[data-label]::before, .eventCol::before). */
   .entityTable .eventHead, .entityTable .eventRow, .roleTable .eventHead, .roleTable .eventRow { grid-template-columns: minmax(0, 1fr); }
-  .entityTable .eventWho::before { content: attr(data-label) ' · '; }
   .roleTable .eventCol { justify-content: space-between; }
   .roleTable .reachText { text-align: right; }
 }
@@ -161,6 +163,5 @@
 /* (REG-647, settings parity Q-12) Lead capture's ways in, on the event table. */
 .captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(200px, 1.2fr) minmax(160px, 1fr) minmax(160px, 1fr); }
 @media (max-width: 767px) {
-  .captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(0, 1fr); }
-  .captureTable .eventWho::before { content: attr(data-label) ' · '; }
+  .captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(0, 1fr); }   /* the stack's one column, as the entities' */
 }

@@ -1,9 +1,7 @@
 /* Terms and Conditions · Additional Notes (1263:36229 · 1263:36303, REG-420): the section-top's "My Templates" link and the
    "Show in client view" switch (1263:36236 · 1263:36237); the body is the editor's 68px toolbar row + the p24 text. */
 .actions { display: inline-flex; align-items: center; gap: var(--om-spacing-6); }
-.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; border-radius: var(--om-radius-1); }
-.link:hover { color: var(--om-color-on-primary-variant); }
-.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.link { composes: link from '../../../om/text-link.module.css'; white-space: nowrap; }   /* (REG-729) the house text link */
 .switchRow { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 14/400 ink + the 20px switch (1263:36237) */
 .aiMark { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
 .aiMark img { width: 17px; height: 17px; display: block; }

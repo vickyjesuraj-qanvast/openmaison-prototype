@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useTransition, type RefObject } from 'react'
+import { useState, useTransition, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
@@ -9,7 +9,6 @@ import { anchoredSurface } from '@/lib/motion'
 import { Icon } from '@/components/om/icon'
 import { CreditToken } from '@/components/om/credit-token'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
-import { useMenuKeyboard } from '@/components/om/surface'
 import { useSnackbar } from '@/components/om/snackbar'
 import { askForCredits, keepPlan } from '@/app/credits/actions'
 import { aboutRenders, dayMonth, fmtCredits, levelOf, refreshLine, runOutAt, toneOf, type CreditSummary } from '@/lib/credits/model'
@@ -18,6 +17,7 @@ import { openManageBilling, openPlans, openTopUp, planHref, refreshCredits } fro
 import menuStyles from '@/components/leads/menus.module.css'
 import panel from '@/components/company/company-popover.module.css'
 import styles from './credits-card.module.css'
+import { useRailPopover } from '@/components/shell/rail-popover'
 
 /**
  * (REG-701, AI credits §5.2 · Q-07 · Q-20) The credits card: the whole story behind the balance, opened by a press on the rail's row or
@@ -38,38 +38,7 @@ export function CreditsCard({ open, anchor, placement, onClose, summary, gstLine
   gstLine: string
 }) {
   const sheet = useSheetLayout()
-  const menuRef = useRef<HTMLDivElement | null>(null)
-  const anchorRef = useRef(anchor); useEffect(() => { anchorRef.current = anchor })
-  useMenuKeyboard(open && !sheet, menuRef, onClose)
-
-  const place = useCallback((el: HTMLDivElement | null) => {
-    menuRef.current = el
-    const a = anchorRef.current?.current
-    if (!el || !a) return
-    const r = a.getBoundingClientRect(), EDGE = 8
-    if (placement === 'rail') {
-      const rail = a.closest('nav') ?? a
-      el.style.left = `${rail.getBoundingClientRect().right + 8}px`
-      el.style.top = `${Math.max(EDGE, Math.min(r.bottom, window.innerHeight - EDGE) - el.offsetHeight)}px`
-      el.style.transformOrigin = 'bottom left'
-    } else {
-      el.style.left = `${Math.max(EDGE, Math.min(r.right - el.offsetWidth, window.innerWidth - el.offsetWidth - EDGE))}px`
-      el.style.top = `${Math.min(r.bottom + 8, window.innerHeight - el.offsetHeight - EDGE)}px`
-      el.style.transformOrigin = 'top right'
-    }
-  }, [placement])
-
-  useEffect(() => {
-    if (!open || sheet) return
-    const onDown = (e: MouseEvent) => { const t = e.target as Node; if (anchor.current?.contains(t) || menuRef.current?.contains(t)) return; onClose() }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }
-    let lastW = window.innerWidth
-    const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; onClose() } }
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    document.addEventListener('keydown', onKey, true)
-    window.addEventListener('resize', onResize)
-    return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize) }
-  }, [open, onClose, anchor, sheet])
+  const { place } = useRailPopover({ open, anchor, onClose, sheet, align: placement === 'rail' ? 'bottom' : 'below' })   // (REG-728) the rail's popovers open one way
 
   const body = <CardBody summary={summary} gstLine={gstLine} onClose={onClose} />
   if (typeof document === 'undefined') return null

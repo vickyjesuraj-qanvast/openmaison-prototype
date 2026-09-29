@@ -21,42 +21,9 @@
 /* Fields (24,168,352,296): Text Area 64 · Text Field 48 · Text Area 112, V g36. */
 .fields { display: flex; flex-direction: column; gap: var(--om-spacing-9); }
 
-/* DS Text Area (64 / 112, Filled): 1px on-surface/border, r4, p12/16/8 — the notes textarea of
-   components/leads/move-stage/fields.module.css (.notes) as the base; the label floats to the top border exactly as
-   components/om/text-field.module.css does (12/16 secondary, 4px side padding, primary while active; active = the DS
-   2px stroke as 1px border + 1px inset shadow). The mock's "p12/16/8/7" left figure is its nested text frame — the box
-   itself pads 16 like the DS field. Hover states are not in the mock: none, as the notes textarea. */
-.area { position: relative; display: flex; width: 100%; }
-.areaControl {
-  width: 100%; display: block; resize: none;
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  padding: 12px 16px 8px;
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-  outline: 0;
-  transition: border-color var(--motion-toggle), box-shadow var(--motion-toggle);
-}
-.areaControl[data-resize] { resize: vertical; }   /* Description carries the mock's 8×8 resize glyph bottom-right → the native vertical grip */
-.area[data-active] .areaControl { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 1px var(--om-color-primary-default); }
-.areaLabel {
-  position: absolute; left: 16px; top: 12px;
-  max-width: calc(100% - 32px);
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-secondary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  pointer-events: none;
-  transition: top var(--motion-toggle), left var(--motion-toggle), font-size var(--motion-toggle), line-height var(--motion-toggle), padding var(--motion-toggle), color var(--motion-toggle), transform var(--motion-toggle);
-}
-.area[data-floated] .areaLabel {
-  top: 0; left: 12px; transform: translateY(-50%);
-  padding: 0 4px;
-  background: var(--om-color-surface-default);
-  font: var(--om-type-body-s);
-  line-height: 16px;
-}
-.area[data-active] .areaLabel { color: var(--om-color-primary-default); }
+/* (REG-729) The two text areas are the DS TextArea (its own floating label, 2px active stroke, error line). Description is the DS's 112
+   and keeps its vertical grip (the mock's 8×8 resize glyph); Task name is the mock's 64 and has no grip. */
+.nameArea textarea { block-size: 64px; min-block-size: 64px; resize: none; }
 
 /* Sections (Members 68 · Tags 80 · Attachments 68): V g12, title 14/Semi Bold 20 tall. */
 .section { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
@@ -102,7 +69,6 @@
 
 /* Kebab host: the Dropdown (200w, right-aligned) positions itself against this box (as the table row / header kebabs). */
 .menuHost { position: relative; display: inline-flex; }
-.danger { color: var(--om-color-tertiary-red-default); }   /* "Delete" (red) — as the row kebab in components/leads/table.tsx */
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
    "+ Add Tag" is 20px of link text and person_add is the DS 36 — both under a fingertip's 44. The type and
@@ -116,5 +82,5 @@
   .touchTarget { position: relative; }
   .touchTarget::after { content: ''; position: absolute; inset: -4px; }
 }
-.leadLink { color: var(--om-color-primary-default); font-weight: 600; text-decoration: none; }
+.leadLink { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none; }   /* (REG-729) 14/20/600 from the token, as it drew */
 .leadLink:hover { text-decoration: underline; text-underline-offset: 2px; }

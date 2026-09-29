@@ -7,7 +7,8 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { Dropzone } from '@/components/leads/move-stage/fields'
 import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
 import { NameDialog } from '@/components/leads/files/name-dialog'
@@ -122,33 +123,8 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
         {files.length ? (
           <div className={styles.grid} role="list" aria-label="Attached files">
             {files.map((file) => (
-              <div key={file.id} className={styles.tile} role="listitem">
-                <button type="button" className={styles.tileMain} onClick={() => openFile(file)} aria-label={`Open ${file.name}`}>
-                  {file.thumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={file.thumb} alt="" className={styles.tileImg} />
-                  ) : (
-                    <span className={styles.tileBox}><Icon name={kindIcon(file)} size={32} weight={300} /></span>
-                  )}
-                  <span className={styles.caption}>
-                    <Icon name={kindIcon(file)} size={20} className={styles.kindIcon} />
-                    <span className={styles.tileName}>{file.name}</span>
-                  </span>
-                </button>
-                <span className={styles.menuWrap}>
-                  <Tooltip label="More options" disabled={menuFor === file.id}>
-                    <IconButton icon="more_vert" label={`More options for ${file.name}`} size={24} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuFor === file.id}
-                                onClick={() => setMenuFor((m) => (m === file.id ? null : file.id))} />
-                  </Tooltip>
-                </span>
-                {/* The menu hangs under the tile, flush with its left edge (1239:28329) — anchored on the tile, not the 24px kebab. */}
-                <Dropdown open={menuFor === file.id} onClose={() => setMenuFor(null)} align="left" sheetTitle={file.name}>
-                  <DropdownItem onSelect={() => { setMenuFor(null); openFile(file) }}>Open</DropdownItem>
-                  <DropdownItem onSelect={() => { setMenuFor(null); setRenaming(file) }}>Rename</DropdownItem>
-                  <DropdownItem onSelect={() => { void download(file) }}>Download</DropdownItem>
-                  <DropdownItem tone="danger" onSelect={() => remove(file)}>Delete</DropdownItem>
-                </Dropdown>
-              </div>
+              <FileTile key={file.id} file={file} menuOpen={menuFor === file.id} onToggleMenu={() => setMenuFor((m) => (m === file.id ? null : file.id))} onCloseMenu={() => setMenuFor(null)}
+                        onOpen={() => openFile(file)} onRename={() => { setMenuFor(null); setRenaming(file) }} onDownload={() => { void download(file) }} onDelete={() => remove(file)} />
             ))}
           </div>
         ) : null}
@@ -158,5 +134,42 @@ export function FilesCard({ seed, open, onToggle, onHandlePointerDown, onSaved, 
                         onAttach={attachSet} onUploadPicked={(f) => upload(f)} />
       <NameDialog open={!!renaming} title="Rename File" initial={renaming?.name ?? ''} onSave={(name) => { if (renaming) rename(renaming, name) }} onClose={() => setRenaming(null)} />
     </SectionCard>
+  )
+}
+
+/** One tile the quote carries (169×183: image · kind glyph · name · kebab). (REG-728) Its menu opens through the body portal (PortalMenu),
+ *  as every row menu does — still under the tile, flush with its left edge (1239:28329): anchored on the tile, not the 24px kebab. */
+function FileTile({ file, menuOpen, onToggleMenu, onCloseMenu, onOpen, onRename, onDownload, onDelete }: {
+  file: LeadFile; menuOpen: boolean; onToggleMenu: () => void; onCloseMenu: () => void
+  onOpen: () => void; onRename: () => void; onDownload: () => void; onDelete: () => void
+}) {
+  const tile = useRef<HTMLDivElement>(null)
+  return (
+    <div ref={tile} className={styles.tile} role="listitem">
+      <button type="button" className={styles.tileMain} onClick={onOpen} aria-label={`Open ${file.name}`}>
+        {file.thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={file.thumb} alt="" className={styles.tileImg} />
+        ) : (
+          <span className={styles.tileBox}><Icon name={kindIcon(file)} size={32} weight={300} /></span>
+        )}
+        <span className={styles.caption}>
+          <Icon name={kindIcon(file)} size={20} className={styles.kindIcon} />
+          <span className={styles.tileName}>{file.name}</span>
+        </span>
+      </button>
+      <span className={styles.menuWrap}>
+        <Tooltip label="More options" disabled={menuOpen}>
+          <IconButton icon="more_vert" label={`More options for ${file.name}`} size={24} variant="bare" iconSize={24} iconWeight={300} aria-haspopup="menu" aria-expanded={menuOpen}
+                      onClick={onToggleMenu} />
+        </Tooltip>
+      </span>
+      <PortalMenu open={menuOpen} anchor={tile} onClose={onCloseMenu} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={file.name}>
+        <DropdownItem onSelect={() => { onCloseMenu(); onOpen() }}>Open</DropdownItem>
+        <DropdownItem onSelect={onRename}>Rename</DropdownItem>
+        <DropdownItem onSelect={onDownload}>Download</DropdownItem>
+        <DropdownItem tone="danger" onSelect={onDelete}>Delete</DropdownItem>
+      </PortalMenu>
+    </div>
   )
 }

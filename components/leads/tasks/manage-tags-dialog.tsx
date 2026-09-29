@@ -61,7 +61,7 @@ export function ManageTagsDialog({
                            }} />
                 <div className={styles.editActions}>
                   <Tooltip label="Save">
-                    <IconButton icon="done" label={`Save ${t.name}`} size={24} variant="primary" className={styles.doneBtn} onClick={save} />
+                    <IconButton icon="done" label={`Save ${t.name}`} size={24} variant="filled" onClick={save} />   {/* (REG-729) the house filled icon button */}
                   </Tooltip>
                   <Tooltip label="Cancel">
                     <IconButton icon="close" label="Cancel" size={24} onClick={cancel} />

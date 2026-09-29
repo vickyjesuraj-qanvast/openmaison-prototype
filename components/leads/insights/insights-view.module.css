@@ -1,5 +1,5 @@
 /* (REG-611) Leads › Insights — 1.0's Performance view on 2.0's pieces: the house chips for the range, three StatTiles (REG-614: the
-   shared components/om pieces), the awaiting chips, the By team member table on the listing's table model (the Qanvast card's rules, copied below). */
+   shared components/om pieces), the awaiting chips, the By team member table on the listing's table model (the table core below, REG-727). */
 .bar { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); flex-wrap: wrap; margin-bottom: var(--om-spacing-4); }
 .caption { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-3); margin-bottom: var(--om-spacing-4); }
@@ -31,81 +31,55 @@
 }
 @media (min-width: 768px) and (max-width: 1024px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-/* ── the By team member table — the Qanvast Ops card's rules (qanvast-leads.module.css), so every table reads as the listing ── */
+/* ── the By team member table (REG-611) — on the table core (REG-727): the listing's frame, head, rows and frozen cells written ONCE
+   (components/om/table-core.module.css), so this table can no longer drift from the listing (REG-723: the Qanvast copy it was built on
+   had lost the head cell's padding and the frozen column's edge). This sheet keeps its own: the tracks, the always-on scroller, the cells,
+   the phone's cards. ── */
 .card {
-  display: grid;
-  /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock's 1152-wide content.
-     The five data columns share whatever the container adds, in the mock's own proportions, instead of the slack falling into
-     Status — which holds two 20px tags and needs none (at 1440 with the rail collapsed that used to leave ~390px of white down
-     the right of every row). Status keeps its mocked 369; the ratios are the ghost loader's (components/shell/skeleton.tsx
-     QanvastSkeleton), so the columns don't jump at the PageReveal hand-off. At 1152 every track resolves to its exact mocked
-     px; narrower, each holds its px floor and the card scrolls sideways (the listing's rule, components/leads/table.module.css
-     .scroller) rather than pushing the row's "View Lead" out of reach. */
-  grid-template-columns: var(--tracks,
-    minmax(238px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
-    minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* Name's floor less the card's 2px of border (REG-430); --tracks: the user's dragged widths (REG-427) */
-  width: 100%;
-  /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
-     sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
-     vertically (the row actions sit inside their row; the customise popover is position: fixed). */
-  overflow-x: auto; overflow-y: hidden;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
-  border-radius: var(--om-radius-2);
+  composes: frame card scroller from '../../om/table-core.module.css';   /* (REG-727) the table core: border, radius, the grid */
+  grid-template-columns: var(--tracks);   /* MEMBER_COLUMN_DEFS' tracks (insights-view.tsx), each floor holding its head (REG-723); the user's dragged widths replace them (REG-427) */
+  /* (REG-350) always its own sideways scroller, y hidden: the core's .scroller */
 }
+/* Always a scroller, the card clips its own corners: the core's corner ring — drawn for a frame that does not clip at rest (REG-431) —
+   steps aside, as it does for any scrolling frame (left on, it would reach 1px past the scrollport: the phantom scroll REG-350 removed). */
 
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+/* (REG-723, owner 2026-09-28: "check the table header alignments and looks different compared to the leads table header") The head is
+   the listing's: 56, each cell 16/24/16/16 like the cells under it, the label centred, caption-s uppercase grey. */
+.head { composes: head from '../../om/table-core.module.css'; }   /* (REG-727) the table core */
+.hCell { composes: hCell from '../../om/table-core.module.css'; }   /* relative for the column-resize handle (REG-427) */
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }
 
-/* (REG-723, owner 2026-09-28: "check the table header alignments and looks different compared to the leads table header") The head
-   cell is the listing's (components/leads/table.module.css .hCell): 16/24/16/16 like the cells under it, the label centred in the 56
-   in the head's grey. The copy of the Qanvast Ops card took only the first of its two .hCell rules, so each label sat in the top-left
-   corner of its track, in black, 16px left of its column's values. */
-.hCell {
-  position: relative;   /* the column-resize handle (REG-427) */
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
-  color: var(--om-color-on-surface-secondary);
+.row { composes: row from '../../om/table-core.module.css'; }   /* (REG-727) the table core: 64, the head's tracks (REG-180), hover primary-variant (REG-449) */
+.cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) "Cell / One line" p12/24/12/16, the 1px top rule, body-m, placed on row 1 (REG-430 · REG-431) */
+
+/* (REG-723) The frozen Member column, as every table's: sticky, the row's fill, the 1px edge at rest, the shadow only while the card is
+   scrolled sideways (`data-scrolled` from the card's own scroll handler). */
+.pin { composes: pin from '../../om/table-core.module.css'; }   /* (REG-727) the table core */
+
+/* ── ≤767: the table is cards (REG-727; owner 2026-09-29: "Cards, as every other table at ≤767") — the Qanvast Ops card
+   (qanvast-leads.module.css ≤767): the head steps out; each member is a bordered r8 card of stacked lines on 16, the cards 12 apart on
+   the page's ground; the member leads the card and every other line names itself with its column's head ("Won · 3"). ── */
+@media (max-width: 767px) {
+  .head { display: none; }
+  .card { display: flex; flex-direction: column; gap: var(--om-spacing-3); overflow: visible; background: none; border: 0; }
+  /* The card places every cell itself: the frozen column gives way (0,2,0 — it has to outrank the core's `.pin[data-pin-edge]`). */
+  .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; border-right: 0; }
+  .row {
+    grid-template-columns: 1fr; grid-auto-rows: auto; height: auto;   /* auto rows: the desktop's 100% would make every line a whole card tall (REG-431) */
+    padding: var(--om-spacing-4); row-gap: var(--om-spacing-1);
+    border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+    background: var(--om-color-surface-default);
+  }
+  .row:hover, .row:hover .pin { background: var(--om-color-surface-default); }   /* a finger has no hover; the fill only muddied the card (the quotes cards) */
+  /* (REG-520) `!important`: the column-layout hook (REG-454) writes each cell's grid-column / grid-row as an INLINE style for the desktop
+     grid, and an inline style beats this stylesheet — without it every cell would land on the card's first line. */
+  .cell { grid-column: 1 !important; grid-row: auto !important; padding: 0; border: 0; min-width: 0; }
+  .cell:empty { display: none; }
+  .cell > * { max-width: 100%; }
+  /* Stacked, a value carries no column head to explain it, so every line after the member names itself (the Qanvast card's
+     "Credits · 200"); the words are the head's own (`data-label`, insights-view.tsx). */
+  .cell[data-label]::before { content: attr(data-label) '\00a0\00b7\00a0'; flex-shrink: 0; color: var(--om-color-on-surface-secondary); }
+  /* A turnaround reads as one line with its label — "Assign → First outreach · 2h 10m" — its "med · avg" under the figure. */
+  .cell:has(> .stat) { align-items: baseline; }
+  .statHelp { overflow: hidden; text-overflow: ellipsis; }   /* at 320 the help gives way, never past the card's edge */
 }
-
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-
-.hSort:hover { color: var(--om-color-on-surface-default); }
-
-.row {
-  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180); auto-rows 100%: cells fit the 64 (REG-431) */
-  height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
-  transition: background-color var(--motion-hover);
-}
-
-.row:hover { background: var(--om-color-primary-variant); }
-
-.cell {
-  display: flex; align-items: center;
-  min-width: 0;
-  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
-  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
-
-.oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }
-
-.head .pin { z-index: 3; }
-
-.row:hover .pin { background: var(--om-color-primary-variant); }
-/* (REG-723) The frozen Member column's edge, as every table's: the 1px rule at rest, the shadow only while the card is scrolled sideways
-   (`data-scrolled` from the card's own scroll handler) — also lost in the copy. */
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }

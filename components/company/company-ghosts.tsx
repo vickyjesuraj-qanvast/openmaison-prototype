@@ -1,5 +1,5 @@
 import { Bone } from '@/components/shell/skeleton'
-import { GhostField, GhostTable, Line, Slot, Words, cycle, type Col } from '@/components/shell/ghost-kit'
+import { GhostField, GhostTable, Line, Slot, Words, cycle, type Col, type PhoneRows } from '@/components/shell/ghost-kit'
 import { LibraryGalleryGhost } from '@/components/company/templates/library-gallery.skeleton'
 import { PLAN_TABS, PRICE_BOOK_TABS, TEMPLATE_KINDS } from '@/lib/company/sections'
 import { CompanyGhostFrame } from './company-ghost-frame'
@@ -157,14 +157,14 @@ export function IntegrationsGhost() {
 }
 
 /** A section of Plan & AI credits: the title and its help, the tools at the right, the table on the listing's model. */
-function PlanSection({ title, help, tools = [], cols, rows }: { title: string; help: string; tools?: number[]; cols: Col[]; rows: number }) {
+function PlanSection({ title, help, tools = [], cols, rows, phone }: { title: string; help: string; tools?: number[]; cols: Col[]; rows: number; phone?: PhoneRows }) {
   return (
     <section className={plan.section}>
       <div className={plan.sectionHead}>
         <div className={plan.sectionTitles}><Words as="h2" className={plan.sectionTitle}>{title}</Words><Words className={plan.sectionHelp}>{help}</Words></div>
         <div className={plan.sectionTools}>{tools.map((w, i) => <Slot key={i} kind={w === 36 ? 'icon' : 'btn'} w={w === 36 ? undefined : w} />)}</div>
       </div>
-      <GhostTable cols={cols} rows={rows} head={56} row={64} />
+      <GhostTable cols={cols} rows={rows} head={56} row={64} phone={phone} />   {/* (REG-727) the page's tables are cards on a phone, and so are these */}
     </section>
   )
 }
@@ -188,7 +188,7 @@ export function UsageGhost() {
             </div>
           ))}
         </div>
-        <PlanSection title="By member" help="A monthly amount keeps one person from using the studio’s month. Every active member is listed." tools={[156, 36]} rows={7} cols={[
+        <PlanSection title="By member" help="A monthly amount keeps one person from using the studio’s month. Every active member is listed." tools={[156, 36]} rows={7} phone={{ card: 195, lines: 4 }} cols={[
           { basis: 220, grow: 220, head: 52, cell: (r) => ({ node: <span className={plan.who}><Slot kind="avatar" /><span className={plan.whoText}><Line w={cycle([44, 56, 48, 36, 64, 58, 44], r)} lh={20} h={12} /><Line w={cycle([40, 40, 52, 56, 56, 56, 56], r)} lh={16} h={10} /></span></span> }) },
           { basis: 240, grow: 240, head: 36, cell: { node: <span className={plan.used}><Bone w="100%" h={6} r={3} style={{ maxWidth: 200 }} /><Line w={64} lh={16} h={10} /></span> } },
           { basis: 120, grow: 120, head: 64, cell: 12 },
@@ -225,7 +225,7 @@ export function BillingGhost() {
             {box('Billing details', ['48%'], [], 5, 'billing')}
           </div>
         </div>
-        <PlanSection title="Invoices" help="Every payment — the plan and each top-up" tools={[36]} rows={2} cols={[
+        <PlanSection title="Invoices" help="Every payment — the plan and each top-up" tools={[36]} rows={2} phone={{ card: 214, lines: 6 }} cols={[
           { basis: 140, grow: 140, head: 32, cell: 64 },
           { basis: 180, grow: 180, head: 48, cell: 110 },
           { basis: 240, grow: 240, head: 24, cell: 130 },

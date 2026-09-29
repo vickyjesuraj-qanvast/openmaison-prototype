@@ -9,7 +9,8 @@
 .cardText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .cardTitle { font: var(--om-type-heading-h5); text-transform: uppercase; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cardLine { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cardActions { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; position: relative; }
+.cardActions { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+.menuWrap { display: inline-flex; }   /* (REG-728) the kebab's anchor — its menu opens through the body portal */
 /* Empty (1238:33084): a 1px surface-variant r8 box filling the body's 456; "No templates yet" 20/600 over the 14/400 line, both ink. */
 .empty { flex: 1; min-height: 456px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--om-spacing-3); text-align: center; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .emptyTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }
@@ -17,13 +18,8 @@
 .form { display: flex; flex-direction: column; gap: var(--om-spacing-5); flex: 1; min-height: 0; }   /* fills the 663 panel; the editor inside scrolls (REG-437) */
 .form > :not([data-fill]) { flex: 0 0 auto; }   /* the Title field's own `flex: 1` (a row habit) was splitting the panel's height with the editor (REG-437) */
 .form > [data-fill] { flex: 1 1 0; min-height: 0; }
-/* "Insert Token ▾" (1238:33173): a 36px trigger — 1px #ccc r4, "Insert Token" 14/400 ink, expand_more 20 ink — whose 200 menu right-aligns to it. */
+/* "Insert Token ▾" (1238:33173): (REG-729) the house compact select at 36 (components/om/select-trigger) — its menu right-aligns to it. */
 .tokenAnchor { position: relative; display: inline-flex; }
-.tokenBtn { height: 36px; display: inline-flex; align-items: center; gap: var(--om-spacing-2); padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-default); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; white-space: nowrap; }
-.tokenBtn:hover { background: var(--om-color-hover-04p); }
-.tokenBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-.tokenChev { display: inline-flex; transition: transform var(--motion-toggle); }
-.tokenChev[data-open] { transform: rotate(180deg); }
 @media (max-width: 767px) {
   .headRow { flex-wrap: wrap; }
   .search { width: 100%; flex-basis: 100%; }

@@ -32,7 +32,7 @@ import { countLine, folderNameProblem, foldersIn, foldersUnder, liveFolder, trai
 import { ScopePill } from '@/components/om/scope-pill'
 import { LIBRARY_ROOT, type Folder, type FolderLibrary, type FolderUndo } from '@/lib/company/folder-libraries'
 import { createLibraryFolder, deleteLibraryFolder, moveToLibraryFolder, renameLibraryFolder, undoDeleteLibraryFolder } from '@/app/company/folder-actions'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { Refused, settle, newIdOf } from './refusal'
 import { CompanyShell, templateTabs } from '@/components/company/company-shell'
@@ -354,14 +354,14 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
     const once = (why: string | null, later: (string | null)[]) => (why && !later.includes(why) ? why : null)
     return (
       <>
-        {rows(t).map((it) => <DropdownItem key={it.label} onSelect={() => { closeMenu(); it.onSelect() }} disabled={it.disabled}><MenuLabel label={it.label} why={it.disabled ? it.title : null} /></DropdownItem>)}
+        {rows(t).map((it) => <DropdownItem key={it.label} onSelect={() => { closeMenu(); it.onSelect() }} disabled={it.disabled} help={it.disabled ? it.title : undefined}>{it.label}</DropdownItem>)}
         <DropdownDivider />
-        <DropdownItem onSelect={() => { closeMenu(); void act(`duplicate the ${noun.one}`, () => settle(p.onDuplicate(t))) }} disabled={!!dupWhy}><MenuLabel label="Duplicate" why={once(dupWhy, [moveWhy, renameWhy, delWhy])} /></DropdownItem>
+        <DropdownItem onSelect={() => { closeMenu(); void act(`duplicate the ${noun.one}`, () => settle(p.onDuplicate(t))) }} disabled={!!dupWhy} help={once(dupWhy, [moveWhy, renameWhy, delWhy])}>Duplicate</DropdownItem>
         {/* (F119) a fixed entry (a lead's design) is never filed nor renamed here — the rows leave rather than wait greyed forever */}
-        {F && !fixed ? <DropdownItem onSelect={() => { closeMenu(); openMove([t.id], []) }} disabled={!!moveWhy}><MenuLabel label="Move to Folder" why={once(moveWhy, [renameWhy, delWhy])} /></DropdownItem> : null}
-        {fixed ? null : <DropdownItem onSelect={() => { closeMenu(); setRename({ id: t.id, name: t.title }) }} disabled={!!renameWhy}><MenuLabel label="Rename" why={once(renameWhy, [delWhy])} /></DropdownItem>}
+        {F && !fixed ? <DropdownItem onSelect={() => { closeMenu(); openMove([t.id], []) }} disabled={!!moveWhy} help={once(moveWhy, [renameWhy, delWhy])}>Move to Folder</DropdownItem> : null}
+        {fixed ? null : <DropdownItem onSelect={() => { closeMenu(); setRename({ id: t.id, name: t.title }) }} disabled={!!renameWhy} help={once(renameWhy, [delWhy])}>Rename</DropdownItem>}
         <DropdownDivider />
-        <DropdownItem tone="danger" onSelect={() => { closeMenu(); setDel(t) }} disabled={!!delWhy}><MenuLabel label="Delete" why={delWhy} /></DropdownItem>
+        <DropdownItem tone="danger" onSelect={() => { closeMenu(); setDel(t) }} disabled={!!delWhy} help={delWhy}>Delete</DropdownItem>
       </>
     )
   }
@@ -511,7 +511,8 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
               <ScopePill ref={statusAnchor} label={`${p.filterLabel ?? 'Show'}: ${activeFilter === 'all' ? 'All' : (p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? 'All'}`}
                          short={activeFilter === 'all' ? 'All' : (p.filters ?? []).find((f) => f.key === activeFilter)?.label ?? 'All'}
                          open={statusOpen} scoped={activeFilter !== 'all'} onClick={() => setStatusOpen((o) => !o)} />
-              <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={() => setStatusOpen(false)} align="left" width={240} role="menu" sheetTitle={p.filterLabel ?? 'Show'}>
+              {/* (REG-728) a status list: the width scale's 240 */}
+              <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle={p.filterLabel ?? 'Show'}>
                 <DropdownItem role="menuitemradio" checked={activeFilter === 'all'} onSelect={() => { setStatusOpen(false); setFilter('all') }}>All · {faceted.length}</DropdownItem>
                 {(p.filters ?? []).map((f) => (
                   <DropdownItem key={f.key} role="menuitemradio" checked={activeFilter === f.key} onSelect={() => { setStatusOpen(false); setFilter(f.key) }}>{f.label} · {counts[f.key] ?? 0}</DropdownItem>
@@ -536,7 +537,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             {phone && F && !p.newBlock ? (
               <>
                 <DropdownDivider />
-                <DropdownItem onSelect={() => { setNewOpen(false); setNaming({ open: true, folder: null }) }} disabled={!!F.block}><MenuLabel label={p.newIcons ? <span className={styles.menuIcon}><Icon name="create_new_folder" size={20} weight={300} />New Folder</span> : 'New Folder'} why={F.block} /></DropdownItem>
+                <DropdownItem onSelect={() => { setNewOpen(false); setNaming({ open: true, folder: null }) }} disabled={!!F.block} help={F.block}>{p.newIcons ? <span className={styles.menuIcon}><Icon name="create_new_folder" size={20} weight={300} />New Folder</span> : 'New Folder'}</DropdownItem>
               </>
             ) : null}
           </LibraryNewButton>
@@ -552,7 +553,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
             {foldColumns || pageRows.length ? (
               <>
                 {foldColumns ? <DropdownItem onSelect={() => { setKebabOpen(false); setColumnsOpen(true) }}>Column settings</DropdownItem> : null}
-                {pageRows.map((it) => <DropdownItem key={it.label} onSelect={() => { setKebabOpen(false); it.onSelect() }} disabled={it.disabled}><MenuLabel label={it.label} why={it.disabled ? it.title : null} /></DropdownItem>)}
+                {pageRows.map((it) => <DropdownItem key={it.label} onSelect={() => { setKebabOpen(false); it.onSelect() }} disabled={it.disabled} help={it.disabled ? it.title : undefined}>{it.label}</DropdownItem>)}
               </>
             ) : null}
           </LibraryKebab>
@@ -617,13 +618,14 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
         </div>
       )}
 
-      <PortalMenu open={!!menuItem} anchor={menuAnchor} onClose={closeMenu} align="right" width={264} role="menu" sheetTitle={menuItem?.title ?? ''}>
+      {/* (REG-728) rows with a second line (why a row waits): the width scale's 240, not 264 */}
+      <PortalMenu open={!!menuItem} anchor={menuAnchor} onClose={closeMenu} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={menuItem?.title ?? ''}>
         {menuItem ? menuRows(menuItem) : null}
       </PortalMenu>
       {F ? (
         <>
           {/* (REG-664) A folder's menu — the Files tab's (931:40130): Open · Move · Rename · Delete. */}
-          <PortalMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} align="right" width={224} role="menu" sheetTitle={menuFolder?.name ?? ''}>
+          <PortalMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={menuFolder?.name ?? ''}>   {/* (REG-728) the Files tab's folder menu: 200, not 224 */}
             {menuFolder ? (() => {
               const fb = folderBlockOf(menuFolder)   // (F124) this folder's own rule, said in the row (sweep rule), not in a native title
               return (
@@ -633,7 +635,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
                   <DropdownItem onSelect={() => { setFolderMenu(null); openMove([], [menuFolder.id]) }} disabled={!!fb}>Move</DropdownItem>
                   <DropdownItem onSelect={() => { setFolderMenu(null); setNaming({ open: true, folder: menuFolder }) }} disabled={!!fb}>Rename</DropdownItem>
                   <DropdownDivider />
-                  <DropdownItem tone="danger" onSelect={() => { setFolderMenu(null); setFolderDel({ open: true, folder: menuFolder }) }} disabled={!!fb}><MenuLabel label="Delete" why={fb} /></DropdownItem>
+                  <DropdownItem tone="danger" onSelect={() => { setFolderMenu(null); setFolderDel({ open: true, folder: menuFolder }) }} disabled={!!fb} help={fb}>Delete</DropdownItem>
                 </>
               )
             })() : null}
@@ -795,11 +797,4 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
       })}
     </div>
   )
-}
-
-/** (audit 2026-09-26, F119 — the sweep's rule, REG-656) A menu row that waits says why in the row, under its label — a native title never
-    reached a phone sheet or a keyboard. */
-function MenuLabel({ label, why }: { label: ReactNode; why?: string | null }) {
-  if (!why) return <>{label}</>
-  return <span className={styles.menuRow}>{label}<span className={styles.menuMeta}>{why}</span></span>
 }

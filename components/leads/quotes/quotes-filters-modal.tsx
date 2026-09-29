@@ -116,7 +116,7 @@ export function QuotesFiltersModal({
                       role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
-            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
+            <SurfaceHead title="Filters" onClose={onClose} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (

@@ -46,10 +46,12 @@
   font: var(--om-type-body-m);
   padding: var(--om-spacing-8);
 }
-.soonTitle { font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); }
+.soonTitle { font: var(--om-type-subheading-xl); color: var(--om-color-on-surface-default); }   /* (REG-729) 20/24/600 is subheading-xl — it re-typed heading-h3 by hand */
 
 /* Stage pill + kebab live in the header's actions slot; menus anchor to these wrappers. */
 .anchor { position: relative; display: inline-flex; }
+/* (REG-728) The Stage ▾ chevron turns while its menu is open — the tab toolbar's one rule for every menu trigger. */
+.chev { composes: chev from '../../../components/om/tab-toolbar.module.css'; }
 /* (REG-345) The stage pill and Convert to Project belong to the lead, so ≤767 they stay on Overview and the other
    tabs give the row back to their own content — the header there is the back arrow, the name and the kebab. */
 /* (REG-370, user 2026-09-06: "the stage and Convert to Project buttons go away in other tabs under leads detail —

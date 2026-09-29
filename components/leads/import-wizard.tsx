@@ -7,7 +7,8 @@ import { Button, Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { useSnackbar } from '@/components/om/snackbar'
-import { PortalMenu } from '@/components/leads/move-stage/fields'
+import { PortalMenu } from '@/components/om/portal-menu'
+import { TextField } from '@/components/om/text-field'
 import menuStyles from '@/components/leads/menus.module.css'
 import { modalPanel, overlayFade, duration, ease } from '@/lib/motion'
 import { parseCsv } from '@/lib/csv'
@@ -32,31 +33,35 @@ export type ImportResult = { importId: string; total: number; imported: number; 
 type Parsed = { name: string; headers: string[]; rows: string[][] }
 
 /** (REG-317) `usedBy`: OpenMaison field → the imported column that already holds it. A taken field is disabled here and
- *  says which column has it; Ignore is never taken, and the row's own current value stays selectable. */
+ *  says which column has it; Ignore is never taken, and the row's own current value stays selectable.
+ *  (REG-729) The box is the house TextField at its 36px size (it was a hand-rolled 280×36 select with its own error border and message):
+ *  "Select Field" is its label, the error its own red line. Its list stays this picker's — TextField's select mode draws plain options,
+ *  and REG-317's taken fields read disabled with the column that holds them — so the field opens it as a trigger, and the current field
+ *  wears the Selected fill as TextField's options do. The list takes the field's width (the menu scale). */
 function FieldSelect({
   value, error, onChange, usedBy,
-}: { value: Mapping[number]; error?: boolean; onChange: (v: Mapping[number]) => void; usedBy: Map<string, string> }) {
+}: { value: Mapping[number]; error?: string; onChange: (v: Mapping[number]) => void; usedBy: Map<string, string> }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLDivElement | null>(null)
   return (
-    <div ref={ref} className={styles.selectWrap}>
-      <button type="button" className={styles.select} data-open={open || undefined} data-error={error || undefined} onClick={() => setOpen((o) => !o)}>
-        <span>{value ?? 'Select Field'}</span>
-        <span className={styles.chev}><Icon name="expand_more" size={16} /></span>
-      </button>
-      <PortalMenu open={open} anchor={ref} onClose={() => setOpen(false)}>
+    <>
+      <TextField label="Select Field" mode="trigger" size="s" value={value ?? ''} open={open} onOpen={() => setOpen((o) => !o)} boxRef={box}
+                 error={error} trailingIcon={null}
+                 trailing={<span className={styles.chev} data-open={open || undefined} aria-hidden><Icon name="expand_more" size={16} /></span>} />
+      <PortalMenu open={open} anchor={box} onClose={() => setOpen(false)}>
         {[IGNORE, ...IMPORT_FIELDS].map((o) => {
           const taken = o !== IGNORE && o !== value && usedBy.has(o)
           return (
             <button key={o} type="button" role="option" aria-selected={o === value} aria-disabled={taken || undefined}
-                    className={menuStyles.item} onClick={taken ? undefined : () => { onChange(o); setOpen(false) }}>
+                    className={menuStyles.item} data-selected={o === value || undefined}
+                    onClick={taken ? undefined : () => { onChange(o); setOpen(false) }}>
               <span className={styles.optionLabel}>{o}</span>
               {taken ? <span className={styles.mappedTo}>Mapped to {usedBy.get(o)}</span> : null}
             </button>
           )
         })}
       </PortalMenu>
-    </div>
+    </>
   )
 }
 
@@ -347,12 +352,8 @@ export function ImportWizard({
                                 {(() => {
                                   const missing = mapErrors && (mapping[i] ?? null) === null   // (REG-317) shown after Next, gone once mapped or ignored
                                   const nameErr = errorRow === i && nameMissing
-                                  return (
-                                    <>
-                                      <FieldSelect value={mapping[i] ?? null} usedBy={usedBy} error={missing || nameErr} onChange={(v) => setField(i, v)} />
-                                      {missing ? <span className={styles.required}>{MSG.mapField}</span> : nameErr ? <span className={styles.required}>Required</span> : null}
-                                    </>
-                                  )
+                                  /* (REG-729) the message is the field's own red line (TextField), where the hand-rolled one sat */
+                                  return <FieldSelect value={mapping[i] ?? null} usedBy={usedBy} error={missing ? MSG.mapField : nameErr ? 'Required' : undefined} onChange={(v) => setField(i, v)} />
                                 })()}
                               </div>
                             </div>

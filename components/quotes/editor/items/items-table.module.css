@@ -262,8 +262,7 @@
 .link + .link { margin-left: var(--om-spacing-1); }
 .addField { position: relative; width: 327px; flex-shrink: 0; }
 .wrap[data-nonum] .addInner { padding-left: var(--sel-w); }
-.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
-.link:hover { color: var(--om-color-on-primary-variant); }
+.link { composes: link from '../../../om/text-link.module.css'; white-space: nowrap; }   /* (REG-729) the house text link */
 
 /* Empty table: only the head and the Add Item row — the first line starts here. */
 
@@ -417,10 +416,12 @@
 .row[data-active] .linkOpen { display: none; }
 @media (hover: none) { .linkOpen { position: relative; } .linkOpen::after { content: ''; position: absolute; inset: -12px; } }
 
-/* (REG-627, parity Q-30) A line's comment count after its name: the glyph and the number, quiet until pointed at; a press opens the thread. */
-.commentCount { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; height: 20px; padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
-@media (hover: hover) { .commentCount:hover { background: var(--om-color-hover-08p); color: var(--om-color-primary-default); } }
-.commentCount:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
+/* (REG-627, parity Q-30) A line's comment count after its name; a press opens the thread. (REG-729) The house comment chip (931:40181 ·
+   931:39131, the Tasks and Files chips): 24 tall, p4 g4 on the surface-bg fill, r4 — the comment glyph 16/Light and the count 12/500 in
+   ink; a press darkens the fill. */
+.commentCount { display: inline-flex; align-items: center; gap: var(--om-spacing-1); flex-shrink: 0; height: 24px; margin: -2px 0; padding: var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); cursor: pointer; font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); transition: background-color var(--motion-hover); }   /* −2 top and bottom: the chip rides the name's 20 line, the row keeps its 72 */
+@media (hover: hover) { .commentCount:hover { background: var(--om-color-surface-variant); } }
+.commentCount:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 @media (hover: none) { .commentCount { position: relative; } .commentCount::after { content: ''; position: absolute; inset: -12px -4px; } }
 /* (sweep S1) Find with nothing to show: one quiet row where the lines would be. */
 .findEmpty { grid-column: 1 / -1; padding: var(--om-spacing-5) var(--om-spacing-6); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }

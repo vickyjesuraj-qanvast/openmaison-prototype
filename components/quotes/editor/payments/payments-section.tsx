@@ -13,7 +13,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { decimalTyped } from '@/lib/format'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { QuotePayment } from '@/lib/db/schema'
 import { money2 } from '@/lib/quotes/math'
@@ -205,9 +205,10 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
                aria-label={`${field === 'pct' ? 'Percentage' : field === 'amount' ? 'Amount' : field === 'name' ? 'Payment name' : 'Description'} of ${row.name}`}
                onChange={(e) => setEdit((cur) => (cur ? { ...cur, draft: numeric ? (field === 'pct' ? decimalTyped(e.target.value, 2) : e.target.value.replace(/[^0-9.,S$]/g, '')) : e.target.value } : cur))}   /* (sweep S1) a percentage takes digits and one point — never "S", "$" or "," */
                onKeyDown={onEditKey} onBlur={onEditBlur} />
+        {/* (REG-729) The ✕ / ✓ pair as the house icon buttons (24; ✓ the filled one), raised over the next row. */}
         <span className={styles.confirm}>
-          <Tooltip label="Discard"><button type="button" className={styles.cancelBtn} aria-label="Discard" onMouseDown={(e) => e.preventDefault()} onClick={() => { cancelled.current = false; setEdit(null) }}><Icon name="close" size={20} /></button></Tooltip>
-          <Tooltip label="Save"><button type="button" className={styles.okBtn} aria-label="Save" onMouseDown={(e) => e.preventDefault()} onClick={commitEdit}><Icon name="done" size={20} /></button></Tooltip>
+          <Tooltip label="Discard"><IconButton icon="close" label="Discard" size={24} className={styles.cancelBtn} onMouseDown={(e) => e.preventDefault()} onClick={() => { cancelled.current = false; setEdit(null) }} /></Tooltip>
+          <Tooltip label="Save"><IconButton icon="done" label="Save" size={24} variant="filled" className={styles.okBtn} onMouseDown={(e) => e.preventDefault()} onClick={commitEdit} /></Tooltip>
         </span>
         <span className={styles.editGhost} aria-hidden>{field === 'amount' ? money2(amounts[i] ?? 0) : field === 'pct' ? fmtPct(row.pct) : field === 'name' ? row.name : row.description}</span>
       </>
@@ -218,24 +219,26 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
   /* (REG-664) The splits as Templates › Payments files them: the ones at the top first, then each folder's under its name. */
   const splitFolders = seed.folders ?? []
   const folderOfSplit = (p: PaymentSplit) => (p.folderId && splitFolders.some((f) => f.id === p.folderId) ? p.folderId : null)
+  /* (REG-728) "current" is the row's meta — the status list's mark — so the row takes no Selected fill. */
   const splitRow = (p: PaymentSplit) => (
-    <DropdownItem key={p.id} role="menuitemradio" checked={p.id === preset} onSelect={() => applyPreset(p.id)}>
-      <span className={styles.menuText}>{p.name}</span>{p.id === preset ? <span className={styles.menuCurrent}>current</span> : null}
+    <DropdownItem key={p.id} role="menuitemradio" checked={p.id === preset} selected={false} onSelect={() => applyPreset(p.id)} meta={p.id === preset ? 'current' : undefined}>
+      {p.name}
     </DropdownItem>
   )
   const splitGroups = splitFolders.map((f) => ({ f, list: splits.filter((p) => folderOfSplit(p) === f.id) })).filter((g) => g.list.length)
   const presetRowsUi = (
     <>
       {splits.filter((p) => !folderOfSplit(p)).map(splitRow)}
+      {/* (REG-728) Each folder under the house group title (the group names itself; the title is read once). */}
       {splitGroups.map(({ f, list }) => (
         <div key={f.id} role="group" aria-label={placeOf(splitFolders, f.id)} data-testid="split-group">
-          <span className={styles.menuGroup} aria-hidden><Icon name="folder" size={16} weight={300} />{placeOf(splitFolders, f.id)}</span>
+          <div aria-hidden><DropdownLabel><Icon name="folder" size={16} weight={300} />{placeOf(splitFolders, f.id)}</DropdownLabel></div>
           {list.map(splitRow)}
         </div>
       ))}
       {custom ? (
-        <DropdownItem role="menuitemradio" checked onSelect={() => { setMenu(null); setMoreSub(null) }}>
-          <span className={styles.menuText}>Custom · {splitWord(live)}</span><span className={styles.menuCurrent}>current</span>
+        <DropdownItem role="menuitemradio" checked selected={false} onSelect={() => { setMenu(null); setMoreSub(null) }} meta="current">
+          {`Custom · ${splitWord(live)}`}
         </DropdownItem>
       ) : null}
       <DropdownDivider />
@@ -253,7 +256,7 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
         <Tooltip label="More options" disabled={menu === 'more'}>
           <IconButton icon="more_vert" label="More options for Payment Schedule" aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => { setMoreSub(null); setMenu((m) => (m === 'more' ? null : 'more')) }} />
         </Tooltip>
-        <PortalMenu open={menu === 'more'} anchor={moreRef} onClose={() => { setMenu(null); setMoreSub(null) }} role="menu" width={240} align="right" sheetTitle="Payment Schedule">
+        <PortalMenu open={menu === 'more'} anchor={moreRef} onClose={() => { setMenu(null); setMoreSub(null) }} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Payment Schedule">
           <div ref={moreLevel}>
             {moreSub === 'preset' ? (
               <>
@@ -279,7 +282,8 @@ export function PaymentsCard({ seed, open, onToggle, onHandlePointerDown, totalM
                 onPress={() => setMenu((m) => (m === 'preset' ? null : 'preset'))}>
           {presetLabel(preset, splits)}
         </Button>
-        <PortalMenu open={menu === 'preset'} anchor={presetRef} onClose={() => setMenu(null)} role="menu" width={220} align="right">
+        {/* (REG-728) a list with a current mark: 240, as the kebab's level that shows the same rows */}
+        <PortalMenu open={menu === 'preset'} anchor={presetRef} onClose={() => setMenu(null)} role="menu" width={MENU_WIDTH.wide} align="right">
           {presetRowsUi}
         </PortalMenu>
       </span>

@@ -24,7 +24,7 @@ export { SurfaceHead, SurfaceFoot, FootStart, surfaceClasses } from './surface-p
  */
 export function Dialog({
   open, onClose, title, subtitle, width = 400, children, footer, size = 'compact', nested = false, alert = false,
-  eyebrow, leading, actions, height, minHeight, portal = false, fluid = false, flush = false, closeOnScrim = true,
+  eyebrow, leading, actions, height, minHeight, portal = false, fluid = false, flush = false, closeOnScrim = true, phoneFull = false,
 }: {
   open: boolean; onClose: () => void; title: string; subtitle?: ReactNode
   /** A footer is optional: a modal drawn without one (the templates library, 1238:33258) ends on its body. */
@@ -56,6 +56,9 @@ export function Dialog({
   flush?: boolean
   /** (REG-321) A press on the scrim leaves a form open: what was typed is never lost to a stray press. */
   closeOnScrim?: boolean
+  /** (REG-727) ≤767 the whole screen, not a bottom sheet — the xl lists (the Deleted / Archived sheets) as the canvas draws them
+   *  (1l · 3a · 3h): a table has no room in 88dvh with a grabber. */
+  phoneFull?: boolean
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const panel = useRef<HTMLDivElement>(null)
@@ -65,7 +68,7 @@ export function Dialog({
   /* (REG-353) ≤767 the canvas draws the form / modal sizes as bottom sheets (1e Create New Lead, 1g Filters,
      2i…2m, 3e, 3g): they rise off the bottom edge instead of scaling in the middle, and wear the grabber.
      The compact / standard alerts stay centred cards (canvas 2e Delete Task). */
-  const asSheet = useSheetLayout() && !alert && (size === 'form' || size === 'modal')
+  const asSheet = useSheetLayout() && !alert && !phoneFull && (size === 'form' || size === 'modal')
   const node = (
     <AnimatePresence>
       {open ? (
@@ -73,7 +76,7 @@ export function Dialog({
                     onMouseDown={(e) => { if (closeOnScrim && e.target === e.currentTarget) onClose() }}>
           <motion.div ref={panel} className={`${styles.panel} ${styles.dialog}`} style={fluid ? undefined : { width, height, minHeight }} variants={asSheet ? bottomSheet : modalPanel} data-size={size} data-fluid={fluid || undefined}
                       initial="initial" animate="animate" exit="exit"
-                      data-alert={alert || undefined}
+                      data-alert={alert || undefined} data-phone-full={phoneFull || undefined}
                       role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
             {asSheet ? <span className={styles.grabber} aria-hidden /> : null}
             <SurfaceHead title={title} eyebrow={eyebrow} subtitle={subtitle} leading={leading} actions={actions} onClose={onClose} />

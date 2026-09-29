@@ -8,7 +8,7 @@ import { DateField } from '@/components/om/date-field'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
-import { Dropdown } from '@/components/leads/dropdown'
+import { Dropdown, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Dropzone, FileTile, useUploadSim } from '@/components/leads/move-stage/fields'
 import { digitsOnly, inputDate, isSgPhone, parseInputDate, phoneTyped } from '@/lib/format'
 import styles from './contract-editor.module.css'
@@ -61,9 +61,8 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
           <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
           <span className={styles.phoneNum}><TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
         </div>
-        <div className={styles.sendBox}>
-          <TextArea aria-label="Message to the client" value={text} onChange={(v: string) => setText(v)} />
-        </div>
+        {/* (REG-729) The DS field with its own label and stroke — the box around it doubled the stroke and clipped a label. */}
+        <TextArea className={styles.sendBox} label="Message to the client" value={text} onChange={(v: string) => setText(v)} />
         <div className={styles.sendUnder}>
           <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => setText(draft(name))} isDisabled={text === draft(name)}>Reset to draft</Button>
           <span>{text.length} characters</span>
@@ -136,8 +135,9 @@ export function SaveTemplateDialog({ open, onClose, defaultName, busy, onSave }:
  *  follow-up model: a Follow-up three days after sending (closed once signed), and one on the signing day to thank the client. */
 export function AutomationPopover({ open, onClose, reminders, thankYou, onChange }: { open: boolean; onClose: () => void; reminders: boolean; thankYou: boolean; onChange: (patch: { reminders?: boolean; thankYou?: boolean }) => void }) {
   const ref = useRef<HTMLDivElement>(null)
+  /* (REG-728) Rows with a description: 320. */
   return (
-    <Dropdown open={open} onClose={onClose} align="right" width={340} sheetTitle="Automation">
+    <Dropdown open={open} onClose={onClose} align="right" width={MENU_WIDTH.detail} sheetTitle="Automation">
       <div ref={ref} data-testid="automation">
         <div className={styles.autoHead}>Automation</div>
         <AutomationRows reminders={reminders} thankYou={thankYou} onChange={onChange} />

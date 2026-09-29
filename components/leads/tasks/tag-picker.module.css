@@ -9,7 +9,7 @@
   transform-origin: top left;
 }
 /* Fixed placement (table cell): no head to hang under, above the table and its popovers (AssignPopover .card sits at 70). */
-.picker[data-fixed] { right: auto; margin-top: 0; z-index: 70; }
+.picker[data-fixed] { right: auto; margin-top: 0; z-index: 95; }   /* (REG-728) the popover layer, above the Maison AI button (90) */
 
 /* Search field — the box of components/om/text-field.module.css (.box: 48, 1px on-surface/border, r4, p0/12/0/16, g8) without the
    floating label: the mock's field is a bare placeholder "Search for any tags, hit enter to add" 14/Regular #666666 with the

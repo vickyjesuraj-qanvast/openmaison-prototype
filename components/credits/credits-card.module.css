@@ -1,6 +1,7 @@
 /* (REG-701) The credits card — the Company panel's chrome (304 wide, p12, r4 menu surface), padded to p16 for a card of figures rather
-   than a list of rows; a bottom sheet on a phone (REG-353). */
-.card.card { padding: var(--om-spacing-4); border-radius: var(--om-radius-2); }
+   than a list of rows; a bottom sheet on a phone (REG-353). (REG-728) It keeps the rail popovers' r4 and level 3 (Tools, Company, View as)
+   — it was r8. */
+.card.card { padding: var(--om-spacing-4); }
 .inner { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .sheetBody { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
 .head { display: flex; align-items: center; gap: var(--om-spacing-3); }
@@ -10,13 +11,13 @@
 .big[data-tone='empty'] { color: var(--om-color-tertiary-red-default); }
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .line { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow-wrap: anywhere; }
-.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--om-color-surface-variant); margin-top: var(--om-spacing-1); }
+.bar { display: flex; height: 8px; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-variant); margin-top: var(--om-spacing-1); }
 .bar i { display: block; height: 100%; transition: width 280ms cubic-bezier(0, 0, 0.2, 1); }
 .plan { background: var(--om-color-primary-default); }
 .top { background: var(--om-primitive-primary-l30); }
 .legend { display: flex; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: var(--om-radius-full); }
 .dotPlan { background: var(--om-color-primary-default); }
 .dotTop { background: var(--om-primitive-primary-l30); }
 .dotUsed { background: var(--om-color-surface-variant); }

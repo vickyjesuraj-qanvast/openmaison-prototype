@@ -8,6 +8,7 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
 import { DateField } from '@/components/om/date-field'
 import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
+import { Chips } from '@/components/om/chips'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -80,10 +81,8 @@ export function TasksFiltersModal({
   }
 
   const dots = activeTaskGroups(draft)
-  const toggle = (key: 'assignees' | 'creators' | 'tags' | 'leads' | 'stages', v: string) =>
+  const toggle = (key: 'assignees' | 'creators' | 'tags' | 'leads', v: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].includes(v) ? d[key].filter((x) => x !== v) : [...d[key], v] }))
-  const toggleStatus = (s: TaskStatus) =>
-    setDraft((d) => ({ ...d, status: d.status.includes(s) ? d.status.filter((x) => x !== s) : [...d.status, s] }))
   const today = useMemo(() => new Date(now ?? mountedAt), [now, mountedAt])
   // DateField only ever holds a picker-chosen date, so the only rule left is the range order.
   const fromD = parseInputDate(draft.from), toD = parseInputDate(draft.to)
@@ -120,7 +119,7 @@ export function TasksFiltersModal({
                       role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
-            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
+            <SurfaceHead title="Filters" onClose={onClose} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {tabs.map((t) => (
@@ -172,24 +171,14 @@ export function TasksFiltersModal({
                 ) : tab === 'stages' ? (
                   <>
                     <span className={styles.sectionTitle}>Stage</span>
-                    <div className={styles.chips} role="group" aria-label="Stage">
-                      {STAGES.map((st) => (
-                        <button key={st} type="button" className={styles.chip} aria-pressed={draft.stages.includes(st)}
-                                data-selected={draft.stages.includes(st) || undefined} onClick={() => toggle('stages', st)}>{st}</button>
-                      ))}
-                    </div>
+                    {/* (REG-729) the house chip group (REG-614), several at once */}
+                    <Chips multiple label="Stage" options={STAGES} value={draft.stages} onChange={(v) => setDraft((d) => ({ ...d, stages: v }))} />
                   </>
                 ) : tab === 'status' ? (
                   <>
                     <span className={styles.sectionTitle}>Status</span>
-                    <div className={styles.chips} role="group" aria-label="Status">
-                      {STATUSES.map((s) => (
-                        <button key={s.key} type="button" className={styles.chip} aria-pressed={draft.status.includes(s.key)}
-                                data-selected={draft.status.includes(s.key) || undefined} onClick={() => toggleStatus(s.key)}>
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
+                    <Chips multiple label="Status" options={STATUSES.map((s) => ({ value: s.key, label: s.label }))} value={draft.status}
+                           onChange={(v) => setDraft((d) => ({ ...d, status: v as TaskStatus[] }))} />
                   </>
                 ) : tab === 'tags' ? (
                   <>
@@ -219,7 +208,7 @@ export function TasksFiltersModal({
                 )}
               </div>
             </div>
-            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
+            <SurfaceFoot shadow={bodyScrolls}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_TASK_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>

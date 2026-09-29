@@ -47,7 +47,7 @@
 .groupLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* The attempts row + its error (the Text Field's red 12/16 message, 4 below — components/om/text-field.module.css .support). */
 .attemptsWrap { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.error { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+.error { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }   /* body-s is already 12/16 (REG-729: no type of its own) */
 
 /* row H g10 of five Buttons 86×48 "1" · "2" · "3" · "4" · "+5" — 5 × 86 + 4 × 10 = 470 > 468, so each flexes to the column
    (85.6 wide) rather than spilling 2px past it. Rest = the Choice chip at rest (inside stroke on-surface/border, r4);

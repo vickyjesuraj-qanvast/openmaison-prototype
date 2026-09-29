@@ -14,8 +14,9 @@ import styles from './plan.module.css'
  * (REG-704) One of Plan & AI credits' tables, on the listing's model like every table (REG-430 · 454 · 614): the first column frozen with
  * its 1px edge (the shadow only while scrolled sideways), heads resizable and draggable with the whole column travelling, the house
  * Column settings drawer from the section's tune button. A section head carries the title, one help line and the section's own tools.
+ * (REG-727) The rules are the table core's (components/om/table-core.module.css, composed in plan.module.css); ≤767 each row is a card.
  */
-export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, actions, empty, testId, rowAttrs }: {
+export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, actions, empty, noResults, testId, rowAttrs }: {
   table: string
   title: string
   help?: ReactNode
@@ -25,6 +26,8 @@ export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, 
   cell: (r: T, key: string) => ReactNode
   actions?: ReactNode
   empty: ReactNode
+  /** (REG-729) A search that finds nothing: the house no-results state (TabSearchEmpty) in place of the empty line. */
+  noResults?: ReactNode
   testId: string
   /** A row's own marks — the member an ask came from (`data-focus`). */
   rowAttrs?: (r: T) => Record<string, string | undefined>
@@ -51,7 +54,7 @@ export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, 
           {mobile ? null : <Tooltip label="Column settings"><IconButton icon="tune" label="Column settings" onClick={() => setSettings(true)} /></Tooltip>}
         </div>
       </div>
-      {rows.length === 0 ? <p className={styles.empty}>{empty}</p> : (
+      {rows.length === 0 ? noResults ?? <p className={styles.empty}>{empty}</p> : (
         <div className={styles.card} role="table" aria-label={title} data-drag-root="" data-cols={table} style={{ '--tracks': tracks } as React.CSSProperties}
              onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
           <div ref={headRow} className={styles.head} role="row">
@@ -64,8 +67,9 @@ export function CreditsTable<T>({ table, title, help, defs, rows, rowKey, cell, 
           </div>
           {rows.map((r) => (
             <div key={rowKey(r)} className={styles.row} role="row" {...(rowAttrs?.(r) ?? {})}>
+              {/* (REG-727) On a phone each row is a card: every line after the first column names itself with its head ("AI credits · 120"). */}
               {prefs.columns.map((c) => (
-                <div key={c.key} className={`${styles.cell}${pin(c.key)}`} role="cell" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)}>{cell(r, c.key)}</div>
+                <div key={c.key} className={`${styles.cell}${pin(c.key)}`} role="cell" data-col={c.key} data-label={c.locked ? undefined : c.label} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)}>{cell(r, c.key)}</div>
               ))}
             </div>
           ))}

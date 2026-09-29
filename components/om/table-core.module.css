@@ -1,0 +1,105 @@
+/*
+ * (REG-727) The table core — what every table in the app shares with the leads listing (components/leads/table.module.css, the
+ * model every table follows, REG-430), written ONCE. Owner 2026-09-29: "fix all of this once for all". The audit found the
+ * listing's rules copied into 13 stylesheets and drifting: a selected row that stopped answering hover (REG-449), frozen columns
+ * without their 1px edge, a head 48 tall on a grey fill, row actions 16 in instead of 24, a head without its padding (REG-723).
+ *
+ * A table's own stylesheet composes these classes (`.hCell { composes: hCell from '…/om/table-core.module.css'; }`) and keeps
+ * only what its mock sets on its own: the column tracks, a mocked row height, the phone cards, the touch layout. This file is
+ * loaded before every stylesheet that composes it, so a table's own rule wins where it must differ.
+ *
+ * Anatomy: frame r8 with a 1px surface-variant border · head 56, cells p16/24/16/16, the label caption-s uppercase grey · rows 64,
+ * cells p12/24/12/16 with a 1px top rule, body-m · hover primary-variant · selected primary-variant, selected + hover
+ * primary-variant-hover · frozen cells carry the row's fill; the last one draws the 1px edge at rest and the group's shadow only
+ * while the frame is scrolled sideways · row actions on a white plate at level 1, 24 in from the visible right edge.
+ */
+
+/* (REG-727) The whole core sits in the cascade layer `om-table-core`: a table's own rule is unlayered, so it wins wherever it must differ
+   — WHATEVER order the bundler emits the two stylesheets in. (Load order is not guaranteed: in one build the Quotes table's CSS came
+   before the core's, and its phone rule lost to the core's corner ring.) Only the browser's own defaults sit below a layer. */
+@layer om-table-core {
+/* ---- The frame: a real border outside the scrollport (the frozen cells never cover it, REG-430) ---- */
+.frame {
+  position: relative; width: 100%;
+  background: var(--om-color-surface-default);
+  border: var(--om-border-1) solid var(--om-color-surface-variant);
+  border-radius: var(--om-radius-2);
+}
+/* The rounded corners drawn OVER the children (REG-431): at rest nothing clips (a row menu must hang below a short table), so the
+   frozen cells' square fill painted over the corners' curve; a ring redraws the stroke above them. Once the frame scrolls it clips
+   its own corners and the ring steps aside. */
+.frame:not([data-overflow])::after {
+  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
+  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
+}
+.frame[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
+.card { display: grid; width: 100%; }   /* the tracks are the table's own: grid-template-columns on its .card */
+/* A table that is ALWAYS its own sideways scroller (Plan, Insights, Qanvast Ops — the frame and the grid one element): y hidden, so a
+   sub-pixel of grid rounding never grows a 1px scrollbar (REG-350); it clips its own corners, so the ring steps aside. */
+.scroller { overflow-x: auto; overflow-y: hidden; }
+.frame.scroller::after { content: none; }
+
+/* ---- The head: 56, sharing the card's tracks (REG-180) ---- */
+.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
+.hCell {
+  position: relative;   /* the column-resize handle on the head's right edge (REG-427) */
+  display: flex; align-items: center; gap: var(--om-spacing-1);
+  min-width: 0;
+  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
+  color: var(--om-color-on-surface-secondary);
+}
+.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hSort {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
+  color: inherit; font: inherit; min-width: 0;
+  transition: color var(--motion-hover);
+}
+.hSort:hover { color: var(--om-color-on-surface-default); }
+.hSort[data-sorted='true'] { color: var(--om-color-primary-default); }
+
+/* ---- Rows: 64 by default (a mock that sets its own height says so on the table's .row) ---- */
+.row {
+  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* grid-auto-rows 100%: cells fit the row (REG-431) */
+  height: 64px; position: relative;
+  transition: background-color var(--motion-hover);
+}
+.row:hover { background: var(--om-color-primary-variant); }
+.row[data-selected] { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }   /* (REG-449) a selected row still answers the pointer */
+.cell {
+  display: flex; align-items: center;
+  min-width: 0;
+  min-height: 0;   /* the row's track is its own height: a cell's stroke + padding + content ran 1px past it (REG-431) */
+  grid-row: 1;     /* every cell placed explicitly, so the zero-size .actions item spanning row 1 never pushes cells into a second row (REG-430) */
+  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  font: var(--om-type-body-m);
+  color: var(--om-color-on-surface-default);
+}
+
+/* ---- Frozen columns (REG-430 · REG-454): every pinned cell wears .pin; the layout hook sets its `left` ---- */
+.pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row */
+.head .pin { z-index: 3; }
+.row:hover .pin { background: var(--om-color-primary-variant); }
+.row[data-selected] .pin { background: var(--om-color-primary-variant); }
+.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
+/* The LAST pinned column is the edge: the 1px rule at rest (REG-144) and the group's shadow only while scrolled sideways. */
+.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
+.frame[data-scrolled] .pin[data-pin-edge], .card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+
+/* ---- Row actions: parked at the VISIBLE right edge, the listing's way (REG-430) — a zero-width sticky item laid over the row's
+   tracks, its content hanging to its left, 24 in; revealed on hover, while its menu is open and while it holds focus ---- */
+.actions {
+  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
+  position: sticky; right: 0;
+  width: 0; height: 0; overflow: visible;
+  z-index: 4;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--motion-hover);
+}
+.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }
+.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
+/* The white plate + level-1 shadow sit on a wrapper, so the DS button and the icon button keep their own hover states. */
+.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+}

@@ -1,32 +1,16 @@
 /*
  * Qanvast Ops › Leads (208 931:49232 · 209 931:49435) — spec design-source/context/lead-return/02-qanvast-ops.txt.
  * Page frame (.body / .content) comes from app/leads/leads.module.css (the listing twin) — only the pieces the listing
- * does not already ship live here: the toolbar pill (copied from components/leads/toolbar.module.css), the grouped
- * dropdown titles (copied from components/leads/stage-dropdown.module.css, + the mock's third "Lead Return" tone) and
- * the table (copied from components/leads/contracts/contracts-table.module.css — one grid, subgrid head / rows).
+ * does not already ship live here: the toolbar row, the "Lead Return" title's blue and the table (one grid, subgrid head / rows — since
+ * REG-727 on the table core, components/om/table-core.module.css, not a copy). (REG-728 · REG-729) The pill is the house ScopePill and
+ * the status menu's titles and rules the house DropdownLabel / DropdownDivider — the copies of the listing's pill and the stage menu's
+ * group CSS that lived here are gone.
  */
 
 /* ---- Toolbar (y 144): pill left · Request Leads · search · filter right — components/leads/toolbar.module.css .bar/.left/.right ---- */
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); width: 100%; }
 .left { flex: 1; min-width: 0; display: flex; position: relative; }
 .right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
-
-/* "All Leads (99)" pill 151×36 (spec 02): h36, border ccc, r4, pl-16 pr-12, gap-8 — toolbar.module.css .chip verbatim. */
-.chip {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: transparent; cursor: pointer;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-on-surface-default);
-  transition: background-color var(--motion-hover);
-  position: relative;   /* anchors the REG-295 applied dot */
-}
-.chip:hover { background: var(--om-color-hover-04p); }
-.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
-/* Chevron points up while the menu is open — every menu trigger does this (REG-153). */
-.chip[data-open] .chipChevron { transform: rotate(180deg); }
 
 /* Search Bar 36 Outlined — 280 wide, the geometry every other list toolbar gives it (tasks / quotes / contracts
    toolbars: `.search { width: 280px }`). REG-275: this takes the place of the mock's inert 36px search icon
@@ -35,28 +19,18 @@
 .searchWrap { display: inline-flex; min-width: 0; }
 .search { width: 280px; max-width: 100%; }
 
-/* ---- "All Leads" dropdown 200 wide (931:49435): group title 10/Medium uppercase ("ACTIVE" · "INACTIVE" · "LEAD RETURN" — the
-   Figma render uppercases the third title too), 36 tall p12 — stage-dropdown.module.css .groupTitle/.dot verbatim. ---- */
-.groupTitle {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  padding: var(--om-spacing-3);
-  font: var(--om-type-caption-xs);
-  text-transform: uppercase;
-}
-.groupTitle[data-tone='green'] { color: var(--om-color-tertiary-green-default); }    /* ACTIVE #469e59 */
-.groupTitle[data-tone='yellow'] { color: var(--om-color-tertiary-yellow-default); }  /* INACTIVE #f19e2b */
-.groupTitle[data-tone='blue'] { color: var(--om-color-tertiary-blue-default); }      /* Lead Return #4e58b4 */
-.dot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
-.dot[data-tone='green'] { background: var(--om-color-tertiary-green-default); }
-.dot[data-tone='yellow'] { background: var(--om-color-tertiary-yellow-default); }
-.dot[data-tone='blue'] { background: var(--om-color-tertiary-blue-default); }
-/* Groups are separated by the stage dropdown's rule (780:86452, stage-dropdown.module.css .rule): 1px surface-variant with 4px above and
-   below — three of them take the 200-wide menu to the mock's 613 tall (4 + 36 + 3×36 + 12×36 + 3×9 + 4 + 2 = 613). */
-.rule { height: 1px; margin: var(--om-spacing-1) 0; background: var(--om-color-surface-variant); }
+/* ---- "All Leads" dropdown 200 wide (931:49435): the house group titles (DropdownLabel, 10/Medium uppercase with the 8px dot — "ACTIVE" ·
+   "INACTIVE" · "LEAD RETURN", the Figma render uppercases the third title too) and rules (DropdownDivider). The one thing the house
+   title has no tone for is the third group's blue (#4e58b4): the title — and its dot, drawn in currentColor — takes it here. ---- */
+.returnTone { display: contents; }
+.returnTone > [data-menu-label] { color: var(--om-color-tertiary-blue-default); }
 
-/* ---- Table 1152 wide at the mock (931:49232): fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. ---- */
+/* ---- Table 1152 wide at the mock (931:49232): fill #fff, 1px surface-variant inside, r8, hugs rows. Head 56 · rows 64. ----
+   (REG-727) What every table shares — the frame, the head, the rows, the frozen cells, the row-actions plate — comes from the table
+   core (components/om/table-core.module.css); this sheet keeps the Qanvast card's own: its tracks, its always-on scroller, its cells,
+   the touch layout and the phone's cards. */
 .card {
-  display: grid;
+  composes: frame card scroller from '../om/table-core.module.css';   /* (REG-727) the table core: border, radius, the grid */
   /* Name 240 · Credits 132 · Budget (S$) 138 · Property type 158 · Created 115 · Status 369 at the mock's 1152-wide content.
      The five data columns share whatever the container adds, in the mock's own proportions, instead of the slack falling into
      Status — which holds two 20px tags and needs none (at 1440 with the rail collapsed that used to leave ~390px of white down
@@ -67,34 +41,17 @@
   grid-template-columns: var(--tracks,
     minmax(238px, 240fr) minmax(132px, 132fr) minmax(138px, 138fr)
     minmax(158px, 158fr) minmax(115px, 115fr) 369px);   /* Name's floor less the card's 2px of border (REG-430); --tracks: the user's dragged widths (REG-427) */
-  width: 100%;
-  /* (REG-350) Declaring one axis makes CSS compute the other as `auto`, so the card grew a vertical scrollbar for a
-     sub-pixel of grid rounding — a track that scrolled by 1px and did nothing. Nothing needs to leave the card
-     vertically (the row actions sit inside their row; the customise popover is position: fixed). */
-  overflow-x: auto; overflow-y: hidden;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border, outside the scrollport (REG-430) */
-  border-radius: var(--om-radius-2);
+  /* (REG-350) always its own sideways scroller, y hidden: the core's .scroller */
 }
+/* Always a scroller, the card clips its own corners: the core's corner ring — drawn for a frame that does not clip at rest (REG-431) —
+   steps aside, as it does for any scrolling frame (left on, it would reach 1px past the scrollport: the phantom scroll REG-350 removed). */
 
 /* ---- Head row ×56 ---- */
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }   /* shares the card's tracks */
-.hCell { position: relative; }   /* the column-resize handle (REG-427) */
-.hCell {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
-  color: var(--om-color-on-surface-secondary);
-}
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* "NAME" 12/Medium #666666 uppercase — the Leads listing head (table.module.css .hLabel) and the DS TableColumn */
+.head { composes: head from '../om/table-core.module.css'; }   /* (REG-727) the table core: 56, sharing the card's tracks */
+.hCell { composes: hCell from '../om/table-core.module.css'; }   /* p16/24/16/16; relative for the column-resize handle (REG-427) */
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }   /* "NAME" 12/Medium secondary uppercase — the Leads listing head and the DS TableColumn */
 /* Sort is inert (coming soon) — the contracts / quotes table's sort-button look; unfold_more 16 on every head. */
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
+.hSort { composes: hSort from '../om/table-core.module.css'; }
 /* Name head: the tune 16 icon at the right = Customise view — components/leads/table.module.css .hTools/.hTune verbatim. */
 .hTools { margin-left: auto; display: inline-flex; }
 .hTune { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
@@ -109,22 +66,8 @@
 .colStatus { grid-column: 6; }
 
 /* ---- Rows ×64 ---- */
-.row {
-  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;   /* same tracks as the head — no per-row drift (REG-180); auto-rows 100%: cells fit the 64 (REG-431) */
-  height: 64px; position: relative;                                      /* relative: the absolute .actions hang off the row */
-  transition: background-color var(--motion-hover);
-}
-.row:hover { background: var(--om-color-primary-variant); }   /* hover row fill #f2f2f2 — the quotes / contracts hover row (209 shows the hover button only) */
-.cell {
-  display: flex; align-items: center;
-  min-width: 0;
-  min-height: 0;   /* the row's track is its own height (grid-auto-rows below): a cell's stroke + padding + content ran 1px past it and the last row painted over the card's bottom border (REG-431) */
-  grid-row: 1;   /* every cell is placed explicitly (column by its class, row 1 here) so the zero-size .actions item spanning row 1 cannot push the auto-placed cells into a second row (REG-430) */
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* "Cell / One line" p12/24/12/16 */
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);                    /* cell stroke w1/0/0/0 */
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
+.row { composes: row from '../om/table-core.module.css'; }   /* (REG-727) the table core: 64, the head's tracks (REG-180), the DS primary tint on hover — every table's; a selected row hovered steps to primary-variant-hover (REG-449; 209 shows the hover button only) */
+.cell { composes: cell from '../om/table-core.module.css'; }   /* (REG-727) "Cell / One line" p12/24/12/16, the 1px top rule, body-m, placed on row 1 (REG-430 · REG-431) */
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Name "Cell / Two line": V g4 — "Jasmine Lee" 14/Bold + "9123 4567" 12/Regular secondary (quotes-table.module.css .titleData/.title/.sub). */
@@ -153,34 +96,14 @@
 /* ---- Row hover actions (209): "View Lead" secondary outlined 103×36 floating at the right — and, on a returned row, "Lead Return
    Updates" before it, 12 apart (two 36 outlined buttons, #ccc stroke / ink text at the Figma render) — quotes-table.module.css
    .actions/.float, right 24, top (64 − 36) / 2 = 14. ---- */
-.actions {
-  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
-  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
-  width: 0; height: 0; overflow: visible;
-  z-index: 4;
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--motion-hover);
-}
-.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
-.row:hover .actions, .actions:focus-within { opacity: 1; pointer-events: auto; }
-/* Name frozen on the left at every width (REG-430; ≤1024 since REG-269): opaque, the hover fill survives, the shadow only while scrolled. */
-
-/* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
-   `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */   /* 0,2,0 — outranks the head cell's own `position: relative` */
-.head .pin { z-index: 3; }
-.row:hover .pin { background: var(--om-color-primary-variant); }
-.row[data-selected] .pin { background: var(--om-color-primary-variant); }
-.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+.actions { composes: actions from '../om/table-core.module.css'; }   /* (REG-727) the table core: a zero-size sticky item at the visible right edge, shown on the row's hover or focus (REG-430, the listing's .rowActions) */
+.actionsInner { composes: actionsInner from '../om/table-core.module.css'; }   /* the inset lives on the inner box, 24 in, so it also holds at rest */
+/* Name frozen on the left at every width (REG-430; ≤1024 since REG-269): opaque, the hover fill survives, the shadow only while scrolled.
+   Frozen columns (REG-454): every pinned cell — the locked Name and up to two the user pins — wears `.pin`; the layout hook sets its
+   `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. The frozen cell fades with the row (REG-509). */
+.pin { composes: pin from '../om/table-core.module.css'; }   /* (REG-727) the table core */
 /* White fill + level-1 shadow live on a wrapper so the DS button keeps its own hover state. */
-.float {
-  display: inline-flex;
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  box-shadow: var(--om-elevation-level-1);
-}
+.float { composes: float from '../om/table-core.module.css'; }   /* (REG-727) the table core */
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    Desktop (≥1025) is the mock and is untouched. The card already scrolls sideways below its 1152 floor
@@ -242,7 +165,7 @@
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .hSort, .hTune { min-height: 44px; }
-  .hCell { padding-block: 6px; }
+  .head .hCell { padding-block: 6px; }   /* 16/16 → 6/6 over the core's head cell (the quotes table's form) */
 }
 
 /* Touch ergonomics for the search bar (REG-273, added with REG-275). The DS Search Bar is 36 tall at `md` and
@@ -264,7 +187,9 @@
   /* The rows are subgrid children, so collapsing the row alone changed nothing — the card's own six tracks won.
      Both collapse together, and the card stops scrolling sideways. */
   .card { grid-template-columns: 1fr; overflow-x: visible; border: 0; }   /* the card stops scrolling sideways */
-  .colName, .pin { position: static; clip-path: none; box-shadow: none; border-right: 0; }
+  /* (REG-727) 0,2,0: the frozen cell gives way — it has to outrank the core's `.pin[data-pin-edge]` (0,2,0), or the Name cell kept its
+     1px edge on the card (the old `.colName, .pin` at 0,1,0 lost to it). */
+  .head .pin, .row .pin { position: static; clip-path: none; box-shadow: none; border-right: 0; }
   .actions { position: static; grid-area: auto; grid-column: 1; justify-self: stretch; width: auto; height: auto; }   /* joins the stack as its last line, from the card's left edge like every other line (a floating box drew over the budget line) */
   .actionsInner { position: static; transform: none; flex-wrap: wrap; gap: var(--om-spacing-2); }
   /* The desktop row is a fixed 64px; stacked, its cells need whatever they need, or each row draws over the next. */
@@ -276,8 +201,10 @@
          background: var(--om-color-surface-default); }
   .card { background: none; border: 0; box-shadow: none; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
   /* Each cell is pinned to its own desktop track (.colCredits → column 2 and so on); with one track those pins
-     put the cell outside the card. Released here, every cell simply stacks. */
-  .cell, .colName, .colCredits, .colBudget, .colType, .colCreated, .colStatus { grid-column: 1; grid-row: auto; }   /* stacked: the desktop's row-1 pin goes too */
+     put the cell outside the card. Released here, every cell simply stacks.
+     (REG-520) `!important`: the column-layout hook (REG-454) writes each cell's grid-column / grid-row as an INLINE style for the desktop
+     grid, and an inline style beats this stylesheet — without it every cell landed on the card's first line (the quotes cards' lesson). */
+  .cell { grid-column: 1 !important; grid-row: auto !important; }   /* stacked: the desktop's row-1 pin goes too */
   .cell { padding: 0; border: 0; min-width: 0; }
   .cell:empty { display: none; }
   /* Stacked, "200" and "185,000" carry no column head to explain them, so the two numeric cells name themselves. */
@@ -311,8 +238,6 @@
   }
   .actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); flex-wrap: nowrap; gap: var(--om-spacing-3); }
 }
-
-/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 
 /* (REG-609) The Return window cell: one line; a closed window or a reached cap reads quieter. */
 .window { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 100%; }

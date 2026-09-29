@@ -6,18 +6,18 @@
   border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);
   padding: var(--om-spacing-6);
-  display: flex; flex-direction: column; gap: var(--om-spacing-5);
+  display: flex; flex-direction: column; gap: var(--om-spacing-4);   /* (REG-729) one inner gap, 16, as every Company / Settings card */
   scroll-margin-top: 96px;
 }
 .cardHead { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.cardTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); margin: 0; }
+.cardTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); margin: 0; }   /* (REG-729) the card title: heading-h4 */
 .cardHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); margin: 0; max-width: 72ch; }
 
 /* Marks: logo · stamp wells 180×96 on surface-bg r4; badges as 56-tall chips. */
 .marks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
 .mark { display: flex; flex-direction: column; gap: var(--om-spacing-2); min-width: 0; }
 .markWide { grid-column: 1 / -1; }
-.markLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.markLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .well {
   width: 100%; height: 112px; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
   background: var(--om-color-surface-bg); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: var(--om-spacing-3);
@@ -55,7 +55,7 @@
 
 /* Preview column: 324 wide, sticky under the header; the page at 276 wide on surface-bg. */
 .preview { width: 324px; flex-shrink: 0; position: sticky; top: calc(var(--om-spacing-2) + 68px + var(--om-spacing-6)); display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.previewLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .previewPage { background: var(--om-color-surface-bg); border-radius: var(--om-radius-2); padding: var(--om-spacing-6); display: flex; justify-content: center; }
 .previewPage > * { box-shadow: var(--om-elevation-level-2); }
 .previewHint { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

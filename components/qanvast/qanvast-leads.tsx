@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation'
 import pageStyles from '@/app/leads/leads.module.css'
 import { Button } from '@/components/ds'
 import { useMaisonAi } from '@/lib/maison-ai'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, DropdownLabel, MENU_WIDTH } from '@/components/leads/dropdown'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, exportFileName, type ExportFormat } from '@/lib/leads/export'
-import menuStyles from '@/components/leads/menus.module.css'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { Icon } from '@/components/om/icon'
-import { AppliedDot } from '@/components/om/applied-dot'
 import { IconButton } from '@/components/om/icon-button'
+import { ScopePill } from '@/components/om/scope-pill'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { Tabs } from '@/components/om/tabs'
 import { Tooltip } from '@/components/om/tooltip'
@@ -99,20 +98,13 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
     comingSoon()
   }
 
-  const item = (label: string, value: string | null) => {
-    const selected = scope === value
-    return (
-      <button key={label} type="button" role="menuitemradio" aria-checked={selected}
-              className={menuStyles.item} data-selected={selected || undefined}
-              onClick={() => { setScope(value); setScopeOpen(false) }}>
-        <span>{label}</span>
-        {/* 12/Regular secondary count, right-aligned; 0 when the loader counted none. */}
-        <span className={menuStyles.count}>{counts[label] ?? 0}</span>
-      </button>
-    )
-  }
-  const groupTitle = (label: string, tone: 'green' | 'yellow' | 'blue') => (
-    <div className={styles.groupTitle} data-tone={tone}><span className={styles.dot} data-tone={tone} />{label}</div>
+  /* (REG-728) The house rows: a radio DropdownItem (the current scope in the Selected fill) with its count as the row's meta — 12/Regular
+     secondary, right-aligned; 0 when the loader counted none (as text, so a 0 still prints). */
+  const item = (label: string, value: string | null) => (
+    <DropdownItem key={label} role="menuitemradio" checked={scope === value} meta={String(counts[label] ?? 0)}
+                  onSelect={() => { setScope(value); setScopeOpen(false) }}>
+      {label}
+    </DropdownItem>
   )
 
   /* (REG-609, parity T-10) Export what the table shows — the house dialog, the listing's "Export all as…" wording, the Qanvast columns. */
@@ -146,8 +138,9 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
                 <IconButton icon="bar_chart_4_bars" label="Insights" onClick={comingSoon} />
               </Tooltip>
               <span className={styles.kebabWrap}>
-                <Tooltip label="More options">
-                  <IconButton icon="more_vert" label="More options" onClick={() => setKebabOpen((o) => !o)} />
+                <Tooltip label="More options" disabled={kebabOpen}>
+                  {/* (REG-728) the house trigger: aria-expanded lets a press on the open kebab close its menu (REG-153) instead of reopening it */}
+                  <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
                 </Tooltip>
                 {kebabMenu}
               </span>
@@ -162,8 +155,9 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
                 Insights
               </Button>
               <span className={styles.kebabWrap}>
-                <Tooltip label="More options">
-                  <IconButton icon="more_vert" label="More options" onClick={() => setKebabOpen((o) => !o)} />
+                <Tooltip label="More options" disabled={kebabOpen}>
+                  {/* (REG-728) the house trigger: aria-expanded lets a press on the open kebab close its menu (REG-153) instead of reopening it */}
+                  <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={kebabOpen} onClick={() => setKebabOpen((o) => !o)} />
                 </Tooltip>
                 {kebabMenu}
               </span>
@@ -182,23 +176,22 @@ export function QanvastLeads({ data }: { data: QanvastLeadsData }) {
               The pill's count follows the pipeline, so it reads what the table shows while a search is on (the listing's rule). */}
           <div className={styles.bar}>
             <div className={styles.left}>
-              <button type="button" className={styles.chip} onClick={() => setScopeOpen((o) => !o)}
-                      aria-haspopup="menu" aria-expanded={scopeOpen} data-open={scopeOpen || undefined}>
-                {`${scope ?? 'All Leads'} (${visible.length})`}
-                <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
-                {scope !== null ? <AppliedDot /> : null}   {/* (REG-295) */}
-              </button>
-              {/* Dropdown Menu / Leads "Lead Status" 200 wide (931:49435): All Leads · ACTIVE stages · INACTIVE stages · Lead Return states. */}
-              <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={200} sheetTitle="Lead Status">
+              {/* (REG-729) The house scope pill — the applied dot off "All Leads" (REG-295) comes with it. */}
+              <ScopePill label={`${scope ?? 'All Leads'} (${visible.length})`} onClick={() => setScopeOpen((o) => !o)}
+                         open={scopeOpen} scoped={scope !== null} />
+              {/* Dropdown Menu / Leads "Lead Status" 200 wide (931:49435): All Leads · ACTIVE stages · INACTIVE stages · Lead Return states.
+                  (REG-728) The house group titles and rules (DropdownLabel · DropdownDivider: 1px with 4 above and below, so three of them
+                  still take the menu to the mock's 613); "Lead Return" keeps the mock's blue, which DropdownLabel has no tone for (.returnTone). */}
+              <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" width={MENU_WIDTH.standard} sheetTitle="Lead Status">
                 {item('All Leads', null)}
-                <div className={styles.rule} role="separator" />
-                {groupTitle('ACTIVE', 'green')}
+                <DropdownDivider />
+                <DropdownLabel tone="green" dot>ACTIVE</DropdownLabel>
                 {STAGES.map((s) => item(s, s))}
-                <div className={styles.rule} role="separator" />
-                {groupTitle('INACTIVE', 'yellow')}
+                <DropdownDivider />
+                <DropdownLabel tone="orange" dot>INACTIVE</DropdownLabel>
                 {INACTIVE_STAGES.map((s) => item(s, s))}
-                <div className={styles.rule} role="separator" />
-                {groupTitle('Lead Return', 'blue')}
+                <DropdownDivider />
+                <div className={styles.returnTone}><DropdownLabel dot>Lead Return</DropdownLabel></div>
                 {RETURN_FILTERS.map((s) => item(s, s))}
               </Dropdown>
             </div>

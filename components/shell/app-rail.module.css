@@ -206,15 +206,19 @@ button.avatarRow:focus-visible .avatar { outline: var(--om-border-2) solid var(-
   .wrap .panel .logoTile { width: 44px; margin-inline: -4px; }
 }
 
-/* (REG-466) The overdue count on the Tasks glyph: the toolbar's filter badge (16px pill), top-right of the 24px icon, in both rail states. */
+/* (REG-466) The overdue count on the Tasks glyph: the toolbar's filter badge (16px pill), top-right of the 24px icon, in both rail states.
+   (REG-729) On tokens only — the DS Badge's count look: caption-xs in the red's own ink on the tertiary red, a full radius, and the
+   filter badge's 2px surface ring (drawn as a shadow, so the 16 box stays inside the item, which clips). */
 .item { position: relative; }
 .badge {
   /* Inside the item's box (it clips overflow for the label crossfade): anchored to the right edge while the rail is collapsed,
      to the glyph's corner once it is wide (owner 2026-09-16: "number 5 container looks chopped"). */
   position: absolute; top: 2px; right: 2px; box-sizing: border-box;
-  min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px;
-  background: var(--om-color-tertiary-red-default); color: #fff;
-  font: 600 10px/16px var(--om-font-family, Inter, system-ui, sans-serif); text-align: center; letter-spacing: 0;
+  min-width: 16px; height: 16px; padding: 0 3px; border-radius: var(--om-radius-full);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-tertiary-red-default); color: var(--om-color-on-tertiary-red-default);
+  box-shadow: 0 0 0 2px var(--om-color-surface-default);
+  font: var(--om-type-caption-xs); text-align: center;
   pointer-events: none;
 }
 .panel[data-expanded] .badge { right: auto; left: 22px; }

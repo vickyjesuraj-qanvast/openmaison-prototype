@@ -1,42 +1,66 @@
-/* Deleted Contracts sheet (REG-534): the Deleted sheets' table language — 48 head · 60 rows · the two actions parked right. */
-.head { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-bottom: var(--om-spacing-4); }
+/* Deleted Contracts sheet (REG-534) — and the three sheets on this stylesheet: Deleted Quotes (REG-625), Archived Quotes (sweep S1 ·
+   U-07), Archived Contracts (sweep S2 · U-07).
+   (REG-727) They take the Deleted trio's shape (REG-513, components/leads/deleted-sheet.tsx): Empty Trash in the house head (the
+   Dialog's `actions`), no Close foot, height to content with a 480 floor. The table sits on the table core
+   (components/om/table-core.module.css): the listing's head — 56, its cells and caption (it was 48 on a grey fill with .02em
+   letter-spacing and 12/16 cells) — its rows with their hover, selected and selected + hover fills (REG-449), its cells. What stays
+   here is the table's own: the tracks per sheet, rows 60, the title cell, the actions, the list a phone shows. */
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.table { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
-.row { display: grid; grid-template-columns: minmax(240px, 1fr) 140px 140px 280px; align-items: center; min-height: 60px; }
-.table[data-lead] .row { grid-template-columns: minmax(240px, 1fr) 180px 140px 140px 280px; }
-/* (REG-634, contracts parity E-124) Deleted Contracts' fifth column: who deleted it. Deleted Quotes keeps its four. */
-.table[data-by] .row { grid-template-columns: minmax(240px, 1fr) 140px 140px 140px 280px; }
-.table[data-by][data-lead] .row { grid-template-columns: minmax(200px, 1fr) 160px 120px 140px 140px 280px; }
-.row[data-head] { min-height: 48px; background: var(--om-color-surface-bg); }
-.row[data-head] .cell { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
-.row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-@media (hover: hover) { .row:not([data-head]):hover { background: var(--om-color-primary-variant); } }
-.cell { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* One grid for the head and the rows (subgrid, REG-180). Selection 48 · Title fluid from 240 · Lead 180 (Tools lists) · Status 140 ·
+   Deleted / Archived 140 · Actions 280 — Restore · Delete Forever. */
+.table {
+  composes: frame card scroller from '../om/table-core.module.css';   /* (REG-727) the table core: a real border outside the scrollport (REG-430), the radius, the fill; the grid; always the sideways scroller */
+}
+.table[data-select] { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 280px; }
+.table[data-select][data-lead] { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 280px; }
+/* (REG-634, contracts parity E-124) Deleted Contracts' fifth column: who deleted it — beside its selection column (sweep S2 · U-08). */
+.table[data-select][data-by] { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 140px 280px; }
+.table[data-select][data-by][data-lead] { grid-template-columns: 48px minmax(200px, 1fr) 160px 120px 140px 140px 280px; }
+/* (sweep S1 · U-07) Archived Quotes / Contracts: one action, so a narrower Actions column */
+.table[data-select][data-kind='archived'] { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 160px; }
+.table[data-select][data-kind='archived'][data-lead] { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 160px; }
+
+.head { composes: head from '../om/table-core.module.css'; }   /* (REG-727) the table core: the listing's head, 56 */
+.hCell { composes: hCell from '../om/table-core.module.css'; }   /* (REG-727) the table core: p16/24/16/16, the grey ink */
+.hLabel { composes: hLabel from '../om/table-core.module.css'; }   /* (REG-727) the table core: caption-s, uppercase — no letter-spacing */
+.row { composes: row from '../om/table-core.module.css'; height: 60px; }   /* (REG-727) the table core: subgrid rows, hover · selected · selected + hover (REG-449); 60, the Deleted sheets' row */
+.cell {
+  composes: cell from '../om/table-core.module.css';   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
+  gap: var(--om-spacing-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* (sweep S1 · U-08) The selection column (Deleted Quotes; the libraries' Deleted sheet has one): 16 + the 24 checkbox. */
+.sel { padding-right: 0; }
 .title { font: var(--om-type-subtitle-m); }
 .title > :first-child { color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
 .actions { justify-content: flex-end; gap: var(--om-spacing-2); }
-.empty { padding: var(--om-spacing-8) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
-/* (sweep S1 · U-08) The selection column (Deleted Quotes; the libraries' Deleted sheet has one), a ticked row, and the load retry. */
-.table[data-select] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 280px; }
-.table[data-select][data-lead] .row { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 280px; }
-/* (sweep S2 · U-08) Deleted Contracts' selection column beside its Deleted by column. */
-.table[data-select][data-by] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 140px 280px; }
-.table[data-select][data-by][data-lead] .row { grid-template-columns: 48px minmax(200px, 1fr) 160px 120px 140px 140px 280px; }
-/* (sweep S1 · U-07) Archived Quotes: one action, so a narrower Actions column */
-.table[data-select][data-kind='archived'] .row { grid-template-columns: 48px minmax(240px, 1fr) 140px 140px 160px; }
-.table[data-select][data-kind='archived'][data-lead] .row { grid-template-columns: 48px minmax(240px, 1fr) 180px 140px 140px 160px; }
-.sel { padding-right: 0; }
-.row[data-selected] { background: var(--om-color-primary-variant); }
-.retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
-/* (sweep S1) 768–1024: the dialog is narrower than the columns — the table scrolls sideways inside it, its actions still reachable (the listing model), never clipped */
-@media (max-width: 1024px) and (min-width: 768px) {
-  .table { overflow-x: auto; }
-  .row { width: max-content; min-width: 100%; }
-}
-@media (max-width: 767px) {
-  .row, .table[data-select] .row, .table[data-select][data-lead] .row, .table[data-select][data-kind='archived'] .row, .table[data-select][data-kind='archived'][data-lead] .row, .table[data-select][data-by] .row, .table[data-select][data-by][data-lead] .row { grid-template-columns: 1fr; row-gap: 0; padding: var(--om-spacing-2) 0; }
-  .row[data-head] { display: none; }
-  .actions { justify-content: flex-start; }
-}
+.empty { grid-column: 1 / -1; padding: var(--om-spacing-8) var(--om-spacing-4); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+/* (sweep S1 · U-08) The load retry. */
+.retry { composes: link from '../om/text-link.module.css'; }   /* (REG-729) the house text link — it was underlined at rest */
 /* (REG-625) Deleted Quotes: a quote's amount rides in its title cell, quieter, so the Status column stays one word wide. */
 .amount { margin-left: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+
+/* A finger cannot hover (these rows only ever answered a pointer): a tapped row keeps its fill — REG-525's rule. */
+@media (hover: none) {
+  .row:hover { background: var(--om-color-surface-default); }
+  .row[data-selected]:hover { background: var(--om-color-primary-variant); }
+}
+/* (sweep S1) 768–1024: the dialog is narrower than the columns — the table scrolls sideways inside it (the core's .scroller, the
+   listing model), its actions still reachable, never clipped.
+   (REG-727) From 768 up a long trash scrolls inside the table, both ways — it takes what the capped dialog leaves it — and its head holds
+   at the top as the rows go by: the Deleted trio's rule (sweep S5 #28). On a phone the rows are a list and the sheet's body scrolls. */
+@media (min-width: 768px) {
+  .table { overflow: auto; min-height: 0; }
+  .head { position: sticky; top: 0; z-index: 4; background: var(--om-color-surface-default); }
+}
+@media (max-width: 767px) {
+  .table, .table[data-select], .table[data-select][data-lead], .table[data-select][data-by], .table[data-select][data-by][data-lead], .table[data-select][data-kind='archived'], .table[data-select][data-kind='archived'][data-lead] { grid-template-columns: 1fr; }
+  .table { flex-shrink: 0; }
+  .head { display: none; }
+  /* Each row is a stack of its cells: one column, content-tall lines, one rule between rows — the cells' own top rules go. */
+  .row { grid-template-columns: 1fr; grid-auto-rows: auto; height: auto; row-gap: 0; padding: var(--om-spacing-2) 0; }
+  .row + .row { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+  .cell { grid-row: auto; padding: var(--om-spacing-3) var(--om-spacing-4); border-top: 0; }
+  .actions { justify-content: flex-start; }
+}

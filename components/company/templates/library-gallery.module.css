@@ -2,8 +2,8 @@
 .count { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 /* A document page in the 220 band: a 150×195 sheet with the title and ruled excerpt lines (the picker's thumb). */
 .sheet { display: flex; flex-direction: column; gap: 6px; width: 150px; height: 195px; padding: 16px 14px; background: var(--om-color-surface-default); border-radius: var(--om-radius-0-5); box-shadow: var(--om-elevation-level-2); overflow: hidden; }
-.sheetTitle { font: var(--om-type-caption-s); font-weight: 700; color: var(--om-color-on-surface-default); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sheetKind { font-size: 8px; line-height: 12px; color: var(--om-color-primary-default); text-transform: uppercase; letter-spacing: .04em; }
+.sheetTitle { font: var(--om-type-caption-s); font-weight: 700; color: var(--om-color-on-surface-default); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* (REG-729) no letter-spacing on an uppercase caption */
+.sheetKind { font-size: 8px; line-height: 12px; color: var(--om-color-primary-default); text-transform: uppercase; }   /* (REG-729) no letter-spacing */
 .sheetText { font-size: 8px; line-height: 12px; color: var(--om-color-on-surface-secondary); overflow: hidden; }
 /* The 26×36 list glyph: a page with a title bar and rules. */
 .glyph.glyph { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: 5px 4px; border: var(--om-border-1) solid var(--om-color-surface-variant); box-sizing: border-box; }
@@ -32,8 +32,6 @@
 .glyphSplit { display: flex; align-items: center; gap: 1px; padding: 0 3px; }
 .glyphSplit > span { height: 6px; background: var(--om-color-primary-default); border-radius: 1px; }
 .glyphSplit > span:nth-child(2n) { background: var(--om-color-on-primary-variant); }
-/* The kind chip on a card (Terms · Notes) and on a list row. */
-.kindChip { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }
 .muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 767px) {
@@ -43,11 +41,12 @@
 /* (REG-653, price book parity Q-15) The list's selection box in the frozen name cell (the listing's .selBox, REG-614), and the Filters dialog. */
 .selBox { display: inline-flex; align-items: center; flex-shrink: 0; }
 .facets { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-/* (sweep S5 #7 · #10 · #15) A card's selection box over its thumb, a ticked card and row, and the Filters count badge — the listing's. */
+/* (sweep S5 #7 · #10 · #15) A card's selection box over its thumb, a ticked card and row, and the Filters count badge — the listing's.
+   (REG-729) The badge is the tab toolbar's own (components/om/tab-toolbar.module.css), composed — not a copy. */
 .cardSel { position: absolute; top: var(--om-spacing-2); left: var(--om-spacing-2); z-index: 2; display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
 [data-selected] > .cardSel { box-shadow: none; }
-.filterWrap { position: relative; display: inline-flex; }
-.filterBadge { position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--om-radius-full); background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--om-color-surface-default); box-sizing: content-box; pointer-events: none; }
+.filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; pointer-events: none; }
 /* (REG-664) Folders: the crumb row above the toolbar, the New Folder glyph's anchor, and the folders above the cards. */
 /* (REG-666) Where you are, at the bar's left — the Files tab's title slot: the library's name, or the crumb inside a folder. */
 .where { flex: 1; min-width: 0; display: flex; align-items: center; }
@@ -78,9 +77,6 @@
   .end:has([data-om-search-open]) .tools { display: contents; }
   .bar .end [data-om-search-open] { order: 1; flex: 1 0 100%; }
 }
-/* (audit 2026-09-26, F119) A menu row that waits says why under its label (the sweep's rule, REG-656 — the editor's .menuRow · .menuMeta). */
-.menuRow { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-.menuMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 /* (wave E, gallery-9) A New ▾ row with its glyph (the AI Visualizer's rows — visualizer-home .menuRow), for the phone's New Folder row. */
 .menuIcon { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .menuIcon > :first-child { color: var(--om-color-on-surface-secondary); }

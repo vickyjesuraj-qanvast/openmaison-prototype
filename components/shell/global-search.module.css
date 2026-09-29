@@ -14,14 +14,6 @@
 .field { display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 56px; padding: 0 var(--om-spacing-4); flex-shrink: 0; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .input { flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: none; padding: 0; font: var(--om-type-body-l); color: var(--om-color-on-surface-default); }
 .input::placeholder { color: var(--om-color-on-surface-disabled); }
-.clear { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex-shrink: 0; border: 0; border-radius: var(--om-radius-full); background: none; color: var(--om-color-on-surface-secondary); cursor: pointer; transition: background-color var(--motion-hover); }
-.clear:hover { background: var(--om-color-hover-08p); }
-.clear:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
-.kbd, .foot kbd {
-  display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 var(--om-spacing-1);
-  font: var(--om-type-caption-xs); font-family: inherit; color: var(--om-color-on-surface-secondary);
-  background: var(--om-color-surface-bg); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1);
-}
 .spinner { width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--om-color-surface-variant); border-top-color: var(--om-color-primary-default); animation: spin 700ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -33,7 +25,10 @@
 .list { flex: 1; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; padding: var(--om-spacing-2); }
 .list[data-loading] .group { opacity: 0.55; transition: opacity var(--motion-toggle); }
 .group + .group { margin-top: var(--om-spacing-2); }
-.groupHead { display: flex; align-items: center; justify-content: space-between; padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+/* (REG-728) A group's title is the house menu group title (DropdownLabel's: 10/500 uppercase, grey, no letter-spacing, 12 padding —
+   components/leads/menus.module.css .label), composed; set 8 in, as the rows' own content on the list's 8, its count at the end. */
+.groupHead { composes: label from '../leads/menus.module.css'; }
+.groupHead.groupHead { justify-content: space-between; padding-inline: var(--om-spacing-2); }
 .count { font-variant-numeric: tabular-nums; text-transform: none; }
 .row {
   display: flex; align-items: center; gap: var(--om-spacing-3);
@@ -52,9 +47,9 @@
 .sub .mark { font-weight: 500; }
 .enter { width: 16px; flex-shrink: 0; text-align: center; font: var(--om-type-body-m); color: var(--om-color-primary-default); opacity: 0; }
 .row[data-active] .enter { opacity: 1; }
-.forget { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex-shrink: 0; border: 0; border-radius: var(--om-radius-full); background: none; color: var(--om-color-on-surface-secondary); cursor: pointer; opacity: 0; }
+/* (REG-729) the recent's remove is the house IconButton (24 bare); it shows on the row's hover, the active row, or its own focus */
+.forget { opacity: 0; }
 .row:hover .forget, .row[data-active] .forget, .forget:focus-visible { opacity: 1; }
-.forget:hover { background: var(--om-color-hover-08p); }
 .more .glyph { background: none; }
 .moreText { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); }
 .more { color: var(--om-color-primary-default); }
@@ -63,8 +58,7 @@
 .empty { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-10) var(--om-spacing-6); text-align: center; color: var(--om-color-on-surface-secondary); }
 .emptyTitle { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .emptyHelp { font: var(--om-type-body-s); max-width: 40ch; }
-.emptyAction { margin-top: var(--om-spacing-2); border: 0; background: none; padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-primary-default); cursor: pointer; border-radius: var(--om-radius-1); }
-.emptyAction:hover { background: var(--om-color-hover-04p); }
+.emptyAction { margin-top: var(--om-spacing-2); }   /* (REG-729) the DS text button, 36 tall */
 
 /* the first answer on its way: rows of bones, as a ghost */
 .pending { display: flex; flex-direction: column; padding: var(--om-spacing-2) 0; }

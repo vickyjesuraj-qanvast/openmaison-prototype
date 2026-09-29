@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
 import { SignaturePad } from '@/components/om/signature-pad'
@@ -115,7 +116,7 @@ export function SigningPage({ data }: { data: SigningData }) {
           {brand.logo ? <img className={styles.logo} src={brand.logo} alt="" /> : null}
           <span className={styles.studio}>{issuer}</span>
         </span>
-        <span className={styles.secure}><Icon name="lock" size={16} />Secure signing</span>
+        <MetaChip color="green" icon="lock">Secure signing</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
       </header>
       <div className={styles.body}>
         <div className={`${styles.stage} ${styles.column}`}>

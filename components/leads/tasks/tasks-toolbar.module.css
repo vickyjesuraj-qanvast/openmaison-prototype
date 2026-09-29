@@ -1,41 +1,16 @@
 /*
  * Lead Details › Tasks toolbar — "Section items" 1244×36, H g16 (902:26378, spec 01-listing-table.txt).
  * Left: "All Tasks" 16/Bold (heading-h4 = 16/700/24) fills. Right: actions H g12.
+ * (REG-729) The row itself — bar, title, actions, menu anchors, the turning chevron, the filter badge — is the house tab toolbar
+ * (components/om/tab-toolbar.module.css); what stays here is this toolbar's own.
  */
-.bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 36px; width: 100%; }
-.title { flex: 1; min-width: 0; margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
-
-/* Menu anchors (Add Task button · header kebab) — the Dropdown positions itself against these. */
-.menuWrap { position: relative; display: inline-flex; }
-/* Chevron points up while the menu is open — every menu trigger does this (listing toolbar rule, user 2026-08-28). */
-.chev { display: inline-flex; transition: transform var(--motion-toggle); }
-.chev[data-open] { transform: rotate(180deg); }
-
-/* Search Bar 36 Outlined — 280 wide in the mock; the DS component is fluid so the width is set here. */
-.search { width: 280px; }
-
-/* Active-filter count badge — the listing toolbar's pattern (components/leads/toolbar.module.css), copied verbatim. */
-.filterWrap { position: relative; display: inline-flex; }
-.filterBadge {
-  position: absolute; top: -6px; right: -6px;
-  min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: var(--om-radius-full);
-  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
-  font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
-  border: 2px solid var(--om-color-surface-default);
-  box-sizing: content-box;
-}
-
-/* Menu item tones — "Dropdown Menu / Tasks": danger items #db382a. */
-.danger { color: var(--om-color-tertiary-red-default); }
-
-/* Responsive (REG-269): ≤767 the toolbar wraps — the search drops to its own full-width row so no control
-   is clipped (the audit measured the row ~85px wider than a 390 screen). */
-@media (max-width: 767px) {
-  .bar, .toolbar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
-  .right, .actions { flex-wrap: wrap; }
-}
+.bar { composes: bar from '../../om/tab-toolbar.module.css'; }
+.title { composes: title from '../../om/tab-toolbar.module.css'; }
+.actions { composes: actions from '../../om/tab-toolbar.module.css'; }
+.menuWrap { composes: menuWrap from '../../om/tab-toolbar.module.css'; }   /* Add Task button · header kebab */
+.chev { composes: chev from '../../om/tab-toolbar.module.css'; }
+.filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
 
 /* Touch ergonomics (REG-273): the toolbar's controls are the DS 36px height — a fingertip wants 44. The
    target grows by 4px on every side through a transparent overlay, so Add Task, the filter button (and its
@@ -50,12 +25,9 @@
    The 280px search box folds into one of those glyphs (components/om/toolbar-search.tsx) and, when it is asked
    for, takes the row on its own: the title steps aside for it rather than squeezing it to a few characters. */
 @media (max-width: 767px) {
-  /* (REG-356) The kebab is one of the row's glyphs, 12 from the one before it: REG-347's `margin-left: auto` pushed
-     it flush right for the wrapped row this no longer is, and left a 60px hole in the middle of the set. */
-  .bar { flex-wrap: wrap; height: auto; row-gap: var(--om-spacing-3); }
-  /* (REG-377) The glyph cluster is content-sized: `flex: 1 1 auto` let it claim half the row and ellipsised the
-     section title ("All Cont…" at 390, "All …" at 320) even though the row had space for both. */
-  .actions { flex: 0 0 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+  /* (REG-356) The kebab is one of the row's glyphs, 12 from the one before it. (REG-377) The glyph cluster is content-sized:
+     `flex: 1 1 auto` let it claim half the row and ellipsised the section title even though the row had space for both. */
+  .actions { flex: 0 0 auto; min-width: 0; justify-content: flex-end; }
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }   /* (REG-375) the open box shares the row */
 }
@@ -66,15 +38,6 @@
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
 
-/* (REG-466) The rail's Tasks page scope chip — the listing's "All Leads (99)" chip: h36, border ccc, r4, pl-16 pr-12, gap-8. */
+/* (REG-466) The rail's Tasks page: the scope pill (components/om/scope-pill, REG-729) stands where the title would — this box takes
+   the title's room and anchors the pill's menu. */
 .scopeWrap { flex: 1; min-width: 0; display: flex; align-items: center; position: relative; }
-.scopeChip {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1);
-  background: transparent; cursor: pointer;
-  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
-  transition: background-color var(--motion-hover);
-}
-.scopeChip:hover, .scopeChip[data-open] { background: var(--om-color-hover-08p); }
-.scopeCount { font-weight: 400; color: var(--om-color-on-surface-secondary); }

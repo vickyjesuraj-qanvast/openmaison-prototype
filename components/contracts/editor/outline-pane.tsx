@@ -14,7 +14,7 @@ export function OutlinePane({ items, onPick, onClose, inDrawer = false }: { item
         <div className={styles.outlineHead}>
           <Icon name="list" size={20} />
           <span className={styles.outlineTitle}>Outline</span>
-          <Tooltip label="Hide outline"><IconButton icon="close" label="Hide outline" size={24} variant="bare" onClick={onClose} /></Tooltip>
+          <Tooltip label="Hide outline"><IconButton icon="close" label="Hide outline" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={onClose} /></Tooltip>   {/* (REG-729) the house close: the 24 outlined glyph (the Drawer's) */}
         </div>
       )}
       {items.length === 0 ? (

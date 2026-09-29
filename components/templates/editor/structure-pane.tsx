@@ -6,7 +6,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { BLOCK_ICON, BLOCK_KINDS, BLOCK_LABEL, SINGLETON_KINDS, WATERMARK_OPACITY, type Block, type BlockKind, type Paper, type TemplateDesign } from '@/lib/templates/model'
 import type { Selection } from '@/components/templates/render/canvas'
 import { flowBlocks, patchBlock, reorderFlow } from './editor-state'
@@ -86,7 +86,8 @@ export function StructurePane({ design, selection, pageOfBlock, pages, onSelect,
       <div className={styles.foot}>
         <span className={styles.addAnchor}>
           <Button appearance="text" iconStart={<Icon name="add" size={20} />} onPress={() => setAddOpen((o) => !o)} aria-haspopup="menu" aria-expanded={addOpen}>Add to the page</Button>   {/* (REG-569) "block" was the code's word */}
-          <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" side="up" width={232} sheetTitle="Add to the page">
+          {/* (REG-728) 240: a row already on the page says so under its label */}
+          <Dropdown open={addOpen} onClose={() => setAddOpen(false)} align="left" side="up" width={MENU_WIDTH.wide} sheetTitle="Add to the page">
             {BLOCK_KINDS.filter((k) => !isCanvasKind(k)).map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); onAddBlock(k) }} disabled={SINGLETON_KINDS.includes(k) && present.has(k)} title={SINGLETON_KINDS.includes(k) && present.has(k) ? 'Already in the template' : undefined}>{BLOCK_LABEL[k]}</DropdownItem>)}
             <DropdownDivider />
             {(['cover', 'header', 'footer'] as BlockKind[]).map((k) => <DropdownItem key={k} onSelect={() => { setAddOpen(false); onAddBlock(k) }} disabled={present.has(k)} title={present.has(k) ? 'Already in the template' : undefined}>{k === 'cover' ? 'Cover page' : BLOCK_LABEL[k]}</DropdownItem>)}

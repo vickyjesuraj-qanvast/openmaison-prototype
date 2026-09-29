@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, animate, motion } from 'motion/react'
 import { Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -8,8 +8,8 @@ import { Avatar } from '@/components/om/avatar'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ScrollPagers } from '@/components/om/scroll-pagers'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { menuSideFor } from '@/components/leads/menu-side'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { STAGES, INACTIVE_STAGES, type Stage } from '@/lib/leads/enums'
 import { displayDate, isOverdue, moneySGD, relativeTime } from '@/lib/format'
 import { spring } from '@/lib/motion'
@@ -65,9 +65,10 @@ function KanbanCard({
   pendingDrop: PendingDrop
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [menuSide, setMenuSide] = useState<'down' | 'up'>('down')   // measured on open: the column body clips a menu below its bottom edge
   const [lifted, setLifted] = useState(false)   // the card's slot placeholder while its ghost is out
   const cardEl = useRef<HTMLDivElement>(null)
+  const kebabWrap = useRef<HTMLSpanElement>(null)   // (REG-728) the card menu's anchor — it opens through the body portal
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
   const footEl = useRef<HTMLDivElement>(null)
   const [avatarSlots, setAvatarSlots] = useState(FOOT_SLOTS)
   const firstTask = lead.tasks[0]
@@ -261,27 +262,24 @@ function KanbanCard({
         </span>
         <span className={styles.cardMetaRight}>
           <span className={styles.cardAgo}>{relativeTime(lead.updatedAt, new Date(now))}</span>
-          <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <span className={styles.kebabWrap} ref={kebabWrap}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <button type="button" className={styles.cardKebab} aria-label={`More actions for ${lead.name}`}
                       aria-haspopup="menu" aria-expanded={menuOpen}
-                      onClick={(e) => {
-                        // (REG-286) The ONE shared rule (components/leads/menu-side.ts), as every row kebab now uses:
-                        // flip above the trigger only when the scrolling column body would clip this 1- or 2-item menu
-                        // below AND there is room for it above. Was a local copy with a worst-case 100px constant.
-                        setMenuSide(menuSideFor(e.currentTarget, (canDelete ? 1 : 0) + (canReturnLead(lead) ? 1 : 0)))
-                        setMenuOpen((o) => !o)
-                      }}>
+                      onClick={() => setMenuOpen((o) => !o)}>
                 <Icon name="more_vert" size={20} weight={300} />
               </button>
             </Tooltip>
-            <Dropdown open={menuOpen} onClose={() => setMenuOpen(false)} align="right" side={menuSide} sheetTitle={lead.name}>
+            {/* (REG-728) Through the body portal, as every row menu (the listing's row, components/leads/table.tsx): the scrolling
+                column body can no longer clip it, and PortalMenu flips on the viewport — the menu-side.ts measure retired here. A press
+                inside it still never lifts the card: its rows are buttons in a role="menu" (onPointerDown above). */}
+            <PortalMenu open={menuOpen} anchor={kebabWrap} onClose={closeMenu} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={lead.name}>
               {canDelete ? <DropdownItem tone="danger" onSelect={() => { setMenuOpen(false); onKebabDelete(lead) }}>Delete</DropdownItem> : null}
               {canReturnLead(lead) ? (
                 /* Same rule as the table row menu (REG-139): Return Lead only for Qanvast-sourced leads with no return processing / approved */
                 <DropdownItem onSelect={() => { setMenuOpen(false); onKebabReturn(lead) }}>Return Lead</DropdownItem>
               ) : null}
-            </Dropdown>
+            </PortalMenu>
           </span>
         </span>
       </div>

@@ -8,7 +8,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { Crumbs } from '@/components/om/crumbs'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteContract, QuoteSibling } from '@/lib/quotes/editor'
 import styles from './editor-header.module.css'
@@ -78,8 +78,8 @@ export function EditorHeader({
               <span className={styles.chev} data-open={menu === 'switch' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>
             {/* The lead's quotes, newest last (the Quotes tab's order): one 36px row each — title · number — the open one
-                marked "current" like the tab's status menu (910:36673). */}
-            <Dropdown open={menu === 'switch'} onClose={() => setMenu(null)} align="left" width={320} sheetTitle="Quotes">
+                marked "current" like the tab's status menu (910:36673). (REG-728) The editor switchers' width: rows with a description. */}
+            <Dropdown open={menu === 'switch'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Quotes">
               {siblings.map((s) => (
                 <DropdownItem key={s.id} role="menuitemradio" checked={s.id === quoteId} onSelect={pick(() => { if (s.id !== quoteId) onSwitch(s.id) })}>
                   <span className={styles.menuTitle}>{s.title || s.number}</span>
@@ -114,13 +114,10 @@ export function EditorHeader({
               {/* (REG-587) Send ▾: the client can confirm on a link first (Mavid's flow), or get the agreement for signature straight away. */}
               <Button variant="primary" iconEnd={<span className={styles.chev} data-open={menu === 'send' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                       aria-haspopup="menu" aria-expanded={menu === 'send'} onPress={() => setMenu((m) => (m === 'send' ? null : 'send'))}>Send</Button>
-              <Dropdown open={menu === 'send'} onClose={() => setMenu(null)} align="left" width={300} sheetTitle="Send">
-                <DropdownItem onSelect={pick(() => onSend('confirmation'))}>
-                  <span className={styles.menuText}>Send for confirmation<span className={styles.menuHelp}>The client confirms the quote on a link — no signature yet</span></span>
-                </DropdownItem>
-                <DropdownItem onSelect={pick(() => onSend('signature'))}>
-                  <span className={styles.menuText}>Send for signature<span className={styles.menuHelp}>Add the T&Cs and raise the agreement to sign</span></span>
-                </DropdownItem>
+              {/* (REG-728) Rows with a description: the 320 width, the description as the house row's second line. */}
+              <Dropdown open={menu === 'send'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Send">
+                <DropdownItem onSelect={pick(() => onSend('confirmation'))} help="The client confirms the quote on a link — no signature yet">Send for confirmation</DropdownItem>
+                <DropdownItem onSelect={pick(() => onSend('signature'))} help="Add the T&Cs and raise the agreement to sign">Send for signature</DropdownItem>
               </Dropdown>
             </>
           ) : canSend && sendKind === 'confirmed' ? (
@@ -157,11 +154,12 @@ export function EditorHeader({
             <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={menu === 'more'}
                         onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} />
           </Tooltip>
-          {/* Dropdown Menu / Leads 1271:41512 — ≤1024 Preview and Comments fold in here (responsive.md). 264 wide, as the template menus with long labels (REG-531): "Compare with another quote" wrapped at 200 and its second line was clipped. */}
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={264} sheetTitle={number}>
+          {/* Dropdown Menu / Leads 1271:41512 — ≤1024 Preview and Comments fold in here (responsive.md). (REG-728) 240 — the scale's width for
+              rows with a second line (a locked Delete says why in its row, a key hint): "Compare with another quote" wrapped at 200 (REG-531). */}
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle={number}>
             {folded ? (
               <>
-                <DropdownItem onSelect={pick(() => onMenu('preview'))}>Preview</DropdownItem>
+                <DropdownItem onSelect={pick(() => onMenu('preview'))} shortcut="preview">Preview</DropdownItem>   {/* (REG-728) its key, as the contract kebab's */}
                 {onClientView ? <DropdownItem onSelect={pick(onClientView)}>{clientViewOn ? 'Hide client view' : 'Client view'}</DropdownItem> : null}
                 <DropdownItem onSelect={pick(() => onMenu('comments'))}>Comments</DropdownItem>
                 <DropdownDivider />

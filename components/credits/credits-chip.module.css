@@ -1,5 +1,5 @@
 /* (REG-701) The editors' balance chip — the approved proposal's 32px pill: a 20 token, the figure; calm at rest, the figure takes the state's colour. */
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 6px; flex-shrink: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: 999px; background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color var(--motion-hover); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 6px; flex-shrink: 0; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-full); background: var(--om-color-surface-default); color: var(--om-color-on-surface-default); font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color var(--motion-hover); }   /* (REG-729) the radius token, not a 999px literal */
 .chip:hover { background: var(--om-color-hover-04p); }
 .chip[data-open] { background: var(--om-color-hover-08p); }
 .chip:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

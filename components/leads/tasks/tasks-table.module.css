@@ -8,23 +8,11 @@
  * right edge. Columns never squeeze below the mock. Row fills only touch the middle rows, so the rounded corners stay clean.
  */
 .card {
-  display: flex; flex-direction: column;
-  width: 100%;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);   /* a real border (the listing's card): outside the scroller, so the frozen cells never cover it (REG-430) */
-  border-radius: var(--om-radius-2);
+  composes: frame from '../../om/table-core.module.css';   /* (REG-727) the table core: a real border (the listing's card) outside the scroller, so the frozen cells never cover it (REG-430), r8, and the corner ring drawn over them (REG-431) — this card never scrolls (its .scroller does), so the ring never steps aside */
+  display: flex; flex-direction: column;   /* the scroller, then the bottom bar */
 }
 .scroller { width: 100%; }
-/* The rounded corners drawn OVER the children (REG-431): the frozen cells' opaque fill is square and, with nothing clipping at
-   rest (the row menus must hang below a short table), it painted over the inside of every corner's curve. A ring the size of
-   the border box redraws the stroke above them; once the frame scrolls it clips its own corners and the ring steps aside. */
-.card { position: relative; }
-.card::after {
-  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
-  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
-}
-
-.scroller[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
+.scroller[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }   /* the core's scroller, on this table's inner box */
 /* --table-min: the columns' floor (tasks-table.tsx) + the parked actions' band (Edit 58 · gap 12 · kebab 36 · inset 24 = 130): with the
    mock's 1242 filling a 1440 screen exactly, the hover pills sat over the last column's "Add Tags" (REG-467, the REG-446 rule —
    a hover control never covers a value the row exists to show). The band is part of the floor, as the touch layout and the
@@ -36,32 +24,18 @@
 
 /* Frozen columns (REG-454): every pinned cell — the selection column, the locked title and up to two the user pins — wears
    `.pin`; the layout hook sets its `left`. The LAST pinned column is the edge: the 1px rule at rest and the shadow while scrolled. */
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */   /* 0,2,0 — outranks the head cell's own `position: relative` */
-.head .pin { z-index: 3; }
-.row:hover .pin { background: var(--om-color-primary-variant); }
-.row[data-selected] .pin { background: var(--om-color-primary-variant); }
-.row[data-selected]:hover .pin { background: var(--om-color-primary-variant-hover); }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+.pin { composes: pin from '../../om/table-core.module.css'; }   /* (REG-727) the table core: sticky, the row's fill (REG-509), the 1px edge at rest (REG-144) */
+.scroller[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }   /* the core casts it off a scrolled frame; here the scroller inside the card is what scrolls */
 
 /* ---- Head row 1244×56 ---- */
-.head { display: flex; height: 56px; }
-.hCell { position: relative; }   /* the column-resize handle (REG-427) */
-.hCell {
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);   /* p16/24/16/16 */
-  color: var(--om-color-on-surface-secondary);
+.head {
+  composes: head from '../../om/table-core.module.css';   /* (REG-727) the table core: 56, the listing's head cells, label and sort button */
+  display: flex;   /* this table lays its columns out in flex (the cells carry an `order`, REG-454), not on the core's subgrid */
 }
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }   /* 12/Medium, caps as the listing head (REG-243; the mock types "Title") */
-/* Sort is inert (coming soon) — the head keeps the listing's sort-button look (components/leads/table.module.css .hSort). */
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
+.hCell { composes: hCell from '../../om/table-core.module.css'; }   /* p16/24/16/16; relative for the column-resize handle (REG-427) */
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }   /* 12/Medium, caps as the listing head (REG-243; the mock types "Title") */
+/* Sort is inert (coming soon) — the head keeps the listing's sort-button look. */
+.hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns (flex basis = mock width) ---- */
 .colSel { flex: 0 0 56px; padding: var(--om-spacing-3) var(--om-spacing-4); border-right: var(--om-border-1) solid var(--om-color-surface-variant); }   /* p12/16 · right rule */
@@ -71,35 +45,26 @@
 .colMember { flex: var(--cw-assignees, 0 0 160px); }
 .colLead { flex: var(--cw-lead, 0 0 200px); min-width: 0; }   /* the rail's Tasks page only (REG-466); hidden by the layout on a lead's tab */
 .leadLink { display: flex; min-width: 0; text-decoration: none; color: inherit; }
-.leadName { font: var(--om-type-body-m); font-weight: 600; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.leadName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-underline-offset: 2px; text-decoration-thickness: 1px; }   /* (REG-729) 14/20/600 from the token it re-typed */
 .row:hover .leadName, .leadLink:focus-visible .leadName { color: var(--om-color-primary-default); text-decoration: underline; }   /* the listing's name on hover (REG-450) */
 .leadStudio { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.leadPick { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; max-width: 100%; padding: 0 var(--om-spacing-1) 0 var(--om-spacing-2); border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: none; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); cursor: pointer; }
-.leadPick:hover { background: var(--om-color-hover-08p); }
-.leadPickName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .colCreator { flex: var(--cw-creator, 0 0 160px); }   /* REG-239, not in the mock: Avatar 24 + name */
 .colDue { flex: var(--cw-due, 0 0 137px); }
 .colStatus { flex: var(--cw-status, 0 0 118px); }
 .colTags { flex: var(--cw-tags, 0 0 191px); }   /* --cw-*: the user's dragged widths (REG-427) */
 
 /* ---- Rows 1244×48 ---- */
-.row { display: flex; height: 48px; position: relative; transition: background-color var(--motion-hover); }
-.row:hover { background: var(--om-color-primary-variant); }                    /* frame 195: hover fill #f2f2f2 */
-.row[data-selected] { background: var(--om-color-primary-variant); }     /* frame 192: selected fill #eee5ff */
+.row {
+  composes: row from '../../om/table-core.module.css';   /* (REG-727) the table core: hover (frame 195) · selected (frame 192) · selected + hover (REG-449) */
+  display: flex; height: 48px;   /* the mock's 48 (902:26387), in flex like the head */
+}
 /* Unseen task (Type=RW-New): 4px primary band at the row's left edge — the listing's unseen band (REG-131 applied to tasks);
    drawn inside the frozen Selection cell so it rides with it (REG-430). */
 .row[data-unseen] .colSel::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--om-color-primary-default); z-index: 1;
 }
-.cell {
-  display: flex; align-items: center;
-  min-width: 0;
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);   /* p12/24/12/16 */
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
+.cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
 .cell.colSel { padding: var(--om-spacing-3) var(--om-spacing-4); }                                                    /* p12/16 (declared after .cell so it wins the cascade) */
 .cell.colTitle { gap: var(--om-spacing-3); }                                                               /* H g12 */
 .cell.colMember { gap: var(--om-spacing-2); }                                                              /* H g8 */
@@ -230,39 +195,23 @@
   caret-color: var(--om-color-on-surface-default);
 }
 /* (REG-472) The ✕ / ✓ pair under the box's right end, outside it — payments-section.module.css's `.confirm`, the same 24px
-   boxes on the level-2 lift, so the field keeps its full width and the pair reads as a control of the edit, not a cell value. */
+   boxes on the level-2 lift, so the field keeps its full width and the pair reads as a control of the edit, not a cell value.
+   (REG-729) The two are the house IconButton — ✕ the outlined secondary, ✓ `filled` — so they share its hover, focus and touch target;
+   this only adds the lift, and the ✕'s white plate over the row it hangs across (`button.` stays under the button's own hover). */
 .confirm { position: absolute; right: 0; top: calc(100% + 2px); display: inline-flex; gap: var(--om-spacing-1); z-index: 5; }
-.cancelBtn, .okBtn { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-2); cursor: pointer; }
-.cancelBtn { border: var(--om-border-1) solid var(--om-color-on-surface-border); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); }
-.okBtn { border: 0; background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
-.cancelBtn:hover { background: var(--om-color-hover-08p); }
-.okBtn:hover { background: var(--om-color-primary-hover, var(--om-color-primary-default)); }
-.cancelBtn:focus-visible, .okBtn:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
-/* Icon Buttons Primary/24/Filled (done): fill #5500ff, icon #fff — om/icon-button has no filled variant, so it is
-   restyled here (element + attribute beats the primitive's .btn[data-variant] rule). */
+button.confirmBtn { box-shadow: var(--om-elevation-level-2); background: var(--om-color-surface-default); }
 /* Inert affordances of the add row (member · due · tags) — drawn as in the mock, not pressable while adding. */
 .inert { pointer-events: none; }
 
 /* ---- Row hover actions (frame 195 → 606:75167, REG-163): Edit + kebab at 1113,6 → right 24, top 6; H g12; level-1 shadow. ---- */
 .actions {
+  composes: actions from '../../om/table-core.module.css';   /* (REG-727) the table core: parked at the visible right edge (REG-430), 24 in, revealed on hover, focus or an open menu */
   order: 100;   /* the cells carry a flex `order` from Column settings (REG-454); the parked actions stay last whatever the user does */
-  position: sticky; right: 0;   /* the sticky item pins to the scrollport's edge while panning; the inset lives on the inner box so it also holds at rest, when the frame is no scroller (REG-430) */
-  width: 0; overflow: visible; align-self: center; flex-shrink: 0;
-  z-index: 4;
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--motion-hover);
+  flex-shrink: 0;
 }
-.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }   /* parked at the visible right edge (REG-430, the listing's .rowActions) */
-.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
-/* White fill + level-1 shadow live on a wrapper so the DS button / om icon button keep their own hover states. */
-.float {
-  display: inline-flex;
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  box-shadow: var(--om-elevation-level-1);
-}
+.actionsInner { composes: actionsInner from '../../om/table-core.module.css'; }
+.float { composes: float from '../../om/table-core.module.css'; }   /* white fill + level-1 shadow on a wrapper, so the DS button / om icon button keep their own hover states */
 .menuWrap { position: relative; display: inline-flex; }
-.danger { color: var(--om-color-tertiary-red-default); }
 
 /* ---- Bottom bar 902:26450 — 53 tall: 1px top rule + p16/24; "Add Task" link 20 tall. ----
    It sticks to the bottom of the viewport while the table is taller than the page, so Add Task stays reachable
@@ -293,7 +242,7 @@
 /* Responsive (REG-269): a touch device has no hover, so hover-revealed row actions could never be reached.
    Where the pointer cannot hover, they are simply always visible — at the row's END over the 150px band (REG-310). */
 @media (hover: none) {
-  .actions { opacity: 1; pointer-events: auto; position: absolute; right: var(--om-spacing-6); top: 6px; width: auto; align-self: auto; }
+  .actions { opacity: 1; pointer-events: auto; position: absolute; right: var(--om-spacing-6); top: 6px; width: auto; height: auto; align-self: auto; }   /* width / height auto: released, the box takes its content's size (the core parks a zero-size box) */
   .actionsInner { position: static; transform: none; }
 }
 
@@ -379,7 +328,7 @@
   .head { display: none; }
   .row::after { content: none; }   /* (D8) the list places its own kebab — no end band on a phone */
   .card { border: 0; border-radius: 0; background: none; }
-  .card::after { content: none; }
+  .card:not([data-overflow])::after { content: none; }   /* the core's ring selector as written (0,2,1): a bare `.card::after` no longer outranks it */
   /* The separator belongs to the row now: on the desktop table every cell draws it, which turned each wrapped
      row into two ruled bands. */
   /* The list wraps to the screen, so the desktop column floor that made the card scroll sideways is dropped. */
@@ -410,7 +359,7 @@
   .row:has(.colLead) .cell.colSel, .row:has(.colLead) .colTitle .glyph { top: 22px; }
   .cell.colDue { flex: 0 0 auto; order: 3; padding: 0 0 var(--om-spacing-3) 88px; }   /* under the title, on its left edge */
   .cell.colMember { flex: 0 0 auto; order: 4; padding: 0 0 var(--om-spacing-3) var(--om-spacing-3); }
-  .actions { opacity: 1; pointer-events: auto; position: absolute; width: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }
+  .actions { opacity: 1; pointer-events: auto; position: absolute; width: auto; height: auto; top: 50%; right: var(--om-spacing-1); transform: translateY(-50%); }   /* height auto: the kebab's own height, or translateY(-50%) of the core's zero height would drop it half a kebab */
   .actionsInner { position: static; transform: none; }
   .actionsInner > .float:first-child { display: none; }   /* Edit is in the kebab's menu; the row shows one control (direct child only — the kebab has a .float of its own) */
   .float { box-shadow: none; background: transparent; }
@@ -429,9 +378,6 @@
   .row[data-add] .colTitle { padding: var(--om-spacing-2) var(--om-spacing-3); }
   .row[data-add] .colMember, .row[data-add] .colDue { display: none; }
 }
-
-/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
-.row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
 
 /* (audit 2026-09-26, found checking D8) On a phone — a touch pointer — the title button takes its 44px target (`.titleBtn`, REG-273)
    and the rail card's title line centres 35 down its row, while the ring and the checkbox stayed on the mouse's 22: 12px above the

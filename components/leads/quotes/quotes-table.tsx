@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button, Checkbox } from '@/components/ds'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
-import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
@@ -19,7 +18,7 @@ import type { Member, Quote } from '@/lib/db/schema'
 import { Avatar } from '@/components/om/avatar'
 import { displayDate, money } from '@/lib/format'
 import { isQuoteOverdue, quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
-import { DELETE_RULE, validityPassed } from '@/lib/quotes/policy'
+import { validityPassed } from '@/lib/quotes/policy'
 import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-table.module.css'
 
@@ -237,9 +236,9 @@ function QuoteRowView({
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
           {/* (sweep S1 · U-01) through the portal, as the kebab since REG-639: a short table's scroller can't clip it, a sticky layer can't cover it */}
-          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={240} role="menu" sheetTitle="Status">
-            {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
-                aria-current + the "current" meta — DropdownItem takes no attributes. */}
+          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Status">
+            {/* (REG-728) The house row: the current status marked "current" at its end, as the stage menu marks the lead's stage (836:23422);
+                a refused one greyed, "approvers only" in the same place. */}
             {/* The studio's lifecycle, not the full five: a studio that does not review quotes internally can never
                 set "Sent for Approval" or "Approved" (Settings › Leads › Quote approval, user 2026-08-30). Same list the
                 Overview widget draws its track from. A quote already holding a retired status still shows it above. */}
@@ -247,14 +246,7 @@ function QuoteRowView({
               const isCurrent = s === quote.status
               const locked = lockApproved && s === 'Approved' && !isCurrent
               return (
-                <button
-                  key={s} type="button" role="menuitem" className={menuStyles.item}
-                  aria-current={isCurrent ? 'step' : undefined} aria-disabled={locked || undefined} disabled={locked}
-                  onClick={locked ? undefined : pickStatus(s)}
-                >
-                  <span className={styles.itemText}>{s}</span>
-                  {isCurrent ? <span className={styles.meta}>current</span> : locked ? <span className={styles.meta}>approvers only</span> : null}
-                </button>
+                <DropdownItem key={s} disabled={locked} meta={isCurrent ? 'current' : locked ? 'approvers only' : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
               )
             })}
           </PortalMenu>
@@ -307,7 +299,7 @@ function QuoteRowView({
                           aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenuToggle(e.currentTarget)} />
             </Tooltip>
           </span>
-          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={200} role="menu" sheetTitle={quote.title}>
+          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={quote.title}>
             {/* 910:36723 — verbatim order. */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
             <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
@@ -316,7 +308,9 @@ function QuoteRowView({
             {/* (REG-639, X-Ray parity Q-12) the quote editor's kebab entry, on the row — and a phone's way into X-Ray from a lead */}
             <DropdownItem onSelect={pick('xray')}>Compare with another quote</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
-            <DropdownItem disabled={!deletable} onSelect={pick('delete')}><span className={styles.danger}>Delete</span>{deletable ? null : <span className={styles.meta} title={DELETE_RULE}>creator, Owner or Admin</span>}</DropdownItem>   {/* (sweep S1) the rule's own people — Admins may too */}
+            {/* (sweep S1) the rule's own people — Admins may too. (REG-728) The row's own tone — a locked Delete reads disabled, not red — and
+                its reason in the row's reason line, under its words (the full rule was a native title, which never shows on touch). */}
+            <DropdownItem tone="danger" disabled={!deletable} title={deletable ? undefined : 'creator, Owner or Admin'} onSelect={pick('delete')}>Delete</DropdownItem>
           </PortalMenu>
         </span>
         </span>

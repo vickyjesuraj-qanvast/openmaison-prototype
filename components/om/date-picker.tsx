@@ -7,6 +7,7 @@ import { Icon } from './icon'
 import { Tooltip } from './tooltip'
 import { anchoredSurface } from '@/lib/motion'
 import { PortalMenu } from './portal-menu'
+import { Sheet, useSheetLayout } from './sheet'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './date-picker.module.css'
 
@@ -79,12 +80,16 @@ export function DatePicker({
     if (open) { const b = value ?? today; setView({ y: b.getFullYear(), m: b.getMonth() }); setMode('days') }
   }
   const panel = useRef<HTMLDivElement | null>(null)
+  /* (REG-728) ≤767 the picker is a bottom sheet, as every other picker on a phone (REG-353; the owner, 2026-09-29, "as recommended"):
+     the same calendar in the house Sheet — its head, grabber, scrim — instead of a 256px card anchored to a field. The close rules
+     below hold as they are: a press outside the calendar (the scrim, the sheet's close) closes it, as does Esc. */
+  const sheet = useSheetLayout()
 
   // Position from the anchor before paint (DOM write only); flips above when there is no room below.
   // A layout effect, not a callback ref: motion's ref wrapper only invokes the ref on mount.
   useLayoutEffect(() => {
     const el = panel.current, a = anchorRef.current
-    if (!open || !el || !a) return
+    if (!open || !el || !a || sheet) return   // a sheet sits on the bottom edge: nothing to anchor
     const r = a.getBoundingClientRect()
     let top = r.bottom + GAP, flipped = false
     const height = withTime ? TIME_HEIGHT : HEIGHT, width = withTime ? TIME_WIDTH : WIDTH
@@ -93,7 +98,7 @@ export function DatePicker({
     el.style.top = `${top}px`
     el.style.left = `${left}px`
     el.style.transformOrigin = flipped ? 'bottom left' : 'top left'
-  }, [open, anchorKey, anchorRef, withTime])
+  }, [open, anchorKey, anchorRef, withTime, sheet])
 
   useEffect(() => {
     if (!open) return
@@ -178,75 +183,90 @@ export function DatePicker({
     buttons[next]?.focus()
   }
 
+  const body = (
+    <>
+    <div className={styles.head}>
+      <button type="button" className={styles.monthBtn} aria-expanded={mode === 'years'}
+              aria-label={mode === 'years' ? 'Back to days' : 'Choose a year'} onClick={() => setMode((m) => (m === 'days' ? 'years' : 'days'))}>
+        {MONTHS[view.m]} {view.y}
+        <Icon name="arrow_drop_down" size={24} fill className={mode === 'years' ? styles.flip : undefined} />
+      </button>
+      <span className={styles.pager}>
+        <Tooltip label="Today">
+          <button type="button" className={styles.pageBtn} aria-label="Today" onClick={pickToday}>
+            <Icon name="today" size={20} />
+          </button>
+        </Tooltip>
+        <Tooltip label={mode === 'years' ? 'Earlier years' : 'Previous month'}>
+          <button type="button" className={styles.pageBtn} aria-label={mode === 'years' ? 'Earlier years' : 'Previous month'}
+                  onClick={() => (mode === 'years' ? setView((v) => ({ ...v, y: v.y - YEARS_PER_PAGE })) : step(-1))}>
+            <Icon name="chevron_left" size={20} />
+          </button>
+        </Tooltip>
+        <Tooltip label={mode === 'years' ? 'Later years' : 'Next month'}>
+          <button type="button" className={styles.pageBtn} aria-label={mode === 'years' ? 'Later years' : 'Next month'}
+                  onClick={() => (mode === 'years' ? setView((v) => ({ ...v, y: v.y + YEARS_PER_PAGE })) : step(1))}>
+            <Icon name="chevron_right" size={20} />
+          </button>
+        </Tooltip>
+      </span>
+    </div>
+    {mode === 'days' ? (
+      <>
+        <div className={styles.weekdays} aria-hidden>
+          {WEEKDAYS.map((w, i) => <span key={i} className={styles.weekday}>{w}</span>)}
+        </div>
+        <div className={styles.grid} data-days onKeyDown={onDaysKey}>
+          {gridFor(view.y, view.m).map(({ date, inMonth }) => (
+            <button key={date.getTime()} type="button" className={styles.day}
+                    data-muted={!inMonth || undefined} data-today={sameDay(today, date) || undefined} data-selected={sameDay(value, date) || undefined}
+                    aria-pressed={sameDay(value, date) || undefined} aria-current={sameDay(today, date) ? 'date' : undefined}
+                    aria-label={`${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`}
+                    onClick={() => onSelect(withTime ? withDay(date) : date)}>
+              <span>{date.getDate()}</span>{/* wrapped: the ::before fill would otherwise paint over a bare text node */}
+            </button>
+          ))}
+        </div>
+      </>
+    ) : (
+      <div className={styles.years} role="listbox" aria-label="Year">
+        {Array.from({ length: YEARS_PER_PAGE }, (_, i) => yearStart + i).map((y) => (
+          <button key={y} type="button" role="option" className={styles.year} aria-selected={y === view.y || undefined}
+                  data-current={y === today.getFullYear() || undefined} data-selected={y === view.y || undefined}
+                  onClick={() => { setView((v) => ({ ...v, y })); setMode('days') }}>
+            {y}
+          </button>
+        ))}
+      </div>
+    )}
+    {withTime && mode === 'days' ? (
+      <div className={styles.timeRow} role="group" aria-label="Time">
+        <TimeSelect label="Hour" value={hour12} options={HOURS} placeholder="hh" onChange={setHour12} />
+        <span className={styles.colon} aria-hidden>:</span>
+        <TimeSelect label="Minute" value={minute} options={MINUTES} placeholder="mm" onChange={setMinute} />
+        <TimeSelect label="AM or PM" value={period} options={PERIODS} placeholder="AM" onChange={setPeriod} />
+        <button type="button" className={styles.done} onClick={() => { focusAnchor(anchorRef.current); onClose() }}>Done</button>
+      </div>
+    ) : null}
+    </>
+  )
+  if (sheet) {
+    return (
+      <Sheet open={open} onClose={onClose} title={label}>
+        <div ref={panel} id={PANEL_ID} className={styles.sheetPanel} data-time={withTime || undefined} role="group" aria-label={label}
+             onPointerDown={(e) => e.preventDefault() /* keep the anchor field focused while picking */}>
+          {body}
+        </div>
+      </Sheet>
+    )
+  }
   return isClient ? createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div ref={panel} id={PANEL_ID} className={styles.panel} data-time={withTime || undefined} role="dialog" aria-label={label} tabIndex={-1}
                     variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
                     onPointerDown={(e) => e.preventDefault() /* keep the anchor field focused while picking with the mouse */}>
-          <div className={styles.head}>
-            <button type="button" className={styles.monthBtn} aria-expanded={mode === 'years'}
-                    aria-label={mode === 'years' ? 'Back to days' : 'Choose a year'} onClick={() => setMode((m) => (m === 'days' ? 'years' : 'days'))}>
-              {MONTHS[view.m]} {view.y}
-              <Icon name="arrow_drop_down" size={24} fill className={mode === 'years' ? styles.flip : undefined} />
-            </button>
-            <span className={styles.pager}>
-              <Tooltip label="Today">
-                <button type="button" className={styles.pageBtn} aria-label="Today" onClick={pickToday}>
-                  <Icon name="today" size={20} />
-                </button>
-              </Tooltip>
-              <Tooltip label={mode === 'years' ? 'Earlier years' : 'Previous month'}>
-                <button type="button" className={styles.pageBtn} aria-label={mode === 'years' ? 'Earlier years' : 'Previous month'}
-                        onClick={() => (mode === 'years' ? setView((v) => ({ ...v, y: v.y - YEARS_PER_PAGE })) : step(-1))}>
-                  <Icon name="chevron_left" size={20} />
-                </button>
-              </Tooltip>
-              <Tooltip label={mode === 'years' ? 'Later years' : 'Next month'}>
-                <button type="button" className={styles.pageBtn} aria-label={mode === 'years' ? 'Later years' : 'Next month'}
-                        onClick={() => (mode === 'years' ? setView((v) => ({ ...v, y: v.y + YEARS_PER_PAGE })) : step(1))}>
-                  <Icon name="chevron_right" size={20} />
-                </button>
-              </Tooltip>
-            </span>
-          </div>
-          {mode === 'days' ? (
-            <>
-              <div className={styles.weekdays} aria-hidden>
-                {WEEKDAYS.map((w, i) => <span key={i} className={styles.weekday}>{w}</span>)}
-              </div>
-              <div className={styles.grid} data-days onKeyDown={onDaysKey}>
-                {gridFor(view.y, view.m).map(({ date, inMonth }) => (
-                  <button key={date.getTime()} type="button" className={styles.day}
-                          data-muted={!inMonth || undefined} data-today={sameDay(today, date) || undefined} data-selected={sameDay(value, date) || undefined}
-                          aria-pressed={sameDay(value, date) || undefined} aria-current={sameDay(today, date) ? 'date' : undefined}
-                          aria-label={`${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`}
-                          onClick={() => onSelect(withTime ? withDay(date) : date)}>
-                    <span>{date.getDate()}</span>{/* wrapped: the ::before fill would otherwise paint over a bare text node */}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className={styles.years} role="listbox" aria-label="Year">
-              {Array.from({ length: YEARS_PER_PAGE }, (_, i) => yearStart + i).map((y) => (
-                <button key={y} type="button" role="option" className={styles.year} aria-selected={y === view.y || undefined}
-                        data-current={y === today.getFullYear() || undefined} data-selected={y === view.y || undefined}
-                        onClick={() => { setView((v) => ({ ...v, y })); setMode('days') }}>
-                  {y}
-                </button>
-              ))}
-            </div>
-          )}
-          {withTime && mode === 'days' ? (
-            <div className={styles.timeRow} role="group" aria-label="Time">
-              <TimeSelect label="Hour" value={hour12} options={HOURS} placeholder="hh" onChange={setHour12} />
-              <span className={styles.colon} aria-hidden>:</span>
-              <TimeSelect label="Minute" value={minute} options={MINUTES} placeholder="mm" onChange={setMinute} />
-              <TimeSelect label="AM or PM" value={period} options={PERIODS} placeholder="AM" onChange={setPeriod} />
-              <button type="button" className={styles.done} onClick={() => { focusAnchor(anchorRef.current); onClose() }}>Done</button>
-            </div>
-          ) : null}
+          {body}
         </motion.div>
       ) : null}
     </AnimatePresence>,

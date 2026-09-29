@@ -21,9 +21,12 @@
 .meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .price { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .unit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.empty { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-2); padding: 64px var(--om-spacing-6); text-align: center; border: var(--om-border-1) dashed var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.emptyTitle { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); }
-.emptyHelp { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); max-width: 56ch; }
+/* (REG-729) Empty: the house library empty's recipe (components/om/folders/folder-empty — the 72 well, heading-h4, the grey line, p80 in a
+   bordered r8 box), composed rather than copied; it was a dashed box with a heading-h5 and no glyph. */
+.empty { composes: empty from '../../../om/folders/folder-empty.module.css'; }
+.emptyGlyph { composes: glyph from '../../../om/folders/folder-empty.module.css'; }
+.emptyTitle { composes: title from '../../../om/folders/folder-empty.module.css'; }
+.emptyHelp { composes: help from '../../../om/folders/folder-empty.module.css'; }
 @media (hover: none) { .row:hover { background: none; } .row[data-selected] { background: var(--om-color-primary-variant); } }
 @media (max-width: 767px) {
   .row { grid-template-columns: auto 40px minmax(0, 1fr); row-gap: 2px; }

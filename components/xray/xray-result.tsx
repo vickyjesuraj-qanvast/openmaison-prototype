@@ -138,7 +138,7 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
                           <Dropdown open={kebab} onClose={() => setKebab(false)} align="right" sheetTitle={title}>
                             {record.quote?.live ? <DropdownItem disabled={rerunning} onSelect={() => { void runAgain() }}>Run again</DropdownItem> : null}
                             {quoteHref ? <DropdownItem onSelect={() => { setKebab(false); router.push(quoteHref) }}>Open the quote</DropdownItem> : null}
-                            <DropdownItem tone="danger" disabled={!record.canDelete} title={record.canDelete ? undefined : COMPARISON_DELETE_RULE} onSelect={() => { setKebab(false); setDeleting(true) }}>Delete</DropdownItem>
+                            <DropdownItem tone="danger" disabled={!record.canDelete} help={record.canDelete ? undefined : COMPARISON_DELETE_RULE} onSelect={() => { setKebab(false); setDeleting(true) }}>Delete</DropdownItem>   {/* (REG-728) the rule in the row, not a native title */}
                           </Dropdown>
                         </span>
                       </>} />

@@ -77,7 +77,7 @@ const PAINT = sql(`select id from price_book_items where name='Painting, whole u
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)
     await card(page, 'Painting, whole unit').getByRole('button', { name: 'More options for Painting, whole unit' }).click(); await page.waitForTimeout(300)
     const menu = page.getByRole('menu').last()
-    const dis = async (n) => (await menu.getByRole('menuitem', { name: n, exact: true }).getAttribute('aria-disabled')) === 'true'
+    const dis = async (n) => (await menu.getByRole('menuitem', { name: new RegExp('^' + n) }).first().getAttribute('aria-disabled')) === 'true'
     ok('the kebab: Open, and Duplicate · Rename · Delete disabled', await menu.getByRole('menuitem', { name: 'Open', exact: true }).count() === 1 && await dis('Duplicate') && await dis('Rename') && await dis('Delete'))
     await shot('04-designer-kebab')
     await page.keyboard.press('Escape'); await page.waitForTimeout(200)

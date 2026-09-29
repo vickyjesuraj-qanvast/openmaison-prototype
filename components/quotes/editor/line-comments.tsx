@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { CommentAvatar } from '@/components/leads/tasks/comments-panel'
 import { relativeTime } from '@/lib/format'
 import type { Member, QuoteItemComment } from '@/lib/db/schema'
@@ -87,17 +88,8 @@ export function LineCommentsDrawer({ open, lines, comments, focus, me, members, 
                     <div className={styles.meta}>
                       <span className={styles.author}>{mine ? 'You' : a?.name ?? 'Member'}</span>
                       <span className={styles.time}>{relativeTime(c.createdAt, new Date(now))}</span>
-                      <div className={styles.kebabWrap}>
-                        <Tooltip label="Comment actions" disabled={menuFor === c.id}>
-                          <button type="button" className={styles.kebab} aria-label="Comment actions" aria-haspopup="menu" aria-expanded={menuFor === c.id} onClick={() => setMenuFor((m) => (m === c.id ? null : c.id))}>
-                            <Icon name="more_horiz" size={20} />
-                          </button>
-                        </Tooltip>
-                        <Dropdown open={menuFor === c.id} onClose={() => setMenuFor(null)} align="right" sheetTitle="Comment">
-                          {mine ? <DropdownItem onSelect={() => { setMenuFor(null); setEditing({ id: c.id, body: c.body }) }}>Edit</DropdownItem> : null}
-                          <DropdownItem onSelect={() => { setMenuFor(null); onDelete(c.id) }}><span className={styles.danger}>Delete</span></DropdownItem>
-                        </Dropdown>
-                      </div>
+                      <CommentMenu open={menuFor === c.id} mine={mine} onToggle={() => setMenuFor((m) => (m === c.id ? null : c.id))} onClose={() => setMenuFor(null)}
+                                   onEdit={() => { setMenuFor(null); setEditing({ id: c.id, body: c.body }) }} onDelete={() => { setMenuFor(null); onDelete(c.id) }} />
                     </div>
                     {isEditing && editing ? (
                       <div className={styles.editBlock}>
@@ -117,5 +109,24 @@ export function LineCommentsDrawer({ open, lines, comments, focus, me, members, 
         ))}
       </div>
     </Drawer>
+  )
+}
+
+/** (REG-728) A comment's kebab: its menu opens through the body portal (PortalMenu), as every row menu does — the inline one sat inside
+ *  the drawer's scroller. The trigger stays the Tasks thread's; Delete is the house row's danger tone (the same red). */
+function CommentMenu({ open, mine, onToggle, onClose, onEdit, onDelete }: { open: boolean; mine: boolean; onToggle: () => void; onClose: () => void; onEdit: () => void; onDelete: () => void }) {
+  const anchor = useRef<HTMLDivElement>(null)
+  return (
+    <div ref={anchor} className={styles.kebabWrap}>
+      <Tooltip label="Comment actions" disabled={open}>
+        <button type="button" className={styles.kebab} aria-label="Comment actions" aria-haspopup="menu" aria-expanded={open} onClick={onToggle}>
+          <Icon name="more_horiz" size={20} />
+        </button>
+      </Tooltip>
+      <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle="Comment">
+        {mine ? <DropdownItem onSelect={onEdit}>Edit</DropdownItem> : null}
+        <DropdownItem tone="danger" onSelect={onDelete}>Delete</DropdownItem>
+      </PortalMenu>
+    </div>
   )
 }

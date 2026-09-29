@@ -10,6 +10,7 @@ import { Avatar } from '@/components/om/avatar'
 import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
@@ -84,7 +85,7 @@ export function TaskTemplateEditor({ data, from }: { data: TaskTemplateEditorDat
                        chips={<><MetaChip>{steps.length} {steps.length === 1 ? 'step' : 'steps'}</MetaChip><MetaChip>{usedBy === 0 ? 'Not used yet' : `Added to ${usedBy} ${usedBy === 1 ? 'lead' : 'leads'}`}</MetaChip></>}
                        savedLabel={savedLabel(updatedAt, clock)} primary={{ label: 'Done', onPress: close }}
                        menu={<>
-                         <DropdownItem onSelect={() => setAddOpen(true)} disabled={steps.length === 0} title={steps.length === 0 ? 'Add a step first' : undefined}>Add to a lead…</DropdownItem>
+                         <DropdownItem onSelect={() => setAddOpen(true)} disabled={steps.length === 0} help={steps.length === 0 ? 'Add a step first' : undefined}>Add to a lead…</DropdownItem>   {/* (REG-728) the reason in the row */}
                          <DropdownDivider />
                          <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateTaskTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/tasks/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                          <DropdownDivider />
@@ -146,19 +147,16 @@ function StepRow({ step, index, team, tags, keepMembers, keepDescription, onPatc
                  onChange={(v) => { setDueText(v); onPatch({ dueDays: v.trim() === '' ? null : Math.max(0, Math.min(365, Number(v))) }) }} onBlur={() => setDueText(null)} placeholder="No due date" />
       <span className={styles.stepPick}>
         <Tooltip label={keepMembers ? 'Team members' : 'Members are not kept — switch it on above'}>
-          <button type="button" className={styles.chipBtn} data-on={members.length ? '' : undefined} aria-haspopup="dialog" aria-expanded={assignOpen} disabled={!keepMembers}
-                  onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setAssignPos({ top: r.bottom + 4, left: r.left }); setAssignOpen((o) => !o) }}>
-            {members.length ? <span className={styles.avatars}>{members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} tooltip={false} />)}</span> : <Icon name="person_add" size={20} weight={300} />}
-            {members.length ? (members.length > 3 ? `+${members.length - 3}` : '') : 'Members'}
-          </button>
+          {/* (REG-729) the house compact select trigger — one of the seven hand-rolled ones it replaced */}
+          <SelectTrigger label="Team members" placeholder="Members" open={assignOpen} disabled={!keepMembers}
+                         value={members.length ? <span className={styles.pickValue}><span className={styles.avatars}>{members.slice(0, 3).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} tooltip={false} />)}</span>{members.length > 3 ? `+${members.length - 3}` : null}</span> : ''}
+                         onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setAssignPos({ top: r.bottom + 4, left: r.left }); setAssignOpen((o) => !o) }} />
         </Tooltip>
         <AssignPopover open={assignOpen} team={team} value={step.memberIds} position={assignPos} onClose={() => setAssignOpen(false)} onApply={(ids) => { onPatch({ memberIds: ids }); setAssignOpen(false) }} />
       </span>
       <span className={styles.stepPick}>
         <Tooltip label="Tags">
-          <button ref={setTagEl} type="button" className={styles.chipBtn} data-on={stepTags.length ? '' : undefined} aria-haspopup="dialog" aria-expanded={tagOpen} onClick={() => setTagOpen((o) => !o)}>
-            <Icon name="sell" size={20} weight={300} />{stepTags.length ? stepTags.map((t) => t.name).join(', ') : 'Tags'}
-          </button>
+          <SelectTrigger ref={setTagEl} label="Tags" placeholder="Tags" open={tagOpen} value={stepTags.length ? stepTags.map((t) => t.name).join(', ') : ''} onClick={() => setTagOpen((o) => !o)} />
         </Tooltip>
         <TagPicker open={tagOpen} tags={tags} value={step.tagIds} anchor={tagEl} onChange={(ids) => onPatch({ tagIds: ids })} onManage={() => setTagOpen(false)} onClose={() => setTagOpen(false)} />
       </span>

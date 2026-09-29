@@ -1,8 +1,8 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
-import { menuSideFor } from '@/components/leads/menu-side'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import { Button, Checkbox, Tag } from '@/components/ds'
 import { useColumnDrag } from '@/components/om/column-drag'
@@ -57,6 +57,33 @@ const colStyle = (key: ColumnKey, dragged: number | undefined) => (dragged ? { f
 
 /** (REG-608) The earliest dated open task — the listing's tasks are already ordered by due date, nulls last. */
 const nextDue = (row: LeadRow) => row.tasks.find((t) => t.dueAt) ?? null
+
+/** (REG-728) The row kebab opens through the body portal, as every row menu does (components/leads/quotes/quotes-table.tsx): the
+ *  table's sideways scroller can no longer clip it, and PortalMenu flips on the viewport itself — the menu-side.ts measure retired
+ *  here. Each row owns its anchor, so the menu hangs from its own kebab. Items, tones and the phone sheet are the inline menu's. */
+function RowMenu({ row, open, canDelete, onToggle, onClose, onDelete, onReturn }: {
+  row: LeadRow; open: boolean; canDelete: boolean
+  onToggle: () => void; onClose: () => void; onDelete: (row: LeadRow) => void; onReturn: (row: LeadRow) => void
+}) {
+  const anchor = useRef<HTMLSpanElement>(null)
+  return (
+    <span className={styles.menuWrap} ref={anchor}>
+      <span className={styles.float}>
+        <Tooltip label="More actions" disabled={open}>
+          <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
+                      aria-haspopup="menu" aria-expanded={open} onClick={onToggle} />
+        </Tooltip>
+      </span>
+      <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={row.name}>
+        {canDelete ? <DropdownItem tone="danger" onSelect={() => { onClose(); onDelete(row) }}>Delete</DropdownItem> : null}
+        {canReturnLead(row) ? (
+          /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
+          <DropdownItem onSelect={() => { onClose(); onReturn(row) }}>Return Lead</DropdownItem>
+        ) : null}
+      </PortalMenu>
+    </span>
+  )
+}
 
 function sortValue(row: LeadRow, key: ColumnKey): string | number {
   switch (key) {
@@ -130,7 +157,7 @@ export function LeadsTable({
 }) {
   const [sort, setSort] = useState<Sort>(null)
   const [menuRow, setMenuRow] = useState<string | null>(null)
-  const [menuSide, setMenuSide] = useState<'down' | 'up'>('down')
+  const closeMenu = useCallback(() => setMenuRow(null), [])   // (REG-728) stable, so the open PortalMenu keeps its listeners across renders
   // Render-phase adjust: a Filters-modal sort change owns the column sort.
   const [seenFilterSort, setSeenFilterSort] = useState(filterSort)
   if (seenFilterSort !== filterSort) {
@@ -415,29 +442,9 @@ export function LeadsTable({
                   <span className={styles.float}>
                     <Button variant="primary" appearance="outlined" onPress={() => onEditRow(row)}>Edit</Button>
                   </span>
-                  <span className={styles.menuWrap}>
-                    <span className={styles.float}>
-                      <Tooltip label="More actions" disabled={menuRow === row.id}>
-                        <IconButton icon="more_vert" label={`More actions for ${row.name}`} variant="primary"
-                                    aria-haspopup="menu" aria-expanded={menuRow === row.id}
-                                    onClick={(e) => {
-                                      // (REG-286) Which side has room, from the ONE shared rule (components/leads/menu-side.ts):
-                                      // measured off this trigger and the height of THIS menu (1 or 2 items), never counted
-                                      // from the row index. The answer used to be written out in five places and two of the
-                                      // copies had drifted — Tasks and Files were still counting rows.
-                                      setMenuSide(menuSideFor(e.currentTarget, (canDelete ? 1 : 0) + (canReturnLead(row) ? 1 : 0)))
-                                      setMenuRow((m) => (m === row.id ? null : row.id))
-                                    }} />
-                      </Tooltip>
-                    </span>
-                    <Dropdown open={menuRow === row.id} onClose={() => setMenuRow(null)} align="right" side={menuSide} sheetTitle={row.name}>
-                      {canDelete ? <DropdownItem tone="danger" onSelect={() => { setMenuRow(null); onDeleteRow(row) }}>Delete</DropdownItem> : null}
-                      {canReturnLead(row) ? (
-                        /* Return Lead only for Qanvast-sourced leads (user 2026-08-29) with no return processing / approved — the overview kebab's rule (lib/leads/stage-policy.ts) */
-                        <DropdownItem onSelect={() => { setMenuRow(null); onReturnRow(row) }}>Return Lead</DropdownItem>
-                      ) : null}
-                    </Dropdown>
-                  </span>
+                  <RowMenu row={row} open={menuRow === row.id} canDelete={canDelete}
+                           onToggle={() => setMenuRow((m) => (m === row.id ? null : row.id))} onClose={closeMenu}
+                           onDelete={onDeleteRow} onReturn={onReturnRow} />
                 </span>
               </span>
             </div>

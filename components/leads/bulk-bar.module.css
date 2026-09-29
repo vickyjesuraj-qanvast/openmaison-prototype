@@ -1,58 +1,10 @@
-.bar {
-  position: fixed; left: 50%; bottom: calc(32px + var(--bottom-dock, 0px)); z-index: 80; transition: bottom var(--motion-toggle);
-  display: flex; align-items: center; gap: var(--om-spacing-4);
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-primary-default);
-  border-radius: var(--om-radius-2);
-  box-shadow: var(--om-elevation-level-3);
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-3);
-}
-.bar[data-inset] { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) inside a full-screen sheet it clears the home indicator; 24 where env() is 0 */
-.count {
-  width: 24px; height: 24px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--om-color-primary-default);
-  color: var(--om-color-on-primary-default);
-  border-radius: var(--om-radius-1);
-  font: var(--om-type-subheading-s);
-}
-.link {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-primary-default);
-  transition: color var(--motion-hover);
-}
-.link:hover { color: var(--om-color-on-primary-variant); }
-.link[data-danger] { color: var(--om-color-tertiary-red-default); }
-.link[data-danger]:hover { color: var(--om-color-on-tertiary-red-variant); }
-.divider { width: 1px; height: 20px; background: var(--om-color-surface-variant); }
-.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
-
-/* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
-   (REG-358, user 2026-09-06: "it should be in one line") The bar used to wrap at ≤767 and four stacked lines
-   read as a broken card rather than a selection bar. It stays ONE line: the 16 rhythm tightens to 8, the
-   padding to 8/12, and the actions never break. Where even that is wider than the screen (a long action set
-   at the 320 floor) the bar scrolls inside itself — one line always, nothing ever clipped. */
-@media (max-width: 767px) {
-  .bar {
-    bottom: calc(var(--app-mobile-dock-height) + 16px + var(--bottom-dock, 0px));   /* (REG-298) above the dock */
-    max-width: calc(100vw - 16px);
-    flex-wrap: nowrap; gap: var(--om-spacing-2);
-    padding: var(--om-spacing-2) var(--om-spacing-3);
-    overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-  .bar::-webkit-scrollbar { display: none; }
-  .bar > * { flex-shrink: 0; }
-  .link { white-space: nowrap; }
-}
-
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   Every action here is a bare text button one line tall, and the close is a 20px glyph — under a fingertip
-   they sit inside a bar that also holds a "Delete" a mis-tap away. At ≤767 each takes a 44px box; the type,
-   the colours and the 16px rhythm are the mock's. The count chip is a label, not a control, so it stays 24.
-   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .link { display: inline-flex; align-items: center; min-height: 44px; }
-  .close { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
-}
+/*
+ * (REG-729) One bulk bar. The owner's pick (2026-09-29) is the Lead Details bar (902:26567): count box 24 in subheading-m, the actions
+ * 24 apart, a 1×24 rule, the house 24 close — so the listing's bar is that bar, composed from its one stylesheet (its position, its
+ * one-line phone form and its touch boxes come with it). The copy that lived here — count in subheading-s, 16 apart, a rule between
+ * every action, a 20px close (779:26316) — is gone.
+ */
+.bar { composes: bar from './tasks/detail-bulk-bar.module.css'; }
+.count { composes: count from './tasks/detail-bulk-bar.module.css'; }
+.link { composes: link from './tasks/detail-bulk-bar.module.css'; }
+.rule { composes: rule from './tasks/detail-bulk-bar.module.css'; }

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, SearchBar } from '@/components/ds'
 import { PageReveal } from '@/components/shell/page-reveal'
+import { PageHeaderL2 } from '@/components/shell/page-header-l2'
 import { ImportsSkeleton } from '@/components/shell/skeleton'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
@@ -84,21 +85,11 @@ function View({ imports }: { imports: ImportBatch[] }) {
   return (
     <PageReveal skeleton={<ImportsSkeleton />}>
         <div className={pageStyles.body}>
-          <header className={styles.header}>
-            <Tooltip label="Back to Leads">
-              <button type="button" className={styles.back} aria-label="Back to Leads" onClick={() => router.push('/leads')}>
-                <Icon name="arrow_back" size={24} weight={300} />
-              </button>
-            </Tooltip>
-            <div className={styles.titleBlock}>
-              <span className={styles.crumb}>Leads / </span>
-              <h1 className={styles.title}>Lead Import History</h1>
-            </div>
-            <div className={styles.actions}>
-              <TemplateButton />
-              {uploadButton}
-            </div>
-          </header>
+          {/* (REG-729) The house L2 header, as Insights has it (components/shell/page-header-l2.tsx): the 1px stroke at rest and the
+              level-1 only while the page scrolls under it, the back arrow's hover plate, and Esc as Back once nothing is open (REG-713).
+              The hand-rolled copy wore its shadow always and drew no stroke. The two actions wrap as one group on the narrowest phones. */}
+          <PageHeaderL2 backHref="/leads" crumb="Leads" title="Lead Import History"
+                        actions={<span className={styles.headActions}><TemplateButton />{uploadButton}</span>} />
 
           {imports.length === 0 ? (
             <div className={styles.empty}>
@@ -144,19 +135,21 @@ function View({ imports }: { imports: ImportBatch[] }) {
               </div>
 
               {/* Responsive (REG-269): below 1025 the table scrolls inside this box and the Date column
-                  freezes — data-scrolled turns its shadow on only while the box is scrolled sideways. */}
+                  freezes — data-scrolled turns its shadow on only while the box is scrolled sideways.
+                  (REG-727) The table core: the Date cells wear .pin and, the last frozen column, data-pin-edge — the 1px edge at
+                  rest at every width. */}
               <div className={styles.tableWrap}
                    onScroll={(e) => { e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0) }}>
                 <div className={styles.table} role="table" aria-label="Import history" style={{ '--imports-min': `${COLS.reduce((w, c) => w + (importWidths[c.key] ?? c.width), 0)}px` } as CSSProperties}>
                   <div className={styles.headRow} role="row">
                     {COLS.map((c) => (
-                      <div key={c.key} className={styles.hCell} style={colStyle(c.key, c.width)} role="columnheader">
+                      <div key={c.key} className={`${styles.hCell}${c.key === 'date' ? ` ${styles.pin}` : ''}`} data-pin-edge={c.key === 'date' || undefined} style={colStyle(c.key, c.width)} role="columnheader">
                         {'sortable' in c && c.sortable ? (
                           <button type="button" className={styles.hSort} data-sorted={dateDir !== 'none' || undefined}
                                   onClick={() => setDateDir((d) => (d === 'none' ? 'desc' : d === 'desc' ? 'asc' : 'none'))}>
-                            {c.label}<Icon name={dateDir === 'none' ? 'unfold_more' : dateDir === 'desc' ? 'arrow_downward' : 'arrow_upward'} size={16} />
+                            <span className={styles.hLabel}>{c.label}</span><Icon name={dateDir === 'none' ? 'unfold_more' : dateDir === 'desc' ? 'arrow_downward' : 'arrow_upward'} size={16} />
                           </button>
-                        ) : c.label}
+                        ) : <span className={styles.hLabel}>{c.label}</span>}
                         <ColumnResizer table="imports" column={c.key} label={c.label} min={72} />
                       </div>
                     ))}
@@ -168,7 +161,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                        so a screen reader saw rows of generic children and dropped out of table mode — no column
                        announcements, no cell navigation. Additive only; nothing here is styled by role. */
                     <div key={b.id} className={styles.row} role="row">
-                      <div className={styles.cell} style={colStyle('date', 141)} role="cell"><span>{displayDate(b.createdAt)}</span></div>
+                      <div className={`${styles.cell} ${styles.pin}`} data-pin-edge="" style={colStyle('date', 141)} role="cell"><span>{displayDate(b.createdAt)}</span></div>
                       <div className={`${styles.cell} ${styles.fileName}`} style={colStyle('file', 285)} role="cell"><span>{b.fileName}</span></div>
                       <div className={styles.cell} style={colStyle('total', 118)} role="cell"><span>{b.totalRows}</span></div>
                       <div className={styles.cell} style={colStyle('imported', 142)} role="cell"><span>{b.importedRows}</span></div>
@@ -176,7 +169,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
                       <div className={styles.cell} style={colStyle('log', 232)} role="cell">
                         {b.skippedRows > 0 ? (
                           <a className={styles.link} href={`/leads/imports/${b.id}/skipped`} download>Download Skipped Records</a>
-                        ) : <span style={{ color: 'var(--om-color-on-surface-secondary)' }}>—</span>}
+                        ) : <span className={styles.none}>—</span>}
                       </div>
                     </div>
                   ))}

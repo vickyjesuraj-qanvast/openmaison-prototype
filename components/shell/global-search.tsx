@@ -5,7 +5,9 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { anchoredSurface } from '@/lib/motion'
+import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { Avatar } from '@/components/om/avatar'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Chips } from '@/components/om/chips'
@@ -180,7 +182,8 @@ export function GlobalSearch() {
         <div key={key} {...common} onClick={() => choose(item)}>
           <span className={styles.glyph}><Icon name="history" size={20} weight={300} /></span>
           <span className={styles.text}><span className={styles.title}>{item.text}</span></span>
-          <button type="button" className={styles.forget} aria-label={`Remove “${item.text}” from recent searches`} onClick={(e) => { e.stopPropagation(); forget(item.text) }}><Icon name="close" size={16} /></button>
+          {/* (REG-729) the house 24 bare icon button (r4, its 44 touch overlay) */}
+          <IconButton icon="close" label={`Remove “${item.text}” from recent searches`} size={24} variant="bare" iconSize={18} className={styles.forget} onClick={(e) => { e.stopPropagation(); forget(item.text) }} />
         </div>
       )
     }
@@ -215,8 +218,8 @@ export function GlobalSearch() {
                role="combobox" aria-expanded aria-controls="gs-list" aria-autocomplete="list" aria-activedescendant={items.length ? `gs-opt-${at}` : undefined}
                onChange={(e) => { setQuery(e.target.value); setActive(0) }} onKeyDown={onKeyDown} spellCheck={false} autoComplete="off" />
         {loading ? <span className={styles.spinner} aria-hidden /> : null}
-        {query ? <button type="button" className={styles.clear} aria-label="Clear the search" onClick={() => { setQuery(''); setActive(0); input.current?.focus() }}><Icon name="close" size={18} /></button> : null}
-        {sheet ? null : <kbd className={styles.kbd}>esc</kbd>}
+        {query ? <IconButton icon="close" label="Clear the search" size={24} variant="bare" iconSize={18} onClick={() => { setQuery(''); setActive(0); input.current?.focus() }} /> : null}   {/* (REG-729) the house 24 bare icon button */}
+        {sheet ? null : <Keys spec="esc" />}   {/* (REG-728) the house key chip */}
       </div>
       <ChipRail className={styles.scopes} label="Search in">
         <Chips label="Search in" options={SCOPES.map((s) => ({ value: s.key, label: s.label }))} value={scope} onChange={(v) => { setScope(v as SearchScope); setActive(0); input.current?.focus() }} />
@@ -229,18 +232,18 @@ export function GlobalSearch() {
             <Icon name="search" size={32} weight={300} />
             <span className={styles.emptyTitle}>Nothing matches “{q}”{scope === 'all' ? '' : ` in ${SCOPES.find((s) => s.key === scope)?.label}`}</span>
             <span className={styles.emptyHelp}>Try a name, a phone number, a quote number like OM-10004, or a room.</span>
-            {scope === 'all' ? null : <button type="button" className={styles.emptyAction} onClick={() => { setScope('all'); input.current?.focus() }}>Search everything</button>}
+            {scope === 'all' ? null : <Button appearance="text" className={styles.emptyAction} onPress={() => { setScope('all'); input.current?.focus() }}>Search everything</Button>}   {/* (REG-729) the DS text button (36) */}
           </div>
         ) : sections.map((s, si) => (
           <div key={s.key} className={styles.group} role="group" aria-label={s.label}>
-            <div className={styles.groupHead}><span>{s.label}</span>{typeof s.count === 'number' && typing ? <span className={styles.count}>{s.count}</span> : null}</div>
+            <div className={styles.groupHead} data-menu-label="" role="presentation"><span>{s.label}</span>{typeof s.count === 'number' && typing ? <span className={styles.count}>{s.count}</span> : null}</div>   {/* (REG-728) the house group title */}
             {s.items.map((it, j) => row(it, `${s.key}-${j}`, (starts[si] ?? 0) + j))}
           </div>
         ))}
       </div>
       {sheet ? null : (
         <div className={styles.foot} aria-hidden>
-          <span><kbd>↑</kbd><kbd>↓</kbd> to move</span><span><kbd>↵</kbd> to open</span><span><Keys spec="mod+enter" /> in a new tab</span>
+          <span><Keys spec="up" /><Keys spec="down" /> to move</span><span><Keys spec="enter" /> to open</span><span><Keys spec="mod+enter" /> in a new tab</span>
           <span className={styles.footEnd}><Keys spec={singleKeys ? '?' : 'mod+/'} /> all shortcuts</span>
         </div>
       )}

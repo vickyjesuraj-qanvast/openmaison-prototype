@@ -21,6 +21,11 @@
 .recipientMeta { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .recipientEdit { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .dateBox { width: 200px; }
+/* (REG-729) Quote · Issued by: the house compact select (components/om/select-trigger), the value led by its glyph and capped as the
+   recipient chip beside it. Signed, the chevron steps aside (the recipient's pencil does the same). */
+.metaSelect { max-width: 320px; }
+.metaSelect[aria-disabled='true'] > :last-child { display: none; }
+.metaSelectValue { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
 
 /* ── Formatting bar: the rich editor's tools (its module supplies .tool / .rule), sticky under the meta row ── */
 .bar { position: sticky; top: calc(76px + 56px); z-index: 18; display: flex; align-items: center; gap: var(--om-spacing-4); min-height: 52px; padding: var(--om-spacing-2) var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }
@@ -41,7 +46,7 @@
 .menuSample { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
 .menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
-.menuHead { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+.menuHead { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (REG-728) a menu's instruction line: body-s grey on the row's 12 — the Items row menu's too */
 .styleH1 { font: var(--om-type-heading-h3); }
 .styleH2 { font: var(--om-type-heading-h4); }
 .styleH3 { font: var(--om-type-subheading-m); }
@@ -78,7 +83,7 @@
 /* Smart Text chips (the reference's grey pills): primary-variant, r4, the label in 14/500, not editable. */
 .doc :global(.om-token) { display: inline-block; padding: 0 var(--om-spacing-2); margin: 0 1px; border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-subtitle-m); line-height: 22px; vertical-align: baseline; white-space: nowrap; user-select: all; cursor: default; }
 /* eSignature fields: a dashed 280×72 box with its label — the paper's signature line to come. */
-.doc :global(.om-sign) { display: inline-flex; align-items: flex-end; width: 280px; max-width: 100%; height: 72px; padding: var(--om-spacing-2) var(--om-spacing-3); margin: var(--om-spacing-2) 0; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); user-select: all; cursor: default; white-space: nowrap; }
+.doc :global(.om-sign) { display: inline-flex; align-items: flex-end; width: 280px; max-width: 100%; height: 72px; padding: var(--om-spacing-2) var(--om-spacing-3); margin: var(--om-spacing-2) 0; border: var(--om-border-1) dashed var(--om-color-on-surface-border); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); user-select: all; cursor: default; white-space: nowrap; }   /* (REG-729) no letter-spacing on a caption */
 .doc :global(.om-sign[data-sign^='client']) { border-color: var(--om-color-primary-default); color: var(--om-color-primary-default); background: var(--om-color-primary-variant); }
 
 /* An uploaded PDF has no editable document: the file card in the paper's place. */
@@ -93,7 +98,7 @@
 .signText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .signLabel { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .signHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.signEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); }
+.signEyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); margin-bottom: var(--om-spacing-3); }   /* (REG-729) no letter-spacing */
 .signNote { margin-top: var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
 /* Automation popover: a 320 card — title row, two switch rows with help. */
@@ -109,8 +114,7 @@
 .phoneRow { display: flex; gap: var(--om-spacing-3); align-items: flex-start; }
 .phoneCode { width: 96px; flex-shrink: 0; }
 .phoneNum { flex: 1; min-width: 0; }
-.sendBox { border: var(--om-border-1) solid var(--om-color-on-surface-border); border-radius: var(--om-radius-1); overflow: hidden; }
-.sendBox textarea { width: 100%; min-height: 168px; border: 0; }
+.sendBox textarea { min-height: 168px; }   /* (REG-729) the DS TextArea itself (its label, its one stroke); the message keeps its seven lines */
 .sendUnder { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); margin-top: var(--om-spacing-2); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .linkRow { display: flex; align-items: center; gap: var(--om-spacing-2); padding: var(--om-spacing-2) var(--om-spacing-3); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .linkRow code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
@@ -129,7 +133,7 @@
   .meta { position: relative; top: auto; z-index: auto; flex-wrap: wrap; padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
   .titleInput { max-width: none; flex-basis: 100%; }
   .metaEnd { margin-left: 0; flex-wrap: wrap; width: 100%; }
-  .recipient { flex: 1 1 100%; max-width: 100%; }
+  .recipient, .metaSelect { flex: 1 1 100%; max-width: 100%; }
   .dateBox { width: 168px; }
   .bar { top: 0; padding: var(--om-spacing-2) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance, 96px); }
@@ -140,7 +144,7 @@
   .phoneCode { width: 100%; }
 }
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .styleBtn, .recipient { min-height: 44px; }
+  .styleBtn, .recipient, .metaSelect { min-height: 44px; }
   .outlineItem { min-height: 44px; display: flex; align-items: center; }
 }
 @media print {
@@ -166,8 +170,3 @@
 /* (REG-634, contracts parity E-114) At ≤1024 the Outline opens as a drawer — the pane itself is hidden there. */
 .outlineDrawer { display: flex; flex-direction: column; min-width: 0; }
 .doc:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 8px; border-radius: var(--om-radius-1); }   /* (sweep S2 #10) a keyboard sees where it is */
-.menuMeta { margin-left: auto; padding-left: var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }   /* (sweep S2 #16 · #23) a greyed row's reason, in the row */
-
-/* (audit 2026-09-26, round 3) a greyed row whose reason is a whole sentence: the label, then the rule under it, wrapping */
-.menuStack { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-.menuRule { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }

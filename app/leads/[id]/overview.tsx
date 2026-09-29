@@ -278,7 +278,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             <>
               <span className={`${styles.anchor} ${styles.stageAction}`} ref={stagePillRef} data-kb="move-stage">
                 <Tooltip label="Move stage" shortcut="move-stage" disabled={!!stageMenu}>
-                <Button variant="secondary" appearance="outlined" iconEnd={<Icon name="keyboard_arrow_down" size={20} />} aria-haspopup="menu" aria-expanded={!!stageMenu}
+                {/* (REG-728) the chevron turns while the stage menu is open, as every other menu trigger's does */}
+                <Button variant="secondary" appearance="outlined" iconEnd={<span className={styles.chev} data-open={!!stageMenu || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>} aria-haspopup="menu" aria-expanded={!!stageMenu}
                         onPress={() => { const el = stagePillRef.current; if (!el) return; setStageMenu((s) => (s ? null : { el, ...stagePos(el) })) }}>
                   Stage: {lead.stage}
                 </Button>
@@ -314,8 +315,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                 ) : null}
                 <DropdownItem onSelect={() => { setKebabOpen(false); void copyLink() }}>Copy Link</DropdownItem>
                 {canDelete ? (
-                  <DropdownItem onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setLiveLinks(0); setDeleting(true); void countLiveSigningLinks([lead.id]).then(setLiveLinks).catch(() => setLiveLinks(0)) }}>
-                    <span style={{ color: 'var(--om-color-tertiary-red-default)' }}>Delete</span>
+                  /* (REG-728) the house danger row, where a red span in a plain row stood */
+                  <DropdownItem tone="danger" onSelect={() => { setKebabOpen(false); setDeleteReason('Spam'); setLiveLinks(0); setDeleting(true); void countLiveSigningLinks([lead.id]).then(setLiveLinks).catch(() => setLiveLinks(0)) }}>
+                    Delete
                   </DropdownItem>
                 ) : null}
               </Dropdown>

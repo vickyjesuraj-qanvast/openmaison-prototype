@@ -11,8 +11,6 @@ import { useSheetLayout } from '@/components/om/sheet'
 import type { NoteKind } from '@/lib/leads/note-model'
 import styles from './notes-toolbar.module.css'
 
-/** The pill's three scopes, in the order the retired chips drew them (931:44884). */
-
 export type NotesToolbarProps = {
   query: string
   onQuery: (q: string) => void
@@ -40,7 +38,7 @@ export function NotesToolbar({ query, onQuery, onNew }: NotesToolbarProps) {
           pill is gone — the kind filter went back to the mock's chips in the list head (931:44884, notes-list.tsx). */}
       <h2 className={styles.title}>All Notes &amp; Logs</h2>
 
-      <div className={styles.right}>
+      <div className={styles.actions}>
         <span className={styles.menuWrap}>
           {/* touchTarget: the 36px DS control takes a ≥40 target below 768 (REG-273), drawn unchanged. */}
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;

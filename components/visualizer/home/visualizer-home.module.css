@@ -6,7 +6,10 @@
 .steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-spacing-4); }
 .steps li { display: flex; align-items: flex-start; gap: var(--om-spacing-2); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .steps b { font-weight: 600; }
-.stepN { flex-shrink: 0; width: 22px; height: 22px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); background: var(--om-color-primary-default); color: var(--om-color-on-primary-default); margin-top: 1px; }
+/* (REG-729) The house number disc (X-Ray's Say this, the pin card): a 24 circle, the caption-s number in primary on the primary-variant — here
+   the intro card is that variant itself, so the disc takes the surface's white, as a glyph well does on a picked row (the Company panel,
+   the global search). */
+.stepN { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--om-radius-full); display: inline-flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); background: var(--om-color-surface-default); color: var(--om-color-primary-default); }
 .menuRow { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 .menuRow > :first-child { color: var(--om-color-on-surface-secondary); }
 /* The cover fills the card's thumb band, whatever the band's own padding. */

@@ -5,7 +5,7 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import styles from './quote-templates-gallery.module.css'
 
@@ -36,7 +36,8 @@ export function LibraryNewButton({ open, onOpenChange, children, sheetTitle = 'N
           New
         </Button>
       )}
-      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" width={264} sheetTitle={sheetTitle}>
+      {/* (REG-728) rows that may carry a second line (why one waits, the Price book's import): the width scale's 240, not 264 */}
+      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" width={MENU_WIDTH.wide} sheetTitle={sheetTitle}>
         {children}
       </Dropdown>
     </span>
@@ -51,7 +52,7 @@ export function LibraryKebab({ open, onOpenChange, deletedCount, onDeleted, labe
       <Tooltip label="More options" disabled={open}>
         <IconButton icon="more_vert" label="More options" aria-haspopup="menu" aria-expanded={open} onClick={() => onOpenChange(!open)} />
       </Tooltip>
-      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" sheetTitle={sheetTitle}>
+      <Dropdown open={open} onClose={() => onOpenChange(false)} align="right" width={MENU_WIDTH.standard} sheetTitle={sheetTitle}>
         {children ? <>{children}<DropdownDivider /></> : null}
         <DropdownItem onSelect={() => { onOpenChange(false); onDeleted() }}>{label}{deletedCount ? ` · ${deletedCount}` : ''}</DropdownItem>
       </Dropdown>

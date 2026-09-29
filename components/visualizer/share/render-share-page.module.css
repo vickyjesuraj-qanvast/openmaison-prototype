@@ -6,10 +6,10 @@
 .brand { display: inline-flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 .logo { height: 28px; width: auto; max-width: 140px; object-fit: contain; }
 .studio { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.open { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-subtitle-s); white-space: nowrap; }
+.open { display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1);   /* (REG-729) a tag is r4, as the DS Tag */ background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-subtitle-s); white-space: nowrap; }
 .body { flex: 1; width: 100%; max-width: 928px; margin: 0 auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .intro { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .title { margin: 0; font: var(--om-type-heading-h2); color: var(--om-color-on-surface-default); }
 .message { margin: 0; padding: var(--om-spacing-4) var(--om-spacing-5); border-left: 3px solid var(--om-color-primary-default); border-radius: 0 var(--om-radius-2) var(--om-radius-2) 0; background: var(--om-color-surface-default); display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .message p { margin: 0; font: var(--om-type-body-l, var(--om-type-body-m)); color: var(--om-color-on-surface-default); white-space: pre-wrap; }
@@ -25,7 +25,7 @@
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); min-height: 28px; }
 .cardTitle { min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cardTitle b { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.favBadge { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-full); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-subtitle-s); }
+.favBadge { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--om-spacing-1); height: 28px; padding: 0 var(--om-spacing-3); border-radius: var(--om-radius-1);   /* (REG-729) r4, as the DS Tag */ background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-subtitle-s); }
 .media { position: relative; border-radius: var(--om-radius-1); overflow: hidden; background: var(--om-color-surface-variant); aspect-ratio: 3 / 2; }
 .media[data-pinning] { cursor: crosshair; }
 .photo, .fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; -webkit-user-drag: none; }
@@ -56,8 +56,8 @@
 .callText { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .callFields { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: var(--om-spacing-3); align-items: start; }
 .foot { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2) var(--om-spacing-5); padding: var(--om-spacing-4) 0 var(--om-spacing-8); border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.foot a { color: var(--om-color-primary-default); text-decoration: none; }
-.foot a:hover { text-decoration: underline; }
+/* (REG-729) the studio's phone and email are the house text link (the DS Link look — the hover ink, no underline), at the line's 12px */
+.footLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 .notice { width: min(560px, calc(100% - 32px)); margin: 48px auto 0; display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-4); padding: var(--om-spacing-8) var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); text-align: center; }
 .noticeTitle { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .noticeLink { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none; }

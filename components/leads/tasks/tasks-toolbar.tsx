@@ -5,6 +5,7 @@ import { Button } from '@/components/ds'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
+import { ScopePill } from '@/components/om/scope-pill'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
@@ -80,7 +81,7 @@ export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) 
         <DropdownItem onSelect={pick(() => onMenu('saveAll'))}>Save all as Template</DropdownItem>
         <DropdownItem onSelect={pick(() => onMenu('manage'))}>Manage Templates</DropdownItem>
         <DropdownItem onSelect={pick(() => onMenu('export'))}>Export all as...</DropdownItem>
-        <DropdownItem onSelect={pick(() => onMenu('deleteAll'))}><span className={styles.danger}>Delete all</span></DropdownItem>
+        <DropdownItem tone="danger" onSelect={pick(() => onMenu('deleteAll'))}>Delete all</DropdownItem>   {/* (REG-728) the row's own tone */}
       </Dropdown>
     </span>
   )
@@ -98,13 +99,10 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
   return (
     <div className={styles.bar}>
       {scope ? (
-        /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count. */
+        /* (REG-466) The rail's Tasks page: the listing's "All Leads ▾" chip — All Tasks · My Tasks · Unassigned · Studio Tasks, with the open count.
+           (REG-729) The house scope pill (components/om/scope-pill), as the listing's: the applied dot off "All Tasks" (REG-295), the 4% hover. */
         <span className={styles.scopeWrap}>
-          <button type="button" className={styles.scopeChip} aria-haspopup="menu" aria-expanded={scopeOpen} data-open={scopeOpen || undefined}
-                  onClick={() => setScopeOpen((o) => !o)}>
-            {TASK_SCOPE_LABEL[scope.value]} <span className={styles.scopeCount}>({scope.count})</span>
-            <span className={styles.chev} data-open={scopeOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
-          </button>
+          <ScopePill label={`${TASK_SCOPE_LABEL[scope.value]} (${scope.count})`} open={scopeOpen} scoped={scope.value !== 'all'} onClick={() => setScopeOpen((o) => !o)} />
           <Dropdown open={scopeOpen} onClose={() => setScopeOpen(false)} align="left" sheetTitle="Show">
             {(Object.keys(TASK_SCOPE_LABEL) as TaskScope[]).map((k) => (
               <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>

@@ -83,9 +83,8 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
           <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
           <span className={styles.phoneNum}><TextField label="Client phone (for the code)" required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
         </div>
-        <div className={styles.sendBox}>
-          <TextArea aria-label="Message to the client" value={message} onChange={(v: string) => setText(v)} />
-        </div>
+        {/* (REG-729) The DS field with its own label and stroke, as the Send dialog's. */}
+        <TextArea className={styles.sendBox} label="Message to the client" value={message} onChange={(v: string) => setText(v)} />
         <div className={styles.sendUnder}>
           <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => setText(null)} isDisabled={text === null || text === auto}>Reset to draft</Button>
           <span>{message.length} characters</span>

@@ -34,11 +34,7 @@
 .editRow { display: flex; align-items: center; gap: var(--om-spacing-3); }
 .editRow > .editField { flex: 0 0 284px; width: 284px; }
 .editRow label:empty { display: none; }   /* the mock's field carries no label — hide the DS field's empty floated label notch */
-.editActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
-/* Icon Buttons Primary/24/Filled (done): om/icon-button only ships the outlined primary — filled = primary fill, white icon
-   (the DS primary filled button's colours); hover = primary-hover, as the DS button. */
-.doneBtn { background: var(--om-color-primary-default); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-default); }
-.doneBtn:hover { background: var(--om-color-primary-hover); border-color: var(--om-color-primary-hover); color: var(--om-color-on-primary-default); }
+.editActions { display: flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }   /* ✓ = IconButton `filled` (REG-729) · ✕ */
 
 .rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
 
@@ -53,17 +49,8 @@
   .iconBtn::after { content: ''; position: absolute; inset: -12px; }
 }
 
-/* The edit row's ✓ / ✕ are om icon buttons at 24, grown to a 44 box on a touch pointer by
-   components/om/icon-button.module.css (which paints the mocked 24 box with ::before). Two of them 8 apart
-   would overlap by 12, so the row opens to 20 (the two 44 boxes then meet edge to edge); and the filled ✓
-   hands its fill to that pseudo-element, or the purple square grows with the target. REG-273. */
+/* The edit row's ✓ / ✕ are om icon buttons at 24, whose 44 touch target is a transparent overlay (components/om/icon-button.module.css,
+   REG-344). Two of them 8 apart would overlap by 12, so the row opens to 20 (the two 44 targets then meet edge to edge). REG-273. */
 @media (hover: none) {
   .editActions { gap: var(--om-spacing-5); }
-  button.doneBtn[data-variant='primary'],
-  button.doneBtn[data-variant='primary']:hover { background: transparent; border-color: transparent; }
-  button.doneBtn[data-variant='primary']::before {
-    background: var(--om-color-primary-default);
-    border-color: var(--om-color-primary-default);
-  }
-  button.doneBtn[data-variant='primary'] > * { position: relative; z-index: 1; }
 }

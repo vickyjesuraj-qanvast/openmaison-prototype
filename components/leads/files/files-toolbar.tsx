@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { Icon } from '@/components/om/icon'
@@ -67,11 +67,11 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             <FolderCrumbs root="All Files" trail={trail} onGo={onGo} menuOpen={menu === 'folder'}
                           onMenu={(el) => { folderAnchor.current = el; setMenu((m) => (m === 'folder' ? null : 'folder')) }} />
           </div>
-          <PortalMenu open={menu === 'folder'} anchor={folderAnchor} onClose={() => setMenu(null)} align="left" width={200} role="menu" sheetTitle={folder.name}>
+          <PortalMenu open={menu === 'folder'} anchor={folderAnchor} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle={folder.name}>
             {/* Folder menu 200×118 (frame 91 @339,176) — verbatim order. */}
             <DropdownItem onSelect={pick(() => onFolderMenu('move'))}>Move</DropdownItem>
             <DropdownItem onSelect={pick(() => onFolderMenu('rename'))}>Rename</DropdownItem>
-            <DropdownItem onSelect={pick(() => onFolderMenu('delete'))}><span className={styles.danger}>Delete</span></DropdownItem>
+            <DropdownItem tone="danger" onSelect={pick(() => onFolderMenu('delete'))}>Delete</DropdownItem>   {/* (REG-728) the row's own tone */}
           </PortalMenu>
         </>
       ) : (

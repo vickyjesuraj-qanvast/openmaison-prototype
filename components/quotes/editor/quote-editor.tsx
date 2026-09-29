@@ -8,7 +8,7 @@ import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { MaisonFab } from '@/components/shell/maison-fab'
@@ -468,11 +468,13 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
               onPress={() => setStatusOpen((o) => !o)}>
         {status}
       </Button>
-      <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" sheetTitle="Status">
+      {/* (REG-728) A status list: the 240 width; "current" is the row's meta — the tab's mark (910:36673), so no Selected fill.
+          (REG-590) "approvers only" on Approved while the studio asks for an approver. */}
+      <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} sheetTitle="Status">
         {steps.map((s) => (
-          <DropdownItem key={s} role="menuitemradio" checked={s === status} disabled={s === 'Approved' && quoteApproval === 'required' && !canApprove} onSelect={() => changeStatus(s)}>
-            <span className={styles.menuText}>{s}</span>
-            {s === status ? <span className={styles.menuCurrent}>current</span> : s === 'Approved' && quoteApproval === 'required' && !canApprove ? <span className={styles.menuCurrent}>approvers only</span> : null}   {/* (REG-590) */}
+          <DropdownItem key={s} role="menuitemradio" checked={s === status} selected={false} disabled={s === 'Approved' && quoteApproval === 'required' && !canApprove} onSelect={() => changeStatus(s)}
+                        meta={s === status ? 'current' : s === 'Approved' && quoteApproval === 'required' && !canApprove ? 'approvers only' : undefined}>
+            {s}
           </DropdownItem>
         ))}
       </Dropdown>

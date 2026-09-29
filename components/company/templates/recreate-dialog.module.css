@@ -20,7 +20,7 @@
 .match { display: flex; gap: var(--om-spacing-5); align-items: flex-start; padding: var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .matchThumb { flex-shrink: 0; box-shadow: var(--om-elevation-level-2); border-radius: var(--om-radius-0-5); overflow: hidden; max-height: 200px; }
 .matchText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-tertiary-green-default); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-tertiary-green-default); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .matchTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .matchFile { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .reasons { margin: var(--om-spacing-2) 0 0; padding-left: 18px; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); display: flex; flex-direction: column; gap: 2px; }

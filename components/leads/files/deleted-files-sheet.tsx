@@ -117,10 +117,12 @@ export function DeletedFilesSheet({
                            } />
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
+                {/* (REG-727) The table core: Selection + Title wear .pin, and Title — the last frozen column, data-pin-edge — draws
+                    the 1px edge at rest and the shadow while the card is scrolled sideways. */}
                 <div className={styles.card} role="table" aria-label="Deleted files" data-cols="deleted-files" style={deletedTracks ? ({ '--tracks': deletedTracks } as React.CSSProperties) : undefined}
                      onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
                   <div className={styles.head} role="row">
-                    <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
+                    <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader">
                       <Checkbox
                         isSelected={trashed.length > 0 && liveSelected.size === trashed.length}
                         isIndeterminate={liveSelected.size > 0 && liveSelected.size < trashed.length}
@@ -128,7 +130,7 @@ export function DeletedFilesSheet({
                         aria-label="Select all deleted files"
                       />
                     </div>
-                    <div className={`${styles.hCell} ${styles.colTitle}`} role="columnheader"><span className={styles.hLabel}>Title</span><ColumnResizer table="deleted-files" column="title" label="Title" min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colTitle} ${styles.pin}`} data-pin-edge="" role="columnheader"><span className={styles.hLabel}>Title</span><ColumnResizer table="deleted-files" column="title" label="Title" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colOwner}`} role="columnheader"><span className={styles.hLabel}>Owner</span><ColumnResizer table="deleted-files" column="owner" label="Owner" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colUpdated}`} role="columnheader"><span className={styles.hLabel}>Updated</span><ColumnResizer table="deleted-files" column="updated" label="Updated" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colType}`} role="columnheader"><span className={styles.hLabel}>File type</span><ColumnResizer table="deleted-files" column="type" label="File type" min={72} /></div>
@@ -144,10 +146,10 @@ export function DeletedFilesSheet({
                        so a screen reader saw rows of generic children and dropped out of table mode — no column
                        announcements, no cell navigation. Additive only; nothing here is styled by role. */
                     <div key={f.id} className={styles.row} role="row" data-selected={liveSelected.has(f.id) || undefined}>
-                      <div className={`${styles.cell} ${styles.colSel}`} role="cell">
+                      <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell">
                         <Checkbox isSelected={liveSelected.has(f.id)} onChange={() => toggle(f.id)} aria-label={`Select ${f.name}`} />
                       </div>
-                      <div className={`${styles.cell} ${styles.colTitle}`} role="cell">
+                      <div className={`${styles.cell} ${styles.colTitle} ${styles.pin}`} data-pin-edge="" role="cell">
                         <span className={styles.thumb}>
                           {f.thumb ? (
                             /* eslint-disable-next-line @next/next/no-img-element */

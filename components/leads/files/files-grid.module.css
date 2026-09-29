@@ -94,7 +94,6 @@
    y = tile padding 4 + caption bottom 12 + (26 − 24) / 2 → bottom 17 (centred on the 26px name / chip line, y 481..505). */
 .tileMenuWrap { position: absolute; right: var(--om-spacing-3); bottom: 17px; display: inline-flex; }
 
-.danger { color: var(--om-color-tertiary-red-default); }   /* menu Delete #db382a (frame 89) */
 
 /* The mobile-only selection affordances (REG-273, see the touch block below) — never rendered on the desktop mock. */
 .tilePick { display: none; }

@@ -3,8 +3,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
-import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
+import { Button, Checkbox, Radio, RadioGroup, SearchBar } from '@/components/ds'
+import { Chips } from '@/components/om/chips'
 import { useOverflow } from '@/components/om/use-overflow'
 import { Avatar } from '@/components/om/avatar'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -81,11 +81,9 @@ export function FiltersModal({
   useLiveApply(open, draft, value, !dateInvalid, onApply)
   const rangeError = rangeBad ? MSG.dateRange : undefined
 
+  /* (REG-729) The DS SearchBar, filled — the hand-rolled box drew no focus ring (outline: 0). */
   const searchBox = (
-    <label className={styles.search}>
-      <Icon name="search" size={20} family="outlined" />
-      <input className={styles.searchInput} placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search options" />
-    </label>
+    <SearchBar size="md" appearance="filled" placeholder="Search" aria-label="Search options" value={q} onChange={setQ} className={styles.search} />
   )
 
   return (
@@ -99,7 +97,7 @@ export function FiltersModal({
                       tabIndex={-1}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
-            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
+            <SurfaceHead title="Filters" onClose={onClose} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -199,17 +197,12 @@ export function FiltersModal({
                 ) : (
                   <>
                     <span className={styles.sectionTitle}>Dates</span>
-                    <div className={styles.chips}>
-                      {PRESETS.map((p) => (
-                        <button key={p.key} type="button" className={styles.chip} data-selected={draft.datePreset === p.key || undefined}
-                                onClick={() => setDraft((d) => {
-                                  const next = d.datePreset === p.key ? null : p.key
-                                  return { ...d, datePreset: next, ...(next === 'custom' ? {} : { from: '', to: '' }) }
-                                })}>
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* (REG-729) the house chip group (REG-614), single — pressing the chosen chip again clears it, as before */}
+                    <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.datePreset}
+                           onChange={(k) => setDraft((d) => {
+                             const next = d.datePreset === k ? null : (k as DatePreset)
+                             return { ...d, datePreset: next, ...(next === 'custom' ? {} : { from: '', to: '' }) }
+                           })} />
                     <div className={styles.dateRow}>
                       <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined}
                                  onChange={(v) => setDraft((d) => ({ ...d, from: v, datePreset: 'custom' }))} />
@@ -220,7 +213,7 @@ export function FiltersModal({
                 )}
               </div>
             </div>
-            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
+            <SurfaceFoot shadow={bodyScrolls}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>

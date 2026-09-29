@@ -15,11 +15,15 @@ import { MOBILE } from '@/lib/breakpoint'
  * 6-item quote menu each ask for their own height instead of sharing one worst-case constant.
  *
  * Call it on the press, BEFORE the menu opens — the trigger is on screen and its rect is the real one.
+ *
+ * (REG-728) Only the menus still inline need it: the leads listing's row and the kanban card's kebab open through PortalMenu now,
+ * which flips on the viewport itself (as the quotes and contracts rows already did). When the last inline row menu moves over, this
+ * file goes with it.
  */
 
-/** menus.module.css `.item`: 36 tall, lifted to 40 under the touch media query (REG-273). */
+/** menus.module.css `.item`: 36 tall, lifted to 44 under the touch media query (REG-273) — (REG-728) it said 40 while the CSS drew 44. */
 const ITEM_H = 36
-const ITEM_H_TOUCH = 40
+const ITEM_H_TOUCH = 44
 /** menus.module.css `.menu`: 4px list padding top and bottom, plus its 1px border on each side. */
 const LIST_CHROME = 2 * 4 + 2 * 1
 /** The Dropdown hangs at `calc(100% + 4px)` on whichever side it opens. */

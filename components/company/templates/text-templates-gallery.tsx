@@ -13,6 +13,7 @@ import styles from './library-gallery.module.css'
 import { templateChangeBlock, templatePurgeBlock, templateRestoreBlock } from '@/lib/company/template-rules'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { useHere } from '@/components/om/use-here'
+import { MetaChip } from '@/components/om/meta-chip'
 
 type Row = TextTemplateRow & LibraryItem
 const toRow = (t: TextTemplateRow): Row => ({ ...t, updatedAt: t.updatedAt ?? t.createdAt })
@@ -46,9 +47,9 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
       meta={(t) => textPreview(t.body, 70) || 'Empty'}
       usage={(t) => (t.usedBy === 0 ? 'Not a default anywhere' : `Default on ${t.usedBy} quote ${t.usedBy === 1 ? 'template' : 'templates'}`)}
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} quote template${t.usedBy === 1 ? '' : 's'}`)}
-      chips={(t) => <span className={styles.kindChip}>{kindWord(t.kind)}</span>}
+      chips={(t) => <MetaChip>{kindWord(t.kind)}</MetaChip>}   /* (REG-729) the house tag, as the sibling galleries' Default */
       columns={[
-        { key: 'kind', label: 'Kind', track: '120px', cell: (t) => <span className={styles.kindChip}>{kindWord(t.kind)}</span> },
+        { key: 'kind', label: 'Kind', track: '120px', cell: (t) => <MetaChip>{kindWord(t.kind)}</MetaChip> },
         { key: 'excerpt', label: 'Starts with', track: '320px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{textPreview(t.body, 120) || '—'}</span> },
         { key: 'used', label: 'Default on', track: '160px', sortable: true, cell: (t) => (t.usedBy > 0 ? <span>{t.usedBy} quote template{t.usedBy === 1 ? '' : 's'}</span> : <span className={styles.muted}>—</span>) },
       ]}

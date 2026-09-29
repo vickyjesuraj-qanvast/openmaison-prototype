@@ -401,7 +401,8 @@ function Row({ k, text, children }: { k: string; text?: string; children?: React
   )
 }
 
-/** "Assign Member ›" / "Add ›" — 14/600 primary + keyboard_arrow_right 20 Regular, 4 apart (CellDataGroup link). */
+/** "Assign Member ›" / "Add ›" — 14/600 primary + keyboard_arrow_right 20 Regular, 4 apart (CellDataGroup link).
+ *  (REG-729) Its look is the house text link (info-column.module.css .link composes components/om/text-link.module.css). */
 function LinkButton({ label, onClick, kb }: { label: string; onClick: (anchor: HTMLElement) => void; kb?: string }) {
   return (
     <button type="button" className={styles.link} data-kb={kb} onClick={(e) => onClick(e.currentTarget)}>

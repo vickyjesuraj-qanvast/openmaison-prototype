@@ -21,8 +21,9 @@
 .sel { border-color: var(--om-color-primary-default); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-primary-default); }
 .cardTop { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-height: 24px; }
 .cardTop h3 { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--om-spacing-2); border-radius: 999px; background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); white-space: nowrap; }
-.fit { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--om-spacing-2) 0 6px; border-radius: 999px; background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-caption-s); white-space: nowrap; }
+.tag { display: inline-flex; align-items: center; height: 24px; padding: 0 var(--om-spacing-2); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); white-space: nowrap; }
+/* (REG-729) the two tags above are r4, as the DS Tag — a full radius is for true circles */
+.fit { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 var(--om-spacing-2) 0 6px; border-radius: var(--om-radius-1); background: var(--om-color-primary-variant); color: var(--om-color-primary-default); font: var(--om-type-caption-s); white-space: nowrap; }
 .tagline { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); min-height: 32px; }
 .price { display: flex; align-items: baseline; gap: 6px; min-height: 52px; }
 .v { font: var(--om-type-hero-hero1); letter-spacing: -0.01em; color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
@@ -42,13 +43,13 @@
 .section > p { margin: 0; font: var(--om-type-body-s); }
 .tableBox { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
-.table th { text-align: left; padding: var(--om-spacing-2) var(--om-spacing-3); background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.table th { text-align: left; padding: var(--om-spacing-2) var(--om-spacing-3); background: var(--om-color-surface-bg); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; white-space: nowrap; }   /* (REG-729) no letter-spacing */
 .table th[data-pro] { color: var(--om-color-primary-default); }
 .table td { padding: 9px var(--om-spacing-3); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); font-variant-numeric: tabular-nums; vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tr[data-on] td, .table td[data-pro] { background: color-mix(in srgb, var(--om-color-primary-variant) 45%, var(--om-color-surface-default)); }
 .table td :global(.msr), .table td :global(.mso) { vertical-align: -4px; }
-.table .group { background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.table .group { background: var(--om-color-surface-bg); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); text-transform: uppercase; }   /* (REG-729) no letter-spacing */
 .wide { width: 44%; }
 .no { color: var(--om-color-on-surface-disabled); }
 

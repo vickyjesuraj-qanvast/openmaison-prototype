@@ -37,7 +37,7 @@
    own 24px gutter, and the group rules stay full-bleed. No card border, no radius, no cap of its own. */
 .menuBody { padding: var(--om-spacing-2) 0; }
 .menuBody > * { border-radius: 0; }
-.menuBody > button { padding-left: var(--om-spacing-6); padding-right: var(--om-spacing-6); }
+.menuBody [role^='menuitem'], .menuBody [data-menu-label] { padding-left: var(--om-spacing-6); padding-right: var(--om-spacing-6); }   /* (REG-728) every row and group title, wherever it is nested (a Tooltip, a level, a group) — not only the direct children */
 
 /* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
    (user 2026-09-07: "bottom sheet header left and right spacing should be 16px and the same for the bottom
@@ -45,4 +45,4 @@
    Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
    DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
    with each other. Vertical padding is untouched. */
-.menuBody > button { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+.menuBody [role^='menuitem'], .menuBody [data-menu-label] { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }

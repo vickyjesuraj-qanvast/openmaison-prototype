@@ -7,7 +7,10 @@
 .title { display: block; height: 24px; margin-bottom: var(--om-spacing-1); padding: var(--om-spacing-1) var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 .groups { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .group { display: flex; flex-direction: column; }
-.eyebrow { padding: var(--om-spacing-2) var(--om-spacing-2) var(--om-spacing-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* (REG-728) A group's title is the house menu group title (DropdownLabel's: 10/500 uppercase, grey, 12 padding — components/leads/
+   menus.module.css .label), composed; set 8 in, as the rows' own content, on the panel's 12. */
+.eyebrow { composes: label from '../leads/menus.module.css'; }
+.eyebrow.eyebrow { padding-inline: var(--om-spacing-2); }
 .row {
   display: flex; align-items: center; gap: var(--om-spacing-3);
   width: 100%; min-height: 48px; padding: var(--om-spacing-2);
@@ -24,6 +27,6 @@
 .text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .label { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* (REG-535) the label truncates like the help line — it used to run under the "n awaiting" badge */
 .help { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.soon { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-full); padding: 1px 6px; flex-shrink: 0; }
+.soon { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); padding: 1px 6px; flex-shrink: 0; }   /* (REG-729) a tag is r4, as the DS Tag */
 .sheetBody { padding: var(--om-spacing-2) var(--om-spacing-4) var(--om-spacing-4); }
-.await { font: var(--om-type-caption-s); color: var(--om-color-on-primary-variant); background: var(--om-color-primary-variant); border-radius: var(--om-radius-full); padding: 1px 8px; flex-shrink: 0; }
+.await { font: var(--om-type-caption-s); color: var(--om-color-on-primary-variant); background: var(--om-color-primary-variant); border-radius: var(--om-radius-1); padding: 1px 8px; flex-shrink: 0; }   /* (REG-729) r4, as the DS Tag */

@@ -28,8 +28,7 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  font: var(--om-type-heading-h5);
-  letter-spacing: 0.02em;
+  font: var(--om-type-heading-h5);   /* (REG-729) no letter-spacing on an uppercase label — the type tokens carry none */
 }
 .railDot { width: 8px; height: 8px; border-radius: var(--om-radius-full); }
 .rail[data-tone='green'] .railDot { background: var(--om-color-tertiary-green-default); }
@@ -108,6 +107,7 @@
 .cardMetaRight { display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
 .cardAgo { font: var(--om-type-body-s); }
 .cardKebab { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
+.kebabWrap { display: inline-flex; }   /* (REG-728) the card menu's anchor; the menu opens through the body portal, so it needs no positioned box */
 .cardMeta {
   display: flex; flex-wrap: wrap; gap: var(--om-spacing-1);
   font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary);

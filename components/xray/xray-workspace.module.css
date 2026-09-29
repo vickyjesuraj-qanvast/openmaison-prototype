@@ -12,7 +12,7 @@
 .card { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--om-spacing-6); }
 .side { display: flex; flex-direction: column; gap: var(--om-spacing-3); min-width: 0; }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .lockedLead { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 48px; padding: 0 var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); }   /* (REG-530) the lead the page belongs to — read, not picked */
 .lockedName { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lockedLead .lockedClear { margin-left: auto; margin-right: calc(-1 * var(--om-spacing-2)); }
@@ -33,8 +33,6 @@
 .fileNote b { color: var(--om-color-on-surface-default); font-weight: 600; }
 .question { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); margin-top: var(--om-spacing-1); }
 .none { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.link { color: var(--om-color-primary-default); text-decoration: none; }
-.link:hover { text-decoration: underline; }
 .foot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-4); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .hint { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* Progress: the Recreate dialog's reading step, as a card — glyph, title, bar, the four steps. */
@@ -56,7 +54,7 @@
 @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
 /* Recent comparisons: a 360 card of rows — the Deleted sheets' link row with a chevron and a bare delete. */
 .recents { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
-.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
+.recentsHead { padding: var(--om-spacing-4) var(--om-spacing-5); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .recentsSearch { display: block; padding: var(--om-spacing-3) var(--om-spacing-4); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
 .recentsSearch > * { width: 100%; }
 .recentsEmpty { padding: var(--om-spacing-6) var(--om-spacing-5); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

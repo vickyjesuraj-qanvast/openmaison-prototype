@@ -115,6 +115,10 @@
   .dialog[data-size='form']:not([data-alert]) .head, .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
   .dialog[data-size='form']:not([data-alert]) .foot, .dialog[data-size='modal']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
   .dialog[data-fluid] { height: min(88dvh, calc(100dvh - 56px)); }   /* (REG-511) the xxl window is the tallest bottom sheet on a phone */
+  /* (REG-727) `phoneFull`: the whole screen, square — the Deleted / Archived lists, as the Deleted trio's panels are on a phone. */
+  .overlay:has(.dialog[data-phone-full]) { align-items: stretch; justify-content: stretch; }
+  .dialog.dialog[data-phone-full] { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; min-height: 0 !important; border-radius: 0; }
+  .dialog[data-phone-full] .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
   /* (REG-376 · REG-725) Every centred card — the compact / standard sizes and an alert — keeps the canvas' 24px margins (2e); the
      compact size used to take 16. */
   .dialog[data-alert], .dialog[data-size='compact'], .dialog[data-size='standard'] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
@@ -132,4 +136,5 @@
   .dialog[data-size='form']:not([data-alert]) .foot, .dialog[data-size='modal']:not([data-alert]) .foot {
     padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4);
   }
+  .dialog[data-phone-full] .body:not([data-flush]) { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

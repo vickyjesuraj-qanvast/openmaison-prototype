@@ -116,7 +116,7 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
       <span className={styles.tools}>
         {isGroup ? <Tooltip label={item.collapsed ? 'Expand section' : 'Collapse section'}><IconButton icon={item.collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up'} label={item.collapsed ? `Expand ${item.name}` : `Collapse ${item.name}`} size={24} variant="bare" iconSize={22} aria-expanded={!item.collapsed} onClick={() => patch({ collapsed: !item.collapsed })} /></Tooltip> : null}
         <span ref={kebabRef} className={styles.kebab}>
-          <Tooltip label="More options" disabled={menu}><IconButton icon="more_vert" label={`More options for ${item.name || 'item'}`} size={24} variant="bare" iconSize={22} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)} /></Tooltip>
+          <Tooltip label="More options" disabled={menu}><IconButton icon="more_vert" label={`More options for ${item.name || 'item'}`} size={24} variant="bare" iconSize={24} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)} /></Tooltip>   {/* (REG-729) the house 24 kebab: a 24 glyph */}
         </span>
         <RowMenu open={menu} anchor={kebabRef} item={item} groups={groups} all={all} selectedCount={selected ? selectedCount : 1} brandColors={brandColors}
                  onClose={() => setMenu(false)} onAction={(a) => h.onMenu(item, a)} onChooseGroup={(g) => h.onChooseGroup(item, g)}

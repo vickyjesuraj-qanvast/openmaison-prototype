@@ -2,7 +2,7 @@
    SurfaceFoot in components/om/dialog.tsx): 64 with the rule inside, the foot's top rule always — the mock's 56 heading and 68 foot
    drew their own. */
 .pop {
-  position: fixed; z-index: 70;
+  position: fixed; z-index: 95;   /* (REG-728) the popover layer, above the Maison AI button (90) — as the Assign popover (REG-347) */
   width: 400px;
   max-height: calc(100vh - 24px);
   background: var(--om-color-surface-default);

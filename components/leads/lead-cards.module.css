@@ -69,18 +69,5 @@
   font: var(--om-type-subheading-m);
   color: var(--om-color-on-surface-secondary);
 }
-/* Stage (1082:25603): the outlined Button — h36, pl16 pr12, gap 8, subheading/m, chevron 20 secondary. */
-.stageBtn {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: none; cursor: pointer;
-  font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default);
-  position: relative;
-  transition: background-color var(--motion-hover);
-}
-.stageBtn:hover { background: var(--om-color-hover-04p); }
-.stageBtn::after { content: ''; position: absolute; inset: -4px; }   /* 36 drawn, 44 tappable (REG-273) */
-.chev { display: inline-flex; color: var(--om-color-on-surface-secondary); transition: transform var(--motion-toggle); }
-.stageBtn[data-open] .chev { transform: rotate(180deg); }
+/* Stage (1082:25603): h36, pl16 pr12, gap 8, subheading/m, chevron 20 secondary — (REG-729) the house ScopePill (lead-cards.tsx
+   StagePill), the anatomy this copy was of; its touch box is the pill's. */

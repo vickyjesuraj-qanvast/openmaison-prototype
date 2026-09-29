@@ -8,7 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { TOKEN_GROUPS, tokenChip, type TokenKey, type TokenValues } from '@/lib/contracts/tokens'
 import tools from '@/components/quotes/editor/text/rich-editor.module.css'
@@ -78,10 +78,11 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
                   onMouseDown={keep} onClick={() => setMenu((m) => (m === 'style' ? null : 'style'))}>
             {cur.label}<span className={styles.chev} data-open={menu === 'style' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          {/* (sweep S2 #1) through the body portal — inside the tools' sideways scroller the menu was clipped to nothing */}
-          <PortalMenu open={menu === 'style'} anchor={styleAnchor} onClose={() => setMenu(null)} align="left" width={220} role="menu" sheetTitle="Text style">
+          {/* (sweep S2 #1) through the body portal — inside the tools' sideways scroller the menu was clipped to nothing.
+              (REG-728) The standard 200; each row is drawn in its own style, so the current one says so with the Selected fill. */}
+          <PortalMenu open={menu === 'style'} anchor={styleAnchor} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Text style">
             {BLOCKS.map((b) => (
-              <DropdownItem key={b.kind} role="menuitemradio" checked={b.kind === state.block} onSelect={() => { setMenu(null); editor.current?.formatBlock(b.kind) }}>
+              <DropdownItem key={b.kind} role="menuitemradio" checked={b.kind === state.block} selected={b.kind === state.block} onSelect={() => { setMenu(null); editor.current?.formatBlock(b.kind) }}>
                 <span className={`${styles.menuText} ${b.cls ?? ''}`}>{b.label}</span>
               </DropdownItem>
             ))}
@@ -102,9 +103,10 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
               <Icon name={curAlign.icon} size={24} weight={300} /><span className={styles.chev} data-open={menu === 'align' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
             </button>
           </Tooltip>
-          <PortalMenu open={menu === 'align'} anchor={alignAnchor} onClose={() => setMenu(null)} align="left" width={200} role="menu" sheetTitle="Alignment">
+          {/* (REG-728) Rows led by a glyph: the Selected fill marks the current alignment. */}
+          <PortalMenu open={menu === 'align'} anchor={alignAnchor} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.standard} role="menu" sheetTitle="Alignment">
             {ALIGNS.map((x) => (
-              <DropdownItem key={x.a} role="menuitemradio" checked={x.a === state.align} onSelect={() => { setMenu(null); editor.current?.align(x.a) }}>
+              <DropdownItem key={x.a} role="menuitemradio" checked={x.a === state.align} selected={x.a === state.align} onSelect={() => { setMenu(null); editor.current?.align(x.a) }}>
                 <span className={styles.menuIcon}><Icon name={x.icon} size={20} /></span>{x.label}
               </DropdownItem>
             ))}
@@ -131,7 +133,8 @@ export function DocToolbar({ editor, state, values, onESign, eSignOpen, onOutlin
           <Button variant="secondary" appearance="text" isDisabled={disabled} aria-haspopup="menu" aria-expanded={menu === 'smart'}
                   iconEnd={<span className={styles.chev} data-open={menu === 'smart' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
                   onPress={() => setMenu((m) => (m === 'smart' ? null : 'smart'))}>Smart Text</Button>
-          <Dropdown open={menu === 'smart'} onClose={closeSmart} align="right" width={smart ? 320 : 240} sheetTitle="Smart Text">
+          {/* (REG-728) A record's rows carry its sample: 320; the groups' rows a count and a chevron: 240. */}
+          <Dropdown open={menu === 'smart'} onClose={closeSmart} align="right" width={smart ? MENU_WIDTH.detail : MENU_WIDTH.wide} sheetTitle="Smart Text">
             {smart ? (
               <>
                 <DropdownItem onSelect={() => setSmartGroup(null)}><span className={styles.menuIcon}><Icon name="chevron_left" size={20} /></span>{smart.label}</DropdownItem>

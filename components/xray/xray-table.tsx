@@ -9,7 +9,7 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { money } from '@/lib/xray/compare'
 import type { XrayRow } from '@/lib/xray/compare'
 import styles from './xray-table.module.css'
@@ -39,10 +39,11 @@ function RowMenu({ name, actions }: { name: string; actions: RowAction[] }) {
     <span className={styles.actions} data-open={open || undefined}>
       <span className={styles.actionsInner}>
         <span className={styles.float} ref={anchor}>
-          <Tooltip label="More actions" disabled={open}><IconButton icon="more_vert" label={`More actions for ${name}`} size={36} iconSize={20} variant="bare" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} /></Tooltip>
+          {/* (REG-729) the parked row action is the house 36 primary kebab, as every table's (it was bare) */}
+          <Tooltip label="More actions" disabled={open}><IconButton icon="more_vert" label={`More actions for ${name}`} size={36} variant="primary" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} /></Tooltip>
         </span>
       </span>
-      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={200} role="menu" sheetTitle={name}>
+      <PortalMenu open={open} anchor={anchor} onClose={() => setOpen(false)} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name}>
         {actions.map((a) => <DropdownItem key={a.label} onSelect={() => { setOpen(false); a.onSelect() }}>{a.label}</DropdownItem>)}
       </PortalMenu>
     </span>

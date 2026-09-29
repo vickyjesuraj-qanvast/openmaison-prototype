@@ -4,7 +4,6 @@
 .item[data-current] { border-color: var(--om-color-primary-default); }
 .itemHead { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); }
 .version { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); }
-.currentTag { font: var(--om-type-caption-s); color: var(--om-color-on-primary-variant); background: var(--om-color-primary-variant); border-radius: var(--om-radius-full); padding: 1px 8px; }
 .when { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .note { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .itemFoot { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); min-height: 28px; margin-right: calc(-1 * var(--om-spacing-3)); }

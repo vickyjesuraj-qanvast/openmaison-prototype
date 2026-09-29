@@ -18,7 +18,5 @@
 .pin:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 .pinSlot { width: 24px; flex-shrink: 0; }
 .divider { height: 1px; flex-shrink: 0; background: var(--om-color-surface-variant); margin: var(--om-spacing-2) 0; }
-.link { align-self: flex-start; margin-top: var(--om-spacing-2); border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); border-radius: var(--om-radius-1); }
-.link:hover { text-decoration: underline; }
-.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
+.link { composes: link from './text-link.module.css'; align-self: flex-start; margin-top: var(--om-spacing-2); }   /* (REG-729) the house text link — the hover ink, not an underline */
 .note { margin: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

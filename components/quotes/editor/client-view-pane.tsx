@@ -40,7 +40,7 @@ export function ClientViewPane({ data, design, brand, templateName, version, vie
             <span className={styles.title}>Client view</span>
             <span className={styles.sub}>{templateName}{version ? ` · v${version}` : ''}{pages ? ` · ${pages} page${pages === 1 ? '' : 's'}` : ''}</span>
           </span>
-          <Tooltip label="Close client view"><IconButton icon="close" label="Close client view" size={24} variant="bare" iconSize={20} onClick={onClose} /></Tooltip>
+          <Tooltip label="Close client view"><IconButton icon="close" label="Close client view" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={onClose} /></Tooltip>   {/* (REG-729) the house close: the 24 outlined glyph (the Drawer's) */}
         </div>
       )}
       <div ref={areaRef} className={styles.area}>

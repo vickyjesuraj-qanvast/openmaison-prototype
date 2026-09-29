@@ -5,7 +5,7 @@ import { Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { TextField } from '@/components/om/text-field'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Tooltip } from '@/components/om/tooltip'
 import { Chips } from '@/components/om/chips'
 import { money2, pct, sharePct, type CategoryShare, type NamedDiscount, type QuoteTotals } from '@/lib/quotes/math'
@@ -84,7 +84,8 @@ export function ItemsSummary({ totals, pricing, studio, entities, owner, gstLabe
             <button ref={modeRef} type="button" className={`${styles.mini} ${styles.miniSelect}`} aria-haspopup="menu" aria-expanded={modeOpen} aria-label="Additional discount unit" onClick={() => setModeOpen((o) => !o)}>
               {pricing.additionalDiscountMode === 'amount' ? 'S$' : '%'}<Icon name="expand_more" size={16} />
             </button>
-            <PortalMenu open={modeOpen} anchor={modeRef} onClose={() => setModeOpen(false)} role="menu" width={120} sheetTitle="Additional discount">
+            {/* (REG-728) the standard 200 */}
+            <PortalMenu open={modeOpen} anchor={modeRef} onClose={() => setModeOpen(false)} role="menu" width={MENU_WIDTH.standard} sheetTitle="Additional discount">
               <DropdownItem role="menuitemradio" checked={pricing.additionalDiscountMode === 'pct'} onSelect={() => { setModeOpen(false); onPricing({ additionalDiscountMode: 'pct' }) }}>%</DropdownItem>
               <DropdownItem role="menuitemradio" checked={pricing.additionalDiscountMode === 'amount'} onSelect={() => { setModeOpen(false); onPricing({ additionalDiscountMode: 'amount' }) }}>S$</DropdownItem>
             </PortalMenu>
@@ -140,7 +141,8 @@ function DiscountRow({ d, applied, subtotalMinor, onPatch, onRemove }: { d: Name
       <button ref={modeRef} type="button" className={`${styles.mini} ${styles.miniSelect}`} aria-haspopup="menu" aria-expanded={modeOpen} aria-label="Discount unit" onClick={() => setModeOpen((o) => !o)}>
         {d.mode === 'amount' ? 'S$' : '%'}<Icon name="expand_more" size={16} />
       </button>
-      <PortalMenu open={modeOpen} anchor={modeRef} onClose={() => setModeOpen(false)} role="menu" width={120} sheetTitle="Discount unit">
+      {/* (REG-728) the standard 200 */}
+      <PortalMenu open={modeOpen} anchor={modeRef} onClose={() => setModeOpen(false)} role="menu" width={MENU_WIDTH.standard} sheetTitle="Discount unit">
         <DropdownItem role="menuitemradio" checked={d.mode === 'pct'} onSelect={() => { setModeOpen(false); onPatch({ mode: 'pct', value: Math.min(100, d.value) }) }}>%</DropdownItem>
         <DropdownItem role="menuitemradio" checked={d.mode === 'amount'} onSelect={() => { setModeOpen(false); onPatch({ mode: 'amount' }) }}>S$</DropdownItem>
       </PortalMenu>

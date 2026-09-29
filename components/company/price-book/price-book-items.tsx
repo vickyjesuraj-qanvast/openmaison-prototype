@@ -92,7 +92,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       newMenu={(close) => (<>
         <DropdownItem onSelect={() => { close(); setEdit({ open: true, item: null }) }}>{runsBook ? 'New item' : 'Propose an item'}</DropdownItem>
         <DropdownDivider />
-        <DropdownItem onSelect={() => { close(); setImportOpen(true) }} disabled={!runsBook} title={runsBook ? undefined : BOOK_RULE}>Import from a spreadsheet…</DropdownItem>
+        <DropdownItem onSelect={() => { close(); setImportOpen(true) }} disabled={!runsBook} help={runsBook ? undefined : BOOK_RULE}>Import from a spreadsheet…</DropdownItem>   {/* (REG-728) the reason in the row, not a native title */}
       </>)}
       pageMenu={(shown) => [{ label: 'Export My Items…', onSelect: () => setExportShown(shown) }]}   /* (REG-653, Q-14 · E-73) export sits in the page kebab, as on the Leads listing and the Tasks tab */
       facets={[

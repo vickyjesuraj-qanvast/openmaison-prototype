@@ -7,6 +7,7 @@ import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
 import { useOverflow } from '@/components/om/use-overflow'
 import { DateField } from '@/components/om/date-field'
 import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
+import { Chips } from '@/components/om/chips'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -106,7 +107,7 @@ export function ContractsFiltersModal({
                       role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
             {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
             {/* (REG-725) the house head and foot */}
-            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
+            <SurfaceHead title="Filters" onClose={onClose} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -132,14 +133,8 @@ export function ContractsFiltersModal({
                     {/* the quotes mock types "Dates " with a trailing space — rendered trimmed */}
                     <span className={styles.sectionTitle}>Dates</span>
                     <div className={styles.dateGroup}>
-                      <div className={styles.chips} role="group" aria-label="Dates">
-                        {PRESETS.map((p) => (
-                          <button key={p.key} type="button" className={styles.chip} aria-pressed={draft.date === p.key}
-                                  data-selected={draft.date === p.key || undefined} onClick={() => pickPreset(p.key)}>
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
+                      {/* (REG-729) the house chip group (REG-614), single — pressing the chosen chip again clears it, as before (the Quotes twin's) */}
+                      <Chips label="Dates" options={PRESETS.map((p) => ({ value: p.key, label: p.label }))} value={draft.date || null} onChange={(k) => pickPreset(k as Exclude<ContractDatePreset, ''>)} />
                       {custom ? (
                         <div className={styles.dateRow}>
                           <DateField label="From date" value={draft.from} today={today} error={rangeBad || undefined}

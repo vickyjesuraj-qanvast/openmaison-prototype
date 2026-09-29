@@ -108,7 +108,7 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
 
         {tab === 'items' ? (
           items.length === 0 ? (
-            <div className={styles.empty} role="status"><span className={styles.emptyTitle}>Nothing in My Items yet</span><span className={styles.emptyHelp}>Add items under Company › Price book, or save a line from a quote’s Items table (⋯ › Save to My Items).</span></div>
+            <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="list_alt" size={40} weight={300} /></span><span className={styles.emptyTitle}>Nothing in My Items yet</span><span className={styles.emptyHelp}>Add items under Company › Price book, or save a line from a quote’s Items table (⋯ › Save to My Items).</span></div>
           ) : shownItems.length === 0 && itemBrowse.hereFolders.length === 0 && itemBrowse.finding ? <TabSearchEmpty noun="items" searching={q !== ''} onClearAll={clear} /> : (
             <>
             {!itemBrowse.finding && itemBrowse.openAt ? <FolderCrumbs root="My Items" trail={itemBrowse.trail} onGo={itemBrowse.go} /> : null}
@@ -135,7 +135,7 @@ export function PriceBookDialog({ open, tab, onTab, items, sections, propertyTyp
             </>
           )
         ) : sections.length === 0 ? (
-          <div className={styles.empty} role="status"><span className={styles.emptyTitle}>No saved sections yet</span><span className={styles.emptyHelp}>In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote.</span></div>
+          <div className={styles.empty} role="status"><span className={styles.emptyGlyph} aria-hidden><Icon name="format_list_bulleted" size={40} weight={300} /></span><span className={styles.emptyTitle}>No saved sections yet</span><span className={styles.emptyHelp}>In a quote’s Items table, a section’s ⋯ › Save section to My Sections keeps it here for the next quote.</span></div>
         ) : shownSections.length === 0 && sectionBrowse.hereFolders.length === 0 && (q !== '' || !allTypes) ? <TabSearchEmpty noun="sections" searching={q !== ''} onClearAll={() => { setQuery(''); setAllTypes(true) }} /> : (
           <>
           {!sectionBrowse.finding && sectionBrowse.openAt ? <FolderCrumbs root="My Sections" trail={sectionBrowse.trail} onGo={sectionBrowse.go} /> : null}

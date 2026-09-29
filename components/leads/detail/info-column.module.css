@@ -88,15 +88,9 @@
   color: var(--om-color-on-surface-default);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Head link "Add" (858:25155): 14 / Semi Bold / 20 primary; hover = Link text row of interaction-states.md (#4400cc). */
-.headLink {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-primary-default);
-  white-space: nowrap;
-  transition: color var(--motion-hover);
-}
-.headLink:hover { color: var(--om-color-on-primary-variant); }
+/* Head link "Add" (858:25155): 14 / Semi Bold / 20 primary; hover = Link text row of interaction-states.md (#4400cc).
+   (REG-729) The house text link (components/om/text-link.module.css) — its type, ink, hover and focus ring; one line here. */
+.headLink { composes: link from '../../om/text-link.module.css'; white-space: nowrap; }
 .sectionBody { display: flex; flex-direction: column; }
 
 /* Key/value list: keys 120 FIXED · values FILL · H g12 (g16 in Property info) · V g16 · rows 20 tall. */
@@ -118,17 +112,14 @@
    `min-height` keeps a one-line row on the mock's 20px rhythm; the label column is top-aligned already (.kv align-items: start). */
 .text { display: block; min-height: 20px; overflow-wrap: anywhere; }
 
-/* "Assign Member ›" / "Add ›" (CellDataGroup link): 14 / Semi Bold / 20 primary + 20 arrow, H g4. Hover as .headLink. */
+/* "Assign Member ›" / "Add ›" (CellDataGroup link): 14 / Semi Bold / 20 primary + 20 arrow, H g4. Hover as .headLink.
+   (REG-729) The house text link too — the local LinkButton keeps only its arrow, its 20px line and its one-line rule. */
 .link {
-  border: 0; background: none; padding: 0; cursor: pointer;
+  composes: link from '../../om/text-link.module.css';
   display: inline-flex; align-items: center; gap: var(--om-spacing-1);
   height: 20px;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-primary-default);
   white-space: nowrap;
-  transition: color var(--motion-hover);
 }
-.link:hover { color: var(--om-color-on-primary-variant); }
 
 /* Members (858:25155): one 20px row per member — avatar 20 · name fills · more_vert 20, H g8; rows 16 apart. */
 .assignees { display: flex; flex-direction: column; gap: var(--om-spacing-4); }

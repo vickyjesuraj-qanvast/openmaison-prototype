@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
@@ -8,9 +8,9 @@ import { anchoredSurface } from '@/lib/motion'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
-import { useMenuKeyboard } from '@/components/om/surface'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './tools-popover.module.css'
+import { useRailPopover } from '@/components/shell/rail-popover'
 
 /** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413). */
 export const TOOLS: { key: string; icon: string; label: string; href?: string }[] = [
@@ -35,36 +35,7 @@ export function ToolsPopover({ open, anchor, onClose }: { open: boolean; anchor:
   const router = useRouter()
   const comingSoon = useComingSoon()
   const sheet = useSheetLayout()
-  const menuRef = useRef<HTMLDivElement | null>(null)
-  const anchorRef = useRef(anchor); useEffect(() => { anchorRef.current = anchor })
-  useMenuKeyboard(open && !sheet, menuRef, onClose)
-
-  const place = useCallback((el: HTMLDivElement | null) => {
-    menuRef.current = el
-    const a = anchorRef.current?.current
-    if (!el || !a) return
-    const r = a.getBoundingClientRect()
-    const EDGE = 8
-    // 8 right of the RAIL's edge (the reference), not the item's — the item sits inside the rail's padding.
-    const rail = a.closest('nav') ?? a
-    el.style.left = `${rail.getBoundingClientRect().right + 8}px`
-    const h = el.offsetHeight
-    const top = r.top + h > window.innerHeight - EDGE ? Math.max(EDGE, r.bottom - h) : r.top
-    el.style.top = `${top}px`
-    el.style.transformOrigin = top < r.top ? 'bottom left' : 'top left'
-  }, [])
-
-  useEffect(() => {
-    if (!open || sheet) return
-    const onDown = (e: MouseEvent) => { const t = e.target as Node; if (anchor?.current?.contains(t) || menuRef.current?.contains(t)) return; onClose() }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }
-    let lastW = window.innerWidth
-    const onResize = () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; onClose() } }
-    const t = setTimeout(() => document.addEventListener('pointerdown', onDown), 0)
-    document.addEventListener('keydown', onKey, true)
-    window.addEventListener('resize', onResize)
-    return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', onResize) }
-  }, [open, onClose, anchor, sheet])
+  const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'top' })   // (REG-728) the rail's popovers open one way
 
   const pick = (tool: (typeof TOOLS)[number]) => { onClose(); if (tool.href) router.push(tool.href); else comingSoon() }
   const tiles = (

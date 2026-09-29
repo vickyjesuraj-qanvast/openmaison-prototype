@@ -93,8 +93,9 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
                         menu={<>
                           <DropdownItem onSelect={() => { void flushRef.current().then(() => duplicateContractTemplate(template.id)).then((id) => { snackbar({ message: 'Template duplicated' }); router.push(`/templates/contracts/${id}${from ? `?from=${encodeURIComponent(from)}` : ''}`) }, () => snackbar({ message: 'Couldn’t duplicate the template — please try again' })) }}>Duplicate</DropdownItem>
                           <DropdownDivider />
-                          {/* (sweep S2 #16) Delete is Rename's rule: its author, an Owner or an Admin — (round 3) the whole rule under the row, not a fragment with a native tooltip */}
-                          <DropdownItem tone="danger" disabled={!!changeBlock} onSelect={() => setDeleteOpen(true)}><span className={styles.menuStack}>Delete{changeBlock ? <span className={styles.menuRule}>{changeBlock}</span> : null}</span></DropdownItem>
+                          {/* (sweep S2 #16) Delete is Rename's rule: its author, an Owner or an Admin — (round 3) the whole rule under the row, not a fragment with a native tooltip.
+                              (REG-728) The house row prints a disabled row's rule under its label. */}
+                          <DropdownItem tone="danger" disabled={!!changeBlock} title={changeBlock ?? undefined} onSelect={() => setDeleteOpen(true)}>Delete</DropdownItem>
                         </>}
                         onClose={close} />
         <div className={styles.meta} data-testid="contract-meta">

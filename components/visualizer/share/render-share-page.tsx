@@ -122,8 +122,8 @@ export function RenderSharePage({ data }: { data: PublicShare }) {
         <CallBack data={data} sender={sender} refused={refused} />
         <footer className={styles.foot}>
           <span>{data.studio.name}</span>
-          {data.studio.phone ? <a href={`tel:+65${phoneDigits(data.studio.phone)}`}>{`+65 ${phoneLocal(data.studio.phone)}`}</a> : null}
-          {data.studio.email ? <a href={`mailto:${data.studio.email}`}>{data.studio.email}</a> : null}
+          {data.studio.phone ? <a className={styles.footLink} href={`tel:+65${phoneDigits(data.studio.phone)}`}>{`+65 ${phoneLocal(data.studio.phone)}`}</a> : null}
+          {data.studio.email ? <a className={styles.footLink} href={`mailto:${data.studio.email}`}>{data.studio.email}</a> : null}
           <span>This link is open until {displayDate(new Date(data.expiresAt))}</span>
         </footer>
       </main>

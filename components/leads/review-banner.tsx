@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
+import { Tag } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { snackbarRise } from '@/lib/motion'
 import styles from './review-banner.module.css'
@@ -42,7 +43,8 @@ export function ReviewBanner({ count, duplicates, onOpen }: { count: number; dup
                    onClick={onOpen} aria-label={`Review imported leads (${count})${duplicates > 0 ? `, ${duplicates} duplicate${duplicates === 1 ? '' : 's'}` : ''}`}>
       <span className={styles.lead}>
         <span className={styles.title}>Review imported leads ({count})</span>
-        {duplicates > 0 ? <span className={styles.tag}>{duplicates} Duplicate{duplicates === 1 ? '' : 's'}</span> : null}
+        {/* (REG-729) the DS Tag, filled yellow — the look this hand-typed tag copied */}
+        {duplicates > 0 ? <Tag color="yellow" className={styles.tag}>{`${duplicates} Duplicate${duplicates === 1 ? '' : 's'}`}</Tag> : null}
       </span>
       <span className={styles.spacer} />
       <span className={styles.open} aria-hidden>

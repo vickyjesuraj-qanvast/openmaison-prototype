@@ -20,14 +20,13 @@
 .rule { height: 1px; background: var(--om-color-surface-variant); }
 .total { font: var(--om-type-subheading-xl); }
 .totalLabel { display: flex; align-items: center; gap: var(--om-spacing-2); }
-.roundLink { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }
-.roundLink:hover { color: var(--om-color-on-primary-variant); }
+.roundLink { composes: link from '../../../om/text-link.module.css'; white-space: nowrap; }   /* (REG-729) the house text link */
 /* (REG-532) By category under Issuing Entity: the section's caption eyebrow, then 24px rows in two columns filled down the left first
    (`--rows` = half the count, set inline) — name (≤150) · 6px primary bar on a surface-variant track · the share (subheading, tabular).
    A row is a button with the 4% hover tint bleeding 4 into the gutter; "n · no cost" rows read secondary. */
 .bycat { grid-column: 1; grid-row: 2; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-.bycatHead { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
-.bycatMeta { font: var(--om-type-body-s); text-transform: none; letter-spacing: 0; color: var(--om-color-on-surface-secondary); }
+.bycatHead { display: flex; align-items: center; gap: var(--om-spacing-2); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on a caption */
+.bycatMeta { font: var(--om-type-body-s); text-transform: none; color: var(--om-color-on-surface-secondary); }
 .shares { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 1), 24px); grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; row-gap: var(--om-spacing-2); }
 .share { display: grid; grid-template-columns: minmax(96px, 150px) minmax(0, 1fr) 72px; align-items: center; gap: var(--om-spacing-3); height: 24px; margin: 0 calc(-1 * var(--om-spacing-1)); padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; text-align: left; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); transition: background-color var(--motion-hover); }
 @media (hover: hover) { .share:hover { background: var(--om-color-hover-04p); } .share:hover .shareName { color: var(--om-color-primary-default); } }
@@ -80,9 +79,9 @@
 .popRow:hover, .popRow[data-active] { background: var(--om-color-hover-04p); }   /* the keyboard's active option (aria-activedescendant) */
 .popRow + .popRow { border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .popHead { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); }
-/* (REG-619, parity Q-27) Show all · n more / For {type} only — a text control in the My Sections head. */
-.popToggle { padding: 0; border: 0; background: none; font: var(--om-type-body-s); color: var(--om-color-primary-default); cursor: pointer; white-space: nowrap; }
-.popToggle:hover { text-decoration: underline; }
+/* (REG-619, parity Q-27) Show all · n more / For {type} only — a text control in the My Sections head. (REG-729) The house text link —
+   it was body-s, underlined on hover. */
+.popToggle { composes: link from '../../../om/text-link.module.css'; white-space: nowrap; }
 .popToggle:focus-visible, .popToggle[data-active] { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }   /* (sweep S5 #12) the key walk's active toggle reads as the focused one */
 .popCreate { padding: var(--om-spacing-3) var(--om-spacing-4); }
 .popCreate > * { width: 100%; }
@@ -93,8 +92,10 @@
 .popMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .popEmpty { padding: var(--om-spacing-3) var(--om-spacing-4); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 
-/* Menu rows with a leading glyph (visibility 1271:40931, the icon picker 1271:41123, submenu chevrons). */
-.menuHead { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
+/* Menu rows with a leading glyph (visibility 1271:40931, the icon picker 1271:41123, submenu chevrons).
+   (REG-728) A menu's instruction line — Customize visibility…, What the client reads…, From My Items · … — in the menus' one style:
+   body-s grey on the row's 12 (Smart Text's is the same). */
+.menuHead { padding: var(--om-spacing-2) var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .menuIcon { display: inline-flex; color: var(--om-color-on-surface-secondary); }
 .menuIcon[data-on] { color: var(--om-color-primary-default); }
 .menuTrail { margin-left: auto; display: inline-flex; color: var(--om-color-on-surface-secondary); }
@@ -143,9 +144,10 @@
 @media (max-width: 767px) { .find { flex: 1 1 auto; width: auto; min-width: 0; } .tools:has(.find) > :not(.find) { display: none; } }
 
 /* ── Round 1 of the testers' asks (2026-09-23) ── */
-/* (REG-555) The Print as menu: two-line rows — the word, then what it does — in the row menu's 300 width. */
-.menuText { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.menuHelp { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
+/* (REG-555) The Print as menu: two-line rows — the word, then what it does — (REG-728) at 320, the second line in the house row's
+   (body-s grey, 2 under the label), kept beside the radio so it lines up with the word. */
+.menuText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.menuHelp { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: normal; }
 /* (REG-556) The Highlight menu's swatches: 16px squares in the kit's colours; None is an outlined empty one. */
 .swatch { display: inline-block; width: 16px; height: 16px; border-radius: var(--om-radius-0-5); border: var(--om-border-1) solid var(--om-color-on-surface-border); }
 .swatch[data-none] { background: linear-gradient(135deg, transparent 45%, var(--om-color-on-surface-border) 45%, var(--om-color-on-surface-border) 55%, transparent 55%); }
@@ -158,8 +160,7 @@
 .discRemove { border: 0; background: none; padding: 0; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--om-radius-1); color: var(--om-color-on-surface-secondary); cursor: pointer; flex-shrink: 0; }
 .discRemove:hover { background: var(--om-color-hover-08p); }
 .discAmount { flex: 0 0 auto; min-width: 88px; text-align: right; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
-.addDisc { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-body-s); color: var(--om-color-primary-default); display: inline-flex; align-items: center; gap: var(--om-spacing-1); align-self: flex-start; }
-.addDisc:hover { color: var(--om-color-on-primary-variant); }
+.addDisc { composes: link from '../../../om/text-link.module.css'; display: inline-flex; align-items: center; gap: var(--om-spacing-1); align-self: flex-start; }   /* (REG-729) the house text link — it was body-s */
 /* (REG-653, price book parity Q-12) The Add Item popover lists every item: the lists scroll under Create New Item; a row that asked for the
    pick says where it lands. */
 .popList { max-height: min(360px, 50vh); overflow-y: auto; overscroll-behavior: contain; }

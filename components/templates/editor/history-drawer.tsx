@@ -5,6 +5,7 @@ import { Button } from '@/components/ds'
 import { Drawer } from '@/components/om/drawer'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { Avatar } from '@/components/om/avatar'
+import { MetaChip } from '@/components/om/meta-chip'
 import type { TemplateVersion } from '@/lib/templates/model'
 import { ago } from '@/lib/templates/ago'
 import styles from './history-drawer.module.css'
@@ -26,7 +27,7 @@ export function HistoryDrawer({ open, onClose, versions, current, now, busy, onR
             {versions.map((v) => (
               <li key={v.version} className={styles.item} data-current={v.version === current || undefined}>
                 <div className={styles.itemHead}>
-                  <span className={styles.version}>v{v.version}{v.version === current ? <span className={styles.currentTag}>Current</span> : null}</span>
+                  <span className={styles.version}>v{v.version}{v.version === current ? <MetaChip>Current</MetaChip> : null}</span>   {/* (REG-729) the house tag, r4 — it was a pill */}
                   <span className={styles.when}>{ago(v.publishedAt, now)}</span>
                 </div>
                 {v.note ? <span className={styles.note}>{v.note}</span> : null}

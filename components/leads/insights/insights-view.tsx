@@ -132,8 +132,10 @@ function MembersTable({ rows, columns, onReorder }: { rows: MemberRow[]; columns
   const L0 = useColumnLayout(columns, headRow)
   const D = useColumnDrag(columns, onReorder)
   const L = { ...L0, style: (key: string) => ({ ...L0.style(key), ...D.style(key) }) }   /* (REG-614) every cell rides the drag's transform, so the whole column travels — the Items grid's rule (REG-572) */
+  /* (REG-727) On a phone each row is a card and every line after the member names itself with its column's head ("Won · 3"). */
+  const labelOf = (key: string) => { const c = columns.find((x) => x.key === key); return c && !c.locked ? c.label : undefined }
   const cell = (key: string, node: React.ReactNode) => (
-    <div key={key} className={`${styles.cell} ${L.pinned(key) ? styles.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{node}</div>
+    <div key={key} className={`${styles.cell} ${L.pinned(key) ? styles.pin : ''}`} role="cell" data-col={key} data-label={labelOf(key)} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{node}</div>
   )
   const render = (r: MemberRow, key: string) => {
     switch (key) {

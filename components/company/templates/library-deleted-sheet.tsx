@@ -124,13 +124,15 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
                            } />
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
                 {sharedWhy ? <p className={own.delNote} data-testid="deleted-sheet-note"><Icon name={rows.every((t) => !!noRestore(t) || !!ruled(t)) ? 'lock' : 'info'} size={16} weight={300} />{sharedText}</p> : null}
+                {/* (REG-727) The table core: Selection + Title wear .pin, and Title — the last frozen column, data-pin-edge — draws
+                    the 1px edge at rest and the shadow while the card is scrolled sideways. */}
                 <div className={styles.card} role="table" aria-label={ariaLabel} data-cols="library-deleted" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}
                      onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
                   <div className={styles.head} role="row">
-                    <div className={`${styles.hCell} ${styles.colSel}`} role="columnheader">
+                    <div className={`${styles.hCell} ${styles.colSel} ${styles.pin}`} role="columnheader">
                       <Checkbox isSelected={pickable.length > 0 && pickable.every((t) => liveSelected.has(t.id))} isIndeterminate={liveSelected.size > 0 && !pickable.every((t) => liveSelected.has(t.id))} isDisabled={!pickable.length} onChange={toggleAll} aria-label={`Select all deleted ${noun.many}`} />
                     </div>
-                    <div className={`${styles.hCell} ${styles.colTitle}`} role="columnheader"><span className={styles.hLabel}>{nameLabel}</span><ColumnResizer table="library-deleted" column="title" label={nameLabel} min={72} /></div>
+                    <div className={`${styles.hCell} ${styles.colTitle} ${styles.pin}`} data-pin-edge="" role="columnheader"><span className={styles.hLabel}>{nameLabel}</span><ColumnResizer table="library-deleted" column="title" label={nameLabel} min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colVersion}`} role="columnheader"><span className={styles.hLabel}>{meta.label}</span><ColumnResizer table="library-deleted" column="version" label={meta.label} min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colDeleted}`} role="columnheader"><span className={styles.hLabel}>Deleted</span><ColumnResizer table="library-deleted" column="deleted" label="Deleted" min={72} /></div>
                     <div className={`${styles.hCell} ${styles.colBy}`} role="columnheader"><span className={styles.hLabel}>{byLabel}</span><ColumnResizer table="library-deleted" column="by" label={byLabel} min={72} /></div>
@@ -142,8 +144,8 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
                     const locked = noRestore(t)
                     return (
                       <div key={t.id} className={styles.row} role="row" data-selected={liveSelected.has(t.id) || undefined} data-why={(!sharedWhy && !!whyOf(t)) || undefined} data-testid="deleted-library-row">
-                        <div className={`${styles.cell} ${styles.colSel}`} role="cell">{idle(t) ? <Tooltip label={noRestore(t)!}><span><Checkbox isSelected={false} isDisabled aria-label={`Select ${t.title}`} /></span></Tooltip> : <Checkbox isSelected={liveSelected.has(t.id)} onChange={() => toggle(t.id)} aria-label={`Select ${t.title}`} />}</div>
-                        <div className={`${styles.cell} ${styles.colTitle}`} role="cell"><span className={styles.thumb} aria-hidden>{glyph(t)}</span>
+                        <div className={`${styles.cell} ${styles.colSel} ${styles.pin}`} role="cell">{idle(t) ? <Tooltip label={noRestore(t)!}><span><Checkbox isSelected={false} isDisabled aria-label={`Select ${t.title}`} /></span></Tooltip> : <Checkbox isSelected={liveSelected.has(t.id)} onChange={() => toggle(t.id)} aria-label={`Select ${t.title}`} />}</div>
+                        <div className={`${styles.cell} ${styles.colTitle} ${styles.pin}`} data-pin-edge="" role="cell"><span className={styles.thumb} aria-hidden>{glyph(t)}</span>
                           <span className={own.delNameStack}><span className={styles.name}>{t.title}</span>{!sharedWhy && whyOf(t) ? <span className={own.delWhy} data-testid="deleted-row-why">{whyOf(t)}</span> : null}</span></div>
                         <div className={`${styles.cell} ${styles.colVersion}`} role="cell"><span className={styles.plain}>{meta.value(t)}</span></div>
                         <div className={`${styles.cell} ${styles.colDeleted}`} role="cell"><span className={styles.plain}>{t.deletedAt ? displayDate(t.deletedAt) : '--'}</span></div>

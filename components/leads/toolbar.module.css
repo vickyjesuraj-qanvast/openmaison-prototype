@@ -3,22 +3,8 @@
 .left { flex: 1; min-width: 0; display: flex; position: relative; }
 .right { display: flex; align-items: center; gap: var(--om-spacing-3); position: relative; }
 
-/* "All Leads (99)" chip: h36, border ccc, r4, pl-16 pr-12, gap-8. */
-.chip {
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  height: 36px; padding: 0 var(--om-spacing-3) 0 var(--om-spacing-4);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: transparent; cursor: pointer;
-  font: var(--om-type-subheading-m);
-  color: var(--om-color-on-surface-default);
-  transition: background-color var(--motion-hover);
-  position: relative;   /* anchors the REG-295 applied dot */
-}
-.chip:hover { background: var(--om-color-hover-04p); }
-.chipChevron { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
-/* Chevron points up while the menu is open (user 2026-08-28) — every menu trigger does this. */
-.chip[data-open] .chipChevron { transform: rotate(180deg); }
+/* "All Leads (99)" pill (h36, border ccc, r4, pl-16 pr-12, gap-8, the chevron up while open): (REG-729) the house ScopePill,
+   components/om/scope-pill.module.css — the copy that lived here is gone. */
 
 /* Search — 280px trigger/input; focused = 2px primary border (spec). */
 /* (REG-276) The search is the DS SearchBar now — it draws the 280x36 outlined field, its own leading glyph,
@@ -27,17 +13,9 @@
 .searchWrap { display: inline-flex; }
 .search { width: 280px; }
 
-/* A2: active-filter count badge on the filter icon button. */
-.filterWrap { position: relative; display: inline-flex; }
-.filterBadge {
-  position: absolute; top: -6px; right: -6px;
-  min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: var(--om-radius-full);
-  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
-  font: var(--om-type-caption-xs); display: inline-flex; align-items: center; justify-content: center;
-  border: 2px solid var(--om-color-surface-default);
-  box-sizing: content-box;
-}
+/* A2: active-filter count badge on the filter icon button — (REG-729) the tab toolbar's, written once. */
+.filterWrap { composes: filterWrap from '../om/tab-toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../om/tab-toolbar.module.css'; }
 
 .viewWrap { display: inline-flex; }
 
@@ -45,7 +23,7 @@
    The mocked row is the pill on the left and the filter glyph on the right, both 36 — search moved to the top
    bar and the view toggle is gone (one view: cards). `.right` dissolves into the bar so the filter can sit at
    the far edge with the pill's box taking the rest; the search box, when the bar's glyph reveals it, wraps
-   onto its own full-width line beneath. The pill keeps the mock's 36 and gets a 44px touch box (REG-273). */
+   onto its own full-width line beneath. The pill's touch box is the house ScopePill's (REG-273 · REG-729). */
 @media (max-width: 767px) {
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .right { display: contents; }
@@ -54,17 +32,8 @@
   .search { width: 100%; }
   .viewWrap { display: none; }
 }
-/* (REG-307) Touch ergonomics (REG-273) — the pill keeps the mock's 36 and gets a 44px touch box; also on a touch pointer up to 1024, so an iPad gets the same box. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .chip::after { content: ''; position: absolute; inset: -4px; }
-}
 /* (REG-307) Parity with the Notes toolbar's twin (notes-toolbar.module.css): the DS md SearchBar is 36 tall and a
    fingertip wants 44, so the BOX stands up on a touch pointer — the glyph, the type and the stroke are the DS's. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   .searchWrap .search[data-size='md'] { height: 44px; }
-}
-
-/* (REG-273) Touch: the box takes the 44px target; the glyph / type keeps its mocked size and the extra is given back as margin, so the drawn row is unchanged. The field's own <input> was ~22px inside its shell, so the bands above and below the text missed. */
-@media (hover: none) {
-  .searchInput { block-size: 100%; }
 }

@@ -166,9 +166,12 @@ function AreaField({
           </span>
         }
       />
-      <PortalMenu open={unitOpen} anchor={box} onClose={() => setUnitOpen(false)} align="right" width={96}>
+      {/* (REG-728) A field's list takes its field's width (the menu scale; it was a lone 96), and the current unit wears the Selected
+          fill, as TextField's own option rows do. */}
+      <PortalMenu open={unitOpen} anchor={box} onClose={() => setUnitOpen(false)} align="right">
         {AREA_UNITS.map((u) => (
           <button key={u} type="button" role="option" aria-selected={u === unit} className={menuStyles.item}
+                  data-selected={u === unit || undefined}
                   onClick={() => { onUnitChange(u); setUnitOpen(false) }}>
             {u}
           </button>
@@ -443,8 +446,10 @@ export function LeadFormModal({
                           {/* "Remarks" (user 2026-08-31): the mock types "Notes", which collided with the Notes tab —
                               a different record entirely (lead_notes). The DS TextArea at the mock's 96px
                               (page-checklist › Fields: never a raw input) — lead-form.module.css .notes.
-                              The helper used to say these appear on the Notes page; they do not, and never did. */}
-                          <TextArea aria-label="Remarks" placeholder="Remarks" value={data.notes}
+                              The helper used to say these appear on the Notes page; they do not, and never did.
+                              (REG-729) The field names itself, as every field in this form: "Remarks" is its label — resting where the
+                              placeholder sat while empty, on the border once filled — not a placeholder with a hidden name. */}
+                          <TextArea label="Remarks" value={data.notes}
                                     onChange={(v: string) => set('notes')(v)} className={styles.notes} />
                           <span className={styles.helper}>Shown under Other info on the lead’s Overview.</span>
                         </div>

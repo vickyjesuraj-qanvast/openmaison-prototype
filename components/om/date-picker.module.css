@@ -112,3 +112,8 @@
   transition: background-color var(--motion-hover);
 }
 .done:hover { background: var(--om-color-primary-variant); }
+
+/* (REG-728) ≤767 the calendar sits in the house Sheet (date-picker.tsx): the same 256 (296 with the time row) block, centred on the
+   sheet, with the sheet's own head, grabber and scrim. */
+.sheetPanel { display: flex; flex-direction: column; width: 256px; margin: 0 auto; padding-bottom: var(--om-spacing-4); }
+.sheetPanel[data-time] { width: 296px; }

@@ -3,45 +3,22 @@
  * on the listing's table model: ONE grid with subgrid rows, head 56 · rows 60, the mock's px as floors (REG-430), the user's
  * dragged widths in --tracks (REG-427), frozen cells with `.pin` (REG-454). Columns 318 (fluid) · 236 · 140 · 96 · 132 · 200.
  * No selection column — templates have no bulk action.
+ * (REG-727) What every table shares — the frame, head, rows, frozen cells and the row-actions plate — comes from the table core
+ * (components/om/table-core.module.css); this sheet keeps the list's own: its tracks, the 60 row, its cells and the touch layout.
  */
 .card {
-  display: grid;
+  composes: frame card from '../../om/table-core.module.css';   /* (REG-727) the table core: border, radius, the corner ring (REG-431), the scroller, the grid */
   grid-template-columns: var(--tracks, minmax(318px, 1fr) 236px 140px 96px 132px 200px);
-  width: 100%;
-  background: var(--om-color-surface-default);
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
-  border-radius: var(--om-radius-2);
-  position: relative;
 }
-.card:not([data-overflow])::after {
-  content: ''; position: absolute; inset: calc(-1 * var(--om-border-1)); pointer-events: none; z-index: 3;
-  border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2);
-}
-.card[data-overflow] { overflow-x: auto; overscroll-behavior-x: contain; }
 
-.head .pin, .row .pin { position: sticky; z-index: 2; background: var(--om-color-surface-default); transition: box-shadow var(--motion-toggle), background-color var(--motion-hover); }   /* (REG-509) the frozen cell fades with the row — it used to snap while the rest of the row faded */
-.head .pin { z-index: 3; }
-.row:hover .pin { background: var(--om-color-primary-variant); }
-.pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); clip-path: inset(0 -6px 0 0); }
-.card[data-scrolled] .pin[data-pin-edge] { box-shadow: var(--om-shadow-frozen-column); }
+/* Frozen cells (REG-454): sticky, the row's fill — it fades with the row (REG-509) — the 1px edge at rest, the shadow while scrolled. */
+.pin { composes: pin from '../../om/table-core.module.css'; }   /* (REG-727) the table core */
 
 /* ---- Head 56 ---- */
-.head { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; height: 56px; }
-.hCell {
-  position: relative;
-  display: flex; align-items: center; gap: var(--om-spacing-1);
-  min-width: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6) var(--om-spacing-4) var(--om-spacing-4);
-  color: var(--om-color-on-surface-secondary);
-}
-.hLabel { font: var(--om-type-caption-s); text-transform: uppercase; white-space: nowrap; }
-.hSort {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-1);
-  color: inherit; font: inherit;
-  transition: color var(--motion-hover);
-}
-.hSort:hover { color: var(--om-color-on-surface-default); }
+.head { composes: head from '../../om/table-core.module.css'; }   /* (REG-727) the table core: 56, the listing's head cells, label and sort button */
+.hCell { composes: hCell from '../../om/table-core.module.css'; }
+.hLabel { composes: hLabel from '../../om/table-core.module.css'; }
+.hSort { composes: hSort from '../../om/table-core.module.css'; }
 
 /* ---- Columns: each class pins its cell to its track ---- */
 .colName { grid-column: 1; }
@@ -53,22 +30,12 @@
 
 /* ---- Rows 60 ---- */
 .row {
-  display: grid; grid-template-columns: subgrid; grid-auto-rows: 100%; grid-column: 1 / -1;
-  height: 60px; position: relative;
-  transition: background-color var(--motion-hover);
+  composes: row from '../../om/table-core.module.css';   /* (REG-727) the table core: subgrid, hover · selected · selected + hover (REG-449; sweep S5 #10: a ticked row's frozen cells keep its fill) */
+  height: 60px;   /* the list's mocked row */
 }
-.row:hover { background: var(--om-color-primary-variant); }
 .card > .row:last-child, .card > .row:last-child .colName { border-bottom-left-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
 .card > .row:last-child { border-bottom-right-radius: calc(var(--om-radius-2) - var(--om-border-1)); }
-.cell {
-  display: flex; align-items: center;
-  min-width: 0; min-height: 0;
-  grid-row: 1;
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-3) var(--om-spacing-4);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  font: var(--om-type-body-m);
-  color: var(--om-color-on-surface-default);
-}
+.cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
 .cell.colName { gap: var(--om-spacing-3); }
 .cell.colBy { gap: var(--om-spacing-3); }
 
@@ -97,23 +64,14 @@
 .statusWord[data-tone='draft'] { color: var(--om-color-on-surface-secondary); }
 .statusWord[data-tone='await'] { color: var(--om-color-primary-default); }
 .statusNote { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.usedLink { color: var(--om-color-primary-default); text-decoration: none; white-space: nowrap; }
-.usedLink:hover { text-decoration: underline; }
+.usedLink { composes: link from '../../om/text-link.module.css'; white-space: nowrap; }   /* (REG-729) the house text link — the hover ink, no underline */
 .muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .oneLine { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ---- Row hover kebab (the Files list's) ---- */
-.actions {
-  grid-column: 1 / -1; grid-row: 1; justify-self: end; align-self: center;
-  position: sticky; right: 0;
-  width: 0; height: 0; overflow: visible;
-  z-index: 4;
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--motion-hover);
-}
-.actionsInner { position: absolute; right: var(--om-spacing-6); top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: var(--om-spacing-3); }
-.row:hover .actions, .actions[data-open], .actions:focus-within { opacity: 1; pointer-events: auto; }
-.float { display: inline-flex; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
+/* ---- Row hover kebab (the Files list's): parked at the visible right edge, 24 in, on the white plate ---- */
+.actions { composes: actions from '../../om/table-core.module.css'; }   /* (REG-727) the table core */
+.actionsInner { composes: actionsInner from '../../om/table-core.module.css'; }
+.float { composes: float from '../../om/table-core.module.css'; }
 .menuWrap { position: relative; display: inline-flex; }
 .touchBtn { flex-shrink: 0; }
 
@@ -121,7 +79,6 @@
 @media (max-width: 1024px) {
   .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .head, .row { width: max-content; min-width: 100%; }
-  .pin[data-pin-edge] { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
 }
 @media (hover: none) and (max-width: 1024px) {
   .actions { opacity: 1; pointer-events: auto; position: absolute; right: 0; top: 50%; justify-self: auto; align-self: auto; }
@@ -134,6 +91,8 @@
   .name { min-height: 44px; line-height: 44px; }
   .touchBtn { min-width: 44px; min-height: 44px; }
 }
-@media (hover: none) and (max-width: 1024px) { .row:hover, .row:hover .pin { background: var(--om-color-surface-default); } }
-/* (sweep S5 #10) A ticked row keeps the primary-variant fill, its frozen cells too (REG-449) — it went white again when the pointer left. */
-.row[data-selected], .row[data-selected] .pin { background: var(--om-color-primary-variant); }
+/* A finger has no hover: a tapped row keeps its resting look — a ticked one its primary-variant fill, frozen cells too (sweep S5 #10). */
+@media (hover: none) and (max-width: 1024px) {
+  .row:hover, .row:hover .pin { background: var(--om-color-surface-default); }
+  .row[data-selected]:hover, .row[data-selected]:hover .pin { background: var(--om-color-primary-variant); }
+}

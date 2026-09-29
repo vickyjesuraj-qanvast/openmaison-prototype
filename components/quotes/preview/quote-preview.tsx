@@ -121,7 +121,10 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
             <h1 className={styles.title}>{kept ? `Version ${kept.version}` : 'Preview'}</h1>
             <span className={styles.chips}>
               {kept ? <MetaChip>Read-only</MetaChip> : null}
-              <button type="button" className={styles.templateChip} onClick={() => setPickerOpen(true)} aria-haspopup="dialog" aria-label="Change template"><Icon name="style" size={14} weight={300} /> <span className={styles.chipText}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</span> <Icon name="keyboard_arrow_down" size={16} /></button>
+              {/* (REG-729) The template as the house tag (MetaChip), a press that opens the picker — the editor header's contract chip. */}
+              <Tooltip label="Change template">
+                <button type="button" className={styles.chipBtn} onClick={() => setPickerOpen(true)} aria-haspopup="dialog" aria-label="Change template"><MetaChip icon="style" className={styles.templateChip}>{template ? `${template.name} · v${template.version}` : 'Studio default'}</MetaChip></button>
+              </Tooltip>
               <MetaChip>{status}</MetaChip>
               {pages ? <MetaChip>{pages} page{pages === 1 ? '' : 's'}</MetaChip> : null}
             </span>
@@ -193,7 +196,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
           <aside className={styles.panel} aria-label="What your client sees">
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>What your client sees</span>
-              <Tooltip label="Close"><IconButton icon="close" label="Close" size={24} variant="bare" iconSize={20} onClick={() => setPanel(false)} /></Tooltip>
+              <Tooltip label="Close"><IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={() => setPanel(false)} /></Tooltip>   {/* (REG-729) the house close: the 24 outlined glyph (the Drawer's) */}
             </div>
 
             <div className={styles.panelBody}>

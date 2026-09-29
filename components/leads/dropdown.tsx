@@ -33,6 +33,7 @@ export function Dropdown({
   /** 'up' flips the menu above the trigger (bottom rows near a clipping edge). */
   side?: 'down' | 'up'
   children: ReactNode
+  /** (REG-728) One of MENU_WIDTH — standard 200 by default. */
   width?: number
   /** ≤767 the menu is a bottom sheet and takes a heading (REG-353) — the canvas titles it after what it acts on
    *  ("Add Lead" 1f, the task's own name 2f). Ignored on the desktop, where the menu stays anchored. */
@@ -105,14 +106,27 @@ export function Dropdown({
   )
 }
 
-export function DropdownItem({ children, onSelect, tone, disabled, title, role = 'menuitem', checked, submenu, keys, shortcut }: {
+/** (REG-728) The menu width scale — one width per kind of menu, not one per menu: standard rows · a status list or rows with a second
+ *  line or a key hint · rows with a description. A field's list takes its field's width; the mock-backed exceptions keep theirs
+ *  (the notes family's 140, 931:45488; the Add Item box's 360, 1271:40932; the 400 popovers). */
+export const MENU_WIDTH = { standard: 200, wide: 240, detail: 320 } as const
+
+export function DropdownItem({ children, onSelect, tone, disabled, title, help, meta, selected, role = 'menuitem', checked, submenu, keys, shortcut }: {
   children: ReactNode
   onSelect: () => void
-  /** Destructive item (Delete) — red text, as om/menu's `tone`. */
+  /** Destructive item (Delete) — red text, as om/menu's `tone`. A disabled one reads disabled, not dangerous (REG-265). */
   tone?: 'danger'
-  /** Shown but inert (REG-265: a stage-logged record's Edit / Delete) — `title` says why on hover. */
+  /** Shown but inert (REG-265: a stage-logged record's Edit / Delete). (REG-728) Its `title` — the reason — is printed IN the row, under
+   *  the label, never as a native tooltip (it never shows on touch, and REG-656 says a refused choice says why in the row). */
   disabled?: boolean
   title?: string
+  /** (REG-728) A second line under the label, 12/16 grey: a description, a rule. */
+  help?: ReactNode
+  /** (REG-728) At the row's end, 12/16 grey: "current", a count. */
+  meta?: ReactNode
+  /** (REG-728) The DS Selected state (primary-variant fill) for a row whose label is not plain text — a row with an icon, a swatch, a
+   *  second line — which `checked` alone cannot mark. */
+  selected?: boolean
   /** A radio / checkbox row (View by, density, a status) says which value is current through `checked` (aria-checked);
    *  the keyboard then opens the menu on that row (components/om/surface.ts). Plain rows stay `menuitem`. */
   role?: 'menuitem' | 'menuitemradio' | 'menuitemcheckbox'
@@ -127,13 +141,17 @@ export function DropdownItem({ children, onSelect, tone, disabled, title, role =
      pill's sheet ("Kind: All ▾") could not say which choice was current. It now wears the DS menu item's Selected state (primary/variant
      fill — `.item[data-selected]`, the one the "All Leads" pill's current stage wears, 780:93630). A row that draws its own mark (a radio
      glyph, a "current" tag) passes elements, and is left as it is. */
-  const selected = role !== 'menuitem' && !!checked && plainText(children)
+  const isSelected = selected ?? (role !== 'menuitem' && !!checked && plainText(children))
+  const line2 = help ?? (disabled && title ? title : undefined)
   return (
-    <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={title}
+    <button type="button" role={role} className={styles.item} data-tone={tone} aria-disabled={disabled || undefined} title={disabled ? undefined : title}
             aria-checked={role === 'menuitem' ? undefined : !!checked} aria-haspopup={submenu ? 'menu' : undefined}
-            data-selected={selected || undefined} data-kb={shortcut} aria-keyshortcuts={keys || shortcut ? ariaKeys(keys ?? keysOf(shortcut!) ?? '') : undefined}
+            data-selected={isSelected || undefined} data-kb={shortcut} aria-keyshortcuts={keys || shortcut ? ariaKeys(keys ?? keysOf(shortcut!) ?? '') : undefined}
             onClick={disabled ? undefined : onSelect}>
-      {children}
+      {line2 ? (
+        <span className={styles.itemStack}><span className={styles.itemLabel}>{children}</span><span className={styles.itemHelp}>{line2}</span></span>
+      ) : children}
+      {meta ? <span className={styles.itemMeta}>{meta}</span> : null}
       {keys || shortcut ? <Keys spec={keys} shortcut={shortcut} className={styles.itemKeys} /> : null}
     </button>
   )
@@ -143,4 +161,14 @@ const plainText = (c: ReactNode): boolean => typeof c === 'string' || typeof c =
 
 export function DropdownDivider() {
   return <div className={styles.divider} role="separator" />
+}
+
+/** (REG-728) A group's title inside a menu — the stage menu's recipe (780:86452), now every menu's: 10/500 uppercase, 12 padding, grey,
+ *  or a stage's tone with its 8px dot. */
+export function DropdownLabel({ children, tone, dot = false }: { children: ReactNode; tone?: 'green' | 'orange' | 'blue'; dot?: boolean }) {
+  return (
+    <div className={styles.label} data-tone={tone} data-menu-label="" role="presentation">
+      {dot ? <span className={styles.labelDot} data-tone={tone} aria-hidden /> : null}{children}
+    </div>
+  )
 }

@@ -53,7 +53,7 @@ export function ContractTemplatePicker({ open, onClose, load, onUse, onStarter }
         <div className={styles.grid} aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className={styles.ghost} />)}</div>
       ) : items.length === 0 ? (
         <div className={styles.empty} role="status">
-          <span className={styles.emptyGlyph}><Icon name="contract" size={40} weight={300} /></span>
+          <span className={styles.emptyGlyph} aria-hidden><Icon name="contract" size={40} weight={300} /></span>   {/* (REG-729) in the house empty's 72 well */}
           <span className={styles.emptyTitle}>No contract templates yet</span>
           <span className={styles.emptyHelp}>Save any contract as a template from its editor, or start from the studio agreement below.</span>
         </div>

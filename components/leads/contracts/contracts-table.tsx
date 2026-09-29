@@ -3,9 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ds'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { PortalMenu } from '@/components/om/portal-menu'
-import menuStyles from '@/components/leads/menus.module.css'
 import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { gridTemplateFor, useColumnLayout, type TableColumn, type TableColumnDef } from '@/components/om/table-columns'
 import { useColumnDrag } from '@/components/om/column-drag'
@@ -64,7 +63,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
 
 /**
  * Lead Details › Contracts table (931:38690, frame 112 listing 931:38666) — spec design-source/context/lead-contracts/
- * 01-listing-empty.txt + 00-build-plan.md. Head 48 · rows 68; columns 557 (fluid) · 128 · 120 · 142 · 140 · 157 (= 1244).
+ * 01-listing-empty.txt + 00-build-plan.md. Head 56 · rows 68; columns 557 (fluid) · 128 · 120 · 142 · 140 · 157 (= 1244).
  * No selection column, no bottom bar. Structure copied from components/leads/quotes/quotes-table.tsx (the Quotes twin):
  * every icon-only control carries a Tooltip (REG-75); sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
@@ -84,7 +83,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
     <div ref={frame} className={styles.card} role="table" data-drag-root="" aria-label="Contracts" data-kb-list="contract" data-cols="lead-contracts" data-overflow={overflowing || undefined} data-lead={columns.some((c) => c.key === 'lead') || undefined}
          style={{ '--tracks': tracks } as React.CSSProperties}
          onScroll={(e) => e.currentTarget.toggleAttribute('data-scrolled', e.currentTarget.scrollLeft > 0)}>
-      {/* Head row 48 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
+      {/* Head row 56 (931:38691 "Table / Row / Contracts" Type=HD) — no selection head in this table. */}
       <div ref={headRow} className={styles.head} role="row">
         {columns.map((c) => (
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
@@ -178,22 +177,16 @@ function ContractRowView({
             {contract.status}
             <span className={styles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>
           </button>
-          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={260} role="menu" sheetTitle="Status">
-            {/* Items are raw menu buttons (like components/leads/stage-dropdown.tsx) so the current status can carry
-                aria-current + the "current" meta — DropdownItem takes no attributes. */}
+          <PortalMenu open={statusOpen} anchor={statusAnchor} onClose={onStatusClose} align="left" width={MENU_WIDTH.wide} role="menu" sheetTitle="Status">
+            {/* (REG-728) The house row, as the Quotes twin's status menu: the current status marked "current" at its end. (sweep S2 #23) A
+                refused status says why in the row itself — (REG-728) in the row's reason line, under its words (the full rule was a native
+                title, which never shows on touch); a press on it does nothing. */}
             {CONTRACT_STATUSES.map((s) => {
               const isCurrent = s === contract.status
               const block = isCurrent ? null : statusBlock?.(contract, s) ?? null
-              /* (sweep S2 #23) a refused status says why in the row itself — a native title never shows on a touch screen; a press on it does nothing */
+              const why = block === CLIENT_SIGNED_RULE ? 'signed by the client' : block === UNSIGN_ROLE_RULE ? 'Owner or Admin' : block
               return (
-                <button
-                  key={s} type="button" role="menuitem" className={menuStyles.item}
-                  aria-current={isCurrent ? 'step' : undefined} aria-disabled={block ? true : undefined}
-                  onClick={block ? (e) => e.preventDefault() : pickStatus(s)}
-                >
-                  <span className={styles.itemText}>{s}</span>
-                  {isCurrent ? <span className={styles.meta}>current</span> : block ? <span className={styles.meta} title={block}>{block === CLIENT_SIGNED_RULE ? 'signed by the client' : block === UNSIGN_ROLE_RULE ? 'Owner or Admin' : block}</span> : null}
-                </button>
+                <DropdownItem key={s} disabled={!!block} title={why ?? undefined} meta={isCurrent ? 'current' : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
               )
             })}
           </PortalMenu>
@@ -230,14 +223,15 @@ function ContractRowView({
                           aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
             </Tooltip>
           </span>
-          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={220} role="menu" sheetTitle={contract.title}>
+          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={contract.title}>
             {/* Quotes row kebab 910:36723 — verbatim order (REG-177). */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
             <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
             <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
-            <DropdownItem onSelect={pick('delete')} disabled={!!noDelete}><span className={noDelete ? undefined : styles.danger}>Delete</span>{noDelete ? <span className={styles.meta} title={noDelete}>creator, Owner or Admin</span> : null}</DropdownItem>   {/* (sweep S2 #23) the quotes kebab's words */}
+            {/* (sweep S2 #23) the quotes kebab's words. (REG-728) The row's own tone, and a refused Delete's reason in the row's reason line */}
+            <DropdownItem tone="danger" disabled={!!noDelete} title={noDelete ? 'creator, Owner or Admin' : undefined} onSelect={pick('delete')}>Delete</DropdownItem>
           </PortalMenu>
         </span>
         </span>

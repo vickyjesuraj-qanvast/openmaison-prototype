@@ -1,0 +1,32 @@
+/*
+ * (REG-727) The card table — the short list inside a Settings / Company card: Notifications' events, custom fields, the issuing
+ * entities, Who may do what, Lead capture's ways in, the question bank, Meta's lead forms. One of the two table types (the other:
+ * the listing's, components/om/table-core.module.css) — owner 2026-09-29: a 56 / 64 listing is too heavy for three rows in a card.
+ * It was Notifications' event table (REG-604) copied for every settings list (REG-614); now written ONCE.
+ *
+ * A list's stylesheet composes these classes (`.eventHead { composes: head from '…/om/card-table.module.css'; }`), marks its root
+ * `data-card-table` (the anatomy check's hook) and keeps only its own: the tracks (grid-template-columns on its head and rows), a
+ * column's alignment, its phone layout. This file is loaded before every stylesheet that composes it, so a list's rule wins.
+ *
+ * Anatomy: frame r8, 1px surface-variant · head 40 on surface-bg, the label caption-s uppercase grey, no letter-spacing (the
+ * listing's head type) · rows 56 with a 1px top rule, body-m ink · p8/16 in the head and every row, 12 between cells, each cell
+ * centred on its row — the cells are the rows' children and take all of it from them · no hover.
+ */
+
+/* (REG-727) The whole core sits in the cascade layer `om-card-table`: a table's own rule is unlayered, so it wins wherever it must differ
+   — WHATEVER order the bundler emits the two stylesheets in. (Load order is not guaranteed: in one build the Quotes table's CSS came
+   before the core's, and its phone rule lost to the core's corner ring.) Only the browser's own defaults sit below a layer. */
+@layer om-card-table {
+.table { display: flex; flex-direction: column; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }
+.head, .row { display: grid; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-2) var(--om-spacing-4); }
+.head { min-height: 40px; background: var(--om-color-surface-bg); font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
+.row { min-height: 56px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+/* A switch or a mark, centred under its column name — the head cell and the body cell alike. */
+.col { display: flex; justify-content: center; }
+/* The actions (order · edit · delete) at the row's end; on a phone they take a line of their own and their blank head goes. */
+.actions { display: inline-flex; gap: var(--om-spacing-1); justify-content: flex-end; }
+@media (max-width: 767px) {
+  .actionsHead { display: none; }
+  .actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+}

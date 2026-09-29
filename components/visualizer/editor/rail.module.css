@@ -22,7 +22,7 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 /* Read by a screen reader, never seen (", has changes" after a tab's name; a muted chip's "kept for your next Generate"). */
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .panel { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-.back { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 36px; margin: var(--om-spacing-3) var(--om-spacing-4) 0 calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); padding: var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-secondary); }
+.back { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--om-spacing-1); min-height: 36px; margin: var(--om-spacing-3) var(--om-spacing-4) 0 calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); padding: var(--om-spacing-1) var(--om-spacing-2) var(--om-spacing-1) var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-on-surface-secondary); }   /* (REG-729) the DS button's 600 */
 @media (hover: hover) { .back:hover { background: var(--om-color-hover-08p); color: var(--om-color-on-surface-default); } }
 .back:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
 .panelHead { display: flex; align-items: flex-start; gap: var(--om-spacing-3); padding: var(--om-spacing-4) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); }
@@ -38,10 +38,9 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 /* (F062) the foot's rows keep their own height — when the foot scrolls on a short laptop, the scroll takes the overflow, never Generate */
 .foot > * { flex-shrink: 0; }
 .changes { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.changesHead { display: flex; align-items: center; justify-content: space-between; font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
-.link { border: 0; background: none; padding: 0; cursor: pointer; font: var(--om-type-body-s); text-transform: none; letter-spacing: 0; color: var(--om-color-primary-default); }
-.link:hover { text-decoration: underline; }
-.link:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+.changesHead { display: flex; align-items: center; justify-content: space-between; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing */
+/* (REG-729) Clear all · Change — the house text link (the DS Link look), composed; the caption head's capitals stay off it. */
+.link { composes: link from '../../om/text-link.module.css'; text-transform: none; }
 /* (F007 · F051) Three rows and half of the fourth: a chip cut mid-way reads as "there is more", and the foot fades while there is. */
 .changeList { --chip-h: 28px; display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); }
 .changeList[data-capped] { max-height: calc(var(--chip-h) * 3.5 + var(--om-spacing-2) * 3); overflow-y: auto; overscroll-behavior: contain; }
@@ -58,8 +57,9 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 .changeX:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* the way on, inside the reason Generate waits for (a version to open) */
-.inlineLink { display: inline; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; }
-.inlineLink:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }
+/* (REG-729) the house text link inside the sentence — no underline; the sentence's 12px size at the link's 600 (the DS Link's note: inline, it
+   takes the copy's size) */
+.inlineLink { composes: link from '../../om/text-link.module.css'; font: var(--om-type-subheading-s); }
 /* (F067) Versions and Quality, one row each: the label on the left, the switch on the right — never past the rail's edge. */
 .knobs { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .opts { display: flex; align-items: center; justify-content: center; gap: var(--om-spacing-2); }
@@ -72,7 +72,7 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 .go[data-priced] { justify-content: space-between; }
 .goLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .go:not([data-priced]) .goLabel { flex: 0 1 auto; text-align: center; }
-.cost { display: inline-flex; align-items: center; gap: 4px; padding: 2px var(--om-spacing-2) 2px var(--om-spacing-1); border-radius: 999px; background: color-mix(in srgb, currentColor 18%, transparent); font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; }
+.cost { display: inline-flex; align-items: center; gap: 4px; padding: 2px var(--om-spacing-2) 2px var(--om-spacing-1); border-radius: var(--om-radius-full); background: color-mix(in srgb, currentColor 18%, transparent); font: var(--om-type-subheading-s); font-variant-numeric: tabular-nums; }
 .short { font: var(--om-type-body-s); color: var(--om-color-on-tertiary-yellow-variant); text-align: center; }
 .error { display: flex; align-items: flex-start; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }
 .error > :first-child { flex-shrink: 0; margin-top: 1px; }
@@ -94,7 +94,7 @@ aside > .foot[data-compact]::before { top: calc(-1 * var(--om-border-1)); }
 /* (phone-tablet 9) Clear all on the sheet's title line: the 36px button takes the title's 24px of the row, its target unchanged */
 .sheetAction { display: inline-flex; margin-block: -6px; }
 .compactRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
-.compactToggle { flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subtitle-m); color: var(--om-color-primary-default); white-space: nowrap; }
+.compactToggle { flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 var(--om-spacing-1); border: 0; border-radius: var(--om-radius-1); background: none; cursor: pointer; font: var(--om-type-subheading-m); color: var(--om-color-primary-default); white-space: nowrap; }   /* (REG-729) the DS button's 600 */
 .compactToggle:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 0; }
 @media (hover: hover) { .compactToggle:hover { background: var(--om-color-hover-04p); } }
 .compactStatus { flex: 1; min-width: 0; }

@@ -12,7 +12,6 @@
 .files { display: flex; flex-direction: column; gap: var(--om-spacing-2); padding-top: var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
 .fileList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 32px; color: var(--om-color-on-surface-secondary); }
-.fileLink, .fileName { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fileLink { color: var(--om-color-primary-default); text-decoration: none; }
-@media (hover: hover) { .fileLink:hover { text-decoration: underline; } }
+.fileName { font: var(--om-type-body-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileLink { composes: link from '../../om/text-link.module.css'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* (REG-729) the house text link — it was body-m, underlined on hover */
 @media (hover: none) { .optionalRow { min-height: 44px; } .fileRow { min-height: 44px; } }

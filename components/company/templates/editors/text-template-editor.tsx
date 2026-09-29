@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { PortalMenu } from '@/components/om/portal-menu'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { LibraryEditorGhost } from './library-editor-ghost'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
-import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { RichEditor, type RichEditorHandle } from '@/components/quotes/editor/text/rich-editor'
 import { savedLabel } from '@/lib/contracts/model'
 import { TEXT_LABEL, TOKENS, tokenText, type TextKind } from '@/lib/quotes/text'
@@ -77,7 +77,7 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
                        </>} onClose={close} />
         <div className={page.meta} data-testid="library-meta">
           <input className={page.titleInput} value={title} placeholder="Template name" aria-label="Template name" maxLength={120} onChange={(e) => { setTitle(e.target.value); queue() }} onBlur={() => { void flushRef.current() }} />
-          <div className={page.metaEnd}><span className={styles.kindChip}>{label}</span></div>
+          <div className={page.metaEnd}><MetaChip>{label}</MetaChip></div>   {/* (REG-729) the house tag, as the sibling editors' chips */}
         </div>
         <div className={styles.body}>
           <div className={styles.card}>
@@ -86,10 +86,9 @@ export function TextTemplateEditor({ data, from }: { data: TextTemplateEditorDat
               <RichEditor ref={editor} value={body} onChange={(html) => { setBody(html); queue() }} placeholder={`Write the ${label.toLowerCase()} this template carries.`} label={`${label} template`} minHeight={520}
                           right={
                             <span className={modal.tokenAnchor}>
-                              <button ref={tokenRef} type="button" className={modal.tokenBtn} aria-haspopup="menu" aria-expanded={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)}>
-                                Insert Token<span className={modal.tokenChev} data-open={tokenOpen || undefined}><Icon name="expand_more" size={20} /></span>
-                              </button>
-                              <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={200} align="right" sheetTitle="Insert Token">
+                              {/* (REG-729) the house compact select (m), as the quote editor's Templates modal has it (its .tokenBtn copy is gone) */}
+                              <SelectTrigger ref={tokenRef} label="Insert Token" value={<span>Insert Token</span>} open={tokenOpen} onMouseDown={(e) => e.preventDefault()} onClick={() => setTokenOpen((o) => !o)} />
+                              <PortalMenu open={tokenOpen} anchor={tokenRef} onClose={() => setTokenOpen(false)} role="menu" width={MENU_WIDTH.wide} align="right" sheetTitle="Insert Token">   {/* (REG-728) every insert-field menu is 240 */}
                                 {TOKENS.map((t) => <DropdownItem key={t.key} onSelect={() => { setTokenOpen(false); editor.current?.insertText(tokenText(t.key)) }}>{t.label}</DropdownItem>)}
                               </PortalMenu>
                             </span>

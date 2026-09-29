@@ -129,34 +129,18 @@
 .reviewList span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .colSelect { width: 320px; flex-shrink: 0; flex-direction: column; align-items: flex-start; gap: var(--om-spacing-1); }
 .hLabel { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
-/* The field-select trigger's anchor box (PortalMenu measures it): inline-flex on desktop, stretched to the
-   cell once the mapping rows go single-column (REG-269). */
-.selectWrap { display: inline-flex; }
 /* The map table's column headings, repeated inside each row for the ≤767 stacked layout where the head row
    is gone. Same copy, same caption style — hidden at every width the head row is visible. */
 .stackLabel { display: none; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
-.select {
-  width: 280px; height: 36px;
-  display: inline-flex; align-items: center; gap: var(--om-spacing-2);
-  padding: 0 var(--om-spacing-3);
-  border: var(--om-border-1) solid var(--om-color-on-surface-border);
-  border-radius: var(--om-radius-1);
-  background: var(--om-color-surface-default);
-  font: var(--om-type-body-m); color: var(--om-color-on-surface-default);
-  cursor: pointer; text-align: left;
-  transition: border-color var(--motion-hover);
-}
-.select span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.select[data-error] { border-color: var(--om-color-tertiary-red-default); }
-.select:hover { border-color: var(--om-color-on-surface-secondary); }
+/* (REG-729) The field select is the house TextField at 36 (import-wizard.tsx FieldSelect) — its box, its error stroke and its red line
+   under it; the hand-rolled 280×36 select and its message retired. The field fills its cell (280 at the desktop's 320 column). */
 /* (REG-317) A taken option in the field picker: the label keeps its place and the column that holds the field sits at the
    right in body/s secondary, ellipsised before it can widen the menu. The disabled colour comes from menus.module.css. */
 .optionLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mappedTo { margin-left: auto; padding-left: var(--om-spacing-3); max-width: 60%; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* DS inline error text (12/16 red) under the mapping select. */
-.required { font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+/* The field's chevron turns while its list is open, as every select's does (TextField turns only its own select-mode chevron). */
 .chev { color: var(--om-color-on-surface-secondary); display: inline-flex; transition: transform var(--motion-toggle); }
-.select[data-open] .chev { transform: rotate(180deg); }
+.chev[data-open] { transform: rotate(180deg); }
 
 /* Same card frame as every other table (1px surface-variant, radius-2); the frame owns the outer edges. */
 .previewWrap { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); }
@@ -174,7 +158,7 @@
   background: var(--om-color-surface-default);
 }
 /* Header cells stick to the top of the scrolling preview and take the level-1 shadow once scrolled (user 2026-08-28). */
-.pHead .pCell { position: sticky; top: 0; z-index: 1; height: 48px; font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: 0; color: var(--om-color-on-surface-secondary); transition: box-shadow var(--motion-toggle); }
+.pHead .pCell { position: sticky; top: 0; z-index: 1; height: 48px; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); transition: box-shadow var(--motion-toggle); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .previewWrap[data-scrolled='true'] .pHead .pCell { box-shadow: var(--om-elevation-level-1); }
 
 /* ---- Step 4 ---- */
@@ -211,12 +195,10 @@
   .dropSuccess { padding: var(--om-spacing-6) var(--om-spacing-4); }
 
   /* Step 2 — the 320 | ≥200 | 320 row (840 min) is wider than the clamped panel, so the tracks shrink
-     instead of the row scrolling; the select follows its cell. */
+     instead of the row scrolling; the field follows its cell. */
   .colName { width: 240px; }
   .colReview { min-width: 140px; }
   .colSelect { width: 264px; }
-  .selectWrap { align-self: stretch; }
-  .select { width: 100%; }
 
   /* Step 3 — SL No freezes so a row stays identifiable while the preview scrolls sideways (REG-144 edge rule). */
   .previewWrap { -webkit-overflow-scrolling: touch; }
@@ -287,9 +269,8 @@
        · step 1's two stacked links ("Download Template" / "View import history") and the success card's
          "Re-upload File" — 20px text lines that take a 44px box (the column's own 12px gaps keep them
          apart, and the success card is centred, so nothing shifts sideways);
-       · step 2's field select, the control every mapping row exists for: 36 → 44 tall. It is already full
-         width in the stacked row, so only its height changes — the label, the chevron and the error line
-         below it are untouched.
+       · step 2's field select, the control every mapping row exists for: 36 → 44 tall — (REG-729) now the
+         house TextField's own touch rule (its 36px size stands 44 under a finger).
      Not grown: "this template", which is a link INSIDE a sentence in the tips list — a 44px box around a
      run of body text would break the paragraph it belongs to, and the same file is one tap away from the
      stacked "Download Template" link below it. */
@@ -297,5 +278,4 @@
   .toastBtn::after { content: ''; position: absolute; inset: -10px; }
   .link { min-height: 44px; }
   .reupload { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
-  .select { height: 44px; }
 }

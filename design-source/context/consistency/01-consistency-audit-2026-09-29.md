@@ -114,6 +114,29 @@ filled SearchBar in Filters; a house `TextArea`.
 **Owner's calls.** (a) The one card-title font for Company / Settings cards. (b) Letter-spacing on uppercase captions: none (the
 listing's heads) or .02em (most eyebrows)?
 
+## The owner's answers — 2026-09-29: "as recommended"
+
+The calls above, answered as recommended (the reasons in brief):
+
+| Round | Call | Answer |
+| --- | --- | --- |
+| 2 Tables | (a) Event tables | **Two table types, each ONE shared component.** A data list on a page is the listing's model; a short list inside a Settings / Company card (the switch lists and the small data lists — custom fields, entities, roles, ways in, the questionnaire bank) is the *card table*: the event table's compact rows, with the listing's head type (caption-s uppercase grey, no letter-spacing). A 56 / 64 listing inside a card is too heavy for three rows; two types are fine when each exists once. |
+| 2 Tables | (b) Insights and Plan on a phone | **Cards**, as every other table at ≤767. |
+| 2 Tables | (the Contracts table's 48 head) | **56, as every table.** Contracts has no mock of its own (REG-534 drew on Houzz references); the listing's model governs (REG-430). |
+| 3 Menus | (a) Width scale | **200** standard · **240** a status list or rows with a second line or key hint · **320** rows with a description (the editor switchers, Automation) · **the anchor's width** for a field's list. Mock-backed widths stay: the notes family's 140 (931:45488), the Add Item box's 360 (1271:40932), the 400 popovers. |
+| 3 Menus | (b) Glyph-led rows | **12px**, the house row's padding, for every row (≈90 of 92 already). |
+| 3 Menus | (c) Date picker on a phone | **A bottom sheet**, as every other picker at ≤767 (REG-353). |
+| 4 Buttons | (a) Bulk bar | **The Lead Details bar (902:26567)** — count in subheading-m, 24 gaps, the house 24 close; the listing takes it too. |
+| 4 Buttons | (b) Visualizer text buttons | **The DS's 600**: one button type. |
+| 4 Buttons | (c) Pill-shaped tags | **r4 everywhere** (the DS Tag); a full radius only on true circles (avatars, dots, count badges). |
+| 4 Buttons | (d) Compact select | **Yes: one house select trigger** — the scope pill's anatomy, 36 in a toolbar and 28 inside a table cell — for the seven. |
+| 5 Page structure | (a) Card titles in Company / Settings | **heading-h4** (16/24 bold), the house section title (tab toolbars, X-Ray and library editor cards, titles above tables), the help line in body-s grey. |
+| 5 Page structure | (b) Letter-spacing on uppercase captions | **None** — the type tokens carry none and the listing's heads have none. |
+
+Round 1's leftovers, with the same logic: the Deleted / Archived Quotes & Contracts sheets take the trio's shape (REG-513: Empty
+Trash in the head, no Close foot, height to content with a 480 floor); the two client-view drawers take one width (400); the
+layers get one z-index scale with the snackbar above every dialog.
+
 ## Guardrails (REG-726, built 2026-09-29)
 
 - `npm run design:lint` — `scripts/design-lint.mjs`: eight rules (a modal draws the house head and foot · a close is the house one ·

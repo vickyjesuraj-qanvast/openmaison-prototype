@@ -22,7 +22,7 @@
 .subHead { display: flex; align-items: center; gap: var(--om-spacing-3); margin-top: var(--om-spacing-2); }
 .subHead > :first-child { flex: 1; min-width: 0; }
 .subLines { padding-left: var(--om-spacing-5); border-left: var(--om-border-1) solid var(--om-color-surface-variant); }
-.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; letter-spacing: .02em; color: var(--om-color-on-surface-secondary); }
+.eyebrow { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }   /* (REG-729) no letter-spacing on an uppercase caption */
 .addLine { align-self: flex-start; }
 @media (max-width: 767px) { .lineRow { grid-template-columns: 1fr 1fr; } .lineRow > :first-child { grid-column: 1 / -1; } .lineTools { grid-column: 1 / -1; justify-self: end; } }
 
@@ -62,7 +62,7 @@
 .richRead { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow-wrap: anywhere; }
 .richRead :where(p, ul, ol) { margin: 0 0 var(--om-spacing-2); }
 .richRead :where(p, ul, ol):last-child { margin-bottom: 0; }
-.retry { border: 0; background: none; padding: 0; font: inherit; color: var(--om-color-primary-default); text-decoration: underline; cursor: pointer; }
+.retry { composes: link from '../../om/text-link.module.css'; }   /* (REG-729) the house text link — not underlined at rest */
 /* (sweep S5 #6) The import's kept file, back from the mapping step. */
 .fileRow { display: flex; align-items: center; gap: var(--om-spacing-2); min-height: 44px; padding: 0 var(--om-spacing-2) 0 var(--om-spacing-3); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); color: var(--om-color-on-surface-secondary); }
 .fileName { flex: 1; min-width: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

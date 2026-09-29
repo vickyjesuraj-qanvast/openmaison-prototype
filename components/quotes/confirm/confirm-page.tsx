@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Checkbox } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
 import { useSnackbar } from '@/components/om/snackbar'
 import { displayDateLong } from '@/lib/format'
@@ -76,7 +77,7 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
           {brand.logo ? <img className={shell.logo} src={brand.logo} alt="" /> : null}
           <span className={shell.studio}>{studioName}</span>
         </span>
-        <span className={shell.secure}><Icon name="lock" size={16} />Private link</span>
+        <MetaChip color="green" icon="lock">Private link</MetaChip>   {/* (REG-729) the house tag (r4) — it was a pill */}
       </header>
       <div className={shell.body}>
         <div className={`${shell.stage} ${styles.stage}`} ref={areaRef}>

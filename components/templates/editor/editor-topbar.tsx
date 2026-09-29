@@ -6,7 +6,8 @@ import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import type { TemplateStatus } from '@/lib/templates/model'
 import styles from './editor-topbar.module.css'
 
@@ -48,7 +49,7 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
           <MetaChip>{status === 'draft' ? 'Draft' : status === 'archived' ? `Archived · v${version}` : `Published v${version}`}</MetaChip>
           {isDefault ? <MetaChip>Default</MetaChip> : null}
           {status !== 'draft' && hasChanges ? <MetaChip>Edited since v{version}</MetaChip> : null}   {/* (REG-577) the gallery's words */}
-          {originLabel ? <span className={styles.origin} data-testid="origin-chip"><Icon name="request_quote" size={16} weight={300} /> {originLabel}</span> : null}
+          {originLabel ? <span className={styles.originChip} data-testid="origin-chip"><MetaChip icon="request_quote">{originLabel}</MetaChip></span> : null}   {/* (REG-729) the house tag, r4 — it was a pill */}
         </span>
         <span className={styles.saved}>{saving ? <><Icon name="progress_activity" size={16} weight={300} className={styles.spin} /> Saving…</> : <><Icon name="check_circle" size={16} weight={300} className={styles.savedIcon} /> {savedLabel}</>}</span>
       </div>
@@ -60,16 +61,19 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
       ) : (
         <div className={styles.actions}>
           <span className={styles.anchor}>
+            {/* (REG-729) The house compact select (m, a toolbar) — its chevron turns while the list is open. */}
             <Tooltip label="The quote drawn on the page while you design" disabled={menu === 'source'}>
-              <button type="button" className={styles.sourceBtn} onClick={() => setMenu((m) => (m === 'source' ? null : 'source'))} aria-haspopup="menu" aria-expanded={menu === 'source'} aria-label={`Preview with ${sources.find((s) => s.key === source)?.label ?? 'Sample quote'}`}>
-                <Icon name="request_quote" size={18} weight={300} /><span className={styles.sourceCaption}>Preview with:</span><span className={styles.sourceLabel}>{sources.find((s) => s.key === source)?.label ?? 'Sample quote'}</span><Icon name="keyboard_arrow_down" size={18} />
-              </button>
+              <SelectTrigger className={styles.sourceBtn} open={menu === 'source'} onClick={() => setMenu((m) => (m === 'source' ? null : 'source'))}
+                             label={`Preview with ${sources.find((s) => s.key === source)?.label ?? 'Sample quote'}`}
+                             value={<span className={styles.sourceValue}><Icon name="request_quote" size={18} weight={300} /><span className={styles.sourceCaption}>Preview with:</span><span className={styles.sourceLabel}>{sources.find((s) => s.key === source)?.label ?? 'Sample quote'}</span></span>} />
             </Tooltip>
-            <Dropdown open={menu === 'source'} onClose={() => setMenu(null)} align="right" width={280} sheetTitle="Preview with">
+            {/* (REG-728) 240: rows with a meta (a long lead's name wraps — the house row grows, REG-531 — rather than being cut); the
+                source in use wears the Selected fill. */}
+            <Dropdown open={menu === 'source'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="Preview with">
               {sources.map((s, i) => (
                 <div key={s.key}>
                   {i === 2 ? <DropdownDivider /> : null}
-                  <DropdownItem role="menuitemradio" checked={s.key === source} onSelect={() => { setMenu(null); onSource(s.key) }}><span className={styles.menuLabel}>{s.label}</span>{s.sub ? <span className={styles.menuSub}>{s.sub}</span> : null}</DropdownItem>
+                  <DropdownItem role="menuitemradio" checked={s.key === source} selected={s.key === source} onSelect={() => { setMenu(null); onSource(s.key) }} meta={s.sub}>{s.label}</DropdownItem>
                 </div>
               ))}
             </Dropdown>
@@ -78,7 +82,8 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
             <Tooltip label="Zoom out"><IconButton icon="zoom_out" label="Zoom out" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => onZoom('out')} /></Tooltip>
             <span className={styles.anchor}>
               <button type="button" className={styles.zoomLabel} onClick={() => setMenu((m) => (m === 'zoom' ? null : 'zoom'))} aria-haspopup="menu" aria-expanded={menu === 'zoom'} aria-label={`Zoom ${zoomLabel}`}>{zoomLabel}</button>
-              <Dropdown open={menu === 'zoom'} onClose={() => setMenu(null)} align="right" width={160} sheetTitle="Zoom">
+              {/* (REG-728) the standard 200 */}
+              <Dropdown open={menu === 'zoom'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.standard} sheetTitle="Zoom">
                 <DropdownItem onSelect={() => { setMenu(null); onZoom('fit') }}>Fit to width</DropdownItem>
                 <DropdownItem onSelect={() => { setMenu(null); onZoom('100') }}>Actual size</DropdownItem>
               </Dropdown>
@@ -91,14 +96,15 @@ export function EditorTopbar({ name, onName, status, version, isDefault, hasChan
           <Tooltip label="History"><IconButton icon="history" label="History" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onHistory} /></Tooltip>
           <span className={styles.anchor}>
             <Tooltip label="More options" disabled={menu === 'more'}><IconButton icon="more_vert" label="More options" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={menu === 'more'} onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))} /></Tooltip>
-            <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={264} sheetTitle="Template">
+            {/* (REG-728) 240: a locked row's rule, a key hint */}
+            <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="Template">
               <DropdownItem onSelect={() => { setMenu(null); onMenu('rename'); setTimeout(() => { nameRef.current?.focus(); nameRef.current?.select() }, 120) }}>Rename template</DropdownItem>   {/* after the menu hands focus back to its button */}
               <DropdownItem onSelect={() => { setMenu(null); onMenu('duplicate') }}>Duplicate template</DropdownItem>
               <DropdownItem onSelect={() => { setMenu(null); onMenu('match') }}>{hasReference ? 'Upload another existing quote' : 'Upload my existing quote to match'}</DropdownItem>
               <DropdownItem onSelect={() => { setMenu(null); onMenu('start') }} disabled={!canStart} title={canStart ? undefined : 'Publish it first'}>Start a quote with this template</DropdownItem>
               <DropdownItem onSelect={() => { setMenu(null); onMenu('gallery') }}>All quote templates</DropdownItem>
               <DropdownDivider />
-              {compact ? <DropdownItem onSelect={() => { setMenu(null); onMenu('preview') }}>Preview</DropdownItem> : null}
+              {compact ? <DropdownItem onSelect={() => { setMenu(null); onMenu('preview') }} shortcut="preview">Preview</DropdownItem> : null}
               <DropdownItem tone="danger" onSelect={() => { setMenu(null); onMenu('discard') }}>{status === 'draft' ? 'Delete this draft' : `Discard the edits since v${version}`}</DropdownItem>
             </Dropdown>
           </span>

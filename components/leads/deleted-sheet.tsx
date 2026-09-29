@@ -168,7 +168,7 @@ export function DeletedLeadsSheet({
                         />
                       </span>
                       {COLS.map((c, i) => (
-                        <div key={c.key} className={`${styles.hCell}${i === 0 ? ` ${styles.pin}` : ''}`} style={{ width: cw(c.key, c.width) }} role="columnheader">
+                        <div key={c.key} className={`${styles.hCell}${i === 0 ? ` ${styles.pin}` : ''}`} data-pin-edge={i === 0 || undefined} style={{ width: cw(c.key, c.width) }} role="columnheader">
                           {c.key === 'source' || c.key === 'propertyType' ? (
                             /* (REG-468) categories the filter serves — no sort glyph */
                             <span className={styles.hLabel}>{c.label}</span>
@@ -182,7 +182,7 @@ export function DeletedLeadsSheet({
                         </div>
                       ))}
                       <div className={styles.hCell} style={{ width: ACTIONS_W }} role="columnheader">
-                        <span className={styles.hLabel} style={{ color: 'var(--om-color-on-surface-secondary)' }}>Actions</span>
+                        <span className={styles.hLabel}>Actions</span>
                       </div>
                     </div>
 
@@ -190,10 +190,10 @@ export function DeletedLeadsSheet({
                       <div className={styles.emptyRow}>No deleted leads.</div>
                     ) : rows.map((l) => (
                       <div key={l.id} className={styles.row} role="row" data-selected={liveSelected.has(l.id) || undefined}>
-                        <span className={styles.selCell} role="cell">
+                        <span className={`${styles.cell} ${styles.selCell}`} role="cell">
                           <Checkbox isSelected={liveSelected.has(l.id)} onChange={() => toggle(l.id)} aria-label={`Select ${titleCaseName(l.name)}`} />
                         </span>
-                        <div className={`${styles.cell} ${styles.pin}`} style={{ width: cw('name', 176) }} role="cell">
+                        <div className={`${styles.cell} ${styles.pin}`} data-pin-edge="" style={{ width: cw('name', 176) }} role="cell">
                           <span className={styles.twoLine}>
                             <span className={styles.name}>{titleCaseName(l.name)}</span>
                             <span className={styles.phone}>{phoneLocal(l.phone)}</span>

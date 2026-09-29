@@ -6,7 +6,7 @@ import { Tooltip } from './tooltip'
 import styles from './scroll-pagers.module.css'
 
 /**
- * Edge pagers for any horizontal scroller (chip rails, boards): a round chevron appears at
+ * Edge pagers for any horizontal scroller (chip rails, boards): a chevron button (r4, REG-729) appears at
  * whichever edge has more content and pages the scroller by `step` (default 70% of the
  * visible width). Optional surface-colour fades. Mount it as a sibling of the scroller inside a
  * `position: relative` wrapper and pass the scroller's ref.

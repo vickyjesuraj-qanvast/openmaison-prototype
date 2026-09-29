@@ -8,7 +8,7 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
-import { DropdownItem } from '@/components/leads/dropdown'
+import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { QuoteTextTemplate } from '@/lib/db/schema'
 import { aiNotes, aiTerms, resolveTokens, TEXT_LABEL, TEXT_PLACEHOLDER, type TextContext, type TextKind, type TokenValues } from '@/lib/quotes/text'
@@ -110,7 +110,8 @@ export function TextCard({ seed, open, onToggle, onHandlePointerDown, onSaved, t
       <Tooltip label="More options" disabled={menu}>
         <IconButton icon="more_vert" label={`More options for ${label}`} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)} />
       </Tooltip>
-      <PortalMenu open={menu} anchor={moreRef} onClose={() => setMenu(false)} role="menu" width={240} align="right" sheetTitle={label}>
+      {/* (REG-728) the standard 200 (a phone draws it as a sheet) */}
+      <PortalMenu open={menu} anchor={moreRef} onClose={() => setMenu(false)} role="menu" width={MENU_WIDTH.standard} align="right" sheetTitle={label}>
         <DropdownItem onSelect={() => { setMenu(false); setModal(true) }}>My Templates</DropdownItem>
         <DropdownItem role="menuitemcheckbox" checked={visible} onSelect={() => { setMenu(false); toggleVisible(!visible) }}>
           <span className={styles.menuIcon} data-on={visible || undefined}><Icon name={visible ? 'check_box' : 'check_box_outline_blank'} size={20} /></span>Show in client view

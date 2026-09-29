@@ -68,19 +68,20 @@ export function VisualizerEditorSkeleton() {
 
 /**
  * The client's link while it loads (F167): the letterhead bar (the logo, the studio, "Open until"), the greeting — eyebrow, title, the
- * designer's message, the how-to line — then the room's name and its first design card, at the page's own spacing.
+ * designer's message, the how-to line — then the room's name and its first design card, at the page's own spacing. (REG-729) The two
+ * tags' bones are r4, as the tags now are.
  */
 export function RenderShareSkeleton() {
   return (
     <div className={styles.share}>
       <GhostSheet label="Loading the designs">
         <div aria-hidden>
-          <div className={styles.shareTop}><span className={styles.shareBrand}><Bone w={32} h={32} r={16} /><Bone w={140} h={16} /></span><Bone w={150} h={28} r={14} className={styles.shareOpen} /></div>
+          <div className={styles.shareTop}><span className={styles.shareBrand}><Bone w={32} h={32} r={16} /><Bone w={140} h={16} /></span><Bone w={150} h={28} r={4} className={styles.shareOpen} /></div>
           <div className={styles.shareBody}>
             <div className={styles.shareIntro}><Bone w={90} h={12} /><Bone w="70%" h={32} className={styles.shareTitle} /><Bone w="100%" h={104} r={8} /><Bone w="60%" h={16} /></div>
             <div className={styles.shareRoom}>
               <Bone w={120} h={20} className={styles.shareRoomName} />
-              <div className={styles.shareCard}><span className={styles.shareCardHead}><Bone w={160} h={18} /><Bone w={80} h={28} r={14} /></span><div className={styles.sharePhoto} /><span className={styles.shareTools}><Bone w={150} h={36} r={4} /><Bone w={150} h={36} r={4} /><Bone w={120} h={36} r={4} /></span></div>
+              <div className={styles.shareCard}><span className={styles.shareCardHead}><Bone w={160} h={18} /><Bone w={80} h={28} r={4} /></span><div className={styles.sharePhoto} /><span className={styles.shareTools}><Bone w={150} h={36} r={4} /><Bone w={150} h={36} r={4} /><Bone w={120} h={36} r={4} /></span></div>
             </div>
           </div>
         </div>

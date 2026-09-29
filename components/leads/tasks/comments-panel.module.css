@@ -6,19 +6,22 @@
 .comment { display: flex; align-items: flex-start; gap: var(--om-spacing-3); }
 .textCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 
-/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; kebab 20 at the right edge. */
+/* Meta row (20 tall): name 14/Semi Bold + "2 days ago" 12/Regular secondary, 4 apart; the kebab at the right edge — (REG-729) the house
+   IconButton 24 bare (the heads' kebab), centred on the 20 line, so the row keeps its height. */
 .meta { display: flex; align-items: center; gap: var(--om-spacing-1); height: 20px; }
 .author { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .time { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
 .kebabWrap { margin-left: auto; position: relative; display: inline-flex; }
+.kebabBtn[aria-expanded='true'] { background: var(--om-color-hover-08p); }   /* the wash stays while its menu is open */
+/* The quote editor's line comments (components/quotes/editor/line-comments.tsx) still draw THEIR kebab from this sheet — a bare 20px box
+   with the drawer head's hover (components/om/drawer.module.css) — so the class stays for them. */
 .kebab {
   border: 0; background: none; padding: 0; cursor: pointer;
   width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--om-color-on-surface-secondary); border-radius: var(--om-radius-1);
   transition: background-color var(--motion-hover);
 }
-.kebab:hover, .kebab[aria-expanded='true'] { background: var(--om-color-hover-08p); }   /* hover copied from the drawer's head icon buttons (components/om/drawer.module.css) */
-.danger { color: var(--om-color-tertiary-red-default); }
+.kebab:hover, .kebab[aria-expanded='true'] { background: var(--om-color-hover-08p); }
 
 /* Comment text 14/Regular on-surface, wraps. */
 .body { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -38,11 +41,10 @@
 .composerRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 36px; }
 .privacy { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
 
-/* Touch ergonomics (REG-273): the per-comment kebab is a 20px box — half a fingertip. It keeps its 20px
-   glyph AND its 20px hover wash (a 44px wash would read as a grey tile on a comment); the target alone grows
-   to 44 through a transparent overlay, inside the drawer body's own 24 padding. The meta row stays 20 tall.
-   Composer / edit buttons are DS controls: app/globals.css already lifts the `sm` Cancel · Save to 44 on a
-   touch pointer, and their 8 gap is horizontal, so nothing collides. Desktop with a mouse never matches. */
+/* Touch ergonomics (REG-273): this panel's kebab is the house IconButton, whose own transparent overlay takes the 44 target on a
+   touch pointer (om/icon-button.module.css); the line comments' 20px `.kebab` keeps its 20px glyph and wash, the target alone growing to
+   44 through a transparent overlay. Composer / edit buttons are DS controls: app/globals.css already lifts the `sm` Cancel · Save to 44
+   on a touch pointer, and their 8 gap is horizontal, so nothing collides. Desktop with a mouse never matches. */
 @media (max-width: 767px), (hover: none) {
   .kebab { position: relative; }
   .kebab::after { content: ''; position: absolute; inset: -12px; }

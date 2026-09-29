@@ -76,7 +76,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await openEditor(page, RYAN)
     await pill(page).click()
     const item = page.getByRole('menuitemradio', { name: /^Draft/ })
-    ok('Draft is out of reach in the editor', (await item.getAttribute('aria-disabled')) === 'true' && /stays signed/.test(await item.getAttribute('title') ?? ''))
+    ok('Draft is out of reach in the editor', (await item.getAttribute('aria-disabled')) === 'true' && /stays signed/.test(`${await item.innerText()} ${await item.getAttribute('title') ?? ''}`))   // (REG-728) a disabled row's reason prints in the row
     await page.keyboard.press('Escape')
     ok('the banner says they signed online', /signed online/.test(await page.getByTestId('contract-banner').innerText()))
     await shot('03-client-signed')

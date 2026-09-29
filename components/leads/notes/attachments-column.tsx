@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { useRef, useState } from 'react'
+import { DropdownItem } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
+import { PortalMenu } from '@/components/om/portal-menu'
 import { Tooltip } from '@/components/om/tooltip'
 import type { LeadFile } from '@/lib/db/schema'
 import { displayDateTimeDot } from '@/lib/format'
@@ -30,7 +31,10 @@ const kindIcon = (f: LeadFile) => (f.kind === 'pdf' || f.mime === 'application/p
  */
 export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumnProps) {
   const [menu, setMenu] = useState<string | null>(null)
+  /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab — inline, it hung inside this scrolling column. */
+  const kebab = useRef<HTMLElement | null>(null)
   if (files.length === 0) return null
+  const menuFile = menu ? files.find((f) => f.id === menu) ?? null : null
 
   return (
     <aside className={styles.column} aria-label="Attachments">
@@ -61,19 +65,19 @@ export function AttachmentsColumn({ files, onRemove, onOpen }: AttachmentsColumn
                   type="button" className={styles.kebab}
                   aria-label={`Actions for ${f.name}`}
                   aria-haspopup="menu" aria-expanded={open}
-                  onClick={() => setMenu((m) => (m === f.id ? null : f.id))}
+                  onClick={(e) => { kebab.current = e.currentTarget; setMenu((m) => (m === f.id ? null : f.id)) }}
                 >
                   <Icon name="more_vert" size={24} weight={300} />
                 </button>
               </Tooltip>
-              {/* Not mocked: one item, at the Notes menus' 140 width (931:45488 / 931:45009). */}
-              <Dropdown open={open} onClose={() => setMenu(null)} align="right" width={140} sheetTitle="Attachment">
-                <DropdownItem onSelect={() => { setMenu(null); onRemove(f.id) }}>Remove</DropdownItem>
-              </Dropdown>
             </span>
           </div>
         )
       })}
+      {/* Not mocked: one item, at the Notes menus' 140 width (931:45488 / 931:45009). */}
+      <PortalMenu open={!!menuFile} anchor={kebab} onClose={() => setMenu(null)} align="right" width={140} role="menu" sheetTitle="Attachment">
+        <DropdownItem onSelect={() => { const f = menuFile; setMenu(null); if (f) onRemove(f.id) }}>Remove</DropdownItem>
+      </PortalMenu>
     </aside>
   )
 }

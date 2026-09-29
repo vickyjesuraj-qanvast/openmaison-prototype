@@ -35,7 +35,8 @@ export function InsightsGhost() {
             <div><Words className={styles.sectionTitle}>By team member</Words><Words className={styles.sectionHelp}>Outreach &amp; conversion attributed to whoever logged the first outreach</Words></div>
             <Slot kind="icon" desk />
           </div>
-          <GhostTable head={56} row={64} rows={3} cols={[
+          {/* (REG-727) a phone gets the member cards the real table turns into, 222 tall: the member (36), then five lines — each turnaround two */}
+          <GhostTable head={56} row={64} rows={3} phone={{ card: 222, lines: 5 }} cols={[
             { basis: 220, grow: 220, head: 52, cell: { node: <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}><Slot kind="avatar" /><span style={{ display: 'flex', flexDirection: 'column' }}><Line w={40} lh={20} h={12} /><Line w={36} lh={16} h={10} /></span></span> } },
             { basis: 96, grow: 96, head: 36, cell: 10 },
             { basis: 220, grow: 220, head: 140, cell: [16, 72] },

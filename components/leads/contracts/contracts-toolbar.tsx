@@ -92,7 +92,8 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
           <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
             {/* (REG-591) Send together: every unsigned document of the lead under one signing link. */}
-            <DropdownItem disabled={bundleCount < 2} onSelect={pick(() => onMenu('bundle'))}>Send together for signature{bundleCount < 2 ? <span className={styles.menuMeta}>needs two documents ready to go</span> : null}</DropdownItem>   {/* (sweep S2 #23) greyed with its reason */}
+            {/* (sweep S2 #23) greyed with its reason — (REG-728) in the row's own reason line, under its words */}
+            <DropdownItem disabled={bundleCount < 2} title={bundleCount < 2 ? 'needs two documents ready to go' : undefined} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Contracts</DropdownItem>   {/* (sweep S2 · U-07) */}

@@ -101,12 +101,13 @@ function PinSpot({ image, x, y, n, role }: { image: string; x: number; y: number
   )
 }
 
-/** Both boxes: no resize grip (DescribeBox's rule), Esc closes from inside the text box (react-aria keeps the key from the card). */
-function NoteBox({ label, ariaLabel, placeholder, value, onChange, onSubmit, onEscape, autoFocus }: {
-  label?: string; ariaLabel?: string; placeholder: string; value: string; onChange: (v: string) => void; onSubmit: () => void; onEscape: () => void; autoFocus?: boolean
+/** Both boxes: no resize grip (DescribeBox's rule), Esc closes from inside the text box (react-aria keeps the key from the card).
+ *  (REG-729) Every multi-line field carries its label — the reply box and the phone's note box drew only a placeholder. */
+function NoteBox({ label, placeholder, value, onChange, onSubmit, onEscape, autoFocus }: {
+  label: string; placeholder: string; value: string; onChange: (v: string) => void; onSubmit: () => void; onEscape: () => void; autoFocus?: boolean
 }) {
   return (
-    <TextArea label={label} aria-label={label ? undefined : ariaLabel} placeholder={placeholder} value={value} autoFocus={autoFocus} onChange={(v: string) => onChange(v.slice(0, PIN_CHARS))}
+    <TextArea label={label} placeholder={placeholder} value={value} autoFocus={autoFocus} onChange={(v: string) => onChange(v.slice(0, PIN_CHARS))}
               onKeyDown={(e: React.KeyboardEvent) => {
                 if (e.key === 'Escape') { e.preventDefault(); onEscape(); return }
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onSubmit() }
@@ -200,7 +201,7 @@ export function PinThread({ pin, index, now, onReply, onStatus, onDelete, onClos
   )
   const replyBox = (
     <>
-      <NoteBox ariaLabel="Reply" placeholder={toClient ? 'Reply — the client sees it' : 'Reply…'} value={text} onChange={setText} onSubmit={() => { void send() }} onEscape={onClose} />
+      <NoteBox label="Reply" placeholder={toClient ? 'Reply — the client sees it' : 'Reply…'} value={text} onChange={setText} onSubmit={() => { void send() }} onEscape={onClose} />
       <span className={styles.actions}><Button isDisabled={!text.trim() || busy} onPress={() => { void send() }}>{busy ? 'Sending…' : 'Reply'}</Button></span>
     </>
   )
@@ -261,7 +262,7 @@ export function DraftPin({ x, y, onSave, onCancel, label = 'Pin a note here', hi
           <Sheet open onClose={onCancel} title={label} footer={<div className={styles.sheetFoot}>{foot}</div>}>
             <div className={styles.sheetBody} data-card="" data-draft="" data-testid="viz-pin-draft">
               {image ? <PinSpot image={image} x={x} y={y} n={null} role="studio" /> : null}
-              <NoteBox ariaLabel={label} placeholder="e.g. Can this wall go a shade warmer?" value={text} onChange={setText} onSubmit={() => { void save() }} onEscape={onCancel} autoFocus />
+              <NoteBox label={label} placeholder="e.g. Can this wall go a shade warmer?" value={text} onChange={setText} onSubmit={() => { void save() }} onEscape={onCancel} autoFocus />
             </div>
           </Sheet>
         </span>

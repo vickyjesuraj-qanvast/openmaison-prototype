@@ -1,76 +1,46 @@
-/* Lead Import History — 1:1 from 780:93997 (empty) and 779:20147 (populated). */
-.header {
-  position: sticky; top: var(--om-spacing-2); z-index: 20;
-  display: flex; align-items: center; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  background: transparent;   /* painted by ::after (rounded) */
-  border-radius: var(--om-radius-2) var(--om-radius-2) 0 0;
-  box-shadow: var(--om-elevation-level-1);   /* same header treatment as Leads (799:23251) */
-}
-/* While stuck, the 8px canvas gutter above the header is part of the body's box. Two plates behind the content:
-   ::before paints the canvas over the gutter + the corner cut-outs, ::after is the white header plate with the body's
-   top radius — so the header keeps rounded corners when it is stuck instead of turning square. */
-.header::before {
-  content: ''; position: absolute; left: 0; right: 0; top: calc(-1 * var(--om-spacing-2)); bottom: 0; z-index: -1;
-  background: var(--om-color-surface-bg); pointer-events: none;
-}
-.header::after {
-  content: ''; position: absolute; inset: 0; z-index: -1;
-  background: var(--om-color-surface-default); border-radius: var(--om-radius-2) var(--om-radius-2) 0 0; pointer-events: none;
-}
-.back { border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; color: var(--om-color-on-surface-default); }
-.titleBlock { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; }
-.actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
+/* Lead Import History — 1:1 from 780:93997 (empty) and 779:20147 (populated).
+   (REG-729) The header is the house L2 (components/shell/page-header-l2) — the hand-rolled copy and its plates are gone. Its two
+   actions ride as one group, 12 apart as the header's own, that may wrap where a 320 phone cannot hold them on one line. */
+.headActions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-3); min-width: 0; }
 
-.empty {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--om-spacing-6); padding: var(--om-spacing-6);
-}
-.emptyArt { width: 180px; height: 180px; }
-.emptyText { display: flex; flex-direction: column; align-items: center; gap: var(--om-spacing-3); color: var(--om-color-on-surface-default); }
-.emptyTitle { font: var(--om-type-subheading-xl); }
+/* (REG-729) The empty card's inner anatomy (components/om/empty-card.module.css — the art, 24, the texts 12 apart with the 20/24/600
+   title, 24, the buttons 12 apart), on the page's own white: no card frame here, the page body is the card. */
+.empty { composes: inner from '../../../components/om/empty-card.module.css'; flex: 1; justify-content: center; padding: var(--om-spacing-6); }
+.emptyArt { composes: art from '../../../components/om/empty-card.module.css'; width: 180px; height: 180px; }
+.emptyText { composes: texts from '../../../components/om/empty-card.module.css'; color: var(--om-color-on-surface-default); }
+.emptyTitle { composes: title from '../../../components/om/empty-card.module.css'; }
 .emptyBody { display: flex; flex-direction: column; gap: var(--om-spacing-2); font: var(--om-type-body-m); }
 .emptyBody ul { margin: 0; padding-left: 21px; list-style: disc; }
-.emptyBtns { display: flex; gap: var(--om-spacing-3); }
+.emptyBtns { composes: buttons from '../../../components/om/empty-card.module.css'; }
 
 .content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: var(--om-spacing-6); padding-bottom: var(--fab-clearance); }
 .toolbar { display: flex; align-items: center; gap: var(--om-spacing-4); }
 .sectionTitle { flex: 1; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 .toolRight { display: flex; align-items: center; gap: var(--om-spacing-3); }
 
+/* (REG-727) The history table sits on the table core (components/om/table-core.module.css) — the frame, the head cells and their
+   caption, the sort button, the cells and their top rule, the frozen Date cell and its 1px edge — the leads listing's rules, written
+   once. Its head and rows are FLEX rows (the columns grow pro rata from the mock's widths), so the row layout stays here. */
 .tableWrap {
   /* The mock's rule is an inside stroke. It was an inset outline for a while (REG-323: a border took 2px off the content box
      and the 1316 columns scrolled by exactly that), but the frozen Date column paints over an outline; a real border sits
      outside the scrollport, and the last column gives up the border's 2px instead (REG-430, the listing's card). */
-  border: var(--om-border-1) solid var(--om-color-surface-variant);
-  border-radius: var(--om-radius-2);
-  overflow-x: auto;
+  composes: frame scroller from '../../../components/om/table-core.module.css';   /* (REG-727) the table core: that border, the radius, the fill; always the sideways scroller */
 }
 .table { display: flex; flex-direction: column; width: 100%; min-width: var(--imports-min, 1314px); }   /* 141+285+118+142+396+232 (779:20147 less the border); columns grow pro rata beyond that; a dragged column raises the floor (REG-430) */
-/* Date frozen at every width (REG-430; ≤1024 since REG-269): the frozen cell paints the body's white behind itself. */
-.headRow > .hCell:first-child, .row > .cell:first-child {
-  position: sticky; left: 0; z-index: 2;
-  background: var(--om-color-surface-default);
-  clip-path: inset(0 -6px 0 0);
-  transition: box-shadow var(--motion-toggle);
-}
-.tableWrap[data-scrolled] .headRow > .hCell:first-child, .tableWrap[data-scrolled] .row > .cell:first-child { box-shadow: var(--om-shadow-frozen-column); }
 .headRow, .row { display: flex; align-items: stretch; }
 .headRow { height: 56px; }
-.row { height: 44px; border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.row { height: 44px; transition: background-color var(--motion-hover); }   /* 44, the mock's row; the 1px rule between rows is each cell's top rule (the core's .cell) */
 .hCell, .cell { flex: var(--col) 0 calc(var(--col) * 1px); }
-.hCell, .cell {
-  flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-1);
-  padding: 0 var(--om-spacing-6) 0 var(--om-spacing-4);
-  overflow: hidden; white-space: nowrap;
-}
-.hCell { font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); position: relative; }   /* relative: the column-resize handle (REG-427); the frozen Date head's sticky rule below still wins */
-.hSort { display: inline-flex; align-items: center; gap: var(--om-spacing-1); border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; text-transform: inherit; }
-.hSort[data-sorted] { color: var(--om-color-primary-default); }
-.cell { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
+.hCell, .cell { flex-shrink: 0; gap: var(--om-spacing-1); overflow: hidden; white-space: nowrap; }
+.hCell { composes: hCell from '../../../components/om/table-core.module.css'; }   /* (REG-727) the table core: p16/24/16/16, the grey ink, the column-resize handle's anchor (REG-427) */
+.hLabel { composes: hLabel from '../../../components/om/table-core.module.css'; }   /* (REG-727) the table core: caption-s, uppercase */
+.hSort { composes: hSort from '../../../components/om/table-core.module.css'; }   /* (REG-727) the table core: the sort button, its hover and its sorted ink */
+.cell { composes: cell from '../../../components/om/table-core.module.css'; }   /* (REG-727) the table core: p12/24/12/16, the 1px top rule, body-m */
 .cell span { overflow: hidden; text-overflow: ellipsis; }
+/* Date frozen at every width (REG-430; ≤1024 since REG-269): the frozen cell paints the body's white behind itself, draws its 1px edge
+   at rest — at every width since REG-727 (it was ≤1024 only) — and the shadow only while the box is scrolled sideways (REG-144). */
+.pin { composes: pin from '../../../components/om/table-core.module.css'; left: 0; }   /* (REG-727) the table core */
 .fileName { font: var(--om-type-subtitle-m); }
 .link {
   border: 0; background: none; padding: 0; cursor: pointer;
@@ -80,34 +50,20 @@
 }
 .link:hover { color: var(--om-color-on-primary-variant); }
 .noMatch { padding: var(--om-spacing-6); text-align: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
+.none { color: var(--om-color-on-surface-secondary); }   /* a row with no skipped records: "—" */
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
-   Desktop ≥1025 is untouched. The history table already lives in its own overflow-x box, so below 1025 it
-   only needs the frozen-first-column treatment the other tables now have (REG-144): a 1px inner edge at
-   rest, the shadow only while the box is scrolled sideways. ≤767 the sticky header drops below the mobile
-   app bar and its two actions take their own row, the toolbar's 280px search fills a row of its own, and
-   content padding comes down 24 → 16. */
+   Desktop ≥1025 is untouched. The history table already lives in its own overflow-x box with the Date column
+   frozen (REG-144: a 1px inner edge at rest, the shadow only while the box is scrolled sideways — the core's
+   .pin, at every width since REG-727). ≤767 the header is the house L2's phone form (its actions take their own row), the
+   toolbar's 280px search fills a row of its own, and content padding comes down 24 → 16. */
 @media (max-width: 1024px) {
   .tableWrap { -webkit-overflow-scrolling: touch; }
-  /* The frozen Date cell draws its 1px edge at rest on a tablet, where the table always scrolls. */
-  .headRow > .hCell:first-child, .row > .cell:first-child { border-right: var(--om-border-1) solid var(--om-color-surface-variant); }
   /* the empty-search line starts at the box's left edge instead of the centre of the 1316px track */
   .noMatch { text-align: left; }
 }
 
 @media (max-width: 767px) {
-  .header {
-    top: var(--app-mobile-bar-height);   /* (REG-362) zero off a level-1 page — this header IS the top of the screen there */
-    flex-wrap: wrap; row-gap: var(--om-spacing-2);
-    padding: var(--om-spacing-3) var(--om-spacing-4);
-    padding-top: calc(var(--om-spacing-3) + env(safe-area-inset-top, 0px));
-    border-radius: 0;
-  }
-  .header::before { top: 0; }            /* no 8px canvas gutter to cover: the page sheet is edge to edge */
-  .header::after { border-radius: 0; }
-  .title { overflow: hidden; text-overflow: ellipsis; }   /* single line, truncated (responsive.md) */
-  .actions { flex: 1 1 100%; flex-wrap: wrap; }
-
   .content { padding: var(--om-spacing-4); padding-bottom: var(--fab-clearance); }
   .toolbar { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
   .sectionTitle { flex: 1 1 100%; }
@@ -124,20 +80,16 @@
 }
 
 /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────────
-   Three controls on this page are under the 44px floor at a phone's finger: the bare 24px back arrow in the
-   header, the Date column's sort button (a 12px caption + a 16px glyph, ~16 tall) and each row's "Download
-   Skipped Records" link (a 20px text line). None of them moves or changes size — the invisible ::after around
-   each grows to at least 44 in both directions, and every one of them has the room:
-     · the back arrow grows into the header's own 12/16 padding;
+   Two controls on this page are under the 44px floor at a phone's finger ((REG-729) the header's back arrow is the house L2's, which
+   carries its own 44): the Date column's sort button (a 12px caption + a 16px glyph, ~16 tall) and each row's "Download
+   Skipped Records" link (a 20px text line). Neither moves or changes size — the invisible ::after around
+   each grows to at least 44 in both directions, and each has the room:
      · the sort button grows into the 56px head row's vertical padding (44 inside 56, 6 clear top and bottom)
        and 4px each side, inside the head cell's own 16/24 padding — so no neighbouring head is touched;
      · the link grows into the 44px row (44 inside 44) and 8px each side, inside the cell's 16/24 padding.
    Nothing here changes the table's tracks, so the row still cannot widen the page.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .back { position: relative; }
-  .back::after { content: ''; position: absolute; inset: -10px; }
-
   .hSort { position: relative; }
   .hSort::after { content: ''; position: absolute; inset: -14px -4px; }
 
@@ -150,8 +102,8 @@
    6 + 44 + 6 = 56), so the drawn head is the mock's to the pixel.
    (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .hSort, .hTune, .link { min-height: 44px; }
-  .hCell { padding-block: 6px; }
+  .hSort, .link { min-height: 44px; }
+  .headRow .hCell { padding-block: 6px; }   /* 16/16 → 6/6 over the core's head cell: a 44px sort button still lands the head on 56 */
 }
 
 /* (REG-284) The page's own search box — it used to borrow components/leads/toolbar.module.css, which broke when
@@ -165,15 +117,14 @@
 @media (max-width: 767px) {
   .table { min-width: 0; }
   .headRow { display: none; }
-  .row { height: auto; flex-wrap: wrap; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); }
+  /* As a list the row draws the one rule between entries — the cells' own top rules would stripe every wrapped line. */
+  .row { height: auto; flex-wrap: wrap; row-gap: var(--om-spacing-1); padding: var(--om-spacing-3) var(--om-spacing-4); border-top: var(--om-border-1) solid var(--om-color-surface-variant); }
   /* (REG-390) The cell's own 4px gap sat between the pseudo separators and the value ("13 of  14"). */
-  .cell { flex: 0 0 auto; padding: 0; gap: 0; }
+  .cell { flex: 0 0 auto; padding: 0; gap: 0; border-top: 0; }
   .cell:nth-child(2) { flex: 1 1 100%; font: var(--om-type-subheading-m); order: 1; }   /* file name leads */
-  /* (REG-390) The frozen first column is a ≤1024 treatment for a table that scrolls sideways. Here there is no
+  /* (REG-390) The frozen first column is a treatment for a table that scrolls sideways. Here there is no
      sideways scroll and no columns — and it left a 1px rule standing in the middle of the date line. */
-  .row > .cell:first-child, .headRow > .hCell:first-child {
-    position: static; border-right: 0; box-shadow: none; clip-path: none; background: none;
-  }
+  .row > .pin { position: static; border-right: 0; box-shadow: none; clip-path: none; background: none; }
   .cell:nth-child(1) { color: var(--om-color-on-surface-secondary); font: var(--om-type-body-s); order: 2; }
   /* (REG-390) "27 Aug '26 · 13 of 14 imported" — the counts read in that order, with the separators the row's
      own columns used to provide. They used to come out as "27 Aug '26of 14 —  13 imported": the total was
@@ -188,5 +139,6 @@
   .cell:nth-child(6) { flex: 1 1 100%; order: 5; }
 }
 
-/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
-.row:hover, .row:hover > .cell:first-child { background: var(--om-color-primary-variant); }
+/* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads.
+   (REG-727) A flex row: the core's row fills reach only its subgrid rows, so the frozen Date cell takes the fill here. */
+.row:hover, .row:hover .pin { background: var(--om-color-primary-variant); }

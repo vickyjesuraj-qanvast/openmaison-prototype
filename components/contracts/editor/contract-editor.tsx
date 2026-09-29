@@ -16,7 +16,8 @@ import { ContractSkeleton } from './contract-skeleton'
 import { MSG } from '@/lib/forms'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { AiSheet } from '@/components/leads/ai-sheet'
-import { Dropdown, DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { SelectTrigger } from '@/components/om/select-trigger'
 import { useFlagPref } from '@/lib/prefs'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
@@ -210,13 +211,14 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
       <Button variant="secondary" appearance="outlined" aria-haspopup="menu" aria-expanded={statusOpen}
               iconEnd={<span className={quoteStyles.chev} data-open={statusOpen || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
               onPress={() => setStatusOpen((o) => !o)}>{status}</Button>
-      <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" sheetTitle="Status">
+      {/* (REG-728) The quote editor's status list: 240, "current" as the row's meta, a locked row's rule in the row. */}
+      <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} sheetTitle="Status">
         {CONTRACT_STATUSES.map((s) => {
           const block = s !== status && status === 'Signed' ? unsignBlock({ status, signedBy: contract.signedBy }, viewer) : null
           return (
-            <DropdownItem key={s} role="menuitemradio" checked={s === status} onSelect={() => changeStatus(s)} disabled={!!block} title={block ?? undefined}>
-              <span className={quoteStyles.menuText}>{s}</span>
-              {s === status ? <span className={quoteStyles.menuCurrent}>current</span> : null}
+            <DropdownItem key={s} role="menuitemradio" checked={s === status} selected={false} onSelect={() => changeStatus(s)} disabled={!!block} title={block ?? undefined}
+                          meta={s === status ? 'current' : undefined}>
+              {s}
             </DropdownItem>
           )
         })}
@@ -272,41 +274,44 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
             </Tooltip>
             {/* (REG-632, parity Q-08) The quote this contract reads — named, never swapped for another. */}
             <span className={quoteStyles.anchor}>
+              {/* (REG-729) The house compact select (m, a form row); signed, it stays focusable with its rule in the tooltip and no chevron. */}
               <Tooltip label={signedLock ? 'Signed — the quote stays as signed' : 'The quote this contract reads'} disabled={quoteOpen}>
-                <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setQuoteOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={quoteOpen} aria-disabled={signedLock || undefined} data-testid="contract-quote">
-                  <Icon name="request_quote" size={20} weight={300} />
-                  <span className={styles.recipientName}>{namedQuote ? namedQuote.number : 'No quote'}</span>
-                  {namedQuote ? <span className={styles.recipientMeta}>· {money2(namedQuote.amountMinor)}</span> : null}
-                  {quoteGone ? <span className={styles.quoteWarn} aria-label={`The quote was ${quoteGone}`}><Icon name="warning" size={16} /></span> : null}
-                  {signedLock ? null : <span className={styles.recipientEdit}><Icon name="keyboard_arrow_down" size={16} weight={300} /></span>}
-                </button>
+                <SelectTrigger className={styles.metaSelect} open={quoteOpen} onClick={() => { if (!signedLock) setQuoteOpen((o) => !o) }} aria-disabled={signedLock || undefined} data-testid="contract-quote"
+                               label={`Quote: ${namedQuote ? `${namedQuote.number} · ${money2(namedQuote.amountMinor)}` : 'No quote'}${quoteGone ? `. The quote was ${quoteGone}` : ''}`}
+                               value={(
+                                 <span className={styles.metaSelectValue}>
+                                   <Icon name="request_quote" size={20} weight={300} />
+                                   <span className={styles.recipientName}>{namedQuote ? namedQuote.number : 'No quote'}</span>
+                                   {namedQuote ? <span className={styles.recipientMeta}>· {money2(namedQuote.amountMinor)}</span> : null}
+                                   {quoteGone ? <span className={styles.quoteWarn}><Icon name="warning" size={16} /></span> : null}
+                                 </span>
+                               )} />
               </Tooltip>
-              <Dropdown open={quoteOpen} onClose={() => setQuoteOpen(false)} align="right" width={340} sheetTitle="Quote">
+              {/* (REG-728) Rows with a description: 320; the picked quote wears the Selected fill (its label is not plain text). */}
+              <Dropdown open={quoteOpen} onClose={() => setQuoteOpen(false)} align="right" width={MENU_WIDTH.detail} sheetTitle="Quote">
                 {data.quotes.map((q) => (
-                  <DropdownItem key={q.id} role="menuitemradio" checked={q.id === quoteId} onSelect={() => pickQuote(q.id)}>
-                    <span className={quoteStyles.menuText}>{q.number} · {q.title}</span>
-                    <span className={quoteStyles.menuCurrent}>{money2(q.amountMinor)} · {q.status}</span>
+                  <DropdownItem key={q.id} role="menuitemradio" checked={q.id === quoteId} selected={q.id === quoteId} onSelect={() => pickQuote(q.id)} meta={`${money2(q.amountMinor)} · ${q.status}`}>
+                    {`${q.number} · ${q.title}`}
                   </DropdownItem>
                 ))}
                 {data.quotes.length ? <DropdownDivider /> : null}
-                <DropdownItem role="menuitemradio" checked={!quoteId} onSelect={() => pickQuote(null)}><span className={quoteStyles.menuText}>No quote</span></DropdownItem>
+                <DropdownItem role="menuitemradio" checked={!quoteId} selected={!quoteId} onSelect={() => pickQuote(null)}>No quote</DropdownItem>
               </Dropdown>
             </span>
             {/* (REG-632, parity Q-10) Issued by — offered when Company › Profile names two or more entities. */}
             {entities.length > 1 ? (
               <span className={quoteStyles.anchor}>
+                {/* (REG-729) The house compact select, as Quote beside it. */}
                 <Tooltip label={signedLock ? 'Signed — the issuer stays as signed' : 'Issued by'} disabled={entityOpen}>
-                  <button type="button" className={styles.recipient} onClick={() => { if (!signedLock) setEntityOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={entityOpen} aria-disabled={signedLock || undefined} data-testid="contract-issuer">
-                    <Icon name="domain" size={20} weight={300} />
-                    <span className={styles.recipientName}>{issuer.name}</span>
-                    {signedLock ? null : <span className={styles.recipientEdit}><Icon name="keyboard_arrow_down" size={16} weight={300} /></span>}
-                  </button>
+                  <SelectTrigger className={styles.metaSelect} open={entityOpen} onClick={() => { if (!signedLock) setEntityOpen((o) => !o) }} aria-disabled={signedLock || undefined} data-testid="contract-issuer"
+                                 label={`Issued by: ${issuer.name}`}
+                                 value={<span className={styles.metaSelectValue}><Icon name="domain" size={20} weight={300} /><span className={styles.recipientName}>{issuer.name}</span></span>} />
                 </Tooltip>
-                <Dropdown open={entityOpen} onClose={() => setEntityOpen(false)} align="right" width={280} sheetTitle="Issued by">
+                {/* (REG-728) The rows carry a meta, not a description: 240; the issuer wears the Selected fill. */}
+                <Dropdown open={entityOpen} onClose={() => setEntityOpen(false)} align="right" width={MENU_WIDTH.wide} sheetTitle="Issued by">
                   {entities.map((name, i) => (
-                    <DropdownItem key={name} role="menuitemradio" checked={(entity ?? entities[0]) === name} onSelect={() => pickEntity(name)}>
-                      <span className={quoteStyles.menuText}>{name}</span>
-                      {i === 0 ? <span className={quoteStyles.menuCurrent}>the studio</span> : null}
+                    <DropdownItem key={name} role="menuitemradio" checked={(entity ?? entities[0]) === name} selected={(entity ?? entities[0]) === name} onSelect={() => pickEntity(name)} meta={i === 0 ? 'the studio' : undefined}>
+                      {name}
                     </DropdownItem>
                   ))}
                 </Dropdown>

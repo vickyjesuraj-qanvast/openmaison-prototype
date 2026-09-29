@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { SearchBar } from '@/components/ds'
-import { AppliedDot } from '@/components/om/applied-dot'
-import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
+import { ScopePill } from '@/components/om/scope-pill'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSearchTarget } from '@/components/shell/search-focus'
@@ -53,11 +52,9 @@ export function LeadsToolbar({
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
-        <button type="button" className={styles.chip} onClick={onChipClick} aria-haspopup="menu" aria-expanded={chipOpen} data-open={chipOpen || undefined}>
-          {chipLabel}
-          <span className={styles.chipChevron}><Icon name="keyboard_arrow_down" size={20} /></span>
-          {chipScoped ? <AppliedDot /> : null}
-        </button>
+        {/* (REG-729) The house scope pill (components/om/scope-pill.tsx) — the listing's own pill, now written once: the chevron turns
+            while its menu is open, the applied dot off "All Leads" (REG-295). */}
+        <ScopePill label={chipLabel} onClick={onChipClick} open={chipOpen} scoped={chipScoped} />
         {chipMenu}
       </div>
       <div className={styles.right}>
