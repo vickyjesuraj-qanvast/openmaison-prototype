@@ -69,7 +69,7 @@ const clampAxis = (preferred: number, size: number, viewport: number) =>
   Math.max(POP_EDGE, Math.min(preferred, Math.max(POP_EDGE, viewport - size - POP_EDGE)))
 const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 356, window.innerHeight), left: clampAxis(r.left, 240, window.innerWidth) } }
 const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: clampAxis(r.bottom + 4, 456, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
-const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 516, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
+const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 532, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
 
 /**

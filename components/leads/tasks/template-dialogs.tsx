@@ -7,8 +7,10 @@ import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
+import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
+import { useSheetLayout } from '@/components/om/sheet'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import type { TemplateRow } from '@/lib/leads/tasks'
 import styles from './template-dialogs.module.css'
@@ -19,7 +21,8 @@ import type { FolderNode } from '@/lib/folders'
 
 /* Lead Details › Tasks › templates (902:29194): Choose Template 600×600 · Save as Template 400×495 (new / existing). */
 
-/** Modal shell shared by both dialogs — the listing FiltersModal's heading 64 + footer 68 (the wizard Dialog has no 64px rule head nor a fixed height). */
+/** Modal shell shared by both dialogs. (REG-725) the house head and foot, on a panel of its own: the house Dialog's foot takes no
+ *  class, and a phone needs one — Choose Template's three buttons wrap there, Manage Templates on its own line (REG-347). */
 function TemplateShell({
   open, kind, title, onClose, children, footer,
 }: { open: boolean; kind: 'choose' | 'save'; title: string; onClose: () => void; children: ReactNode; footer: ReactNode }) {
@@ -34,26 +37,20 @@ function TemplateShell({
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
+  const sheet = useSheetLayout()   // (REG-377) ≤767 both are bottom sheets, and wear the house grabber
   return (
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} data-kind={kind} variants={modalPanel}
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; the shared panel's `outline: none` (surfaceClasses.panel)
+              leaves the ring to the panel's own controls. */}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} data-kind={kind} variants={modalPanel}
                       role="dialog" aria-modal aria-label={title} tabIndex={-1}>
-            <div className={styles.heading}>
-              <span className={styles.title}>{title}</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            <SurfaceHead title={title} onClose={onClose} className={styles.head} />
             <div ref={scrollRef} className={styles.body}>{children}</div>
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>{footer}</div>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>{footer}</SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}
@@ -87,9 +84,9 @@ export function ChooseTemplateDialog({
   return (
     <TemplateShell open={open} kind="choose" title="Choose Template" onClose={onClose}
                    footer={<>
-                     <span className={styles.footerStart}>
+                     <FootStart>
                        <Button variant="secondary" appearance="outlined" onPress={onManage}>Manage Templates</Button>
-                     </span>
+                     </FootStart>
                      <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
                      <Button isDisabled={!picked} onPress={() => { if (picked) onSelect(picked) }}>Select</Button>
                    </>}>

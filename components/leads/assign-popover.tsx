@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { MSG } from '@/lib/forms'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
-import { Tooltip } from '@/components/om/tooltip'
 import { anchoredSurface } from '@/lib/motion'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { FootStart, SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
+import { useOverflow } from '@/components/om/use-overflow'
 import type { Member } from '@/lib/db/schema'
 import { pickable } from '@/lib/leads/assign-policy'
 import type { Suggestion } from '@/lib/leads/suggest'
@@ -47,6 +47,7 @@ export function AssignPopover({
   const [wasOpen, setWasOpen] = useState(open)
   const sheet = useSheetLayout()
   const ref = useRef<HTMLDivElement>(null)
+  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow only while the member list scrolls under it
 
   // React's adjust-state-during-render pattern: re-seed the draft on open.
   if (open !== wasOpen) {
@@ -90,14 +91,15 @@ export function AssignPopover({
       <Button appearance="text" onPress={() => setPicked(new Set([suggestion.id]))}>Assign to {suggestion.name}</Button>
     </div>
   ) : null
+  /* (REG-725) The message rides on the foot's left (FootStart) — in the popover's house foot and in the phone sheet's. */
   const foot = locked ? (
     <>
-      <span className={styles.footMsg} data-testid="assign-hint">{hint}</span>
+      <FootStart><span className={styles.footMsg} data-testid="assign-hint">{hint}</span></FootStart>
       <Button variant="secondary" appearance="outlined" onPress={onClose}>Close</Button>
     </>
   ) : (
     <>
-      {requireOne && picked.size === 0 ? <span className={styles.footMsg} role="alert">{MSG.assignee}</span> : null}
+      {requireOne && picked.size === 0 ? <FootStart><span className={styles.footMsg} role="alert">{MSG.assignee}</span></FootStart> : null}
       <Button variant="secondary" appearance="outlined" onPress={() => setPicked(new Set(assignable === null ? [] : [...picked].filter((id) => !assignable.includes(id))))}>
         Clear All
       </Button>
@@ -127,20 +129,15 @@ export function AssignPopover({
           role="dialog"
           aria-label="Assign Member"
         >
-          <div className={styles.head}>
-            <h2 className={styles.title}>Assign Member</h2>
-            <Tooltip label="Close">
-              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
-            </Tooltip>
-          </div>
-          <div className={styles.body}>
+          {/* (REG-725) the house head and foot (components/om/dialog.tsx): the 64 head with its rule inside and the outlined close; the
+              foot's top rule always, its shadow only while the members scroll. */}
+          <SurfaceHead title="Assign Member" onClose={onClose} />
+          <div ref={scrollRef} className={styles.body}>
             {tip}{rows}
           </div>
-          <div className={styles.foot}>
+          <SurfaceFoot shadow={bodyScrolls}>
             {foot}
-          </div>
+          </SurfaceFoot>
         </motion.div>
       ) : null}
     </AnimatePresence>

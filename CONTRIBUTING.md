@@ -103,27 +103,60 @@ member, because there is no login (map 17 › *Conventions*).
 - **UI code** (with Vicky's go-ahead): house pieces from `components/om/*`; design-system components through
   `@/components/ds` only; `--om-*` tokens only; icons from the self-hosted subset (`public/fonts/ICONS.txt` — a name
   outside it renders as a word; the re-subset steps are in `CLAUDE.md` › *Icons*).
+- **Use a house piece; never copy one.** Every inconsistency the design audit of 2026-09-29 found was a copy that drifted
+  (`design-source/context/consistency/`). A dialog, confirm, drawer or sheet is `Dialog` / `ConfirmDialog` / `Drawer` —
+  or, for a layout of its own, `SurfaceHead` + `SurfaceFoot` from `components/om/dialog.tsx`; a table is the leads
+  listing's model; a menu goes through `PortalMenu` with `DropdownItem` rows. If a house piece can't do what you need,
+  say so in your pull request — don't copy its stylesheet and change the copy. The design lint fails on copies.
 - **TypeScript** is strict with `noUncheckedIndexedAccess`. The React hooks lint rules are strict: no `Date.now()` or
   reading refs in render, and no `setState` in an effect body.
 
 ## 6 · Check your work
 
 ```bash
-npm run typecheck && npm run lint && npm run build
+npm run typecheck && npm run lint && npm run design:lint && npm run build
+# then, against the build on a scratch database:
+DATABASE_URL=file:/tmp/test.db npx next start -p 3011 &
+npm run design:anatomy
 ```
 
-CI runs the same three on every pull request. For the screens you touched, run the module's probes: Playwright scripts
-in `design-source/verify/**/verify-*.cjs`, each with its usage in its first lines. Run them against `next start` on a
-scratch database, never your `local.db`.
+CI runs all of these on every push and pull request. The two design checks are the house rules as code (REG-726):
 
-## 7 · Pull requests
+- **`design:lint`** reads the code. It fails on a new raw colour, raw type or radius, a design value in an inline style,
+  a modal without the house head and foot, a hand-rolled close, or a copied table stylesheet — and names the file, the
+  line and the house piece to use. `design-lint.baseline.json` holds the violations that existed on 2026-09-29; it only
+  ever goes down. Never raise it to let a new one in: fix the code.
+- **`design:anatomy`** measures the running app in a browser: every page's table heads against the leads listing's, and
+  every dialog the pages open against the house head and foot, at 1440 and on a phone.
+
+For the screens you touched, also run the module's probes: Playwright scripts in `design-source/verify/**/verify-*.cjs`,
+each with its usage in its first lines. Run them against `next start` on a scratch database, never your `local.db`.
+
+## 7 · Integrating 1.0 without breaking the design
+
+The screens are finished; the integration connects them to 1.0. Most breakage comes from changing a screen to fit the
+data, so change the data to fit the screen:
+
+1. **Integrate behind the data layer.** Each screen reads a typed shape (`LeadDetail`, `LeadRow`, `CreditSummary` …) from
+   `lib/**/queries.ts` and writes through server actions. Replace what fills those shapes and what the actions do —
+   1.0's API, its tables, its auth — and leave the components that render them as they are. The per-module migration
+   maps in `design-source/context/parity/` list every field and where it comes from.
+2. **When 1.0's data needs something the screen doesn't have** — a new state, a longer value, an error the design never
+   showed — don't design it in code. Open the pull request with the data side only, and describe what the screen should
+   show; Vicky designs it, then it's built on the house pieces.
+3. **Rehearse with real data.** Real records are longer, emptier and more varied than the demo's. Load an anonymised
+   sample into a scratch database and run `design:anatomy` and the module probes on it before the pull request.
+4. **Let the checks and the review do their job.** CI runs the design checks; CODEOWNERS asks Vicky to review; screenshots
+   at 1440 and 390 go in the pull request for anything visible (the template has the checklist).
+
+## 8 · Pull requests
 
 1. Branch from `main`; `main` takes changes only through pull requests.
 2. Fill in the pull-request template, including screenshots for anything visible.
 3. `CODEOWNERS` requests Vicky's review. Anything in her lane needs her approval before it merges.
 4. Keep `design-source/REGISTER.md` to Vicky — propose an entry in the pull request and she adds it.
 
-## 8 · Working with an AI assistant
+## 9 · Working with an AI assistant
 
 `AGENTS.md` and `CLAUDE.md` are read by coding assistants (Claude Code, Cursor, Codex and others). They tell the assistant
 the same rule as this guide, so it will stop and ask before changing anything visible — let it. `CLAUDE.md` is Vicky's

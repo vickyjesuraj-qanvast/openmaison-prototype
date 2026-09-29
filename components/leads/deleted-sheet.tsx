@@ -7,7 +7,7 @@ import { ColumnResizer, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { BulkBar } from '@/components/leads/bulk-bar'
-import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
+import { DangerButton, Dialog, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { displayDate, money, titleCaseName, phoneLocal } from '@/lib/format'
 import type { Lead } from '@/lib/db/schema'
@@ -122,25 +122,18 @@ export function DeletedLeadsSheet({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
-                controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
-            <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Leads"
-                        tabIndex={-1} style={{ outline: 'none' }}>
-              <div className={styles.heading}>
-                <div className={styles.titleBlock}>
-                  <span className={styles.crumb}>Leads / </span>
-                  <span className={styles.title}>Deleted Leads</span>
-                </div>
-                <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
-                        isDisabled={deleted.length === 0}>
-                  Empty Trash
-                </Button>
-                <Tooltip label="Close">
-                  <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                    <Icon name="close" size={24} family="outlined" />
-                  </button>
-                </Tooltip>
-              </div>
+            {/* (REG-287) Focus lands on the panel on open (surface.ts) and the ring belongs to its controls — the house panel
+                (surfaceClasses.panel) carries the `outline: none`, with the look every dialog wears. */}
+            <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Deleted Leads"
+                        tabIndex={-1}>
+              {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot. */}
+              <SurfaceHead title="Deleted Leads" eyebrow="Leads /" className={styles.heading} onClose={onClose}
+                           actions={
+                             <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
+                                     isDisabled={deleted.length === 0}>
+                               Empty Trash
+                             </Button>
+                           } />
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
                 {bannerOpen ? (
@@ -242,8 +235,9 @@ export function DeletedLeadsSheet({
         ) : null}
       </AnimatePresence>
 
-      {/* Permanent-delete confirmations — unmocked; destructive actions must confirm (REG). */}
-      <Dialog open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
+      {/* Permanent-delete confirmations — unmocked; destructive actions must confirm (REG). `nested`: over the open sheet, the lighter
+          scrim on the layer above it (REG-725). */}
+      <Dialog nested open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
               title={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `Delete ${confirm.ids.length} leads forever?` : 'Delete this lead forever?'}
               subtitle={confirmName}
               footer={<>
@@ -256,7 +250,7 @@ export function DeletedLeadsSheet({
         <span className={styles.confirmText}>This can’t be undone. The lead and its tasks will be removed permanently.</span>
       </Dialog>
 
-      <Dialog open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
+      <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
               title="Empty trash?"
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>

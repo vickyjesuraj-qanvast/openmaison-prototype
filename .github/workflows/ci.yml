@@ -27,7 +27,24 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # (REG-726) The house rules as checks: a new raw colour, raw type, a hand-rolled dialog head or close, a copied table
+      # stylesheet fails here with the file, the line and the house piece to use. design-lint.baseline.json only ever goes down.
+      - name: Design lint
+        run: npm run design:lint
+
       # `npm run build` runs scripts/preflight.mjs first (writes .env.local, applies migrations, restores the demo data
       # into a throwaway local.db), exactly as a developer's first build does.
       - name: Build
         run: npm run build
+
+      # (REG-726) The design's measures in a real browser: every page's table heads against the leads listing's, every dialog the
+      # pages open against the house head and foot. The build's throwaway local.db (the demo baseline) is what it reads.
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Design anatomy
+        run: |
+          npx next start -p 3011 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3011/leads && break; sleep 1; done
+          curl -sf -o /dev/null http://localhost:3011/leads || (cat /tmp/next.log; exit 1)
+          npm run design:anatomy

@@ -135,7 +135,7 @@ sql(`insert or replace into contracts (id, lead_id, title, status, created_at, u
     await page.goto(`${BASE}/templates/contracts/${TPL}`); await ready(page)
     ok('a Designer cannot rename someone else’s template', await page.getByRole('textbox', { name: 'Template name' }).evaluate((e) => e.readOnly))
     await page.getByRole('button', { name: 'More options', exact: true }).first().click(); await page.waitForTimeout(300)
-    ok('and Delete waits with its reason', await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled') === 'true' && /author, Owner or Admin/.test(await page.getByRole('menuitem', { name: /^Delete/ }).innerText()))
+    ok('and Delete waits with its reason', await page.getByRole('menuitem', { name: /^Delete/ }).getAttribute('aria-disabled') === 'true' && /author, (an )?Owner or (an )?Admin/.test(await page.getByRole('menuitem', { name: /^Delete/ }).innerText()))
     await page.keyboard.press('Escape')
     as('dane')
     await page.goto(`${BASE}/contracts/${DRAFT}`, { waitUntil: 'commit' })

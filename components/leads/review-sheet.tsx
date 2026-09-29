@@ -13,6 +13,7 @@ import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ChipRail } from '@/components/om/chip-rail'
 import { Tooltip } from '@/components/om/tooltip'
+import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 
 type Pick = 'existing' | 'new'
 /** Rows of the merge / detail table, in mock order. */
@@ -68,11 +69,11 @@ export function ReviewSheet({
   /* (REG-287) aria-modal told assistive tech the page behind was inert while nothing held focus in: Tab walked
      straight out of the panel. Same policy as Dialog / the Move stage window (components/om/surface.ts) — Esc
      closes this surface only while it is the topmost one, focus moves into the panel on open, Tab cycles inside
-     it, and the opener gets focus back on close. Esc keeps its own gate: an approve / reject / merge in flight
-     is never interrupted (the ref is read in the handler, never in render). */
+     it, and the opener gets focus back on close. Esc and the head's close share one gate: an approve / reject /
+     merge in flight is never interrupted (the ref is read in the handler, never in render). */
   const panelRef = useRef<HTMLDivElement>(null)
-  const escClose = useCallback(() => { if (!busyRef.current) onClose() }, [onClose])
-  useEscapeLayer(open, panelRef, escClose)
+  const close = useCallback(() => { if (!busyRef.current) onClose() }, [onClose])
+  useEscapeLayer(open, panelRef, close)
   useDialogFocus(open, panelRef)
   const [scrollRef, bodyScrolls] = useOverflow()   // the footer's shadow follows the body's scroll (REG-322)
 
@@ -129,20 +130,10 @@ export function ReviewSheet({
     <AnimatePresence>
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit">
-          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
-              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
-          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads"
-                      tabIndex={-1} style={{ outline: 'none' }}>
-            <div className={styles.heading}>
-              <div className={styles.titleGroup}>
-                <span className={styles.title}>Review imported leads ({rows.length})</span>
-              </div>
-              <Tooltip label="Close review" disabled={busy}>
-                <button type="button" className={styles.closeBtn} aria-label="Close review" onClick={onClose} disabled={busy}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Review imported leads"
+                      tabIndex={-1}>
+            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel; the close takes Esc's gate */}
+            <SurfaceHead title={`Review imported leads (${rows.length})`} onClose={close} closeLabel="Close review" closeDisabled={busy} className={styles.heading} />
 
             <div className={styles.toolbar}>
               <ChipRail label="Filter by source">
@@ -278,9 +269,9 @@ export function ReviewSheet({
                         })}
                       </div>
                     </div>
-                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
-                      <span className={styles.note}>Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.</span>
-                      <span className={styles.spacer} />
+                    {/* (REG-725) the house foot, kept in the detail pane: the note on its left, the three answers on its right */}
+                    <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
+                      <FootStart><span className={styles.note}>Notes, tasks and activity from both leads are kept. Merge can be undone for 30 days.</span></FootStart>
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject New</Button>
                       <Button variant="secondary" appearance="outlined" isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
                       <Button isDisabled={busy}
@@ -289,7 +280,7 @@ export function ReviewSheet({
                                 for (const f of FIELDS) if (f.radio) p[f.label] = newValue(selected, f) ? pickOf(f.label) : 'existing'
                                 void run(() => onMerge(selected.row.id, p))
                               }}>Merge into Existing</Button>
-                    </div>
+                    </SurfaceFoot>
                   </>
                 ) : selected.row.status === 'duplicate' && selected.twin ? (
                   <>
@@ -327,11 +318,10 @@ export function ReviewSheet({
                         })}
                       </div>
                     </div>
-                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
-                      <span className={styles.spacer} />
+                    <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
                       <Button isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Keep Both</Button>
-                    </div>
+                    </SurfaceFoot>
                   </>
                 ) : (
                   <>
@@ -351,11 +341,10 @@ export function ReviewSheet({
                         ))}
                       </div>
                     </div>
-                    <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
-                      <span className={styles.spacer} />
+                    <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                       <Button variant="secondary" appearance="outlined" className={styles.toneRed} isDisabled={busy} onPress={() => { void run(() => onReject([selected.row.id])) }}>Reject</Button>
                       <Button className={styles.toneGreen} isDisabled={busy} onPress={() => { void run(() => onApprove([selected.row.id])) }}>Approve</Button>
-                    </div>
+                    </SurfaceFoot>
                   </>
                 )}
               </div>

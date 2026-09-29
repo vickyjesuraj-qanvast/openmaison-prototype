@@ -42,6 +42,11 @@ changed rule), treat that part as visible.
 - Migrations are additive only. A refused action answers `{ error: <the rule> }`. A long string (a picture, rich text)
   goes to a server action inside one object argument.
 - Reuse `components/om/*`. Use `--om-*` tokens only, and design-system components through `@/components/ds`.
+- Never copy a house piece's stylesheet or hand-roll a dialog head, close, foot, table head or menu row — every
+  inconsistency found on 2026-09-29 was a copy that drifted. Use `Dialog` / `ConfirmDialog` / `Drawer`, or `SurfaceHead` +
+  `SurfaceFoot` (`components/om/dialog.tsx`), the listing's table model, and `PortalMenu` + `DropdownItem`.
+- Before a pull request, run `npm run design:lint`, and `npm run design:anatomy` against `next start` on a scratch
+  database. Never raise `design-lint.baseline.json` to make a check pass — fix the code, or ask Vicky.
 - Commit only when asked, never push to `main` directly, and open a pull request for review.
 
 <!-- BEGIN:nextjs-agent-rules -->

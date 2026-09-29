@@ -7,6 +7,8 @@ import { IconButton } from './icon-button'
 import { Tooltip } from './tooltip'
 import { useDialogFocus, useEscapeLayer } from './surface'
 import { useSheetLayout } from './sheet'
+import { useOverflow } from './use-overflow'
+import { SurfaceFoot, SurfaceHead } from './surface-parts'
 import styles from './drawer.module.css'
 
 /**
@@ -35,6 +37,7 @@ export function Drawer({
   kbPanel?: boolean
 }) {
   const panel = useRef<HTMLElement>(null)
+  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow only while the body scrolls under it, as every dialog's
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel, { trap: false })
   /* (REG-353) ≤767 the canvas draws this panel as a bottom sheet (2c Task · 2d Task comments): it comes up off the
@@ -65,25 +68,16 @@ export function Drawer({
           initial="initial" animate="animate" exit="exit"
         >
           {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-          <header className={styles.head} data-crumb={crumb ? '' : undefined}>
-            {crumb && onBack ? (
-              <Tooltip label="Back">
-                <IconButton icon="arrow_back" label="Back" size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.back} onClick={onBack} />
-              </Tooltip>
-            ) : null}
-            <div className={styles.titles}>
-              {crumb ? <span className={styles.crumb}>{crumb}</span> : null}
-              <h2 className={styles.title}>{title}</h2>
-            </div>
-            <div className={styles.actions}>
-              {actions}
-              <Tooltip label="Close">
-                <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} onClick={onClose} />
-              </Tooltip>
-            </div>
-          </header>
-          <div className={styles.body}>{children}</div>
-          {footer ? <footer className={styles.footer}>{footer}</footer> : null}
+          {/* (REG-725) The one head and foot every overlay wears (components/om/dialog.tsx) — the drawer's own 65 head with a border and
+              a level-1 shadow, its rounded close and its always-on footer shadow are gone. */}
+          <SurfaceHead title={title} eyebrow={crumb} className={styles.head} actions={actions} onClose={onClose}
+                       leading={crumb && onBack ? (
+                         <Tooltip label="Back">
+                           <IconButton icon="arrow_back" label="Back" size={24} variant="bare" iconSize={24} iconWeight={300} className={styles.back} onClick={onBack} />
+                         </Tooltip>
+                       ) : undefined} />
+          <div ref={scrollRef} className={styles.body}>{children}</div>
+          {footer ? <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>{footer}</SurfaceFoot> : null}
         </motion.aside>
         </>
       ) : null}

@@ -1,30 +1,22 @@
 /* Move dialog — 931:39219 (600×600 = the tasks filters modal shell, components/leads/tasks/tasks-filters-modal.module.css).
-   Measurements: design-source/context/lead-files/04-dialogs-move-deleted.txt. */
+   Measurements: design-source/context/lead-files/04-dialogs-move-deleted.txt.
+   (REG-725) The panel's look, the head and the foot are the house's (surfaceClasses.panel · SurfaceHead · SurfaceFoot,
+   components/om/dialog.tsx): r12 at level 5; the 64 head (the title and the close) with its rule inside; the 68 foot, its top
+   rule always and the house shadow while the list scrolls (REG-322) — the mock's raw 0 25 50 @25 is gone. */
 .overlay {
   overscroll-behavior: contain;
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the dialogs' layer */
   background: var(--om-color-overlay-60p);
   display: flex; align-items: safe center; justify-content: center;
   padding: 48px 0; overflow-y: auto;
 }
 .panel {
   width: var(--om-modal-m); height: 600px; max-height: calc(100vh - 96px);
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  display: flex; flex-direction: column; overflow: hidden;
 }
 
-/* Heading 122: V g16 p20/24, bottom rule #e5e5e5 — title row 24 + location row 42 */
-.heading {
-  display: flex; flex-direction: column; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-5) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.titleRow { display: flex; align-items: center; gap: var(--om-spacing-4); }
-.title { flex: 1; min-width: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; transition: color var(--motion-hover); }
-.close:hover { color: var(--om-color-on-surface-default); }
+/* (REG-725) The mock's second head row opens the body: the location row, then the note, V g16. The body pads 12, so the block adds
+   the other 12 (the .folderHead / .create compensation) and sits on the house body's 24 from the head's rule and the panel's sides. */
+.where { display: flex; flex-direction: column; gap: var(--om-spacing-4); padding: var(--om-spacing-3) var(--om-spacing-3) 0; flex-shrink: 0; }
 /* Location row H g12: "Current location: " 14/Regular + chip 42 tall (H g8 p8, fill #fff, stroke #cccccc w1, r4) */
 .location { display: flex; align-items: center; gap: var(--om-spacing-3); font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; }
 .chip {
@@ -77,17 +69,9 @@
 .create { display: flex; flex-direction: column; gap: var(--om-spacing-6); padding: 0 var(--om-spacing-3); flex-shrink: 0; }
 .createTitle { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
 
-/* Footer 68: H g12 p16/24, top rule, shadow 0 25 50 #000@25 (the mock's value; only its upward blur shows inside the clipped panel) */
-.footer {
-  display: flex; align-items: center; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  background: var(--om-color-surface-default);
-  transition: box-shadow var(--motion-toggle);
-  flex-shrink: 0; position: relative; z-index: 1;
-}
-.footer[data-shadow] { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); }   /* only while the body scrolls (REG-322) */
-.footerRight { margin-left: auto; display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
+/* Footer 68 = the house foot: New Folder on its left (FootStart); Cancel · Move (or Cancel · Create) kept as one pair, so a
+   phone's wrapped foot moves them to the next line together. */
+.footerRight { display: inline-flex; align-items: center; gap: var(--om-spacing-3); }
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    This modal carries its own shell (copied from the tasks filters modal), so it repeats the shared
@@ -100,21 +84,24 @@
 }
 @media (max-width: 767px) {
   .overlay { padding: 0; }
-  .panel { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
-  .heading { padding: var(--om-spacing-5) var(--om-spacing-4); }
+  .panel { width: 100vw; height: 100dvh; max-height: 100dvh; }
+  /* Qualified, so they hold over the house head and foot (components/om/dialog.module.css) whichever stylesheet loads first. */
+  .panel .heading { padding: var(--om-spacing-5) var(--om-spacing-4); }
   .body { padding: var(--om-spacing-3) var(--om-spacing-3) var(--om-spacing-4); }
-  .footer { padding: var(--om-spacing-4); flex-wrap: wrap; row-gap: var(--om-spacing-3); }
-  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
+  .where { padding-left: 0; padding-right: 0; }   /* the location row stays on the head's 16, where it sat as the head's second row */
+  .panel .footer { padding: var(--om-spacing-4); flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .panel .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 }
 
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────
-     Close and the folder head's back keep their 24px glyphs inside 44px boxes (the extra as margin, so
-     the heading rows keep their mocked rhythm). The browse rows are the primary target: 40 as mocked,
+     The folder head's back keeps its 24px glyph inside a 44px box (the extra as margin, so the folder head
+     keeps its mocked rhythm; the head's close is the house IconButton, which carries its own 44 overlay —
+     REG-344). The browse rows are the primary target: 40 as mocked,
      grown to 60 here because the row-hover "Move" button — a DS 24px `size="sm"` that this file cannot
      resize — is permanently visible on a touch pointer (see the hover block below) and needs the room. */
-  .close, .back { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
+  .back { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
   /* Row 40 → 60 = the row's own 8/8 padding around a 44px "Move" (a DS `size="sm"`, 24 tall, whose box is
      its mark): the row stays the primary target and the shortcut inside it is now tappable too. */
   .folderRow { height: auto; min-height: 60px; }
@@ -136,13 +123,13 @@
   .panel {
     width: 100vw; max-width: 100vw; height: auto;
     max-height: min(88dvh, calc(100dvh - 56px));
-    border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
+  .overlay .panel { border-radius: var(--om-radius-3) var(--om-radius-3) 0 0; }   /* qualified, over the house panel's 12 all round */
   .panel::before {
     content: ''; flex-shrink: 0; align-self: center;
     width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
     border-radius: var(--om-radius-full); background: var(--om-color-surface-variant);
   }
-  .heading, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
-  .heading { padding-top: var(--om-spacing-3); }
+  .panel .heading, .body, .panel .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .panel .heading { padding-top: var(--om-spacing-3); }
 }

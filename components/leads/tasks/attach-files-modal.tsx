@@ -9,6 +9,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { SegmentedIconToggle } from '@/components/om/segmented'
 import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { Dropzone } from '@/components/leads/move-stage/fields'
@@ -141,21 +142,13 @@ export function AttachFilesModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; the shared panel's `outline: none` (surfaceClasses.panel)
+              leaves the ring to the panel's own controls. */}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label={imageMode ? 'Add Image' : 'Attach files'} tabIndex={-1}>
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            {/* Heading 64 (p20/24): title 20/Bold · bare 24px close · 1px rule — the modal header standard (779:26016). */}
-            <div className={styles.heading}>
-              <span className={styles.title}>{imageMode ? 'Add Image' : 'Attach files'}</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot — head 64 (p20/24): title 20/Bold · bare 24px close · 1px rule (779:26016). */}
+            <SurfaceHead title={imageMode ? 'Add Image' : 'Attach files'} onClose={onClose} className={styles.head} />
 
             <div ref={scrollRef} className={styles.body}>
               {/* Upload block (V g12): title 16/Semi Bold + dropzone 140 (p40, 2px dashed #cccccc on surface-bg). */}
@@ -309,11 +302,11 @@ export function AttachFilesModal({
               </div>
             </div>
 
-            {/* Footer 68 (p16/24, top rule): Cancel (secondary outlined) · Attach n File(s) (primary; "Attach Files" disabled at 0). */}
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            {/* Foot 68 (p16/24, top rule): Cancel (secondary outlined) · Attach n File(s) (primary; "Attach Files" disabled at 0). */}
+            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               <Button isDisabled={count === 0} onPress={() => onAttach(picks)}>{attachLabel}</Button>
-            </div>
+            </SurfaceFoot>
 
             {/* Uploading toast (902:28261): 360×200 bottom-right of the modal (right 16, bottom 76), dark 56px head, 64px rows. */}
             <AnimatePresence>

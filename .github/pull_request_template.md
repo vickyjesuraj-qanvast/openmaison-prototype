@@ -21,7 +21,10 @@
 
 ## Checks
 
-- [ ] `npm run typecheck`, `npm run lint` and `npm run build` pass.
+- [ ] `npm run typecheck`, `npm run lint`, `npm run design:lint` and `npm run build` pass, and `npm run design:anatomy`
+      passes against the build (CI runs all of them).
+- [ ] Nothing visible is hand-rolled or copied: dialogs, confirms, drawers, tables and menus use the house pieces in
+      `components/om/*`, and `design-lint.baseline.json` is unchanged or lower — never raised.
 - [ ] Migrations are additive only. A new kind of record has its Activity line and a repair rule.
 - [ ] Tests and probes ran on a scratch database (`DATABASE_URL` on the command), never on `local.db`;
       `fixtures/baseline.json` is untouched or rebuilt with `npm run db:baseline`.

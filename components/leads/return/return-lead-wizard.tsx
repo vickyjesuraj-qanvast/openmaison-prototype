@@ -4,8 +4,10 @@ import { useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Link, TextArea } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { useOverflow } from '@/components/om/use-overflow'
 import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { TextField } from '@/components/om/text-field'
 import { DateTimeField } from '@/components/om/date-field'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -26,9 +28,9 @@ import styles from './return-lead-wizard.module.css'
 /*
  * Return Lead wizard (931:48813 step 1 · 931:48882 reason form · 931:48930 filled · 931:49009 terms): the 800-wide l-modal.
  * Spec: design-source/context/lead-return/01-wizard-details.txt; contract: 00-build-plan.md.
- * Shell = components/leads/tasks/tasks-filters-modal.tsx (overlay, panel, Escape / scrim close, useScrollLock, footer);
- * the two-line head = components/leads/move-stage/wizard.tsx; tiles = components/leads/notes/attachments-column.tsx;
- * "Attach Files" opens the tasks' AttachFilesModal.
+ * Shell = components/leads/tasks/tasks-filters-modal.tsx (overlay, panel, Escape / scrim close, useScrollLock); the head
+ * and the foot are the house's (REG-725, SurfaceHead with its subtitle · SurfaceFoot); tiles =
+ * components/leads/notes/attachments-column.tsx; "Attach Files" opens the tasks' AttachFilesModal.
  */
 
 /* (REG-609, parity D-39) The reasons are 1.0's seven, with the fields each one asks for — lib/leads/return-model.ts. The mock's one
@@ -188,29 +190,19 @@ export function ReturnLeadWizard({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-                focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-                surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-            <motion.div ref={panelRef} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+            {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
+                `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
+            <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
                         role="dialog" aria-modal aria-label="Return Lead" tabIndex={-1}
                         data-testid="return-wizard" data-step={step}>
-              {/* Heading 84: "Return Lead" 20/Bold · "<name> · Received on <date>" 12 secondary · info 24 (coming soon) · close 24 */}
-              <div className={styles.head}>
-                <div className={styles.headText}>
-                  <span className={styles.title}>Return Lead</span>
-                  <span className={styles.subtitle}>{lead.name} · Received on {displayDate(lead.createdAt)}</span>
-                </div>
-                <Tooltip label="Information">
-                  <button type="button" className={styles.iconBtn} aria-label="Information" onClick={comingSoon}>
-                    <Icon name="info" size={24} />
-                  </button>
-                </Tooltip>
-                <Tooltip label="Close">
-                  <button type="button" className={styles.iconBtn} aria-label="Close" onClick={onClose}>
-                    <Icon name="close" size={24} family="outlined" />
-                  </button>
-                </Tooltip>
-              </div>
+              {/* (REG-725) the house head and foot. Heading 84: "Return Lead" 20/Bold · "<name> · Received on <date>" 12 secondary ·
+                  info 24 (coming soon) · close 24 */}
+              <SurfaceHead title="Return Lead" subtitle={`${lead.name} · Received on ${displayDate(lead.createdAt)}`} className={styles.head} onClose={onClose}
+                           actions={
+                             <Tooltip label="Information">
+                               <IconButton icon="info" label="Information" size={24} variant="bare" iconSize={24} className={styles.info} onClick={comingSoon} />
+                             </Tooltip>
+                           } />
 
               <div className={styles.steps}>
               <AnimatePresence mode="popLayout" initial={false} custom={dir}>
@@ -355,8 +347,9 @@ export function ReturnLeadWizard({
               </AnimatePresence>
               </div>
 
-              {/* Footer 68: Cancel · Submit (reads Next once a reason is chosen) — step 2: Back · Confirm */}
-              <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+              {/* Footer 68: Cancel · Submit (reads Next once a reason is chosen) — step 2: Back · Confirm. (REG-725) the house foot:
+                  its shadow while the step's body scrolls. */}
+              <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
                 {step === 'reason' ? (
                   <>
                     <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
@@ -368,7 +361,7 @@ export function ReturnLeadWizard({
                     <Button className={styles.wide} onPress={() => { void confirm() }} isDisabled={busy}>Confirm</Button>
                   </>
                 )}
-              </div>
+              </SurfaceFoot>
             </motion.div>
           </motion.div>
         ) : null}

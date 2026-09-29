@@ -17,7 +17,7 @@ import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { useSheetLayout } from '@/components/om/sheet'
 import { MSG } from '@/lib/forms'
-import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 
 type Tab = 'sort' | 'quick' | 'propertyTypes' | 'sources' | 'assignees' | 'date'
 const TABS: { key: Tab; label: string }[] = [
@@ -93,19 +93,13 @@ export function FiltersModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
-              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
-          <motion.div ref={panelRef} className={styles.panel} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal aria-label="Filters"
-                      tabIndex={-1} style={{ outline: 'none' }}>
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            <div className={styles.heading}>
-              <span className={styles.title}>Filters</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+          {/* (REG-287) focus lands on the panel on open (surface.ts) and the ring belongs to its controls — the shared
+              panel's `outline: none` (surfaceClasses.panel), the rule Dialog and the Move stage window carry. */}
+          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal aria-label="Filters"
+                      tabIndex={-1}>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot */}
+            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -226,11 +220,11 @@ export function FiltersModal({
                 )}
               </div>
             </div>
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
-            </div>
+            </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}

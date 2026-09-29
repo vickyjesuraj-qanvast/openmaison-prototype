@@ -4,8 +4,9 @@ import { Button } from '@/components/ds'
 import { DangerButton, Dialog, DialogMessage } from './dialog'
 
 /**
- * Generic confirmation alert — same shell and tone as the delete alerts (779:24663):
- * compact 400px dialog, message in the helper style, Cancel + one committing action.
+ * Generic confirmation alert — every delete and every "are you sure?" in the app (REG-725: the six Lead Details deletes moved
+ * onto it): the house head and foot (components/om/dialog.tsx SurfaceHead / SurfaceFoot), 400 wide, the 14/20 message,
+ * Cancel + one committing action named by its verb.
  * Use it for any "are you sure?" moment (closing a flow mid-way, discarding edits…).
  * Esc / outside click / X cancel; the dialog consumes Esc so the surface under it stays put.
  */

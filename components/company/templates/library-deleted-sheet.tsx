@@ -8,7 +8,7 @@ import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
 import { Tooltip } from '@/components/om/tooltip'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
-import { DangerButton, Dialog } from '@/components/om/dialog'
+import { DangerButton, Dialog, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
@@ -106,24 +106,22 @@ export function LibraryDeletedSheet<T extends LibraryItem>({ open, rows, crumb, 
       <AnimatePresence>
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel} role="dialog" aria-modal aria-label={title} tabIndex={-1}>
-              <div className={styles.heading}>
-                <div className={`${styles.titleBlock} ${own.delTitle}`}>
-                  <span className={styles.crumb}>{crumb} / </span>
-                  <span className={styles.title}>{title}</span>
-                </div>
-                {/* (verify round 1) a phone: the title keeps the first line with the close; Empty Trash takes the line under it */}
-                <span className={own.delEmpty}>
-                  {rows.length > 0 && deletable.length === 0 ? (
-                    /* (verify round 3) one reason for every row says it; rows kept for different reasons (a preset beside Dane's template) never
-                       read "still in use" when a rule keeps them — each row says its own reason */
-                    <Tooltip label={(() => { const k = [...new Set(rows.map(kept))]; return k.length === 1 && k[0] ? (rows.length > 1 && rows.every((t) => !!ruled(t)) ? plural(k[0]) : k[0]) : rows.some((t) => !!ruled(t)) ? `None of these ${noun.many} can be deleted for good — each row says why` : `Every deleted ${noun.one} is still in use — restore them instead` })()}><span><Button variant="secondary" appearance="outlined" isDisabled>Empty Trash</Button></span></Tooltip>
-                  ) : (
-                    <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>Empty Trash</Button>
-                  )}
-                </span>
-                <Tooltip label="Close"><button type="button" className={`${styles.close} ${own.delClose}`} aria-label="Close" onClick={onClose}><Icon name="close" size={24} family="outlined" /></button></Tooltip>
-              </div>
+            {/* (REG-287) the house panel (surfaceClasses.panel) takes focus on open with no ring of its own — the ring belongs to its controls */}
+            <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label={title} tabIndex={-1}>
+              {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot.
+                  (verify round 1) a phone: the title keeps the first line with the close; Empty Trash takes the line under it */}
+              <SurfaceHead title={title} eyebrow={`${crumb} /`} className={styles.heading} onClose={onClose}
+                           actions={
+                             <span className={own.delEmpty}>
+                               {rows.length > 0 && deletable.length === 0 ? (
+                                 /* (verify round 3) one reason for every row says it; rows kept for different reasons (a preset beside Dane's template) never
+                                    read "still in use" when a rule keeps them — each row says its own reason */
+                                 <Tooltip label={(() => { const k = [...new Set(rows.map(kept))]; return k.length === 1 && k[0] ? (rows.length > 1 && rows.every((t) => !!ruled(t)) ? plural(k[0]) : k[0]) : rows.some((t) => !!ruled(t)) ? `None of these ${noun.many} can be deleted for good — each row says why` : `Every deleted ${noun.one} is still in use — restore them instead` })()}><span><Button variant="secondary" appearance="outlined" isDisabled>Empty Trash</Button></span></Tooltip>
+                               ) : (
+                                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })} isDisabled={deletable.length === 0}>Empty Trash</Button>
+                               )}
+                             </span>
+                           } />
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
                 {sharedWhy ? <p className={own.delNote} data-testid="deleted-sheet-note"><Icon name={rows.every((t) => !!noRestore(t) || !!ruled(t)) ? 'lock' : 'info'} size={16} weight={300} />{sharedText}</p> : null}
                 <div className={styles.card} role="table" aria-label={ariaLabel} data-cols="library-deleted" style={tracks ? ({ '--tracks': tracks } as React.CSSProperties) : undefined}

@@ -8,46 +8,22 @@
   outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
 }
 
-/* Head 64 (p20/24, title 20/700, H g16 to the actions); with a crumb: 80 tall, back arrow 12 from "Task / " + title. Bottom rule + level-1 shadow.
-   Spec: 03-panel-tags.txt "Heading H g16", 04-comments-attach.txt "page-title H g12". */
-.head {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-5) var(--om-spacing-6);
-  min-height: 64px;
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  box-shadow: var(--om-elevation-level-1);
-  flex-shrink: 0;
-  position: relative; z-index: 1;
-}
-.titles { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.crumb { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.title { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.actions { display: flex; align-items: center; gap: var(--om-spacing-4); }
-/* Back arrow (crumb variant): on-surface ink, and 12 (not 16) to the titles. Head icons are the bare 24 IconButton (hover-08p, radius 4). */
-.head[data-crumb] .back { color: var(--om-color-on-surface-default); margin-right: calc(-1 * var(--om-spacing-1)); }
+/* (REG-725) The head and the foot are the shell's own (SurfaceHead / SurfaceFoot in components/om/dialog.tsx): 64 with the rule inside,
+   80 with a crumb over the title; the foot's top rule always and its shadow only while the body scrolls. What stays here is the
+   drawer's: the back arrow's ink, and the safe-area padding below. */
+.back { color: var(--om-color-on-surface-default); }
 
 /* Body scrolls; 24 padding, 24 gap between blocks (rules sit in the flow). */
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); }
 .rule { height: 1px; background: var(--om-color-surface-variant); flex-shrink: 0; }
-
-/* Footer 68 (p16/24), top rule, shadow 0 25px 50px #000@25 (mock). */
-.footer {
-  flex-shrink: 0;
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-  display: flex; align-items: center; gap: var(--om-spacing-3);
-  background: var(--om-color-surface-default);
-  position: relative; z-index: 1;
-}
 
 /* Responsive (REG-269): a 400px drawer on a 390px screen becomes the screen. */
 .drawer { max-width: 100vw; }
 
 /* (REG-308) The drawer is fixed full-height at every width (viewport-fit=cover): the head pads below the status bar and the
    footer past the home indicator, keeping their own 20 / 16 — env() is 0 off-iOS, so nothing moves on the desktop. */
-.head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
-.footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+.drawer .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }
+.drawer .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
 
 /* ── Mobile bottom sheet (REG-353) ────────────────────────────────────────────────────────────────────
    The canvas presents the side panel as a bottom sheet at ≤767 (2c Task · 2d Task comments): full width on
@@ -66,8 +42,8 @@
     border-radius: var(--om-radius-full);
     background: var(--om-color-surface-variant);
   }
-  /* The sheet starts below the status bar, so the head keeps its own 20 and the grabber takes that clearance. */
-  .head { padding-top: var(--om-spacing-3); }
+  /* The sheet starts below the status bar, so the grabber takes the head's top clearance. */
+  .drawer .head { padding-top: var(--om-spacing-3); }
 }
 
 /* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
@@ -77,5 +53,5 @@
    DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
    with each other. Vertical padding is untouched. */
 @media (max-width: 767px) {
-  .head, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .drawer .head, .body, .drawer .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

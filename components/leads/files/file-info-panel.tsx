@@ -2,8 +2,7 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { Icon } from '@/components/om/icon'
-import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceHead } from '@/components/om/dialog'
 import { displayDate, fileSize } from '@/lib/format'
 import { fileTypeLabel, type FileRow } from '@/lib/leads/file-model'
 import type { Member } from '@/lib/db/schema'
@@ -34,14 +33,8 @@ export function FileInfoPanel({ file, folder, me, onClose, origin = null }: { fi
   ]
   return (
     <div className={styles.panel}>
-      <div className={styles.head}>
-        <h2 className={styles.title}>Information</h2>
-        <Tooltip label="Close">
-          <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-            <Icon name="close" size={24} />
-          </button>
-        </Tooltip>
-      </div>
+      {/* (REG-725) the house head (components/om/dialog.tsx): 64 with its rule inside, the outlined bare close — as the Comments panel's. */}
+      <SurfaceHead title="Information" onClose={onClose} className={styles.head} />
       <div className={styles.body}>
         <dl className={styles.block}>
           {rows.map(([label, value]) => (

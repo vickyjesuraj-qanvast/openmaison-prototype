@@ -20,7 +20,7 @@ import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { ChoiceCard } from '@/components/om/choice-card'
-import { Dialog } from '@/components/leads/move-stage/dialogs'
+import { Dialog, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { Tooltip } from '@/components/om/tooltip'
 
 export const TEMPLATE_HREF = '/templates/leads-import-template.csv'
@@ -236,19 +236,11 @@ export function ImportWizard({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}>
-          {/* (REG-287) `outline: none`: focus lands on the panel on open (surface.ts) and the ring belongs to its
-              controls — the same rule Dialog and the Move stage window carry in their stylesheets. */}
-          <motion.div ref={panelRef} className={styles.panel} variants={modalPanel} role="dialog" aria-modal aria-label="Import Leads"
-                      tabIndex={-1} style={{ outline: 'none' }}>
-            <div className={styles.heading}>
-              <span className={styles.title}>Import Leads</span>
-              <span className={styles.step}>Step {step} of 4</span>
-              <Tooltip label="Close" disabled={busy}>
-                <button type="button" className={styles.close} aria-label="Close" onClick={close} disabled={busy}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+          <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel} role="dialog" aria-modal aria-label="Import Leads"
+                      tabIndex={-1}>
+            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel: the step count rides in the head's
+                actions, and the close goes through `close`, whose busy gate holds it while an import runs */}
+            <SurfaceHead title="Import Leads" actions={<span className={styles.step}>Step {step} of 4</span>} onClose={close} closeDisabled={busy} className={styles.heading} />
 
             <div className={styles.body}>
               <AnimatePresence mode="wait" initial={false}>
@@ -453,8 +445,10 @@ export function ImportWizard({
               </AnimatePresence>
             </div>
 
-            {/* Lead routing (821:23969 / 821:24010): question + two option cards with the radio on the right; no default. */}
-            <Dialog open={destOpen} onClose={() => setDestOpen(false)} title="Lead routing" width={400} size="standard"
+            {/* Lead routing (821:23969 / 821:24010): question + two option cards with the radio on the right; no default.
+                (REG-725) Nested over the wizard, through a portal on <body> as the close confirm below, so it sits above the panel and
+                owns Esc — rendered inside the panel, the surface policy skipped it as a descendant and the wizard took Esc first. */}
+            <Dialog open={destOpen} onClose={() => setDestOpen(false)} title="Lead routing" width={400} size="standard" nested portal
                     footer={<>
                       <Button variant="secondary" appearance="outlined" onPress={() => setDestOpen(false)}>Cancel</Button>
                       <Button onPress={() => { void runImport() }} isDisabled={busy || destination === null}>Import</Button>
@@ -470,9 +464,9 @@ export function ImportWizard({
                 ))}
               </div>
             </Dialog>
-            <ConfirmDialog open={confirmClose} title="Are you sure you want to close?" message="Your file and column mapping won't be saved."
+            <ConfirmDialog open={confirmClose} title="Are you sure you want to close?" message="Your file and column mapping won't be saved." nested
                            confirmLabel="Close window" onCancel={() => setConfirmClose(false)} onConfirm={() => { setConfirmClose(false); onClose() }} />
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
               {step === 1 ? (
                 <>
                   <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
@@ -491,7 +485,7 @@ export function ImportWizard({
               ) : (
                 <Button onPress={() => { if (result) onDone(result) }}>Done</Button>
               )}
-            </div>
+            </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}

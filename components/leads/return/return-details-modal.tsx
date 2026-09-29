@@ -6,11 +6,13 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Link } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
+import { IconButton } from '@/components/om/icon-button'
 import { MetaChip } from '@/components/om/meta-chip'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
+import { SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import { useSheetLayout } from '@/components/om/sheet'
 import { displayDateTimeTight } from '@/lib/format'
@@ -22,10 +24,11 @@ import styles from './return-details-modal.module.css'
 /**
  * Return details — ModalComponent 620×934 r12 (frame 176 processing 931:49048 · 178 approved + refund 931:49138;
  * spec design-source/context/lead-return/01-wizard-details.txt "Return details"; build plan 00-build-plan.md).
- * Shell (overlay + panel, Escape, scroll lock) = components/leads/tasks/tasks-filters-modal.tsx at 620 wide, height to
- * content (viewport-capped, the body scrolls). Head 64 (H g16 p20/24, bottom rule): the lead name 20/Bold · `returnTags`
- * as the 20px "Tag Outlined" MetaChip (title case, as the Lead Details header — UI-01; H g8) · info 24 (coming soon) ·
- * close 24. Body V g20 p24:
+ * Shell (overlay + panel, Escape, scroll lock) = components/leads/tasks/tasks-filters-modal.tsx, height to content
+ * (viewport-capped, the body scrolls) — (REG-725) on the modal scale's m, 600: the mock's 620 sat between m and l, and its
+ * content fits the 600 as drawn. Head 64 = the house head (SurfaceHead, the rule inside): the lead name 20/Bold, then its
+ * actions — `returnTags` as the 20px "Tag Outlined" MetaChip (title case, as the Lead Details header — UI-01; H g8) · info 24
+ * (coming soon) — before the close 24. Body V g20 p24:
  *   appeal banner (rejected with an appeal window only) 572×72 H g8 p16 yellow variant2 fill / variant1 stroke r8 —
  *     "here" is a DS Link → coming soon (user 2026-08-30);
  *   reply card (only once Qanvast has replied): Two Line (Qanvast image 40 + "Qanvast" 14 / "Business Team" 12 secondary)
@@ -93,31 +96,20 @@ export function ReturnDetailsModal({ open, leadName, ret, onClose, onOpenFile }:
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
+              `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label={leadName} tabIndex={-1} data-testid="return-details">
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            <div className={styles.heading}>
-              <div className={styles.titleWrap}>
-                <span className={styles.title}>{leadName}</span>
-                <span className={styles.tags}>
-                  {returnTags(ret).map((t) => <MetaChip key={t.label} color={t.color}>{t.label}</MetaChip>)}
-                </span>
-              </div>
-              {/* Tooltip label = the file viewer's info control (file-viewer.tsx) — the mock has no tooltip text. */}
-              <Tooltip label="Information">
-                <button type="button" className={styles.iconBtn} aria-label="Information" onClick={comingSoon}>
-                  <Icon name="info" size={24} />
-                </button>
-              </Tooltip>
-              <Tooltip label="Close">
-                <button type="button" className={styles.iconBtn} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot: the name is the title with its status tags beside it (the mock), the info control in its actions; no foot. */}
+            <SurfaceHead title={leadName} className={styles.heading} onClose={onClose}
+                         chips={returnTags(ret).map((t) => <MetaChip key={t.label} color={t.color}>{t.label}</MetaChip>)}
+                         actions={
+                           /* Tooltip label = the file viewer's info control (file-viewer.tsx) — the mock has no tooltip text. */
+                           <Tooltip label="Information">
+                             <IconButton icon="info" label="Information" size={24} variant="bare" iconSize={24} className={styles.info} onClick={comingSoon} />
+                           </Tooltip>
+                         } />
 
             <div className={styles.body}>
               {showAppeal ? (

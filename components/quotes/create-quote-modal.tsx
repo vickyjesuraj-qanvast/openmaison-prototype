@@ -10,8 +10,10 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { TextField } from '@/components/om/text-field'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
+import { useOverflow } from '@/components/om/use-overflow'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { useSheetLayout } from '@/components/om/sheet'
+import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
 import type { QuoteTemplate } from '@/lib/db/schema'
@@ -116,6 +118,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
      so the modal would take Esc first and close under them. While one is open it owns Esc; the layer re-arms when it closes. */
   useEscapeLayer(open && menuFor === null, panel, () => { if (mode.kind === 'all') setMode({ kind: 'rail' }); else onClose() })
   useDialogFocus(open, panel)
+  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow follows the body's scroll (REG-322)
   /* (REG-489) Only published templates can start a quote; drafts and archived ones stay in Company › Templates. */
   const picker: PickerData | null = useMemo(() => (render ? { ...render.extras, templates: pickerTemplates(templates), brand: render.brand, sample: render.sample } : null), [templates, render])
   const published = picker ? picker.templates : templates.filter((t) => t.status === 'published' && !t.deletedAt)
@@ -132,19 +135,14 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label={title} tabIndex={-1} data-testid="create-quote" data-mode={mode.kind}>
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            <div className={styles.heading}>
-              {mode.kind !== 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : null}
-              <span className={styles.title}>{mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : title}</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
-            <div className={styles.body}>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel: Back leads the head off the rail */}
+            <SurfaceHead className={styles.heading} onClose={onClose}
+                         leading={mode.kind !== 'rail' ? <Tooltip label="Back"><IconButton icon="arrow_back" label="Back to the start" size={24} variant="bare" iconSize={24} iconWeight={300} onClick={() => setMode({ kind: 'rail' })} /></Tooltip> : undefined}
+                         title={mode.kind === 'all' ? `Choose a template${forName ? ` for ${forName}` : ''}` : mode.kind === 'upload' ? `Upload a quote${forName ? ` for ${forName}` : ''}` : title} />
+            <div ref={scrollRef} className={styles.body}>
               {clients ? (
                 /* (REG-422) Studio-wide: the Client field decides which lead the quote belongs to; a tile pressed before a pick shows the field's error. */
                 <section className={styles.block} aria-label="Client">
@@ -271,16 +269,16 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
             </div>
             <input ref={fileRef} type="file" accept={UPLOAD_ACCEPT} hidden data-testid="upload-quote-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pickFile(f) }} />
             {mode.kind === 'upload' ? (
-              <div className={styles.foot}>
+              <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
                 <Button variant="secondary" appearance="outlined" onPress={() => setMode({ kind: 'rail' })}>Cancel</Button>
                 <Button onPress={createFromUpload} isDisabled={!mode.read?.ok}>Create the quote</Button>
-              </div>
+              </SurfaceFoot>
             ) : mode.kind === 'all' ? (
               /* (REG-518) The modal footer every dialog has: Cancel · the picker's action. */
-              <div className={styles.foot}>
+              <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
                 <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
                 <Button onPress={() => { if (pickedId) start(pickedId) }} isDisabled={!pickedId}>Use this template</Button>
-              </div>
+              </SurfaceFoot>
             ) : null}
           </motion.div>
         </motion.div>

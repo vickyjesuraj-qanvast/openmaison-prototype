@@ -168,8 +168,6 @@
 }
 /* A phone: the title and the close share the first line (the title whole — "Deleted Materials", never "Deleted …"); Empty Trash takes the next. */
 @media (max-width: 767px) {
-  .delTitle.delTitle { flex: 1 1 0; order: 0; }
-  .delClose.delClose { order: 1; }
   .delEmpty { order: 2; flex-basis: 100%; }
 }
 /* (verify round 1, F166) The gallery's ghost (library-gallery.skeleton.tsx): bones in the controls' own boxes, per width — the scope pill

@@ -5,6 +5,8 @@ import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
+import { useOverflow } from '@/components/om/use-overflow'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { relativeTime } from '@/lib/format'
 import type { Member } from '@/lib/db/schema'
@@ -32,6 +34,7 @@ export function FileCommentsPanel({
   const [draft, setDraft] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null)
+  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the composer's shadow only while the thread scrolls under it
   const count = comments.length
 
   const submit = () => {
@@ -49,17 +52,12 @@ export function FileCommentsPanel({
 
   return (
     <div className={styles.panel}>
-      {/* Panel head (931:39921) 64, H g16 p20/24, bottom rule: "Comments" 20/Bold + close 24 secondary */}
-      <div className={styles.head}>
-        <h2 className={styles.title}>Comments</h2>
-        <Tooltip label="Close">
-          <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-            <Icon name="close" size={24} />
-          </button>
-        </Tooltip>
-      </div>
+      {/* Panel head (931:39921) 64, H g16 p20/24, bottom rule: "Comments" 20/Bold + close 24 secondary.
+          (REG-725) the house head and foot (components/om/dialog.tsx): the rule inside the 64, the outlined bare close; the composer
+          rides in the house foot — its top rule always, its shadow only while the thread scrolls. */}
+      <SurfaceHead title="Comments" onClose={onClose} className={styles.head} />
 
-      <div className={styles.body}>
+      <div ref={scrollRef} className={styles.body}>
         {count === 0 ? (
           /* Empty state (931:39928): undraw_empty-mailbox 180×180 → 24 → texts V g12 */
           <div className={styles.empty}>
@@ -137,7 +135,7 @@ export function FileCommentsPanel({
       </div>
 
       {/* Footer (931:39946) 400×88, V g12 p16/24, top rule: Avatar 36 + [V g8] field 36 + caption 12. Enter posts (no Submit button in this mock). */}
-      <div className={styles.footer}>
+      <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
         <div className={styles.composer}>
           <CommentAvatar member={me} />
           <div className={styles.composerCol}>
@@ -152,7 +150,7 @@ export function FileCommentsPanel({
             <span className={styles.privacy}>Clients can’t see these comments</span>
           </div>
         </div>
-      </div>
+      </SurfaceFoot>
     </div>
   )
 }

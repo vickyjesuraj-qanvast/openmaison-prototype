@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
-import { IconButton } from '@/components/om/icon-button'
+import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
@@ -284,19 +284,13 @@ export function MoveStageWizard({
     <AnimatePresence>
       <motion.div key="ov" className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                   onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-        <motion.div ref={panelRef} className={styles.modal} variants={modalPanel} initial="initial" animate="animate" exit="exit"
+        <motion.div ref={panelRef} className={`${surfaceClasses.panel} ${styles.modal}`} variants={modalPanel} initial="initial" animate="animate" exit="exit"
                     role="dialog" aria-modal="true" aria-label="Move stage" tabIndex={-1}>
-          <div className={styles.head}>
-            <div className={styles.headText}>
-              <span className={styles.title}>Move stage</span>
-              <span className={styles.subtitle}>
-                <span>{lead.name}</span><span>·</span><span>Current stage: {lead.stage}</span>
-              </span>
-            </div>
-            <Tooltip label="Close">
-              <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" onClick={onClose} />
-            </Tooltip>
-          </div>
+          {/* (REG-725) the house head and foot (components/om/dialog.tsx) and the shell's panel look (r12, level 5): the 64 head with
+              its rule inside and the lead · stage line as its subtitle; the foot's top rule always, its shadow only while the step
+              scrolls, the validation message on its left. The window keeps its own rail, overlay and phone sheet. */}
+          <SurfaceHead title="Move stage" className={styles.head} onClose={onClose}
+                       subtitle={<span className={styles.subtitle}><span>{lead.name}</span><span>·</span><span>Current stage: {lead.stage}</span></span>} />
           <div className={styles.body}>
             <div ref={railRef} className={styles.rail} role="tablist" aria-label="Stages">
               {STAGES.map((s, i) => {
@@ -346,16 +340,19 @@ export function MoveStageWizard({
               </AnimatePresence>
             </div>
           </div>
-          <div className={styles.foot} data-shadow={bodyScrolls || undefined}>
+          <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
             {showErrors && Object.keys(errors).length ? (
-              <motion.span className={styles.footError}
-                           initial={{ x: 0 }}
-                           animate={{ x: [0, -4, 4, -4, 0], transition: { duration: duration.sheet } }}   /* the 280ms shake — no dedicated shake token in lib/motion yet */
-              >
-                <Icon name="error" size={16} />
-                {editing ? 'Unable to save. Please fill in the required fields.' : 'Unable to move. Please fill in the required fields.'}
-              </motion.span>
-            ) : <span className={styles.footSpacer} />}
+              <FootStart>
+                <motion.span className={styles.footError}
+                             initial={{ x: 0 }}
+                             animate={{ x: [0, -4, 4, -4, 0], transition: { duration: duration.sheet } }}   /* the 280ms shake — no dedicated shake token in lib/motion yet */
+                >
+                  <Icon name="error" size={16} />
+                  {editing ? 'Unable to save. Please fill in the required fields.' : 'Unable to move. Please fill in the required fields.'}
+                </motion.span>
+              </FootStart>
+            ) : null}
+            {/* One group, so the phone's stacked foot keeps the pair on one row under the message. */}
             <div className={styles.footBtns}>
               <Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
               {!anyOpen ? null : (
@@ -364,7 +361,7 @@ export function MoveStageWizard({
                 </Button>
               )}
             </div>
-          </div>
+          </SurfaceFoot>
         </motion.div>
 
         <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillFor(null)} onUpload={handleAutoFillUpload} />

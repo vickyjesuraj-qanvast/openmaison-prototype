@@ -4,7 +4,8 @@ import { useCallback, useRef, useSyncExternalStore, type ReactNode } from 'react
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { bottomSheet, overlayFade } from '@/lib/motion'
-import { IconButton } from './icon-button'
+import { SurfaceFoot, SurfaceHead } from './surface-parts'
+import { useOverflow } from './use-overflow'
 import { useScrollLock } from './use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from './surface'
 import styles from './sheet.module.css'
@@ -59,6 +60,7 @@ export function Sheet({
   bodyClassName?: string
 }) {
   const panel = useRef<HTMLDivElement>(null)
+  const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the foot's shadow only while the body scrolls under it
   useScrollLock(open)   // the page never scrolls behind this surface
   useEscapeLayer(open, panel, onClose)
   useDialogFocus(open, panel)
@@ -71,18 +73,10 @@ export function Sheet({
           <motion.div ref={panel} className={styles.sheet} variants={bottomSheet} initial="initial" animate="animate" exit="exit"
                       role={role} aria-modal="true" aria-label={label ?? title} tabIndex={-1}>
             <span className={styles.grabber} aria-hidden />
-            {title ? (
-              <div className={styles.head}>
-                <div className={styles.titles}>
-                  <span className={styles.title}>{title}</span>
-                  {subtitle ? <span className={styles.sub}>{subtitle}</span> : null}
-                </div>
-                {headActions ? <span className={styles.headActions}>{headActions}</span> : null}
-                <IconButton icon="close" label="Close" size={24} variant="bare" iconSize={24} iconFamily="outlined" className={styles.close} onClick={onClose} />
-              </div>
-            ) : null}
-            <div className={`${styles.body} ${bodyClassName ?? ''}`}>{children}</div>
-            {footer ? <div className={styles.foot}>{footer}</div> : null}
+            {/* (REG-725) the house head and foot, on the sheet's own 12 / 16 padding (REG-308 · REG-372) */}
+            {title ? <SurfaceHead title={title} subtitle={subtitle} actions={headActions} onClose={onClose} className={styles.head} /> : null}
+            <div ref={scrollRef} className={`${styles.body} ${bodyClassName ?? ''}`}>{children}</div>
+            {footer ? <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>{footer}</SurfaceFoot> : null}
           </motion.div>
         </motion.div>
       ) : null}

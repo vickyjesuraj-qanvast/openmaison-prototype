@@ -18,6 +18,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "design:lint": "node scripts/design-lint.mjs",
+    "design:anatomy": "node scripts/design-anatomy.mjs",
     "ds:vendor": "tsx scripts/vendor-ds.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",

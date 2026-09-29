@@ -1,35 +1,13 @@
-/* Review imported leads — full-page takeover, 1:1 from 779:26221 / 779:26272. */
+/* Review imported leads — full-page takeover, 1:1 from 779:26221 / 779:26272. (REG-725) The head, the detail pane's foot and the
+   panel's look (fill, r12, level 5, clip) are the house's — SurfaceHead / SurfaceFoot / surfaceClasses.panel in components/om/dialog. */
 .overlay {
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the house layer */
   background: var(--om-color-overlay-60p);
   display: flex; align-items: center; justify-content: center;
   padding: var(--om-modal-xxl-margin);   /* xxl: 48px on every side (designer, 2026-08-29) */
 }
 /* XXL modal (designer, 2026-08-29): fluid — fills the viewport minus the 48px margin on every side; the list / detail scroll inside. */
-.panel {
-  width: 100%; height: 100%;
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  box-shadow: var(--om-elevation-level-5);
-  display: flex; flex-direction: column; min-height: 0; min-width: 0;
-  overflow: hidden;
-}
-.heading {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
-  height: 64px; padding: 0 var(--om-spacing-6);   /* modal header standard 779:26016: 64px, 20/24, title 20 Bold, bare 24px close */
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.titleGroup { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-2); }
-.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; }   /* 779:26227: heading/h3 (was h4) */
-.closeBtn {
-  width: 24px; height: 24px; padding: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: none; border: 0; border-radius: var(--om-radius-1);
-  color: var(--om-color-on-surface-secondary); cursor: pointer;
-  transition: color var(--motion-hover), background-color var(--motion-hover);
-}
-.closeBtn:hover { color: var(--om-color-on-surface-default); background: var(--om-color-hover-04p); }
+.panel { width: 100%; height: 100%; min-height: 0; min-width: 0; }
 
 .toolbar {
   display: flex; align-items: center; gap: var(--om-spacing-3);
@@ -50,7 +28,6 @@
 .chip[data-selected] { background: var(--om-color-primary-variant); border-color: var(--om-color-primary-default); color: var(--om-color-on-primary-variant); }
 .vdivider { width: 1px; height: 36px; background: var(--om-color-surface-variant); }
 .toggleLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); white-space: nowrap; }
-.spacer { flex: 1; }
 /* The mock's tones the DS Button has no variant for (779:26221 / 26272): green Approve (filled) and red-outlined Reject. Colour-only
    overrides on the DS Button — geometry, hover fill, focus ring and disabled opacity stay the DS's; the doubled class outranks the
    DS's [data-variant][data-appearance] rules whatever the sheet order. Hover darkens to the tone's d80, as primary → primary-hover. */
@@ -159,16 +136,6 @@
    its two records one above the other at ≤767 (REG-269). Same copy as the head row, same caption style. */
 .stackLabel { display: none; font: var(--om-type-caption-s); text-transform: uppercase; color: var(--om-color-on-surface-secondary); }
 
-.footer {
-  display: flex; align-items: center; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  background: var(--om-color-surface-default);
-  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
-  transition: box-shadow var(--motion-toggle);
-  flex-shrink: 0;
-}
-.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
 .note { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .emptyDetail { flex: 1; display: flex; align-items: center; justify-content: center; font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 
@@ -209,9 +176,10 @@
   .cCol { flex: 1 1 220px; min-width: 220px; }
   .cMerged { flex: 1 1 200px; min-width: 200px; }
 
-  /* Merge footer: note + three nowrap buttons no longer fit one row — the note takes its own. */
-  .footer { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
-  .footer .note { flex: 1 1 100%; }
+  /* Merge footer: note + three nowrap buttons no longer fit one row — the note (its FootStart) takes its own.
+     (REG-725) `.panel .footer`: the house foot's rules must not win the tie whatever the sheets' order. */
+  .panel .footer { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .footer > :has(> .note) { flex: 1 1 100%; }
 
   /* (REG-273) "Back to queue" only exists at these widths — i.e. only where the sheet is a touch surface —
      and its 8px padding left it 36 tall. A 44px box, taken from its own padding; nothing else moves. */
@@ -220,9 +188,8 @@
 
 @media (max-width: 767px) {
   .overlay { padding: 0; height: 100dvh; }   /* xxl → full-screen sheet (responsive.md) */
-  .panel { border-radius: 0; }
-  .heading { padding: 0 var(--om-spacing-4); }
-  .title { overflow: hidden; text-overflow: ellipsis; }
+  .overlay .panel { border-radius: 0; }   /* (REG-725) doubled: the house panel's r12 must not win the tie */
+  .panel .heading { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 
   /* Toolbar: the source ChipRail keeps a scrolling row of its own; the duplicates switch, its label and
      Approve All Clean share the row below it (the label wraps instead of the row overflowing). */
@@ -235,10 +202,9 @@
   .body { margin: 0; border-left: 0; border-right: 0; border-bottom: 0; border-radius: 0; }
   .detailBody { padding: var(--om-spacing-4); }
   /* Reject New / Keep Both / Merge into Existing measure ~374 against 358 of footer, so the last one wraps;
-     with the flex spacer gone the buttons stay right-aligned on whichever line they land. */
-  .footer { padding: var(--om-spacing-3) var(--om-spacing-4); justify-content: flex-end; row-gap: var(--om-spacing-2); }
-  .footer { padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 12 where env() is 0 */
-  .spacer { display: none; }
+     the house foot is right-aligned, so the buttons stay right-aligned on whichever line they land. */
+  .panel .footer { padding: var(--om-spacing-3) var(--om-spacing-4); row-gap: var(--om-spacing-2); }
+  .panel .footer { padding-bottom: calc(var(--om-spacing-3) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 12 where env() is 0 */
 
   /* Merge table at 390: 88 + 140 frozen leaves ~130 — exactly one data column, so one swipe moves from
      Existing to New and back. The label wraps rather than clipping ("Property type"). */
@@ -274,10 +240,10 @@
 /* (REG-307) Touch ergonomics (REG-273) — also on a touch pointer up to 1024, so an iPad gets the same boxes. */
 @media (max-width: 767px), (hover: none) and (max-width: 1024px) {
   /* ── Touch ergonomics (REG-273) ────────────────────────────────────────────────────────────────────────
-     The sheet's own controls, each taken to a ≥44px box with no mark or type resized:
+     The sheet's own controls, each taken to a ≥44px box with no mark or type resized ((REG-725) the head's
+     close is the house IconButton, which carries its own 44px target):
        · source chips: 32 → 44 tall (their 8/12 padding and 12px type are unchanged, the box grows around
          them). They scroll inside the shared ChipRail, which simply follows their height;
-       · the bare 24px close: an invisible ::after takes it to 44×44, into the heading's own 16px padding;
        · each queue card's Reject / Approve / View & Merge — 20px text lines. The ::after takes each to 44
          tall and 6px wider each side, which is exactly half the 12px gap between them, so two targets meet
          without ever overlapping, and the card behind them keeps every pixel it had;
@@ -290,8 +256,6 @@
      <label> (the rail is a div, the caption a span, Approve All Clean a button), so it takes a 44px box
      around the same track: the track's size and its optical centre are unchanged. */
   .toolbar > label { min-block-size: 44px; }
-  .closeBtn { position: relative; }
-  .closeBtn::after { content: ''; position: absolute; inset: -10px; }
   .link { position: relative; }
   .link::after { content: ''; position: absolute; inset: -12px -6px; }
   .radioBtn { position: relative; }

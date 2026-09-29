@@ -8,7 +8,7 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { TextField } from '@/components/om/text-field'
 import { Chips } from '@/components/om/chips'
 import { AssigneeField } from './assignee-field'
-import { Dialog } from '@/components/om/dialog'
+import { Dialog, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { Dropzone, FileTile, LinkButton, SectionRow } from './move-stage/fields'
 import { findDuplicateLead } from '@/app/leads/actions'
 import { displayCustomValue, validateCustomValue, type CustomFieldDef, type CustomValues } from '@/lib/leads/custom-fields-model'
@@ -25,7 +25,6 @@ import type { LeadRow } from '@/lib/leads/queries'
 import styles from './lead-form.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
-import { Tooltip } from '@/components/om/tooltip'
 
 /* The three option lists live in lib/leads/enums.ts since the parity round (REG-607): only 'Contemporary' / 'Collected' / 'New'
    are mock-visible; the rest came from the testers (REG-549) and from 1.0's Singapore lists. */
@@ -359,19 +358,11 @@ export function LeadFormModal({
           /* (REG-321, user 2026-09-02) No scrim dismiss here: the lead form holds the lead's own details, so only the X, Cancel
              or Escape close it — a stray click outside must never throw a half-filled form away. */
         >
-          <motion.div ref={panel} className={styles.panel} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
-                      /* focus lands on the panel on open; the ring belongs to its controls (om/dialog.module.css) */
-                      style={{ outline: 'none' }}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel} role="dialog" aria-modal tabIndex={-1}
                       aria-label={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}>
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            <div className={styles.heading}>
-              <span className={styles.title}>{form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'}</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot (components/om/dialog.tsx), on the house panel */}
+            <SurfaceHead title={form.mode === 'create' ? 'Create New Lead' : 'Edit Lead'} onClose={onClose} className={styles.heading} />
 
             <div ref={scrollRef} className={styles.body}>
               <div className={styles.section}>
@@ -490,10 +481,10 @@ export function LeadFormModal({
               </div>
             </div>
 
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
               <Button variant="secondary" appearance="outlined" onPress={onClose} isDisabled={submitting}>Cancel</Button>
               <Button onPress={() => { void submit() }} isDisabled={submitting}>{form.mode === 'create' ? 'Create' : 'Save'}</Button>
-            </div>
+            </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}

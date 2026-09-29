@@ -92,7 +92,7 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
        its box (no autofocus); the framed editor whose toolbar ends in the "Insert Token ▾" trigger (200 menu). The panel is the
        mock's 663 and the editor's body scrolls inside it (REG-437: an edited template's long body grew the modal past the screen). */
     return (
-      <Dialog open={open} onClose={close} title={editing.id ? 'Edit Template' : 'New Template'} size="modal" width={800} height={663} headRule={false}
+      <Dialog open={open} onClose={close} title={editing.id ? 'Edit Template' : 'New Template'} size="modal" width={800} height={663}
               eyebrow={`${label} Templates /`}
               leading={<Tooltip label="Back"><IconButton icon="arrow_back" label="Back to templates" size={24} variant="bare" iconSize={24} onClick={() => setEditing(null)} /></Tooltip>}
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => save(false)} isDisabled={!editing.title.trim()}>Save</Button><Button onPress={() => save(true)} isDisabled={!editing.title.trim()}>Save and Add</Button></>}>
@@ -116,7 +116,7 @@ export function TemplatesModal({ open, kind, templates, onClose, onAdd, onTempla
   return (
     <>
       {/* The library (1238:33084 empty · 1238:33258 list): a 96 head with no rule, 600 tall, no footer — the close ✕ ends it. */}
-      <Dialog open={open} onClose={close} title={`${label} Templates`} size="modal" width={800} height={600} headRule={false}
+      <Dialog open={open} onClose={close} title={`${label} Templates`} size="modal" width={800} height={600}
               subtitle={
                 <div className={styles.headRow}>
                   <SearchBar appearance="outlined" size="md" placeholder="Search" aria-label="Search templates" value={query} onChange={setQuery} className={styles.search} />

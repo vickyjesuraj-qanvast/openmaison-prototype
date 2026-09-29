@@ -78,7 +78,7 @@ const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); re
 const anchorRect = (el: HTMLElement) => ({ el, ...clampPos(el, 400, 456) })
 /** (REG-610) The Assign popover opened from the bulk bar — one anchored state, this id instead of a lead's. */
 const BULK = '__bulk__'
-const tasksPos = (el: HTMLElement) => clampPos(el, 400, 516)
+const tasksPos = (el: HTMLElement) => clampPos(el, 400, 532)   /* (REG-725) the popover's head is the house 64: a full list with the composer stands 532 */
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > usableViewportHeight() }
 
 function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement, sources, liveSources, viewer, leadReasons, customFields, memberStats }: { /** (REG-612) the studio's active custom fields · what the suggestion scores members on */ customFields: CustomFieldDef[]; memberStats: MemberStats; rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; /** (REG-599) every source to filter by · the live ones the form offers */ sources: string[]; liveSources: string[]; /** (REG-601) who is looking, for the assignment rules */ viewer: Viewer; /** (REG-607) the studio's Lost and On Hold reasons for the two dialogs */ leadReasons: LeadReasons }) {

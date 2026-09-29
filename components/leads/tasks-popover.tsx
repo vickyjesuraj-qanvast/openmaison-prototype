@@ -10,6 +10,7 @@ import { anchoredSurface, duration, ease } from '@/lib/motion'
 import { displayDate, isDueToday, isOverdue, phoneLocal } from '@/lib/format'
 import { DatePicker, focusDatePicker } from '@/components/om/date-picker'
 import { Sheet, useSheetLayout } from '@/components/om/sheet'
+import { FootStart, SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
 import type { LeadRow } from '@/lib/leads/queries'
 import type { LeadTask } from '@/lib/db/schema'
 import styles from './tasks-popover.module.css'
@@ -232,14 +233,9 @@ export function TasksPopover({
           variants={anchoredSurface} initial="initial" animate="animate" exit="exit"
           role="dialog" aria-label={`Tasks for ${lead.name}`}
         >
-          <div className={styles.head}>
-            <span className={styles.title}>Tasks</span>
-            <Tooltip label="Close">
-              <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                <Icon name="close" size={24} family="outlined" />
-              </button>
-            </Tooltip>
-          </div>
+          {/* (REG-725) the house head and foot (components/om/dialog.tsx): the 64 head with its rule inside and the outlined close; the
+              foot's top rule, Add Task on its left as the mock draws it (779:24722). The composer below keeps its own row. */}
+          <SurfaceHead title="Tasks" onClose={onClose} />
           {inner}
           {adding ? (
             <div className={styles.addArea}
@@ -252,9 +248,9 @@ export function TasksPopover({
               </div>
             </div>
           ) : (
-            <div className={styles.foot}>
-              <Button onPress={() => setAdding(true)}>Add Task</Button>
-            </div>
+            <SurfaceFoot>
+              <FootStart><Button onPress={() => setAdding(true)}>Add Task</Button></FootStart>
+            </SurfaceFoot>
           )}
         </motion.div>
       ) : null}

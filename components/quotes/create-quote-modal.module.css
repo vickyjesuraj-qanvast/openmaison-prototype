@@ -6,39 +6,19 @@
  */
 .overlay {
   overscroll-behavior: contain;
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the house layer */
   background: var(--om-color-overlay-60p);
   display: flex; align-items: safe center; justify-content: center;
   padding: 48px 0; overflow-y: auto;
 }
+/* (REG-515 · REG-725) The fill, radius, shadow and clip belong to EVERY mode — they are the house panel's now (surfaceClasses.panel in
+   components/om/dialog: r12, level 5), as the head (SurfaceHead: 64, the rule inside it) and the picker / upload foot (SurfaceFoot). */
 .panel {
   position: relative;
   width: var(--om-modal-xl); max-height: calc(100dvh - 96px);
   height: min(960px, calc(100dvh - 96px));   /* (REG-517) one height for the rail and the picker — and the ready-made design dialog's 960 — so View all / New template never jump */
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  box-shadow: var(--om-elevation-level-5);   /* the reference's level-5 panel (the Dialog shell's) */
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  /* (REG-515) the fill, radius, shadow and clip belong to EVERY mode — the REG-494 rewrite left them on the picker mode only,
-     so the rail mode drew its content straight over the scrim with the page's table showing through (owner 2026-09-18) */
 }
 /* (REG-494) the picker mode fills the panel, so the grid scrolls inside rather than the whole body */
-/* Heading 64: p20/24, 20/Bold title, bare 24px close, the 1px rule INSIDE the 64 (779:26016, Figma inside stroke). */
-.heading {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
-  height: 64px; padding: 0 var(--om-spacing-6);
-  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.heading > :first-child:not(.title) { margin-left: calc(-1 * var(--om-spacing-2)); }
-.title { flex: 1; min-width: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.close {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  color: var(--om-color-on-surface-secondary); display: inline-flex;
-  transition: color var(--motion-hover);
-}
-.close:hover { color: var(--om-color-on-surface-default); }
 /* Body p24, the two blocks 24 apart; each block = eyebrow row + 12 + content. */
 .body {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
@@ -46,8 +26,6 @@
   display: flex; flex-direction: column; gap: var(--om-spacing-6);
 }
 .block { display: flex; flex-direction: column; gap: var(--om-spacing-3); }
-/* (REG-518) The picker mode's footer — the Dialog shell's: p16/24, top rule, right-aligned. */
-.foot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); flex-shrink: 0; }
 .panel[data-mode='all'] .body { overflow: hidden; }
 /* Only the picker block fills the height — the Client block above it (Tools › Quotes) keeps its own (REG-518 screenshot). */
 .panel[data-mode='all'] .block[data-fill] { flex: 1; min-height: 0; }
@@ -136,19 +114,15 @@
 }
 @media (max-width: 767px) {
   .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
-  .panel {
+  /* (REG-725) `.overlay .panel` / `.panel .heading`: the house panel's r12 on every corner and the house head's padding must not win
+     the tie whatever the sheets' order. */
+  .overlay .panel {
     width: 100vw; max-width: 100vw;
     max-height: min(88dvh, calc(100dvh - 56px));
     border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
-  .grabber {
-    flex-shrink: 0; align-self: center;
-    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
-    border-radius: var(--om-radius-full);
-    background: var(--om-color-surface-variant);
-  }
-  .heading { padding-top: var(--om-spacing-3); }
-  .heading, .body { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .panel .heading { padding-top: var(--om-spacing-3); }
+  .panel .heading, .body { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
   .body { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
   /* The eyebrow keeps its line; the two text buttons drop under it (a 390 screen has no room beside a 4-line label). */
   .eyebrowRow { flex-direction: column; align-items: flex-start; gap: var(--om-spacing-2); min-height: 0; }
@@ -159,15 +133,15 @@
   .well { height: auto; aspect-ratio: 268 / 180; }
   .doc { width: 60%; height: 90%; }
 }
-/* Touch (REG-273): the bare 24px close and kebab take 44px boxes. */
+/* Touch (REG-273): the bare 24px kebab takes a 44px box ((REG-725) the head's close is the house IconButton, which carries its own). */
 @media (max-width: 767px), (hover: none) {
-  .close { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
   .kebab { position: absolute; }
   .kebab > button { position: relative; }
   .kebab > button::after { content: ''; position: absolute; inset: -10px; }
 }
-/* (REG-525) the pinned footer shares the sheet's 16 gutter and clears the home indicator (dialog.module.css) */
-@media (max-width: 767px) { .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); } }
+/* (REG-525) the pinned footer shares the sheet's 16 gutter and clears the home indicator (dialog.module.css); doubled (REG-725) so the
+   house foot's padding never wins the tie */
+@media (max-width: 767px) { .panel .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); } }
 /* (REG-521) On a phone the picker mode scrolls its body as one — the desktop's overflow: hidden squeezed the tile grid to nothing. */
 @media (max-width: 767px) {
   .panel[data-mode='all'] .body { overflow-y: auto; }

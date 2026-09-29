@@ -1,7 +1,9 @@
-/* Move Stage wizard — 800w modal, 240 rail, from 780:86258 / 781:58292. */
+/* Move Stage wizard — 800w modal, 240 rail, from 780:86258 / 781:58292. (REG-725) The head, the foot and the panel's look (surface,
+   r12, level 5, the focus outline) are the shell's — SurfaceHead / SurfaceFoot / surfaceClasses.panel in components/om/dialog.tsx;
+   what stays here is the window's own: the top-aligned overlay, the rail, the step panel and the phone sheet. */
 .overlay {
   overscroll-behavior: contain;
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the dialog layer, as every other modal */
   background: var(--om-color-overlay-60p);
   display: flex; align-items: flex-start; justify-content: center;
   padding: 48px 0;
@@ -9,21 +11,10 @@
 }
 .modal {
   width: var(--om-modal-l);
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  display: flex; flex-direction: column;
-  overflow: hidden;
   max-height: calc(100vh - 96px);
-  outline: none;   /* focus lands on the panel on open (components/om/surface.ts) */
 }
-.head {
-  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-5) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+/* The head's subtitle row (lead · Current stage) — also the subtitle line of the dialogs that import this stylesheet (On Hold / Lost,
+   the lead delete, the follow-up). */
 .subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); display: flex; gap: var(--om-spacing-1); }
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-3); width: 100%; }   /* panel title · Add Log / Edit */
 
@@ -67,22 +58,13 @@
   position: relative; overscroll-behavior: contain; }
 .panelTitle { font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); }
 
-.foot {
-  display: flex; align-items: center; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
-  transition: box-shadow var(--motion-toggle);
-  flex-shrink: 0;
-}
-.foot[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
+/* The foot's left: the validation message (inside the house FootStart), then Cancel · Save as one group. */
 .footError {
-  flex: 1; min-width: 0;
+  min-width: 0;
   display: flex; align-items: center; gap: var(--om-spacing-2);
   font: var(--om-type-body-s);
   color: var(--om-color-tertiary-red-default);
 }
-.footSpacer { flex: 1; }
 .footBtns { display: flex; gap: var(--om-spacing-3); }
 
 /* New: assignee rows (avatar 40 · name / role · disabled check). */
@@ -233,10 +215,10 @@
   .modal {
     width: 100vw; max-width: 100vw;
     height: 100dvh; max-height: 100dvh;
-    border-radius: 0;
   }
-  .head { padding: var(--om-spacing-5) var(--om-spacing-4); }
-  .head { padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }   /* (REG-308) below the status bar; 20 where env() is 0 */
+  /* (REG-725) Two classes, so these beat the shared panel's and head's single-class rules wherever the stylesheets land. */
+  .overlay > .modal { border-radius: 0; }   /* the shared panel's r12 — a full-screen sheet has no corners */
+  .modal .head { padding: var(--om-spacing-5) var(--om-spacing-4); padding-top: calc(var(--om-spacing-5) + env(safe-area-inset-top, 0px)); }   /* (REG-308) below the status bar; 20 where env() is 0 */
   /* Long lead names truncate instead of pushing the close button out of the header. */
   .subtitle { min-width: 0; }
   .subtitle > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -276,10 +258,7 @@
   .taskRow[data-variant='notes'] { height: auto; min-height: 46px; padding: var(--om-spacing-2) var(--om-spacing-4); }
 
   /* The footer stacks: the shake-error message above the buttons instead of fighting them for one row. */
-  .foot { flex-direction: column; align-items: stretch; gap: var(--om-spacing-3); padding: var(--om-spacing-4); }
-  .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator; 16 where env() is 0 */
-  .footError { flex: none; }
-  .footSpacer { display: none; }
+  .modal .foot { flex-direction: column; align-items: stretch; padding: var(--om-spacing-4); padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator; 16 where env() is 0 */
   .footBtns { justify-content: flex-end; }
 }
 

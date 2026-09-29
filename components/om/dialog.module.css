@@ -1,12 +1,19 @@
-/* Dialog shell — compact (779:24663) · standard (821:23969) · form (784:113420) · modal (779:26016). Moved here from
-   components/leads/move-stage/wizard.module.css (audit 2026-08-30): the shell is app-wide, not a Move stage piece. */
+/* Dialog shell. (REG-725, owner 2026-09-29: "there are modals with bottom border and there are without … fix all of this once for all")
+   ONE anatomy for every overlay — this dialog in every size, the confirm, the side drawer and the hand-rolled wizards and sheets all
+   render SurfaceHead / SurfaceFoot (dialog.tsx), so these rules are the only place a dialog's head and foot are drawn. The measures
+   are the modal standard (779:26016): head 64 (p20/24), the 20/24 bold title, the bare 24 close, the 1px rule inside the head's
+   bottom edge ALWAYS (the owner's pick of three); body p24; foot 68 (p16/24, gap 12), right-aligned, the top rule always and its
+   shadow only while the body scrolls (REG-322); panel r12, level 5. Until 2026-09-29 each size drew its own head and foot — compact
+   (779:24663) without the rule and a 16px title, standard (821:23969) a 56 head with a border at level 3, form (784:113420) a 72 head
+   and an 84 foot with no rules, the templates modals (1238:33084) no rule — and the hand-rolled overlays a sixth and seventh. */
 .overlay {
   position: fixed; inset: 0; z-index: 110;
   background: var(--om-color-overlay-60p);   /* the mock's scrim (780:91936 Overlay = overlay/60p), as every other modal */
   display: flex; align-items: center; justify-content: center;
 }
 .overlay[data-nested] { background: var(--om-color-overlay-20p); z-index: 120; }   /* second scrim layered over an open modal (Move stage window) — (REG-617) and over a phone sheet (z 115), which it used to open under */
-.dialog {
+/* The panel's look — shared with the overlays that keep their own layout (surfaceClasses.panel). */
+.panel {
   background: var(--om-color-surface-default);
   border-radius: var(--om-radius-3);
   box-shadow: var(--om-elevation-level-5);
@@ -14,42 +21,51 @@
   overflow: hidden;
   outline: none;   /* focus lands on the panel on open (surface.ts); the ring belongs to its controls */
 }
-.head { display: flex; align-items: flex-start; gap: var(--om-spacing-4); padding: var(--om-spacing-5) var(--om-spacing-6); }
-.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
+.dialog { max-height: calc(100dvh - 48px); }   /* (REG-437) a tall dialog on a short window scrolls its body instead of running off the screen */
+
+/* The head: 64 = p20/24 + the 24 title line; 80 with an eyebrow (a crumb reads tight over its title, as the L2 header's), 84 with a
+   subtitle; a phone sheet's is 56, the grabber taking its top clearance (REG-308). No min-height: the padding and the title make the
+   64, so a sheet keeps its own. The rule is inside the head (the Figma inside stroke: 931:46937 = 64 + 170 + 68 = 302). */
+.head {
+  display: flex; align-items: center; gap: var(--om-spacing-4);
+  padding: var(--om-spacing-5) var(--om-spacing-6);
+  box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant);
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+.headText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.title { margin: 0; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }
 .eyebrow { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* the crumb above a title (1238:33173) */
-.subtitle { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (REG-511) one secondary line under the title — the leads dialogs' subtitle, now the primitive's */
+.subtitle { margin-top: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }   /* (REG-511) one secondary line under the title */
+.titleRow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-1) var(--om-spacing-3); min-width: 0; }
+.chips { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--om-spacing-2); }   /* 8 apart, as the L2 header's MetaChips */
+.headEnd { flex-shrink: 0; display: flex; align-items: center; gap: var(--om-spacing-4); }
+.close { flex-shrink: 0; }
 /* (REG-511) xxl = fluid, 48 on every side (the Review imported leads sheet's rule) — the template preview window. */
 .dialog[data-fluid] { width: calc(100vw - 2 * var(--om-modal-xxl-margin)); height: calc(100dvh - 2 * var(--om-modal-xxl-margin)); max-height: none; }
-.dialog[data-size='compact'] .title { font: var(--om-type-heading-h4); }
-.close { flex-shrink: 0; }
-.body { padding: 0 var(--om-spacing-6) var(--om-spacing-5); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
-.foot { display: flex; justify-content: flex-end; gap: var(--om-spacing-3); padding: var(--om-spacing-4) var(--om-spacing-6); border-top: var(--om-border-1) solid var(--om-color-surface-variant); position: relative; z-index: 1; transition: box-shadow var(--motion-toggle); }   /* positioned: above a body that scrolls or animates (REG-322) */
-.foot[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }
+
+/* The body: p24 on every size; gaps 16, 24 between a modal's sections. `flush` runs a layout to the panel's edges (a rail). */
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-4); }
+.dialog[data-size='modal'] .body { gap: var(--om-spacing-6); }
+.body[data-flush] { padding: 0; gap: 0; }
+
+/* The foot: 68 = p16/24 + 36 buttons; the top rule always; the shadow only while the body scrolls (REG-322). */
+.foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
+  padding: var(--om-spacing-4) var(--om-spacing-6);
+  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
+  background: var(--om-color-surface-default);
+  flex-shrink: 0; position: relative; z-index: 1;   /* positioned: above a body that scrolls or animates */
+  transition: box-shadow var(--motion-toggle);
+}
+.foot[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
+.footStart { margin-right: auto; display: flex; align-items: center; gap: var(--om-spacing-3); min-width: 0; }   /* a link, a note, an error on the left */
 /* (REG-720) A footer of buttons only wraps rather than clip: neither the DS Button nor the danger button breaks its label, so two long
    answers on a narrow alert (320: "Keep Pro — Studio" · "Cancel the plan") ran past the card's edge, cut off by its overflow. */
-.foot:not(:has(> :not(button))) { flex-wrap: wrap; }   /* only while the body scrolls (REG-322) */
-/* Standard dialog (821:23969): radius-1 + border + level-3, 56px heading with divider, 24px body. */
-.dialog[data-size='standard'] { border-radius: var(--om-radius-3); border: var(--om-border-1) solid var(--om-color-surface-variant); box-shadow: var(--om-elevation-level-3); }   /* 12px = the standard modal radius (designer, 2026-08-28) */
-.dialog[data-size='standard'] .head { align-items: center; padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6); border-bottom: var(--om-border-1) solid var(--om-color-surface-variant); }
-.dialog[data-size='standard'] .body { padding: var(--om-spacing-6); }
-/* form (784:113420): s-modal with one field — 72px heading (24 all round, no divider), 12/24 body, 84px footer (24, gap 8). */
-.dialog[data-size='form'] { border-radius: var(--om-radius-3); box-shadow: var(--om-elevation-level-5); }
-.dialog[data-size='form'] .head { align-items: center; padding: var(--om-spacing-6); }
-.dialog[data-size='form'] .body { padding: var(--om-spacing-3) var(--om-spacing-6); }
-.dialog[data-size='form'] .foot { padding: var(--om-spacing-6); gap: var(--om-spacing-2); border-top: 0; }
-/* modal (779:26016 — Notes' Auto Fill 931:45344 / Add tasks 931:45360, spec 02): 64px heading = p20/24 + the h3 title
-   (24 line) with the bottom rule; body p24 g24; the footer is already 68 (p16/24 + 36 buttons, top rule). r12 = .dialog. */
-.dialog[data-size='modal'] .head { align-items: center; box-shadow: inset 0 calc(-1 * var(--om-border-1)) 0 var(--om-color-surface-variant); }   /* the 1px rule is inside the 64 (Figma inside stroke): 931:46937 = 64 + 170 + 68 = 302 */
-.dialog[data-size='modal'] .body { padding: var(--om-spacing-6); gap: var(--om-spacing-6); }
-.dialog[data-size='modal'][data-norule] .head { box-shadow: none; align-items: flex-start; }   /* the templates modals' heads carry no rule and keep ✕ on the title row (1238:33084 · 33173) */
-.dialog[data-size='modal'][data-norule] .head:has(.eyebrow) { padding-block: 10px; align-items: center; }   /* crumb 16 + title 24 in a 60 head (1238:33173) */
-.dialog[data-size='modal'][data-norule] .head:has(.eyebrow) .headText { gap: 0; }
-/* A fixed-height panel (the templates modal's 600, 1238:33258): the body takes the room and scrolls. */
-.dialog[data-size='modal'] .body { flex: 1; min-height: 0; overflow-y: auto; }
-.dialog[data-size='modal'] { max-height: calc(100dvh - 48px); }   /* the desktop caps a modal too (REG-437): a 663 form on a short window scrolls its body instead of running off the screen */
+.foot:not(:has(> :not(button))) { flex-wrap: wrap; }
 
-.message { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
+/* (REG-725) A confirm's message: 14/20 in the text's ink, as the Lead Details deletes (902:27738) — the 12/16 grey of 779:24663 read
+   as a footnote to the question it asks. One message for every confirm. */
+.message { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 
 /* (REG-720) One line, as the DS Button's label: a long label used to wrap and spill below the 36 box ("Cancel at the period’s end"). */
 .dangerButton {
@@ -71,23 +87,15 @@
 
 /* ── Responsive (REG-269) ─────────────────────────────────────────────────────────────────────────────
    Tablet-and-down every dialog clamps to the viewport and its body scrolls (callers pass raw px widths).
-   ≤767 the form/modal sizes become full-screen sheets — the compact/standard alerts stay centred cards. */
+   ≤767 the form/modal sizes become bottom sheets — the compact/standard sizes and every alert stay centred cards. */
 @media (max-width: 1024px) {
   .dialog { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
-  .body { overflow-y: auto; }
-  /* (REG-387) A scrolling body clips at its padding box, and a TextField's notched label sits ~7px ABOVE the
-     field's own top edge — so the base body (`padding-top: 0`) sliced the first label in half: "Reason" in Move
-     stage › On Hold / Lost came out with its top cut off at 390. Eight pixels of head-room restore it. Only the
-     base size is touched: the standard / form / modal bodies carry their own padding at 0,2,0 and keep it, and
-     the desktop body never scrolls, so it never clipped. */
-  .body { padding-top: var(--om-spacing-2); }
 }
 @media (max-width: 767px) {
   .dialog { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
   /* (REG-353) The form / modal sizes are the mobile canvas' bottom sheets (1e, 1g, 1k, 2i…2m, 3e, 3g, 3k): full
      width on the bottom edge, rounded on top only, as tall as their content up to 88dvh — the page stays visible
-     under the scrim above them. They used to take the whole screen, which left a form like Create New Lead with a
-     column of empty white under its last field. The compact / standard alerts stay centred cards (canvas 2e). */
+     under the scrim above them. The compact / standard alerts stay centred cards (canvas 2e). */
   .overlay:has(.dialog[data-size='form']:not([data-alert])), .overlay:has(.dialog[data-size='modal']:not([data-alert])) { align-items: flex-end; justify-content: stretch; }
   .dialog[data-size='form']:not([data-alert]), .dialog[data-size='modal']:not([data-alert]) {
     width: 100vw; max-width: 100vw;
@@ -102,16 +110,14 @@
     border-radius: var(--om-radius-full);
     background: var(--om-color-surface-variant);
   }
-  /* (REG-308) The sheet reaches the home indicator (viewport-fit=cover): the pinned footer pads past it, keeping
-     its own 24 (form) / 16 (modal) — a no-op where env() is 0. The head no longer clears a status bar: the sheet
-     starts below it, and the grabber sits where that padding was. */
-  .dialog[data-size='form']:not([data-alert]) .head { padding-top: var(--om-spacing-4); }
-  .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
-  .dialog[data-size='form']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-6) + env(safe-area-inset-bottom, 0px)); }
-  .dialog[data-size='modal']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
+  /* (REG-308) The sheet reaches the home indicator (viewport-fit=cover): the pinned footer pads past it — a no-op where env() is 0.
+     The head no longer clears a status bar: the sheet starts below it, and the grabber sits where that padding was. */
+  .dialog[data-size='form']:not([data-alert]) .head, .dialog[data-size='modal']:not([data-alert]) .head { padding-top: var(--om-spacing-3); }
+  .dialog[data-size='form']:not([data-alert]) .foot, .dialog[data-size='modal']:not([data-alert]) .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }
   .dialog[data-fluid] { height: min(88dvh, calc(100dvh - 56px)); }   /* (REG-511) the xxl window is the tallest bottom sheet on a phone */
-  /* (REG-376) A confirmation stays the canvas' centred card (2e): 24px margins either side, height to content. */
-  .dialog[data-alert] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
+  /* (REG-376 · REG-725) Every centred card — the compact / standard sizes and an alert — keeps the canvas' 24px margins (2e); the
+     compact size used to take 16. */
+  .dialog[data-alert], .dialog[data-size='compact'], .dialog[data-size='standard'] { max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px); }
 }
 
 /* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────

@@ -6,9 +6,8 @@ import { Button, Checkbox } from '@/components/ds'
 import { ColumnResizer, gridTracks, useColumnWidths } from '@/components/om/column-resize'
 import { Icon } from '@/components/om/icon'
 import { Avatar } from '@/components/om/avatar'
-import { Tooltip } from '@/components/om/tooltip'
 import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
-import { DangerButton, Dialog } from '@/components/leads/move-stage/dialogs'
+import { DangerButton, Dialog, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { modalPanel, overlayFade } from '@/lib/motion'
@@ -22,11 +21,11 @@ import styles from './deleted-files-sheet.module.css'
  * copied from the Deleted Leads sheet (components/leads/deleted-sheet.tsx); the leads sheet's 30-day banner, note and
  * sortable heads are not in this mock and are left out.
  *
- * Heading 80 (H g16 p20/24, bottom rule + shadow): [V] "Files / " 12 secondary · "Deleted Files" 20/Bold · "Empty Trash"
- * secondary outlined · close 24. Body p24 → table (fill #fff, 1px #e5e5e5 inside, r8; head 56 / rows 60) as one CSS grid
- * with subgrid rows (REG-180): Selection 40 · Title 210 · Owner 152 · Updated 116 · File type 119 · File size 114 ·
- * File Location 149 · Actions 252 (= 1152). Selected rows fill #eee5ff. Bulk bar (inside the modal, bottom centre):
- * count · Restore · Delete Forever.
+ * Heading 80 (H g16 p20/24): [V] "Files / " 12 secondary · "Deleted Files" 20/Bold · "Empty Trash" secondary outlined ·
+ * close 24 — since REG-725 the house head (SurfaceHead): the rule inside its bottom edge, the mock's drop shadow gone.
+ * Body p24 → table (fill #fff, 1px #e5e5e5 inside, r8; head 56 / rows 60) as one CSS grid with subgrid rows (REG-180):
+ * Selection 40 · Title 210 · Owner 152 · Updated 116 · File type 119 · File size 114 · File Location 149 · Actions 252
+ * (= 1152). Selected rows fill #eee5ff. Bulk bar (inside the modal, bottom centre): count · Restore · Delete Forever.
  *
  * Invented (build plan): File Location reads "All Files" for a root item; the Delete Forever / Empty Trash confirmations
  * are the Deleted Leads sheet's dialogs with "file" / "folder" copy — destructive actions must confirm.
@@ -104,26 +103,18 @@ export function DeletedFilesSheet({
         {open ? (
           <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-            {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-                focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-                surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-            <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+            {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
+                `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
+            <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
                         role="dialog" aria-modal aria-label="Deleted Files" tabIndex={-1}>
-              <div className={styles.heading}>
-                <div className={styles.titleBlock}>
-                  <span className={styles.crumb}>Files / </span>
-                  <span className={styles.title}>Deleted Files</span>
-                </div>
-                <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
-                        isDisabled={trashed.length === 0}>
-                  Empty Trash
-                </Button>
-                <Tooltip label="Close">
-                  <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                    <Icon name="close" size={24} family="outlined" />
-                  </button>
-                </Tooltip>
-              </div>
+              {/* (REG-725) the house head and foot: the crumb is the head's eyebrow, Empty Trash its one action before the close; no foot. */}
+              <SurfaceHead title="Deleted Files" eyebrow="Files /" className={styles.heading} onClose={onClose}
+                           actions={
+                             <Button variant="secondary" appearance="outlined" onPress={() => setConfirm({ kind: 'empty' })}
+                                     isDisabled={trashed.length === 0}>
+                               Empty Trash
+                             </Button>
+                           } />
 
               <div className={styles.body} data-bulk={liveSelected.size > 0 || undefined}>
                 <div className={styles.card} role="table" aria-label="Deleted files" data-cols="deleted-files" style={deletedTracks ? ({ '--tracks': deletedTracks } as React.CSSProperties) : undefined}
@@ -207,8 +198,9 @@ export function DeletedFilesSheet({
         ) : null}
       </AnimatePresence>
 
-      {/* Permanent-delete confirmations — the Deleted Leads sheet's dialogs with file copy (unmocked; destructive actions must confirm). */}
-      <Dialog open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
+      {/* Permanent-delete confirmations — the Deleted Leads sheet's dialogs with file copy (unmocked; destructive actions must confirm).
+          `nested`: over the open sheet, the lighter scrim on the layer above it (REG-725). */}
+      <Dialog nested open={confirm?.kind === 'forever'} onClose={() => setConfirm(null)} width={400}
               title={confirm?.kind === 'forever' && confirm.ids.length > 1 ? `Delete ${confirm.ids.length} ${manyNoun} forever?` : `Delete this ${confirmNoun} forever?`}
               subtitle={confirmTarget?.name}
               footer={<>
@@ -227,7 +219,7 @@ export function DeletedFilesSheet({
         </span>
       </Dialog>
 
-      <Dialog open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
+      <Dialog nested open={confirm?.kind === 'empty'} onClose={() => setConfirm(null)} width={400}
               title="Empty trash?"
               footer={<>
                 <Button variant="secondary" appearance="outlined" onPress={() => setConfirm(null)}>Cancel</Button>

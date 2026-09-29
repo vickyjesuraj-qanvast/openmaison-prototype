@@ -11,6 +11,7 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { couldnt, refusalOf } from '@/components/leads/tasks/use-run'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
+import { FootStart, SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { modalPanel, overlayFade } from '@/lib/motion'
 import { folderNameProblem, foldersIn, foldersUnder, trailTo, type FolderNode } from '@/lib/folders'
 import styles from './move-dialog.module.css'
@@ -23,17 +24,18 @@ export type MoveEntry = { id: string; name: string; parentId: string | null; thu
 /**
  * Move dialog (931:39219 frame 100 · 101 inside a folder 931:39285 · 106 New Folder 931:39335 · 107 "Move 2 items") —
  * ModalComponent 600×600, r12. Spec: design-source/context/lead-files/04-dialogs-move-deleted.txt.
- * Shell (overlay, panel, Escape / scrim close, scroll lock, footer) copied from the tasks filters modal
+ * Shell (overlay, panel, Escape / scrim close, scroll lock) copied from the tasks filters modal
  * (components/leads/tasks/tasks-filters-modal.tsx, the 600×600 twin).
  *
- * Head 122: title row ("Move “<name>”" / "Move n items" 20/Bold + close 24) over the location row
- * ("Current location: " 14/Regular + chip: folder 24 secondary + name 14/Semi Bold, stroke #cccccc r4).
+ * (REG-725) The head and the foot are the house's (SurfaceHead · SurfaceFoot): the head is the title row ("Move “<name>”" /
+ * "Move n items" 20/Bold + close 24); the mock's second head row — the location row ("Current location: " 14/Regular + chip:
+ * folder 24 secondary + name 14/Semi Bold, stroke #cccccc r4) — opens the body instead.
  * Body: browsing starts at the root — folder rows 40 (folder 24 · name · keyboard_arrow_right 24/Light; hover fill #f2f2f2
  * + a 24px "Move" primary filled button before the chevron), file rows 36 (thumb 24×18 + name, listed for orientation
  * only). Inside a folder the folder head replaces the crumb: arrow_back 24/Light · "All Files / " 12 secondary ·
  * folder name 20/Bold, then that folder's rows. Footer 68: New Folder (primary outlined, leading create_new_folder 20)
- * left · Cancel · Move right; New Folder swaps the footer for Cancel · Create and shows the inline "Create Folder"
- * heading + Name field under the list.
+ * left (the foot's FootStart) · Cancel · Move right; New Folder swaps the footer for Cancel · Create and shows the inline
+ * "Create Folder" heading + Name field under the list.
  *
  * Decisions the mock leaves open (all in the build plan): the chip reads "All Files" at the root; Move is enabled only
  * when the browsed folder differs from where the items sit (frame 100: disabled at the root with root items; frame 101:
@@ -135,31 +137,26 @@ export function MoveDialog({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={modalPanel}
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; the house panel (surfaceClasses.panel) carries the
+              `outline: none` every panel that takes focus on open wears. The ring belongs to the panel's own controls. */}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={modalPanel}
                       role="dialog" aria-modal aria-label={title} tabIndex={-1}>
-            <div className={styles.heading}>
-              <div className={styles.titleRow}>
-                <span className={styles.title}>{title}</span>
-                <Tooltip label="Close">
-                  <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                    <Icon name="close" size={24} family="outlined" />
-                  </button>
-                </Tooltip>
-              </div>
-              <div className={styles.location}>
-                <span>Current location: </span>
-                <span className={styles.chip}>
-                  <Icon name="folder" size={24} className={styles.chipIcon} />
-                  <span className={styles.chipName}>{currentFolder ? currentFolder.name : root}</span>
-                </span>
-              </div>
-              {note ? <p className={styles.note} role="note"><Icon name="info" size={16} weight={300} />{note}</p> : null}
-            </div>
+            {/* (REG-725) the house head and foot: the head is the title and the close alone */}
+            <SurfaceHead title={title} className={styles.heading} onClose={onClose} />
 
             <div className={styles.body}>
+              {/* (REG-725) where the items sit now, and what stays — the mock's second head row, at the top of the body */}
+              <div className={styles.where}>
+                <div className={styles.location}>
+                  <span>Current location: </span>
+                  <span className={styles.chip}>
+                    <Icon name="folder" size={24} className={styles.chipIcon} />
+                    <span className={styles.chipName}>{currentFolder ? currentFolder.name : root}</span>
+                  </span>
+                </div>
+                {note ? <p className={styles.note} role="note"><Icon name="info" size={16} weight={300} />{note}</p> : null}
+              </div>
+
               {here ? (
                 <div className={styles.folderHead}>
                   <Tooltip label="Back">
@@ -214,12 +211,15 @@ export function MoveDialog({
               ) : null}
             </div>
 
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            {/* (REG-725) the house foot: New Folder on its left, its shadow while the list scrolls */}
+            <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
               {creating || !onCreateFolder ? null : (
-                <Button variant="primary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />}
-                        onPress={() => setCreating(true)}>
-                  New Folder
-                </Button>
+                <FootStart>
+                  <Button variant="primary" appearance="outlined" iconStart={<Icon name="create_new_folder" size={20} />}
+                          onPress={() => setCreating(true)}>
+                    New Folder
+                  </Button>
+                </FootStart>
               )}
               <span className={styles.footerRight}>
                 {creating ? (
@@ -234,7 +234,7 @@ export function MoveDialog({
                   </>
                 )}
               </span>
-            </div>
+            </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}

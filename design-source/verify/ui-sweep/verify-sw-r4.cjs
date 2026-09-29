@@ -165,8 +165,12 @@ const TOKEN = sql(`select json_extract(value,'$.webhooks[0].token') from setting
     const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     ok('320: the message cards fit', over <= 0, `${over}px`)
     await page.goto(`${BASE}/company/integrations`, { waitUntil: 'commit' })
-    const ghost = await page.locator('[aria-label="Loading company"] [class*="ghostForm"]').first().waitFor({ state: 'attached', timeout: 5000 }).then(() => true, () => false)
-    ok('Integrations’ ghost is one column', ghost)
+    /* (REG-708) the ghost is the page's own layout now, labelled for the page — its cards stand in one column as the page's do */
+    const g = page.locator('[aria-label="Loading integrations"]').first()
+    const ghost = await g.waitFor({ state: 'attached', timeout: 5000 }).then(() => true, () => false)
+    const xs = ghost ? await g.locator('[class*="__card"]').evaluateAll((els) => els.filter((e) => [...e.classList].some((c) => /__card$/.test(c)))   // the cards, not their __cardHead / __cardTitle
+      .map((e) => Math.round(e.getBoundingClientRect().x))).catch(() => []) : []
+    ok('Integrations’ ghost is one column', ghost && new Set(xs).size <= 1, `${xs.length} cards at x ${[...new Set(xs)].join(',')}`)
     await ctx.close()
   })
 

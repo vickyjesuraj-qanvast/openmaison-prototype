@@ -4,10 +4,9 @@ import { useMemo, useRef, useState } from 'react'
 import { useLiveApply } from '@/components/om/use-live-apply'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Checkbox, Radio, RadioGroup } from '@/components/ds'
-import { Icon } from '@/components/om/icon'
 import { useOverflow } from '@/components/om/use-overflow'
 import { DateField } from '@/components/om/date-field'
-import { Tooltip } from '@/components/om/tooltip'
+import { SurfaceFoot, SurfaceHead, surfaceClasses } from '@/components/om/dialog'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
 import { bottomSheet, modalPanel, overlayFade } from '@/lib/motion'
@@ -101,20 +100,13 @@ export function ContractsFiltersModal({
       {open ? (
         <motion.div className={styles.overlay} variants={overlayFade} initial="initial" animate="animate" exit="exit"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-          {/* (REG-287) tabIndex={-1} so the panel can hold focus; `outline: none` matches every other panel that takes
-              focus on open (components/om/dialog.module.css, move-stage/wizard.module.css) — inline because this
-              surface's stylesheet is outside this pass. The ring belongs to the panel's own controls. */}
-          <motion.div ref={panel} className={styles.panel} style={{ outline: 'none' }} variants={sheet ? bottomSheet : modalPanel}
+          {/* (REG-287) tabIndex={-1} so the panel can hold focus; the shared panel's `outline: none` (surfaceClasses.panel)
+              leaves the ring to the panel's own controls. */}
+          <motion.div ref={panel} className={`${surfaceClasses.panel} ${styles.panel}`} variants={sheet ? bottomSheet : modalPanel}
                       role="dialog" aria-modal aria-label="Filters" tabIndex={-1}>
-            {sheet ? <span className={styles.grabber} aria-hidden /> : null}
-            <div className={styles.heading}>
-              <span className={styles.title}>Filters</span>
-              <Tooltip label="Close">
-                <button type="button" className={styles.close} aria-label="Close" onClick={onClose}>
-                  <Icon name="close" size={24} family="outlined" />
-                </button>
-              </Tooltip>
-            </div>
+            {sheet ? <span className={surfaceClasses.grabber} aria-hidden /> : null}
+            {/* (REG-725) the house head and foot */}
+            <SurfaceHead title="Filters" onClose={onClose} className={styles.head} />
             <div className={styles.body}>
               <div className={styles.rail} role="tablist" aria-label="Filter groups">
                 {TABS.map((t) => (
@@ -176,11 +168,11 @@ export function ContractsFiltersModal({
                 )}
               </div>
             </div>
-            <div className={styles.footer} data-shadow={bodyScrolls || undefined}>
+            <SurfaceFoot shadow={bodyScrolls} className={styles.foot}>
               <Button variant="secondary" appearance="outlined" onPress={() => setDraft(EMPTY_CONTRACT_FILTERS)}>Clear All</Button>
               {/* (REG-464) The draft is already applied — Done only closes. */}
               <Button onPress={onClose}>Done</Button>
-            </div>
+            </SurfaceFoot>
           </motion.div>
         </motion.div>
       ) : null}

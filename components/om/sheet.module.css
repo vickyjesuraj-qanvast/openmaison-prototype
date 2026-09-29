@@ -26,30 +26,13 @@
   border-radius: var(--om-radius-full);
   background: var(--om-color-surface-variant);
 }
-/* Heading: the modal header standard read for a sheet — 20/Bold title over a 14 secondary line, bare 24 close,
-   1px rule under it (canvas 1i "Olivia Martinez / 9123 4567 · Current stage: Contacted"). */
-.head {
-  flex-shrink: 0;
-  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-3) var(--om-spacing-6) var(--om-spacing-4);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-}
-.titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
-.title { font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
-.close { flex-shrink: 0; margin-top: 2px; }
-/* (REG-380) The head's own controls, between the title and the close (canvas 3e: Auto Fill · ✕). */
-.headActions { display: inline-flex; align-items: center; gap: var(--om-spacing-4); flex-shrink: 0; margin-top: 2px; }
+/* (REG-725) The head and the foot are the house ones (SurfaceHead / SurfaceFoot, components/om/surface-parts.tsx): the 20/24 title,
+   a 12/16 subtitle, the bare 24 close, the rule inside the head, the foot's top rule and its shadow while the body scrolls. A sheet
+   pads them as every phone sheet does — 12 above the title (the grabber takes the rest, REG-308), 16 at the sides (REG-372) — so a
+   menu's sheet and a dialog's sheet stand the same 56. */
+.sheet .head { padding: var(--om-spacing-3) var(--om-spacing-4) var(--om-spacing-5); }
+.sheet .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-/* Action row pinned under the body, on the modal footer's own 16/24 (canvas 1i "Add Task", 3e "Save"). Right-aligned,
-   as every other footer in the app is — Dialog, the Move stage window, the filter modals (user 2026-09-06: "right
-   align buttons in the mobile screens"). */
-.foot {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-}
 /* A menu inside a sheet is the full-width list of the canvas (1f, 2f): rows run the sheet's width on the modal's
    own 24px gutter, and the group rules stay full-bleed. No card border, no radius, no cap of its own. */
 .menuBody { padding: var(--om-spacing-2) 0; }
@@ -62,6 +45,4 @@
    Every sheet at ≤767 — heading, body and footer — sits on ONE 16px side gutter. The 24 they inherited is the
    DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
    with each other. Vertical padding is untouched. */
-.head { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
-.foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 .menuBody > button { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }

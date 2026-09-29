@@ -1,34 +1,18 @@
 /* Attach files modal (902:28220) — 1200×928 xl modal; shell copied from the import wizard (components/leads/import-wizard.module.css). */
 .overlay {
   overscroll-behavior: contain;
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0; z-index: 110;   /* (REG-725) the house layer */
   background: var(--om-color-overlay-60p);
   display: flex; align-items: safe center; justify-content: center;
   padding: 48px 0; overflow-y: auto;
 }
+/* (REG-725) The look (surface, r12 — the mock's r10 → the modal standard's 12, REG-107 — level 5, the column) is the shared panel's
+   (surfaceClasses.panel); the head 64 and the foot 68 are the house's (SurfaceHead / SurfaceFoot, components/om/dialog.tsx). The
+   panel stays positioned: the upload toast is placed inside it. */
 .panel {
   position: relative;
   width: var(--om-modal-xl); height: 928px; max-height: calc(100vh - 96px);
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);   /* mock r10 → the modal standard's 12 (REG-107) */
-  display: flex; flex-direction: column;
-  overflow: hidden;
 }
-
-/* Heading 64: H p20/24, 20/Bold title, bare 24px close, 1px bottom rule (779:26016). */
-.heading {
-  display: flex; align-items: center; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-5) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.close {
-  border: 0; background: none; padding: 0; cursor: pointer;
-  color: var(--om-color-on-surface-secondary); display: inline-flex;
-  transition: color var(--motion-hover);
-}
-.close:hover { color: var(--om-color-on-surface-default); }
 
 /* Body "Filter content": V g24 p24; scrolls when the groups outgrow the fixed 928. */
 .body {
@@ -146,18 +130,6 @@
 .emptyTitle { margin: 0; font: var(--om-type-heading-h3); font-size: 20px; line-height: 24px; font-weight: 600; color: var(--om-color-on-surface-default); text-align: center; }
 .emptyBody { margin: 0; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); text-align: center; }
 
-/* Footer 68: H g12 p16/24, top rule, right-aligned buttons. */
-.footer {
-  display: flex; gap: var(--om-spacing-3); align-items: center; justify-content: flex-end;
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  background: var(--om-color-surface-default);
-  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
-  transition: box-shadow var(--motion-toggle);
-  flex-shrink: 0;
-}
-.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
-
 /* Uploading toast (902:28261): 360×200, white, 1px #e5e5e5, r4, at right 16 / bottom 76 of the modal. */
 .toast {
   position: absolute; right: 16px; bottom: 76px; z-index: 5;
@@ -210,23 +182,17 @@
   /* (REG-353) The mobile canvas' bottom sheet: full width on the bottom edge, rounded on top, as tall as its
      content up to 88dvh, with the grabber above the heading — not the whole screen. */
   .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
-  .panel {
+  .panel.panel {   /* doubled: beats the shared panel's r12 whichever sheet loads last */
     width: 100vw; max-width: 100vw;
     height: auto; max-height: min(88dvh, calc(100dvh - 56px));
     border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
-  }
-  .grabber {
-    flex-shrink: 0; align-self: center;
-    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
-    border-radius: var(--om-radius-full);
-    background: var(--om-color-surface-variant);
   }
   /* (REG-375) …and give up the fixed 36px height it keeps from the base rule, or the second line it was just
      told to wrap onto is drawn OUTSIDE the row: the file list rendered on top of the toolbar, so a tap on the
      visible "Kitchen" row fired the sort button hidden beneath it. */
   .bar { flex-wrap: wrap; row-gap: var(--om-spacing-3); height: auto; }
   .search { width: 100%; flex-basis: 100%; flex-shrink: 1; }
-  .footer { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
+  .panel .foot { padding-bottom: calc(var(--om-spacing-4) + env(safe-area-inset-bottom, 0px)); }   /* (REG-308) clears the home indicator (viewport-fit=cover); 16 where env() is 0 */
 
   /* (REG-393, canvas 2j) "Your files" is a LIST on a phone, not the desktop's 276×262 tiles: a 262px-tall photo
      per file filled the sheet with two files and pushed Attach off the fold, and the 276px width is a desktop
@@ -248,14 +214,14 @@
 
 /* ── Touch ergonomics (REG-273, owner 2026-09-01) ─────────────────────────────────────────────────────
    The modal's bare glyphs are 20–24px boxes. Each keeps its mocked glyph (and, where it has one, its 20/24
-   hover wash) and grows a 44px target: the close and the toast buttons take the box + a negative margin
-   (their rows are 64 and 56 tall, so nothing moves), while the folder kebab and the 36px "File Type" chip
-   take a transparent overlay so their wash and stroke stay the mocked size. The 276-wide file tiles are
-   already far past 44. Desktop with a mouse matches neither arm. */
+   hover wash) and grows a 44px target: the toast buttons take the box + a negative margin (their row is 56
+   tall, so nothing moves), while the folder kebab and the 36px "File Type" chip take a transparent overlay so
+   their wash and stroke stay the mocked size. The 276-wide file tiles are already far past 44. Desktop with a
+   mouse matches neither arm. (REG-725) The close is the house head's, with its own target. */
 @media (max-width: 767px), (hover: none) {
-  /* 24px glyphs → a 44 box, ±10 handed back: the heading's title row is unchanged; the toast head opens
-     its 16 gap to 20 so the two toast targets still meet edge to edge without overlapping (REG-312). */
-  .close, .toastBtn { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
+  /* 24px glyphs → a 44 box, ±10 handed back; the toast head opens its 16 gap to 20 so the two toast targets
+     still meet edge to edge without overlapping (REG-312). */
+  .toastBtn { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -10px; }
   .toastRetry { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -12px; }
   .toastHead { gap: var(--om-spacing-5); }
   .folderKebab, .chip { position: relative; }
@@ -263,10 +229,10 @@
   .chip::after { content: ''; position: absolute; inset: -4px; }
 }
 
-/* (REG-353) The sheet starts below the status bar, so the heading gives up the clearance it took as a
-   full-screen surface and the grabber sits in that space. */
+/* (REG-353) The sheet starts below the status bar, so the head gives up the clearance it took as a
+   full-screen surface and the grabber (surfaceClasses.grabber) sits in that space. */
 @media (max-width: 767px) {
-  .heading { padding-top: var(--om-spacing-3); }
+  .panel .head { padding-top: var(--om-spacing-3); }
 }
 
 /* ── Bottom-sheet gutter (REG-372) ────────────────────────────────────────────────────────────────────
@@ -276,5 +242,5 @@
    DESKTOP modal's gutter; on a 390 screen it spent 12% of the width on air, and the sheets did not even agree
    with each other. Vertical padding is untouched. */
 @media (max-width: 767px) {
-  .heading, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .panel .head, .body, .panel .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
 }

@@ -62,6 +62,7 @@ generic stuffs and never miss." Tick every line before a screen is reported as d
 
 ## Surfaces
 - Modal widths come from the scale only: s 400 · m 600 · l 800 · xl 1200 (`--om-modal-*`), or xxl = fluid with a 48px margin on every side; height follows content, capped to the viewport; radius 12; centred overlay. Full-page overlays are not used — Review imported leads is an XXL modal.
+- [ ] **Every overlay wears the one head and foot** (REG-725): `Dialog` / `ConfirmDialog` / `Drawer`, or `SurfaceHead` + `SurfaceFoot` for a layout of its own — head 64 with the rule inside ALWAYS (the owner's pick), the 20/24 title, the bare 24 close; foot p16/24 with its top rule, the shadow only while the body scrolls. Never a head, close or foot of your own; `npm run design:lint` fails on one and `npm run design:anatomy` measures them (REG-726).
 - [ ] Closing a multi-step flow or discarding edits asks first via the shared `ConfirmDialog` (`components/om/confirm-dialog.tsx`).
 - [ ] **A confirm's answers fit its 400 alert on one row** — short verb phrases ("Delete", "Stop sharing", "Cancel the plan"); the message carries the detail (a date, a count). No button breaks its label; a footer of buttons that still runs out of room wraps to a second row, never clips (REG-720).
 - [ ] Modals / sheets / dialogs call `useScrollLock(open)` and their overlays contain overscroll; any table inside a scrolling surface has a sticky header.

@@ -94,7 +94,7 @@ const pill = (page) => page.getByTestId('contract-editor').getByRole('button', {
     await page.getByRole('menuitem', { name: 'Delete' }).click()
     const d = page.getByRole('dialog', { name: 'Delete Contract' })
     ok('“You can restore it from Deleted Contracts.”', /You can restore it from Deleted Contracts/.test(await d.innerText()))
-    await d.getByRole('button', { name: 'No' }).click()
+    await d.getByRole('button', { name: 'Cancel' }).click()   // (REG-725) the confirm answers with its verb
   })
   await step('a Draft’s link is not ready, and shows no document', async () => {
     const sp = await ctx.newPage(); await sp.goto(`${BASE}/sign/${OLIVIA}`); await ready(sp)

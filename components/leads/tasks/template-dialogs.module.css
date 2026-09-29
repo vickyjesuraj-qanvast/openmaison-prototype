@@ -1,6 +1,5 @@
 /* Task templates — Choose Template (902:29198, 600×600) and Save as Template (902:29220 new · 902:29256 existing, 400×495).
-   Shell (overlay · heading 64 · footer 68) copied from components/leads/filters-modal.module.css; the second scrim layers
-   over the drawer / listing like the wizard's nested dialog (z 110). */
+   The overlay is the listing filters modal's (components/leads/filters-modal.module.css) on the house layer (z 110). */
 .overlay {
   overscroll-behavior: contain;
   position: fixed; inset: 0; z-index: 110;
@@ -8,28 +7,13 @@
   display: flex; align-items: safe center; justify-content: center;
   padding: 48px 0; overflow-y: auto;
 }
-.panel {
-  background: var(--om-color-surface-default);
-  border-radius: var(--om-radius-3);
-  box-shadow: var(--om-elevation-level-5);
-  display: flex; flex-direction: column; overflow: hidden;
-  max-height: calc(100vh - 96px);
-}
+/* (REG-725) The look (surface, r12, level 5, the column) is the shared panel's (surfaceClasses.panel); the head 64 and the foot 68
+   are the house's (SurfaceHead / SurfaceFoot, components/om/dialog.tsx). What stays here is each dialog's size and the phone rules. */
+.panel { max-height: calc(100vh - 96px); }
 /* Choose Template: fixed 600×600 */
 .panel[data-kind='choose'] { width: var(--om-modal-m); height: 600px; }
 /* Save as Template: 400 wide, height to content (495 in the mock) */
 .panel[data-kind='save'] { width: var(--om-modal-s); }
-
-/* Heading 64: p20/24, title 20/Bold, close 24, bottom rule */
-.heading {
-  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-5) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-  flex-shrink: 0;
-}
-.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; transition: color var(--motion-hover); }
-.close:hover { color: var(--om-color-on-surface-default); }
 
 /* Body V g24 p24 (scrolls inside the fixed Choose shell) */
 .body { flex: 1; min-height: 0; padding: var(--om-spacing-6); display: flex; flex-direction: column; gap: var(--om-spacing-6); overflow-y: auto; overscroll-behavior: contain; }
@@ -72,19 +56,6 @@
 .keepRow { display: flex; align-items: center; justify-content: space-between; height: 24px; }
 .keepLabel { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 
-/* Footer 68 (p16/24, top rule) */
-.footer {
-  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4) var(--om-spacing-6);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-  background: var(--om-color-surface-default);
-  position: relative; z-index: 1;   /* above a positioned body (sticky columns, animated panels), or they paint over the shadow (REG-322) */
-  transition: box-shadow var(--motion-toggle);
-  flex-shrink: 0;
-}
-.footer[data-shadow] { box-shadow: var(--om-shadow-modal-footer); }   /* only while the body scrolls (REG-322) */
-.footerStart { margin-right: auto; }
-
 /* Responsive (REG-269, added under REG-273): both panels kept their mocked widths at every size, so Choose
    Template (600) and Save as Template (400) opened wider than a 390 screen. The modal rule for s / m
    (design-source/context/responsive.md): clamp to the viewport rather than go full-screen — Save is
@@ -94,45 +65,38 @@
 }
 @media (max-width: 767px) {
   /* (REG-347) Three buttons on one nowrap row need ~404px inside a 343px sheet, so "Manage Templates" was pushed
-     off the left edge. The row wraps and the left-hand link takes its own line. */
-  .footer { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
-  .footerStart { flex: 1 0 100%; margin-right: 0; }
+     off the left edge. The row wraps and the left-hand link (the foot's FootStart) takes its own line. */
+  .panel .foot { flex-wrap: wrap; row-gap: var(--om-spacing-3); }
+  .panel .foot > :not(button) { flex: 1 0 100%; margin-right: 0; }
   .panel { max-width: calc(100vw - 32px); }
   .panel[data-kind='choose'] { width: min(var(--om-modal-m), calc(100vw - 32px)); height: min(600px, calc(100dvh - 96px)); }
   .panel[data-kind='save'] { width: min(var(--om-modal-s), calc(100vw - 32px)); }
 }
 
-/* Touch ergonomics (REG-273): the two bare glyphs (the heading's close 24, the banner's dismiss 20) keep
-   their mocked sizes and take a 44 box, each handing back exactly half the difference — the 64 heading and
-   the 58 banner do not move. The template rows are 66 tall and the footer buttons are full DS buttons, both
-   already past 44. */
+/* Touch ergonomics (REG-273): the banner's bare 20 dismiss keeps its mocked size and takes a 44 box, handing
+   back exactly half the difference — the 58 banner does not move. The template rows are 66 tall and the footer
+   buttons are full DS buttons, both already past 44. (REG-725) The close is the house head's, with its own target. */
 @media (max-width: 767px), (hover: none) {
-  .close, .bannerClose { width: 44px; height: 44px; align-items: center; justify-content: center; }
-  .close { margin: -10px; }
-  .bannerClose { margin: -12px; }
+  .bannerClose { width: 44px; height: 44px; align-items: center; justify-content: center; margin: -12px; }
 }
 
 /* (REG-377) Save as Template and Choose Template were centred desktop cards floating mid-screen, and Choose kept
    a fixed 600px height that left 134px of white between its last row and a wrapped footer. Both are bottom sheets
-   at ≤767 — the same conversion the shared Dialog performs — and Choose gives up its height so the sheet ends
-   under its last template. The ≥1025 400 / 600×600 cards are untouched. */
+   at ≤767 — the same conversion the shared Dialog performs, the house grabber (surfaceClasses.grabber) on top —
+   and Choose gives up its height so the sheet ends under its last template. The ≥1025 400 / 600×600 cards are
+   untouched. */
 @media (max-width: 767px) {
   .overlay { padding: 0; align-items: flex-end; justify-content: stretch; }
   /* (REG-392) `[data-kind='save']` has to be named too: its own `width: min(400px, 100vw - 32px)` above is
      specificity 0,2,0 and beat the bare `.panel` here, so Save as Template opened as a 358px card inside an
      overlay that had already switched to `justify-content: stretch` — a sheet-height panel flush to the left
-     edge with 32px of scrim beside it. */
+     edge with 32px of scrim beside it. (REG-725) The 0,2,0 pair also beats the shared panel's r12. */
   .panel, .panel[data-kind='choose'], .panel[data-kind='save'] {
     width: 100vw; max-width: 100vw; height: auto;
     max-height: min(88dvh, calc(100dvh - 56px));
     border-radius: var(--om-radius-3) var(--om-radius-3) 0 0;
   }
-  .panel::before {
-    content: ''; flex-shrink: 0; align-self: center;
-    width: 56px; height: 4px; margin: var(--om-spacing-2) 0 var(--om-spacing-1);
-    border-radius: var(--om-radius-full); background: var(--om-color-surface-variant);
-  }
-  .heading, .body, .footer { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
-  .heading { padding-top: var(--om-spacing-3); }
+  .panel .head, .body, .panel .foot { padding-left: var(--om-spacing-4); padding-right: var(--om-spacing-4); }
+  .panel .head { padding-top: var(--om-spacing-3); }
   .radioRow { min-height: 44px; }   /* 24px rows were well under a fingertip */
 }

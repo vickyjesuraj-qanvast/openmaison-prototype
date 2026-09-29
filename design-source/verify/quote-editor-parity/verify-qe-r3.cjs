@@ -54,7 +54,7 @@ async function kebab(page, number) { const r = rowOf(page, number); await r.scro
   await step('a designer: a bulk Delete takes only her own', async () => {
     for (const n of ['OM-10001', 'OM-10008']) await rowOf(page, n).getByRole('checkbox').first().click({ force: true })
     await page.getByRole('button', { name: 'Delete', exact: true }).last().click()
-    await page.getByRole('button', { name: 'Yes' }).click()
+    await page.getByRole('dialog', { name: /Delete Quote/ }).getByRole('button', { name: 'Delete' }).click()   // (REG-725) the confirm answers with its verb
     await snack(page, 'Quote deleted — 1 left: only its creator, an Owner or an Admin deletes a quote')
     await page.waitForTimeout(600)
     ok('OM-10008 deleted, OM-10001 kept', sql(`select number from quotes where deleted_at is not null order by number`) === 'OM-10008', sql(`select group_concat(number) from quotes where deleted_at is not null`))

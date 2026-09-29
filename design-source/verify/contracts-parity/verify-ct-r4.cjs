@@ -42,7 +42,7 @@ const openEditor = async (page, id) => { await page.goto(`${BASE}/contracts/${id
     await page.goto(`${BASE}/leads/${OLIVIA_LEAD}/contracts`); await ready(page)
     const row = page.getByRole('row').filter({ hasText: 'To be deleted' })
     await row.hover(); await row.getByRole('button', { name: /^More actions for/ }).click(); await page.getByRole('menuitem', { name: 'Delete' }).click()
-    await page.getByRole('dialog', { name: 'Delete Contract' }).getByRole('button', { name: 'Yes' }).click()
+    await page.getByRole('dialog', { name: 'Delete Contract' }).getByRole('button', { name: 'Delete' }).click()
     await snack(page, 'Contract deleted'); await page.waitForTimeout(600)
     ok('deleted_by is kept', sql(`select deleted_by from contracts where id='${id}'`) === 'dane')
     await page.getByRole('button', { name: 'More options' }).last().click(); await page.getByRole('menuitem', { name: 'Deleted Contracts' }).click()

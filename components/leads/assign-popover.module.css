@@ -8,14 +8,10 @@
   box-shadow: var(--om-elevation-level-3);
   display: flex; flex-direction: column;
   max-height: 440px;
+  overflow: hidden;   /* (REG-725) the house foot paints the surface: the card's rounded corners clip its square ones */
 }
-.head {
-  display: flex; align-items: flex-start; gap: var(--om-spacing-4);
-  padding: var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-4) var(--om-spacing-6);
-  border-bottom: var(--om-border-1) solid var(--om-color-surface-variant);
-}
-.title { flex: 1; font: var(--om-type-heading-h3); color: var(--om-color-on-surface-default); }
-.close { border: 0; background: none; padding: 0; cursor: pointer; color: var(--om-color-on-surface-secondary); display: inline-flex; }
+/* (REG-725) The head and the foot are the shell's (SurfaceHead / SurfaceFoot in components/om/dialog.tsx): 64 with the rule inside,
+   the foot's top rule always and its shadow only while this list scrolls — until then the card drew its own 57 heading and 16-inset foot. */
 .body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--om-spacing-3) var(--om-spacing-6); }
 .row {
   display: flex; align-items: center; gap: var(--om-spacing-3);
@@ -27,14 +23,9 @@
 .rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .rowName { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); }
 .rowRole { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.foot {
-  display: flex; align-items: center; justify-content: flex-end; gap: var(--om-spacing-3);
-  padding: var(--om-spacing-4);
-  border-top: var(--om-border-1) solid var(--om-color-surface-variant);
-}
 
-/* Owner rule past New (user 2026-08-29): DS error text in the footer, before the buttons. */
-.footMsg { margin-right: auto; font: var(--om-type-body-s); line-height: 16px; color: var(--om-color-tertiary-red-default); }
+/* Owner rule past New (user 2026-08-29): DS error text in the footer, before the buttons — on the foot's left (FootStart). */
+.footMsg { font: var(--om-type-body-s); color: var(--om-color-tertiary-red-default); }   /* body-s is 12/16 — the 16 line it used to restate */
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    The card is 400 wide and the workspace anchors it with an inline `left` clamped against that width
@@ -45,18 +36,8 @@
   .card { left: var(--om-spacing-4) !important; right: var(--om-spacing-4); width: auto; }
 }
 
-/* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
-   The head's close is a bare 24px glyph. At ≤767 it takes a 44px box and hands the extra back as margin, so
-   the heading keeps the mock's 16px inset and the title stays put. The member rows are already 64px tall
-   (40px avatar + 12px padding) and their checkbox gets its touch box centrally (app/globals.css).
-   (REG-307) Also on a touch pointer up to 1024, so an iPad gets the same box. */
-@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
-  .close {
-    min-width: 44px; min-height: 44px;
-    align-items: center; justify-content: center;
-    margin: -10px;   /* 44 − 20 = the 24px glyph box the heading laid out */
-  }
-}
+/* Touch ergonomics (REG-273) need no rule here: the member rows are already 64px tall (40px avatar + 12px padding), their checkbox
+   gets its touch box centrally (app/globals.css), and the head's close is the house IconButton with its own 44 target (REG-725). */
 
 /* (REG-353) The same member rows inside the mobile bottom sheet. (user 2026-09-06: "container left and right
    spacing is 16px for the member list") The gutter is on the ROW, so a row's hover fill still runs the sheet's
