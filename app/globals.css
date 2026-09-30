@@ -79,6 +79,13 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+/* (REG-821, owner 2026-09-30: "while scrolling up there is a small jump in the tab sections … please across and fix it") The page never
+   rubber-bands under a trackpad or a mouse: at the top (and the bottom) a Mac's elastic overscroll dragged the stuck page header and tab
+   strip down with the page and sprang them back — the strip holds its 76 on every frame of an ordinary scroll. Touch keeps its bounce and
+   its pull-to-refresh. */
+@media (hover: hover) and (pointer: fine) {
+  html { overscroll-behavior-y: none; }
+}
 
 body {
   margin: 0;
