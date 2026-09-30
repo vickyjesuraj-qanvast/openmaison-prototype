@@ -63,18 +63,12 @@
 /* Cells p12/24/12/16, contents centred (the mock's 60-tall cell), top rule between rows */
 .cell { composes: cell from '../../om/table-core.module.css'; }   /* (REG-727) the table core */
 .cell.colSel { padding: var(--om-spacing-3) 0 var(--om-spacing-3) var(--om-spacing-4); }
-.cell.colTitle { gap: var(--om-spacing-3); }        /* H g12: the first page 26×36 + name 14/Medium */
+.cell.colTitle { gap: var(--om-spacing-3); }        /* H g12: the square thumb 36 + name 14/Medium */
 .cell.colBy { gap: var(--om-spacing-3); }           /* Avatar 24 + name, H g12 */
 .cell.colActions { gap: var(--om-spacing-6); }      /* H g24: Restore · Delete Forever */
 
-/* The template's first page as a 26×36 portrait glyph (the templates list's, templates-table.module.css). */
-.thumb {
-  width: 26px; height: 36px; flex-shrink: 0;
-  display: inline-flex; align-items: flex-start; justify-content: center;
-  border-radius: var(--om-radius-0-5); overflow: hidden;
-  box-shadow: var(--om-elevation-level-1);
-  background: var(--om-color-surface-default);
-}
+/* The template's thumbnail, the templates list's (templates-table.module.css). */
+.thumb { composes: thumb from '../../om/thumb.module.css'; }   /* (REG-820) the house square */
 .name { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plain { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

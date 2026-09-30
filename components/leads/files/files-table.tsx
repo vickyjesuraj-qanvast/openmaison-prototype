@@ -177,7 +177,7 @@ function FileRowView({
             <Icon name="folder" size={24} className={styles.thumbIcon} />
           ) : row.thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={row.thumb} alt="" className={styles.thumbImg} width={48} height={36} />
+            <img src={row.thumb} alt="" className={styles.thumbImg} width={36} height={36} />
           ) : (
             /* No thumbnail (a PDF): the kind's glyph in the same box (spec silent — the grid tile's fallback). */
             <Icon name="picture_as_pdf" size={24} className={styles.thumbIcon} />

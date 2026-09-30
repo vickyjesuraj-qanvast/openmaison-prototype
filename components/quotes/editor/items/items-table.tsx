@@ -484,7 +484,7 @@ function SideScrollbar({ scroller }: { scroller: React.RefObject<HTMLDivElement 
     <div className={styles.hbar} data-on={st.on || undefined} data-side-scroll="" aria-hidden={st.on ? undefined : true}>
       <Tooltip label="Scroll left"><button type="button" className={styles.pager} aria-label="Scroll the columns left" onClick={() => page(-1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_left" size={20} /></button></Tooltip>
       <div ref={track} className={styles.track} role="scrollbar" aria-orientation="horizontal" aria-valuenow={st.pct} aria-label="Scroll the columns" onPointerDown={onTrack}>
-        <span className={styles.thumb} data-dragging={held || undefined} style={{ left: st.left, width: st.width }} />
+        <span className={styles.barThumb} data-dragging={held || undefined} style={{ left: st.left, width: st.width }} />
       </div>
       <Tooltip label="Scroll right"><button type="button" className={styles.pager} aria-label="Scroll the columns right" onClick={() => page(1)} tabIndex={st.on ? 0 : -1}><Icon name="chevron_right" size={20} /></button></Tooltip>
     </div>

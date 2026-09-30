@@ -28,8 +28,8 @@
 .sampleName { padding: 0 var(--om-spacing-3); font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 .sampleHelp { padding: 0 var(--om-spacing-3); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 @media (max-width: 1024px) { .steps { grid-template-columns: 1fr; gap: var(--om-spacing-2); } }
-/* (F133) A design's own cover in the list's and the Deleted sheet's 26×36 glyph (Price book › My Items' box); the wand only without a photo. */
-.glyph { width: 26px; height: 36px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+/* (F133) A design's own cover in the list's and the Deleted sheet's glyph (Price book › My Items' box); the wand only without a photo. */
+.glyph { width: 100%; height: 100%; display: inline-flex; align-items: center; justify-content: center; }   /* (REG-820) it fills the house square (templates-table .thumb) */
 .glyph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* (F155) A phone: the intro closes up (the house type one step down), and once the studio has a design its three steps rest — the title and
    Dismiss stay — so the first designs show above the fold at 390. */

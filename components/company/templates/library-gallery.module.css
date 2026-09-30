@@ -5,8 +5,9 @@
 .sheetTitle { font: var(--om-type-caption-s); font-weight: 700; color: var(--om-color-on-surface-default); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* (REG-729) no letter-spacing on an uppercase caption */
 .sheetKind { font-size: 8px; line-height: 12px; color: var(--om-color-primary-default); text-transform: uppercase; }   /* (REG-729) no letter-spacing */
 .sheetText { font-size: 8px; line-height: 12px; color: var(--om-color-on-surface-secondary); overflow: hidden; }
-/* The 26×36 list glyph: a page with a title bar and rules. */
-.glyph.glyph { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; padding: 5px 4px; border: var(--om-border-1) solid var(--om-color-surface-variant); box-sizing: border-box; }
+/* The list glyph: a page with a title bar and rules. (REG-820) It fills the house square (templates-table .thumb) as white paper, top
+   first; the square draws the edge. */
+.glyph.glyph { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px; width: 100%; height: 100%; padding: 7px 6px; background: var(--om-color-surface-default); box-sizing: border-box; }
 .glyphTitle { display: block; width: 70%; height: 3px; border-radius: 1px; background: var(--om-color-on-surface-default); }
 .glyphLines { display: block; flex: 1; max-height: 16px; margin-top: 2px; background-image: repeating-linear-gradient(to bottom, var(--om-color-on-surface-border) 0 1px, transparent 1px 4px); background-size: 100% 4px; }
 /* A checklist in the band: up to four steps with an empty box each. */
@@ -15,7 +16,7 @@
 .checkRow > :first-child { color: var(--om-color-on-surface-border); flex-shrink: 0; }
 .checkText { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .checkMore { font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
-.glyphChecks { display: flex; flex-direction: column; gap: 3px; padding: 6px 5px; }
+.glyphChecks { display: flex; flex-direction: column; gap: 3px; width: 100%; height: 100%; padding: 6px; background: var(--om-color-surface-default); box-sizing: border-box; }   /* (REG-820) the square's paper */
 .glyphCheck { display: flex; align-items: center; gap: 2px; }
 .glyphCheck::before { content: ''; width: 4px; height: 4px; border: 1px solid var(--om-color-on-surface-border); border-radius: 1px; flex-shrink: 0; }
 .glyphCheck::after { content: ''; flex: 1; height: 2px; background: var(--om-color-surface-variant); }
@@ -29,7 +30,7 @@
 .splitRow { display: flex; justify-content: space-between; gap: 8px; font: var(--om-type-body-s); color: var(--om-color-on-surface-default); }
 .splitRow > :first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--om-color-on-surface-secondary); }
 .splitRow > :last-child { font-variant-numeric: tabular-nums; }
-.glyphSplit { display: flex; align-items: center; gap: 1px; padding: 0 3px; }
+.glyphSplit { display: flex; align-items: center; gap: 1px; width: 100%; height: 100%; padding: 0 5px; background: var(--om-color-surface-default); box-sizing: border-box; }   /* (REG-820) the square's paper */
 .glyphSplit > span { height: 6px; background: var(--om-color-primary-default); border-radius: 1px; }
 .glyphSplit > span:nth-child(2n) { background: var(--om-color-on-primary-variant); }
 .muted { color: var(--om-color-on-surface-secondary); white-space: nowrap; }
@@ -53,11 +54,9 @@
 .here { margin: 0; font: var(--om-type-heading-h4); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .newFolder { display: inline-flex; }
 .gridStack { display: flex; flex-direction: column; gap: var(--om-spacing-6); }
-.folderGlyph.folderGlyph { background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); border: 0; }
 .folderCount { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; flex-shrink: 0; }
 .place { display: inline-flex; align-items: center; gap: 2px; vertical-align: middle; }
 .place > :first-child { vertical-align: -2px; }
-.folderGlyph.folderGlyph { display: inline-flex; align-items: center; justify-content: center; }
 /* (wave E, gallery-9) The bar's two groups — the scope (to-do chips + the pill) and the tools. From 768 up they melt into the one cluster,
    exactly as before; so do a to-do chip's and New Folder's own wrappers. */
 .scopes, .tools, .todo, .folderSlot { display: contents; }

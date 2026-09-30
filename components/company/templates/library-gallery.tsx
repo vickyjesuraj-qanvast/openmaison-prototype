@@ -797,7 +797,7 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={`${table.thumb} ${styles.folderGlyph}`} aria-hidden><Icon name="folder" size={20} /></span><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`} data-kb-open>{f.name}</button><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={table.thumb} aria-hidden><Icon name="folder" size={20} /></span><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`} data-kb-open>{f.name}</button><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
           if (key === 'updated') return cell('updated', ago(f.updatedAt, now))
           return cell(key, '')
         }

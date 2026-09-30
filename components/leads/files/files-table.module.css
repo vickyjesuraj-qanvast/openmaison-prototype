@@ -46,14 +46,9 @@
 .cell.colTitle { gap: var(--om-spacing-3); }
 .cell.colOwner { gap: var(--om-spacing-3); }   /* Avatar 24 + name, H g12 */
 
-/* Thumb 48×36: fill #f2f2f2 r2 — image cover, or the folder icon 24/Regular #666666 centred. */
-.thumb {
-  width: 48px; height: 36px; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--om-color-surface-bg);
-  border-radius: var(--om-radius-0-5);
-  overflow: hidden;
-}
+/* Thumb: image cover, or the folder icon 24/Regular #666666 centred. (REG-820) The house square (components/om/thumb.module.css) —
+   the mock drew 48×36 r2; the owner keeps every table's thumbnail square. */
+.thumb { composes: thumb from '../../om/thumb.module.css'; }
 .thumbImg { display: block; width: 100%; height: 100%; object-fit: cover; }
 .thumbIcon { color: var(--om-color-on-surface-secondary); }
 /* Name "Living room" 14/Medium #1a1a1a (subtitle-m) — a bare button that opens the folder / file. */
@@ -102,7 +97,7 @@
   .head, .row { width: max-content; min-width: 100%; }
 }
 /* ≤767 the frozen band has to leave something to scroll: 40 + 420 is wider than a 358px card, so the Title
-   track takes 200 (thumb 48 + name + comment chip) and ~118 of the metadata columns stay in view. */
+   track takes 200 (thumb 36 + name + comment chip) and ~118 of the metadata columns stay in view. */
 @media (max-width: 767px) {
   .card { grid-template-columns: 40px minmax(200px, 1fr) 240px 116px 119px 114px 195px; }
 }

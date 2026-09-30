@@ -1,5 +1,7 @@
 /* (REG-664) The Files tab's breadcrumb row (931:39719, files-toolbar.module.css), with every level on the way a link. */
-.crumbRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; }
+/* (REG-820) It takes its own width and shrinks, never grows: in a column (the Price book dialog, the pickers) a growing row took the
+   free height and stood the crumb in the middle of it. */
+.crumbRow { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); min-height: 36px; }
 .back {
   border: 0; background: none; padding: 0; cursor: pointer; flex-shrink: 0;
   width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;

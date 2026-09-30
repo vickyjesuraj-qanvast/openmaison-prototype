@@ -40,13 +40,9 @@
 .cell.colBy { gap: var(--om-spacing-3); }
 
 /* The template's first page as a 26×36 portrait glyph — the Files list's 48×36 box, portrait (the card's 200-wide page at 26). */
-.thumb {
-  width: 26px; height: 36px; flex-shrink: 0;
-  display: inline-flex; align-items: flex-start; justify-content: center;
-  border-radius: var(--om-radius-0-5); overflow: hidden;
-  box-shadow: var(--om-elevation-level-1);
-  background: var(--om-color-surface-default);
-}
+/* (REG-820) The house square (components/om/thumb.module.css) — it was a 26×36 portrait page with a shadow, and every non-page glyph
+   (items, sections, materials, designs, folders) drew its own grey r4 box inside its r2 white one. Each glyph now fills the square. */
+.thumb { composes: thumb from '../../om/thumb.module.css'; }
 .name {
   min-width: 0; flex: 0 1 auto;
   border: 0; background: none; padding: 0; cursor: pointer; text-align: left;

@@ -113,7 +113,7 @@ export function QuoteTemplatesGallery({ data, from, folders = [] }: { data: Temp
           {r.t.submitted ? <span className={styles.ribbon} data-tone="await">Awaiting approval</span> : r.t.status === 'draft' ? <span className={styles.ribbon}>Draft</span> : r.t.hasDraft ? <span className={styles.ribbon} data-tone="edits">Edited since v{r.t.version}</span> : null}
         </>
       )}
-      glyph={(r) => <TemplateThumb design={r.t.design} brand={brand} data={sample} width={26} />}
+      glyph={(r) => <span className={styles.listPage}><TemplateThumb design={r.t.design} brand={brand} data={sample} width={36} /></span>}   /* (REG-820) the page fills the square, top first */
       meta={(r) => statusLine(r.t)}
       usage={(r) => usage(r.t)}
       foot={(r) => <>{r.t.usedBy > 0 ? <Link href={`/quotes?template=${r.t.id}`} className={styles.usedLink} aria-label={`Quotes on ${r.t.name}`}>{usage(r.t)}</Link> : usage(r.t)} · {r.t.paper}{r.t.sourceFile ? ' · rebuilt from your quote' : ''}</>}

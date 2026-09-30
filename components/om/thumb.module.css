@@ -1,0 +1,16 @@
+/*
+ * (REG-820, owner 2026-09-30: "Can we keep square across thumbnails in the tables and quote items table?") The house thumbnail —
+ * one square for every table row and the quote's Items: the surface-bg well, r4 (the fields' and buttons' corner), its 1px edge drawn
+ * inside so a pale picture still shows, whatever it holds clipped to the square. A picture fills it (cover); an icon sits in its middle;
+ * a document fills it with its page, top first. 36 in a table's 60 row; a host that needs another size says only its width and height
+ * (the Items table 48, the phone's item cards and the Price book dialog 40). Hosts compose it — never a copy of these lines.
+ */
+.thumb {
+  position: relative; flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--om-radius-1); overflow: hidden;
+  background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary);
+}
+.thumb::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); pointer-events: none; }
+.thumb > img { display: block; width: 100%; height: 100%; object-fit: cover; }

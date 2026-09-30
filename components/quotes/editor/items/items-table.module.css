@@ -114,11 +114,13 @@
 .edgeAdd::after { content: ''; position: absolute; inset: -4px; border-radius: inherit; }
 .check { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; }
 
-/* ITEM cell: thumb 48 (r2, surface-bg, 1px surface-variant; placeholder = 2px dashed #ccc + add_photo_alternate 20) + name 14/600 + description 12/400. */
-.thumbBtn { width: 48px; height: 48px; flex-shrink: 0; border: 0; padding: 0; background: none; cursor: pointer; border-radius: var(--om-radius-0-5); position: relative; }
-.thumb { width: 48px; height: 48px; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); }
-.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.thumb[data-empty] { box-shadow: none; border: var(--om-border-2) dashed var(--om-color-on-surface-border); }
+/* ITEM cell: thumb 48 (surface-bg, 1px surface-variant; placeholder = 2px dashed #ccc + add_photo_alternate 20) + name 14/600 + description 12/400.
+   (REG-820) The thumb is the house square (components/om/thumb.module.css) at 48 — r4, as every table's. It was a circle: the sideways
+   scrollbar's handle below was also called .thumb and its rules (r-full, a grey fill, a grab cursor) reached the photo; the handle is .barThumb. */
+.thumbBtn { width: 48px; height: 48px; flex-shrink: 0; border: 0; padding: 0; background: none; cursor: pointer; border-radius: var(--om-radius-1); position: relative; }
+.thumb { composes: thumb from '../../../om/thumb.module.css'; width: 48px; height: 48px; }
+.thumb[data-empty] { border: var(--om-border-2) dashed var(--om-color-on-surface-border); }
+.thumb[data-empty]::after { content: none; }   /* the dashed placeholder is its own edge */
 /* "1/2" badge (1260:31287): 10/500 on a dark pill at the thumb's top-left. */
 .badge { position: absolute; left: 4px; top: 4px; padding: 1px 4px; border-radius: var(--om-radius-1); background: var(--om-color-overlay-60p); color: var(--om-color-surface-default); font: var(--om-type-caption-xs); }
 .itemText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); position: relative; }   /* the active description field overlays the clamp */
@@ -395,9 +397,9 @@
 .pager:hover { background: var(--om-color-hover-08p); }
 .pager::after { content: ''; position: absolute; inset: -4px; }
 .track { flex: 1; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-surface-variant); position: relative; cursor: pointer; touch-action: none; }
-.thumb { position: absolute; top: 0; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); cursor: grab; transition: background-color var(--motion-hover); }
-.thumb:hover, .thumb[data-dragging] { background: var(--om-color-on-surface-secondary); }
-.thumb[data-dragging] { cursor: grabbing; }
+.barThumb { position: absolute; top: 0; height: 100%; border-radius: var(--om-radius-full); background: var(--om-color-on-surface-border); cursor: grab; transition: background-color var(--motion-hover); }
+.barThumb:hover, .barThumb[data-dragging] { background: var(--om-color-on-surface-secondary); }
+.barThumb[data-dragging] { cursor: grabbing; }
 @media (hover: none) { .pager { display: none; } }
 
 /* (REG-597) The phone's card list + the Add Item row under it: the field takes its line, the two links the next — nothing runs past the screen. */

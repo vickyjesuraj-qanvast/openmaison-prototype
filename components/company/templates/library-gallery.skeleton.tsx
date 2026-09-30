@@ -112,7 +112,7 @@ function LibraryTableGhost({ tracks, rows, select = false, cells = [], folders =
   const name = (r: number, folder: boolean) => (
     <div className={`${table.cell} ${table.colName}`}>
       {select ? <Bone w={18} h={18} className={styles.gCheck} /> : null}
-      <Bone w={26} h={36} r={4} style={{ flexShrink: 0 }} />
+      <Bone w={36} h={36} r={4} style={{ flexShrink: 0 }} />   {/* (REG-820) the house square */}
       <Bone w={folder ? cycle([72, 88], r) : cycle(['46%', '58%', '40%', '52%', '62%', '44%'], r)} h={14} />
     </div>
   )

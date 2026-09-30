@@ -78,3 +78,5 @@
   .ready { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: calc(100vw - 64px); padding-bottom: var(--om-spacing-1); }
   .readyTile { flex-shrink: 0; }
 }
+/* (REG-820) In the list's square (templates-table .thumb) the first page fills the width and shows its top — the letterhead. */
+.listPage { display: block; align-self: flex-start; }

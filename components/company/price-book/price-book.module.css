@@ -10,7 +10,8 @@
 .itemThumb[data-kind='purchase'] { color: var(--om-color-primary-default); }
 .itemPrice { font: var(--om-type-heading-h5); color: var(--om-color-on-surface-default); font-variant-numeric: tabular-nums; }
 .itemUnit { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
-.glyph { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 36px; border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); color: var(--om-color-on-surface-secondary); }
+/* (REG-820) The list's glyph fills the house square (templates-table .thumb): the square is the well, its corner and its edge. */
+.glyph { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--om-color-on-surface-secondary); }
 .oneLine { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; min-width: 0; }
@@ -57,7 +58,7 @@
 .photoHelp { flex: 1; min-width: 200px; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 /* The card's picture when the item has a photo. */
 .itemPhoto { width: 120px; height: 96px; object-fit: cover; border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-1); }
-.glyph img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--om-radius-1); }
+.glyph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* (sweep S5 #20 · #25) A read-only description with its shape, and the History's retry. */
 .richRead { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); padding: var(--om-spacing-3) var(--om-spacing-4); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); background: var(--om-color-surface-bg); overflow-wrap: anywhere; }
 .richRead :where(p, ul, ol) { margin: 0 0 var(--om-spacing-2); }

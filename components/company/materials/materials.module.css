@@ -1,8 +1,8 @@
 /* Company › Materials (REG-677): the library's swatch card and the material dialog (the brand kit's colour row, REG-554). */
 .thumb { position: absolute; inset: 0; display: block; }   /* the whole 220 band, as the design covers fill it */
 .thumbHex { position: absolute; left: var(--om-spacing-3); bottom: var(--om-spacing-3); padding: 2px var(--om-spacing-2); border-radius: var(--om-radius-1); background: rgba(255, 255, 255, 0.86); font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); }
-/* (F133) the list's 26×36 glyph is the swatch — its photo or its colour — with an edge so a pale one still shows */
-.glyph { width: 26px; height: 36px; display: block; flex-shrink: 0; border-radius: var(--om-radius-1); box-shadow: inset 0 0 0 1px var(--om-color-overlay-20p); }
+/* (F133) the list's glyph is the swatch — its photo or its colour. (REG-820) It fills the house square, whose edge shows a pale one. */
+.glyph { width: 100%; height: 100%; display: block; }
 .hexCell { display: inline-flex; align-items: center; gap: var(--om-spacing-2); font-variant-numeric: tabular-nums; }
 .muted { color: var(--om-color-on-surface-secondary); }
 .form { display: flex; flex-direction: column; gap: var(--om-spacing-4); }
