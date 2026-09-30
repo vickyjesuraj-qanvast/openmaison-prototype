@@ -1,8 +1,8 @@
 'use server'
 
-import { fetchLeadSources } from '@/lib/settings/queries'
+import { fetchLeadSources, fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
 import { fetchViewer } from '@/lib/leads/visibility'
-import { diffFields, logLeadEvent } from '@/lib/leads/events'
+import { diffFields, logLeadEvent, logTaskEvent, printField } from '@/lib/leads/events'
 import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 import { assignHint, assignableIds, runsStudio } from '@/lib/leads/assign-policy'
@@ -10,14 +10,17 @@ import { and, eq, inArray, isNotNull, isNull, sql, gte, asc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'node:crypto'
 import { db, type Db } from '@/lib/db'
-import { leadAssignees, leadCustomFieldValues, leadCustomFields, leadFiles, leads, members, questions, studioScopeQuestions } from '@/lib/db/schema'
+import { contracts, leadAssignees, leadCustomFieldValues, leadCustomFields, leadFiles, leadNotes, leads, members, noteAttachments, questions, quotes, studioScopeQuestions } from '@/lib/db/schema'
 import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { ALL_STAGES, DISTRICTS, TASK_KINDS } from '@/lib/leads/enums'
 // (REG-287) The app's one phone rule and one strict d/m/yyyy parser — the CSV import used to carry private copies
 // of both, and the date copy accepted impossible dates (32/13/2026) the UI refuses.
-import { digitsOnly, parseInputDate, phoneDigits, titleCaseName } from '@/lib/format'
+import { digitsOnly, formatInputDateTime, parseInputDate, phoneDigits, titleCaseName } from '@/lib/format'
+import type { ContactLog, WizardData } from '@/lib/leads/stage-data'
+import { bodyText } from '@/lib/leads/note-model'
 import { revalidateEveryLead, revalidateLead, revalidateLeadListings } from '@/lib/leads/queries'
 import { recordWonUpload } from '@/lib/contracts/won'
+import { adjustedPhrase, countChanges, readAmount, readArea, readDate, readDistrict, readImportRecord, readPropertyType, readSource, readStage, type AdjustedCount, type ImportAdjustment } from '@/lib/leads/import-values'
 
 const ME = sessionMemberSql   // (REG-286 · REG-667) the signed-in member, resolved inside each write (lib/db/session.ts)
 
@@ -110,7 +113,7 @@ export async function moveStage(input: {
   payload: unknown
   tasks: MoveTask[]
   followUpAt?: string | null
-}): Promise<{ logId: string }> {
+}): Promise<{ logId: string; stamped: string | null }> {
   assertStage(input.fromStage, input.toStage)   // (REG-286)
   const { leads, stageLogs, leadTasks } = await import('@/lib/db/schema')
   const { randomUUID: uuid } = await import('node:crypto')
@@ -149,11 +152,70 @@ export async function moveStage(input: {
     }
   })
   if (input.toStage === 'Won') await recordWonUpload(input.leadId, input.payload, now)   // (REG-632, contracts parity Q-14) the uploaded signed contract is a contract
+  const stamped = input.toStage === 'Quote Sent' ? await stampQuoteSent(input.leadId, input.payload) : null   // (UX audit 2026-09-30, Q1)
   /* (REG-608, parity Q-23) The lead's stage changed — Owners, Admins and the lead's members hear it (never the actor); the reminder's members hear their new task. */
   await notifyStageChange(input.leadId, input.fromStage, input.toStage, input.payload)
   for (const a of assigned) await notify('task_assigned', a.memberIds, { title: `New task: ${a.title}`, body: `On ${await leadName(input.leadId)}`, href: `/leads/${input.leadId}/tasks?open=${a.id}`, leadId: input.leadId })
   revalidateLead(input.leadId)
-  return { logId }
+  return { logId, stamped }
+}
+
+/* ── (UX audit 2026-09-30, Q1 · C1 · L2) The deal moves with its documents ─────────────────────────────────────────────────── */
+
+/** What the Quote Sent step needs to know about sending: the studio's approval rule, and whether this member's own send approves
+    (REG-624 — an approver's send is the approval). */
+export async function fetchQuoteSendRule(): Promise<{ approvalRequired: boolean; approver: boolean }> {
+  const [approval, viewer] = await Promise.all([fetchQuoteApproval(), fetchViewer()])
+  return { approvalRequired: approval === 'required', approver: await isApprover(viewer.id, viewer.role) }
+}
+
+/**
+ * A Quote Sent move that attaches a system quote says that quote went to the client: an Approved quote — or a Draft where the studio
+ * needs no approval, or whose sender approves (REG-624) — becomes Sent to Client, stamped Sent and shared (the quote editor's own send,
+ * `sendQuote`); one already out keeps its status and gains the client stamp it lacked. A quote still waiting for an approval is left
+ * as it is — the step refused it before Save (the window's `quoteNeedsApproval`). Returns the number of a quote whose status moved.
+ */
+async function stampQuoteSent(leadId: string, payload: unknown): Promise<string | null> {
+  const p = (payload && typeof payload === 'object' ? payload : {}) as Partial<WizardData>
+  if (p.quoteTab !== 'system' || (!p.quoteSelectedId && !p.quoteSelected)) return null
+  const rows = await db.select().from(quotes).where(and(eq(quotes.leadId, leadId), isNull(quotes.deletedAt), isNull(quotes.archivedAt)))
+  const q = (p.quoteSelectedId ? rows.find((r) => r.id === p.quoteSelectedId) : undefined) ?? rows.find((r) => r.title === p.quoteSelected)
+  if (!q) return null
+  const now = new Date()
+  if (q.status === 'Sent to Client' || q.status === 'Confirmed' || q.status === 'Signed') {
+    if (!q.clientSentAt) await db.update(quotes).set({ clientSentAt: now, sentAt: q.sentAt ?? now, updatedAt: now }).where(eq(quotes.id, q.id))
+    return null
+  }
+  const [approval, viewer] = await Promise.all([fetchQuoteApproval(), fetchViewer()])
+  const selfApproves = q.status === 'Draft' && approval === 'required' && await isApprover(viewer.id, viewer.role)
+  if (!(q.status === 'Approved' || (q.status === 'Draft' && approval !== 'required') || selfApproves)) return null
+  await db.update(quotes).set({ status: 'Sent to Client', sentAt: q.sentAt ?? now, clientSentAt: q.clientSentAt ?? now, visibility: 'Shared', ...(selfApproves ? { approvedAt: q.approvedAt ?? now, approvedBy: viewer.id } : {}), updatedAt: now }).where(eq(quotes.id, q.id))
+  revalidatePath(`/quotes/${q.id}`); revalidatePath('/quotes')
+  return q.number
+}
+
+/**
+ * The hand-off's documents, read for the Move stage window (`?move=<step>&quote=|contract=|log=`, lib/leads/move-link.ts): the quote,
+ * the contract and the quote it was raised from (C1: a signed contract's quote is the Won step's source), and a Notes-tab contact log
+ * as a Contacted entry (L2). Only this lead's records answer — an id from another lead resolves to nothing.
+ */
+export async function resolveMoveHandoff(leadId: string, pick: { quote?: string | null; contract?: string | null; log?: string | null }): Promise<{ quoteId: string | null; contractId: string | null; log: ContactLog | null }> {
+  const [q, c, n] = await Promise.all([
+    pick.quote ? db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.id, pick.quote), eq(quotes.leadId, leadId), isNull(quotes.deletedAt))).limit(1) : Promise.resolve([]),
+    pick.contract ? db.select({ id: contracts.id, fromQuoteId: contracts.fromQuoteId }).from(contracts).where(and(eq(contracts.id, pick.contract), eq(contracts.leadId, leadId), isNull(contracts.deletedAt))).limit(1) : Promise.resolve([]),
+    pick.log ? db.select().from(leadNotes).where(and(eq(leadNotes.id, pick.log), eq(leadNotes.leadId, leadId), eq(leadNotes.kind, 'contact'))).limit(1) : Promise.resolve([]),
+  ])
+  const note = n[0]
+  let log: ContactLog | null = null
+  if (note) {
+    const files = await db.select({ name: leadFiles.name }).from(noteAttachments).innerJoin(leadFiles, eq(leadFiles.id, noteAttachments.fileId)).where(and(eq(noteAttachments.noteId, note.id), isNull(leadFiles.deletedAt)))
+    log = {
+      channel: note.channel, when: note.contactedAt ? formatInputDateTime(note.contactedAt) : '', outcome: note.outcome ?? '',
+      nextStepWhen: note.nextStepAt ? formatInputDateTime(note.nextStepAt) : '', nextStepMode: note.nextStepMode ?? '',
+      files: files.map((f) => f.name), notes: bodyText(note.body).trim(), noteId: note.id,
+    }
+  }
+  return { quoteId: q[0]?.id ?? c[0]?.fromQuoteId ?? null, contractId: c[0]?.id ?? null, log }
 }
 
 const leadName = async (leadId: string): Promise<string> => { const [l] = await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)); return l ? titleCaseName(l.name) : 'A lead' }
@@ -386,14 +448,18 @@ async function leadOfTask(taskId: string): Promise<string | null> {
    to leave no trace there. */
 export async function completeTask(taskId: string): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
+  const [was] = await db.select({ done: leadTasks.done }).from(leadTasks).where(eq(leadTasks.id, taskId))
   await db.update(leadTasks).set({ done: true, updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
+  if (was && !was.done) await logTaskEvent(taskId, 'task_completed')   // (UX audit 2026-09-30, T10) Activity names who completed it
   const leadId = await leadOfTask(taskId)
   if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }
 
 export async function setTaskDue(taskId: string, due: Date): Promise<void> {
   const { leadTasks } = await import('@/lib/db/schema')
+  const [was] = await db.select({ dueAt: leadTasks.dueAt }).from(leadTasks).where(eq(leadTasks.id, taskId))
   await db.update(leadTasks).set({ dueAt: due, updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
+  if (was && was.dueAt?.getTime() !== due.getTime()) await logTaskEvent(taskId, 'task_edited', { fields: [{ key: 'dueAt', label: 'Due date', from: printField('dueAt', was.dueAt), to: printField('dueAt', due) }] })   // (T10)
   const leadId = await leadOfTask(taskId)
   if (leadId) revalidateLead(leadId); else revalidateLeadListings()
 }
@@ -446,16 +512,26 @@ export async function emptyTrash(): Promise<void> {
 }
 
 export type ImportDestination = 'listing' | 'review'
-type ImportPayloadInput = { fileName: string; headers: string[]; mapping: (string | null)[]; rows: string[][]; destination?: ImportDestination }
+/** `batchSource` (UX audit L4): step 2's one lead source for the whole file — every row gets it. */
+type ImportPayloadInput = { fileName: string; headers: string[]; mapping: (string | null)[]; rows: string[][]; destination?: ImportDestination; batchSource?: string | null }
 
 /** Import wizard step 3 → 4: persists the batch + every row into the review
  *  queue (M8). Rows without a Lead Name are skipped; phone/email matches
- *  against live leads (or earlier rows in the file) are flagged as duplicates. */
+ *  against live leads (or earlier rows in the file) are flagged as duplicates.
+ *  (UX audit L4) Each row is READ as it is stored (lib/leads/import-values.ts): k / m amounts, property types, sources, stages and districts
+ *  by their synonyms — the queue and the leads hold the values the lead gets, and what didn't land as typed comes back counted (`adjusted`),
+ *  listed (`changes`, the first 50) and written on the import's history line. (L5) `leadIds` = the leads the listing destination added,
+ *  for the last step's "Assign these n". */
 export async function importLeads(input: ImportPayloadInput): Promise<{
   importId: string; total: number; imported: number; skipped: number; duplicates: number
   destination: ImportDestination; approved: number; flagged: number
+  adjusted: AdjustedCount[]; changes: ImportAdjustment[]; leadIds: string[]
 }> {
   const { imports, importRows } = await import('@/lib/db/schema')
+  const studioSources = (await fetchLeadSources()).sources.map((s) => s.name)
+  /* The batch's one source must be one of the studio's; anything else is ignored and each row keeps its own. */
+  const batchSource = input.batchSource ? studioSources.find((s) => s === input.batchSource) ?? null : null
+  const allChanges: ImportAdjustment[] = []
   const existing = await db.select({ id: leads.id, phone: leads.phone, email: leads.email }).from(leads).where(isNull(leads.deletedAt))
   const byPhone = new Map<string, string>()
   const byEmail = new Map<string, string>()
@@ -475,14 +551,20 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
     const p = phoneDigits(d['Lead Phone Number'] ?? ''); if (p) seenPhone.add(p)
     const e = (d['Lead Email'] ?? '').trim().toLowerCase(); if (e) seenEmail.add(e)
   }
-  for (const raw of input.rows) {
-    const rec: Record<string, string> = {}
-    input.mapping.forEach((f, i) => { if (f && f !== 'Ignore') rec[f] = (raw[i] ?? '').trim() })
-    const name = rec['Lead Name'] ?? ''
+  for (const [rowIndex, raw] of input.rows.entries()) {
+    const typedRec: Record<string, string> = {}
+    input.mapping.forEach((f, i) => { if (f && f !== 'Ignore') typedRec[f] = (raw[i] ?? '').trim() })
+    const name = typedRec['Lead Name'] ?? ''
     if (!name) {
       skipped++
-      rowsOut.push({ id: randomUUID(), importId, data: { ...rec, __reason: 'Missing Lead Name' }, status: 'skipped', duplicateOfLeadId: null, matchedOn: null })
+      rowsOut.push({ id: randomUUID(), importId, data: { ...typedRec, __reason: 'Missing Lead Name' }, status: 'skipped', duplicateOfLeadId: null, matchedOn: null })
       continue
+    }
+    /* (UX audit L4) The row as the lead will hold it; what the file said for a changed cell rides along under `__typed`. */
+    const { record: rec, changes } = readImportRecord(typedRec, studioSources, batchSource)
+    if (changes.length) {
+      rec.__typed = JSON.stringify(Object.fromEntries(changes.map((c) => [c.field, c.typed])))
+      for (const c of changes) allChanges.push({ ...c, row: rowIndex + 1, name: titleCaseName(name) })
     }
     const phone = phoneDigits(rec['Lead Phone Number'] ?? '')
     if (rec['Lead Phone Number'] !== undefined) rec['Lead Phone Number'] = phone
@@ -497,11 +579,14 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
   }
   const total = input.rows.length
   const imported = total - skipped
+  const adjusted = countChanges(allChanges)
+  const phrase = adjustedPhrase(adjusted)
   // One transaction, chunked rows (500 × 6 params ≪ SQLite's 32,766 cap): no orphan batch on failure.
   await db.transaction(async (tx) => {
     await tx.insert(imports).values({
       id: importId, fileName: input.fileName, totalRows: total, importedRows: imported, skippedRows: skipped,
-      errorNote: skipped ? `${skipped} error${skipped === 1 ? '' : 's'} detected across ${skipped} skipped lead${skipped === 1 ? '' : 's'}` : null,
+      /* (UX audit L4) The history line says what the reader changed, beside what it skipped. */
+      errorNote: [skipped ? `${skipped} error${skipped === 1 ? '' : 's'} detected across ${skipped} skipped lead${skipped === 1 ? '' : 's'}` : '', phrase ? `${phrase} adjusted` : ''].filter(Boolean).join(' · ') || null,
       createdAt: now,
     })
     const CHUNK = 500
@@ -512,46 +597,48 @@ export async function importLeads(input: ImportPayloadInput): Promise<{
   // "Add to my lead listing": clean rows go straight in as leads; duplicates stay in the review queue.
   const destination: ImportDestination = input.destination ?? 'review'
   let approved = 0, flagged = 0
+  let leadIds: string[] = []
   if (destination === 'listing') {
     const pending = await db.select({ id: importRows.id }).from(importRows).where(and(eq(importRows.importId, importId), eq(importRows.status, 'pending')))
     const res = await approveImportRows(pending.map((r) => r.id))
-    approved = res.approved; flagged = res.flagged
+    approved = res.approved; flagged = res.flagged; leadIds = res.leadIds
   }
   revalidateLeadListings()   // (REG-286) Qanvast Ops lists imported Qanvast leads too
   revalidatePath('/leads/imports')
-  return { importId, total, imported, skipped, duplicates, destination, approved, flagged }
+  return { importId, total, imported, skipped, duplicates, destination, approved, flagged, adjusted, changes: allChanges.slice(0, 50), leadIds }
 }
 
 /* ---------- Review imported leads (M8) ---------- */
 
-/** Imported row → lead columns; enum values outside the mock vocab fall back to 'Others' / 'New'. */
+/** Imported row → lead columns; enum values outside the vocabulary fall back to 'Others' / 'New'.
+ *  (UX audit L4) Through the import's one reader (lib/leads/import-values.ts), so a row queued before the reader existed — "S$80k",
+ *  "4rm HDB" — is read the way a new import is: k / m amounts, synonyms onto the vocabulary. A value already read passes through unchanged. */
 async function leadFromImport(data: Record<string, string>) {
-  const { PROPERTY_TYPES, ALL_STAGES, KEY_COLLECTION_OPTIONS } = await import('@/lib/leads/enums')
-  const pick = (v: string | undefined, list: readonly string[], fallback: string) => {
-    const hit = list.find((x) => x.toLowerCase() === (v ?? '').trim().toLowerCase())
-    return hit ?? fallback
-  }
+  const { KEY_COLLECTION_OPTIONS } = await import('@/lib/leads/enums')
   const now = new Date()
+  const budget = readAmount(data['Estimated Budget (S$)'] ?? '').value
+  const startDate = readDate(data['Estimated Start Date'] ?? '').value
+  const areaSize = readArea(data['Area Size'] ?? '').value
   return {
     name: titleCaseName(data['Lead Name'] ?? ''),   // (REG-329) imported in any case, saved as "Farah Ahmad"
     phone: phoneDigits(data['Lead Phone Number'] ?? ''),
     email: (data['Lead Email'] ?? '').trim() || null,
-    source: pick(data['Lead Source'], (await fetchLeadSources()).sources.map((s) => s.name), 'Others'),   // (REG-599) the studio's list, retired names included so an old export still maps
-    stage: pick(data['Lead Stage'], ALL_STAGES, 'New'),   // the full vocabulary: STAGES is active-only, so an imported 'On Hold' / 'Lost' row landed silently in New
-    propertyType: pick(data['Property Type'], PROPERTY_TYPES, 'Others'),
+    source: readSource(data['Lead Source'] ?? '', (await fetchLeadSources()).sources.map((s) => s.name)) ?? 'Others',   // (REG-599) the studio's list, retired names included so an old export still maps
+    stage: readStage(data['Lead Stage'] ?? '') ?? 'New',   // the full vocabulary: STAGES is active-only, so an imported 'On Hold' / 'Lost' row landed silently in New
+    propertyType: readPropertyType(data['Property Type'] ?? '') ?? 'Others',
     propertyAddress: (data['Property Address'] ?? '').trim() || null,
     leadAddress: (data['Lead Address'] ?? '').trim() || null,
-    budgetMinor: Number(digitsOnly(data['Estimated Budget (S$)'] ?? '') || 0) * 100,
+    budgetMinor: budget && budget > 0 ? budget * 100 : 0,   // 0 = no budget known (the listing shows "--", UX audit L8)
     // (REG-287) The STRICT shared parser. The `parseDMY` copy that stood here accepted 32/13/2026 and rolled it into
     // a real Date, so a CSV could put a date on a lead that no field in the UI would ever have taken.
-    estimatedStartDate: parseInputDate(data['Estimated Start Date']),
+    estimatedStartDate: parseInputDate(startDate),
     style: (data['Style'] ?? '').trim() || null,
     // (REG-607) The key-collection vocabulary is 1.0's five since the parity round; an old sheet's "Not yet collected" reads as "Later".
     keyCollection: (() => { const raw = (data['Key Collection'] ?? '').trim(); if (!raw) return null; if (/^not yet/i.test(raw)) return 'Later'; return KEY_COLLECTION_OPTIONS.find((k) => k.toLowerCase() === raw.toLowerCase()) ?? raw })(),
     condition: (data['Condition'] ?? '').trim() || null,
-    areaSqft: Number(digitsOnly(data['Area Size'] ?? '')) || null,
+    areaSqft: areaSize || null,
     notes: (data['Remarks'] ?? '').trim() || null,   // the import vocabulary's Remarks (REG-266); the DB column stays `notes`
-    area: pick(data['District'], DISTRICTS, '') || null,   // (REG-607) 1.0's Area / District
+    area: readDistrict(data['District'] ?? '') ?? null,   // (REG-607) 1.0's Area / District
     createdAt: now, updatedAt: now,
   }
 }
@@ -559,8 +646,8 @@ async function leadFromImport(data: Record<string, string>) {
 /** Approve → real leads (also used by 'Keep Both', which approves a 'duplicate' row deliberately).
  *  Pending rows are RE-MATCHED against live leads at approval time: a lead created since the
  *  import (or by an earlier row in this batch) turns the row into a duplicate instead of a twin. */
-export async function approveImportRows(rowIds: string[]): Promise<{ approved: number; flagged: number }> {
-  if (rowIds.length === 0) return { approved: 0, flagged: 0 }
+export async function approveImportRows(rowIds: string[]): Promise<{ approved: number; flagged: number; leadIds: string[] }> {
+  if (rowIds.length === 0) return { approved: 0, flagged: 0, leadIds: [] }
   const arrivals: { id: string; name: string; source: string }[] = []   /* (REG-604) */
   const { importRows } = await import('@/lib/db/schema')
   let approved = 0, flagged = 0
@@ -599,7 +686,7 @@ export async function approveImportRows(rowIds: string[]): Promise<{ approved: n
   /* (REG-604) Every lead that just arrived through an import or the capture reaches the Owners and Admins. */
   if (arrivals.length) { const runners = await studioRunnerIds(); for (const a of arrivals.slice(0, 20)) await notify('new_lead', runners, { title: `New lead: ${titleCaseName(a.name)}`, body: a.source, href: `/leads/${a.id}`, leadId: a.id, actorId: null }) }
   revalidateLeadListings()   // (REG-286)
-  return { approved, flagged }
+  return { approved, flagged, leadIds: arrivals.map((a) => a.id) }   /* (UX audit L5) the new leads, for the import's "Assign these n" */
 }
 
 export async function rejectImportRows(rowIds: string[]): Promise<number> {
@@ -705,6 +792,7 @@ export async function updateStageDetails(input: { leadId: string; stage: string;
     .where(and(eq(stageLogs.leadId, input.leadId), eq(stageLogs.toStage, input.stage)))
     .orderBy(desc(stageLogs.createdAt)).limit(1)
   if (input.stage === 'Won') await recordWonUpload(input.leadId, input.data, new Date())   // (REG-632, contracts parity Q-14)
+  if (input.stage === 'Quote Sent') await stampQuoteSent(input.leadId, input.data)   // (UX audit 2026-09-30, Q1) a corrected pick is the quote that went
   if (latest) {
     await db.update(stageLogs).set({ payload: input.data as object }).where(eq(stageLogs.id, latest.id))
   } else {

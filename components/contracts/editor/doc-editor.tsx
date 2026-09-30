@@ -4,6 +4,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import { useShortcutsHere } from '@/lib/keys/store'
 import { DOC_KEYS } from '@/lib/keys/registry'
 import { isBlankDoc } from '@/lib/contracts/tokens'
+import { hideTooltipFor, showTooltipFor } from '@/components/om/tooltip'
 import styles from './contract-editor.module.css'
 
 /**
@@ -41,7 +42,9 @@ export const DocEditor = forwardRef<DocEditorHandle, {
   placeholder: string
   label: string
   readOnly?: boolean
-}>(function DocEditor({ value, onChange, onState, placeholder, label, readOnly }, ref) {
+  /** (UX audit C7) What a Smart Text chip prints on this document — the house tooltip over the chip ("Prints as: Harpreet Kaur"). */
+  chipTip?: (token: string) => string | null
+}>(function DocEditor({ value, onChange, onState, placeholder, label, readOnly, chipTip }, ref) {
   const body = useRef<HTMLDivElement>(null)
   useShortcutsHere(readOnly ? [] : DOC_KEYS)   // (REG-714) the ? panel lists the paper's keys while it is open
   const [, setTick] = useState(0)
@@ -55,6 +58,14 @@ export const DocEditor = forwardRef<DocEditorHandle, {
 
   const onChangeRef = useRef(onChange); useEffect(() => { onChangeRef.current = onChange })
   const onStateRef = useRef(onState); useEffect(() => { onStateRef.current = onState })
+  const chipTipRef = useRef(chipTip); useEffect(() => { chipTipRef.current = chipTip })
+  /* (UX audit C7) a chip names what it prints — the house tooltip over it, on a pointer that hovers (a finger never leaves one behind) */
+  const chipOf = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement>('.om-token[data-token]') : null)
+  const onChipOver = (e: React.PointerEvent) => {
+    const chip = chipOf(e.target); const tip = chip && e.pointerType !== 'touch' ? chipTipRef.current?.(chip.dataset.token ?? '') : null
+    if (chip && tip) showTooltipFor(chip, tip)
+  }
+  const onChipOut = (e: React.PointerEvent) => { const chip = chipOf(e.target); if (chip && !(e.relatedTarget instanceof Node && chip.contains(e.relatedTarget))) hideTooltipFor(chip) }
   const emit = useCallback(() => { const el = body.current; if (!el) return; el.toggleAttribute('data-empty', isBlankDoc(el.innerHTML)); onChangeRef.current(el.innerHTML) }, [])
 
   const readState = useCallback(() => {
@@ -122,7 +133,7 @@ export const DocEditor = forwardRef<DocEditorHandle, {
   return (
     <div ref={body} className={styles.doc} contentEditable={!readOnly} suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label={label}
          aria-readonly={readOnly || undefined} data-placeholder={placeholder} data-testid="contract-doc"
-         onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState}
+         onInput={emit} onBlur={readState} onKeyUp={readState} onMouseUp={readState} onPointerOver={onChipOver} onPointerOut={onChipOut}
          onKeyDown={(e) => {
            if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); document.execCommand('redo'); return }   // (REG-714) ⌘Y redoes, as in the other editors
            /* Cmd/Ctrl+B/I/U are the browser's. (sweep S2 #10) Tab indents a list item and Shift+Tab brings it back; anywhere else Tab moves

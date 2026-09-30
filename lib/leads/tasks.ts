@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { unreadCount } from '@/lib/notifications/queries'
 import { isOverdue } from '@/lib/format'
-import { leadFiles, leadTasks, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks, type LeadFile, type LeadTask, type Member, type Tag, type TaskComment, type TaskTemplate, leads } from '@/lib/db/schema'
+import { leadAssignees, leadFiles, leadTasks, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks, type LeadFile, type LeadTask, type Member, type Tag, type TaskComment, type TaskTemplate, leads } from '@/lib/db/schema'
 import { fetchFolders } from '@/lib/company/folders'
 
 /* Lead Details › Tasks (902-36216) — one loader for the tab; joins resolved in memory (a lead has a handful of tasks). */
@@ -30,6 +30,9 @@ export type LeadTasksData = {
   templateFolders: { id: string; name: string; parentId: string | null }[]
   team: Member[]
   now: number
+  /** (UX audit 2026-09-30, T4) Each lead's members, by lead id — a new task starts with its lead's members on it (removable), the rule a
+      log's reminder already follows (REG-608). */
+  leadMembers: Record<string, string[]>
 }
 export type StudioTasksData = LeadTasksData & { leads: TaskLead[] }
 
@@ -48,6 +51,10 @@ async function loadTasks(scope: { leadId: string } | 'studio'): Promise<LeadTask
     db.select().from(taskTemplates).where(isNull(taskTemplates.deletedAt)).orderBy(asc(taskTemplates.createdAt)),   // (REG-538) deleted templates leave the chooser
     db.select({ id: leads.id, name: leads.name, stage: leads.stage }).from(leads).where(leadId ? eq(leads.id, leadId) : isNull(leads.deletedAt)).orderBy(asc(leads.name)),
   ])
+  /* (T4) the leads' members, oldest assignment first — the add row's pre-filled members */
+  const onLeads = await (leadId ? db.select().from(leadAssignees).where(eq(leadAssignees.leadId, leadId)) : db.select().from(leadAssignees))
+  const leadMembers: Record<string, string[]> = {}
+  for (const a of onLeads) (leadMembers[a.leadId] ??= []).push(a.memberId)
   const ids = rows.map((t) => t.id)
   const [links, tagLinks, comments, attachments, tplTasks] = ids.length
     ? await Promise.all([
@@ -75,7 +82,7 @@ async function loadTasks(scope: { leadId: string } | 'studio'): Promise<LeadTask
   tasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   const templates: TemplateRow[] = tpls.map((tp) => ({ ...tp, tasks: tplTasks.filter((x) => x.templateId === tp.id).map((x) => ({ id: x.id, title: x.title, description: x.description, kind: x.kind })) }))
   const templateFolders = (await fetchFolders('tasks')).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId }))   // (REG-664)
-  return { tasks, tags: allTags, files, templates, templateFolders, team, now: Date.now(), leads: leadRows }
+  return { tasks, tags: allTags, files, templates, templateFolders, team, now: Date.now(), leads: leadRows, leadMembers }
 }
 
 export async function fetchLeadTasks(leadId: string): Promise<LeadTasksData> {
@@ -90,20 +97,42 @@ export async function fetchStudioTasks(): Promise<StudioTasksData> {
   return { ...data, tasks: data.tasks.filter((t) => !t.leadId || visible.has(t.leadId)), leads: data.leads.filter((l) => visible.has(l.id)) }
 }
 
-/** The rail badge (REG-466): open tasks whose due date has passed, studio-wide. */
+/**
+ * The rail badge (REG-466; UX audit 2026-09-30, T5): the signed-in member's OWN open tasks whose due date has passed — it counted the
+ * studio's, whoever looked, and led to a list that showed something else. A press lands on My Tasks with Overdue on (the rail's link).
+ * Tasks on a lead the viewer may not see (REG-601) are not theirs to act on, so they don't count.
+ */
 export async function countOverdueTasks(): Promise<number> {
-  const rows = await db.select({ dueAt: leadTasks.dueAt }).from(leadTasks).where(and(eq(leadTasks.done, false), isNotNull(leadTasks.dueAt)))
+  const viewer = await fetchViewer()
+  const rows = await db.select({ dueAt: leadTasks.dueAt, leadId: leadTasks.leadId }).from(leadTasks)
+    .innerJoin(taskAssignees, eq(taskAssignees.taskId, leadTasks.id))
+    .where(and(eq(leadTasks.done, false), isNotNull(leadTasks.dueAt), eq(taskAssignees.memberId, viewer.id)))
+  const visible = await visibleLeadIds(viewer)
   const now = Date.now()
-  return rows.filter((r) => isOverdue(r.dueAt, now)).length
+  return rows.filter((r) => isOverdue(r.dueAt, now) && (!r.leadId || !visible || visible.has(r.leadId))).length
 }
 
 /** What the rail draws on its items (REG-466): the Tasks item's overdue count, keyed by href; nothing when there is nothing to say. */
 export async function railBadges(): Promise<Record<string, number>> {
   const [overdue, pending, unread, proposed, asks] = await Promise.all([countOverdueTasks(), countPendingTemplates(), unreadCount(), countProposalsToReview(), countCreditAsks()])   // (REG-501) Company: templates awaiting approval · (REG-604) the bell · (REG-652) proposed items · (REG-703) asks for AI credits
+  const toApprove = await countQuotesToApprove()   // (UX audit Q4) quotes waiting for this approver — the Tools item
   return {
+    ...(toApprove > 0 ? { tools: toApprove } : {}),
     ...(overdue > 0 ? { '/tasks': overdue } : {}), ...(pending + proposed + asks > 0 ? { '/company': pending + proposed + asks } : {}), ...(unread > 0 ? { notifications: unread } : {}),
     ...(pending > 0 ? { 'company:templates': pending } : {}), ...(proposed > 0 ? { 'company:price-book': proposed } : {}), ...(asks > 0 ? { 'company:plan': asks } : {}),   // the Company panel's rows
   }
+}
+/** (UX audit Q4) Quotes waiting at Sent for Approval on the leads this member sees — an approver's queue only (an Owner, an Admin or the
+    backup approver, REG-590), and only while the studio asks for approval. The Tools item counts them; Tools › Quotes' chip lists them. */
+async function countQuotesToApprove(): Promise<number> {
+  const { fetchQuoteApproval, isApprover } = await import('@/lib/settings/queries')
+  const { quotes } = await import('@/lib/db/schema')
+  const viewer = await fetchViewer()
+  if ((await fetchQuoteApproval()) !== 'required' || !(await isApprover(viewer.id, viewer.role))) return 0
+  const rows = await db.select({ leadId: quotes.leadId }).from(quotes).innerJoin(leads, eq(leads.id, quotes.leadId))
+    .where(and(eq(quotes.status, 'Sent for Approval'), isNull(quotes.archivedAt), isNull(quotes.deletedAt), isNull(leads.deletedAt)))
+  const seen = await visibleLeadIds(viewer)
+  return seen ? rows.filter((r) => seen.has(r.leadId)).length : rows.length
 }
 /** (REG-703, AI credits Q-34) Members waiting on the Owner for AI credits — the Owner's queue only (1.0: only the Owner buys or raises). */
 async function countCreditAsks(): Promise<number> {

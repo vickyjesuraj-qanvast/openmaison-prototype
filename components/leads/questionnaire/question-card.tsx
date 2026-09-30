@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/om/tooltip'
 import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import type { Question } from '@/lib/db/schema'
 import { QUESTION_TYPE_LABELS, answerText, parseMulti, parseOptions, validateAnswer } from '@/lib/leads/question-model'
-import { relativeTime } from '@/lib/format'
+import { displayDayShortMonth, relativeTime } from '@/lib/format'
 import styles from './question-card.module.css'
 
 /**
@@ -25,7 +25,7 @@ import styles from './question-card.module.css'
  * The inputs are the app's 48px `TextField` / `DateField` where 02 draws "Text Field 36" (REG-189, as REG-176).
  */
 export function QuestionCard({
-  question, now, mode, onAnswer, onCancel, onSave, saving,
+  question, now, mode, onAnswer, onCancel, onSave, saving, askedAt = null,
 }: {
   question: Question
   /** Server "now" (ms) for the "1d ago" stamp — never Date.now() in render. */
@@ -35,6 +35,8 @@ export function QuestionCard({
   onCancel: () => void
   onSave: (value: string | string[]) => void
   saving?: boolean
+  /** (UX audit 2026-09-30, T12) When the client was last asked this question (ms) — the unanswered card wears "Asked · 30 Sep". */
+  askedAt?: number | null
 }) {
   const [draft, setDraft] = useState<string | string[]>(() => seedDraft(question))
   const [submitted, setSubmitted] = useState(false)
@@ -61,6 +63,7 @@ export function QuestionCard({
       <div className={styles.head}>
         <p className={styles.q}><span className={styles.qLabel}>Q: </span>{question.text}</p>
         {question.required && !answered ? <Tag appearance="outlined" className={styles.tag} data-testid="question-required">Required</Tag> : null}   {/* (REG-647) the bank's Required */}
+        {askedAt && !answered ? <Tag appearance="outlined" color="blue" className={styles.tag} data-testid="question-asked">{`Asked · ${displayDayShortMonth(new Date(askedAt))}`}</Tag> : null}   {/* (T12) */}
         {mode === 'view' && !answered ? <Link variant="primary" onPress={onAnswer}>Answer</Link> : null}
         {answered ? <Tag appearance="outlined" className={styles.tag}>{question.answeredBy === 'client' ? 'By Client' : 'By Studio'}</Tag> : null}
       </div>

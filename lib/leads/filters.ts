@@ -1,15 +1,38 @@
 import type { LeadRow } from '@/lib/leads/queries'
-import { startOfDay } from '@/lib/format'
+import { isOverdue, startOfDay } from '@/lib/format'
 
 /** Filters modal model (780:94580) — Sort · Property type · Source · Assignees · Date. */
 export type DatePreset = 'today' | '7d' | '30d' | 'month' | 'custom'   // (REG-610, parity L-27) 'month' = 1.0's "This month"
 /** (REG-608, parity L-22) 1.0's quick filters, minus Hot (no temperature, Q-10) and Needs attention (no 2.0 meaning); every ticked one must hold. */
 export type QuickFilter = 'overdue' | 'unassigned' | 'unseen'
 export const QUICK_FILTERS: { key: QuickFilter; label: string; help: string }[] = [
-  { key: 'overdue', label: 'Overdue follow-ups', help: 'An open task past its due date' },
+  { key: 'overdue', label: 'Overdue follow-ups', help: 'An open task past its due date (not On Hold or Lost)' },
   { key: 'unassigned', label: 'Unassigned', help: 'No member yet' },
   { key: 'unseen', label: 'Unseen', help: 'Nobody has opened it' },
 ]
+
+/**
+ * (UX audit L3, supersedes the pane-only reach of REG-608) Morning triage where the eye is: the scope pill's menu carries these beside the
+ * stages — "Mine", then the Needs attention group (the three quick filters with their counts). One of them, or a stage, scopes the listing;
+ * the pill names it ("Overdue follow-ups (4)") and wears the applied dot.
+ */
+export type AttentionScope = QuickFilter | 'mine'
+export const ATTENTION_LABEL: Record<AttentionScope, string> = { mine: 'Mine', overdue: 'Overdue follow-ups', unassigned: 'Unassigned', unseen: 'Unseen' }
+
+/** (UX audit L3) ONE rule for an overdue lead — the pill's count, its list and the Filters modal's quick filter: an open task due before
+ *  today (the red Overdue tag's own rule, `isOverdue`) on a lead still being worked. Parked (On Hold) and Lost leads are left out. */
+export const isOverdueLead = (r: LeadRow, now: number): boolean =>
+  r.stage !== 'On Hold' && r.stage !== 'Lost' && r.tasks.some((t) => isOverdue(t.dueAt, now))
+
+/** Does the row belong to the attention scope? `unseen` is the caller's (the listing's band: nobody has opened it, here or on the server). */
+export function inAttention(r: LeadRow, key: AttentionScope, ctx: { now: number; viewerId: string; unseen: (r: LeadRow) => boolean }): boolean {
+  switch (key) {
+    case 'mine': return r.assignees.some((m) => m.id === ctx.viewerId)
+    case 'overdue': return isOverdueLead(r, ctx.now)
+    case 'unassigned': return r.assignees.length === 0
+    case 'unseen': return ctx.unseen(r)
+  }
+}
 export type LeadFilters = {
   sort: 'newest' | 'oldest'
   quick: QuickFilter[]
@@ -53,7 +76,7 @@ export const activeFilterCount = (f: LeadFilters) => Object.values(activeGroups(
 export function applyFilters(rows: LeadRow[], f: LeadFilters, now: number): LeadRow[] {
   let out = rows
   /* (REG-608) Quick filters AND together, as 1.0's do. */
-  if (f.quick.includes('overdue')) out = out.filter((r) => r.tasks.some((t) => t.dueAt && t.dueAt.getTime() < now))
+  if (f.quick.includes('overdue')) out = out.filter((r) => isOverdueLead(r, now))   /* (UX audit L3) the one rule — parked and Lost leads out */
   if (f.quick.includes('unassigned')) out = out.filter((r) => r.assignees.length === 0)
   if (f.quick.includes('unseen')) out = out.filter((r) => r.seenAt === null)
   if (f.propertyTypes.length) out = out.filter((r) => f.propertyTypes.includes(r.propertyType))

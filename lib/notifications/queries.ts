@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { leadAssignees, leadNotes, leadTasks, leads, members, notifications, settings, stageLogs, taskAssignees } from '@/lib/db/schema'
 import { DEFAULT_RULES, DEFAULT_TEMPLATES, parseRules, parseTemplates, type Channel, type FeedRow, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
@@ -106,15 +106,17 @@ export async function fetchFeed(memberId: string, role: string): Promise<{ rows:
     ...stored.map((n) => ({ id: n.id, kind: n.kind as FeedRow['kind'], title: n.title, body: n.body, href: n.href, at: n.createdAt.getTime(), readAt: n.readAt?.getTime() ?? null, channels: n.channels.split(',').filter(Boolean) as Channel[], derived: false })),
     ...due,
   ].sort((a, b) => b.at - a.at)
-  return { rows, unread: rows.filter((r) => r.readAt === null).length }
+  /* (UX audit V8) unread = the notices nobody has opened; a follow-up that is due is work, listed apart, and never in the count */
+  return { rows, unread: rows.filter((r) => r.readAt === null && !r.derived).length }
 }
 
-/** The rail's badge: unread stored rows plus the follow-ups due, for the signed-in member. */
+/** The rail's badge (UX audit V8): the signed-in member's unread notices — not the follow-ups due, which the bell lists apart (and the Tasks
+    item already counts), so Mark all as read clears it. One count, no derivation. */
 export async function unreadCount(): Promise<number> {
-  const [me] = await db.select({ id: members.id, role: members.role }).from(members).where(eq(members.isYou, true)).limit(1)
+  const [me] = await db.select({ id: members.id }).from(members).where(eq(members.isYou, true)).limit(1)
   if (!me) return 0
-  const { unread } = await fetchFeed(me.id, me.role)
-  return unread
+  const [row] = await db.select({ n: sql<number>`count(*)` }).from(notifications).where(and(eq(notifications.memberId, me.id), isNull(notifications.readAt)))
+  return Number(row?.n ?? 0)
 }
 
 /** Members of a lead (its assignees), for the events addressed to "the lead's members". */

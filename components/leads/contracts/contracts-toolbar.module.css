@@ -43,3 +43,10 @@
   .bar:has([data-om-search-open]) .title { display: none; }
   .bar:has([data-om-search-open]) .actions { flex-wrap: nowrap; }
 }
+
+/* (UX audit C5) The to-do chip "Awaiting signature (n)" leads the tools while something waits; when the search opens on a narrow row the chip
+   steps aside with the title, as the galleries' to-do chips do (library-gallery.module.css .todo). */
+.todo { display: inline-flex; flex-shrink: 0; }
+@media (max-width: 1024px) {
+  .bar:has([data-om-search-open]) .todo { display: none; }
+}

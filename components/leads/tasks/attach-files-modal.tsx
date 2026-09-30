@@ -28,7 +28,11 @@ const dayLabel = (d: Date) => `${DAYS_LONG[d.getDay()]}, ${displayDate(d)}`
 /** How long the simulated upload takes before the toast row shows the green check. */
 const UPLOAD_MS = 1400
 
-type Toast = { name: string; pdf: boolean; state: 'uploading' | 'done' | 'failed' }
+/** One row of the upload toast — one per picked file (T2). `file` stays at hand so a failed row's Retry sends it again. */
+type ToastRow = { key: string; name: string; pdf: boolean; thumb: string | null; state: 'uploading' | 'done' | 'failed'; file: File | null }
+/** (UX audit 2026-09-30, T1) What a host's upload answers: the real file (listed and ticked here), a refusal, or nothing — the old stand-in. */
+export type UploadAnswer = LeadFile | { error: string } | null
+const isFileRow = (r: unknown): r is LeadFile => !!r && typeof r === 'object' && 'id' in r && 'name' in r && !('error' in r)
 
 /**
  * Attach files modal (902:28220 frame 57 · 56 one file + uploading toast 902:28261 · 58 · 64 empty): 1200×928 xl modal
@@ -37,9 +41,10 @@ type Toast = { name: string; pdf: boolean; state: 'uploading' | 'done' | 'failed
  *
  * Selection: tiles toggle ids; a group's header checkbox selects / clears the group. Files already attached to the task
  * open pre-checked; the footer count and `onAttach` carry only the NEW picks (attached − already attached) so the parent's
- * "{n} files attached" stays honest. Any picked / dropped file (REG-149) → the upload toast ("Uploading…" 1.4 s → done)
- * and the file is listed under today's group with the mock's thumbnail (local id — the parent owns the real upload).
- * The toast's "Failed" + refresh row exists behind data-state="failed" for completeness; nothing in the demo triggers it.
+ * "{n} files attached" stays honest. (UX audit 2026-09-30, T1 · T2) Every picked / dropped file — several at once — gets a row in the
+ * upload toast and goes through the host's `onUploadPicked`: a host that uploads (the Tasks tab: the Files tab's `uploadFileRecord`,
+ * REG-684) answers the real file, which is listed under today and ticked; a refused one reads Failed with a Retry. A host that answers
+ * nothing keeps REG-149's stand-in ("Uploading…" 1.4 s → the mock's file under today, local id).
  */
 export function AttachFilesModal({
   open, files, attached, onClose, onAttach, onUploadPicked, mode = 'files', chrome = 'tasks',
@@ -49,7 +54,9 @@ export function AttachFilesModal({
   attached: string[]
   onClose: () => void
   onAttach: (fileIds: string[]) => void
-  onUploadPicked: (file?: File) => void
+  /** (UX audit 2026-09-30, T1) The host's upload for a picked / dropped file. Answer a promise of the real `LeadFile` (the Files tab's
+      `uploadFileRecord`, REG-684) and the modal lists it and ticks it; answer nothing and it keeps REG-149's stand-in. */
+  onUploadPicked: (file?: File) => void | Promise<UploadAnswer>
   /** image = the quote editor's "Add Image" (1271:41016): images only, one pick, "Add" (REG-415). */
   mode?: 'files' | 'image'
   /** quote = the quote editor's frames (Attach files 1238:30353 · Add Image 1271:41016): no checkboxes — a picked tile is
@@ -64,7 +71,7 @@ export function AttachFilesModal({
   const [selected, setSelected] = useState<Set<string>>(() => new Set(attached))
   const [query, setQuery] = useState('')
   const [uploaded, setUploaded] = useState<LeadFile[]>([])
-  const [toast, setToast] = useState<Toast | null>(null)
+  const [toast, setToast] = useState<ToastRow[] | null>(null)
   const [toastCollapsed, setToastCollapsed] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -86,8 +93,13 @@ export function AttachFilesModal({
     if (open) { setSelected(new Set(attached)); setQuery(''); setUploaded([]); setToast(null); setToastCollapsed(false) }
   }
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+  /* the toast's picture thumbs are object URLs of the picked files — released when the modal goes */
+  const thumbs = useRef<string[]>([])
+  const pickRun = useRef(0)   // each pick's rows get keys of their own
+  useEffect(() => () => { for (const u of thumbs.current) URL.revokeObjectURL(u) }, [])
 
-  const all = [...uploaded, ...(imageMode ? files.filter((f) => f.kind !== 'pdf') : files)]
+  /* An upload that landed is also in `files` once the page refreshes (the action revalidates the lead) — listed once. */
+  const all = [...uploaded.filter((u) => !files.some((f) => f.id === u.id)), ...(imageMode ? files.filter((f) => f.kind !== 'pdf') : files)]
   /* Search matches everything a tile shows (REG-274): the file name, the kind caption under it ("pdf" / "image"),
      and the day heading the tile sits under, formatted by this modal's own `dayLabel` ("Friday, 17 Jul ’26") so a
      search for a day keeps that whole group. Folders carry neither a kind caption nor a day heading — they render
@@ -112,30 +124,62 @@ export function AttachFilesModal({
   const toggle = (id: string) => setSelected((s) => { if (imageMode) return new Set(s.has(id) ? [] : [id]); const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleGroup = (ids: string[], on: boolean) => setSelected((s) => { const n = new Set(s); ids.forEach((id) => (on ? n.add(id) : n.delete(id))); return n })
 
-  const pick = (file?: File) => {
-    onUploadPicked(file)
-    const name = file?.name ?? 'filename.jpg'   // the mock's row name when nothing real was picked (drop of a non-file)
-    const pdf = /\.pdf$/i.test(name)            // one reading of the kind for both the toast row and the file it lands
-    if (timer.current) clearTimeout(timer.current)
-    setToast({ name, pdf, state: 'uploading' })
+  /* (UX audit 2026-09-30, T1 · T2) Each picked or dropped file gets its row in the toast and goes through the host's upload; a real file
+     comes back listed under today and ticked, so "Attach n Files" carries it. Image mode (the quote's Add Image) keeps one pick. */
+  const setRow = (key: string, state: ToastRow['state']) => setToast((t) => (t ? t.map((r) => (r.key === key ? { ...r, state } : r)) : t))
+  const send = (row: ToastRow) => {
+    const answer = onUploadPicked(row.file ?? undefined)
+    if (!answer || typeof (answer as Promise<UploadAnswer>).then !== 'function') return false
+    setRow(row.key, 'uploading')
+    ;(answer as Promise<UploadAnswer>).then((r) => {
+      if (!isFileRow(r)) { setRow(row.key, 'failed'); return }
+      setRow(row.key, 'done')
+      setUploaded((u) => [r, ...u.filter((x) => x.id !== r.id)])
+      setSelected((sel) => (imageMode ? new Set([r.id]) : new Set(sel).add(r.id)))
+    }, () => setRow(row.key, 'failed'))
+    return true
+  }
+  const retry = (key: string) => { const row = toast?.find((r) => r.key === key); if (row?.file) send(row) }
+  const pickMany = (list: File[]) => {
+    const picked = imageMode ? list.slice(0, 1) : list
+    if (!picked.length) return
+    const at = ++pickRun.current
+    const rows: ToastRow[] = picked.map((file, i) => {
+      let thumb: string | null = null
+      if (file.type.startsWith('image/')) { try { thumb = URL.createObjectURL(file); thumbs.current.push(thumb) } catch { thumb = null } }
+      return { key: `${at}-${i}`, name: file.name, pdf: /\.pdf$/i.test(file.name), thumb, state: 'uploading', file }
+    })
+    setToast((t) => [...rows, ...(t ?? [])])
     setToastCollapsed(false)
+    const legacy = rows.filter((row) => !send(row))
+    if (legacy.length) pickStandIn(legacy)
+  }
+  /* REG-149's stand-in — a host that keeps no upload of its own (its answer is nothing): the row turns done after the simulated beat and
+     the mock's file joins the list under today. */
+  const pickStandIn = (rows: ToastRow[]) => {
+    if (!rows.length) return
+    if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
-      setToast((t) => (t ? { ...t, state: 'done' } : t))
+      setToast((t) => (t ? t.map((r) => (rows.some((x) => x.key === r.key) ? { ...r, state: 'done' } : r)) : t))
       // The uploaded file joins the library under today — the mock's thumbnail stands in for the real bytes (REG-149).
       // The kind follows the picked name, though: the dropzone advertises PDFs, and a PDF captioned with a photo of a
       // floor plan reads as a bug. A null thumb takes the row's existing surface-variant + glyph branch. Same
       // derivation as components/leads/return/return-lead-wizard.tsx, so the two surfaces agree about one pick.
       const at = new Date()
-      setUploaded((u) => [{ id: `local-${at.getTime()}`, leadId: files[0]?.leadId ?? '', kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null }, ...u])
+      setUploaded((u) => [...rows.map(({ name, pdf }, i): LeadFile => ({ id: `local-${at.getTime()}-${i}`, leadId: files[0]?.leadId ?? '', kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : '/figma-assets/file-thumb-1.png', createdAt: at, parentId: null, ownerId: null, sizeBytes: 728064, mime: pdf ? 'application/pdf' : 'image/jpeg', updatedAt: at, deletedAt: null })), ...u])
     }, UPLOAD_MS)
   }
 
   const count = picks.length
   const attachLabel = imageMode ? 'Add' : count === 0 ? 'Attach Files' : count === 1 ? 'Attach 1 File' : `Attach ${count} Files`
   // The head counts the toast's rows, not the in-flight flag: the toast stays up after the row's green check (only ✕
-  // removes it), and a count keyed off 'uploading' turned that frame into "Uploading 0 files". One row per toast —
-  // the Dropzone takes one file — so this reads "Uploading 1 file" throughout, as 902:28261 and the sibling toasts do.
-  const uploadingCount = toast ? 1 : 0
+  // removes it), and a count keyed off 'uploading' turned that frame into "Uploading 0 files" — the mock's head reads
+  // "Uploading 2 files" over its finished rows (902:28261). (T2) One row per picked file; a failure says so once nothing is in flight.
+  const uploadingCount = toast?.length ?? 0
+  const failedCount = toast?.filter((r) => r.state === 'failed').length ?? 0
+  const settled = !!toast && toast.every((r) => r.state !== 'uploading')
+  const toastTitle = settled && failedCount ? (failedCount === uploadingCount ? (uploadingCount === 1 ? 'Upload failed' : `${uploadingCount} uploads failed`) : `${failedCount} of ${uploadingCount} uploads failed`)
+    : uploadingCount === 1 ? 'Uploading 1 file' : `Uploading ${uploadingCount} files`
 
   return (
     <AnimatePresence>
@@ -159,7 +203,8 @@ export function AttachFilesModal({
                     title={<>Drop your file or <b>browse</b></>}
                     helper={quoteChrome ? undefined : imageMode ? 'Supports: JPEG or PNG' : 'Supports: JPEG, PNG, PDF'}
                     accept={imageMode ? 'image/*' : 'image/*,.pdf'}
-                    onPick={pick}
+                    onPick={(f) => { if (f) pickMany([f]) }}
+                    onPickMany={imageMode ? undefined : pickMany}
                   />
                 </div>
               </div>
@@ -314,7 +359,7 @@ export function AttachFilesModal({
                 <motion.div className={styles.toast} data-collapsed={toastCollapsed || undefined} role="status" aria-live="polite"
                             variants={snackbarRise} initial="initial" animate="animate" exit="exit">
                   <div className={styles.toastHead}>
-                    <span className={styles.toastTitle}>{uploadingCount === 1 ? 'Uploading 1 file' : `Uploading ${uploadingCount} files`}</span>
+                    <span className={styles.toastTitle}>{toastTitle}</span>
                     <Tooltip label={toastCollapsed ? 'Expand' : 'Collapse'} side="top">
                       <button type="button" className={styles.toastBtn} aria-label={toastCollapsed ? 'Expand' : 'Collapse'} aria-expanded={!toastCollapsed}
                               onClick={() => setToastCollapsed((c) => !c)}>
@@ -328,8 +373,10 @@ export function AttachFilesModal({
                     </Tooltip>
                   </div>
                   {toastCollapsed ? null : (
-                    <div className={styles.toastRow} data-state={toast.state}>
-                      {toast.pdf ? (
+                    <div className={styles.toastRows}>
+                    {toast.map((row) => (
+                    <div key={row.key} className={styles.toastRow} data-state={row.state}>
+                      {row.pdf ? (
                         /* A PDF takes the tiles' surface-variant box + glyph at the thumb's 40×40: the mock's photograph
                            beside "Quotation.pdf" drew the same pick two ways at once (the tile below already got it right). */
                         <span className={styles.toastThumb} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--om-color-surface-variant)' }}>
@@ -337,19 +384,19 @@ export function AttachFilesModal({
                         </span>
                       ) : (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src="/figma-assets/file-thumb-1.png" alt="" className={styles.toastThumb} width={40} height={40} />
+                        <img src={row.thumb ?? '/figma-assets/file-thumb-1.png'} alt="" className={styles.toastThumb} width={40} height={40} />
                       )}
-                      <span className={styles.toastFile}>{toast.name}</span>
-                      {toast.state === 'uploading' ? (
+                      <span className={styles.toastFile}>{row.name}</span>
+                      {row.state === 'uploading' ? (
                         <>
                           <span className={styles.toastStatus}>Uploading...</span>
                           <span className={`${styles.toastIcon} ${styles.spin}`}><Icon name="progress_activity" size={20} /></span>
                         </>
-                      ) : toast.state === 'failed' ? (
+                      ) : row.state === 'failed' ? (
                         <>
                           <span className={styles.toastFailed}>Failed</span>
                           <Tooltip label="Retry upload" side="top">
-                            <button type="button" className={styles.toastRetry} aria-label="Retry upload" onClick={comingSoon}>
+                            <button type="button" className={styles.toastRetry} aria-label={`Retry uploading ${row.name}`} onClick={() => (row.file ? retry(row.key) : comingSoon())}>
                               <Icon name="refresh" size={20} />
                             </button>
                           </Tooltip>
@@ -357,6 +404,8 @@ export function AttachFilesModal({
                       ) : (
                         <span className={styles.toastIcon}><Icon name="check_circle" size={20} fill /></span>
                       )}
+                    </div>
+                    ))}
                     </div>
                   )}
                 </motion.div>

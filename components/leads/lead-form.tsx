@@ -69,7 +69,8 @@ type LeadFormErrors = FieldErrors<'name' | 'phone' | 'email' | 'budget' | 'start
 /** A field the modal can be opened ON — the info column's "Add" links name the row the user actually pressed. */
 export type LeadFormField = keyof LeadFormData
 /** What the host holds while the modal is open: which mode, and optionally the field it was opened on. */
-export type LeadFormOpen = ({ mode: 'create' } | { mode: 'edit'; lead: LeadRow }) & { focus?: LeadFormField }
+/** `prefill` (UX audit L11): a new lead that starts with what the host already knows — the listing's "Add lead with 9123 4599". */
+export type LeadFormOpen = ({ mode: 'create'; prefill?: Partial<Pick<LeadFormData, 'phone' | 'name'>> } | { mode: 'edit'; lead: LeadRow }) & { focus?: LeadFormField }
 /** Fields that live behind "Additional info": opening on one of them has to expand that section first. */
 const IN_MORE: ReadonlySet<LeadFormField> = new Set<LeadFormField>([
   'email', 'leadAddress', 'budget', 'startDate', 'style', 'keyCollection', 'condition', 'areaSize', 'areaUnit', 'notes', 'nric', 'customerId',
@@ -89,7 +90,7 @@ const fromLead = (lead: LeadRow): LeadFormData => ({
   propertyAddress: lead.propertyAddress ?? '',
   email: lead.email ?? '',
   leadAddress: lead.leadAddress ?? '',
-  budget: groupDigits(String(Math.round(lead.budgetMinor / 100))),
+  budget: lead.budgetMinor > 0 ? groupDigits(String(Math.round(lead.budgetMinor / 100))) : '',   // (UX audit 2026-09-30, L8) an unknown budget edits as empty, never "0"
   // (REG-287) `inputDate` is the inverse of `parseInputDate` the field validates with — one d/m/yyyy formatter,
   // not this hand-rolled twin of it.
   startDate: lead.estimatedStartDate ? inputDate(lead.estimatedStartDate) : '',
@@ -232,7 +233,7 @@ export function LeadFormModal({
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open && form) {
-      setData(form.mode === 'edit' ? fromLead(form.lead) : { ...emptyForm(), ...(selfAssign ? { assignees: [selfAssign.id] } : {}) })   // (REG-609) a Designer's lead is theirs
+      setData(form.mode === 'edit' ? fromLead(form.lead) : { ...emptyForm(), ...(selfAssign ? { assignees: [selfAssign.id] } : {}), ...(form.prefill ?? {}) })   // (REG-609) a Designer's lead is theirs · (UX audit L11) the host's prefill
       setFiles([]); setFillOpen(false); setDup(null)
       setCustom(form.mode === 'edit' ? { ...(customValues ?? {}) } : {})
       setExpanded(form.mode === 'edit' || (form.focus ? IN_MORE.has(form.focus) : false))

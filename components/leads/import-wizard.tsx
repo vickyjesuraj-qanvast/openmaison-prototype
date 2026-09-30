@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Button, Tag } from '@/components/ds'
@@ -15,6 +15,7 @@ import { parseCsv } from '@/lib/csv'
 import { parseXlsx } from '@/lib/xlsx'
 import { parseLeadSheet } from '@/lib/leads/homematch'
 import { IMPORT_FIELDS, IGNORE, PREVIEW_COLUMNS, autoMap, toRecord, type ImportField, type Mapping } from '@/lib/leads/import-fields'
+import { CHANGE_LABEL, adjustedPhrase, readImportRecord, type AdjustedCount, type ImportAdjustment } from '@/lib/leads/import-values'
 import { MSG } from '@/lib/forms'
 import styles from './import-wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
@@ -27,8 +28,16 @@ import { Tooltip } from '@/components/om/tooltip'
 export const TEMPLATE_HREF = '/templates/leads-import-template.csv'
 
 export type ImportDestination = 'listing' | 'review'
-export type ImportPayload = { fileName: string; headers: string[]; mapping: Mapping; rows: string[][]; destination: ImportDestination }
-export type ImportResult = { importId: string; total: number; imported: number; skipped: number; duplicates: number; destination: ImportDestination; approved: number; flagged: number }
+/** `batchSource` (UX audit L4): step 2's one lead source for the whole file, or null for each row's own. */
+export type ImportPayload = { fileName: string; headers: string[]; mapping: Mapping; rows: string[][]; destination: ImportDestination; batchSource: string | null }
+/** (UX audit L4 · L5) `adjusted` / `changes`: what the reader changed (lib/leads/import-values.ts); `leadIds`: the leads the listing got. */
+export type ImportResult = { importId: string; total: number; imported: number; skipped: number; duplicates: number; destination: ImportDestination; approved: number; flagged: number; adjusted: AdjustedCount[]; changes: ImportAdjustment[]; leadIds: string[] }
+
+/** Step 2's source select: the file's own column, when one is mapped. */
+const FROM_FILE = 'As in the file'
+/** How many of the last step's changes are listed before "and n more". */
+const CHANGES_SHOWN = 6
+const NO_SOURCES: readonly string[] = []
 
 type Parsed = { name: string; headers: string[]; rows: string[][] }
 
@@ -66,12 +75,20 @@ function FieldSelect({
 }
 
 export function ImportWizard({
-  open, onClose, onImport, onDone,
+  open, onClose, onImport, onDone, sources = NO_SOURCES, batchSources = NO_SOURCES, onAssign, onReview,
 }: {
   open: boolean
   onClose: () => void
   onImport: (payload: ImportPayload) => Promise<ImportResult | null>
   onDone: (result: ImportResult) => void
+  /** (UX audit L4) Every source name the studio's list holds (retired ones too) — what Review reads a Lead Source cell against, as the server does. */
+  sources?: readonly string[]
+  /** (UX audit L4) The live sources step 2 offers as the whole file's one source. */
+  batchSources?: readonly string[]
+  /** (UX audit L5) The last step's next moves: assign the leads this import added (the listing's bulk Assign), open Review imported leads.
+   *  Absent where the host has neither (Lead Import History) — or, for Assign, when this member assigns nobody. */
+  onAssign?: (leadIds: string[]) => void
+  onReview?: () => void
 }) {
   useScrollLock(open)   // the page never scrolls behind this surface
   const router = useRouter()
@@ -92,6 +109,8 @@ export function ImportWizard({
   const [errorRow, setErrorRow] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
+  /* (UX audit L4) Step 2's one lead source for the whole file — null = each row's own (or Others without a source column). */
+  const [batchSource, setBatchSource] = useState<string | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -102,7 +121,7 @@ export function ImportWizard({
     setWasOpen(open)
     if (open) {
       setStep(1); setParsed(null); setToast(null); setToastCollapsed(false); setOver(false)
-      setConfirmClose(false); setDestOpen(false); setDestination(null); setMapping([]); setAutoMapped([]); setAutoCount(0); setErrorRow(null); setMapErrors(false); setBusy(false); setResult(null)
+      setConfirmClose(false); setDestOpen(false); setDestination(null); setMapping([]); setAutoMapped([]); setAutoCount(0); setErrorRow(null); setMapErrors(false); setBusy(false); setResult(null); setBatchSource(null)
     }
   }
   // Reset the in-flight guard on open; kill a pending upload timer on close.
@@ -205,7 +224,7 @@ export function ImportWizard({
     busyRef.current = true
     setDestOpen(false)
     setBusy(true)
-    const r = await onImport({ fileName: parsed.name, headers: parsed.headers, mapping, rows: parsed.rows, destination })
+    const r = await onImport({ fileName: parsed.name, headers: parsed.headers, mapping, rows: parsed.rows, destination, batchSource })
     setBusy(false)
     busyRef.current = false
     if (r) { setResult(r); setStep(4) }
@@ -227,14 +246,30 @@ export function ImportWizard({
   // The preview shows the columns the user just mapped, not every OpenMaison field: PREVIEW_COLUMNS is
   // the label/width/order lookup, the mapping decides which of them appear. The shipped template maps
   // all 14, so 779:26144 still draws 120/171/124/…/200; a file that maps 7 no longer scrolls past 7 blanks.
-  const previewCols = PREVIEW_COLUMNS.filter((c) => used.has(c.field))
+  const sourceMapped = used.has('Lead Source')
+  /* (UX audit L4) Step 2's whole-file source shows as the Lead Source column, mapped or not. */
+  const previewCols = PREVIEW_COLUMNS.filter((c) => used.has(c.field) || (c.field === 'Lead Source' && !!batchSource))
   const nameMissing = !mapping.some((f) => f === 'Lead Name')
-  const previewValue = (row: string[], field: ImportField) => {
-    const rec = toRecord(parsed?.headers ?? [], mapping, row)
-    const v = rec[field] ?? ''
+  /* (UX audit L4) Each row read the way the server will read it (lib/leads/import-values.ts, the one reader): its typed cells, and the
+     cells that won't land as typed — Review marks those with what they become. Rows with no Lead Name are skipped, so they mark nothing. */
+  const readRows = useMemo(() => (step === 3 && parsed
+    ? parsed.rows.map((row) => { const typed = toRecord(parsed.headers, mapping, row); return { typed, ...readImportRecord(typed, sources, batchSource) } })
+    : []), [step, parsed, mapping, sources, batchSource])
+  const changeCount = readRows.reduce((n, r) => n + (r.typed['Lead Name'] ? r.changes.length : 0), 0)
+  const previewValue = (i: number, field: ImportField) => {
+    const r = readRows[i]
+    if (!r) return ''
+    if (field === 'Lead Source' && batchSource) return batchSource
+    const v = r.typed[field] ?? ''
     if (field === 'Estimated Budget (S$)' && /^\d+$/.test(v)) return Number(v).toLocaleString('en-SG')
     return v
   }
+  const changeOf = (i: number, field: ImportField) => { const r = readRows[i]; return r && r.typed['Lead Name'] ? r.changes.find((c) => c.field === field) ?? null : null }
+  /* (UX audit L4 · L5) The last step: what changed, and the next move. */
+  const adjustedTotal = result ? result.adjusted.reduce((n, a) => n + a.count, 0) : 0
+  const reviewCount = result ? (result.destination === 'listing' ? result.duplicates + result.flagged : result.imported) : 0
+  const offerAssign = !!onAssign && !!result && result.leadIds.length > 0
+  const offerReview = !!onReview && reviewCount > 0
 
   return (
     <AnimatePresence>
@@ -322,6 +357,15 @@ export function ImportWizard({
                           <div className={styles.autoNote}><Icon name="check_circle" size={16} fill />{autoCount} column{autoCount === 1 ? '' : 's'} auto-matched</div>
                         ) : null}
                       </div>
+                      {/* (UX audit L4) One lead source for the whole file: an expo sheet or a referral list has no source column, and every row
+                          used to land as Others. The house select; "As in the file" keeps each row's own when a column is mapped. */}
+                      <div className={styles.batchSource} data-testid="import-batch-source">
+                        <TextField label="Lead source for every lead" mode="select" size="s"
+                                   options={sourceMapped ? [FROM_FILE, ...batchSources] : batchSources}
+                                   value={batchSource ?? (sourceMapped ? FROM_FILE : '')}
+                                   onChange={(v) => setBatchSource(v === FROM_FILE ? null : v)}
+                                   helper={!sourceMapped && !batchSource ? 'Without one, these leads import as Others' : sourceMapped && batchSource ? 'Replaces the file’s own source for every lead' : undefined} />
+                      </div>
                       <div className={styles.mapTable} onScroll={(e) => { e.currentTarget.dataset.scrolled = String(e.currentTarget.scrollTop > 0) }}>
                         <div className={styles.mapHead}>
                           <div className={`${styles.mapCell} ${styles.colName} ${styles.hLabel}`}>Imported Column Name</div>
@@ -368,6 +412,13 @@ export function ImportWizard({
                         <div className={styles.stepDesc}>
                           Ensure your columns align with the correct OpenMaison fields, especially assigning one to “Lead Name”. Only columns matched to a OpenMaison field name will be imported.
                         </div>
+                        {/* (UX audit L4) Said before the Import press, in the house error ink: the cells below that won't land as typed. */}
+                        {changeCount > 0 ? (
+                          <div className={styles.adjustNote} role="status" data-testid="import-adjust-note">
+                            <Icon name="error" size={16} fill />
+                            {changeCount} value{changeCount === 1 ? '' : 's'} won’t import as typed — each is marked with what it becomes.
+                          </div>
+                        ) : null}
                       </div>
                       {/* data-scrolled = down (sticky head shadow); data-scrolled-x = sideways (the frozen
                           SL No column's shadow below 1025, REG-269/REG-144). */}
@@ -389,9 +440,15 @@ export function ImportWizard({
                           {parsed.rows.map((r, i) => (
                             <div key={i} className={styles.pRow} role="row">
                               <div className={styles.pCell} role="cell"><span>{i + 1}</span></div>
-                              {previewCols.map((c) => (
-                                <div key={c.field} className={styles.pCell} role="cell"><span>{previewValue(r, c.field)}</span></div>
-                              ))}
+                              {previewCols.map((c) => {
+                                const ch = changeOf(i, c.field)
+                                return (
+                                  <div key={c.field} className={styles.pCell} role="cell" data-adjusted={ch ? '' : undefined}>
+                                    <span>{previewValue(i, c.field)}</span>
+                                    {ch ? <span className={styles.adjusted}>{ch.landed ? `Imports as ${ch.landed}` : 'Imports blank'}</span> : null}
+                                  </div>
+                                )
+                              })}
                             </div>
                           ))}
                         </div>
@@ -401,7 +458,12 @@ export function ImportWizard({
                     <div className={styles.done}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/figma-assets/import-done.svg" alt="" className={styles.doneArt} />
-                      <span className={styles.doneTitle}>{result.imported} of {result.total} records imported successfully</span>
+                      {/* (UX audit L4) Never "successfully" when the reader changed values: the line says what was adjusted, the list below which. */}
+                      <span className={styles.doneTitle} data-testid="import-done-title">
+                        {adjustedTotal > 0
+                          ? `${result.imported} of ${result.total} records imported — ${adjustedPhrase(result.adjusted)} ${adjustedTotal === 1 ? 'was' : 'were'} adjusted`
+                          : `${result.imported} of ${result.total} records imported successfully`}
+                      </span>
                       <span className={styles.doneSub}>
                         {result.destination === 'listing'
                           ? (result.approved === 0 && result.duplicates + result.flagged > 0
@@ -409,6 +471,17 @@ export function ImportWizard({
                               : `${result.approved} lead${result.approved === 1 ? '' : 's'} added to your listing${result.duplicates + result.flagged > 0 ? ` · ${result.duplicates + result.flagged} possible duplicate${result.duplicates + result.flagged === 1 ? '' : 's'} sent to review` : ''}`)
                           : `${result.imported} lead${result.imported === 1 ? '' : 's'} waiting in Review imported leads`}
                       </span>
+                      {result.changes.length > 0 ? (
+                        <ul className={styles.changeList} aria-label="What was adjusted" data-testid="import-changes">
+                          {result.changes.slice(0, CHANGES_SHOWN).map((c) => (
+                            <li key={`${c.row}-${c.field}`}>
+                              <span className={styles.changeName}>{c.name}</span>
+                              {` · ${CHANGE_LABEL[c.field] ?? c.field}: “${c.typed}” → ${c.landed || 'blank'}`}
+                            </li>
+                          ))}
+                          {adjustedTotal > CHANGES_SHOWN ? <li className={styles.changeMore}>and {adjustedTotal - CHANGES_SHOWN} more</li> : null}
+                        </ul>
+                      ) : null}
                     </div>
                   ) : null}
                 </motion.div>
@@ -484,7 +557,23 @@ export function ImportWizard({
                   <Button onPress={() => setDestOpen(true)} isDisabled={busy}>Import</Button>
                 </>
               ) : (
-                <Button onPress={() => { if (result) onDone(result) }}>Done</Button>
+                /* (UX audit L5) Not a dead end: the next move beside Done — "Assign these n" (the listing's bulk Assign on the leads this
+                   import added) and "Review n duplicates" (or, routed to review, "Review n leads"). One filled button: the furthest step on. */
+                <>
+                  <Button variant={offerAssign || offerReview ? 'secondary' : 'primary'} appearance={offerAssign || offerReview ? 'outlined' : 'filled'}
+                          onPress={() => { if (result) onDone(result) }}>Done</Button>
+                  {offerReview && result ? (
+                    <Button variant={offerAssign ? 'secondary' : 'primary'} appearance={offerAssign ? 'outlined' : 'filled'} onPress={() => onReview?.()}
+                            data-testid="import-review">
+                      {result.destination === 'listing' ? `Review ${reviewCount} duplicate${reviewCount === 1 ? '' : 's'}` : `Review ${reviewCount} lead${reviewCount === 1 ? '' : 's'}`}
+                    </Button>
+                  ) : null}
+                  {offerAssign && result ? (
+                    <Button onPress={() => onAssign?.(result.leadIds)} data-testid="import-assign">
+                      {`Assign ${result.leadIds.length === 1 ? 'this lead' : `these ${result.leadIds.length}`}`}
+                    </Button>
+                  ) : null}
+                </>
               )}
             </SurfaceFoot>
           </motion.div>

@@ -66,6 +66,12 @@
   .convertAction { flex: 1 1 auto; min-width: 0; }
   .convertAction button { width: 100%; }
 }
+/* (UX audit 2026-09-30, L6) Up to 1024 the header keeps the pair: the pill and the one filled primary ("Move to Met" … Convert to
+   Project). The locked, outlined Convert that sits between them on a desktop would squeeze the lead's name to "Far…" at 768 — the
+   primary already carries the way on. */
+@media (max-width: 1024px) {
+  .convertLocked { display: none; }
+}
 
 /* ── Responsive (REG-269) ──────────────────────────────────────────────────────────────────────────────────
    Tablet and down: the card grid drops to one column. The two stacks keep their DOM order — MY WORK / QUOTES /

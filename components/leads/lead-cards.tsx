@@ -8,7 +8,8 @@ import { IconButton } from '@/components/om/icon-button'
 import { ScopePill } from '@/components/om/scope-pill'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
-import { isOverdue, moneySGD, relativeTime, phoneLocal } from '@/lib/format'
+import { isOverdue, relativeTime, phoneDisplay, phoneLocal } from '@/lib/format'
+import { budgetCard, stageAge } from '@/lib/leads/row-text'
 import styles from './lead-cards.module.css'
 
 export type LeadCardsProps = {
@@ -64,11 +65,15 @@ export function LeadCards({ rows, now, query, openStageId, onOpen, onStageClick,
               </span>
             </button>
             <p className={styles.info}>
-              <span>{highlightPhone(phoneLocal(row.phone), query)}</span>
+              {/* (UX audit L11) On a phone the number calls: the house's copy / WhatsApp live on the lead's page, a card's number dials. */}
+              <span className={styles.telWrap}><a className={styles.tel} href={`tel:${phoneDisplay(row.phone).replace(/\s/g, '')}`} aria-label={`Call ${row.name}, ${phoneLocal(row.phone)}`}>{highlightPhone(phoneLocal(row.phone), query)}</a></span>
               <span className={styles.dot} aria-hidden>·</span>
-              <span>{moneySGD(row.budgetMinor)}</span>
+              <span>{budgetCard(row.budgetMinor)}</span>   {/* (UX audit L8) no budget known reads "--", never S$0 */}
               <span className={styles.dot} aria-hidden>·</span>
               <span>{highlightMatch(row.source, query)}</span>
+              {/* (UX audit L3) how long the lead has sat in its stage — the morning's "what's gone stale" */}
+              <span className={styles.dot} aria-hidden>·</span>
+              <span data-testid="card-stage-age">{stageAge(row, now)}</span>
             </p>
             </div>
             {first ? (

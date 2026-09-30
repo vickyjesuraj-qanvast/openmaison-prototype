@@ -11,16 +11,11 @@ import { Crumbs } from '@/components/om/crumbs'
 import { Dropdown, DropdownDivider, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { EditorLead, QuoteContract, QuoteSibling } from '@/lib/quotes/editor'
+import { SendButton, type SendKind, type SendMode } from '@/components/quotes/send/send-button'
 import styles from './editor-header.module.css'
 
 export type HeaderMenuAction = 'rename' | 'duplicate' | 'revise' | 'template' | 'xray' | 'contract' | 'pdf' | 'export' | 'print' | 'history' | 'delete' | 'preview' | 'comments' | 'confirmLink'
-/**
- * (REG-587) What the Send button does at this status: `approval` = plain Send (for approval) · `client` = Send ▾ with
- * "Send for confirmation" and "Send for signature" · `confirmed` = "Send for signature" (the contract with the T&Cs) ·
- * `done` = inert with `sendHint`.
- */
-export type SendKind = 'approval' | 'client' | 'confirmed' | 'done'
-export type SendMode = 'next' | 'confirmation' | 'signature'
+export type { SendKind, SendMode }
 
 /**
  * Page Header / Quotes (1201:33834 · 1260:31143 · the page's instance 1273:29264): back → the lead's Quotes tab ·
@@ -62,7 +57,7 @@ export function EditorHeader({
   clientViewOn?: boolean
   onClientView?: () => void
 }) {
-  const [menu, setMenu] = useState<'switch' | 'more' | 'send' | null>(null)
+  const [menu, setMenu] = useState<'switch' | 'more' | null>(null)
   const folded = useMediaQuery(TABLET_DOWN)   // ≤1024 Preview and Comments live in the kebab (editor-header.module.css)
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
   return (
@@ -109,28 +104,8 @@ export function EditorHeader({
       <span className={styles.send}>
         {statusSlot}
         <span className={`${styles.sendBtn} ${styles.anchor}`}>
-          {canSend && sendKind === 'client' ? (
-            <>
-              {/* (REG-587) Send ▾: the client can confirm on a link first (Mavid's flow), or get the agreement for signature straight away. */}
-              <Button variant="primary" iconEnd={<span className={`${styles.chev} ${styles.onFill}`} data-open={menu === 'send' || undefined}><Icon name="keyboard_arrow_down" size={20} /></span>}
-                      aria-haspopup="menu" aria-expanded={menu === 'send'} onPress={() => setMenu((m) => (m === 'send' ? null : 'send'))}>Send</Button>
-              {/* (REG-728) Rows with a description: the 320 width, the description as the house row's second line. */}
-              <Dropdown open={menu === 'send'} onClose={() => setMenu(null)} align="left" width={MENU_WIDTH.detail} sheetTitle="Send">
-                <DropdownItem onSelect={pick(() => onSend('confirmation'))} help="The client confirms the quote on a link — no signature yet">Send for confirmation</DropdownItem>
-                <DropdownItem onSelect={pick(() => onSend('signature'))} help="Add the T&Cs and raise the agreement to sign">Send for signature</DropdownItem>
-              </Dropdown>
-            </>
-          ) : canSend && sendKind === 'confirmed' ? (
-            <Tooltip label="Add the T&Cs and send the agreement for signature">
-              <span><Button variant="primary" onPress={() => onSend('signature')}>Send for signature</Button></span>
-            </Tooltip>
-          ) : canSend ? (
-            <Button variant="primary" onPress={() => onSend('next')}>Send</Button>
-          ) : (
-            <Tooltip label={sendHint}>
-              <span><Button variant="primary" isDisabled>Send</Button></span>
-            </Tooltip>
-          )}
+          {/* (UX audit Q2) The quote's one Send (components/quotes/send/send-button.tsx) — Preview's bar carries the same. */}
+          <SendButton kind={sendKind} canSend={canSend} hint={sendHint} status={status} onSend={onSend} />
         </span>
       </span>
       <div className={styles.actions}>

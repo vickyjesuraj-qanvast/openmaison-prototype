@@ -3,7 +3,7 @@
 import { type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { anchoredSurface } from '@/lib/motion'
 import { Icon } from '@/components/om/icon'
 import { useComingSoon } from '@/components/om/snackbar'
@@ -11,6 +11,7 @@ import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './tools-popover.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
+import { leaveThen } from '@/components/company/leave-guard'   // (UX audit S2) unsaved Company / Settings edits ask before the move
 
 /** The 1.0 tools in their order (owner 2026-09-11); the first is the way into Quotes and is labelled so (REG-413). */
 export const TOOLS: { key: string; icon: string; label: string; href?: string }[] = [
@@ -25,25 +26,34 @@ export const TOOLS: { key: string; icon: string; label: string; href?: string }[
   { key: 'copilot', icon: 'analytics', label: 'Meeting Copilot' },
 ]
 
+/** (UX audit V7) A page that belongs to Tools — its list or anything opened from it — lights the rail's Tools item, as Company lights on /company. */
+export const toolOf = (pathname: string) => TOOLS.find((t) => !!t.href && (pathname === t.href || pathname.startsWith(`${t.href}/`))) ?? null
+export const onToolsPage = (pathname: string) => !!toolOf(pathname)
+
 /**
  * Tools (the rail's item; design reference "Create Quote Reference" §Tools, approved 2026-09-11 — REG-422): the quick-links
  * tile grid inside the anchored-menu chrome, 8px to the right of the rail and aligned to the item's top, bottom-aligned
  * when it would run past the viewport. "TOOLS" eyebrow, 92×96 tiles three across (the Create strip's tile). Quotes opens
  * the studio-wide list; Quote X-Ray opens the comparison tool (REG-529); the other six answer coming soon. ≤767 (REG-353) it is a bottom sheet titled Tools, tiles 3-up.
  */
-export function ToolsPopover({ open, anchor, onClose }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void }) {
+export function ToolsPopover({ open, anchor, onClose, counts = {} }: { open: boolean; anchor: RefObject<HTMLElement | null> | null; onClose: () => void; /** (UX audit Q4) a tile's count — Quotes: the quotes waiting for this approver, the rail's Tools badge */ counts?: Record<string, number> }) {
   const router = useRouter()
+  const on = toolOf(usePathname())?.key ?? null   // (UX audit V7) the tool you are in is marked, as the Company panel marks its section
   const comingSoon = useComingSoon()
   const sheet = useSheetLayout()
   const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'top' })   // (REG-728) the rail's popovers open one way
 
-  const pick = (tool: (typeof TOOLS)[number]) => { onClose(); if (tool.href) router.push(tool.href); else comingSoon() }
+  const pick = (tool: (typeof TOOLS)[number]) => { onClose(); const href = tool.href; if (href) leaveThen(() => router.push(href)); else comingSoon() }
   const tiles = (
     <div className={styles.grid} role="group" aria-label="Tools">
       {TOOLS.map((t) => (
-        <button key={t.key} type="button" role="menuitem" className={styles.tile} onClick={() => pick(t)}>
-          <Icon name={t.icon} size={24} weight={300} />
+        /* (UX audit V6) a tool that isn't built wears the Company panel's "Soon" tag and says so in its name; its press still answers "Coming soon" */
+        <button key={t.key} type="button" role="menuitem" className={styles.tile} onClick={() => pick(t)} data-on={on === t.key || undefined} aria-current={on === t.key ? 'page' : undefined}
+                aria-label={!t.href ? `${t.label}, coming soon` : counts[t.key] ? `${t.label} (${counts[t.key]} waiting for your approval)` : t.label} data-soon={t.href ? undefined : ''}>
+          {counts[t.key] ? <span className={styles.count} aria-hidden>{counts[t.key]}</span> : null}
+          <Icon name={t.icon} size={24} weight={300} fill={on === t.key} />
           <span className={styles.label}>{t.label}</span>
+          {t.href ? null : <span className={styles.soon} aria-hidden>Soon</span>}
         </button>
       ))}
     </div>

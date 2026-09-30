@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ds'
 import { SettingsGhost } from './settings-ghost'
 import { CompanyShell } from '@/components/company/company-shell'
@@ -21,7 +21,12 @@ import { ListEntryDialog, type EntryEdit } from './list-entry-dialog'
 import { LOST_COMPETITOR, LOST_POSTPONED, LEAD_VISIBILITY_OPTIONS, intakeAddress, type LeadCapture, type LeadSourceEntry, type LeadVisibility, type LeadReason, type LeadReasons } from '@/lib/settings/types'
 import { simulateArrival } from '@/app/leads/capture-actions'
 import { NotificationsSettings } from './notifications-settings'
-import type { MessageTemplate, NotificationRules } from '@/lib/notifications/model'
+import { UNTOUCHED_OPTIONS, type MessageTemplate, type NotificationRules } from '@/lib/notifications/model'
+import { setNotificationRules } from '@/app/notifications/actions'
+import type { NewQuoteDefaults } from '@/lib/settings/queries'
+import { HelpLink } from '@/components/company/help-link'
+import { LeaveGuard, leaveThen } from '@/components/company/leave-guard'
+import { useHashLanding } from '@/components/company/use-hash-landing'
 import { useCopy } from '@/components/om/use-copy'
 import { useRouter } from 'next/navigation'
 import { decimalTyped, displayDateTimeDot } from '@/lib/format'
@@ -32,7 +37,7 @@ import { MSG } from '@/lib/forms'
 import { StudioSettings, type EntityLine, type TeamMember } from './studio-settings'
 import styles from './settings.module.css'
 
-export function SettingsView({ stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, tradeNotes = {}, meName, section = 'studio', from, rules, team, leadSources, sourcesManaged, sourceCounts, leadVisibility, leadCapture, studioName, arrivals, notificationRules, messageTemplates, leadReasons, reasonsManaged, reasonCounts, canManage, customFields, studio, entities, quoteNumbers }: {
+export function SettingsView({ stageMovement, quoteApproval, templateApproval, numbering, trades, tradesManaged, tradeNotes = {}, meName, section = 'studio', from, rules, team, leadSources, sourcesManaged, sourceCounts, leadVisibility, leadCapture, studioName, arrivals, notificationRules, messageTemplates, leadReasons, reasonsManaged, reasonCounts, canManage, customFields, studio, entities, quoteNumbers, newQuoteDefaults }: {
   /** (REG-645, settings parity Q-01 · Q-02) The open module (`?section=`) and where the page was opened from (`?from=`, Back). */
   section?: SettingsModule; from?: string
   /** (REG-645, Q-04 · Q-05) The studio record (GST), its issuing entities as Settings › Studio lists them, and every quote number given (the real next number, Q-15). */
@@ -56,9 +61,12 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
   tradeNotes?: Record<string, string>
   /** (REG-584 · 589 · 590) The studio's quote rules and the members the backup approver is picked from. */
   rules: QuoteRules; team: TeamMember[]
+  /** (UX audit S4) What a new quote starts with — the default template's New quotes settings, shown here read-only. */
+  newQuoteDefaults: NewQuoteDefaults
 }) {
   const comingSoon = useComingSoon()
   const snackbar = useSnackbar()
+  useHashLanding(section)   // (UX audit S3) a help link to a card (#lead-visibility, #untouched-leads, #backup-approver) lands on it
   const short = shortStudioName(studioName)
   const readOnly = !canManage   // (REG-645, settings parity Q-08) one read-only look: every value shown, the controls disabled, one line under the title
   const [mode, setMode] = useState<StageMovement>(stageMovement)
@@ -120,24 +128,17 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
   /* (REG-645, settings parity Q-15) The example is the number the next quote would really get — the creation rule over every number given. */
   const example = isDefaultNumbering(num) ? defaultNextNumber(quoteNumbers) : formatQuoteNumber(num, nextSequence(quoteNumbers, num.prefix, num.next), { initials: initialsOf(meName || 'Dane Tan'), date: new Date() })
   const exampleCom = num.commercial.on ? formatQuoteNumber(num, nextSequence(quoteNumbers, num.commercial.prefix, num.commercial.next), { initials: initialsOf(meName || 'Dane Tan'), date: new Date(), commercial: true }) : null   /* (REG-586) */
-  /* (REG-645, E-99) An unsaved pattern is not lost to a tab or a reload without a word — Profile's rule. */
-  useEffect(() => {
-    if (!numDirty) return
-    const onUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
-    window.addEventListener('beforeunload', onUnload)
-    return () => window.removeEventListener('beforeunload', onUnload)
-  }, [numDirty])
   /* (REG-645, settings parity Q-05) GST: the studio's registration writes at once; the rate has its own Save. */
   const [gst, setGst] = useState<Studio>(studio)
   const [gstRate, setGstRate] = useState(String(studio.gstPct))
   const rateValue = Number(gstRate)
   const rateValid = gstRate.trim() !== '' && Number.isFinite(rateValue) && rateValue >= 0 && rateValue <= 30
   const rateDirty = rateValid && Math.round(rateValue * 10) / 10 !== gst.gstPct
-  const writeGst = async (patch: { gstRegistered?: boolean; gstPct?: number }, done: string) => {
+  const writeGst = async (patch: { gstRegistered?: boolean; gstPct?: number }, done: string): Promise<boolean> => {
     const prev = gst
     setGst((g) => ({ ...g, ...patch }))
-    try { const next = await setStudioGst(patch); setGst(next); if (patch.gstPct !== undefined) setGstRate(String(next.gstPct)); snackbar({ message: done }) }   // a rate being typed is not overwritten by the switch's answer
-    catch { setGst(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
+    try { const next = await setStudioGst(patch); setGst(next); if (patch.gstPct !== undefined) setGstRate(String(next.gstPct)); snackbar({ message: done }); return true }   // a rate being typed is not overwritten by the switch's answer
+    catch { setGst(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }); return false }
   }
   /* (REG-584 · 589 · 590) The studio's rules write at once, each with its own word. */
   const [rulesState, setRulesState] = useState<QuoteRules>(rules)
@@ -147,12 +148,23 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
     try { const clean = await setQuoteRules(patch); setRulesState(clean); snackbar({ message: done }) }
     catch { setRulesState(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
   }
-  const saveNumbering = async () => {
+  const saveNumbering = async (): Promise<boolean> => {
     setNumBusy(true)
-    try { const clean = await setNumbering(num); setNum(clean); setSavedNum(clean); snackbar({ message: `The next quote will be ${isDefaultNumbering(clean) ? defaultNextNumber(quoteNumbers) : formatQuoteNumber(clean, nextSequence(quoteNumbers, clean.prefix, clean.next), { initials: initialsOf(meName || 'Dane Tan'), date: new Date() })}` }) }   /* (sweep S4 #12) the real next number, as the example shows it — never OM-0001 while the studio is past it */
-    catch { snackbar({ message: 'Couldn’t save the numbering — please try again' }) }
+    try { const clean = await setNumbering(num); setNum(clean); setSavedNum(clean); snackbar({ message: `The next quote will be ${isDefaultNumbering(clean) ? defaultNextNumber(quoteNumbers) : formatQuoteNumber(clean, nextSequence(quoteNumbers, clean.prefix, clean.next), { initials: initialsOf(meName || 'Dane Tan'), date: new Date() })}` }); return true }   /* (sweep S4 #12) the real next number, as the example shows it — never OM-0001 while the studio is past it */
+    catch { snackbar({ message: 'Couldn’t save the numbering — please try again' }); return false }
     finally { setNumBusy(false) }
   }
+  /* (UX audit S2) The page's unsaved edits — the quote-number pattern and a GST rate typed but not saved — ask before any move inside the
+     app (and a tab or a reload): Save writes both, Discard puts both back. */
+  const rateEdited = gst.gstRegistered && gstRate.trim() !== String(gst.gstPct)
+  const leaveWhat = [numDirty ? 'the quote numbers' : null, rateEdited ? 'the GST rate' : null].filter(Boolean).join(' and ')
+  const saveBeforeLeaving = async (): Promise<boolean> => {
+    let ok = true
+    if (numDirty) ok = (await saveNumbering()) && ok
+    if (rateEdited) ok = (rateValid ? await writeGst({ gstPct: rateValue }, `New lines start at ${Math.round(rateValue * 10) / 10}% GST`) : false) && ok   // a rate out of range keeps its error and the page
+    return ok
+  }
+  const discardBeforeLeaving = () => { setNum(savedNum); setGstRate(String(gst.gstPct)) }
 
   /* (REG-602) Lead capture: the address to copy, the arrivals, the demo's simulated lead. */
   const router = useRouter()
@@ -164,7 +176,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
     setSimulating(true)
     try {
       const r = await simulateArrival('email')
-      snackbar({ message: r.flagged ? `${r.name} wrote in — a lead with that number exists, so it waits in Review imported leads` : `${r.name} wrote in from the website — a new lead`, actionLabel: 'Open leads', onAction: () => router.push('/leads') })
+      snackbar({ message: r.flagged ? `${r.name} wrote in — a lead with that number exists, so it waits in Review imported leads` : `${r.name} wrote in from the website — a new lead`, actionLabel: 'Open leads', onAction: () => leaveThen(() => router.push('/leads')) })
       router.refresh()
     } catch { snackbar({ message: 'Couldn’t simulate the lead — please try again' }) } finally { setSimulating(false) }
   }
@@ -177,6 +189,17 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
     setVis(next)
     try { await setLeadVisibility(next); snackbar({ message: next === 'assigned' ? 'Designers now see only their own leads, and Managers their own and their team’s' : 'Everyone sees every lead again' }) }
     catch { setVis(prev); snackbar({ message: 'Couldn’t save the setting — please try again' }) }
+  }
+  /* (UX audit S9) The untouched-lead delay is a response rule: it lives with the leads, not under the notification rows. It writes the same
+     notification rule the bell reads (setNotificationRules), optimistic and put back when refused. */
+  const [untouched, setUntouched] = useState(notificationRules.untouchedMinutes)
+  const chooseUntouched = async (label: string) => {
+    const o = UNTOUCHED_OPTIONS.find((x) => x.label === label)
+    if (!o || o.minutes === untouched) return
+    const prev = untouched
+    setUntouched(o.minutes)
+    try { const next = await setNotificationRules({ untouchedMinutes: o.minutes }); setUntouched(next.untouchedMinutes); snackbar({ message: `Untouched leads raised after ${o.label}` }) }
+    catch { setUntouched(prev); snackbar({ message: 'Couldn’t save the untouched-lead delay — please try again' }) }
   }
   /* (REG-599) Lead sources: add · retire · restore · remove — the whole list written at once, as the trades are. */
   const [sources, setSources] = useState<LeadSourceEntry[]>(leadSources)
@@ -309,6 +332,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
   const tabs = SETTINGS_MODULES.map((m) => ({ label: m.label, href: settingsHref(m.key), soon: !m.live }))
   return (
     <CompanyShell title="Settings" tabs={tabs} activeHref={settingsHref(section)} from={from} crumb="Settings" skeleton={<SettingsGhost />} onSoon={comingSoon}>
+          <LeaveGuard dirty={!readOnly && (numDirty || rateEdited)} what={leaveWhat} onSave={saveBeforeLeaving} onDiscard={discardBeforeLeaving} />
           {section === 'studio' ? (
             <StudioSettings studioName={short} team={team} entities={entities} backupName={team.find((m) => m.id === rulesState.backupApproverId)?.name ?? null}
                             rules={{ visibility: vis, quoteApproval: approval, templateApproval: tApproval, paymentLock: rulesState.paymentLock }} />
@@ -328,6 +352,17 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                   {STAGE_MOVEMENT_OPTIONS.map((o) => (
                     <ChoiceCard key={o.key} title={o.title} help={o.help} selected={mode === o.key} onSelect={guard(() => { void choose(o.key) })} />
                   ))}
+                </div>
+              </div>
+              {/* (UX audit S9) The untouched-lead delay — moved here from Notifications › Follow-ups, which now points here. */}
+              <div className={styles.setting} data-testid="untouched-leads" id="untouched-leads">
+                <div className={styles.settingHead}>
+                  <span className={styles.settingTitle}>Untouched leads</span>
+                  <span className={styles.settingHelp}>A New lead with no contact logged is raised as “untouched” after this delay — to the members on it, in the bell and on the channels Notifications sets for it.</span>
+                </div>
+                <div className={styles.numGrid}>
+                  <TextField label="Raise an untouched lead after" mode="select" options={UNTOUCHED_OPTIONS.map((o) => o.label)} value={UNTOUCHED_OPTIONS.find((o) => o.minutes === untouched)?.label ?? '30 minutes'}
+                             onChange={(v) => { if (!canManage) { snackbar({ message: LOCKED }); return } void chooseUntouched(v) }} />
                 </div>
               </div>
               {/* (REG-599) Lead sources — Flipstone's "add TikTok etc.": the list the lead form, the import mapping, the filters and the Source column read. */}
@@ -407,12 +442,12 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               <div className={styles.setting} data-testid="lead-capture" id="lead-capture">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Lead capture</span>
-                  <span className={styles.settingHelp}>Point your website form at this address and every enquiry becomes a lead here — source Website, unread until someone opens it. A known phone number goes to Review imported leads instead of a second lead. Meta Lead Ads, webhooks and email lead sources connect under Company › Integrations; a webhook’s label is the source its leads carry.</span>
+                  <span className={styles.settingHelp}>Point your website form at this address and every enquiry becomes a lead here — source Website, unread until someone opens it. A known phone number goes to Review imported leads instead of a second lead. Meta Lead Ads, webhooks and email lead sources connect under <HelpLink href="/company/integrations">Company › Integrations</HelpLink>; a webhook’s label is the source its leads carry.</span>
                 </div>
                 <div className={styles.captureRow}>
                   <code className={styles.captureAddress} data-testid="intake-address">{address}</code>
                   <Button variant="secondary" appearance="outlined" iconStart={<Icon name="content_copy" size={20} />} onPress={() => { void copy() }}>{copied ? 'Copied' : 'Copy'}</Button>
-                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} onPress={() => router.push(withFrom('/company/integrations', fromHere('leads')))}>Integrations</Button>
+                  <Button variant="secondary" appearance="outlined" iconStart={<Icon name="link" size={20} />} onPress={() => leaveThen(() => router.push(withFrom('/company/integrations', fromHere('leads'))))}>Integrations</Button>
                 </div>
                 {/* (REG-647, settings parity Q-12 · E-101) Every way in — the website form, Meta, each webhook, the email lead sources — with what arrived. */}
                 <div className={`${styles.eventTable} ${styles.captureTable}`} role="table" aria-label="Ways in" data-testid="ways-in" data-card-table="">
@@ -436,10 +471,10 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                 </div>
               </div>
               {/* (REG-601) Who sees leads — Dyel's hierarchy: the owner assigns, a manager assigns within their team, a designer keeps their own. Roles and teams live under Company › Members. */}
-              <div className={styles.setting} data-testid="lead-visibility">
+              <div className={styles.setting} data-testid="lead-visibility" id="lead-visibility">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Who sees leads</span>
-                  <span className={styles.settingHelp}>Owners and Admins always see every lead and assign anyone. Roles and who reports to whom are set under Company › Members.</span>
+                  <span className={styles.settingHelp}>Owners and Admins always see every lead and assign anyone. Roles and who reports to whom are set under <HelpLink href="/company/members">Company › Members</HelpLink>.</span>
                 </div>
                 <div className={styles.choices} role="radiogroup" aria-label="Who sees leads">
                   {LEAD_VISIBILITY_OPTIONS.map((o) => (
@@ -476,7 +511,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               <div className={styles.setting}>
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Template approval</span>
-                  <span className={styles.settingHelp}>Whether a designer’s quote template needs an Owner’s or Admin’s approval before the studio can use it. Applies to Company › Templates.</span>
+                  <span className={styles.settingHelp}>Whether a designer’s quote template needs an Owner’s or Admin’s approval before the studio can use it. Applies to <HelpLink href="/company/templates/quotes">Company › Templates</HelpLink>.</span>
                 </div>
                 <div className={styles.choices} role="radiogroup" aria-label="Template approval">
                   {TEMPLATE_APPROVAL_OPTIONS.map((o) => (
@@ -484,6 +519,9 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
                   ))}
                 </div>
               </div>
+              {/* (UX audit S4, REG-578…583) What a new quote starts with — the default template's New quotes settings, read-only here where the
+                  studio looks for them, with the way to change them on the template itself. */}
+              <NewQuoteDefaultsCard d={newQuoteDefaults} gst={gst} from={fromHere('quotes')} />
               {/* (REG-561) Quote numbers — the testers' "our numbering convention": prefix · designer initials · year-month · running number. */}
               <div className={styles.setting} data-testid="numbering">
                 <div className={styles.settingHead}>
@@ -552,7 +590,7 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               <div className={styles.setting} data-testid="gst">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>GST</span>
-                  <span className={styles.settingHelp}>Whether the studio charges GST, and the rate a new line starts with. Quotes already written keep their rates; another issuing entity keeps its own switch under Company › Profile.</span>
+                  <span className={styles.settingHelp}>Whether the studio charges GST, and the rate a new line starts with. Quotes already written keep their rates; another issuing entity keeps its own switch under <HelpLink href="/company/profile#entities">Company › Profile</HelpLink>.</span>
                 </div>
                 <label className={styles.switchRow}><Switch size="sm" isSelected={gst.gstRegistered} isDisabled={readOnly} aria-label="The studio is registered for GST"
                   onChange={guardQV((v: boolean) => { void writeGst({ gstRegistered: v }, v ? `${short} is registered for GST — new quotes carry it` : `${short} is not registered for GST — new quotes start without it`) })} /><span>Registered for GST</span></label>
@@ -577,13 +615,13 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
               {/* (REG-589) The payment schedule kept to Owners and Admins — Mavid's "the owner fixes it; IDs cannot change it". */}
               <div className={styles.setting} data-testid="payment-lock">
                 <div className={styles.settingHead}>
-                  <span className={styles.settingTitle}>Payment schedule</span>
-                  <span className={styles.settingHelp}>Who may change a quote’s payment schedule. Locked, everyone but Owners and Admins sees the milestones and cannot edit, reorder, add or replace them.</span>
+                  <span className={styles.settingTitle}>Who may change the payment schedule</span>
+                  <span className={styles.settingHelp}>Locked, everyone but Owners and Admins sees a quote’s milestones and cannot edit, reorder, add or replace them. The split a new quote starts with is under New quotes start with.</span>
                 </div>
                 <label className={styles.switchRow}><Switch size="sm" isSelected={rulesState.paymentLock} isDisabled={readOnly} onChange={guardQV((v: boolean) => { void writeRules({ paymentLock: v }, v ? 'Only Owners and Admins change the payment schedule now' : 'Every member can change the payment schedule') })} aria-label="Only Owners and Admins can change the payment schedule" /><span>Only Owners and Admins can change it</span></label>
               </div>
               {/* (REG-590) A backup approver beside the Owners and Admins — H Design's ask. */}
-              <div className={styles.setting} data-testid="backup-approver">
+              <div className={styles.setting} data-testid="backup-approver" id="backup-approver">
                 <div className={styles.settingHead}>
                   <span className={styles.settingTitle}>Backup approver</span>
                   <span className={styles.settingHelp}>A member who may approve quotes and publish templates when an Owner or Admin is away. Owners and Admins always can.</span>
@@ -608,5 +646,36 @@ export function SettingsView({ stageMovement, quoteApproval, templateApproval, n
             </section>
           )}
     </CompanyShell>
+  )
+}
+
+/** (UX audit S4) "New quotes start with": the studio's default template's New quotes settings, as a new quote takes them (read the way
+    createQuote reads them), and the way to change them — the template editor on its New quotes tab, with Back to here. */
+function NewQuoteDefaultsCard({ d, gst, from }: { d: NewQuoteDefaults; gst: Studio; from: string }) {
+  const router = useRouter()
+  const split = d.split ? `${d.split.name} — ${d.split.rows.map((r) => `${r.name} ${r.pct}%`).join(' · ')}` : 'None'
+  const gstLine = !gst.gstRegistered ? 'Off — the studio isn’t registered for GST' : d.gstEnabled ? `On, at ${gst.gstPct}%` : 'Off'
+  const open = () => { const t = d.template; if (t) leaveThen(() => router.push(withFrom(`/templates/${t.id}?tab=new-quotes`, from))) }
+  return (
+    <div className={styles.setting} data-testid="new-quote-defaults" id="new-quote-defaults">
+      <div className={styles.settingHeadRow}>
+        <div className={styles.settingHead}>
+          <span className={styles.settingTitle}>New quotes start with</span>
+          <span className={styles.settingHelp}>{d.template
+            ? `What every new quote takes from the studio’s default template, ${d.template.name}. They are set on the template’s New quotes tab and reach new quotes once it is published; quotes you already have keep their own.`
+            : <>No default quote template yet — a new quote starts with the house settings below. Pick a default under <HelpLink href="/company/templates/quotes">Company › Templates</HelpLink>.</>}</span>
+        </div>
+        {d.template ? <Button variant="secondary" appearance="outlined" iconStart={<Icon name="edit" size={20} />} onPress={open} data-testid="new-quote-defaults-change">{`Change in ${d.template.name} › New quotes`}</Button> : null}
+      </div>
+      <dl className={styles.defaults}>
+        <dt>Valid for</dt><dd>{d.validityDays} {d.validityDays === 1 ? 'day' : 'days'}</dd>
+        <dt>Payment schedule</dt><dd>{split}</dd>
+        <dt>Terms and Conditions</dt><dd>{d.terms ?? 'None — written on the quote'}</dd>
+        <dt>Additional Notes</dt><dd>{d.notes ?? 'None'}</dd>
+        <dt>GST</dt><dd>{gstLine}</dd>
+        <dt>Client signs online</dt><dd>{d.signatureRequired ? 'Yes' : 'No — the client signs the printed quote'}</dd>
+        <dt>Starts with sections</dt><dd>{d.starterGroups.length ? d.starterGroups.join(' · ') : 'None — the Items table starts empty'}</dd>
+      </dl>
+    </div>
   )
 }

@@ -12,6 +12,7 @@ import { Sheet, useSheetLayout } from '@/components/om/sheet'
 import menuStyles from '@/components/leads/menus.module.css'
 import styles from './company-popover.module.css'
 import { useRailPopover } from '@/components/shell/rail-popover'
+import { leaveThen } from './leave-guard'
 
 /**
  * Company (REG-484; owner 2026-09-17: "the navigation is in the sidebar only"): the rail's item opens the Tools panel's
@@ -26,7 +27,7 @@ export function CompanyPopover({ open, anchor, onClose, awaiting = 0, proposed =
   const { place } = useRailPopover({ open, anchor, onClose, sheet, align: 'top' })   // (REG-728) the rail's popovers open one way
 
   const isOn = (s: CompanySection) => !!s.href && (s.key === 'templates' ? pathname.startsWith('/company/templates') : pathname === s.href || pathname.startsWith(`${s.href}/`))
-  const pick = (s: CompanySection) => { onClose(); if (s.href) router.push(s.href); else comingSoon() }
+  const pick = (s: CompanySection) => { onClose(); const href = s.href; if (href) leaveThen(() => router.push(href)); else comingSoon() }   // (UX audit S2) unsaved edits on the page ask first
   const list = (
     <div className={styles.groups}>
       {COMPANY_GROUPS.map((g) => (

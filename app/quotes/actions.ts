@@ -1,10 +1,10 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, gte } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
-import { members, quoteItems, quotePayments, quoteVersions, quotes, leads } from '@/lib/db/schema'
+import { members, notifications, quoteItems, quotePayments, quoteVersions, quotes, leads } from '@/lib/db/schema'
 import { PROPERTY_TYPES } from '@/lib/leads/enums'
 import { revalidateLead } from '@/lib/leads/queries'
 import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
@@ -15,6 +15,10 @@ import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 import { approverIds } from '@/lib/notifications/approvers'
 import { reviveSnapshot } from '@/lib/templates/queries'
 import { parseDiscounts, quoteTotals } from '@/lib/quotes/math'
+import { offersQuoteSent, statusBlock } from '@/lib/quotes/policy'
+import { moveStageHref } from '@/lib/leads/move-link'
+import { isQuoteStatus } from '@/lib/leads/quote-filters'
+import { setQuoteStatus } from '@/app/leads/quotes-actions'
 
 /* Quote editor (1271:40301). Autosave writes land here; the editor keeps its own state, so nothing here refreshes the
    route — the lead's pages are revalidated because the Quotes tab, the Overview card and Activity print these fields. */
@@ -34,6 +38,12 @@ async function whoAmI(): Promise<{ id: string | null; name: string; approver: bo
   return { id: m?.id ?? null, name: m?.name ?? 'The studio', approver: await isApprover(m?.id, m?.role) }
 }
 const leadName = async (leadId: string) => (await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)))[0]?.name ?? null
+/** (UX audit Q1) The lead's next stage, offered where the quote now is: the Move stage window at Quote Sent with this quote picked — only
+    while the lead is before Quote Sent and the quote is with the client (Sent to Client · Confirmed). `null` = nothing to offer. */
+async function moveOffer(leadId: string, quoteId: string, status: string): Promise<string | null> {
+  const [l] = await db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, leadId))
+  return offersQuoteSent(l?.stage, status) ? moveStageHref(leadId, 'quote-sent', { quote: quoteId }) : null
+}
 
 export type GeneralPatch = {
   title?: string
@@ -89,7 +99,7 @@ export async function saveQuoteSections(quoteId: string, sections: QuoteSectionS
  * Draft → Sent for Approval → Approved → Sent to Client → Signed, or Draft → Sent to Client → Signed). Only a Draft or an
  * Approved quote has somewhere to be sent; anything else is returned unchanged. The first send stamps Sent.
  */
-export async function sendQuote(quoteId: string): Promise<{ status: QuoteStatus; sentAt: number | null; updatedAt: number }> {
+export async function sendQuote(quoteId: string): Promise<{ status: QuoteStatus; sentAt: number | null; updatedAt: number; /** (UX audit Q1) the Move stage link, when the lead is before Quote Sent */ moveTo?: string | null }> {
   const q = await load(quoteId)
   if (!q) throw new Error('quote not found')
   const steps = quoteStatuses(await fetchQuoteApproval())
@@ -110,7 +120,7 @@ export async function sendQuote(quoteId: string): Promise<{ status: QuoteStatus;
   await db.update(quotes).set(set).where(eq(quotes.id, quoteId))
   if (next === 'Sent for Approval') { const l = await leadName(q.leadId); await notify('quote_approval', await approverIds(), { title: `Quote ${q.number} needs your approval`, body: l ? `For ${l}` : null, href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: me.id }) }   /* (REG-604) */
   touch(q.leadId, quoteId)
-  return { status: next, sentAt: (set.sentAt ?? q.sentAt ?? null)?.getTime() ?? null, updatedAt: now.getTime() }
+  return { status: next, sentAt: (set.sentAt ?? q.sentAt ?? null)?.getTime() ?? null, updatedAt: now.getTime(), moveTo: await moveOffer(q.leadId, quoteId, next) }
 }
 
 /**
@@ -179,7 +189,7 @@ export async function reviseQuote(quoteId: string, note?: string): Promise<{ ver
  * studio need not approve, or from Approved; with approval required a Draft goes for approval first (`sendQuote`). Sending again
  * from Sent to Client is allowed (a second nudge with the same link).
  */
-export async function sendQuoteForConfirmation(quoteId: string): Promise<{ status: QuoteStatus; sentAt: number; updatedAt: number }> {
+export async function sendQuoteForConfirmation(quoteId: string): Promise<{ status: QuoteStatus; sentAt: number; updatedAt: number; /** (UX audit Q1) */ moveTo: string | null }> {
   const q = await load(quoteId)
   if (!q) throw new Error('quote not found')
   const approval = await fetchQuoteApproval()
@@ -192,7 +202,7 @@ export async function sendQuoteForConfirmation(quoteId: string): Promise<{ statu
   const sentAt = q.sentAt ?? now
   await db.update(quotes).set({ status: 'Sent to Client', sentAt, clientSentAt: q.clientSentAt ?? now, visibility: 'Shared', ...(selfApproves ? { approvedAt: q.approvedAt ?? now, approvedBy: me.id } : {}), updatedAt: now }).where(eq(quotes.id, quoteId))
   touch(q.leadId, quoteId); revalidatePath(`/confirm/${quoteId}`)
-  return { status: 'Sent to Client', sentAt: sentAt.getTime(), updatedAt: now.getTime() }
+  return { status: 'Sent to Client', sentAt: sentAt.getTime(), updatedAt: now.getTime(), moveTo: await moveOffer(q.leadId, quoteId, 'Sent to Client') }
 }
 
 /**
@@ -214,7 +224,10 @@ export async function confirmQuoteOnline(quoteId: string, name: string, picks: s
   for (const o of optional) await db.update(quoteItems).set({ clientChoice: wanted.has(o.id) ? 'want' : 'skip', updatedAt: now }).where(eq(quoteItems.id, o.id))
   const picked = optional.filter((o) => wanted.has(o.id)).map((o) => o.name)
   const body = optional.length ? `${picked.length ? `Wants ${picked.length} of ${optional.length} optional works — ${picked.join(', ')}` : `Passed on the ${optional.length} optional ${optional.length === 1 ? 'work' : 'works'}`}. Next: add the T&Cs and send for signature` : 'Next: add the T&Cs and send for signature'
-  await notify('quote_confirmed', [...await leadMemberIds(q.leadId), ...await studioRunnerIds(), ...(q.createdBy ? [q.createdBy] : [])], { title: `${who} confirmed quote ${q.number}`, body, href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: null })   /* (REG-604) */
+  /* (UX audit Q1, the confirmation's bell line) A confirmation on a lead still before Quote Sent opens the Move stage window at Quote Sent with this
+     quote picked — the pipeline catches up first, then the quote goes for signature. */
+  const moveTo = await moveOffer(q.leadId, quoteId, 'Confirmed')
+  await notify('quote_confirmed', [...await leadMemberIds(q.leadId), ...await studioRunnerIds(), ...(q.createdBy ? [q.createdBy] : [])], { title: `${who} confirmed quote ${q.number}`, body: moveTo ? `${body.replace(/Next: add the T&Cs and send for signature$/, '')}Next: move the lead to Quote Sent, then send for signature` : body, href: moveTo ?? `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: null })   /* (REG-604) */
   touch(q.leadId, quoteId); revalidatePath(`/confirm/${quoteId}`)
   return { confirmedAt: now.getTime(), by: who }
 }
@@ -249,4 +262,79 @@ export async function restoreQuoteVersion(quoteId: string, version: number): Pro
   })
   touch(q.leadId, quoteId); revalidatePath(`/quotes/${quoteId}/preview`)
   return { updatedAt: now.getTime(), amountMinor: totals.totalMinor }
+}
+
+/**
+ * (UX audit Q6) The confirmation link's "Ask for a change": the client's request reaches the studio's bell — the lead's members, the
+ * Owners and Admins, whoever made the quote — with their words, while WhatsApp opens to the designer on the page. A public endpoint: only
+ * a quote the client holds (sent, not yet confirmed or signed) takes one, and the words are bounded. The words travel in one object.
+ */
+export async function askQuoteChange(quoteId: string, ask: { name: string; note: string }): Promise<{ ok: true } | { error: string }> {
+  const q = await load(quoteId)
+  if (!q || q.deletedAt) return { error: 'This quote is no longer available' }
+  if (q.status !== 'Approved' && q.status !== 'Sent to Client') return { error: 'This quote can’t take a change request now' }
+  const who = (clean(ask?.name, 80) ?? '').trim() || (await leadName(q.leadId)) || 'The client'
+  const note = (clean(ask?.note, 500) ?? '').trim()
+  await notify('quote_change_asked', [...await leadMemberIds(q.leadId), ...await studioRunnerIds(), ...(q.createdBy ? [q.createdBy] : [])], { title: `${who} asked for a change to quote ${q.number}`, body: note ? `“${note}”` : 'On the confirmation link — they will say what on WhatsApp', href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: null })
+  return { ok: true }
+}
+
+/* ── (UX audit 2026-09-30, Q3) The status menu's marks: rules first, the approvers told, and a way back ── */
+
+/** What a mark changed, so its Undo puts every stamp back as it was (the status alone would leave "sent" dates behind). */
+export type StatusUndo = {
+  status: string; visibility: string; sentAt: number | null; clientSentAt: number | null; approvedAt: number | null; approvedBy: string | null
+  submittedAt: number | null; submittedBy: string | null; confirmedAt: number | null; confirmedBy: string | null; signedAt: number | null
+  /** When the approvers were told (a mark to Sent for Approval) — Undo takes those rows back out of the bell. */
+  raisedAt: number | null
+}
+const ms = (d: Date | null) => (d ? d.getTime() : null)
+
+/**
+ * (Q3 — supersedes REG-176's one-tap row menu, extends REG-590) A status picked from a status menu (the Quotes rows and cards, the editor's
+ * pill). Sent for Approval is the real submission — stamped as the member's and the approvers are told, as the editor's Send tells them;
+ * the client's statuses (Sent to Client · Confirmed · Signed) are asked about in the menu first ("nothing reaches the client") and, with
+ * approval required, wait for an approver's OK (`statusBlock`). A refusal answers `{ error }` in the rule's words; a mark answers what
+ * Undo needs and — for a quote now with the client on a lead before Quote Sent — the Move stage link (Q1).
+ */
+export async function markQuoteStatus(quoteId: string, status: string): Promise<{ status: QuoteStatus; number: string; undo: StatusUndo; told: number; moveTo: string | null } | { error: string }> {
+  if (!isQuoteStatus(status)) return { error: 'That isn’t a quote status' }
+  const q = await load(quoteId)
+  if (!q) return { error: 'The quote is gone — it was deleted' }
+  const me = await whoAmI()
+  const approval = await fetchQuoteApproval()
+  if (status === 'Approved' && approval === 'required' && !me.approver) return { error: 'Only an Owner, an Admin or the backup approver approves a quote' }
+  const blocked = statusBlock({ target: status, current: q.status, approval, approver: me.approver })
+  if (blocked) return { error: blocked }
+  const undo: StatusUndo = {
+    status: q.status, visibility: q.visibility, sentAt: ms(q.sentAt), clientSentAt: ms(q.clientSentAt), approvedAt: ms(q.approvedAt), approvedBy: q.approvedBy,
+    submittedAt: ms(q.submittedAt), submittedBy: q.submittedBy, confirmedAt: ms(q.confirmedAt), confirmedBy: q.confirmedBy, signedAt: ms(q.signedAt), raisedAt: null,
+  }
+  if (status === q.status) return { status, number: q.number, undo, told: 0, moveTo: null }
+  const before = Date.now()
+  await setQuoteStatus(quoteId, status)
+  let told = 0
+  if (status === 'Sent for Approval') {
+    undo.raisedAt = before
+    const l = await leadName(q.leadId)
+    told = await notify('quote_approval', await approverIds(), { title: `Quote ${q.number} needs your approval`, body: l ? `For ${l}` : null, href: `/quotes/${quoteId}`, leadId: q.leadId, quoteId, actorId: me.id })   /* (REG-604) as the editor's Send */
+  }
+  revalidatePath(`/quotes/${quoteId}`); revalidatePath('/quotes')
+  return { status, number: q.number, undo, told, moveTo: await moveOffer(q.leadId, quoteId, status) }
+}
+
+/** (Q3) The mark's Undo: the status and every stamp as they were, and the approvers' bell lines it raised taken back. */
+export async function undoQuoteStatus(quoteId: string, undo: StatusUndo): Promise<{ status: QuoteStatus } | { error: string }> {
+  if (!undo || !isQuoteStatus(undo.status)) return { error: 'Nothing to undo' }
+  const q = await load(quoteId)
+  if (!q) return { error: 'The quote is gone — it was deleted' }
+  const d = (n: number | null) => (typeof n === 'number' && Number.isFinite(n) ? new Date(n) : null)
+  const s = (v: string | null) => (typeof v === 'string' ? v.slice(0, 200) : null)
+  await db.update(quotes).set({
+    status: undo.status, visibility: undo.visibility === 'Shared' ? 'Shared' : 'Private', sentAt: d(undo.sentAt), clientSentAt: d(undo.clientSentAt), approvedAt: d(undo.approvedAt), approvedBy: s(undo.approvedBy),
+    submittedAt: d(undo.submittedAt), submittedBy: s(undo.submittedBy), confirmedAt: d(undo.confirmedAt), confirmedBy: s(undo.confirmedBy), signedAt: d(undo.signedAt), updatedAt: new Date(),
+  }).where(eq(quotes.id, quoteId))
+  if (typeof undo.raisedAt === 'number') await db.delete(notifications).where(and(eq(notifications.quoteId, quoteId), eq(notifications.kind, 'quote_approval'), gte(notifications.createdAt, new Date(undo.raisedAt - 1000))))
+  touch(q.leadId, quoteId); revalidatePath('/quotes')
+  return { status: undo.status }
 }

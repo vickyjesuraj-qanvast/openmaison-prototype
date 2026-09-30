@@ -30,6 +30,13 @@
 .info { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .info > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 4px; text-align: center; }
+/* (UX audit L11) The number dials: the DS link ink, its line's type, a 44px tap box paid back with margin (REG-273) so nothing moves. */
+.tel {
+  color: var(--om-color-primary-default); text-decoration: none;
+  display: inline-block; padding: 12px 0; margin: -12px 0;
+}
+.tel:active { color: var(--om-color-on-primary-variant); }
+.info > .telWrap { overflow: visible; }   /* the line's clip would cut the tap box back to 20 */
 
 /* Task box (1082:25625): border ccc, r4, p8, the title truncating before the tags. */
 .taskBox {

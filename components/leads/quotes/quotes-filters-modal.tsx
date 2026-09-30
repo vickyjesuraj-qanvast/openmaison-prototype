@@ -16,7 +16,7 @@ import { MSG } from '@/lib/forms'
 import { parseInputDate } from '@/lib/format'
 import {
   EMPTY_QUOTE_FILTERS, activeQuoteGroups, quoteStatuses,
-  type QuoteDatePreset, type QuoteDue, type QuoteFilters, type QuoteSort, type QuoteStatus,
+  type QuoteDatePreset, type QuoteDue, type QuoteFilters, type QuoteSort, type QuoteStatus, type QuoteValid,
 } from '@/lib/leads/quote-filters'
 import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-filters-modal.module.css'
@@ -29,16 +29,24 @@ import styles from './quotes-filters-modal.module.css'
  * Spec: design-source/context/lead-quotes/03-filters.txt.
  */
 
-type Group = 'sort' | 'date' | 'status' | 'due'
+type Group = 'sort' | 'date' | 'status' | 'due' | 'valid'
 const TABS: { key: Group; label: string }[] = [
   { key: 'sort', label: 'Sort' },
   { key: 'date', label: 'Date' },
   { key: 'status', label: 'Status' },
   { key: 'due', label: 'Due' },
+  { key: 'valid', label: 'Valid until' },   /* (UX audit Q5) */
 ]
 const SORTS: { key: QuoteSort; label: string }[] = [
   { key: 'newest', label: 'Newest at the top' },
   { key: 'oldest', label: 'Oldest at the top' },
+  { key: 'valid', label: 'Valid until — soonest first' },   /* (UX audit Q5) the Valid until head's own order */
+]
+/** (UX audit Q5) The quote's Valid until: this week (today and the six days after) · already passed. */
+const VALIDS: { key: QuoteValid; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'week', label: 'This week' },
+  { key: 'passed', label: 'Passed' },
 ]
 /** "Choice" chips (910:36448), left → right. */
 const PRESETS: { key: Exclude<QuoteDatePreset, ''>; label: string }[] = [
@@ -168,6 +176,15 @@ export function QuotesFiltersModal({
                         </div>
                       ))}
                     </div>
+                  </>
+                ) : tab === 'valid' ? (
+                  <>
+                    <span className={styles.sectionTitle}>Valid until</span>
+                    <RadioGroup aria-label="Valid until" value={draft.valid} onChange={(v) => setDraft((d) => ({ ...d, valid: v as QuoteValid }))}>
+                      {VALIDS.map((s) => (
+                        <div key={s.key} className={styles.sortRow}><Radio value={s.key}>{s.label}</Radio></div>
+                      ))}
+                    </RadioGroup>
                   </>
                 ) : (
                   <>

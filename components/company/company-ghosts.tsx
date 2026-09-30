@@ -1,6 +1,6 @@
 import { Bone } from '@/components/shell/skeleton'
 import { GhostField, GhostTable, Line, Slot, Words, cycle, type Col, type PhoneRows } from '@/components/shell/ghost-kit'
-import { LibraryGalleryGhost } from '@/components/company/templates/library-gallery.skeleton'
+import { LibraryGhostFor } from '@/components/company/templates/library-ghost-for'
 import { PLAN_TABS, PRICE_BOOK_TABS, TEMPLATE_KINDS } from '@/lib/company/sections'
 import { CompanyGhostFrame } from './company-ghost-frame'
 import profile from './profile-view.module.css'
@@ -276,7 +276,7 @@ export function BrandKitGhost() {
 export function TemplateLibraryGhost() {
   return (
     <CompanyGhostFrame title={100} tabs={TEMPLATE_TABS} label="Loading templates">
-      <LibraryGalleryGhost pill folders={2} cards={4} />
+      <LibraryGhostFor page="templates" pill folders={2} cards={4} />
     </CompanyGhostFrame>
   )
 }
@@ -285,7 +285,7 @@ export function TemplateLibraryGhost() {
 export function PriceBookGhost({ sections = false }: { sections?: boolean }) {
   return (
     <CompanyGhostFrame title={100} tabs={PRICE_BOOK_TABS.map((t) => t.label)} label={sections ? 'Loading My Sections' : 'Loading My Items'}>
-      <LibraryGalleryGhost pill={!sections} filters={!sections} folders={sections ? 1 : 2} cards={sections ? 4 : 5} />
+      <LibraryGhostFor page={sections ? 'price-book-sections' : 'price-book-items'} pill={!sections} filters={!sections} folders={sections ? 1 : 2} cards={sections ? 4 : 5} />
     </CompanyGhostFrame>
   )
 }

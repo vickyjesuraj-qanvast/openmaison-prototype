@@ -27,6 +27,8 @@ import { FolderCard, FolderGroup } from '@/components/om/folders/folder-card'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { FolderEmpty } from '@/components/om/folders/folder-empty'
 import { EmptyState, type EmptyAction } from '@/components/om/empty-state'
+import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
+import { libraryShape } from './library-ghost-for'
 import { MoveDialog } from '@/components/om/folders/move-dialog'
 import { NameDialog } from '@/components/leads/files/name-dialog'
 import { countLine, folderNameProblem, foldersIn, foldersUnder, liveFolder, trailTo } from '@/lib/folders'
@@ -65,7 +67,9 @@ export type LibraryKebabItem = { label: string; onSelect: () => void; tone?: 'da
 export type LibraryColumn<T> = TableColumnDef & { cell: (t: T) => ReactNode; sortable?: boolean | ((t: T) => number | string) }
 export type LibraryFilter<T> = { key: string; label: string; test: (t: T) => boolean
   /** (REG-666) A to-do, not a kind (Awaiting approval · Proposed): its words for the chip that shows while something waits. */
-  attention?: (n: number) => string }
+  attention?: (n: number) => string
+  /** (UX audit S7) The to-do chip's glyph (default the approvals' one). */
+  icon?: string }
 /** (REG-653, Q-15) A filter by one of the entry's values (a category, a vendor): the toolbar's Filters dialog, applied as picked. */
 export type LibraryFacet<T> = { key: string; label: string; options: string[]; test: (t: T, value: string) => boolean
   /** (wave E, E6) The no-filter choice's words (default "Any {label}") — "Price book link: Any · Linked · Not linked". */
@@ -183,6 +187,13 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   newIcons?: boolean
   /** (critic 14) Delete many in one call (the bulk bar), so one Undo brings back exactly what went. */
   onDeleteMany?: (ts: T[]) => Promise<unknown>
+  /** (UX audit S8) The view a member who never picked one sees: the Price book's My Items opens as the list (the listing's table model);
+      a member's own pick still sticks (om.<tableKey>.list). Default the grid. */
+  defaultView?: 'grid' | 'list'
+  /** (UX audit S7) Narrow the list to one of the filters — a fresh object each time (an import's "just imported" to-do). */
+  focusFilter?: { key: string } | null
+  /** (UX audit S12) A library with one way to make an entry (Materials): a plain button with its name, in place of a New ▾ of one row. */
+  newAction?: (place: LibraryPlace) => { label: string; onPress: () => void }
 }
 /** (F118) Where the member stands when they press New ▾. */
 export type LibraryPlace = { folderId: string | null; here: string }
@@ -265,8 +276,13 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
      and the toolbar keeps only what can act (the name, ⋮ for Deleted). The first entry brings the whole toolbar back. */
   const firstRun = items.length === 0 && flist.length === 0 && !openFolderRow
   const welcome = firstRun ? p.empty.welcome ?? null : null
+  /* (UX audit build) the shape this library opened on — its loading ghost draws the same one next time (lib/ghost-shape.tsx) */
+  useRememberShape(libraryShape(p.tableKey), firstRun)
   const [filter, setFilter] = useState('all')
-  const [listPref, setListPref] = useFlagPref(`om.${p.tableKey}.list`, false)
+  /* (UX audit S7) the caller's nudge onto one filter (render-phase adjust: a new object, a new narrowing) */
+  const [seenFocus, setSeenFocus] = useState(p.focusFilter ?? null)
+  if ((p.focusFilter ?? null) !== seenFocus) { setSeenFocus(p.focusFilter ?? null); if (p.focusFilter) setFilter(p.focusFilter.key) }
+  const [listPref, setListPref] = useFlagPref(`om.${p.tableKey}.list`, p.defaultView === 'list')
   const view: 'grid' | 'list' = phone || !listPref ? 'grid' : 'list'
   const foldColumns = view === 'list' && tabletDown   // (verify round 3) Column settings in ⋮ at 768–1024
   const [newOpen, setNewOpen] = useState(false)
@@ -499,16 +515,17 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
   )
   /* (REG-735) The first run's ways in — the caller's, each waiting with New ▾'s reason when this member may make nothing here. */
   const starts = firstRun && !welcome ? p.empty.start?.(place) ?? {} : {}
+  const newAction = !p.newBlock && p.newAction ? p.newAction(place) : null
   const blocked = (a: EmptyAction | null | undefined) => (a ? { ...a, block: a.block ?? p.newBlock ?? null } : null)
   const shellTitle = p.shell?.title ?? 'Templates'   // (F123) a one-page section (Materials) is not crumbed "Materials / Materials"
   const frame = (children: ReactNode) => (p.page ? (
-    <PageReveal skeleton={p.page.skeleton}>
+    <PageReveal skeleton={<GhostShape first={firstRun}>{p.page.skeleton}</GhostShape>}>
       <div className={pageStyles.body} style={{ position: 'relative' }}>
         <PageHeader title={p.page.title} actions={welcome ? kebab : undefined} />
         <div className={pageStyles.content}>{children}</div>
       </div>
     </PageReveal>
-  ) : <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell ? p.shell.tabs : templateTabs()} from={p.from} skeleton={p.shell?.skeleton ?? <TemplateLibraryGhost />}>{children}</CompanyShell>)   /* (REG-708) Templates' galleries: the ghost (libraries)/loading.tsx draws */
+  ) : <CompanyShell title={p.shell?.title ?? 'Templates'} tabs={p.shell ? p.shell.tabs : templateTabs()} from={p.from} skeleton={<GhostShape first={firstRun}>{p.shell?.skeleton ?? <TemplateLibraryGhost />}</GhostShape>}>{children}</CompanyShell>)   /* (REG-708) Templates' galleries: the ghost (libraries)/loading.tsx draws */
   return frame(
     <>
       {welcome ? null : p.intro}
@@ -530,7 +547,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {/* (REG-666) A to-do shows only while something here waits for it; a press narrows the list to it. */}
           {(p.filters ?? []).filter((f) => f.attention && (counts[f.key] ?? 0) > 0).map((f) => (
             <span key={f.key} className={styles.todo}>
-              <ScopePill tone="attention" icon="approval" menu={false} label={f.attention!(counts[f.key] ?? 0)} short={String(counts[f.key] ?? 0)} selected={activeFilter === f.key}
+              <ScopePill tone="attention" icon={f.icon ?? 'approval'} menu={false} label={f.attention!(counts[f.key] ?? 0)} short={String(counts[f.key] ?? 0)} selected={activeFilter === f.key}
                          onClick={() => setFilter(activeFilter === f.key ? 'all' : f.key)} />
             </span>
           ))}
@@ -555,12 +572,20 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           {F ? (
             /* (REG-664) New Folder, as the Files tab's toolbar has it — in the open folder. (wave E, gallery-9) On a phone it rides New ▾ (its
                last row), so the one row keeps the scope, New, Search, Filters and ⋮; it stays out here when New ▾ is closed to this member. */
-            <span className={styles.folderSlot} data-keep={p.newBlock ? '' : undefined}>
+            <span className={styles.folderSlot} data-keep={p.newBlock || p.newAction ? '' : undefined}>
               <Tooltip label={F.block ?? 'New Folder'}>
                 <span className={styles.newFolder}><IconButton icon="create_new_folder" label="New Folder" disabled={!!F.block} onClick={() => setNaming({ open: true, folder: null })} /></span>
               </Tooltip>
             </span>
           ) : null}
+          {newAction ? (
+            /* (UX audit S12) one way in, one plain button (the glyph on a phone, REG-354); New Folder keeps its own button beside it */
+            <span className={gallery.newAnchor}>
+              {phone ? (
+                <Tooltip label={newAction.label} shortcut="create"><IconButton icon="add" label={newAction.label} variant="primary" onClick={newAction.onPress} data-testid="new-template" data-kb="create" data-kb-label={newAction.label} /></Tooltip>
+              ) : <Button variant="primary" appearance="outlined" onPress={newAction.onPress} data-testid="new-template" data-kb="create" data-kb-label={newAction.label}>{newAction.label}</Button>}
+            </span>
+          ) : (
           <LibraryNewButton open={newOpen} onOpenChange={setNewOpen} block={p.newBlock ?? null}>
             {p.newMenu(() => setNewOpen(false), place)}
             {phone && F && !p.newBlock ? (
@@ -570,6 +595,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
               </>
             ) : null}
           </LibraryNewButton>
+          )}
           {/* (verify round 3) the search's slot — on a narrow desk the box gives first (280 → 200) so ⋮ stays in the frame; below 1025 it is no box */}
           <span className={styles.searchSlot}><ToolbarSearch query={query} onQuery={setQuery} placeholder={openFolderRow ? `Search ${openFolderRow.name}` : `Search ${noun.many}`} label={`Search ${noun.many}`} /></span>
           {/* (sweep S5 #15) the listing's Filters: the count rides the button as a badge (REG-69 · REG-295) */}
@@ -801,7 +827,7 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>{t.title}</button>{chips?.(t)}{place ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>{t.title}</button>{chips?.(t)}{place && place(t) ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
           if (key === 'updated') return cell('updated', ago(t.updatedAt.getTime(), now))
           if (key === 'by') return cell('by', t.author ? <><Avatar name={t.author} color={t.authorColor ?? 'var(--om-color-on-surface-secondary)'} size={24} tooltip={false} /><span className={table.oneLine}>{t.author}</span></> : '--', table.colBy)
           const c = extra.find((x) => x.key === key)

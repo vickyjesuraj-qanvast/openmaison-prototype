@@ -17,6 +17,7 @@ import { countedLines, descendantIds, flattenItems, groupTotals, lineCostMinor, 
 import type { PriceBookSection } from '@/lib/db/schema'
 import { parseSavedSection, parseSectionTags, savedSectionCount } from '@/lib/quotes/items-model'
 import { ItemRow, COL_CLASS, type ColWidths, type RowHandlers } from './item-row'
+import type { LineChanges } from './line-change'
 import { atEdge, focusCell, nextAcross, nextDown, rowOf, type Target } from './grid-keys'
 import { useRowDrag, type DragRow, type DropSlot } from './row-drag'
 import { ItemCards } from './item-cards'
@@ -139,10 +140,12 @@ export function buildDisplay(items: QuoteItem[], view: ItemsView, labels: string
 export function ItemsTable({
   items, priceBook, priceBookSections, brandColors, view, density, columns, onReorder, details, labels, selected, collapsedBuckets, showFull, nextNumber, h, onDropRow, fresh,
   onSelectAll, onToggleBucket, onToggleAllBuckets, onCreate, onPickPriceBook, onPickSection, onViewPriceBook, onExport, addInputRef, addOpenTick, bookPlace = null, bookPlaceSection = null, onClearBookPlace,
-  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {},
+  query, onPasteBlock, clientColumns, onAddColumn, propertyType = null, commentCounts = {}, changes,
 }: {
   /** (REG-627, parity Q-30) Each line's comment count, by id. */
   commentCounts?: Record<string, number>
+  /** (UX audit Q10) On a revision: the lines new or changed since the kept version. */
+  changes?: LineChanges
   /** (REG-619, parity Q-27) The quote's property type — the Add Item popover's My Sections filter. */
   propertyType?: string | null
   /** The head's + opens the Column settings drawer (its catalogue is where a column is added). */
@@ -376,7 +379,7 @@ export function ItemsTable({
     return (
       <div ref={wrap} className={styles.cardsWrap} data-testid="items-cards" onPaste={onPaste}>
         <ItemCards rows={shown.map((d) => (d.kind === 'row' ? { kind: 'row' as const, item: d.item, number: details.autonumber ? d.number : '' } : { kind: 'bucket' as const, key: d.key, name: d.name, number: d.number, lines: d.lines }))}
-                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} commentCounts={commentCounts} />
+                   items={items} selected={selected} groups={groups} labels={labels} brandColors={brandColors} h={h} collapsedBuckets={collapsedBuckets} onToggleBucket={onToggleBucket} showDescription={details.description} showCost={columns.includes('cost')} commentCounts={commentCounts} changes={changes} />
         {/* (wave E, phone-4) no "#n" before the field on a phone — the cards carry their own numbers, and a lone "2" floated at the edge */}
         <AddItemRow number={nextNumber} autonumber={false} priceBook={priceBook} sections={priceBookSections} propertyType={propertyType} onCreate={onCreate} onPick={onPickPriceBook} onPickSection={onPickSection} onViewPriceBook={onViewPriceBook} onExport={onExport} inputRef={addInputRef} openTick={addOpenTick} place={bookPlace} placeSection={bookPlaceSection} onClearPlace={onClearBookPlace} />
       </div>
@@ -422,7 +425,7 @@ export function ItemsTable({
             <ItemRow key={d.item.id} item={d.item} all={items} number={d.number} columns={columns} colW={colW} colStyle={D.style} details={details} density={density}
                      selected={selected.has(d.item.id)} groups={groups} selectedCount={selected.size} labels={labels}
                      {...R.rowProps(d.item.id)} fresh={fresh.has(d.item.id)}
-                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} />
+                     showFull={showFull.has(d.item.id)} fillCol={fill?.col ?? null} inFill={fillIds.has(d.item.id)} onFillStart={(col, id) => setFill({ col, from: id, to: null })} h={rowH} brandColors={brandColors} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
           ))}
           {found && !shown.some((d) => d.kind === 'row') ? <div className={styles.findEmpty} role="row" data-testid="find-empty"><span role="cell">No items match “{query.trim()}”</span></div> : null}   {/* (sweep S1) */}
           <SumRow sums={sums} priced={priced} columns={columns} colW={colW} colStyle={D.style} autonumber={details.autonumber} itemStyle={itemStyle} />

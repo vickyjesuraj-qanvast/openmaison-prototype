@@ -54,9 +54,12 @@ export function AutoFillDialog({
  * row gap is not written in the spec; 12 is what the mock's 385 total leaves (64 + 24 + [20+12+46] + 24 + 1 + 24 + [20+12+46] + 24 + 68).
  */
 export function SuggestedTasksDialog({
-  open, onClose, onSave, autoAdded, suggestions, picked, onToggle, title = 'Suggested tasks', width = 400, variant = 'wizard',
+  open, onClose, onSave, autoAdded, suggestions, picked, onToggle, title = 'Suggested tasks', width = 400, variant = 'wizard', onSkip, skipLabel = 'Cancel',
 }: {
   open: boolean; onClose: () => void; onSave: () => void
+  /** (UX audit 2026-09-30, L10) The footer's secondary button when it does more than close: the Move stage window's "Move without
+      tasks" completes the move, while ✕ / Esc (`onClose`) go back to the log. Without it the button is Cancel and closes. */
+  onSkip?: () => void; skipLabel?: string
   /** (REG-319) Empty when nothing was scheduled — the Auto added group is then left out. */
   autoAdded: string; suggestions: string[]
   picked: Set<string>; onToggle: (s: string) => void
@@ -65,7 +68,7 @@ export function SuggestedTasksDialog({
   variant?: SharedDialogVariant
 }) {
   const notes = variant === 'notes'
-  const footer = <><Button variant="secondary" appearance="outlined" onPress={onClose}>Cancel</Button>
+  const footer = <><Button variant="secondary" appearance="outlined" onPress={onSkip ?? onClose}>{skipLabel}</Button>
                    <Button onPress={onSave}>Save</Button></>
   if (notes) {
     return (

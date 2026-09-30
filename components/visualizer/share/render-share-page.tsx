@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent, type RefObject } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, TextArea } from '@/components/ds'
 import { CompareSlider } from '@/components/om/compare-slider'
@@ -13,7 +13,7 @@ import { displayDate, isSgPhone, phoneDigits, phoneLocal, phoneTyped } from '@/l
 import type { Pin, PublicShare } from '@/lib/visualizer/queries'
 import { DraftPin, PinThread } from '@/components/visualizer/editor/pin-card'
 import { askCallBack, clientPin, clientReply, leaveNote, pickFavourite, stampShareView } from '@/app/renders/actions'
-import { clientRoomNames, roomsInSentence } from '@/lib/visualizer/outputs'
+import { clientRoomNames } from '@/lib/visualizer/outputs'
 import styles from './render-share-page.module.css'
 
 type V = PublicShare['versions'][number]
@@ -70,6 +70,33 @@ function useSnackAboveSheet(open: boolean) {
 }
 
 /**
+ * (UX audit V10) While the note box is open, the snackbars rest above it — "Thanks — Dane will see it’s your favourite" never covers the note's
+ * Send. The house offset (`--bottom-dock`, REG-302) follows the box as the page scrolls, and is given back when the box closes or leaves the
+ * snackbar's band.
+ */
+function useSnackAboveBox(box: RefObject<HTMLElement | null>, open: boolean) {
+  useEffect(() => {
+    const el = box.current
+    if (!open || !el) return
+    const css = document.documentElement.style
+    let raf = 0
+    const write = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect(), H = window.innerHeight, base = window.matchMedia('(max-width: 767px)').matches ? 16 : 24
+        /* the snackbar's band: its 48 over the house gap; the box reaching into it (and room above it) lifts the snackbar over the box */
+        if (r.bottom > H - base - 48 - 8 && r.top < H && r.top > 80) css.setProperty('--bottom-dock', `${Math.max(0, Math.round(H - r.top + 8 - base))}px`)
+        else css.removeProperty('--bottom-dock')
+      })
+    }
+    write()
+    const ro = new ResizeObserver(write); ro.observe(el)
+    window.addEventListener('scroll', write, { passive: true }); window.addEventListener('resize', write)
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener('scroll', write); window.removeEventListener('resize', write); css.removeProperty('--bottom-dock') }
+  }, [box, open])
+}
+
+/**
  * The client's link (REG-676, Q-14 · Q-15 · Q-16; 1.0's `/renders/[token]` homeowner page, A E-04…E-20, on 2.0's signing-page frame):
  * the studio's letterhead, the note it came with, then each design as the studio made it — before and after, what changed — with
  * *I like this one*, a note, and pins on the picture; at the foot, *Ask for a call back*. Everything the client says lands on the lead.
@@ -77,7 +104,6 @@ function useSnackAboveSheet(open: boolean) {
 export function RenderSharePage({ data }: { data: PublicShare }) {
   const snack = useSnackbar()
   const [fav, setFav] = useState(data.favourite)
-  const first = data.lead?.name.split(' ')[0] ?? null
   /* (F102 · F103) the client's words: rooms without "sketch", in the design's order, joined as a sentence ("living room, bedroom and kitchen");
      (round 1) the editor's "2" goes when the link has one room of that name, and the headline says the rooms as the WhatsApp preview does */
   const rooms = [...new Set(data.versions.map((v) => v.clientRoom))]
@@ -103,8 +129,9 @@ export function RenderSharePage({ data }: { data: PublicShare }) {
       <Letterhead data={data} />
       <main className={styles.body}>
         <section className={styles.intro}>
-          <span className={styles.eyebrow}>{first ? `For ${first}` : 'Design ideas'}</span>
-          <h1 className={styles.title}>{data.versions.length === 1 ? 'A design idea' : `${data.versions.length} design ideas`} for your {roomsInSentence(rooms.map((r) => words.get(r) ?? r))}</h1>
+          {/* (UX audit V10) whose design it is — the lead, or the design's own name — never the studio's name for a room ("your Original") */}
+          <span className={styles.eyebrow}>Design ideas</span>
+          <h1 className={styles.title} data-testid="render-share-title">{data.headline}</h1>
           {data.message ? <blockquote className={styles.message}><p>{data.message}</p><cite>{data.sender ?? data.studio.name}, {data.studio.name}</cite></blockquote>
             : data.sender ? <p className={styles.byline} data-testid="render-share-sender">From {data.sender}, {data.studio.name}</p> : null}
           <p className={styles.how}><Icon name="star" size={18} weight={300} /><span>{tap} <b>I like this one</b> on your favourite, pin a note on anything you’d change, or ask {sender} to call you.</span></p>
@@ -229,14 +256,18 @@ function VersionCard({ v, token, favourite, onLike, pins, notes, now, sender, ta
   }
   const activePin = active ? pins.find((p) => p.id === active) ?? null : null
   useSnackAboveSheet(sheet && !compare && (!!draft || !!activePin))
+  const writeBox = useRef<HTMLDivElement>(null)
+  useSnackAboveBox(writeBox, writing)
   const tools = 3 + (v.beforeUrl ? 1 : 0)
   /* (F103) the client's words — "Design 2 · Golden Hour" — never the studio's strip shorthand ("Walls, Floor +1") */
   const [lead, ...rest] = v.clientLabel.split(' · ')
   const tail = rest.join(' · ')
+  /* (UX audit V10) the studio's own number beside the client's — "Design 1" is the studio's V1, so both can say the same thing on a call */
+  const studioN = /^V\d+/.exec(v.label)?.[0] ?? null
   return (
     <article className={styles.card} data-favourite={favourite || undefined} data-testid="render-share-version">
       <div className={styles.cardHead}>
-        <span className={styles.cardTitle}><b>{lead}</b>{tail ? ` · ${tail}` : ''}</span>
+        <span className={styles.cardTitle}><b>{lead}</b>{tail ? ` · ${tail}` : ''}{studioN ? <span className={styles.studioRef} data-testid="render-share-ref"><span className="visually-hidden">, {sender}’s </span>{studioN}</span> : null}</span>
         {favourite ? <span className={styles.favBadge}><Icon name="star" size={16} fill />Your favourite</span> : null}
       </div>
       <div className={styles.media} data-pinning={pinning || undefined} onPointerDown={onDown}>
@@ -266,11 +297,17 @@ function VersionCard({ v, token, favourite, onLike, pins, notes, now, sender, ta
       ) : null}
       {notes.length ? (
         <div className={styles.notes}>
-          {notes.map((n) => <div key={n.id} className={styles.said}><span className={styles.saidWho}>You · {said(n.createdAt, now)}</span>{n.message}</div>)}
+          {notes.map((n) => (
+            <div key={n.id} className={styles.saidGroup}>
+              <div className={styles.said}><span className={styles.saidWho}>You · {said(n.createdAt, now)}</span>{n.message}</div>
+              {/* (UX audit V1) the studio's answer, under the note it answers */}
+              {n.replies.map((r) => <div key={r.id} className={styles.said} data-from="studio" data-testid="render-share-reply"><span className={styles.saidWho}>{r.who} · {said(r.createdAt, now)}</span>{r.message}</div>)}
+            </div>
+          ))}
         </div>
       ) : null}
       {writing ? (
-        <div className={styles.write}>
+        <div ref={writeBox} className={styles.write}>
           <TextArea label="Your note" placeholder="e.g. Love the floor — could the walls be a little warmer?" value={note} onChange={(x: string) => setNote(x)} autoFocus />
           <span className={styles.writeActions}><Button appearance="outlined" variant="secondary" onPress={() => { setWriting(false); setNote('') }}>Cancel</Button><Button isDisabled={!note.trim() || busy} onPress={() => { void sendNote() }} data-testid="render-share-send-note">{busy ? 'Sending…' : 'Send'}</Button></span>
         </div>

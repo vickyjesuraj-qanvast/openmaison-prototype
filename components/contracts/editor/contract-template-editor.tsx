@@ -15,7 +15,9 @@ import { useFlagPref } from '@/lib/prefs'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
 import { savedLabel } from '@/lib/contracts/model'
-import { outlineOf } from '@/lib/contracts/tokens'
+import { isBlankDoc, outlineOf, signFieldsIn } from '@/lib/contracts/tokens'
+import { Icon } from '@/components/om/icon'
+import bannerStyles from '@/components/quotes/editor/template-bar.module.css'
 import type { ContractTemplateEditorData } from '@/lib/contracts/queries'
 import { deleteContractTemplate, duplicateContractTemplate, saveContractTemplate } from '@/app/company/contract-templates-actions'
 import { isRefusal } from '@/lib/company/template-rules'
@@ -80,6 +82,8 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
     return () => window.removeEventListener('pagehide', onHide)
   }, [])
   const outline = useMemo(() => outlineOf(body), [body])
+  /* (UX audit C4) A template with nowhere for the client to sign starts contracts that can never be sent — said while it is being written. */
+  const noClientSign = useMemo(() => !isBlankDoc(body) && !signFieldsIn(body).includes('client-signature'), [body])
   const backHref = from ?? '/company/templates/contracts'
   const close = () => { void flushRef.current(); router.push(backHref) }
 
@@ -105,6 +109,13 @@ export function ContractTemplateEditor({ data, from }: { data: ContractTemplateE
             <Button variant="secondary" appearance="text" onPress={() => snackbar({ message: 'Smart Text chips fill in from the lead, the quote and your studio when a contract starts from this template' })}>How chips fill in</Button>
           </div>
         </div>
+        {noClientSign ? (
+          <div className={bannerStyles.banner} role="status" data-tone="changes" data-testid="template-no-client-sign">
+            <span className={bannerStyles.bannerIcon}><Icon name="warning" size={20} weight={300} /></span>
+            <span className={bannerStyles.bannerText}>There’s nowhere for the client to sign — a contract started from this template can’t be sent until it has a Client signature.</span>
+            <span className={bannerStyles.bannerActions}><Button variant="secondary" appearance="outlined" onPress={() => setEsign(true)}>Insert a Client signature</Button></span>
+          </div>
+        ) : null}
         <DocToolbar editor={editor} state={docState} values={values} onESign={() => setEsign((o) => !o)} eSignOpen={esign} onOutline={() => (narrow ? setOutlineDrawer((o) => !o) : setOutlinePref(!outlinePref))} outlineOpen={narrow ? outlineDrawer : outlinePref} />
         <div className={styles.body}>
           {outlinePref && !narrow ? <OutlinePane items={outline} onPick={(i) => editor.current?.scrollToHeading(i)} onClose={() => setOutlinePref(false)} /> : null}

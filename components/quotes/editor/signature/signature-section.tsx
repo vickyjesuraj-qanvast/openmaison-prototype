@@ -118,7 +118,7 @@ export function SignatureCard({ seed, open, onToggle, onHandlePointerDown, onSav
  * signature as" Draw / Type (radio rows), the 752×140 preview — the name in the signature face, or a drawing surface with
  * Clear — and Cancel · Save. Drawing is pointer-driven (a finger works) and stored as an SVG path on the box's 752×140.
  */
-function SignatureSettings({ open, value, onChange, onClose, onSave }: {
+export function SignatureSettings({ open, value, onChange, onClose, onSave }: {
   open: boolean
   value: { kind: 'draw' | 'type'; name: string; data: string } | null
   onChange: (v: { kind: 'draw' | 'type'; name: string; data: string } | null) => void

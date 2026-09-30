@@ -26,6 +26,9 @@ export type LeadRow = Lead & {
   contactCount: number
   /** (REG-640, X-Ray parity Q-18) The lead's latest Quote X-Ray: the other studio it was compared with — the Lost dialog's competitor. */
   lastComparison: { studio: string; at: number } | null
+  /** (UX audit L3) Since when the lead has sat in its stage: the latest move into it, else its creation (a lead still in New) — the cards'
+   *  "5d in Met" and the In stage column. */
+  stageSince: Date
 }
 export type LastContact = { at: Date; channel: string | null; outcome: string | null }
 
@@ -126,8 +129,9 @@ function buildLeadRows(rows: Lead[], { tasks, links, team, logs, rets, contacts,
       resumeStage: resumeStageOf(l),
       returnStatus: latestReturn.get(l.id) ?? null,
       lastContact: lastContactOf(l.id, contacts, logsByLead.get(l.id) ?? [], stageData),
-      contactCount: contacts.filter((c) => c.leadId === l.id).length + (stageData.logs?.length ?? 0),   // (REG-607)
+      contactCount: contacts.filter((c) => c.leadId === l.id).length + (stageData.logs?.filter((x) => !x.noteId).length ?? 0),   // (REG-607; UX audit 2026-09-30, L2: a Notes log carried into Contacted counts once)
       lastComparison: ((x) => (x ? { studio: x.otherStudio, at: x.createdAt.getTime() } : null))(xrays.find((x) => x.leadId === l.id)),   // (REG-640)
+      stageSince: logsByLead.get(l.id)?.filter((g) => g.toStage === l.stage).at(-1)?.createdAt ?? l.createdAt,   // (UX audit L3) logs are oldest first
     }
   })
 }

@@ -37,10 +37,11 @@ export function FieldError({ message }: { message?: string }) {
   return message ? <span className={styles.fieldError} role="alert">{message}</span> : null
 }
 
-export function SectionRow({ label, action }: { label: string; action?: ReactNode }) {
+/** `required` (UX audit 2026-09-30, L2) marks a mandatory attach row the way ChoiceChips marks its label — "…*". */
+export function SectionRow({ label, action, required = false }: { label: string; action?: ReactNode; required?: boolean }) {
   return (
     <div className={styles.rowBetween}>
-      <span className={styles.sectionLabel}>{label}</span>
+      <span className={styles.sectionLabel}>{required ? `${label}*` : label}</span>
       {action}
     </div>
   )
@@ -111,8 +112,10 @@ export function NotesArea({ value, onChange }: { value: string; onChange: (v: st
  * `variant="notes"` = Notes › Auto Fill (931:45344, spec 02): 552×168, the helper 237 wide and centred.
  * Keyboard: the box is a real tab stop; Enter / Space open the file picker (audit 2026-08-30).
  */
-export function Dropzone({ title, helper, onPick, uploading, accept, variant, onBrowse, label = 'Upload file' }: {
+export function Dropzone({ title, helper, onPick, onPickMany, uploading, accept, variant, onBrowse, label = 'Upload file' }: {
   title: ReactNode; helper?: string; onPick: (file?: File) => void; uploading?: boolean; accept?: string
+  /** (UX audit 2026-09-30, T2) Several files per pick and per drop — given, the picker takes many and every file goes here (not `onPick`). */
+  onPickMany?: (files: File[]) => void
   /** (sweep S3) What the box uploads, for a screen reader — two dropzones side by side must not both be "Upload file". */
   label?: string
   /** notes = the Auto Fill box (168 tall) · compact = the quote editor's 68px strip (1267:36650, REG-419). */
@@ -141,15 +144,15 @@ export function Dropzone({ title, helper, onPick, uploading, accept, variant, on
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onBrowse) onBrowse(); else inputRef.current?.click() } }}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
-      onDrop={(e) => { e.preventDefault(); setOver(false); onPick(e.dataTransfer.files[0]) }}
+      onDrop={(e) => { e.preventDefault(); setOver(false); if (onPickMany) onPickMany([...e.dataTransfer.files]); else onPick(e.dataTransfer.files[0]) }}
       role="button"
       tabIndex={0}
       aria-label={label}
     >
       <span className={styles.dropTitle}>{title}</span>
       {helper ? <span className={styles.dropHelper}>{helper}</span> : null}
-      <input ref={inputRef} type="file" accept={accept} className={styles.fileInput} tabIndex={-1} aria-hidden
-             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; onPick(f) }} />
+      <input ref={inputRef} type="file" accept={accept} className={styles.fileInput} tabIndex={-1} aria-hidden multiple={!!onPickMany}
+             onChange={(e) => { const list = [...(e.target.files ?? [])]; e.target.value = ''; if (onPickMany) { if (list.length) onPickMany(list) } else onPick(list[0]) }} />
     </div>
   )
 }

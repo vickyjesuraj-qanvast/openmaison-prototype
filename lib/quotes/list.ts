@@ -10,11 +10,12 @@ import type { PickerExtras } from '@/lib/templates/picker'
 import { SAMPLE_DATA, type DocData } from '@/lib/templates/data'
 import type { BrandKit } from '@/lib/templates/model'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
+import { sentToClientDates } from './sent-to-client'
 
 /* Tools › Quotes (REG-422): every live quote in the studio with the lead it belongs to — the Quotes tab's table plus a
    Client column — and the leads the Create Quote modal's Client field can choose from. */
 
-export type StudioQuoteRow = Quote & { leadName: string; creator: Member | null }   /* creator: REG-471 */
+export type StudioQuoteRow = Quote & { leadName: string; creator: Member | null; /** (UX audit Q5) the day it went to the client */ sentToClientAt: Date | null }   /* creator: REG-471 */
 export type StudioQuotesData = {
   quotes: StudioQuoteRow[]
   leads: { id: string; name: string }[]
@@ -51,5 +52,6 @@ export async function fetchStudioQuotes(): Promise<StudioQuotesData> {
   const seen = await visibleLeadIds(viewer)
   if (seen) { rows.splice(0, rows.length, ...rows.filter((r) => seen.has(r.quote.leadId))); clients.splice(0, clients.length, ...clients.filter((c) => seen.has(c.id))) }
   const canApprove = await isApprover(me?.id, me?.role)   // (REG-624)
-  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
+  const sent = await sentToClientDates(rows.map((r) => r.quote))   // (UX audit Q5)
+  return { quotes: rows.map((r) => ({ ...r.quote, leadName: r.leadName, creator: r.quote.createdBy ? byMember.get(r.quote.createdBy) ?? null : null, sentToClientAt: sent.get(r.quote.id) ?? null })), leads: clients, templates, priceBookCount: book[0]?.n ?? 0, approval, canApprove, viewer: { id: viewer.id, role: viewer.role }, extras, brand: brand.kit, sample: { ...SAMPLE_DATA, studio: brand.details }, now: Date.now() }
 }

@@ -54,7 +54,7 @@ export function focusDatePicker() {
 }
 
 export function DatePicker({
-  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date', withTime = false, defaultHour = 10,
+  open, anchorRef, anchorKey = '', value, today, onSelect, onClose, label = 'Choose a date', withTime = false, defaultHour = 10, defaultNow = false,
 }: {
   open: boolean
   anchorRef: RefObject<HTMLElement | null>
@@ -70,6 +70,9 @@ export function DatePicker({
   withTime?: boolean
   /** Hour applied to a freshly picked day when the field had no time yet. */
   defaultHour?: number
+  /** (UX audit 2026-09-30, L9) Opt-in: a freshly picked day takes the time it is NOW instead of `defaultHour` — a contact or meeting
+      log records when it happened, and a silent 10:00 AM put a 12:21 PM call before the lead existed. Read at the press, never in render. */
+  defaultNow?: boolean
 }) {
   const isClient = useSyncExternalStore(subscribeNoop, () => true, () => false)
   const [seed, setSeed] = useState({ open, anchorKey })
@@ -152,7 +155,11 @@ export function DatePicker({
   }, [open, anchorRef])
 
   // Time row: edits apply to the current value (or today at defaultHour when nothing is picked yet).
-  const base = () => { const d = value ? new Date(value) : new Date(today); if (!value) d.setHours(defaultHour, 0, 0, 0); return d }
+  const base = () => {
+    const d = value ? new Date(value) : new Date(today)
+    if (!value) { if (defaultNow) { const n = new Date(); d.setHours(n.getHours(), n.getMinutes(), 0, 0) } else d.setHours(defaultHour, 0, 0, 0) }
+    return d
+  }
   const withDay = (day: Date) => { const d = new Date(day); const b = base(); d.setHours(b.getHours(), b.getMinutes(), 0, 0); return d }
   const setHour12 = (h: string) => { const d = base(); const pm = d.getHours() >= 12; d.setHours((Number(h) % 12) + (pm ? 12 : 0)); onSelect(d) }
   const setMinute = (m: string) => { const d = base(); d.setMinutes(Number(m)); onSelect(d) }

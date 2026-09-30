@@ -9,7 +9,7 @@ import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon } from '@/components/om/snackbar'
 import { openGlobalSearch } from './global-search'
-import { ToolsPopover } from './tools-popover'
+import { ToolsPopover, onToolsPage } from './tools-popover'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { openNotifications } from '@/components/shell/notifications-panel'
 import { ViewAsPopover } from './view-as-popover'
@@ -47,6 +47,11 @@ const BOTTOM_ITEMS = [
  *  `credits`: the studio's plan and AI credits for the Upgrade slot (REG-701) — Upgrade on Free, the balance on a paid plan. */
 /** (REG-715) The rail's places the G then … keys go to (`lib/keys/registry.ts` GO). */
 const GO_BY_HREF: Record<string, string> = { '/tasks': 'go.tasks', '/leads': 'go.leads', '/settings': 'go.settings' }
+/** (UX audit V6) The rail's dead ends say so where they are pointed at — the tooltip, the name a screen reader reads — as the Company panel's
+    "Soon" does; the press still answers "Coming soon in OpenMaison 2.0". */
+export const SOON = ' · coming soon'
+/** (UX audit 2026-09-30, T5) Where an item lands while it wears its badge: Tasks' red number is the viewer's own overdue tasks, so it opens them. */
+const BADGE_LANDING: Record<string, string> = { '/tasks': '/tasks?scope=mine&due=overdue' }
 
 export function AppRail({ badges, team = [], credits = null }: { badges?: Record<string, number>; team?: SessionMember[]; credits?: CreditsChrome | null } = {}) {
   const comingSoon = useComingSoon()
@@ -85,7 +90,10 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
   const navItem = (it: { icon: string; label: string; href?: string; panel?: string }, extra?: string) => {
     /* (REG-715) G then … — the key shows in the item's tooltip, collapsed or wide, and the ? panel lights it */
     const shortcut = it.href ? GO_BY_HREF[it.href] : it.label === 'Notifications' ? 'go.notifications' : undefined
-    const active = (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel))
+    /* (UX audit V7) Tools lights on its pages — Quotes, Quote X-Ray, Contracts, the AI Visualizer and what opens from them — as Company does on /company */
+    const active = (!!it.href && (pathname === it.href || pathname.startsWith(`${it.href}/`))) || (!!it.panel && pathname.startsWith(it.panel)) || (it.label === 'Tools' && onToolsPage(pathname))
+    /* (UX audit V6) a coming-soon item says so in its tooltip and its name */
+    const soon = !it.href && !it.panel && it.label !== 'Tools' && it.label !== 'Notifications' && it.icon !== 'diamond'
     const className = extra ? `${styles.item} ${extra}` : styles.item
     const inner = (
       <>
@@ -99,6 +107,7 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
         )}
         {(it.href && badges?.[it.href]) || (it.panel && badges?.[it.panel]) ? <span className={styles.badge} aria-hidden>{badges?.[it.href ?? it.panel ?? '']}</span> : null}
         {it.label === 'Notifications' && badges?.notifications ? <span className={styles.badge} aria-hidden>{badges.notifications}</span> : null}   {/* (REG-604) */}
+        {it.label === 'Tools' && badges?.tools ? <span className={styles.badge} aria-hidden>{badges.tools}</span> : null}   {/* (UX audit Q4) quotes waiting for this approver */}
         <span className={styles.label}>{it.label}</span>
       </>
     )
@@ -115,22 +124,22 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
     if (it.label === 'Tools') {
       return (
         <Tooltip key={it.label} label={it.label} side="right" disabled={expanded || toolsOpen}>
-          <button ref={toolsRef} type="button" className={className} aria-label={it.label} data-active={toolsOpen ? 'true' : undefined}
-                  aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen((o) => !o)}>
+          <button ref={toolsRef} type="button" className={className} aria-label={badges?.tools ? `${it.label} (${badges.tools} ${badges.tools === 1 ? 'quote waits' : 'quotes wait'} for your approval)` : it.label} data-active={toolsOpen || active || undefined}
+                  aria-haspopup="menu" aria-expanded={toolsOpen} aria-current={active ? 'page' : undefined} onClick={() => setToolsOpen((o) => !o)}>
             {inner}
           </button>
         </Tooltip>
       )
     }
     return (
-      <Tooltip key={it.label} label={it.label} side="right" disabled={expanded && !shortcut} shortcut={shortcut}>
+      <Tooltip key={it.label} label={soon ? `${it.label}${SOON}` : it.label} side="right" disabled={expanded && !shortcut && !soon} shortcut={shortcut}>
         {it.href ? (
-          <Link href={it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
+          <Link href={badges?.[it.href] ? BADGE_LANDING[it.href] ?? it.href : it.href} className={className} data-kb={shortcut} data-active={active || undefined} aria-label={badges?.[it.href] ? `${it.label} (${badges[it.href]} overdue)` : it.label}
                 aria-current={active ? 'page' : undefined}>
             {inner}
           </Link>
         ) : (
-          <button type="button" className={className} data-kb={shortcut} data-notifications-tile={it.label === 'Notifications' || undefined} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
+          <button type="button" className={className} data-kb={shortcut} data-notifications-tile={it.label === 'Notifications' || undefined} aria-label={it.label === 'Notifications' && badges?.notifications ? `Notifications (${badges.notifications} unread)` : soon ? `${it.label}${SOON}` : it.label} onClick={it.label === 'Notifications' ? openNotifications : comingSoon}>   {/* (REG-604) the bell opens the feed */}
             {inner}
           </button>
         )}
@@ -214,7 +223,7 @@ export function AppRail({ badges, team = [], credits = null }: { badges?: Record
         </Tooltip>
         </div>
       </nav>
-      <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} />
+      <ToolsPopover open={toolsOpen} anchor={toolsRef} onClose={() => setToolsOpen(false)} counts={badges?.tools ? { quotes: badges.tools } : undefined} />
       <ViewAsPopover open={viewAsOpen} anchor={studioRef} onClose={() => setViewAsOpen(false)} team={team} />
       <CompanyPopover open={companyOpen} anchor={companyRef} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
     </div>

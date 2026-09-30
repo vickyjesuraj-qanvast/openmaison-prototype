@@ -32,8 +32,10 @@ export type FilesToolbarProps = {
   onQuery: (q: string) => void
   /** New File menu (931:40128): From Local Files · From Company Files · From Google Drive. */
   onNew: (kind: 'local' | 'company' | 'drive') => void
-  /** filter_list (931:40164) — no Files filter is mocked; the caller answers coming soon. */
+  /** filter_list (931:40164) — (UX audit 2026-09-30, T9) opens Files › Filters (Type · Owner · Updated); no mock, the Tasks panes. */
   onFilter: () => void
+  /** Active filter groups — the badge on the filter button (the tab toolbars' pattern). */
+  filterCount?: number
   /** Column settings (REG-454) — only in the list view, and never on a phone. */
   onColumns?: () => void
   view: FilesView
@@ -52,7 +54,7 @@ export type FilesToolbarProps = {
  * Copied from components/leads/contracts/contracts-toolbar.tsx — same geometry, the Files copy + the segmented view toggle.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, onColumns, view, onView, onMenu, bare = false }: FilesToolbarProps) {
+export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, onQuery, onNew, onFilter, filterCount = 0, onColumns, view, onView, onMenu, bare = false }: FilesToolbarProps) {
   const [menu, setMenu] = useState<'new' | 'more' | 'folder' | null>(null)
   const folder = trail[trail.length - 1] ?? null
   const folderAnchor = useRef<HTMLElement | null>(null)
@@ -115,9 +117,13 @@ export function FilesToolbar({ trail, onGo, onNewFolder, onFolderMenu, query, on
             (lib/leads/file-model.ts). The placeholder names those fields; the aria-label stays the plain name. */}
         <ToolbarSearch query={query} onQuery={onQuery} placeholder="Search name, owner, type…" label="Search files" />
         {/* (REG-273) `touchBtn` / `viewToggle` grow these 36px boxes to 40 at ≤767 — the icons keep their size. */}
-        <Tooltip label="Filters" shortcut="filters">
-          <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label="Filters" className={styles.touchBtn} onClick={onFilter} />
-        </Tooltip>
+        <span className={styles.filterWrap}>
+          <Tooltip label="Filters" shortcut="filters">
+            <IconButton icon="filter_list" data-kb="filters" data-kb-label="Filters" label={filterCount ? `Filters (${filterCount} active)` : 'Filters'} className={styles.touchBtn}
+                        onClick={onFilter} selected={filterCount > 0} />
+          </Tooltip>
+          {filterCount > 0 ? <span className={styles.filterBadge} aria-hidden>{filterCount}</span> : null}
+        </span>
         {onColumns ? (
           /* Column settings (REG-454): the same drawer as the leads listing, after Filters — hidden ≤767 where the cards place every cell. */
           <Tooltip label="Column settings">

@@ -4,9 +4,9 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { and, asc, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadEvents, leadFileImages, libraryFolders, leadFileRenders, leadFiles, leads, members, priceBookItems, projectRooms, quoteItems, quotes, renderAnnotations, renderImages, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom } from '@/lib/db/schema'
+import { leadEvents, leadFileImages, libraryFolders, leadFileRenders, leadFiles, leads, members, priceBookItems, projectRooms, quoteItems, quotes, renderAnnotations, renderConsultationRequests, renderImages, renderJobs, renderShareLinks, studioMaterials, visualizerDesigns, type ProjectRoom } from '@/lib/db/schema'
 import { actingMember } from '@/lib/contracts/automation'
-import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
+import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { logLeadEvent, type LeadEventDetail, type LeadEventKind } from '@/lib/leads/events'
 import { sampleByKey } from '@/lib/visualizer/samples'
 import { displayDayShortMonth } from '@/lib/format'
@@ -146,6 +146,81 @@ export async function openLeadDesign(leadId: string): Promise<{ id: string } | E
   if (!made) return { error: 'Couldn’t open the lead’s design — please try again.' }
   if (made.id === id) revalidatePath('/visualizer')
   return { id: made.id }
+}
+
+/* ── (UX audit V2) a personal design joins a lead ── */
+/** What "Link to a lead…" offers: the leads this member sees, each with why it can't take the design when it can't — a lead has one design
+    (its own, or one waiting in Deleted Designs), and a lead returned or deleted takes no more. Newest leads first. */
+export type LinkableLead = { id: string; name: string; stage: string; propertyType: string | null; blocked: string | null }
+export async function leadsToLink(): Promise<LinkableLead[]> {
+  const viewer = await fetchViewer()
+  const [rows, designs, visible] = await Promise.all([
+    db.select({ id: leads.id, name: leads.name, stage: leads.stage, propertyType: leads.propertyType, createdAt: leads.createdAt }).from(leads).where(isNull(leads.deletedAt)).orderBy(desc(leads.createdAt)),
+    db.select({ leadId: visualizerDesigns.leadId, deletedAt: visualizerDesigns.deletedAt }).from(visualizerDesigns).where(eq(visualizerDesigns.kind, 'lead')),
+    visibleLeadIds(viewer),
+  ])
+  const out: LinkableLead[] = []
+  for (const l of rows) {
+    if (visible && !visible.has(l.id)) continue
+    const d = designs.find((x) => x.leadId === l.id)
+    const blocked = d ? (d.deletedAt ? 'Its design is in Deleted Designs' : 'Has a design already') : (await leadClosed(l.id)) ? 'Returned or closed — takes no designs' : null
+    out.push({ id: l.id, name: l.name, stage: l.stage, propertyType: l.propertyType, blocked })
+  }
+  return out
+}
+/** The design as it was before it joined the lead — what Undo puts back, and when it joined (Undo is for right after). */
+export type Unlink = { name: string; folderId: string | null; at: number }
+/**
+ * (UX audit V2) Link to a lead: a personal design becomes that lead's design — named after the lead, out of the folders (a lead's design lives
+ * with its lead), its rooms, renders and client links the lead's, so Save to Files and Add to a quote work and what the client says reaches
+ * the lead's members. The design's own rule (its maker, an Owner or an Admin) and Who sees leads; one design per lead.
+ */
+export async function linkDesignToLead(designId: string, leadId: string): Promise<{ ok: true; leadId: string; leadName: string; undo: Unlink } | Err> {
+  const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
+  if (got.d.kind === 'lead') return { error: 'This design is already a lead’s.' }
+  const block = designChangeBlock(got.viewer, got.d.createdBy, await makerName(got.d.createdBy)); if (block) return { error: block }
+  const [lead] = await db.select({ id: leads.id, name: leads.name }).from(leads).where(and(eq(leads.id, String(leadId)), isNull(leads.deletedAt)))
+  if (!lead || !(await canOpenLead(got.viewer, lead.id))) return { error: 'That lead is gone or not yours to open.' }
+  if (await leadClosed(lead.id)) return { error: `${lead.name} was returned or closed — it takes no designs.` }
+  const [has] = await db.select({ deletedAt: visualizerDesigns.deletedAt }).from(visualizerDesigns).where(and(eq(visualizerDesigns.leadId, lead.id), eq(visualizerDesigns.kind, 'lead')))
+  if (has) return { error: has.deletedAt ? `${lead.name}’s design is in Deleted Designs — restore it there instead.` : `${lead.name} already has a design — open it from the lead.` }
+  const at = now()
+  const rooms = await db.select({ id: projectRooms.id }).from(projectRooms).where(eq(projectRooms.designId, designId))
+  try {
+    await db.transaction(async (tx) => {
+      await tx.update(visualizerDesigns).set({ kind: 'lead', leadId: lead.id, sourceLeadId: null, name: lead.name, folderId: null, updatedAt: at }).where(eq(visualizerDesigns.id, designId))
+      await tx.update(projectRooms).set({ leadId: lead.id }).where(eq(projectRooms.designId, designId))
+      if (rooms.length) await tx.update(renderJobs).set({ leadId: lead.id }).where(inArray(renderJobs.roomId, rooms.map((r) => r.id)))
+      await tx.update(renderShareLinks).set({ leadId: lead.id }).where(eq(renderShareLinks.designId, designId))
+    })
+  } catch { return { error: `${lead.name} already has a design — open it from the lead.` } }   // two links at once: the one-per-lead index keeps the first
+  touch(designId, lead.id)
+  return { ok: true, leadId: lead.id, leadName: lead.name, undo: { name: got.d.name, folderId: got.d.folderId, at: at.getTime() } }
+}
+/** (UX audit V2) Link to a lead's Undo — right after, and only while nothing has happened since that belongs to the lead (a version filed in
+    its Files, a new link sent from it). The design goes back to personal, with its name and its folder. */
+export async function unlinkDesign(designId: string, undo: Unlink): Promise<{ ok: true } | Err> {
+  const got = await designFor(designId); if (!got) return { error: 'That design is gone.' }
+  if (got.d.kind !== 'lead' || !got.d.leadId) return { ok: true }
+  const block = designChangeBlock(got.viewer, got.d.createdBy, await makerName(got.d.createdBy)); if (block) return { error: block }
+  const at = Number(undo?.at)
+  const later = 'Newer changes came after that — it stays with the lead'
+  const sec = (ms: number) => Math.floor(ms / 1000)   // the stamps are kept to the second
+  if (!Number.isFinite(at) || Date.now() - at > UNDO_MS || sec(got.d.updatedAt.getTime()) !== sec(at)) return { error: later }
+  const [filed] = await db.select({ fileId: leadFileRenders.fileId }).from(leadFileRenders).where(eq(leadFileRenders.designId, designId)).limit(1)
+  const [sent] = await db.select({ id: renderShareLinks.id }).from(renderShareLinks).where(and(eq(renderShareLinks.designId, designId), sql`${renderShareLinks.createdAt} >= ${sec(at)}`)).limit(1)
+  if (filed || sent) return { error: later }
+  const folderId = undo.folderId ? ((await db.select({ id: libraryFolders.id }).from(libraryFolders).where(and(eq(libraryFolders.id, undo.folderId), eq(libraryFolders.library, 'visualizer'), isNull(libraryFolders.deletedAt))))[0]?.id ?? null) : null
+  const leadId = got.d.leadId
+  const rooms = await db.select({ id: projectRooms.id }).from(projectRooms).where(eq(projectRooms.designId, designId))
+  await db.transaction(async (tx) => {
+    await tx.update(visualizerDesigns).set({ kind: 'personal', leadId: null, name: cleanName(undo.name) || got.d.name, folderId, updatedAt: now() }).where(eq(visualizerDesigns.id, designId))
+    await tx.update(projectRooms).set({ leadId: null }).where(eq(projectRooms.designId, designId))
+    if (rooms.length) await tx.update(renderJobs).set({ leadId: null }).where(inArray(renderJobs.roomId, rooms.map((r) => r.id)))
+    await tx.update(renderShareLinks).set({ leadId: null }).where(eq(renderShareLinks.designId, designId))
+  })
+  touch(designId, leadId)
+  return { ok: true }
 }
 
 export async function renameDesign(designId: string, name: string): Promise<{ ok: true } | Err> {
@@ -752,6 +827,22 @@ export async function setPinStatus(pinId: string, status: 'open' | 'resolved'): 
   await db.update(renderAnnotations).set({ status: status === 'resolved' ? 'resolved' : 'open', updatedAt: now() }).where(eq(renderAnnotations.id, pinId))
   touch(got.d.id, got.d.leadId); return { ok: true }
 }
+/**
+ * (UX audit V1) The studio answers a client's note on a version — kept beside the note on the link, where the client reads it (as the studio's
+ * reply on a client's pin is). A `reply` row on the link's answers: `task_id` names the note it answers, `client_name` who wrote it.
+ */
+export async function replyToNote(noteId: string, input: { body: string }): Promise<{ ok: true } | Err> {
+  const [n] = await db.select().from(renderConsultationRequests).where(and(eq(renderConsultationRequests.id, String(noteId)), eq(renderConsultationRequests.kind, 'note')))
+  if (!n) return { error: 'That note is gone.' }
+  const got = await linkFor(n.shareLinkId); if (!got) return { error: 'That link’s design is gone.' }
+  const text = String(input?.body ?? '').trim()
+  if (!text) return { error: 'Write a reply first.' }
+  if (text.length > PIN_CHARS) return { error: 'That reply is too long.' }
+  const me = await actingMember()
+  await db.insert(renderConsultationRequests).values({ id: randomUUID(), shareLinkId: n.shareLinkId, kind: 'reply', versionKey: n.versionKey, clientName: await memberName(me), clientPhone: null, message: text, taskId: n.id, createdAt: now() })
+  touchLink(got.s); return { ok: true }
+}
+
 /** Remove a pin — the studio's own only (1.0's rule, A D-11); with Undo. */
 export async function deletePin(pinId: string): Promise<{ ok: true } | Err> {
   const got = await pinFor(pinId); if (!got) return { error: 'That pin is gone.' }

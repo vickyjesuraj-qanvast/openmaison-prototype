@@ -376,7 +376,7 @@ export async function saveItemToPriceBook(itemId: string, mode: 'new' | 'update'
   if (status === 'proposed') {
     const { notify } = await import('@/lib/notifications/emit'); const { studioRunnerIds } = await import('@/lib/notifications/queries')
     const [me] = await db.select({ name: members.name }).from(members).where(eq(members.id, v.id))
-    await notify('price_book_proposed', await studioRunnerIds(), { title: `${me?.name ?? 'Someone'} proposed “${i.name}” for My Items`, body: 'Approve it, or send it back with a note', href: '/company/price-book', actorId: v.id })
+    await notify('price_book_proposed', await studioRunnerIds(), { title: `${me?.name ?? 'Someone'} proposed “${i.name}” for My Items`, body: 'Approve it, or send it back with a note', href: `/company/price-book?open=${encodeURIComponent(id)}`, actorId: v.id })   // (UX audit V11) the item itself
   }
   await db.update(quoteItems).set({ priceBookItemId: id }).where(eq(quoteItems.id, i.id))
   const q = await quoteOf(i.quoteId)

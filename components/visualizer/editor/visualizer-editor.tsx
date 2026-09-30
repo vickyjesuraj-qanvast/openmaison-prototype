@@ -46,8 +46,9 @@ import { MAX_REFERENCES, type ReferenceRole } from '@/lib/visualizer/tools'
 import { fallbackDots } from '@/lib/visualizer/engine/fallback'
 import { dominantColour, referencePalette } from '@/lib/visualizer/engine/palette'
 import type { Pt } from '@/lib/visualizer/engine/pixels'
-import { defKey, lightSceneFor, loadImg, previewLight, regionOf, regionOverlay, regionShare, runPass } from '@/lib/visualizer/engine/run'
-import { addPin, addRoom, addVersionToQuote, createShareLink, deleteDesigns, deletePin, deleteRoom, deleteVersion, recordShareSent, removeOwnSwatch, renameDesign, renameRoom, renewShareLink, replyPin, restoreDesigns, restoreOwnSwatch, restorePin, restoreRoom, restoreVersion, saveOwnSwatch, saveRender, saveRoomAsset, saveVersionToFiles, setPinStatus, setRoomPhoto, stopShareLink, undoRoomPhoto, unstopShareLink } from '@/app/visualizer/actions'
+import { defKey, lightSceneFor, loadImg, previewLight, regionOf, regionOverlay, regionShare, runPass, washOverlay } from '@/lib/visualizer/engine/run'
+import { addPin, addRoom, addVersionToQuote, createShareLink, deleteDesigns, deletePin, deleteRoom, deleteVersion, leadsToLink, linkDesignToLead, recordShareSent, removeOwnSwatch, renameDesign, renameRoom, renewShareLink, replyPin, replyToNote, restoreDesigns, restoreOwnSwatch, restorePin, restoreRoom, restoreVersion, saveOwnSwatch, saveRender, saveRoomAsset, saveVersionToFiles, setPinStatus, setRoomPhoto, stopShareLink, undoRoomPhoto, unlinkDesign, unstopShareLink } from '@/app/visualizer/actions'
+import { PickOneDialog, type PickOption } from '@/components/company/templates/pick-one-dialog'
 import { createStudioMaterial } from '@/app/company/materials-actions'
 import { useEditorState } from './use-editor-state'
 import { roomNameFromFile } from '@/lib/visualizer/room-name'
@@ -56,7 +57,7 @@ import { EditorTopbar, RoomMore, useRoomInView } from './topbar'
 import { GenerateFooter, ModeTabs, PanelClose, type Change, type FootPrice, type Mode } from './rail'
 import { Stage, type Marker, type StageMode } from './stage'
 import { carriesClientInput, VersionsStrip, type Badge } from './versions-strip'
-import { DraftPin, PinThread } from './pin-card'
+import { ClientNotes, DraftPin, PinThread, type ClientNote } from './pin-card'
 import { DescribeBox } from './describe-box'
 import { SurfacesPanel, scopeOf, type SurfaceSel } from './panels/surfaces-panel'
 import { FurniturePanel } from './panels/furniture-panel'
@@ -120,12 +121,14 @@ type Run = { title: string; step: number; steps: string[]; roomId: string; roomN
  * it on the canvas; the version's ⋯ takes it to Files, a quote or the client. ≤1024 (portrait, phones) the camera-app model: the photo,
  * the versions, the mode dock, and a tray that opens the mode's panel above the dock (Q-25).
  */
-export function VisualizerEditor({ data, from, initialRoom, initialVersion = null, initialPin = null, initialNotice = null, initialFile = null }: {
+export function VisualizerEditor({ data, from, initialRoom, initialVersion = null, initialPin = null, initialNote = null, initialNotice = null, initialFile = null }: {
   data: VisualizerEditorData; from: string | undefined; initialRoom: string | null
   /** (F095 · F098) the version to open on — a filed render, the bell's link */
   initialVersion?: string | null
   /** (F098) a pin's thread to open */
   initialPin?: string | null
+  /** (UX audit V1) the version whose client notes open on arrival — the bell's `?note=` */
+  initialNote?: string | null
   /** what the link asked for that is gone */
   initialNotice?: string | null
   /** (Q-31) a lead photo to add as a room on arrival */
@@ -134,13 +137,13 @@ export function VisualizerEditor({ data, from, initialRoom, initialVersion = nul
   useShortcutsHere(VISUALIZER_KEYS)   // (REG-714) the ? panel lists the design editor's own keys
   return (
     <PageReveal skeleton={<VisualizerEditorSkeleton />}>
-      <Editor data={data} from={from} initialRoom={initialRoom} initialVersion={initialVersion} initialPin={initialPin} initialNotice={initialNotice} initialFile={initialFile} />
+      <Editor data={data} from={from} initialRoom={initialRoom} initialVersion={initialVersion} initialPin={initialPin} initialNote={initialNote} initialNotice={initialNotice} initialFile={initialFile} />
     </PageReveal>
   )
 }
 
-function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNotice, initialFile }: {
-  data: VisualizerEditorData; from: string | undefined; initialRoom: string | null; initialVersion: string | null; initialPin: string | null; initialNotice: string | null
+function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNote, initialNotice, initialFile }: {
+  data: VisualizerEditorData; from: string | undefined; initialRoom: string | null; initialVersion: string | null; initialPin: string | null; initialNote: string | null; initialNotice: string | null
   initialFile: { id: string; name: string; url: string } | null
 }) {
   const router = useRouter()
@@ -206,7 +209,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const here = useCallback(() => {
     if (typeof window === 'undefined') return `/visualizer/${data.design.id}`
     const u = new URL(window.location.href)
-    for (const k of ['file', 'v', 'version', 'pin']) u.searchParams.delete(k)
+    for (const k of ['file', 'v', 'version', 'pin', 'note']) u.searchParams.delete(k)
     const { room: r, version: v } = placeRef.current
     if (r) u.searchParams.set('room', r)
     if (v) u.searchParams.set('v', v === ORIGINAL ? 'original' : v)
@@ -244,6 +247,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const [placing, setPlacing] = useState<Placing>(null)
   const [pinning, setPinning] = useState(false)
   const [activePin, setActivePin] = useState<string | null>(initialPin)
+  /** (UX audit V1) the version whose client notes are open (From the client) */
+  const [notesFor, setNotesFor] = useState<string | null>(initialNote)
   const [draftPin, setDraftPin] = useState<Pt | null>(null)
   const [compare, setCompare] = useState<{ on: boolean; key: string | null }>({ on: false, key: null })
   const [markersHidden, setMarkersHidden] = useFlagPref('om.viz.markersHidden', false)
@@ -252,7 +257,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const [recent, setRecent] = useState<string[]>(readRecent)
   const selKey = `${roomId}|${viewKey}`
   const [selWas, setSelWas] = useState(selKey)
-  if (selKey !== selWas) { setSelWas(selKey); setSurfSel(null); setFurnSel(null); setActivePin(null); setDraftPin(null); setPlacing(null); setCompare((c) => ({ ...c, key: null })); setRunError(null) }
+  if (selKey !== selWas) { setSelWas(selKey); setSurfSel(null); setFurnSel(null); setActivePin(null); setDraftPin(null); setPlacing(null); setCompare((c) => ({ ...c, key: null })); setRunError(null); setNotesFor((n) => (n && n === viewKey ? n : null)) }
 
   /* the save stamp's clock (F019): ticks while the page is open, never read from Date.now() in render */
   const [now, setNow] = useState(data.now)
@@ -269,6 +274,9 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const focusNext = useRef<'tile' | 'generate' | null>(null)
   useEffect(() => { roomIdRef.current = roomId })
   const [running, setRunning] = useState<Run | null>(null)
+  /* (UX audit V4) the versions this visit made — the next step on them is Share: first on their ⋯, and once their Compare closes */
+  const [fresh, setFresh] = useState<string[]>([])
+  const [shareAsk, setShareAsk] = useState<string | null>(null)
   /** The run on screen — only in the room it renders (F196). */
   const hereRun = running && running.roomId === roomId ? running : null
   const unlit = unlitSource(view, all)
@@ -352,6 +360,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     setLocal((l) => ({ ...l, ...Object.fromEntries(out.variants.map((v, i) => [saved.keys[i]!, v.dataUrl])) }))
     ed.setVersions((prev) => ({ ...prev, [r0.id]: [...(prev[r0.id] ?? []), ...made] }))
     setViewKeys((v) => ({ ...v, [r0.id]: saved.keys[0]! }))
+    setFresh((f) => [...f, ...saved.keys])
     ed.setPending(r0.id, (p) => afterRender(p, { used, consumed: out.consumed ?? consumes }))
     stop()
     router.refresh()
@@ -364,7 +373,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       message: `${elsewhere ? `${r0.name} · ` : ''}${names} ${made.length === 1 ? 'is' : 'are'} ready`,
       actionLabel: 'Compare', onAction: () => {
         setPresent(null); setShare(null); setBoard(null); setQuoteFor(null); setDeletedOpen(false); setMenu(null)
-        setRoomPick(r0.id); setViewKeys((v) => ({ ...v, [r0.id]: saved.keys[0]! })); setPinning(false); setDraftPin(null); setActivePin(null); setCompare({ on: true, key: null })
+        setRoomPick(r0.id); setViewKeys((v) => ({ ...v, [r0.id]: saved.keys[0]! })); setPinning(false); setDraftPin(null); setActivePin(null); setNotesFor(null); setCompare({ on: true, key: null }); setShareAsk(saved.keys[0]!)
       },
     })
   }
@@ -441,6 +450,27 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   }, [hlKey])
   /* (F177) the last highlight stays until the next one lands (the stage crossfades them) — never across photos */
   const highlight = hlKey && hl && hl.img === imageUrl ? hl.url : null
+  /* (UX audit V5) every pick still waiting for Generate stays on the photo, washed in its own colour, while the studio picks the next — the
+     surfaces' finishes and the pieces' new colours, not the one lit (its highlight wears its own) */
+  const washItems: { def: SurfaceDef | FurnitureDef; hex: string }[] = !reading || !imageUrl || sketch || markersHidden || compare.on || hereRun || placing || pinning || (mode !== 'surfaces' && mode !== 'furniture') ? [] : [
+    ...reading.surfaces.filter((x) => !scopeIds.has(x.id)).flatMap((x) => { const mid = pending.materials[x.id]; const m = mid ? resolve(mid) : null; return m ? [{ def: x, hex: m.hex }] : [] }),
+    ...reading.furniture.filter((f) => !scopeIds.has(f.id)).flatMap((f) => { const p = pending.furniture[f.id]; const hex = p?.action === 'customize' ? (p.customizeColor ? COLOUR_HEX[p.customizeColor] ?? null : p.customizeMaterial ? FINISH_HEX[p.customizeMaterial] ?? null : null) : null; return hex ? [{ def: f, hex }] : [] }),
+  ]
+  const washKey = washItems.length && imageUrl ? `${imageUrl.slice(-80)}|${washItems.map((w) => `${w.def.id}:${defKey(w.def)}:${w.hex}`).join(',')}` : null
+  const washRef = useRef(washItems)
+  useEffect(() => { washRef.current = washItems })
+  const [washed, setWashed] = useState<{ key: string; img: string; url: string } | null>(null)
+  useEffect(() => {
+    if (!washKey) return
+    let alive = true
+    const t = setTimeout(() => {
+      const url = imgRef.current, items = washRef.current
+      if (!url || !items.length) return
+      washOverlay(url, items, { reading: readingRef.current, photoUrl: photoRef.current, finishes: finishesRef.current }).then((u) => { if (alive) setWashed({ key: washKey, img: url, url: u }) }).catch(() => {})
+    }, 60)
+    return () => { alive = false; clearTimeout(t) }
+  }, [washKey])
+  const wash = washKey && washed && washed.img === imageUrl ? washed.url : null
   const lightOn = lightingSet(pending.lighting.knobs, pending.lighting.presetId, pending.lighting.instruction)
   const relit = pending.lighting.presetId && (unlit?.key ?? viewKey) === ORIGINAL && !pending.lighting.instruction.trim() && JSON.stringify(presetById(pending.lighting.presetId)?.knobs) === JSON.stringify(pending.lighting.knobs) ? sample?.relit?.[pending.lighting.presetId] ?? null : null
   const pvKey = mode === 'lighting' && lightOn && lightUrl && !relit && !compare.on && !hereRun ? `${lightUrl.slice(-80)}|${JSON.stringify(pending.lighting.knobs)}|${finishes.reshaped ? 'r' : finishes.emptied ? 'e' : 'a'}` : null
@@ -533,7 +563,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   }, [modeKind])
   const stageMode: StageMode = placing?.kind === 'place' ? { kind: 'place', label: placing.label, onPlace: (p) => { setPlacing(null); placing.add(p) }, onCancel: () => setPlacing(null) }
     : placing?.kind === 'draw' ? { kind: 'draw', label: placing.label, onDone: (poly) => { setPlacing(null); placing.done(poly) }, onCancel: () => setPlacing(null) }
-    : pinning && view && !readOnly ? { kind: 'pin', onAdd: (p) => { if (!draftPin && !activePin) pinBack.current = openerFor(); setActivePin(null); setDraftPin(p) }, onCancel: () => { setPinning(false); setDraftPin(null) }, drafting: !!draftPin } : { kind: 'view' }
+    : pinning && view && !readOnly ? { kind: 'pin', onAdd: (p) => { if (!draftPin && !activePin) pinBack.current = openerFor(); setActivePin(null); setNotesFor(null); setDraftPin(p) }, onCancel: () => { setPinning(false); setDraftPin(null) }, drafting: !!draftPin } : { kind: 'view' }
 
   /* the strip's badges: the client's favourite and notes, pins, sent */
   const badges: Record<string, Badge> = {}
@@ -545,6 +575,26 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     for (const r of s.responses) if (r.kind === 'note' && r.versionKey) badge(r.versionKey).notes++
   }
   for (const p of data.pins) if (p.status === 'open') badge(p.key).pins++
+
+  /* ── (UX audit V1) From the client: the notes left on a version, each with the studio's replies ── */
+  const clientFirst = data.lead?.name.split(' ')[0] ?? 'the client'
+  const answers = data.shares.flatMap((sh) => sh.responses)
+  const notesOf = (key: string): ClientNote[] => answers.filter((r) => r.kind === 'note' && r.versionKey === key && !!r.message).sort((a, b) => a.createdAt - b.createdAt)
+    .map((r) => ({ id: r.id, who: r.clientName ?? 'Your client', body: r.message!, at: r.createdAt,
+      replies: answers.filter((x) => x.kind === 'reply' && x.replyTo === r.id && !!x.message).sort((a, b) => a.createdAt - b.createdAt).map((x) => ({ id: x.id, who: x.clientName ?? data.studio.name, body: x.message!, at: x.createdAt })) }))
+  const openNotes = (key: string) => {
+    if (notesFor === key && viewKey === key) { setNotesFor(null); return }
+    setPinning(false); setDraftPin(null); setActivePin(null); setCompare({ on: false, key: null }); setView(key); setNotesFor(key)
+    if (narrow) setTray(false)
+  }
+  const replyNote = async (notes: ClientNote[], body: string): Promise<boolean> => {
+    const last = notes[notes.length - 1]; if (!last) return false
+    const r = await replyToNote(last.id, { body }).catch(() => ({ error: 'Couldn’t send the reply — please try again' }))
+    if ('error' in r) { snack({ message: r.error.startsWith('Couldn’t') ? r.error : `Couldn’t send the reply — ${r.error.replace(/\.$/, '').replace(/^./, (c) => c.toLowerCase())}` }); return false }
+    router.refresh()
+    snack({ message: `${clientFirst === 'the client' ? 'The client sees' : `${clientFirst} sees`} your reply on the link` })
+    return true
+  }
 
   /** (F210) An action with nothing on screen to show for it: on a refusal the change goes back and the snackbar says what failed. */
   const act = async (p: Promise<unknown>, what: string, o: { rollback?: () => void; done?: () => void } = {}): Promise<boolean> => {
@@ -754,12 +804,26 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     landRoom({ roomId: first })
   }
   /* (REG-735) Photos picked on the landing's welcome ("Upload a room photo") arrive with this new design: each becomes a room, through the
-     same path as a pick here. Once, on arrival — a reload in between lands on "Add the first room". */
+     same path as a pick here. Once, on arrival — a reload in between lands on "Add the first room". (UX audit V2) A welcome upload makes a
+     personal design; the editor asks, quietly, whether it is for a lead ("For a lead? Link it"). */
+  const [linkAsk, setLinkAsk] = useState(false)
   useEffect(() => {
     const files = takePhotos(data.design.id)
     if (!files?.length) return
-    queueMicrotask(() => { if (files.length > 1) void addPhotoRooms(files); else void addPhotoRoom(files[0]!) })
+    queueMicrotask(() => { if (!data.lead) setLinkAsk(true); if (files.length > 1) void addPhotoRooms(files); else void addPhotoRoom(files[0]!) })
   }, [])   // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival
+  /* ── (UX audit V2) Link to a lead: a personal design becomes the lead's — Save to Files, Add to a quote, the client's answers reach it ── */
+  const [linkOpen, setLinkOpen] = useState(false)
+  const loadLinkable = useCallback(async (): Promise<PickOption[]> => (await leadsToLink()).map((l) => ({ id: l.id, label: l.name, sub: [l.stage, l.propertyType, l.blocked].filter(Boolean).join(' · '), blocked: l.blocked ?? undefined })), [])
+  const linking = useRef(false)   // one press links once
+  const linkTo = async (leadId: string) => {
+    if (linking.current) return
+    linking.current = true
+    const r = await linkDesignToLead(data.design.id, leadId).catch(() => ({ error: 'Couldn’t link the design — please try again' })).finally(() => { linking.current = false })
+    if ('error' in r) { snack({ message: r.error.startsWith('Couldn’t') ? r.error : `Couldn’t link the design — ${r.error.replace(/\.$/, '').replace(/^./, (c) => c.toLowerCase())}` }); return }
+    setLinkOpen(false); setLinkAsk(false); router.refresh()
+    snack({ message: `Linked to ${r.leadName}`, actionLabel: 'Undo', onAction: () => { void act(unlinkDesign(data.design.id, r.undo), 'undo the link', { done: () => snack({ message: 'Back to a personal design' }) }) } })
+  }
   const addSampleRoom = async (key: string, asSketch: boolean) => { setRoomBusy(true); landRoom(await addRoom(data.design.id, { imageUrl: '', sampleKey: key, asSketch }).catch(() => ({ error: 'Couldn’t add the room — please try again' }))) }
   const addLeadFileRoom = async (f: { id: string; name: string; url: string }) => {
     const s = sampleByImage(f.url)
@@ -990,6 +1054,15 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     snack({ message: 'Pin removed', actionLabel: 'Undo', onAction: () => { void act(restorePin(pin.id), 'bring back the pin') } })
   }
 
+  /* (UX audit V4) the fresh version's Compare, opened from "V3 is ready", closes on the next step: Share it with the client */
+  const shareOk = !readOnly && !leadClosed && !leadDeleted
+  const askShare = () => {
+    const k = shareAsk; setShareAsk(null)
+    const v = k ? live.find((x) => x.key === k) : null
+    if (!v || !shareOk) return
+    snack({ key: 'viz-ready', message: `Share V${v.n} with ${clientFirst}?`, actionLabel: 'Share', onAction: () => { setBoard(null); setPresent(null); setShare([v.key]) } })
+  }
+  const endCompare = () => { setCompare({ on: false, key: null }); askShare() }
   /* ── keys: ⌘Z / ⇧⌘Z, Esc, ← → through the versions ── */
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
@@ -1006,8 +1079,9 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
         if (placing) { setPlacing(null); return }
         if (draftPin) { setDraftPin(null); return }
         if (activePin) { setActivePin(null); return }
+        if (notesFor) { setNotesFor(null); return }
         if (pinning) { setPinning(false); return }
-        if (compare.on) { setCompare({ on: false, key: null }); return }
+        if (compare.on) { endCompare(); return }
         if (surfSel || furnSel) { setSurfSel(null); setFurnSel(null); return }
         if (tray) setTray(false)
         return
@@ -1032,7 +1106,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   useEffect(() => {
     if (!roomId) return
     const u = new URL(window.location.href)
-    const spent = ['file', 'v', 'version', 'pin'].filter((k) => u.searchParams.has(k))
+    const spent = ['file', 'v', 'version', 'pin', 'note'].filter((k) => u.searchParams.has(k))
     if (u.searchParams.get('room') === roomId && !spent.length) return
     u.searchParams.set('room', roomId); for (const k of spent) u.searchParams.delete(k)
     window.history.replaceState(null, '', `${u.pathname}${u.search}`)
@@ -1114,7 +1188,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   /* ── the canvas' bar ── */
   const parentLabel = view ? (defaultBefore === ORIGINAL ? 'Original' : `V${all.find((v) => v.key === defaultBefore)?.n ?? '?'}`) : null
   /* (F080) Compare and Pin take turns: pins go on the version alone */
-  const toggleCompare = () => { if (!compare.on) { setPinning(false); setDraftPin(null); setActivePin(null) } setCompare({ on: !compare.on, key: null }) }
+  const toggleCompare = () => { if (compare.on) { endCompare(); return } setPinning(false); setDraftPin(null); setActivePin(null); setNotesFor(null); setCompare({ on: true, key: null }) }
   const toolbar = (
     <>
       <Tooltip label={markersHidden ? 'Show markers' : 'Hide markers'}><IconButton icon={markersHidden ? 'visibility' : 'visibility_off'} label={markersHidden ? 'Show markers' : 'Hide markers'} size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => setMarkersHidden(!markersHidden)} data-testid="viz-markers" /></Tooltip>
@@ -1127,8 +1201,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   )
   const activePinRow = activePin ? vPins.find((p) => p.id === activePin) ?? null : null
   const stage = (
-    <Stage image={imageUrl} alt={view ? `${room?.name} · V${view.n}` : room?.name ?? ''} compare={stageCompare} preview={preview} highlight={highlight} markers={markers} onDot={onDot} mode={stageMode}
-           pins={vPins} activePin={activePin} onPin={(id) => { if (!draftPin && !activePin) pinBack.current = openerFor(); setDraftPin(null); setActivePin((a) => (a === id ? null : id)) }} running={hereRun} onCancelRun={cancelRun} toolbar={toolbar}
+    <Stage image={imageUrl} alt={view ? `${room?.name} · V${view.n}` : room?.name ?? ''} compare={stageCompare} preview={preview} highlight={highlight} wash={wash} markers={markers} onDot={onDot} mode={stageMode}
+           pins={vPins} activePin={activePin} onPin={(id) => { if (!draftPin && !activePin) pinBack.current = openerFor(); setDraftPin(null); setNotesFor(null); setActivePin((a) => (a === id ? null : id)) }} running={hereRun} onCancelRun={cancelRun} toolbar={toolbar}
            chip={room && !stageCompare ? <span className={styles.stageChip} data-testid="viz-stage-chip">{view ? <><b>V{view.n}</b> · {view.descriptor}</> : <b>Original</b>}</span> : null}
            empty={
              <div className={styles.empty} data-testid="viz-empty">
@@ -1144,13 +1218,17 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
                    onDelete={activePinRow.authorRole === 'studio' ? () => { void removePin(activePinRow) } : null} onClose={() => setActivePin(null)} image={imageUrl} />
       ) : null}
       {draftPin ? <DraftPin x={draftPin.x} y={draftPin.y} onSave={savePin} onCancel={() => setDraftPin(null)} image={imageUrl} /> : null}
+      {view && notesFor === view.key && !activePinRow && !draftPin ? (() => { const ns = notesOf(view.key); return ns.length ? (
+        <ClientNotes version={`V${view.n} · ${view.descriptor}`} notes={ns} now={now} client={clientFirst} onReply={(b) => replyNote(ns, b)} onClose={() => setNotesFor(null)} />
+      ) : null })() : null}
     </Stage>
   )
   const strip = room ? (
     <div className={styles.stripSlot} data-viz-bottom="" data-viz-strip="">
       <VersionsStrip lineage={all} original={room.imageUrl} versions={live.map((v) => (local[v.key] ? { ...v, imageUrl: local[v.key]! } : v))} viewKey={viewKey} compareKey={compareKey} inFlight={hereRun ? hereRun.count : 0} badges={badges}
                      onPick={(k) => { setView(k); if (k === ORIGINAL) setCompare({ on: false, key: null }) }} onMenu={(k, el) => openMenu({ kind: 'version', key: k }, el)} menuFor={menu?.kind === 'version' ? menu.key : null}
-                     deleted={all.length - live.length} onDeleted={() => setDeletedOpen(true)} originalSub={effectiveDetection(ed.detectionOf(room.id), pending.asPhoto, NO_FINISHES)?.kind === 'sketch' ? 'the sketch' : 'the photo'} />
+                     deleted={all.length - live.length} onDeleted={() => setDeletedOpen(true)} originalSub={effectiveDetection(ed.detectionOf(room.id), pending.asPhoto, NO_FINISHES)?.kind === 'sketch' ? 'the sketch' : 'the photo'}
+                     onNotes={openNotes} notesFor={notesFor} />
     </div>
   ) : null
   const mv = menu?.kind === 'version' ? versionOf(menu.key) : null
@@ -1220,6 +1298,9 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
     const write = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
+        /* (UX audit V12) where the stage starts — the Maison AI button rides its top corner in the camera model, clear of the versions */
+        const body = root.querySelector<HTMLElement>('[data-viz-body]')?.getBoundingClientRect()
+        if (body) root.style.setProperty('--viz-stage-top', `${Math.round(body.top)}px`)
         const phone = window.matchMedia('(max-width: 767px)').matches, H = window.innerHeight, SNACK = 48
         const base = phone ? 16 : 24
         /* the snackbar's own band: 16 from the left (no app rail here), 344 wide — the width of the screen less its gutters on a phone */
@@ -1310,7 +1391,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
   const hasRail = !narrow && !!room && !readOnly
 
   return (
-    <div ref={rootRef} className={styles.editor} data-narrow={narrow || undefined} data-tray={(narrow && tray) || undefined} data-tray-leaving={(narrow && trayLeaving && !tray) || undefined} data-rail={hasRail || undefined} data-short={short || undefined} data-testid="viz-editor">
+    <div ref={rootRef} className={styles.editor} data-card={(!!notesFor || pinCardOpen) || undefined} data-narrow={narrow || undefined} data-tray={(narrow && tray) || undefined} data-tray-leaving={(narrow && trayLeaving && !tray) || undefined} data-rail={hasRail || undefined} data-short={short || undefined} data-testid="viz-editor">
       <EditorTopbar backLabel={backLabel} onBack={() => { void leave(back) }} title={title} chip={designKindLabel(data.design.kind, data.lead?.stage)} rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} roomId={roomId} onRoom={(id) => setRoomPick(id)}
                     onRoomMenu={openRoomMenu} roomMenuOpen={menu?.kind === 'room'} onAddRoom={() => setAddRoomOpen(true)}
                     saving={!conflict && !ed.save.error && (ed.save.saving || ed.dirty)} savedLabel={savedLabel} savedTone={conflict || ed.save.error ? 'warn' : 'ok'}
@@ -1330,6 +1411,12 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
         <div className={styles.note} role="alert" data-tone="warn" data-testid="viz-conflict"><Icon name="error" size={20} weight={300} />
           <span className={styles.noteText}>Changed in another tab — reload to see the latest. Your picks here since then aren’t saved.</span>
           <Button appearance="text" onPress={() => window.location.reload()}>Reload</Button></div>
+      ) : linkAsk && !data.lead && !(narrow && tray) ? (
+        /* (UX audit V2) right after the welcome's upload lands: is it for a lead? */
+        <div className={styles.note} role="note" data-testid="viz-link-ask"><Icon name="person" size={20} weight={300} />
+          <span className={styles.noteText}>For a lead? Link this design to it — its renders can then go to the lead’s Files, a quote and the client.</span>
+          <Button appearance="text" onPress={() => setLinkOpen(true)}>Link it</Button>
+          <Button appearance="text" onPress={() => setLinkAsk(false)}>Not now</Button></div>
       ) : !hintSeen && rooms.length && !(narrow && tray) && !short ? (
         <div className={styles.note} role="note" data-testid="viz-hint"><Icon name="info" size={20} weight={300} />
           <span className={styles.noteText}>{sketch && !view ? 'This is a sketch — pick a style, then Render from sketch to turn it into a photo.'
@@ -1391,6 +1478,11 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
       <PortalMenu open={menu?.kind === 'version' && !!mv} anchor={menuAnchor} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={mv ? `V${mv.n} · ${mv.descriptor}` : ''}>
         {mv ? (
           <>
+            {/* (UX audit V4) a version made this visit: Share is its next step, first */}
+            {fresh.includes(mv.key) ? <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem> : null}
+            {/* (UX audit V1) what the client said on it, readable here */}
+            {badges[mv.key]?.notes ? <DropdownItem onSelect={() => { setMenu(null); openNotes(mv.key) }}>{`From the client · ${badges[mv.key]!.notes} ${badges[mv.key]!.notes === 1 ? 'note' : 'notes'}`}</DropdownItem> : null}
+            {fresh.includes(mv.key) || badges[mv.key]?.notes ? <DropdownDivider /> : null}
             {/* (surfaces-27) with the Original on screen, a version's own ⋯ offers its before and after — never a dead Compare */}
             {!view ? <DropdownItem onSelect={() => { setMenu(null); setPinning(false); setDraftPin(null); setActivePin(null); setView(mv.key); setCompare({ on: true, key: null }) }}>Before and after</DropdownItem>
               : mv.key !== viewKey ? <DropdownItem onSelect={() => { setMenu(null); setPinning(false); setDraftPin(null); setActivePin(null); setCompare({ on: true, key: mv.key }) }}>{`Compare with V${view.n}`}</DropdownItem>
@@ -1402,7 +1494,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
             {/* (files-9) a deleted lead takes nothing more from its design — the rows say why */}
             {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void toFiles(mv) }} disabled={leadDeleted} help={leadDeleted ? LEAD_DELETED_ROW : undefined}>Save to Files</DropdownItem> : null}
             {data.lead ? <DropdownItem onSelect={() => { setMenu(null); setQuoteFor(mv) }} disabled={leadDeleted || !mvLines.length} help={leadDeleted ? LEAD_DELETED_ROW : !mvLines.length ? noQuoteReason(mv) : undefined}>Add to a quote…</DropdownItem> : null}
-            <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem>
+            {fresh.includes(mv.key) ? null : <DropdownItem onSelect={() => { setMenu(null); setShare([mv.key]) }} disabled={readOnly || leadClosed} help={leadClosed && !readOnly ? (leadDeleted ? LEAD_DELETED_ROW : LEAD_CLOSED_SHARE) : undefined}>Share with the client…</DropdownItem>}
             <DropdownDivider />
             <DropdownItem tone="danger" onSelect={() => { setMenu(null); askRemoveVersion(mv) }} disabled={readOnly}>Delete</DropdownItem>
           </>
@@ -1419,6 +1511,8 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
         {/* (round 3) a deleted lead has no page to open — the row says so, as Share and Save to Files do */}
         {data.lead ? <DropdownItem onSelect={() => { setMenu(null); void leave(withFrom(`/leads/${data.lead!.id}`, here())) }} disabled={leadDeleted} help={leadDeleted ? `${LEAD_DELETED_ROW} — restore it from Leads › Deleted Leads` : undefined}>Open the lead</DropdownItem>
           : <DropdownItem onSelect={() => { setMenu(null); setRename({ kind: 'design', value: data.design.name }) }} disabled={!!data.design.mayChange || readOnly} help={data.design.mayChange || undefined}>Rename</DropdownItem>}
+        {/* (UX audit V2) a personal design joins a lead from here, as from its card on the landing */}
+        {data.lead ? null : <DropdownItem onSelect={() => { setMenu(null); setLinkOpen(true) }} disabled={!!data.design.mayChange || readOnly} help={data.design.mayChange || undefined}>Link to a lead…</DropdownItem>}
         {narrow ? <DropdownItem onSelect={() => { setMenu(null); if (roomId) ed.undo(roomId) }} disabled={!ed.canUndo(roomId)}>Undo</DropdownItem> : null}
         {narrow ? <DropdownItem onSelect={() => { setMenu(null); if (roomId) ed.redo(roomId) }} disabled={!ed.canRedo(roomId)}>Redo</DropdownItem> : null}
         <DropdownItem onSelect={() => { setMenu(null); setHintSeen(false) }}>Show the tips again</DropdownItem>
@@ -1426,6 +1520,7 @@ function Editor({ data, from, initialRoom, initialVersion, initialPin, initialNo
         <DropdownItem tone="danger" onSelect={() => { setMenu(null); setConfirmDelete(true) }} disabled={!!data.design.mayChange || readOnly} help={data.design.mayChange || undefined}>Delete design</DropdownItem>
       </PortalMenu>
 
+      <PickOneDialog open={linkOpen} onClose={() => setLinkOpen(false)} title="Link to a lead" label="Lead" load={loadLinkable} confirmLabel="Link" onPick={(id) => linkTo(id)} empty="No leads to link to yet" />
       <AddRoomDialog open={addRoomOpen} onClose={() => { if (!roomBusy) setAddRoomOpen(false) }} onFile={(f) => { void addPhotoRoom(f) }} onFiles={(fs) => { void addPhotoRooms(fs) }} onLeadFile={(f) => { void addLeadFileRoom(f) }} onSample={(k, s) => { void addSampleRoom(k, s) }} leadImages={data.leadImages} leadName={data.lead?.name ?? null} busy={roomBusy} />
       <AddItemDialog kind={addItem} prefer={addPrefer} onClose={() => setAddItem(null)} onDone={(label, category, how) => {
         const kind = addItem; setAddItem(null)

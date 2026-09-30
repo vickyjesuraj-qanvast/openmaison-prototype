@@ -1,9 +1,11 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { questions } from '@/lib/db/schema'
+import { homeownerLeadLinks, questions } from '@/lib/db/schema'
+import { ensureHomeownerLink } from '@/lib/leads/portal'
+import { logLeadEvent } from '@/lib/leads/events'
 import { QUESTION_TYPES, type QuestionType } from '@/lib/leads/question-model'
 import { revalidateLead } from '@/lib/leads/queries'
 
@@ -58,4 +60,21 @@ export async function addStudioQuestions(leadId: string): Promise<number> {
   }))
   touch(leadId)
   return missing.length
+}
+
+/**
+ * (UX audit 2026-09-30, T12) Ask the client › Send, naming what it asks: the ticked questions (unanswered ones only) are recorded on the
+ * ask, so each card can say "Asked · 30 Sep" and Activity says how many were asked. The portal link is stamped as `askClient` stamps it
+ * (REG-609). Answers how many went.
+ */
+export async function askClientQuestions(leadId: string, questionIds: string[]): Promise<number | { error: string }> {
+  const open = questionIds.length
+    ? (await db.select({ id: questions.id }).from(questions).where(and(eq(questions.leadId, leadId), inArray(questions.id, questionIds), isNull(questions.answeredBy)))).map((q) => q.id)
+    : []
+  if (!open.length) return { error: 'Tick at least one unanswered question' }
+  const link = await ensureHomeownerLink(leadId)
+  await db.update(homeownerLeadLinks).set({ lastAskedAt: new Date() }).where(eq(homeownerLeadLinks.id, link.id))
+  await logLeadEvent(db, leadId, 'questionnaire_asked', { ids: open })
+  touch(leadId)
+  return open.length
 }

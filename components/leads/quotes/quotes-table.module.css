@@ -45,6 +45,8 @@
 .colSent { grid-column: 7; }
 .colUpdated { grid-column: 8; }
 .colApproval { grid-column: 9; }
+/* (UX audit Q5) A Valid until that has passed while the client holds the quote: the overdue due date's red (.dueBtn[data-overdue]). */
+.validDate[data-passed] { color: var(--om-color-tertiary-red-default); }
 /* (REG-422) Tools › Quotes adds a Client track after Title; every later column moves one track along. */
 .card[data-client] { grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px) 157px); }
 .card[data-client][data-no-approval] { grid-template-columns: var(--tracks, 40px minmax(317px, 1fr) 180px minmax(128px, max-content) repeat(5, 120px)); }
@@ -223,7 +225,7 @@
   .cell.colTitle { grid-column: 2 / -1 !important; grid-row: 1 !important; padding: 0 40px 0 0; }
   .cell.colStatus { grid-column: 2 !important; grid-row: 2 !important; }
   .cell.colTotal { grid-column: 3 !important; grid-row: 2 !important; justify-content: flex-end; font: var(--om-type-heading-h5); }
-  .colDue, .colCreated, .colSent, .colUpdated, .colApproval, .colClient { display: none; }
+  .colDue, .colCreated, .colSent, .colValid, .colUpdated, .colApproval, .colClient { display: none; }
   .subClient { display: inline; }
   /* (REG-422) The Client column's desktop pins (one track along) must not reach the card: status and total keep the card's own lines. */
   .card[data-client] .colStatus { grid-column: 2 !important; }

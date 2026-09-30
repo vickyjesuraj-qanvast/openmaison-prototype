@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { LibraryGallery, Refused, type LibraryItem, type LibraryPlace } from '@/components/company/templates/library-gallery'
 import { DropdownDivider, DropdownItem } from '@/components/leads/dropdown'
-import { PickOneDialog } from '@/components/company/templates/pick-one-dialog'
+import { PickOneDialog, type PickOption } from '@/components/company/templates/pick-one-dialog'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -17,7 +17,7 @@ import { useMaisonAi } from '@/lib/maison-ai'
 import { withFrom } from '@/lib/nav'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
 import type { DesignCard, VisualizerHome as HomeData } from '@/lib/visualizer/queries'
-import { createDesign, deleteDesigns, deleteDesignsForever, duplicateDesign, emptyDesignTrash, openLeadDesign, renameDesign, restoreDesigns } from '@/app/visualizer/actions'
+import { createDesign, deleteDesigns, deleteDesignsForever, duplicateDesign, emptyDesignTrash, leadsToLink, linkDesignToLead, openLeadDesign, renameDesign, restoreDesigns, unlinkDesign } from '@/app/visualizer/actions'
 import { designKindLabel } from './kind-label'
 import { VisualizerHomeGhost } from './home-skeleton'
 import { INTRO_PREF, VisualizerIntro } from './intro'
@@ -52,7 +52,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
   const [busy, setBusy] = useState(false)
   /* (F118) this page as it stands (its folder, its search) — where the editor's Back returns */
   const params = useSearchParams()
-  const hereParams = new URLSearchParams(params.toString()); hereParams.delete('deleted')   // (F084) the folder and search ride along; the one-off mark does not
+  const hereParams = new URLSearchParams(params.toString()); hereParams.delete('deleted'); hereParams.delete('new')   // (F084) the folder and search ride along; the one-off marks do not
   const here = hereParams.toString() ? `/visualizer?${hereParams}` : '/visualizer'
   /* (F085) deleted from its editor: said here once, with the gallery's Undo, and the URL loses the mark (contract templates' pattern) */
   const pathname = usePathname()
@@ -66,6 +66,18 @@ export function VisualizerHome({ data }: { data: HomeData }) {
     if (d) snackbar({ message: `${d.name} deleted`, actionLabel: 'Undo', onAction: () => { void run('restore the design', () => restoreDesigns([d.id])).then((ok) => { if (ok) router.refresh() }) } })
   }, [deletedId])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   useMaisonAi(['Which renders did clients pick this week?', 'Start a design for my newest lead', 'Show designs waiting on the client'])
+  /* (UX audit V2) a personal design joins a lead from its card, as from Design options in the editor */
+  const [linkFor, setLinkFor] = useState<Item | null>(null)
+  const loadLinkable = useCallback(async (): Promise<PickOption[]> => (await leadsToLink()).map((l) => ({ id: l.id, label: l.name, sub: [l.stage, l.propertyType, l.blocked].filter(Boolean).join(' · '), blocked: l.blocked ?? undefined })), [])
+  const [linking, setLinking] = useState(false)   // one press links once
+  const linkTo = async (t: Item, leadId: string) => {
+    if (linking) return
+    setLinking(true)
+    const r = await linkDesignToLead(t.id, leadId).catch(() => ({ error: 'Couldn’t link the design — please try again' })).finally(() => setLinking(false))
+    if ('error' in r) { snackbar({ message: r.error.startsWith('Couldn’t') ? r.error : `Couldn’t link the design — ${r.error.replace(/\.$/, '').replace(/^./, (c) => c.toLowerCase())}` }); return }
+    setLinkFor(null); router.refresh()
+    snackbar({ message: `${t.title} linked to ${r.leadName}`, actionLabel: 'Undo', onAction: () => { void run('undo the link', () => unlinkDesign(t.id, r.undo)).then((ok) => { if (ok) router.refresh() }) } })
+  }
 
   const open = (id: string) => router.push(withFrom(`/visualizer/${id}`, here))
   const toItem = (d: DesignCard): Item => ({ id: d.id, title: d.name, createdAt: d.createdAt, updatedAt: d.updatedAt, author: d.author, authorColor: d.authorColor, usedBy: d.renders, deletedAt: d.deletedAt, folderId: d.folderId, d })
@@ -77,6 +89,13 @@ export function VisualizerHome({ data }: { data: HomeData }) {
     setBusy(true)
     try { const r = await createDesign({ folderId: place.folderId }); if ('error' in r) { snackbar({ message: r.error }); return } router.push(withFrom(`/visualizer/${r.id}`, place.here)) } catch { snackbar({ message: 'Couldn’t start a design — please try again' }) } finally { setBusy(false) }
   }
+  /* (UX audit V9) Search › Create › New design lands here with ?new=1: a blank design starts, as New ▾ › Blank design does (once; the mark goes) */
+  const startNew = params.get('new') === '1'
+  useEffect(() => {
+    if (!startNew) return
+    router.replace(here, { scroll: false })
+    queueMicrotask(() => { void blank({ folderId: null, here }) })
+  }, [startNew])   // eslint-disable-line react-hooks/exhaustive-deps -- once per arrival
   /* (REG-735) The welcome's "Upload a room photo": the picked photos start a design and ride to its editor, which adds each as a room —
      its own upload path. A pick with no photo it can read says why here, and no empty design is left behind. */
   const upload = async (files: File[]) => {
@@ -164,7 +183,8 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         tableKey="viz-designs"
         onOpen={(t) => open(t.id)}
         /* (F084) the lead's Back returns here — this folder, this search */
-        kebab={(t) => (t.d.leadId ? [{ label: 'Open the lead', onSelect: () => router.push(withFrom(`/leads/${t.d.leadId}`, here)) }] : [])}
+        kebab={(t) => (t.d.leadId ? [{ label: 'Open the lead', onSelect: () => router.push(withFrom(`/leads/${t.d.leadId}`, here)) }]
+          : [{ label: 'Link to a lead…', onSelect: () => setLinkFor(t), disabled: !!t.d.mayChange, title: t.d.mayChange ?? undefined }])}   /* (UX audit V2) */
         /* (verify round 1, F129) a refusal throws the server's words (Refused), so the snackbar says why rather than "please try again" */
         onDuplicate={async (t) => { const r = await duplicateDesign(t.id); if ('error' in r) throw new Refused(r.error); snackbar({ message: 'Duplicated as a personal copy', actionLabel: 'Open', onAction: () => open(r.id) }) }}   /* one line at 344 whatever the name (the Open action rides it) */
         onRename={(t, name) => renameDesign(t.id, name)}
@@ -201,6 +221,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
                                       onSample={(key) => { void run('start the design', () => fromSample(key, false, { folderId: null, here })) }} /> }}
         folders={{ library: 'visualizer', list: data.folders, block: null }}
       />
+      <PickOneDialog open={!!linkFor} onClose={() => setLinkFor(null)} title="Link to a lead" label="Lead" load={loadLinkable} confirmLabel="Link" onPick={(id) => { if (linkFor) void linkTo(linkFor, id) }} empty="No leads to link to yet" />
       <PickOneDialog open={!!leadPick} onClose={() => setLeadPick(null)} title="Design for a lead" label="Lead" load={loadLeads} confirmLabel="Open design" onPick={(id) => { const at = leadPick ?? { folderId: null, here }; void forLead(id, at) }} empty="No leads to design for yet" />
       <Dialog open={!!samplePick} onClose={() => setSamplePick(null)} title="Start from a sample room" subtitle="A furnished photo to try every tool on — or a sketch to render." size="modal" width={600}
               footer={<Button variant="secondary" appearance="outlined" onPress={() => setSamplePick(null)}>Cancel</Button>}>

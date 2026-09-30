@@ -5,7 +5,7 @@
  */
 .card {
   display: flex; flex-direction: column;
-  width: 480px; height: 136px; flex-shrink: 0;
+  width: 480px; min-height: 136px; flex-shrink: 0;   /* (UX audit 2026-09-30, T12) the mock's 136 is its floor — "Client asked on …" and "Required still open" ran out of a fixed 136 */
   background: var(--om-color-surface-default);
   box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant);
   border-radius: var(--om-radius-2);

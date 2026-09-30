@@ -12,6 +12,8 @@ export const CHANNELS: { key: Channel; label: string }[] = [{ key: 'in_app', lab
 
 export type EventKey = 'new_lead' | 'assigned' | 'untouched' | 'quote_approval' | 'quote_approved' | 'quote_changes' | 'quote_confirmed' | 'contract_sent' | 'quote_signed' | 'task_due' | 'stage_changed' | 'task_assigned' | 'task_due_soon' | 'hold_due' | 'question_answered' | 'price_book_proposed' | 'price_book_answered' | 'render_feedback'
   | 'credits_low' | 'credits_out' | 'credit_request' | 'credit_request_answered' | 'credit_amount_reached' | 'credits_renewed' | 'payment_failed' | 'credit_receipt'
+  | 'quote_change_asked'   /* (UX audit Q6) */
+  | 'task_comment' | 'file_comment'   // (UX audit 2026-09-30, T8) a comment reaches the people it concerns
 export type EventDef = { key: EventKey; label: string; help: string; who: string; icon: string }
 export const EVENTS: EventDef[] = [
   { key: 'new_lead', label: 'A new lead arrives', help: 'From the form, an import, the website or Meta.', who: 'Owners and Admins', icon: 'person_add' },
@@ -22,6 +24,8 @@ export const EVENTS: EventDef[] = [
   { key: 'quote_approved', label: 'Your quote is approved', help: 'An approver approved a quote you sent for approval.', who: 'Whoever sent it', icon: 'verified' },
   { key: 'quote_changes', label: 'Changes are asked on your quote', help: 'An approver sent a quote back to Draft with a note.', who: 'Whoever sent it', icon: 'edit' },
   { key: 'quote_confirmed', label: 'A client confirms a quote', help: 'On the confirmation link.', who: 'The lead’s members', icon: 'task' },
+  /* (UX audit Q6) The confirmation link's "Ask for a change": the client's words reach the studio, not only the designer's WhatsApp. */
+  { key: 'quote_change_asked', label: 'A client asks for a change to a quote', help: 'On the confirmation link, before confirming.', who: 'The lead’s members, Owners and Admins', icon: 'edit' },
   /* (REG-634, contracts parity Q-23) 1.0 told the studio on every send (`quote.signature_requested`); a signature — the client's own, or one the studio marks — reaches the same people. */
   { key: 'contract_sent', label: 'A contract goes out for signature', help: 'Sent on WhatsApp, its link shared, or sent together — by anyone but you.', who: 'Owners, Admins and the lead’s members', icon: 'send' },
   { key: 'quote_signed', label: 'A contract is signed', help: 'By the client on its link, or marked signed by the studio.', who: 'The lead’s members, Owners and Admins', icon: 'draw' },
@@ -47,6 +51,9 @@ export const EVENTS: EventDef[] = [
   { key: 'credits_renewed', label: 'This month’s AI credits are in', help: 'The plan’s credits refresh on its date each month.', who: 'Owners and Admins', icon: 'diamond' },
   { key: 'payment_failed', label: 'A payment for the plan doesn’t go through', help: 'The plan stays until the grace date; update the card before then.', who: 'The Owner', icon: 'credit_card' },
   { key: 'credit_receipt', label: 'A receipt for a purchase', help: 'A plan, a seat or a top-up — with its tax invoice.', who: 'Whoever bought it, and the Owner', icon: 'receipt_long' },
+  /* (UX audit 2026-09-30, T8) Comments were silent: a task's comment reaches its members, a file's the lead's team — never the author. */
+  { key: 'task_comment', label: 'Someone comments on a task', help: 'A comment on a task you are on — its first words in the feed.', who: 'The task’s members, else the lead’s members', icon: 'comment' },
+  { key: 'file_comment', label: 'Someone comments on a file', help: 'A comment on one of a lead’s files — its first words in the feed.', who: 'The lead’s members', icon: 'comment' },
 ]
 export const eventDef = (key: string): EventDef | undefined => EVENTS.find((e) => e.key === key)
 
@@ -60,7 +67,9 @@ export type NotificationRules = {
 export const UNTOUCHED_OPTIONS: { minutes: number; label: string }[] = [{ minutes: 15, label: '15 minutes' }, { minutes: 30, label: '30 minutes' }, { minutes: 60, label: '1 hour' }, { minutes: 240, label: '4 hours' }, { minutes: 1440, label: '1 day' }]
 const on = (in_app: boolean, email: boolean, whatsapp: boolean): Record<Channel, boolean> => ({ in_app, email, whatsapp })
 export const DEFAULT_RULES: NotificationRules = {
-  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false), render_feedback: on(true, false, true), credits_low: on(true, true, false), credits_out: on(true, true, true), credit_request: on(true, true, false), credit_request_answered: on(true, false, false), credit_amount_reached: on(true, false, false), credits_renewed: on(true, false, false), payment_failed: on(true, true, true), credit_receipt: on(true, true, false) },
+  channels: { new_lead: on(true, true, true), assigned: on(true, true, false), untouched: on(true, false, true), quote_approval: on(true, true, false), quote_approved: on(true, true, false), quote_changes: on(true, true, false), quote_confirmed: on(true, true, true), contract_sent: on(true, true, false), quote_signed: on(true, true, true), task_due: on(true, false, false), stage_changed: on(true, false, false), task_assigned: on(true, true, false), task_due_soon: on(true, false, true), hold_due: on(true, true, false), question_answered: on(true, true, false), price_book_proposed: on(true, true, false), price_book_answered: on(true, false, false), render_feedback: on(true, false, true), credits_low: on(true, true, false), credits_out: on(true, true, true), credit_request: on(true, true, false), credit_request_answered: on(true, false, false), credit_amount_reached: on(true, false, false), credits_renewed: on(true, false, false), payment_failed: on(true, true, true), credit_receipt: on(true, true, false),
+    quote_change_asked: on(true, true, true),
+    task_comment: on(true, false, false), file_comment: on(true, false, false) },   // (UX audit 2026-09-30, T8)
   untouchedMinutes: 30,
   stopWhenClosed: true,
 }
@@ -83,6 +92,7 @@ export const FIELDS: { key: string; label: string }[] = [
   { key: '{stage}', label: 'The lead’s new stage' }, { key: '{task}', label: 'The task’s title' },   /* (REG-608) */
   { key: '{item}', label: 'The price book item' },   /* (REG-652) */
   { key: '{credits}', label: 'The AI credits' }, { key: '{amount}', label: 'The amount paid' },   /* (REG-703) */
+  { key: '{comment}', label: 'The comment’s first words' }, { key: '{file}', label: 'The file’s name' },   /* (UX audit 2026-09-30, T8) */
 ]
 const T = (event: EventKey, channel: 'email' | 'whatsapp', subject: string, body: string): MessageTemplate => ({ event, channel, subject, body })
 export const DEFAULT_TEMPLATES: MessageTemplate[] = [
@@ -101,6 +111,9 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('quote_changes', 'whatsapp', '', '{actor} asked for changes on quote {quote_number} for {lead_name}: {link}'),
   T('quote_confirmed', 'email', '{lead_name} confirmed quote {quote_number}', 'Hi {member},\n\n{lead_name} confirmed quote {quote_number} on its link. Add the T&Cs and send it for signature: {link}\n\n{studio}'),
   T('quote_confirmed', 'whatsapp', '', '{lead_name} confirmed quote {quote_number}. Next: add the T&Cs and send for signature — {link}'),
+  /* (UX audit Q6) */
+  T('quote_change_asked', 'email', '{lead_name} asked for a change to quote {quote_number}', 'Hi {member},\n\n{lead_name} asked for a change to quote {quote_number} on its confirmation link. Read what they asked and revise it: {link}\n\n{studio}'),
+  T('quote_change_asked', 'whatsapp', '', '{lead_name} asked for a change to quote {quote_number}: {link}'),
   /* (REG-634) */
   T('contract_sent', 'email', 'A contract went out to {lead_name}', 'Hi {member},\n\n{actor} sent a contract to {lead_name} for signature. Follow it on the lead: {link}\n\n{studio}'),
   T('contract_sent', 'whatsapp', '', '{actor} sent a contract to {lead_name} for signature: {link}'),
@@ -143,6 +156,11 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   T('payment_failed', 'whatsapp', '', 'The payment for {studio}’s plan didn’t go through. Update the card: {link}'),
   T('credit_receipt', 'email', 'Your receipt · {amount}', 'Hi {member},\n\nThanks — {amount} was paid for {credits}. The tax invoice is in Company › Plan & AI credits: {link}\n\n{studio}'),
   T('credit_receipt', 'whatsapp', '', 'Receipt from {studio}: {amount} for {credits}. The tax invoice: {link}'),
+  /* (UX audit 2026-09-30, T8) */
+  T('task_comment', 'email', '{actor} commented on “{task}”', 'Hi {member},\n\n{actor} commented on “{task}” for {lead_name}: “{comment}”. Reply in the task: {link}\n\n{studio}'),
+  T('task_comment', 'whatsapp', '', '{actor} on “{task}” ({lead_name}): “{comment}” — {link}'),
+  T('file_comment', 'email', '{actor} commented on {file}', 'Hi {member},\n\n{actor} commented on {file} for {lead_name}: “{comment}”. Reply on the file: {link}\n\n{studio}'),
+  T('file_comment', 'whatsapp', '', '{actor} on {file} ({lead_name}): “{comment}” — {link}'),
 ]
 export function parseTemplates(v: unknown): MessageTemplate[] {
   const list = Array.isArray(v) ? v : []
@@ -157,7 +175,7 @@ export const templateFor = (list: MessageTemplate[], event: EventKey, channel: '
 export function renderTemplate(text: string, fields: Record<string, string>): string {
   return text.replace(/\{[a-z_]+\}/g, (k) => fields[k] ?? k)
 }
-export const SAMPLE_FIELDS: Record<string, string> = { '{lead_name}': 'Farah Ahmad', '{studio}': 'Demo Studio', '{member}': 'Sarah', '{actor}': 'Dane', '{source}': 'Website', '{quote_number}': 'OM-10008', '{link}': 'https://app.openmaison.sg/leads/farah-ahmad', '{stage}': 'Met', '{task}': 'Follow up with Farah Ahmad', '{item}': 'Skirting, PVC', '{credits}': '1,000', '{amount}': 'S$20.00' }
+export const SAMPLE_FIELDS: Record<string, string> = { '{lead_name}': 'Farah Ahmad', '{studio}': 'Demo Studio', '{member}': 'Sarah', '{actor}': 'Dane', '{source}': 'Website', '{quote_number}': 'OM-10008', '{link}': 'https://app.openmaison.sg/leads/farah-ahmad', '{stage}': 'Met', '{task}': 'Follow up with Farah Ahmad', '{item}': 'Skirting, PVC', '{credits}': '1,000', '{amount}': 'S$20.00', '{comment}': 'Can we move the site visit to Friday?', '{file}': 'Kitchen layout.pdf' }
 
 /** A feed row — a stored notification or a derived one (a due follow-up). */
 export type FeedRow = { id: string; kind: EventKey; title: string; body: string | null; href: string | null; at: number; readAt: number | null; channels: Channel[]; derived: boolean }

@@ -17,9 +17,11 @@ import { globalSearch } from '@/app/search/actions'
 import { withFrom } from '@/lib/nav'
 import { Keys } from '@/components/om/keys'
 import { useFlagPref } from '@/lib/prefs'
-import { markUsed, openShortcuts, SINGLE_KEYS } from '@/lib/keys/store'
-import { JUMP_TO, PAGES, SCOPES, marks, pageHits, scopeOf, type SearchHit, type SearchResult, type SearchScope } from '@/lib/global-search/model'
+import { hasHandler, markUsed, openShortcuts, runHandler, SINGLE_KEYS } from '@/lib/keys/store'
+import { CREATE, JUMP_TO, PAGES, SCOPES, createHits, marks, pageHits, scopeOf, type SearchHit, type SearchResult, type SearchScope } from '@/lib/global-search/model'
+import { isVisible, layerOpen, marked, press } from '@/components/shell/shortcuts/dom'
 import styles from './global-search.module.css'
+import { leaveThen } from '@/components/company/leave-guard'   // (UX audit S2) unsaved Company / Settings edits ask before the move
 
 /**
  * (REG-709, owner 2026-09-28: "an amazing global search … a popover window like what we have for company tab with a search bar and the results
@@ -42,6 +44,44 @@ type Item =
   | { type: 'hit'; hit: SearchHit }
   | { type: 'recent'; text: string }
   | { type: 'more'; scope: SearchScope; label: string; total: number }
+
+/* ── (UX audit V9 · S3) what a row opens on arrival: a Create row presses the page's own Create; a card's link brings the card into view ── */
+const CREATE_KEY = 'om.search.create'   // sessionStorage: the page a Create row went to, until it has pressed its Create
+const readCreate = (): { path: string; at: number; pick: string | null } | null => { try { const v = JSON.parse(sessionStorage.getItem(CREATE_KEY) ?? 'null') as { path?: unknown; at?: unknown; pick?: unknown } | null; return v && typeof v.path === 'string' && typeof v.at === 'number' ? { path: v.path, at: v.at, pick: typeof v.pick === 'string' ? v.pick : null } : null } catch { return null } }
+const writeCreate = (path: string | null, pick?: string | null) => { try { if (path) sessionStorage.setItem(CREATE_KEY, JSON.stringify({ path, at: Date.now(), pick: pick ?? null })); else sessionStorage.removeItem(CREATE_KEY) } catch { /* a private window: the page opens, its Create waits for a press */ } }
+/** The page's content has come out from behind its ghost (PageReveal holds it `inert` until then). */
+const settled = () => !document.querySelector('[inert][data-ready="false"]')
+/** Waits for `find` to answer (the page streaming in, its ghost leaving) and runs `then` once — or gives up after ~6 s. */
+function when<T>(find: () => T | null, then: (v: T) => void): () => void {
+  let tries = 0, t: ReturnType<typeof setTimeout> | null = null
+  const tick = () => { const v = settled() ? find() : null; if (v) { then(v); return } if (++tries < 60) t = setTimeout(tick, 100) }
+  t = setTimeout(tick, 60)
+  return () => { if (t) clearTimeout(t) }
+}
+/** Presses the page's Create — the C key's own answer (a registered handler, else the `data-kb="create"` control), with the page's checks — and,
+    when that opens a menu, the menu's `pick` row ("Create New Task"). */
+function pressCreate(pick: string | null, done?: () => void): () => void {
+  let stop = () => {}
+  const first = when(() => (layerOpen() ? null : hasHandler('create') ? 'handler' : marked('create')), (v) => {
+    done?.()
+    if (v === 'handler') runHandler('create'); else press(v)
+    if (pick) stop = when(() => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => isVisible(el) && el.textContent?.trim().startsWith(pick)) ?? null, (row) => row.click())
+  })
+  return () => { first(); stop() }
+}
+/** Brings a Settings or Company card into view and marks it for a moment (its id, else its data-testid). */
+function landOn(anchor: string, mark: string): () => void {
+  const find = () => { const el = document.getElementById(anchor) ?? document.querySelector<HTMLElement>(`[data-testid="${CSS.escape(anchor)}"]`); return isVisible(el) ? el : null }
+  return when(find, (el) => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' })
+    if (!mark) return
+    el.classList.add(mark)
+    setTimeout(() => el.classList.remove(mark), 1800)
+  })
+}
+/** The card links land only where the cards are — Settings and Company. */
+const LANDS = /^\/(settings|company)(\/|$)/
 
 const Marked = ({ text, q }: { text: string; q: string }) => <>{marks(text, q).map((p, i) => (p.hit ? <mark key={i} className={styles.mark}>{p.text}</mark> : <span key={i}>{p.text}</span>))}</>
 
@@ -88,6 +128,18 @@ export function GlobalSearch() {
   const [shownFor, setShownFor] = useState(pathname)
   if (shownFor !== pathname) { setShownFor(pathname); if (open) setOpen(false) }
 
+  /* (UX audit V9 · S3) On arrival: a Create row's page presses its Create; a card's link (`#<card>`) brings the card into view. */
+  const search = params.toString()
+  useEffect(() => {
+    const stops: (() => void)[] = []
+    const c = readCreate()
+    if (c && Date.now() - c.at < 15_000 && c.path === pathname) stops.push(pressCreate(c.pick, () => writeCreate(null)))   // spent once it is pressed
+    else if (c && Date.now() - c.at >= 15_000) writeCreate(null)
+    const hash = decodeURIComponent(window.location.hash.slice(1))
+    if (hash && LANDS.test(pathname)) stops.push(landOn(hash, styles.landed ?? ''))
+    return () => stops.forEach((f) => f())
+  }, [pathname, search])
+
   /* The search itself: 120ms after the last key, the newest answer wins. */
   useEffect(() => {
     if (!open || !query.trim()) return
@@ -126,21 +178,27 @@ export function GlobalSearch() {
   const q = query.trim()
   const shown = q && result ? result : null   // while a newer answer loads, the last one stays (dimmed)
   const pages = useMemo(() => (q && scope === 'all' ? pageHits(q).slice(0, 4) : []), [q, scope])
+  const creates = useMemo(() => (q && scope === 'all' ? createHits(q) : []), [q, scope])
   const sections: { key: string; label: string; count?: number; items: Item[] }[] = useMemo(() => {
     if (!q) {
       const out: { key: string; label: string; items: Item[] }[] = []
       if (recent.length) out.push({ key: 'recent', label: 'Recent searches', items: recent.map((text) => ({ type: 'recent' as const, text })) })
       if (opened.length) out.push({ key: 'opened', label: 'Recently opened', items: opened.map((hit) => ({ type: 'hit' as const, hit })) })
       out.push({ key: 'go', label: 'Go to', items: JUMP_TO.map((id) => PAGES.find((p) => p.id === id)!).filter(Boolean).map((p) => ({ type: 'hit' as const, hit: { kind: 'page' as const, id: p.id, title: p.title, sub: p.sub, href: p.href, icon: p.icon, rank: 0 } })) })
+      out.push({ key: 'create', label: 'Create', items: createHits('').map((hit) => ({ type: 'hit' as const, hit })) })   // (UX audit V9)
       return out
     }
     const groups = (shown?.groups ?? []).map((g) => ({
       key: g.kind, label: g.label, count: g.total,
       items: [...g.hits.map((hit) => ({ type: 'hit' as const, hit })), ...(scope === 'all' && g.total > g.hits.length ? [{ type: 'more' as const, scope: scopeOf(g.kind), label: g.label, total: g.total }] : [])],
     }))
-    if (pages.length) groups.push({ key: 'page', label: 'Go to', count: pages.length, items: pages.map((hit) => ({ type: 'hit' as const, hit })) })
-    return groups
-  }, [q, recent, opened, shown, scope, pages])
+    /* (UX audit V9) Go to and Create close the list — whichever holds the better answer first (a name before a line under it) */
+    const tail = [
+      ...(pages.length ? [{ key: 'page', label: 'Go to', count: pages.length, items: pages.map((hit) => ({ type: 'hit' as const, hit })), best: pages[0]!.rank }] : []),
+      ...(creates.length ? [{ key: 'create', label: 'Create', count: creates.length, items: creates.map((hit) => ({ type: 'hit' as const, hit })), best: creates[0]!.rank }] : []),
+    ].sort((a, b) => b.best - a.best)
+    return [...groups, ...tail.map((g) => ({ key: g.key, label: g.label, count: g.count, items: g.items }))]
+  }, [q, recent, opened, shown, scope, pages, creates])
   const items = sections.flatMap((s) => s.items)
   const at = Math.min(active, Math.max(0, items.length - 1))
   /* each section's first row's place in the keyboard's walk */
@@ -158,11 +216,21 @@ export function GlobalSearch() {
     /* (REG-715, Q-03) Go to › Keyboard shortcuts opens the ? panel over the page you are on */
     if (hit.kind === 'page' && hit.href === '#shortcuts') { setOpen(false); openShortcuts(); return }
     if (q) remember(q)
-    if (hit.kind !== 'page') write(OPENED_KEY, [{ ...hit, rank: 0 }, ...read<SearchHit>(OPENED_KEY).filter((h) => !(h.kind === hit.kind && h.id === hit.id))].slice(0, 5))
-    const href = hit.kind === 'page' ? hit.href : withFrom(hit.href, here)
+    if (hit.kind !== 'page' && hit.kind !== 'create') write(OPENED_KEY, [{ ...hit, rank: 0 }, ...read<SearchHit>(OPENED_KEY).filter((h) => !(h.kind === hit.kind && h.id === hit.id))].slice(0, 5))
+    const href = hit.kind === 'page' || hit.kind === 'create' ? hit.href : withFrom(hit.href, here)
     if (newTab) { window.open(href, '_blank', 'noopener'); return }
     setOpen(false)
-    router.push(href)
+    /* (UX audit V9) a Create row without a landing of its own presses the page's Create once it is there — at once when it is this page */
+    const path = href.split(/[?#]/)[0]!
+    if (hit.kind === 'create' && !href.includes('?')) {
+      const pick = CREATE.find((c) => c.id === hit.id)?.pick ?? null
+      if (path === pathname) { pressCreate(pick); return }
+      writeCreate(path, pick)
+    }
+    /* (UX audit S3) a card on this very page: only the hash moves, so the arrival runs here */
+    const hash = href.includes('#') ? href.slice(href.indexOf('#') + 1) : ''
+    if (hash && path === pathname && LANDS.test(pathname)) { window.history.replaceState(null, '', href); landOn(hash, styles.landed ?? ''); return }
+    leaveThen(() => router.push(href))   // (UX audit S2) an unsaved Company / Settings form asks first
   }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive(Math.min(at + 1, items.length - 1)) }

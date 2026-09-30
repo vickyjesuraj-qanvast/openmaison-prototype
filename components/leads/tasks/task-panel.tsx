@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Tag as TagChip, TextArea } from '@/components/ds'
 import { Avatar } from '@/components/om/avatar'
 import { DateField } from '@/components/om/date-field'
@@ -30,7 +30,7 @@ export type TaskPanelMenuAction = 'template' | 'delete'
  */
 export function TaskPanel({
   task, tags, onClose, onComments, onAttach, onMenu, onChange, onAssign, onTags, onManageTags, onToggleDone, onDetach,
-  open = true, now, onCreateTag, lead,
+  open = true, now, onCreateTag, lead, focusName = 0,
 }: {
   task: TaskRow
   /** The studio's members (the assign popover is the host's; the panel shows task.assignees). */
@@ -53,6 +53,8 @@ export function TaskPanel({
   open?: boolean
   now?: number
   onCreateTag?: (name: string) => void
+  /** (UX audit 2026-09-30, T6) Bumped by a double-click on the row's title: the Task name takes the caret with its text selected — rename here. */
+  focusName?: number
 }) {
   // Day-granular "today" for the Material picker: the host's `now`, else one lazy read at mount (no Date.now() in render).
   const [mountedAt] = useState(() => new Date())
@@ -77,13 +79,24 @@ export function TaskPanel({
     if (description !== desc) onChange({ description })
   }
 
+  const nameBox = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!focusName) return
+    const el = nameBox.current?.querySelector('textarea')
+    if (el) { el.focus(); el.select() }
+  }, [focusName])
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [addTagEl, setAddTagEl] = useState<HTMLElement | null>(null)   // the "+ Add Tag" trigger, exempt from the picker's outside-press (REG-153)
 
   const actions: ReactNode = (
     <>
-      <DrawerAction icon="comment" label="Comments" onClick={onComments} />
+      {/* (UX audit 2026-09-30, T8) the comment icon carries its count, as the row's comment chip does */}
+      <span className={styles.countHost}>
+        <DrawerAction icon="comment" label={task.comments.length ? `Comments (${task.comments.length})` : 'Comments'} onClick={onComments} />
+        {task.comments.length ? <span className={styles.count} aria-hidden data-testid="panel-comment-count">{task.comments.length}</span> : null}
+      </span>
       <DrawerAction icon="attach_file" label="Attach files" onClick={onAttach} />
       <span className={styles.menuHost}>
         <DrawerAction icon="more_vert" label="More" expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)} />
@@ -134,7 +147,7 @@ export function TaskPanel({
           (REG-729) The DS TextArea with its own label — rests inside while empty, floats to the top border on focus or a value — where a
           local copy of that behaviour stood. Commits on blur: the panel has no Save button (902:27363). */}
       <div className={styles.fields}>
-        <TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} />
+        <div ref={nameBox}><TextArea label="Task name" value={title} onChange={setTitle} onBlur={commitTitle} className={styles.nameArea} /></div>
         <DateField label="Due date" today={today} value={task.dueAt ? inputDate(task.dueAt) : ''}
                    onChange={(v) => { const d = parseInputDate(v); if (d) onChange({ dueAt: d }) }} />
         <TextArea label="Description" value={description} onChange={setDescription} onBlur={commitDescription} />

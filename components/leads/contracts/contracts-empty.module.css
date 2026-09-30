@@ -11,6 +11,8 @@
 .title { composes: title from '../../om/empty-card.module.css'; }   /* 20/24/600 = subheading-xl, no longer heading-h3 re-typed by hand */
 .body { composes: body from '../../om/empty-card.module.css'; }
 .buttons { composes: buttons from '../../om/empty-card.module.css'; }
+/* (UX audit C6) The quote a new contract will name, under the card's words — the body's type, the quote glyph leading. */
+.names { composes: body from '../../om/empty-card.module.css'; display: inline-flex; align-items: center; justify-content: center; gap: var(--om-spacing-1); }
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    The Quotes twin's rule: the two CTAs are DS buttons at the mock's 36, so on a touch pointer each keeps

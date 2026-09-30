@@ -1,5 +1,6 @@
 import { Bone, GhostSheet } from './skeleton'
 import { tabGhost } from '@/components/leads/detail/tab-ghosts'
+import { TabGhostFor } from '@/components/leads/detail/tab-ghost-for'
 import { DETAIL_TABS } from '@/lib/leads/stage-policy'
 import { tabBones } from '@/lib/company/sections'
 import styles from './detail-skeleton.module.css'
@@ -14,7 +15,8 @@ const ROW_W = [168, 132, 190, 150, 176, 140]
  * `tab` is the tab's slug; the route's `[tab]/loading.tsx` reads it from the address (detail-tab-skeleton.tsx).
  */
 export function DetailSkeleton({ wide = false, tab }: { wide?: boolean; tab?: string }) {
-  const body = wide ? tabGhost(tab) : null
+  /* (UX audit build) a list tab draws its remembered shape — its first run (the empty card) or its list */
+  const body = wide ? (tabGhost(tab) ? <TabGhostFor tab={tab} /> : null) : null
   return (
     <GhostSheet label="Loading lead">
       <div className={styles.header}>
@@ -36,6 +38,9 @@ export function DetailSkeleton({ wide = false, tab }: { wide?: boolean; tab?: st
         <span className={styles.kebabPhone}><Bone w={36} h={36} r={4} /></span>
         <div className={styles.actions}>
           <Bone w={134} h={36} r={4} />
+          {/* (UX audit 2026-09-30, L6) Convert to Project outlined with its lock while Won is out of reach, then the one filled primary —
+              "Move to Met" … — the header most leads show; up to 1024 the row is the pill and the primary (overview.module.css .convertLocked) */}
+          <span className={styles.convertLocked}><Bone w={178} h={36} r={4} /></span>
           <span className={styles.convert}><Bone w="100%" h={36} r={4} /></span>
           <span className={styles.kebabDesk}><Bone w={36} h={36} r={4} /></span>
         </div>

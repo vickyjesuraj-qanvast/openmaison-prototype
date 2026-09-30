@@ -2,11 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Chips } from '@/components/om/chips'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { displayDateLong, displayTime } from '@/lib/format'
-import type { LeadActivityData } from '@/lib/leads/activity'
+import type { ActivityGroup, LeadActivityData } from '@/lib/leads/activity'
 import styles from './lead-activity.module.css'
+
+/** (UX audit 2026-09-30, T10) The chips above the timeline — the house `Chips` (REG-614), one at a time. */
+type Show = 'all' | ActivityGroup
+const SHOW: { value: Show; label: string }[] = [
+  { value: 'all', label: 'All' }, { value: 'tasks', label: 'Tasks' }, { value: 'files', label: 'Files' }, { value: 'notes', label: 'Notes' }, { value: 'stage', label: 'Stage' },
+]
 
 /**
  * Lead Details › Activity — a single continuous timeline (REG-245 + REG-248, user 2026-09-01): the mock's
@@ -17,12 +24,16 @@ import styles from './lead-activity.module.css'
  * ITSELF is the hyperlink (underlined on hover) where the event has a destination; no See-CTA, no "by who"
  * (every sentence opens with its actor). Newest first (REG-191); the feed derives from the lead's records
  * (lib/leads/activity.ts), so unfiltered it is never empty: the lead's creation is its last row.
+ * (UX audit 2026-09-30, T10 — extends REG-191 · REG-245) Chips above the timeline keep one kind of line — All · Tasks · Files · Notes ·
+ * Stage — and a task's lines name whoever made each change (the lead's event log).
  */
 export function LeadActivity({ data }: { data: LeadActivityData }) {
   const [query, setQuery] = useState('')
+  const [show, setShow] = useState<Show>('all')
 
   const q = query.trim().toLowerCase()
-  const events = q ? data.events.filter((e) => e.text.toLowerCase().includes(q)) : data.events
+  const kept = show === 'all' ? data.events : data.events.filter((e) => e.group === show)
+  const events = q ? kept.filter((e) => e.text.toLowerCase().includes(q)) : kept
 
   return (
     <div className={styles.tab} data-testid="activity-feed">
@@ -34,9 +45,11 @@ export function LeadActivity({ data }: { data: LeadActivityData }) {
           <ToolbarSearch query={query} onQuery={setQuery} placeholder="Search people, tasks, files…" label="Search activities" />
         </div>
       </div>
+      <Chips label="Show" options={SHOW} value={show} onChange={(v) => setShow(v as Show)} testId="activity-chips" />
 
       {events.length === 0 ? (
-        <TabSearchEmpty noun="activities" searching onClearAll={() => setQuery('')} />
+        /* a search, or a chip, that keeps nothing — the tabs' shared No-results card ("No activities match this filter."), Clear All back to All */
+        <TabSearchEmpty noun="activities" searching={!!q} onClearAll={() => { setQuery(''); setShow('all') }} />
       ) : (
         <div className={styles.list} role="list" aria-label="Activity">
           {events.map((e) => (

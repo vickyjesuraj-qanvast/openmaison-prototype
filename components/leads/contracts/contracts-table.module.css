@@ -200,6 +200,22 @@
   .card[data-lead] .cell.colLead { display: flex; grid-column: 2 / -1 !important; grid-row: 2 !important; }
   .card[data-lead] .cell.colStatus, .card[data-lead] .cell.colCreated { grid-row: 3 !important; }
 }
+/* (UX audit C5) Under a status out for signature, whether the client opened it and how long it has waited — "Not opened in 3d" in the
+   table's 128 column, beside the Sent date; "Sent 3d ago · not opened" on a phone's card, which has room and no Sent column — the Sent
+   cell’s second-line type (body-s grey). On a touch pointer the status
+   trigger is its 44 box (REG-273): the cell gives up its 12s so the two lines fit the 68 row. */
+.statusStack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.waiting { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+.waiting[data-form='full'] { display: none; }
+@media (max-width: 767px), (hover: none) and (max-width: 1024px) {
+  .cell.colStatus[data-sub] { padding-block: 0; }
+  .statusStack { gap: 0; }
+}
+@media (max-width: 767px) {
+  .statusStack { gap: var(--om-spacing-1); }
+  .waiting[data-form='short'] { display: none; }
+  .waiting[data-form='full'] { display: inline; }
+}
 /* (REG-633, contracts parity Q-17) The Sent cell's second line: when the client first opened the link. */
 .sentCell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .viewed { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; }

@@ -11,6 +11,16 @@ import { isWizardPayload } from '@/lib/leads/stage-data'
 import { displayDate, displayDateTimeDot, parseInputDateTime } from '@/lib/format'
 import type { LeadEventDetail } from '@/lib/leads/events'
 
+/** (UX audit 2026-09-30, T10) "Sarah assigned Kevin and Hui Min to the task “X”." — who joined, who left, in one sentence. */
+function assignedLine(actor: string, d: LeadEventDetail): string {
+  const names = (list: string[] | undefined) => { const l = list ?? []; return l.length <= 1 ? l.join('') : `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` }
+  const task = `“${d.title ?? ''}”`
+  const on = names(d.names), off = names(d.removed)
+  if (on && off) return `${actor} assigned ${on} to the task ${task} and took ${off} off it.`
+  if (on) return `${actor} assigned ${on} to the task ${task}.`
+  return `${actor} took ${off || 'a member'} off the task ${task}.`
+}
+
 /* Lead Details › Activity (931-47975) — the feed is derived from every table that carries a timestamp for the lead.
    There is no event log: each row is what the record's own dates say happened (created / updated / completed / answered), so the
    sentences are the prototype's (REG-191) — the mock shows one task sentence with actors "James" and "System". */
@@ -28,7 +38,11 @@ export type ActivityEvent = {
   /** (audit 2026-09-26, round 3) A record's creation — at the same second as something done to it (a quote and its first items), it reads as
       the older of the two, so the feed never says the items came before the quote. */
   origin?: boolean
+  /** (UX audit 2026-09-30, T10) Which of the tab's chips keeps the line — the rest show under All only. */
+  group?: ActivityGroup
 }
+/** (T10) The chips above the timeline: All · Tasks · Files · Notes · Stage. */
+export type ActivityGroup = 'tasks' | 'files' | 'notes' | 'stage'
 
 export type LeadActivityData = { events: ActivityEvent[]; now: number }
 
@@ -107,7 +121,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       : log.toStage === 'On Hold' ? `You put the lead on hold${why}.`
       : log.toStage === 'Lost' ? `You marked the lead as lost${why}${extra}.`
       : `You moved the lead from ${log.fromStage} to ${log.toStage}.`
-    push({ id: `stage-${log.id}`, at: log.createdAt, icon: 'swap_horiz', text, link: overview, actor: 'You' })
+    push({ id: `stage-${log.id}`, at: log.createdAt, icon: 'swap_horiz', text, link: overview, actor: 'You', group: 'stage' })
     // Add Log rewrites the stage's row in place (updateStageDetails), so later contact / meeting logs live only inside the payload:
     // every log past the first (the row above already stands for it) gets its own row, dated by the log's own "when".
     if (!isWizardPayload(log.payload)) continue
@@ -115,7 +129,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       ? log.payload.logs.slice(1).map((l) => ({ when: l.when, text: `You added a contact log${l.channel ? ` via ${l.channel}` : ''}.` }))
       : log.toStage === 'Met' && Array.isArray(log.payload.meetings) ? log.payload.meetings.slice(1).map((m) => ({ when: m.when, text: 'You added a meeting log.' }))
       : []
-    entries.forEach((e, i) => push({ id: `stage-${log.id}-log-${i + 1}`, at: parseInputDateTime(e.when) ?? log.createdAt, icon: 'swap_horiz', text: e.text, link: overview, actor: 'You' }))
+    entries.forEach((e, i) => push({ id: `stage-${log.id}-log-${i + 1}`, at: parseInputDateTime(e.when) ?? log.createdAt, icon: 'swap_horiz', text: e.text, link: overview, actor: 'You', group: 'stage' }))
   }
   /* (REG-529) Quote X-Ray: a comparison is a reading of two quotes, kept on the lead. */
   for (const c of cmps) {
@@ -158,6 +172,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       const name = a.clientName ?? lead.name
       const text = a.kind === 'favourite' ? `${name} picked ${v ?? 'a render'} as the favourite.`
         : a.kind === 'call_back' ? `${name} asked for a call back about the renders.`
+        : a.kind === 'reply' ? `${name} answered ${lead.name}’s note on ${v ?? 'the renders'}: ${q(a.message ?? '')}`   // (UX audit V1) the studio's reply, `client_name` its writer
         : `${name} left a note on ${v ?? 'the renders'}: ${q(a.message ?? '')}`
       push({ id: `viz-ask-${a.id}`, at: a.createdAt, icon: a.kind === 'favourite' ? 'star' : a.kind === 'call_back' ? 'call' : 'comment', text, link: a.kind === 'call_back' && a.taskId ? { label: 'See Task', href: `${base}/tasks?open=${a.taskId}` } : at(a.versionKey), actor: name })
     }
@@ -186,7 +201,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       : e.kind === 'file_deleted' ? `${actor} deleted ${q(d.name ?? '')} forever.`
       : e.kind === 'return_undone' ? `${actor} undid the return to Qanvast.`
       : e.kind === 'invite_sent' ? `${actor} invited ${lead.name} to the portal.`
-      : e.kind === 'questionnaire_asked' ? `${actor} asked ${lead.name} to answer the questionnaire.`
+      : e.kind === 'questionnaire_asked' ? (d.ids?.length ? `${actor} asked ${lead.name} to answer ${d.ids.length === 1 ? '1 question' : `${d.ids.length} questions`}.` : `${actor} asked ${lead.name} to answer the questionnaire.`)   // (T12) the ask names what it asked
       : e.kind === 'comparison_deleted' ? `${actor} deleted the Quote X-Ray comparison ${q(d.title ?? '')}.`   // (REG-641)
       : e.kind === 'contract_unsigned' ? `${actor} moved the contract ${q(d.title ?? '')} back to ${d.kind ?? 'Draft'} — its signature was cleared.`   // (REG-634)
       : e.kind === 'contract_archived' ? `${actor} archived the contract ${q(d.title ?? '')}.`
@@ -202,27 +217,37 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
       : e.kind === 'share_stopped' ? `${actor} stopped sharing the renders’ link.`
       : e.kind === 'share_renewed' ? `${actor} renewed the renders’ link for ${d.n ?? SHARE_DAYS} days.`
       : e.kind === 'share_reopened' ? `${actor} reopened the renders’ link.`
+      /* (UX audit 2026-09-30, T10) a task's changes, by whoever made them */
+      : e.kind === 'task_completed' ? `${actor} completed the task ${q(d.title ?? '')}.`
+      : e.kind === 'task_reopened' ? `${actor} reopened the task ${q(d.title ?? '')}.`
+      : e.kind === 'task_edited' ? `${actor} updated the task ${q(d.title ?? '')} — ${(d.fields ?? []).map((f) => (f.key === 'description' ? 'the description' : `${f.label}: ${f.from} → ${f.to}`)).join('; ')}.`
+      : e.kind === 'task_assigned' ? assignedLine(actor, d)
       : null
     if (!text) continue
     const icon = e.kind === 'member_removed' ? 'person' : e.kind === 'field_edited' ? 'edit' : e.kind === 'task_deleted' ? 'ballot' : e.kind === 'note_deleted' ? 'sticky_note_2' : e.kind === 'file_trashed' || e.kind === 'file_deleted' ? 'delete' : e.kind === 'return_undone' ? 'undo' : e.kind === 'invite_sent' ? 'send' : e.kind.startsWith('contract_') ? 'contract' : e.kind === 'comparison_deleted' ? 'scan'
       : e.kind === 'design_deleted' || e.kind === 'design_purged' || e.kind === 'room_deleted' || e.kind === 'version_deleted' ? 'delete' : e.kind === 'design_restored' || e.kind === 'room_restored' || e.kind === 'version_restored' ? 'restore'
-      : e.kind === 'share_stopped' ? 'link_off' : e.kind === 'share_renewed' ? 'schedule' : e.kind === 'share_reopened' ? 'link' : 'help'
+      : e.kind === 'share_stopped' ? 'link_off' : e.kind === 'share_renewed' ? 'schedule' : e.kind === 'share_reopened' ? 'link' : e.kind.startsWith('task_') ? 'ballot' : 'help'
     const vizLink = e.kind === 'design_purged' ? overview : e.kind.startsWith('room_') || e.kind.startsWith('version_') ? viz(d.roomId ?? null, e.kind.startsWith('version_') ? d.id ?? null : null) : viz(null)
-    const link = e.kind === 'questionnaire_asked' ? { label: 'See Questionnaire', href: `${base}/questionnaire` } : e.kind === 'task_deleted' ? { label: 'See Tasks', href: `${base}/tasks` } : e.kind === 'file_trashed' ? { label: 'See Files', href: `${base}/files` }
+    const liveTask = e.kind.startsWith('task_') && e.kind !== 'task_deleted' && d.id && tasks.some((t) => t.id === d.id)
+    const link = e.kind === 'questionnaire_asked' ? { label: 'See Questionnaire', href: `${base}/questionnaire` } : liveTask ? { label: 'See Task', href: `${base}/tasks?open=${d.id}` } : e.kind.startsWith('task_') ? { label: 'See Tasks', href: `${base}/tasks` } : e.kind === 'file_trashed' ? { label: 'See Files', href: `${base}/files` }
       : e.kind.startsWith('design_') || e.kind.startsWith('room_') || e.kind.startsWith('version_') || e.kind.startsWith('share_') ? vizLink : overview
-    push({ id: `ev-${e.id}`, at: e.at, icon, text, link, actor })
+    const group: ActivityGroup | undefined = e.kind.startsWith('task_') ? 'tasks' : e.kind.startsWith('file_') ? 'files' : e.kind === 'note_deleted' ? 'notes' : undefined
+    push({ id: `ev-${e.id}`, at: e.at, icon, text, link, actor, group })
   }
 
   // Tasks (the mock's "ballot" rows) — created by whoever the record names, then updated / completed when its dates say so.
   // The record keeps no history of what changed (updatedAt is bumped by every edit, assignment and tag change), so the update row
   // is the plain sentence unless the task is done — and it is yours: every write in the prototype is by the signed-in member.
   const askedFor = new Set(vAsks.map((a) => a.taskId).filter((id): id is string => !!id))   // (REG-676) a client's call back names its task in its own line
+  /* (UX audit 2026-09-30, T10) a task whose changes are on the event log reads them there, each with its own actor; only a task changed before
+     the log began keeps the one line its row can give — and that line no longer claims "You" did it: the row keeps no author of a change */
+  const logged = new Set(events.filter((e) => e.kind.startsWith('task_')).map((e) => (e.detail as LeadEventDetail | null)?.id).filter((id): id is string => !!id))
   for (const t of tasks) {
     const creator = who(t.creatorId)
     const link = { label: 'See Task', href: `${base}/tasks?open=${t.id}` }
-    if (!askedFor.has(t.id)) push({ id: `task-${t.id}`, at: t.createdAt, icon: 'ballot', text: `${creator} created the task ${q(t.title)}.`, link, actor: creator, origin: true })
-    if (t.updatedAt && t.updatedAt.getTime() - t.createdAt.getTime() > 60_000) {
-      push({ id: `task-u-${t.id}`, at: t.updatedAt, icon: 'ballot', text: t.done ? `You completed the task ${q(t.title)}.` : `You updated the task ${q(t.title)}.`, link, actor: 'You' })
+    if (!askedFor.has(t.id)) push({ id: `task-${t.id}`, at: t.createdAt, icon: 'ballot', text: `${creator} created the task ${q(t.title)}.`, link, actor: creator, origin: true, group: 'tasks' })
+    if (!logged.has(t.id) && t.updatedAt && t.updatedAt.getTime() - t.createdAt.getTime() > 60_000) {
+      push({ id: `task-u-${t.id}`, at: t.updatedAt, icon: 'ballot', text: t.done ? `The task ${q(t.title)} was completed.` : `The task ${q(t.title)} was updated.`, link, actor: 'System', group: 'tasks' })
     }
   }
   /* (REG-627, parity Q-30) A comment on a quote's line — the line named while it is still on the quote. */
@@ -231,7 +256,7 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     const line = qLines.find((l) => l.id === c.itemId)
     push({ id: `qc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on ${line ? `“${line.name}” in ` : ''}the quote ${q(x.number)}.`, link: { label: 'Open Quote', href: `/quotes/${x.id}` }, actor: who(c.authorId) })
   }
-  for (const c of tComments) { const t = tasks.find((x) => x.id === c.taskId); if (t) push({ id: `tc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the task ${q(t.title)}.`, link: { label: 'See Task', href: `${base}/tasks?open=${t.id}` }, actor: who(c.authorId) }) }
+  for (const c of tComments) { const t = tasks.find((x) => x.id === c.taskId); if (t) push({ id: `tc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the task ${q(t.title)}.`, link: { label: 'See Task', href: `${base}/tasks?open=${t.id}&panel=comments` }, actor: who(c.authorId), group: 'tasks' }) }
 
   // Quotes / contracts — created, then each stamped milestone.
   for (const x of qs) {
@@ -294,14 +319,14 @@ export async function fetchLeadActivity(leadId: string): Promise<LeadActivityDat
     const rendersFolder = f.kind === 'folder' && filedRender.has(firstChild(f.id)?.id ?? '')
     // The glyph follows the record's kind (the mock's files were all images, so "image" was written in).
     push({ id: `file-${f.id}`, at: f.createdAt, icon: render ? 'wand_shine' : f.kind === 'folder' ? 'folder' : f.kind === 'pdf' || f.mime === 'application/pdf' ? 'picture_as_pdf' : 'image',
-      text: rendersFolder ? `${actor} created the folder ${q(f.name)} for renders from the AI Visualizer.` : f.kind === 'folder' ? `${actor} created the folder ${q(f.name)}.` : render ? `${actor} saved ${q(f.name)} from the AI Visualizer to Files.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor })
-    if (f.deletedAt) push({ id: `file-d-${f.id}`, at: f.deletedAt, icon: 'delete', text: `${actor} moved ${q(f.name)} to the Trash Folder.`, link: { label: 'See Files', href: `${base}/files` }, actor })
+      text: rendersFolder ? `${actor} created the folder ${q(f.name)} for renders from the AI Visualizer.` : f.kind === 'folder' ? `${actor} created the folder ${q(f.name)}.` : render ? `${actor} saved ${q(f.name)} from the AI Visualizer to Files.` : `${actor} uploaded the file ${q(f.name)}.`, link: fileLink(f), actor, group: 'files' })
+    if (f.deletedAt) push({ id: `file-d-${f.id}`, at: f.deletedAt, icon: 'delete', text: `${actor} moved ${q(f.name)} to the Trash Folder.`, link: { label: 'See Files', href: `${base}/files` }, actor, group: 'files' })
   }
-  for (const c of fComments) { const f = files.find((x) => x.id === c.fileId); if (f) push({ id: `fc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the file ${q(f.name)}.`, link: fileLink(f), actor: who(c.authorId) }) }
+  for (const c of fComments) { const f = files.find((x) => x.id === c.fileId); if (f) push({ id: `fc-${c.id}`, at: c.createdAt, icon: 'comment', text: `${who(c.authorId)} commented on the file ${q(f.name)}.`, link: f.deletedAt || f.kind === 'folder' ? fileLink(f) : { label: 'See File', href: `${base}/files/${f.id}?panel=comments` }, actor: who(c.authorId), group: 'files' }) }
   for (const n of notes) {
     const actor = who(n.authorId)
     const link = { label: 'See Note', href: `${base}/notes` }
-    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'call_log' : 'sticky_note_2'   /* one mark for a contact log everywhere (REG-278) */, text: n.kind === 'contact' ? `${actor} logged a contact${n.channel ? ` via ${n.channel}` : ''}${n.outcome ? ` — ${n.outcome}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor })
+    push({ id: `note-${n.id}`, at: n.createdAt, icon: n.kind === 'contact' ? 'call_log' : 'sticky_note_2'   /* one mark for a contact log everywhere (REG-278) */, text: n.kind === 'contact' ? `${actor} logged a contact${n.channel ? ` via ${n.channel}` : ''}${n.outcome ? ` — ${n.outcome}` : ''}.` : `${actor} added the note ${q(n.title || 'New')}.`, link, actor, group: 'notes' })
   }
   for (const x of qns) {
     const link = { label: 'See Questionnaire', href: `${base}/questionnaire` }

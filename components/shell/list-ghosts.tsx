@@ -1,6 +1,9 @@
+'use client'
+
 import { GhostSheet } from './skeleton'
 import { GhostHead, type Action } from './ghost-kit'
-import { ContractsTabGhost, QuotesTabGhost, TasksTabGhost } from '@/components/leads/detail/tab-ghosts'
+import { ContractsTabGhost, FirstRunTabGhost, QuotesTabGhost, TasksTabGhost } from '@/components/leads/detail/tab-ghosts'
+import { useFirstRunShape } from '@/lib/ghost-shape'
 import pageStyles from '@/app/leads/leads.module.css'
 import tasksTab from '@/components/leads/tasks/lead-tasks.module.css'
 
@@ -21,14 +24,17 @@ function ListGhost({ title, actions, label, frame, children }: { title: number; 
 
 export function TasksListGhost() {
   /* the rail's Tasks page is the lead tab's own frame (lead-tasks.module.css .tab[data-studio]: p24 at every width) */
-  const body = <TasksTabGhost studio rows={12} />
-  return <ListGhost title={58} actions={[{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{body}</div>}>{body}</ListGhost>
+  const first = useFirstRunShape('tasks')   // (UX audit build) no task yet: the bare bar and the empty card (REG-737)
+  const body = first ? <FirstRunTabGhost tab="tasks" /> : <TasksTabGhost studio rows={12} />
+  return <ListGhost title={58} actions={first ? ['icon'] : [{ fold: 119 }, 'icon']} label="Loading tasks" frame={<div className={tasksTab.tab} data-studio="" aria-hidden>{body}</div>}>{body}</ListGhost>
 }
 
 export function QuotesListGhost() {
-  return <ListGhost title={72} label="Loading quotes"><QuotesTabGhost studio rows={7} /></ListGhost>
+  const first = useFirstRunShape('tools.quotes')
+  return <ListGhost title={72} label="Loading quotes">{first ? <FirstRunTabGhost tab="quotes" /> : <QuotesTabGhost studio rows={7} />}</ListGhost>
 }
 
 export function ContractsListGhost() {
-  return <ListGhost title={96} label="Loading contracts"><ContractsTabGhost studio rows={4} /></ListGhost>
+  const first = useFirstRunShape('tools.contracts')
+  return <ListGhost title={96} label="Loading contracts">{first ? <FirstRunTabGhost tab="contracts" /> : <ContractsTabGhost studio rows={4} />}</ListGhost>
 }

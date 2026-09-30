@@ -43,8 +43,10 @@ export function agreementHtml(): string {
   ].join('')
 }
 
-/** A second, short template (repair R34): the variation order the reference's "Change Order" answers. */
+/** A second, short template (repair R34): the variation order the reference's "Change Order" answers. (UX audit C4) It ends with the
+ *  Client signature a send needs; `VARIATION_SIGN_OFF` is what R65 adds to a copy seeded before. */
 export const VARIATION_TITLE = 'Variation Order'
+export const VARIATION_SIGN_OFF = () => `<p>${signField('client-signature')}</p><p>${t('client.name')}, the Client</p>`
 export function variationHtml(): string {
   return [
     `<h1>${VARIATION_TITLE}</h1>`,
@@ -59,5 +61,6 @@ export function variationHtml(): string {
     '<p>Both parties agree that this Variation Order forms part of the Agreement.</p>',
     `<p>${signField('studio-initial')}</p>`,
     `<p>${signField('client-initial')}</p>`,
+    VARIATION_SIGN_OFF(),   // (UX audit C4) somewhere for the client to sign — the initials alone could never be sent
   ].join('')
 }

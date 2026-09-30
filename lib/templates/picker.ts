@@ -53,6 +53,13 @@ export function startsWith(t: PickerTemplate, paymentLabel: (key: string | null)
   }
 }
 
+/** (UX audit Q8) The line a template's tile prints — what a quote from it really starts with (its starter sections, no priced lines), the
+    Template card's words; the tile's page is the template's look, drawn with the sample quote. */
+export function startsLine(t: Pick<PickerTemplate, 'defaults'>): string {
+  const g = cleanGroups(t.defaults.starterGroups)
+  return g.length ? `Starts with ${g.join(' · ')}` : 'Starts with an empty table'
+}
+
 /** The quote editor's View by a template's items grouping maps to (REG-497). */
 export function viewForTemplate(design: TemplateDesign): 'none' | 'category' | 'room' | 'section' {
   const items = design.blocks.find((b): b is ItemsBlock => b.kind === 'items')

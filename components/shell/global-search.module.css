@@ -82,3 +82,8 @@
 /* where there is no keyboard, no key hints */
 @media (hover: none) { .enter { display: none; } }
 @media (max-width: 1024px) { .foot > span:nth-child(3) { display: none; } }
+
+/* (UX audit S3) A Settings or Company card a search result opened: brought into view and ringed for a moment, as a fresh row is (REG-574) */
+.landed { animation: gsLanded 1600ms ease-out; }
+@keyframes gsLanded { 0%, 40% { box-shadow: 0 0 0 3px var(--om-color-primary-default); } 100% { box-shadow: 0 0 0 3px transparent; } }
+@media (prefers-reduced-motion: reduce) { .landed { animation: none; box-shadow: 0 0 0 3px var(--om-color-primary-default); } }

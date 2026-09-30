@@ -238,7 +238,7 @@ function FileRowView({
           </span>
           {folder
             ? <FolderMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} />
-            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} />}
+            : <FileMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} onPick={pick} name={row.name} visualize={visualize} share={!!row.share} />}
         </span>
         </span>
       </span>

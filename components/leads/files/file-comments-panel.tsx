@@ -10,6 +10,7 @@ import { SurfaceFoot, SurfaceHead } from '@/components/om/dialog'
 import { useOverflow } from '@/components/om/use-overflow'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { relativeTime } from '@/lib/format'
+import { CommentComposer } from '@/components/leads/tasks/comment-composer'
 import type { Member } from '@/lib/db/schema'
 import type { FileViewData } from '@/lib/leads/files'
 import styles from './file-comments-panel.module.css'
@@ -32,7 +33,6 @@ export function FileCommentsPanel({
   onDelete: (id: string) => void
   onClose: () => void
 }) {
-  const [draft, setDraft] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
   /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab. */
   const kebab = useRef<HTMLElement | null>(null)
@@ -41,12 +41,6 @@ export function FileCommentsPanel({
   const [scrollRef, bodyScrolls] = useOverflow()   // (REG-725) the composer's shadow only while the thread scrolls under it
   const count = comments.length
 
-  const submit = () => {
-    const body = draft.trim()
-    if (!body) return
-    onAdd(body)
-    setDraft('')
-  }
   const saveEdit = () => {
     if (!editing) return
     const body = editing.body.trim()
@@ -130,22 +124,10 @@ export function FileCommentsPanel({
         <DropdownItem tone="danger" onSelect={() => { const c = menuComment; setMenuFor(null); if (c) onDelete(c.id) }}>Delete</DropdownItem>
       </PortalMenu>
 
-      {/* Footer (931:39946) 400×88, V g12 p16/24, top rule: Avatar 36 + [V g8] field 36 + caption 12. Enter posts (no Submit button in this mock). */}
+      {/* Footer (931:39946), p16/24, top rule. (UX audit 2026-09-30, T8) The mock's one-line field with no Submit is the task panel's composer
+          now (components/leads/tasks/comment-composer.tsx): multi-line, Enter posts, Shift+Enter breaks the line, Submit beside the caption. */}
       <SurfaceFoot shadow={bodyScrolls} className={styles.footer}>
-        <div className={styles.composer}>
-          <CommentAvatar member={me} />
-          <div className={styles.composerCol}>
-            <TextField
-              className={styles.field}
-              label="Chat with your team here"
-              placeholder="Chat with your team here"
-              value={draft}
-              onChange={setDraft}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit() } }}
-            />
-            <span className={styles.privacy}>Clients can’t see these comments</span>
-          </div>
-        </div>
+        <CommentComposer me={me} onSubmit={onAdd} />
       </SurfaceFoot>
     </div>
   )

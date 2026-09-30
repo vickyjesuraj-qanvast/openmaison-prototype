@@ -14,9 +14,12 @@ export function diffItem(before: Tracked, after: Tracked): Record<string, [unkno
   for (const f of BOOK_FIELDS) { const a = before[f.key] ?? null, b = after[f.key] ?? null; if (a !== b) out[f.key] = [a, b] }
   return out
 }
-export async function logBookChange(itemId: string, kind: BookChangeKind, by: string | null, changes: Record<string, [unknown, unknown]> | null = null, note: string | null = null, at = new Date()): Promise<void> {
-  if (kind === 'edited' && (!changes || !Object.keys(changes).length)) return
-  await db.insert(priceBookChanges).values({ id: randomUUID(), itemId, kind, changes: changes && Object.keys(changes).length ? JSON.stringify(changes) : null, note, by, at })
+/** Keeps one change; answers its id (null when an edit moved nothing) — (UX audit S7) an import's Undo reads back the changes it made. */
+export async function logBookChange(itemId: string, kind: BookChangeKind, by: string | null, changes: Record<string, [unknown, unknown]> | null = null, note: string | null = null, at = new Date()): Promise<string | null> {
+  if (kind === 'edited' && (!changes || !Object.keys(changes).length)) return null
+  const id = randomUUID()
+  await db.insert(priceBookChanges).values({ id, itemId, kind, changes: changes && Object.keys(changes).length ? JSON.stringify(changes) : null, note, by, at })
+  return id
 }
 export async function fetchItemHistory(itemId: string): Promise<ItemChange[]> {
   const [rows, team] = await Promise.all([

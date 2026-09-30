@@ -13,7 +13,10 @@
   border-radius: var(--om-radius-1);
   box-shadow: var(--om-elevation-level-3);   /* not in the dump; the import wizard's toast casts level-3 */
   display: flex; flex-direction: column; overflow: hidden;
+  max-height: calc(56px + 4 * 64px + 2px);   /* (UX audit 2026-09-30, T2) past four rows the list scrolls under the head */
 }
+/* (T2) One row per file; the list scrolls inside the toast, the head stays. */
+.toastRows { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 /* Head 56: H g16 p16, fill #1a1a1a, "Uploading 1 file" 16/Bold white + keyboard_arrow_down 24 + close 24. */
 .toastHead {
   display: flex; align-items: center; gap: var(--om-spacing-4);

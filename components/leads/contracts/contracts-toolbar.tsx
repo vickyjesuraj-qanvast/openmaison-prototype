@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ds'
-import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
+import { Dropdown, DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
+import { ScopePill } from '@/components/om/scope-pill'
 import { useSheetLayout } from '@/components/om/sheet'
 import styles from './contracts-toolbar.module.css'
 
@@ -25,8 +26,13 @@ export type ContractsToolbarProps = {
   filterCount: number
   /** Header kebab — not mocked; the Quotes kebab (910:36729) copied: Manage Templates · Contracts Settings · Deleted Contracts. */
   onMenu: (action: 'templates' | 'settings' | 'archived' | 'deleted' | 'bundle') => void
-  /** (REG-591) How many documents could go together — the item is inert below two. */
+  /** (REG-591) How many documents could go together — the item is inert below two. (UX audit C4) `bundleBlock` names why instead —
+      "Variation Order 2 has nowhere to sign" — and wins over the count. */
   bundleCount?: number
+  bundleBlock?: string | null
+  /** (UX audit C5) The to-do chip "Awaiting signature (n)" — shown only while something is out for signature; a press narrows the list to
+      it, a second press lets go (REG-666's to-do twin). */
+  awaiting?: { count: number; on: boolean; onToggle: () => void }
 }
 
 /**
@@ -36,7 +42,8 @@ export type ContractsToolbarProps = {
  * Copied from components/leads/quotes/quotes-toolbar.tsx — same geometry, the contracts' copy.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0, bare = false }: ContractsToolbarProps) {
+export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, filterCount, onMenu, bundleCount = 0, bundleBlock, awaiting, bare = false }: ContractsToolbarProps) {
+  const noBundle = bundleBlock !== undefined ? bundleBlock : bundleCount < 2 ? 'needs two documents ready to go' : null
   const [menu, setMenu] = useState<'new' | 'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -46,6 +53,11 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
       <h2 className={styles.title}>All Contracts</h2>
       <div className={styles.actions}>
         {bare ? null : (<>
+        {awaiting && awaiting.count > 0 ? (
+          <span className={styles.todo} data-testid="contracts-awaiting">
+            <ScopePill tone="attention" icon="draw" menu={false} label={`Awaiting signature (${awaiting.count})`} short={String(awaiting.count)} selected={awaiting.on} onClick={awaiting.onToggle} />
+          </span>
+        ) : null}
         <span className={styles.menuWrap}>
           {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon;
               the menu, its title and every action behind it are the same. */}
@@ -94,11 +106,13 @@ export function ContractsToolbar({ query, onQuery, onNew, onFilter, onColumns, f
               onClick={() => setMenu((m) => (m === 'more' ? null : 'more'))}
             />
           </Tooltip>
-          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" sheetTitle="All Contracts">
+          {/* (REG-728) 240: Send together's row carries its reason as a second line (UX audit C4 names the document) */}
+          <Dropdown open={menu === 'more'} onClose={() => setMenu(null)} align="right" width={MENU_WIDTH.wide} sheetTitle="All Contracts">
             {/* Quotes kebab 910:36729 with "Quotes Settings" → "Contracts Settings", "Deleted Quotes" → "Deleted Contracts". */}
             {/* (REG-591) Send together: every unsigned document of the lead under one signing link. */}
             {/* (sweep S2 #23) greyed with its reason — (REG-728) in the row's own reason line, under its words */}
-            <DropdownItem disabled={bundleCount < 2} title={bundleCount < 2 ? 'needs two documents ready to go' : undefined} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
+            {/* (UX audit C4) the reason names the document that holds it back */}
+            <DropdownItem disabled={!!noBundle} title={noBundle ?? undefined} onSelect={pick(() => onMenu('bundle'))}>Send together for signature</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('templates'))}>Manage Templates</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('settings'))}>Contracts Settings</DropdownItem>
             <DropdownItem onSelect={pick(() => onMenu('archived'))}>Archived Contracts</DropdownItem>   {/* (sweep S2 · U-07) */}

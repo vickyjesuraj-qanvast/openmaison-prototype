@@ -20,6 +20,7 @@ import { useComingSoon } from '@/components/om/snackbar'
 import { Tooltip } from '@/components/om/tooltip'
 import { displayDate, isOverdue } from '@/lib/format'
 import type { TaskRow } from '@/lib/leads/tasks'
+import type { Member } from '@/lib/db/schema'
 import styles from './tasks-table.module.css'
 
 const NO_HOVER = '(hover: none)'
@@ -50,10 +51,13 @@ export type TasksTableProps = {
   /** Changes per inline save: remounts the add row empty + focused so entry chains (REG-257). */
   addKey?: number
   onAddCancel: () => void
-  /** Row being renamed — the same field treatment on that row, pre-filled with the title. */
+  /** Row being renamed — the same field treatment on that row, pre-filled with the title (the row menu's Rename, REG-472). */
   renaming: string | null
-  /** (REG-472) A click on the title text — the row starts editing in place. */
-  onRenameStart: (task: TaskRow) => void
+  /** (UX audit 2026-09-30, T6) A double-click on the title — the panel opens with its Task name selected, to rename there. */
+  onRenameInPanel?: (task: TaskRow) => void
+  /** (T4) The members the new task will carry — the lead's, until changed — and the add row's person_add that changes them. */
+  addMembers?: Member[]
+  onAddAssign?: (anchor: HTMLElement) => void
   onRenameSubmit: (id: string, title: string) => void
   onRenameCancel: () => void
   onOpen: (task: TaskRow, anchor: HTMLElement) => void
@@ -95,8 +99,8 @@ const SORTABLE: Record<string, boolean> = { title: false, lead: false, assignees
  */
 export function TasksTable({
   tasks, now, selected, onSelect, unseen, descriptionMatches,
-  adding, onAddSubmit, addKey, onAddCancel,
-  renaming, onRenameStart, onRenameSubmit, onRenameCancel,
+  adding, onAddSubmit, addKey, onAddCancel, addMembers, onAddAssign,
+  renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, onAddClick, columns, onReorder, leadPicker,
 }: TasksTableProps) {
   const comingSoon = useComingSoon()
@@ -170,12 +174,12 @@ export function TasksTable({
       </div>
 
       {adding ? (
-        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} />
+        <AddRow key={`new-${addKey ?? 0}`} onSubmit={onAddSubmit} onCancel={onAddCancel} L={L} leadPicker={leadPicker} members={addMembers} onAssign={onAddAssign} />
       ) : null}
 
       {tasks.map((task, idx) => (
         <TaskRowView L={L}
-          onRenameStart={onRenameStart}
+          onRenameInPanel={onRenameInPanel}
           key={task.id}
           task={task}
           now={now}
@@ -213,6 +217,22 @@ export function TasksTable({
 /** The title cell as the active field (frame 194): bare input + ✕ (secondary outlined 24) + ✓ (primary filled 24) — (REG-729) the house IconButton. */
 function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { initial: string; onSubmit: (title: string) => void; onCancel: () => void; closeOnBlur?: boolean }) {
   const [value, setValue] = useState(initial)
+  /* (UX audit 2026-09-30, T4) The caret lands in the field on mount — also when the row arrives already open (`?add=1` from a saved log):
+     React leaves `autoFocus` alone on server-rendered markup, and the page is `inert` under its ghost until PageReveal lets it go (REG-708),
+     so the typing went to the page's shortcuts instead. It tries again each frame for ~2 s, and stops the moment focus is anywhere else. */
+  const field = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    let tries = 0, raf = 0
+    const land = () => {
+      const el = field.current
+      if (!el || document.activeElement === el) return
+      if (document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return   // the person is typing somewhere else
+      el.focus()
+      if (document.activeElement !== el && tries++ < 120) raf = requestAnimationFrame(land)
+    }
+    land()
+    return () => cancelAnimationFrame(raf)
+  }, [])
   /* Settled once — Enter, Escape or a button ends the edit, and the blur the unmount then fires must not act again. */
   const settled = useRef(false)
   const submit = () => {
@@ -240,6 +260,7 @@ function TitleField({ initial, onSubmit, onCancel, closeOnBlur = false }: { init
   return (
     <>
       <input
+        ref={field}
         className={styles.editInput}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -295,7 +316,9 @@ function LeadPickerCell({ picker }: { picker: LeadPicker }) {
   )
 }
 
-function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout>; leadPicker?: LeadPicker }) {
+function AddRow({ onSubmit, onCancel, L, leadPicker, members, onAssign }: { onSubmit: (title: string) => void; onCancel: () => void; L: ReturnType<typeof useColumnLayout>; leadPicker?: LeadPicker
+  /** (UX audit 2026-09-30, T4) the new task's members (the lead's, removable) and their person_add */
+  members?: Member[]; onAssign?: (anchor: HTMLElement) => void }) {
   return (
     /* `data-add` marks the row a task is being CREATED in — a rename puts the same field on a real row, whose
        cells hold real values. The phone's stylesheet needs to tell the two apart (REG-403). */
@@ -311,11 +334,30 @@ function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: strin
           <LeadPickerCell picker={leadPicker} />
         </div>
       ) : null}
-      <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')}>
-        <span className={`${styles.assignLink} ${styles.inert}`}>
-          <Icon name="person_add" size={20} />
-          Assign
-        </span>
+      {/* (UX audit 2026-09-30, T4) A new task starts with its lead's members — the log reminder's rule (REG-608) — shown as the row will show
+          them; the person_add changes them before the save. With nobody on the lead, the row's "Assign" link picks them. */}
+      <div className={`${styles.cell} ${styles.colMember} ${L.pinned('assignees') ? styles.pin : ''}`} role="cell" data-col="assignees" data-pin-edge={L.edge('assignees') || undefined} style={L.style('assignees')} data-testid="add-row-members">
+        {onAssign && members?.length ? (
+          <>
+            <span className={styles.memberStack}>
+              {members.slice(0, 2).map((m) => <Avatar key={m.id} name={m.name} color={m.color} size={24} />)}
+              {members.length > 2 ? <span className={styles.plusBox}>+{members.length - 2}</span> : null}
+            </span>
+            <Tooltip label="Assign members">
+              <IconButton icon="person_add" label="Members of the new task" size={24} variant="primary" onClick={(e) => onAssign(e.currentTarget)} />
+            </Tooltip>
+          </>
+        ) : onAssign ? (
+          <button type="button" className={styles.assignLink} onClick={(e) => onAssign(e.currentTarget)} aria-label="Members of the new task">
+            <Icon name="person_add" size={20} />
+            Assign
+          </button>
+        ) : (
+          <span className={`${styles.assignLink} ${styles.inert}`}>
+            <Icon name="person_add" size={20} />
+            Assign
+          </span>
+        )}
       </div>
       {/* The creator is stamped on save; until then the cell reads as unset, the panel's own "—". */}
       <div className={`${styles.cell} ${styles.colCreator} ${L.pinned('creator') ? styles.pin : ''}`} role="cell" data-col="creator" data-pin-edge={L.edge('creator') || undefined} style={L.style('creator')}>
@@ -336,12 +378,12 @@ function AddRow({ onSubmit, onCancel, L, leadPicker }: { onSubmit: (title: strin
 
 function TaskRowView({
   task, now, unseen, descriptionMatch, selected, onToggleSelect,
-  renaming, onRenameStart, onRenameSubmit, onRenameCancel,
+  renaming, onRenameInPanel, onRenameSubmit, onRenameCancel,
   menuOpen, onMenuToggle, onMenuClose,
   onOpen, onOpenComments, onToggleDone, onAssign, onDue, onAddTags, onRowMenu, onEdit, L,
 }: {
   task: TaskRow
-  onRenameStart: (task: TaskRow) => void
+  onRenameInPanel?: (task: TaskRow) => void
   L: ReturnType<typeof useColumnLayout>
   now: number
   unseen: boolean
@@ -366,7 +408,7 @@ function TaskRowView({
 }) {
   const overdue = !task.done && isOverdue(task.dueAt, now)
   const shiftHeld = useRef(false)
-  const touch = useMediaQuery(NO_HOVER)   /* (REG-472) which of the two the title cell does */
+  const touch = useMediaQuery(NO_HOVER)   /* a double-click is a mouse's gesture: on touch the tap alone opens the panel */
   const inert = renaming ? '' : undefined
   const pick = (action: TaskRowAction) => () => { onMenuClose(); onRowMenu(task, action) }
   /* (REG-728) The row menu opens through the body portal, as the Quotes / Contracts twins' (REG-639): an inline menu inside the card's
@@ -404,9 +446,11 @@ function TaskRowView({
             </button>
           </Tooltip>
           {/* Nested buttons aren't allowed, so the glyph sits beside this button; the anchor handed up is the cell itself. */}
-          {/* (REG-472, owner 2026-09-16) The title itself edits in place, as a cell of the quote editor does; the rest of the
-              cell, the Edit pill and the comment chip still open the panel. */}
-          <button type="button" className={styles.titleBtn} onClick={(e) => (touch ? onOpen(task, e.currentTarget.parentElement as HTMLElement) : onRenameStart(task))} aria-label={touch ? `Open ${task.title}` : `Rename ${task.title}`}>
+          {/* (UX audit 2026-09-30, T6 — supersedes REG-472's click-to-rename) A click on the title opens the task's panel, as the rest of the
+              cell, the Edit pill and the comment chip do: a designer who wanted the details landed in a text field. A double-click opens the
+              panel with its Task name selected — rename there; the row menu's Rename still edits in place. */}
+          <button type="button" className={styles.titleBtn} onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}
+                  onDoubleClick={touch || !onRenameInPanel ? undefined : () => onRenameInPanel(task)} aria-label={`Open ${task.title}`}>
             <span className={styles.title} data-unseen={unseen ? '' : undefined}>{task.title}</span>
           </button>
           {/* The chips sit BESIDE the title button, not inside it: the comment chip is a control of its own now
@@ -442,9 +486,10 @@ function TaskRowView({
               ) : null}
             </span>
           ) : null}
-          {/* (REG-472) The whole cell edits on a pointer that hovers; on touch the tap opens the panel (the mobile canvas, REG-354). */}
+          {/* (T6) The rest of the cell opens the panel too — one gesture for the whole title cell. */}
           <button type="button" className={styles.titleRest} tabIndex={-1} aria-hidden
-                  onClick={(e) => (touch ? onOpen(task, e.currentTarget.parentElement as HTMLElement) : onRenameStart(task))} />
+                  onClick={(e) => onOpen(task, e.currentTarget.parentElement as HTMLElement)}
+                  onDoubleClick={touch || !onRenameInPanel ? undefined : () => onRenameInPanel(task)} />
         </div>
       )}
 

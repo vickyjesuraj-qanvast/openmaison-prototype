@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createClient, type InStatement } from '@libsql/client'
 import { compareQuotes, ENGINE, refAsYours, type YourLine } from '@/lib/xray/compare'
 import { yourLinesFrom } from '@/lib/xray/lines'
-import { AGREEMENT_TITLE, VARIATION_TITLE, agreementHtml, variationHtml } from '@/lib/contracts/agreement'
+import { AGREEMENT_TITLE, VARIATION_SIGN_OFF, VARIATION_TITLE, agreementHtml, variationHtml } from '@/lib/contracts/agreement'
 import { readOtherQuote } from '@/lib/xray/reference'
 import { createHash } from 'node:crypto'
 import { DATABASE_AUTH_TOKEN, DATABASE_URL } from './env'
@@ -17,7 +17,7 @@ import { projectRef, VALIDITY_DAYS } from '../lib/quotes/refs'
 import { STAGES } from '../lib/leads/enums'
 import { PRESETS } from '../lib/templates/presets'
 import { DEFAULT_BRAND_SETTING, parseBrandSetting } from '../lib/templates/brand'
-import { snapshotColumns, type ContractLead, type ContractQuote } from '../lib/contracts/snapshot'
+import { documentHashOf, snapshotColumns, type ContractLead, type ContractQuote } from '../lib/contracts/snapshot'
 import type { Contract } from '../lib/db/schema'
 import { DEMO_BADGES } from '../lib/templates/assets'
 import { sampleByKey } from '../lib/visualizer/samples'
@@ -230,7 +230,7 @@ async function main() {
             VALUES (?,?,?, 'Signed', ?,?,?,?,?, NULL, NULL)
             ON CONFLICT(id) DO UPDATE SET status=excluded.status, created_at=excluded.created_at, sent_at=excluded.sent_at,
               signed_at=excluded.signed_at, signed_copy=excluded.signed_copy, updated_at=excluded.updated_at`,
-        [sid(l.id, 'contract'), l.id, 'General Contract Agreement', tQ + 1 * D, tQ + 2 * D, tW - 2 * H, 'General Contract Agreement.pdf', tW - 2 * H])
+        [sid(l.id, 'contract'), l.id, AGREEMENT_TITLE, tQ + 1 * D, tQ + 2 * D, tW - 2 * H, `${AGREEMENT_TITLE}.pdf`, tW - 2 * H])   // (UX audit C10) the paper's own title
     }
   }
   note(`${needQuote.length} quotes + ${needQuote.filter((l) => l.stage === 'Won').length} contracts created`)
@@ -1328,8 +1328,10 @@ async function main() {
       VALUES ('pb-proposal-skirting', 'Skirting, PVC 80 mm', 'White, clipped to the wall', 'purchase', 'ft run', 320, 130, 'Flooring', NULL, NULL, ?, ?, 'proposed', 'sarah', 'sarah')`, args: [at, at] })
     if (p.rowsAffected) {
       const runners = rows<{ id: string }>(await client.execute(`SELECT id FROM members WHERE role IN ('Owner', 'Admin') AND is_active = 1`))
-      for (const r of runners) await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'price_book_proposed', 'Sarah proposed “Skirting, PVC 80 mm” for My Items', 'Approve it, or send it back with a note', '/company/price-book', NULL, NULL, 'in_app,email', 'sarah', ?, NULL)`, args: [`n-pb-proposal-skirting-${r.id}`, r.id, at] })
+      for (const r of runners) await client.execute({ sql: `INSERT OR IGNORE INTO notifications (id, member_id, kind, title, body, href, lead_id, quote_id, channels, actor_id, created_at, read_at) VALUES (?, ?, 'price_book_proposed', 'Sarah proposed “Skirting, PVC 80 mm” for My Items', 'Approve it, or send it back with a note', '/company/price-book?open=pb-proposal-skirting', NULL, NULL, 'in_app,email', 'sarah', ?, NULL)`, args: [`n-pb-proposal-skirting-${r.id}`, r.id, at] })
     }
+    /* (UX audit V11) the bell's notice opens the proposed item itself (REG-709's ?open=), not the grid — the rows already written too */
+    await client.execute(`UPDATE notifications SET href = '/company/price-book?open=pb-proposal-skirting' WHERE id LIKE 'n-pb-proposal-skirting-%' AND href = '/company/price-book'`)
     const h = await client.execute(`INSERT INTO price_book_changes (id, item_id, kind, changes, note, by, at)
       SELECT 'pbc-created-' || i.id, i.id, 'created', NULL, NULL, i.created_by, i.created_at FROM price_book_items i WHERE NOT EXISTS (SELECT 1 FROM price_book_changes c WHERE c.item_id = i.id)`)
     console.log(`  ${a.rowsAffected} items and ${b.rowsAffected} sections named to ${owner} · ${h.rowsAffected} histories started · ${p.rowsAffected} proposal added`)
@@ -1706,7 +1708,48 @@ async function main() {
     console.log(`  ${r.rowsAffected} note${r.rowsAffected === 1 ? '' : 's'} written`)
   }
 
+  /* ── R65 · the studio's Variation Order can be sent (UX audit 2026-09-30, C4) ───────────────────────────────────────────────────────
+     R34 seeded the Variation Order with a Studio initial and a Client initial and nowhere for the client to sign, so Send refused it and Send
+     together could never take it. The seeded template — and any Draft contract started from it before — gains the Client signature the
+     template now ends with (lib/contracts/agreement.ts); one that has a Client signature already is left alone. */
+  console.log('\nR65 the Variation Order has a Client signature')
+  {
+    const tplId = sid('template', 'contract-variation')
+    const signOff = VARIATION_SIGN_OFF()
+    const a = await client.execute({ sql: `UPDATE contract_templates SET body = body || ? WHERE id = ? AND body NOT LIKE '%data-sign="client-signature"%' AND body LIKE '%data-sign="client-initial"%'`, args: [signOff, tplId] })
+    const b = await client.execute({ sql: `UPDATE contracts SET body = body || ? WHERE template_id = ? AND status = 'Draft' AND source = 'composed' AND body IS NOT NULL AND body NOT LIKE '%data-sign="client-signature"%' AND body LIKE '%data-sign="client-initial"%'`, args: [signOff, tplId] })
+    console.log(`  ${a.rowsAffected} template · ${b.rowsAffected} draft contracts given a Client signature`)
+  }
+
+  /* ── R66 · a contract's name is its paper's (UX audit 2026-09-30, C10) ──────────────────────────────────────────────────────────────
+     R4/R5 and the contracts seed named the demo's contracts "General Contract Agreement" while their paper — the studio agreement — reads
+     "Interior Design Service Agreement", so the client's signing page named two documents. Each takes its paper's title (numbered on its
+     lead only against the same title, as a new contract is); a signed one keeps its copy as signed, its signed file name and its Won log
+     follow the new name, and its fingerprint is taken again over the same kept text under the new title (lib/contracts/snapshot.ts). */
+  console.log('\nR66 contracts named as their paper')
+  {
+    const OLD = 'General Contract Agreement'
+    const olds = rows<{ id: string; lead_id: string; status: string; signed_copy: string | null; signed_body: string | null; source: string }>(await client.execute({ sql: `SELECT id, lead_id, status, signed_copy, signed_body, source FROM contracts
+      WHERE title = ? AND body LIKE ? ORDER BY created_at, id`, args: [OLD, `<h1>${AGREEMENT_TITLE}</h1>%`] }))
+    let renamed = 0, logs = 0
+    for (const c of olds) {
+      const taken = rows<{ title: string }>(await client.execute({ sql: `SELECT title FROM contracts WHERE lead_id = ? AND deleted_at IS NULL AND id <> ?`, args: [c.lead_id, c.id] })).map((r) => r.title)
+      const re = new RegExp(`^${AGREEMENT_TITLE}(?: (\\d+))?$`)
+      const top = taken.reduce((m, t) => { const x = re.exec(t); return x ? Math.max(m, x[1] ? Number(x[1]) : 1) : m }, 0)
+      const title = top === 0 ? AGREEMENT_TITLE : `${AGREEMENT_TITLE} ${top + 1}`
+      const copy = c.signed_copy === `${OLD}.pdf` ? `${title}.pdf` : c.signed_copy
+      const hash = c.status === 'Signed' && c.source === 'composed' && c.signed_body ? documentHashOf(title, c.signed_body) : null
+      await client.execute({ sql: `UPDATE contracts SET title = ?, signed_copy = ?, document_hash = coalesce(?, document_hash) WHERE id = ?`, args: [title, copy, hash, c.id] })
+      if (copy !== c.signed_copy) logs += (await client.execute({ sql: `UPDATE stage_logs SET payload = json_set(payload, '$.wonContract', ?) WHERE lead_id = ? AND to_stage = 'Won' AND json_extract(payload, '$.wonContract') = ?`, args: [copy, c.lead_id, c.signed_copy] })).rowsAffected
+      renamed++
+    }
+    console.log(`  ${renamed} contracts named as their paper · ${logs} Won logs follow`)
+  }
+
   const checks: [string, string][] = [
+    /* (UX audit 2026-09-30) */
+    ['the seeded Variation Order with nowhere for the client to sign (C4)', `SELECT title FROM contract_templates WHERE id = '${sid('template', 'contract-variation')}' AND deleted_at IS NULL AND body NOT LIKE '%data-sign="client-signature"%'`],
+    ['a contract named apart from its paper (C10)', `SELECT title FROM contracts WHERE title = 'General Contract Agreement' AND body LIKE '<h1>${AGREEMENT_TITLE}</h1>%'`],
     ['a member without the keyboard shortcuts note (REG-715)', `SELECT m.id FROM members m WHERE coalesce(m.is_active, 1) = 1 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.id = 'nt-keys-' || m.id)`],
     /* (audit 2026-09-26) the AI Visualizer's audit fixes */
     /* (REG-700) AI credits: the balance is its ledger, one live plan, a paid plan has its invoice */

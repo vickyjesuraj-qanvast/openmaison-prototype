@@ -13,7 +13,7 @@ import { displayDate, moneySGD } from '@/lib/format'
 import type { StageDocuments } from '@/app/leads/quotes-actions'
 import type { Member } from '@/lib/db/schema'
 import { ChoiceChips, DateTimeField, Divider, FieldError, FileTile, LinkButton, NotesArea, SectionRow, Dropzone, TextField, useUploadSim } from './fields'
-import { amountMinor, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
+import { amountMinor, attachLabel, defaultMilestones, SYSTEM_CONTRACT, SYSTEM_QUOTE, zeroMilestones } from '@/lib/leads/stage-data'
 import type { ContactLog, MeetingLog, StageErrors, WizardData } from './types'
 import styles from './wizard.module.css'
 import fieldStyles from './fields.module.css'
@@ -122,7 +122,8 @@ function LogCard({
       <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={log.channel}
                    onChange={(v) => onChange({ channel: v })} error={err('channel')} />
       <div className={styles.fieldPair}>
-        <DateTimeField label="Date & Time" value={log.when} required today={today}
+        {/* (UX audit 2026-09-30, L9) a day picked without a time takes the time it is now, never a silent 10:00 AM */}
+        <DateTimeField label="Date & Time" value={log.when} required today={today} defaultNow
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
         <TextField label="Outcome" required value={log.outcome} mode="select" options={OUTCOMES}
                    onChange={(v) => onChange({ outcome: v })} error={err('outcome')} />
@@ -150,8 +151,9 @@ function LogCard({
       </div>
       <Divider />
       <div className={styles.stack12}>
-        {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). */}
-        <SectionRow label="Attach screenshots of your call attempts"
+        {/* "Attach", not the mock's "Attach Files" (user 2026-09-04, REG-324). (UX audit 2026-09-30, L2 · T3) The row is mandatory,
+            so it carries the required mark, and it names what proves this contact — photos from a visit, screenshots of a call or a message. */}
+        <SectionRow label={attachLabel(log.channel)} required
                     action={<LinkButton icon="attach_file" onClick={() => onChange({ files: [...log.files, 'Q-101'] })}>Attach</LinkButton>} />
         {log.files.length ? (
           <div className={styles.tiles}>
@@ -212,7 +214,7 @@ function MeetingCard({
       <div className={styles.fieldPair}>
         <TextField label="Where" required value={log.where} mode="select" options={['In person', 'Video call', 'Showroom']}
                    onChange={(v) => onChange({ where: v })} error={err('where')} />
-        <DateTimeField label="Date & Time" value={log.when} required today={today}
+        <DateTimeField label="Date & Time" value={log.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) */
                        onChange={(v) => onChange({ when: v })} error={err('when')} />
       </div>
       {/* (REG-325, 780:90234 updated) Remarks before the rule; the Attach row is the log's last section, its link "Attach". */}
@@ -265,16 +267,31 @@ export function MetPanel({
  * mock's file. The timer lives here so the state can't outlive the panel.
  */
 
-/** One From System row (780:91468): the document's name, its meta line, and the amount a signed quote carries for the split. */
-export type SystemRow = { id: string; name: string; meta: string[]; amountMinor?: number }
+/** One From System row (780:91468): the document's name, its meta line, and the amount a signed quote carries for the split.
+    `hold` (UX audit 2026-09-30, Q1): why this quote can't go to the client with the move yet — the step says so when it is picked. */
+export type SystemRow = { id: string; name: string; meta: string[]; amountMinor?: number; hold?: string | null }
+
+/** (UX audit 2026-09-30, Q1) The studio's quote-approval rule as the Quote Sent step reads it (`fetchQuoteSendRule`). */
+export type SendRule = { approvalRequired: boolean; approver: boolean }
+const OUT = ['Approved', 'Sent to Client', 'Confirmed']
+/** Why a quote picked for Quote Sent can't be marked sent to the client — REG-624's approval, respected: a Draft goes where the studio
+    needs no approval or the mover's own send approves; one waiting for (or needing) approval goes once it is approved. */
+export function quoteHold(q: { status: string; number: string }, rule: SendRule): string | null {
+  if (OUT.includes(q.status)) return null
+  if (q.status === 'Draft' && (!rule.approvalRequired || rule.approver)) return null
+  return `${q.number} isn’t approved yet — a quote goes to the client once it’s approved`
+}
 
 /* (REG-340) The From System lists read the lead's own records instead of the demo's fixed pair. The payload keeps
    storing the row's NAME (a quote's title, a contract's signed copy) — the shape every stage log already holds. */
 /** Quote Sent (780:90472): quotes the studio has approved or sent out — "OM-10002 · S$58,000 · Approved on 26 Aug ’26". */
-export function approvedQuoteRows(docs: StageDocuments): SystemRow[] {
+/* (UX audit 2026-09-30, Q1) With the studio's rule known, its Drafts and the quotes awaiting approval list too — the move sends a Draft
+   that may go (the move is the send) and names the approval one still needs (`hold`), where the step used to say "No system generated
+   quotes" beside a quote the lead has. */
+export function approvedQuoteRows(docs: StageDocuments, rule: SendRule | null = null): SystemRow[] {
   return docs.quotes
-    .filter((q) => q.status === 'Approved' || q.status === 'Sent to Client' || q.status === 'Confirmed')   // (REG-587)
-    .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor,
+    .filter((q) => OUT.includes(q.status) || (rule !== null && (q.status === 'Draft' || q.status === 'Sent for Approval')))   // (REG-587)
+    .map((q) => ({ id: q.id, name: q.title, amountMinor: q.amountMinor, hold: rule ? quoteHold(q, rule) : null,
                    meta: [q.number, moneySGD(q.amountMinor), q.approvedAt ? `Approved on ${displayDate(new Date(q.approvedAt))}` : q.status] }))
 }
 /** Won (780:92744): the quotes the client signed. */
@@ -308,10 +325,12 @@ function SystemEmpty({ noun, onCreate }: { noun: 'quotes' | 'contracts'; onCreat
 }
 
 export function AttachTabs({
-  tab, onTab, selected, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty,
+  tab, onTab, selected, selectedId = null, onSelect, uploaded, uploading, onUpload, onRemoveUpload, quotes, empty,
 }: {
   tab: 'system' | 'upload'; onTab: (t: 'system' | 'upload') => void
-  selected: string | null; onSelect: (name: string) => void
+  selected: string | null; onSelect: (name: string, id: string) => void
+  /** (UX audit 2026-09-30, Q1) The picked row's id, where the step keeps one — two quotes may share a title. */
+  selectedId?: string | null
   uploaded: string | null; uploading?: boolean; onUpload: () => void; onRemoveUpload: () => void
   /** The lead's own rows; null while the window is still reading them (nothing is drawn — never a flash of the empty state). */
   quotes: SystemRow[] | null
@@ -332,12 +351,14 @@ export function AttachTabs({
       </div>
       <div className={styles.tabBody}>
         {tab === 'system' ? (
-          quotes === null ? null : quotes.length === 0 ? empty : quotes.map((q) => (
+          quotes === null ? null : quotes.length === 0 ? empty : quotes.map((q) => {
+            const on = selectedId ? selectedId === q.id : selected === q.name
+            return (
             <button key={q.id} type="button" className={styles.quoteRow}
-                    data-selected={selected === q.name || undefined}
-                    onClick={() => onSelect(q.name)}>
+                    data-selected={on || undefined}
+                    onClick={() => onSelect(q.name, q.id)}>
               <span className={styles.quoteRadio}>
-                <Icon name={selected === q.name ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} weight={300} fill />
+                <Icon name={on ? 'radio_button_checked' : 'radio_button_unchecked'} size={20} weight={300} fill />
               </span>
               <span className={styles.quoteText}>
                 <span className={styles.quoteName}>{q.name}</span>
@@ -348,7 +369,8 @@ export function AttachTabs({
               {/* Inert in the prototype; stop the click so the row is not re-selected */}
               <LinkButton onClick={(e) => { e.stopPropagation(); comingSoon() }}>View</LinkButton>
             </button>
-          ))
+            )
+          })
         ) : (
           <>
             {/* 780:91468: the drop target stays above the uploaded file, which reads as the selected row */}
@@ -376,31 +398,35 @@ export function AttachTabs({
 }
 
 export function QuoteSentPanel({
-  data, update, errors, docs, onCreateQuote,
+  data, update, errors, docs, onCreateQuote, rule = null,
 }: { data: WizardData; update: (patch: Partial<WizardData>) => void; errors: StageErrors
   /** (REG-340) The lead's quotes, read when the window opened; null until they land. */
   docs: StageDocuments | null
+  /** (UX audit 2026-09-30, Q1) The studio's approval rule — lists the quotes the move may send and names the one it can't. */
+  rule?: SendRule | null
   /** The empty state's "Create Quote ›" — the lead's Quotes tab with a fresh draft. */
   onCreateQuote: () => void }) {
   // Attach rows (mock: dead buttons) — local tiles like the other stages; not persisted, no validation key.
   const [meetingFiles, setMeetingFiles] = useState<string[]>([])
   const [renderFiles, setRenderFiles] = useState<string[]>([])
-  const quotes = docs ? approvedQuoteRows(docs) : null
+  const quotes = docs ? approvedQuoteRows(docs, rule) : null
   const upload = useUploadSim()
   const [justUploaded, setJustUploaded] = useState(false)   // focus Quote amount once the file lands (user 2026-08-29)
+  /* (UX audit 2026-09-30, Q1) The picked quote's approval, said as soon as it is picked — Save refuses it with the same line. */
+  const picked = data.quoteTab === 'system' ? quotes?.find((q) => (data.quoteSelectedId ? q.id === data.quoteSelectedId : q.name === data.quoteSelected)) : undefined
   return (
     <>
       <div className={styles.stack12}>
         <SectionRow label="Attach approved quote" />
         <AttachTabs
           tab={data.quoteTab} onTab={(t) => update({ quoteTab: t })}
-          selected={data.quoteSelected} onSelect={(n) => update({ quoteSelected: n })}
+          selected={data.quoteSelected} selectedId={data.quoteSelectedId ?? null} onSelect={(n, id) => update({ quoteSelected: n, quoteSelectedId: id })}
           uploaded={data.quoteUploaded} uploading={upload.uploading}
           onUpload={() => upload.start(() => { update({ quoteUploaded: SYSTEM_QUOTE }); setJustUploaded(true) })}   // 780:91468: the mock's file, whatever was picked
           onRemoveUpload={() => update({ quoteUploaded: null })}
           quotes={quotes} empty={<SystemEmpty noun="quotes" onCreate={onCreateQuote} />}
         />
-        <FieldError message={errors.quote} />
+        <FieldError message={errors.quote ?? picked?.hold ?? undefined} />
       </div>
       {/* Upload flow only — a system quote already knows its amount */}
       {data.quoteTab === 'upload' && data.quoteUploaded ? (

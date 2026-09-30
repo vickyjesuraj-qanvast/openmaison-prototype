@@ -149,7 +149,7 @@ export function RowMenu({ open, anchor, item, groups, all, selectedCount, brandC
             <DropdownItem onSelect={() => act('addAbove')}>Above</DropdownItem>
             <DropdownItem onSelect={() => act('addBelow')}>Below</DropdownItem>
             <DropdownDivider />
-            <DropdownItem onSelect={() => act('addFromBook')}>{isItem ? 'From My Items, below…' : 'From My Items, inside…'}</DropdownItem>   {/* (REG-653, price book parity Q-12) the pick lands where this row asked */}
+            <DropdownItem onSelect={() => act('addFromBook')}>{isItem ? 'From Price book, below…' : 'From Price book, inside…'}</DropdownItem>   {/* (REG-653, price book parity Q-12) the pick lands where this row asked */}
           </>
         ) : sub === 'move' ? (
           <>

@@ -1324,7 +1324,41 @@ export async function previewLight(url: string, knobs: RelightKnobs, scene?: Lig
 /** The regions of the surfaces or pieces picked, as one translucent overlay (the canvas lights what a pick will change — 2.0 only).
     `ctx.reading` — the version's reading, so the overlay is exactly what Generate will paint (a drawn surface without what stands in
     front of it, a piece without its neighbours). */
-export async function regionOverlay(url: string, defs: (SurfaceDef | FurnitureDef)[], rgb: [number, number, number] = [85, 0, 255], ctx: { reading?: Detection | null; photoUrl?: string | null; finishes?: Finishes | null } = {}): Promise<string> {
+export async function regionOverlay(url: string, defs: (SurfaceDef | FurnitureDef)[], rgb: [number, number, number] = [85, 0, 255], ctx: OverlayCtx = {}): Promise<string> {
+  const { img, masks } = await regionMasks(url, defs, ctx)
+  const out = new Uint8ClampedArray(img.width * img.height * 4)
+  for (let k = 0; k < img.width * img.height; k++) {
+    let a = 0
+    for (const m of masks) { const v = m[k]!; if (v > a) a = v }
+    if (a > 0.02) { out[k * 4] = rgb[0]; out[k * 4 + 1] = rgb[1]; out[k * 4 + 2] = rgb[2]; out[k * 4 + 3] = Math.round(a * 110) }
+  }
+  return pngOf(out, img.width, img.height)
+}
+/**
+ * (UX audit V5) Every pick still waiting for Generate, washed on the photo in its own colour — the walls' sage while the floor is being
+ * picked — so a pick never vanishes from the stage as the studio moves on. Each region wears its pick's colour through its soft mask
+ * (where two meet, the stronger); lighter than a lit selection's tint, so the one being edited still leads.
+ */
+export async function washOverlay(url: string, items: { def: SurfaceDef | FurnitureDef; hex: string }[], ctx: OverlayCtx = {}): Promise<string> {
+  const { img, masks } = await regionMasks(url, items.map((i) => i.def), ctx)
+  const rgbs = items.map((i) => hexRgb(i.hex))
+  const out = new Uint8ClampedArray(img.width * img.height * 4)
+  for (let k = 0; k < img.width * img.height; k++) {
+    let a = 0, at = -1
+    for (let j = 0; j < masks.length; j++) { const v = masks[j]![k]!; if (v > a) { a = v; at = j } }
+    if (a > 0.02 && at >= 0) { const c = rgbs[at]!; out[k * 4] = c[0]; out[k * 4 + 1] = c[1]; out[k * 4 + 2] = c[2]; out[k * 4 + 3] = Math.round(a * 120) }
+  }
+  return pngOf(out, img.width, img.height)
+}
+type OverlayCtx = { reading?: Detection | null; photoUrl?: string | null; finishes?: Finishes | null }
+const hexRgb = (hex: string): [number, number, number] => { const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim()); const n = m ? parseInt(m[1]!, 16) : 0x5500ff; return [(n >> 16) & 255, (n >> 8) & 255, n & 255] }
+function pngOf(out: Uint8ClampedArray<ArrayBuffer>, w: number, h: number): string {
+  const c = document.createElement('canvas'); c.width = w; c.height = h
+  c.getContext('2d')?.putImageData(new ImageData(out, w, h), 0, 0)
+  return c.toDataURL('image/png')
+}
+/** The regions' soft masks on the picture (or on the room's own photo, where Generate reads them — wave F). */
+async function regionMasks(url: string, defs: (SurfaceDef | FurnitureDef)[], ctx: OverlayCtx): Promise<{ img: Img; masks: Float32Array[] }> {
   const img = await readImg(url)
   /* (wave F) `photoUrl` — the room's own photo, when the version on screen shows the same room (`finishes`: not a whole-room look, not
      emptied, nothing taken out — the rule Generate reads by): a surface is lit where Generate will paint it, read on the photo */
@@ -1335,13 +1369,5 @@ export async function regionOverlay(url: string, defs: (SurfaceDef | FurnitureDe
     if (p) photo = p.width === img.width && p.height === img.height ? { img: p, url: ctx.photoUrl } : { img: resample(p, img.width, img.height), url: `${ctx.photoUrl}#${img.width}x${img.height}` }
   }
   const masks = defs.map((d) => (photo && !isPiece(d) ? regionOf(photo.img, photo.url, d, 480, { reading: ctx.reading ?? null }) : regionOf(img, url, d, 480, { reading: ctx.reading ?? null })))
-  const out = new Uint8ClampedArray(img.width * img.height * 4)
-  for (let k = 0; k < img.width * img.height; k++) {
-    let a = 0
-    for (const m of masks) { const v = m[k]!; if (v > a) a = v }
-    if (a > 0.02) { out[k * 4] = rgb[0]; out[k * 4 + 1] = rgb[1]; out[k * 4 + 2] = rgb[2]; out[k * 4 + 3] = Math.round(a * 110) }
-  }
-  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height
-  c.getContext('2d')?.putImageData(new ImageData(out, img.width, img.height), 0, 0)
-  return c.toDataURL('image/png')
+  return { img, masks }
 }

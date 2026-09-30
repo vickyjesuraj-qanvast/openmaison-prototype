@@ -10,6 +10,12 @@
 .menuWrap { composes: menuWrap from '../../om/tab-toolbar.module.css'; }   /* the header kebab */
 .filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
 .filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
+/* (UX audit Q4 · Q5) The to-do pills between the title and the tools (REG-666); ≤767 they take a line of their own under the row, so the
+   canvas' one row of glyphs stays one row (REG-354). */
+.todos { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; }
+@media (max-width: 767px) {
+  .todos { order: 3; flex: 1 0 100%; flex-wrap: wrap; }
+}
 
 /* ── Touch ergonomics (REG-273) ───────────────────────────────────────────────────────────────────────
    Create Quote, Filters and the kebab are the mock's 36px controls. On a touch pointer each keeps its drawn

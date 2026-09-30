@@ -125,3 +125,42 @@ export async function fetchLeadReasons(): Promise<{ reasons: LeadReasons; manage
   if (!row) return { reasons: DEFAULT_LEAD_REASONS, managed: false }
   try { return { reasons: parseLeadReasons(JSON.parse(row.value)), managed: true } } catch { return { reasons: DEFAULT_LEAD_REASONS, managed: false } }
 }
+
+/* (UX audit 2026-09-30, S4) What a new quote starts with — the studio's default template's New quotes settings, read the way `createQuote`
+   reads them (app/leads/quotes-actions.ts: the published default's defaults; a split gone from the library falls back to the default split,
+   a deleted text to none; GST only while the studio is registered). Settings › Quotes & pricing shows them read-only, with the way to the
+   template's New quotes tab. */
+export type NewQuoteDefaults = {
+  template: { id: string; name: string } | null
+  validityDays: number
+  gstEnabled: boolean
+  /** The studio is registered for GST — off, no new quote carries it whatever the template says. */
+  studioGst: boolean
+  signatureRequired: boolean
+  split: { name: string; rows: { name: string; pct: number }[] } | null
+  terms: string | null
+  notes: string | null
+  starterGroups: string[]
+}
+export async function fetchNewQuoteDefaults(): Promise<NewQuoteDefaults> {
+  const { quoteTemplates, quoteTextTemplates } = await import('@/lib/db/schema')
+  const { parseDefaults, DEFAULT_DEFAULTS } = await import('@/lib/templates/model')
+  const { fetchPaymentSplits } = await import('@/lib/company/payment-templates')
+  const { DEFAULT_SPLIT_ID, findSplit } = await import('@/lib/quotes/payments')
+  const [[row], studio, splits, texts] = await Promise.all([
+    db.select({ id: quoteTemplates.id, name: quoteTemplates.name, defaultsJson: quoteTemplates.defaultsJson }).from(quoteTemplates)
+      .where(and(eq(quoteTemplates.isDefault, true), eq(quoteTemplates.status, 'published'), isNull(quoteTemplates.deletedAt))).limit(1),
+    fetchStudio(), fetchPaymentSplits(),
+    db.select({ id: quoteTextTemplates.id, title: quoteTextTemplates.title }).from(quoteTextTemplates).where(isNull(quoteTextTemplates.deletedAt)),
+  ])
+  const d = row ? parseDefaults(row.defaultsJson) : DEFAULT_DEFAULTS
+  const split = findSplit(d.paymentPreset, splits) ?? findSplit(DEFAULT_SPLIT_ID, splits) ?? splits[0] ?? null
+  const title = (id: string | null) => (id ? texts.find((t) => t.id === id)?.title ?? null : null)
+  return {
+    template: row ? { id: row.id, name: row.name } : null,
+    validityDays: d.validityDays, gstEnabled: d.gstEnabled, studioGst: studio.gstRegistered, signatureRequired: d.signatureRequired,
+    split: split ? { name: split.name, rows: split.rows.map((r) => ({ name: r.name, pct: r.pct })) } : null,
+    terms: title(d.termsTemplateId), notes: title(d.notesTemplateId),
+    starterGroups: d.starterGroups.map((g) => g.trim()).filter(Boolean),
+  }
+}

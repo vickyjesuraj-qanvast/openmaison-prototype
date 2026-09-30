@@ -24,3 +24,30 @@ export function deletedLine(r: { deleted: number; refused: number }): string {
   const done = r.deleted === 1 ? 'Quote deleted' : `${r.deleted} quotes deleted`
   return r.refused ? `${done} — ${r.refused} left: only its creator, an Owner or an Admin deletes a quote` : done
 }
+
+/* ── (UX audit 2026-09-30, Q1 · Q3) The quote's status and the lead's next stage ── */
+
+/** The statuses the client holds the quote in — past the studio's own approval. */
+export const CLIENT_STATUSES = ['Sent to Client', 'Confirmed', 'Signed'] as const
+const isClientStatus = (s: string) => (CLIENT_STATUSES as readonly string[]).includes(s)
+
+/**
+ * (Q3, supersedes REG-176's one-tap menu for these rows · extends REG-590) With approval required, nothing reaches the client's statuses
+ * before an approver's OK: a member who does not approve can't mark a Draft — or a quote still waiting for approval — Sent to Client,
+ * Confirmed or Signed. `null` = allowed. The server holds the same rule (`setQuoteStatus`).
+ */
+export function statusBlock(o: { target: string; current: string; approval: string; approver: boolean }): string | null {
+  if (o.approval !== 'required' || o.approver || !isClientStatus(o.target)) return null
+  return o.current === 'Draft' || o.current === 'Sent for Approval' ? 'It needs an approver’s OK first — send it for approval' : null
+}
+/** The status row's own reason, short enough for the row (the menu's meta). */
+export const STATUS_BLOCK_META = 'needs approval'
+
+/** Marked by hand from a status menu, these send nothing — the menu asks first (Q3). */
+export const asksBeforeMarking = (s: string) => isClientStatus(s)
+
+/** The lead's stages before Quote Sent: a quote that reaches the client there offers the lead's next stage (Q1). */
+export const BEFORE_QUOTE_SENT = ['New', 'Contacted', 'Met'] as const
+/** Whether a quote at `status` on a lead at `stage` offers "Move to Quote Sent" — sent to the client or confirmed, the lead not there yet. */
+export const offersQuoteSent = (stage: string | null | undefined, status: string) =>
+  !!stage && (BEFORE_QUOTE_SENT as readonly string[]).includes(stage) && (status === 'Sent to Client' || status === 'Confirmed')

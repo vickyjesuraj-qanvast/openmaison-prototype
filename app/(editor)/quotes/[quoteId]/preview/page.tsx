@@ -4,6 +4,7 @@ import { fetchQuotePreview } from '@/lib/templates/queries'
 import { QuotePreview } from '@/components/quotes/preview/quote-preview'
 import { readFrom } from '@/lib/nav'
 import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
+import { fetchQuoteApproval, isApprover } from '@/lib/settings/queries'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,9 @@ export default async function QuotePreviewPage({ params, searchParams }: { param
   const version = sp.version && /^\d+$/.test(sp.version) ? Number(sp.version) : undefined   // (REG-565) a kept version, read-only
   const data = await fetchQuotePreview(quoteId, version)
   if (!data) notFound()
-  if (!(await canOpenLead(await fetchViewer(), data.quote.leadId))) notFound()   /* (REG-625, parity §8.2 · E-135) the studio's preview follows Who sees leads; the client's /confirm link does not */
-  return <QuotePreview data={data} from={readFrom(sp.from)} print={sp.print === '1'} />
+  const viewer = await fetchViewer()
+  if (!(await canOpenLead(viewer, data.quote.leadId))) notFound()   /* (REG-625, parity §8.2 · E-135) the studio's preview follows Who sees leads; the client's /confirm link does not */
+  /* (UX audit Q2) Preview's Send is the editor's: it needs the studio's approval rule and whether this member approves. */
+  const [approval, canApprove] = await Promise.all([fetchQuoteApproval(), isApprover(viewer.id, viewer.role)])
+  return <QuotePreview data={data} from={readFrom(sp.from)} print={sp.print === '1'} send={{ approval, canApprove }} />
 }

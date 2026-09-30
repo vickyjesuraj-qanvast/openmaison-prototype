@@ -6,7 +6,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Icon } from '@/components/om/icon'
-import { ToolsPopover } from './tools-popover'
+import { ToolsPopover, onToolsPage } from './tools-popover'
+import { SOON } from './app-rail'
+import { Tooltip } from '@/components/om/tooltip'
 import { CompanyPopover } from '@/components/company/company-popover'
 import { ViewAsPopover } from './view-as-popover'
 import type { SessionMember } from '@/lib/db/session'
@@ -50,7 +52,9 @@ const MORE_BOTTOM = [{ icon: 'settings', label: 'Settings', href: '/settings' }]
  * Nothing here renders ≥768 (CSS) so tablet and desktop are untouched. The sheet keeps the dialog contract
  * (REG-286: focus in, Tab cycles, focus back on close), the scroll lock (REG-287) and the Esc layer.
  */
-export function MobileChrome({ team = [], credits = null }: { team?: SessionMember[]; credits?: CreditsChrome | null } = {}) {
+export function MobileChrome({ team = [], credits = null, badges }: { team?: SessionMember[]; credits?: CreditsChrome | null
+  /** (UX audit V3) The rail's counts (`railBadges`): the bell's unread, the Tasks overdue, Company's waiting asks — a phone shows them too. */
+  badges?: Record<string, number> } = {}) {
   const [open, setOpen] = useState(false)
   const layer = useRef<HTMLDivElement>(null)
   const close = useCallback(() => setOpen(false), [])
@@ -69,22 +73,34 @@ export function MobileChrome({ team = [], credits = null }: { team?: SessionMemb
   useDialogFocus(open, layer)
 
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  /* (UX audit V3) what each row inside More counts, and whether More wears its dot */
+  const unread = badges?.notifications ?? 0
+  const countOf = (label: string) => (label === 'Tasks' ? badges?.['/tasks'] ?? 0 : label === 'Company' ? badges?.['/company'] ?? 0 : 0)
+  const counts = { Tasks: countOf('Tasks'), Company: countOf('Company') }
+  const moreHas = counts.Tasks + counts.Company > 0
+  const countWords = (label: string, n: number) => (label === 'Tasks' ? `${n} overdue` : `${n} waiting`)
   /** One Line row (1082:25102): glyph 20 secondary · body/m label. Destinations navigate and close; the rest are coming soon. */
   const moreItem = (it: { icon: string; label: string; href?: string }) => {
+    const n = countOf(it.label)
     const inner = (
       <>
         <span className={styles.sheetIcon}><Icon name={it.icon} size={20} /></span>
         <span className={styles.sheetLabel}>{it.label}</span>
+        {/* (UX audit V3) the rail's count, on the row */}
+        {n > 0 ? <span className={styles.rowCount} aria-hidden>{n}</span> : null}
+        {/* (UX audit V6) a dead end wears the Company panel's "Soon" tag */}
+        {!it.href && it.label !== 'Company' ? <span className={styles.soon} aria-hidden>Soon</span> : null}
       </>
     )
+    const label = n > 0 ? `${it.label} (${countWords(it.label, n)})` : !it.href && it.label !== 'Company' ? `${it.label}${SOON}` : undefined
     return it.href ? (
-      <Link key={it.label} href={it.href} className={styles.sheetItem} aria-current={active(it.href) ? 'page' : undefined} onClick={close}>
+      <Link key={it.label} href={it.href} className={styles.sheetItem} aria-current={active(it.href) ? 'page' : undefined} aria-label={label} onClick={close}>
         {inner}
       </Link>
     ) : it.label === 'Company' ? (
-      <button key={it.label} type="button" className={styles.sheetItem} aria-haspopup="menu" onClick={() => { close(); setCompanyOpen(true) }}>{inner}</button>
+      <button key={it.label} type="button" className={styles.sheetItem} aria-haspopup="menu" aria-label={label} onClick={() => { close(); setCompanyOpen(true) }}>{inner}</button>
     ) : (
-      <button key={it.label} type="button" className={styles.sheetItem} onClick={() => { close(); comingSoon() }}>{inner}</button>
+      <button key={it.label} type="button" className={styles.sheetItem} aria-label={label} onClick={() => { close(); comingSoon() }}>{inner}</button>
     )
   }
 
@@ -101,11 +117,12 @@ export function MobileChrome({ team = [], credits = null }: { team?: SessionMemb
           <button type="button" className={styles.barIcon} aria-label="Search" onClick={openGlobalSearch}>   {/* (REG-709) the studio-wide search, as a sheet */}
             <Icon name="search" size={24} weight={300} />
           </button>
-          <button type="button" className={styles.barIcon} aria-label="Chat" onClick={comingSoon}>
+          <button type="button" className={styles.barIcon} aria-label={`Chat${SOON}`} onClick={comingSoon}>   {/* (UX audit V6) */}
             <Icon name="chat" size={24} weight={300} />
           </button>
-          <button type="button" className={styles.barIcon} aria-label="Notifications" onClick={openNotifications}>   {/* (REG-604) */}
+          <button type="button" className={styles.barIcon} aria-label={unread ? `Notifications (${unread} unread)` : 'Notifications'} onClick={openNotifications}>   {/* (REG-604) */}
             <Icon name="notifications" size={24} weight={300} />
+            {unread ? <span className={styles.barBadge} aria-hidden>{unread}</span> : null}   {/* (UX audit V3) the rail's bell count */}
           </button>
           <button type="button" className={styles.avatarBtn} aria-label="Dane Bruce Lee" onClick={comingSoon}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -116,7 +133,8 @@ export function MobileChrome({ team = [], credits = null }: { team?: SessionMemb
 
       <nav className={styles.dock} aria-label="Primary">
         {DOCK.map((it) => {
-          const on = 'href' in it && active(it.href)
+          /* (UX audit V7) Tools lights on its own pages, as it does on the rail */
+          const on = 'href' in it ? active(it.href) : it.label === 'Tools' && onToolsPage(pathname)
           const inner = (
             <>
               <span className={styles.dockIcon}><Icon name={it.icon} size={24} weight={300} fill={on} /></span>
@@ -130,18 +148,21 @@ export function MobileChrome({ team = [], credits = null }: { team?: SessionMemb
             </Link>
           ) : it.label === 'Tools' ? (
             /* (REG-422) Tools opens its sheet (tools-popover.tsx) — the rail item's phone form. */
-            <button key={it.label} type="button" className={styles.dockItem} data-active={toolsOpen || undefined} aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen(true)}>{inner}</button>
+            <button key={it.label} type="button" className={styles.dockItem} data-active={toolsOpen || on || undefined} aria-current={on ? 'page' : undefined} aria-haspopup="menu" aria-expanded={toolsOpen} onClick={() => setToolsOpen(true)}>{inner}</button>
           ) : (
-            <button key={it.label} type="button" className={styles.dockItem} onClick={comingSoon}>{inner}</button>
+            /* (UX audit V6) the dock's dead ends say so — the tooltip, the name — and still answer "Coming soon" */
+            <Tooltip key={it.label} label={`${it.label}${SOON}`} side="top">
+              <button type="button" className={styles.dockItem} aria-label={`${it.label}${SOON}`} data-soon="" onClick={comingSoon}>{inner}</button>
+            </Tooltip>
           )
         })}
         <ToolsPopover open={toolsOpen} anchor={null} onClose={() => setToolsOpen(false)} />
-        <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} />
+        <CompanyPopover open={companyOpen} anchor={null} onClose={() => setCompanyOpen(false)} awaiting={badges?.['company:templates'] ?? 0} proposed={badges?.['company:price-book'] ?? 0} asks={badges?.['company:plan'] ?? 0} />
         <ViewAsPopover open={viewAsOpen} anchor={null} onClose={() => setViewAsOpen(false)} team={team} />
         {credits ? <CreditsSheet initial={credits.summary} gstLine={credits.gstLine} open={creditsOpen} onClose={() => setCreditsOpen(false)} /> : null}
         <button type="button" className={styles.dockItem} data-active={open || undefined}
-                aria-label="More" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-          <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} /></span>
+                aria-label={moreHas ? `More (${[counts.Tasks ? `Tasks ${countWords('Tasks', counts.Tasks)}` : null, counts.Company ? `Company ${countWords('Company', counts.Company)}` : null].filter(Boolean).join(', ')})` : 'More'} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+          <span className={styles.dockIcon}><Icon name="more_horiz" size={24} weight={300} />{moreHas ? <span className={styles.moreDot} aria-hidden /> : null}</span>   {/* (UX audit V3) something inside counts */}
           <span className={styles.dockLabel}>More</span>
         </button>
       </nav>

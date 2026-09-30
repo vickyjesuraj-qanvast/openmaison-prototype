@@ -95,3 +95,9 @@
 @media (orientation: landscape) and (max-height: 500px) {
   .media { width: min(100%, calc((100dvh - 64px) * 1.5)); margin-inline: auto; }
 }
+
+/* (UX audit V10) the studio's number beside the client's ("Design 1  V1") — the house tag (r4, caption-s), quiet */
+.studioRef { display: inline-flex; align-items: center; margin-left: var(--om-spacing-2); padding: 0 6px; height: 20px; vertical-align: 2px; border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); font: var(--om-type-caption-s); color: var(--om-color-on-surface-secondary); }
+/* (UX audit V1) a note and the studio's replies to it, one group; a reply sits in from the note, on the page's own surface */
+.saidGroup { display: flex; flex-direction: column; gap: var(--om-spacing-1); }
+.said[data-from='studio'] { margin-left: var(--om-spacing-4); background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); }

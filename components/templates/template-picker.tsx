@@ -11,7 +11,7 @@ import { MetaChip } from '@/components/om/meta-chip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { TemplateDocument, TemplateThumb } from '@/components/templates/render/document'
 import { presetLabel } from '@/lib/quotes/payments'
-import { startsWith, type PickerData, type PickerTemplate } from '@/lib/templates/picker'
+import { startsLine, startsWith, type PickerData, type PickerTemplate } from '@/lib/templates/picker'
 import { ago } from '@/lib/templates/ago'
 import { FolderCrumbs } from '@/components/om/folders/folder-crumbs'
 import { countLine, foldersIn, foldersUnder, placeOf, trailTo, type FolderNode } from '@/lib/folders'
@@ -131,6 +131,7 @@ export function TemplatePicker({ data, picked, onPick, currentId, now, onUse, bl
               <button key={t.id} type="button" role="option" aria-selected={picked === t.id} className={styles.tile} data-on={picked === t.id || undefined} onClick={() => onPick(t.id)} onDoubleClick={() => onUse(t.id)}>
                 <span className={styles.well}><span className={styles.page}><TemplateThumb design={t.design} brand={data.brand} data={data.sample} width={116} /></span></span>
                 <span className={styles.nameRow}><span className={styles.name}>{t.name}</span>{t.isDefault ? <MetaChip>Default</MetaChip> : null}</span>
+                {blank ? <span className={styles.meta} data-testid="template-starts">{startsLine(t)}</span> : null}   {/* (UX audit Q8) where a quote is being started: what it gets */}
                 <span className={styles.meta}>{where(t)}v{t.version}{currentId === t.id ? ' · on this quote' : t.lastUsedAt ? ` · used ${ago(t.lastUsedAt, now)}` : ''}</span>
               </button>
             ))}

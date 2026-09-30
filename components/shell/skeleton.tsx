@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import pageStyles from '@/app/leads/leads.module.css'
 import styles from './skeleton.module.css'
+import emptyCard from '@/components/om/empty-card.module.css'
 
 /**
  * Ghost loader — shown on every load / refresh of every page (user rule,
@@ -82,7 +83,42 @@ const SHEET_CARDS = 6
  * server-rendered, so no JS can know the width when the bones first paint, and a ghost that fades into a
  * differently-shaped page is the REG-74 failure. ≥768 nothing here differs from the table-only ghost.
  */
-export function LeadsSkeleton({ label = 'Loading leads', l1 = true }: { label?: string; /** (wave E, gallery-5) the listing, Tasks, Tools › Quotes and Contracts are level-1; Insights (level 2) passes false */ l1?: boolean } = {}) {   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
+/** (UX audit build · REG-729's empty card) A list's empty card as a ghost, on the card's own classes: the art, the title, the line, the buttons
+    — what the lead tabs, Tools › Quotes · Contracts, the Tasks page and the listing open on while they hold nothing (REG-737). */
+export function EmptyCardGhost({ art = [180, 137], buttons = [132, 150], lines = 1 }: { art?: [number, number]; buttons?: number[]; lines?: number }) {
+  return (
+    <div className={emptyCard.card} aria-hidden>
+      <div className={emptyCard.inner}>
+        <Bone w={art[0]} h={art[1]} r={8} />
+        <div className={emptyCard.texts}><Bone w={200} h={20} />{Array.from({ length: lines }, (_, i) => <Bone key={i} w={i ? 220 : 320} h={12} style={{ maxWidth: '80vw' }} />)}</div>
+        <div className={emptyCard.buttons}>{buttons.map((w, i) => <Bone key={i} w={w} h={36} r="var(--om-radius-1)" />)}</div>
+      </div>
+    </div>
+  )
+}
+
+/** (UX audit build · REG-737) The listing with no lead yet: Insights and ⋮ in the header (Add Lead steps back), "All Leads" alone in the
+    toolbar, and the empty card with Import from File · Create New Lead. */
+function LeadsFirstSkeleton({ label }: { label: string }) {
+  return (
+    <GhostSheet label={label} l1>
+      <div className={`${styles.header} ${styles.headerPlate}`}>
+        <Bone w={72} h={28} />
+        <div className={`${styles.headerActions} ${styles.notMobile}`}><Bone w={126} h={36} r="var(--om-radius-1)" /><Bone w={36} h={36} r="var(--om-radius-1)" /></div>
+        <div className={`${styles.headerActions} ${styles.mobileOnly}`}><Bone w={36} h={36} r="var(--om-radius-1)" /><Bone w={36} h={36} r="var(--om-radius-1)" /></div>
+      </div>
+      <div className={pageStyles.content}>
+        <div className={styles.toolbar}><Bone w={96} h={20} /></div>
+        <EmptyCardGhost buttons={[150, 170]} />
+      </div>
+    </GhostSheet>
+  )
+}
+
+export function LeadsSkeleton({ label = 'Loading leads', l1 = true, first = false }: { label?: string; /** (wave E, gallery-5) the listing, Tasks, Tools › Quotes and Contracts are level-1; Insights (level 2) passes false */ l1?: boolean
+  /** (UX audit build) the listing's first run — no lead yet */
+  first?: boolean } = {}) {
+  if (first) return <LeadsFirstSkeleton label={label} />   /* (sweep S2 #22) Tools › Quotes and Contracts draw this list too — the ghost names what is loading */
   const rows = SHEET_ROWS
   const cards = SHEET_CARDS
   return (
@@ -159,7 +195,7 @@ export function LeadsSkeleton({ label = 'Loading leads', l1 = true }: { label?: 
           {Array.from({ length: cards }, (_, i) => (
             <div key={i} className={styles.card}>
               <div className={styles.cardHead}><Bone w={NAME_W[i % NAME_W.length] ?? 128} h={16} /><Bone w={40} h={12} /></div>
-              <div className={styles.cardInfo}><Bone w={200} h={14} /></div>
+              <div className={styles.cardInfo}><Bone w={264} h={14} /></div>   {/* (UX audit L3) the line ends on "· 5d in Met" now */}
               <Bone w="100%" h={38} r="var(--om-radius-1)" />
               <Bone w="100%" h={1} r={0} />
               <div className={styles.cardFoot}>

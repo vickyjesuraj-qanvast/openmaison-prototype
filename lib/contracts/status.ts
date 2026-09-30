@@ -6,7 +6,7 @@ import { fetchViewer } from '@/lib/leads/visibility'
 import { signQuoteThrough } from '@/lib/quotes/sign'
 import { unsignBlock } from './policy'
 import { sendBlock } from './readiness'
-import { signedSnapshot, UNSIGNED } from './queries'
+import { namedQuoteBlock, signedSnapshot, UNSIGNED } from './queries'
 import { logLeadEvent } from '@/lib/leads/events'
 import { actingMember, afterSent, afterSigned, freshContract } from './automation'
 
@@ -27,7 +27,7 @@ export async function applyContractStatus(c: Contract, status: 'Draft' | 'Sent t
     return
   }
   if (c.status === 'Signed') { const why = unsignBlock(c, await fetchViewer()); if (why) throw new Error(why) }
-  if (status === 'Sent to Client' && c.status === 'Draft') { const why = sendBlock(c); if (why) throw new Error(why) }   // (sweep S2 #3) a list's status menu keeps Send's checks
+  if (status === 'Sent to Client' && c.status === 'Draft') { const why = sendBlock(c) ?? await namedQuoteBlock(c); if (why) throw new Error(why) }   // (sweep S2 #3) a list's status menu keeps Send's checks — (UX audit C2) the named quote's too
   const set: Partial<typeof contracts.$inferInsert> = { status, updatedAt: now, ...(c.status === 'Signed' ? UNSIGNED : {}) }
   if (status === 'Sent to Client' && !c.sentAt) { set.sentAt = now; set.sentBy = await actingMember() }
   await db.update(contracts).set(set).where(eq(contracts.id, c.id))

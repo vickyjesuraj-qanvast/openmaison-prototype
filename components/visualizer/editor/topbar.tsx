@@ -18,7 +18,8 @@ const SNUG = '(max-width: 1280px)'
  * The editor's top bar (REG-673; the template editor's bar, REG-542, with 1.0's room tabs, B-28): back · the design's name and whose it
  * is · the rooms as chips (the active one's ⋯ renames, changes the photo, deletes) and Add room · the save stamp · undo / redo · Share
  * with client · the design's ⋯. (audit 2026-09-26) The room on screen is always scrolled into view (F004 · F149); a long name reads in
- * full on its tooltip (F013); ≤1280 Add room and Share are their icons (F004); compact, the title takes the free width (F148).
+ * full on its tooltip (F013); ≤1280 Add room is its icon (F004) and Share a filled "Share" (UX audit V4); compact, the title takes the free
+ * width (F148).
  */
 export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, onRoom, onRoomMenu, roomMenuOpen, onAddRoom, saving, savedLabel, savedTone = 'ok', canUndo, canRedo, onUndo, onRedo, onShare, shareDisabled, onMenu, menuOpen, compact, short = false, credits = null }: {
   backLabel: string; onBack: () => void
@@ -76,8 +77,10 @@ export function EditorTopbar({ backLabel, onBack, title, chip, rooms, roomId, on
           </>
         ) : null}
         {credits}
+        {/* (UX audit V4, supersedes F004's icon) the step that ends the meeting stays a labelled, filled button — "Share" where the bar is
+            tight (≤1280, the tablet and the phone), never a grey glyph that reads as disabled */}
         <Tooltip label={shareDisabled ?? 'Send the client a link to these renders'}>
-          <span>{compact || snug ? <IconButton icon="send" label="Share with client" size={36} variant="bare" iconSize={20} disabled={!!shareDisabled} onClick={onShare} data-testid="viz-share" />
+          <span>{compact || snug ? <Button onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} aria-label="Share with client" className={styles.share} data-testid="viz-share">Share</Button>
             : <Button onPress={onShare} isDisabled={!!shareDisabled} iconStart={<Icon name="send" size={20} weight={300} />} data-testid="viz-share">Share with client</Button>}</span>
         </Tooltip>
         <Tooltip label="More options" disabled={menuOpen}><IconButton icon="more_vert" label="Design options" size={36} variant="bare" iconSize={20} iconWeight={300} aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => onMenu(e.currentTarget)} data-testid="viz-design-menu" /></Tooltip>

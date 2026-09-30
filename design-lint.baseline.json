@@ -45,7 +45,6 @@
       "components/credits/plans-dialog.module.css": 8,
       "components/leads/detail/ai-brief.module.css": 2,
       "components/leads/detail/returned-card.module.css": 1,
-      "components/leads/files/file-comments-panel.module.css": 1,
       "components/leads/files/files-table.module.css": 1,
       "components/leads/highlight.module.css": 1,
       "components/leads/move-stage/fields.module.css": 1,
@@ -128,6 +127,7 @@
       "components/visualizer/editor/panels/style-panel.tsx": 3
     },
     "ds-bypass": {},
+    "row-fade": {},
     "copied-table": {}
   }
 }

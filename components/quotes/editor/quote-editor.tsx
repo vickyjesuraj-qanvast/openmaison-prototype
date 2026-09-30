@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
-import { createContractDoc } from '@/app/contracts/actions'
 import { Reorder, useDragControls } from 'motion/react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -13,9 +12,7 @@ import { AiSheet } from '@/components/leads/ai-sheet'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { MaisonFab } from '@/components/shell/maison-fab'
 import { useRun } from '@/components/leads/tasks/use-run'
-import { applyTemplateDefaults, deleteQuotes, duplicateQuote, setQuoteStatus } from '@/app/leads/quotes-actions'
-import { fetchContractTemplateOptionsAction } from '@/app/contracts/read-actions'
-import { ContractTemplatePicker } from '@/components/contracts/contract-template-picker'
+import { applyTemplateDefaults, deleteQuotes, duplicateQuote } from '@/app/leads/quotes-actions'
 import { DeleteQuotesDialog } from '@/components/leads/quotes/delete-dialog'
 import { RenameQuoteDialog } from './rename-dialog'
 import { clientViewFromDesign, parseClientView } from '@/lib/templates/client-view'
@@ -35,17 +32,20 @@ import { clientColumnsOf, viewForTemplate } from '@/lib/templates/picker'
 import { updateItemsPrefs } from '@/app/quotes/items-actions'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import type { ItemsView } from '@/lib/quotes/items-model'
-import { approveQuote, requestQuoteChanges, restoreQuoteVersion, reviseQuote, saveQuoteGeneral, saveQuoteSections, sendQuote, sendQuoteForConfirmation, type GeneralPatch } from '@/app/quotes/actions'
+import { approveQuote, requestQuoteChanges, restoreQuoteVersion, reviseQuote, saveQuoteGeneral, saveQuoteSections, type GeneralPatch } from '@/app/quotes/actions'
 import { ApprovalBar, SentBanner } from './quote-bars'
 import { LineCommentsDrawer } from './line-comments'
 import { addLineComment, deleteLineComment, editLineComment } from '@/app/quotes/comment-actions'
 import type { QuoteItemComment } from '@/lib/db/schema'
 import { NoteDialog } from '@/components/templates/editor/review-bar'
 import { readiness } from '@/lib/templates/readiness'
-import { canDeleteQuote, DELETE_RULE, validityPassed } from '@/lib/quotes/policy'
-import { confirmLink, confirmMessage } from '@/lib/quotes/confirm'
-import { firstName } from '@/lib/contracts/model'
-import { SendContractDialog } from '@/components/contracts/editor/dialogs'
+import { canDeleteQuote, DELETE_RULE, offersQuoteSent, STATUS_BLOCK_META, statusBlock, validityPassed } from '@/lib/quotes/policy'
+import { confirmLink } from '@/lib/quotes/confirm'
+import { useQuoteSend } from '@/components/quotes/send/use-quote-send'
+import { useQuoteStatus } from '@/components/leads/quotes/use-quote-status'
+import { moveStageHref } from '@/lib/leads/move-link'
+import { lineChanges } from './items/line-change'
+import { ReviseDialog } from './revise-dialog'
 import { VersionHistoryDrawer } from './version-history'
 import { displayDate, inputDate, parseInputDate } from '@/lib/format'
 import { duration } from '@/lib/motion'
@@ -53,7 +53,7 @@ import { quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
 import type { QuoteEditorData } from '@/lib/quotes/editor'
 import type { QuoteItem, QuotePayment } from '@/lib/db/schema'
 import { SECTION_LABELS, isFixedSection, parseSections, pinFixed, type QuoteSectionState, type SectionKey } from '@/lib/quotes/sections'
-import { EditorHeader, type HeaderMenuAction, type SendKind, type SendMode } from './editor-header'
+import { EditorHeader, type HeaderMenuAction } from './editor-header'
 import { EditorTabs } from './editor-tabs'
 import { CreateStrip, useStripExpanded } from './create-strip'
 import { SectionCard } from './section-card'
@@ -124,7 +124,6 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   const [historyOpen, setHistoryOpen] = useState(false)
   const [reviseOpen, setReviseOpen] = useState(false)
   const [version, setVersion] = useState(quote.version)
-  const [contractPicker, setContractPicker] = useState(false)
   /* (REG-538) Change template on a Draft asks whether the template's defaults land too; the REG-497 regroup question waits behind it. */
   const [applyTpl, setApplyTpl] = useState<{ id: string; name: string; regroup: { view: ItemsView; label: string } | null } | null>(() => (apply && data.templateState.current && data.templateState.current.id === apply && data.quote.status === 'Draft' ? { id: data.templateState.current.id, name: data.templateState.current.name, regroup: null } : null))
   /* (REG-579) The `apply` flag is one-shot: it leaves the address once read, so a reload never asks again. */
@@ -170,6 +169,7 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   const [sections, setSections] = useState<QuoteSectionState[]>(() => parseSections(quote.sections))
   const [updatedAt, setUpdatedAt] = useState((quote.updatedAt ?? quote.createdAt).getTime())
   const [clock, setClock] = useState(now)
+  const stamp = (t: number) => { setUpdatedAt(t); setClock(Date.now()) }
   const [active, setActive] = useState<SectionKey>('general')
   const [statusOpen, setStatusOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
@@ -290,18 +290,6 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
 
   /* ── header actions ── */
   const steps = quoteStatuses(quoteApproval)
-  const nextStep: QuoteStatus | null = status === 'Draft' ? (steps[1] ?? null) : status === 'Approved' ? 'Sent to Client' : null
-  /* (REG-587) What Send offers here: for approval while that is the next step; else the client's two ways — confirm on a link
-     first (Mavid's flow) or the agreement for signature; once Confirmed, only the signature is left. */
-  /* (REG-624, parity Q-23) An approver's own quote skips the approval step: their Send offers the client's two ways at once. */
-  const sendKind: SendKind = nextStep === 'Sent for Approval' && !canApprove ? 'approval' : status === 'Draft' || status === 'Approved' || status === 'Sent to Client' ? 'client' : status === 'Confirmed' ? 'confirmed' : 'done'
-  const canSend = sendKind !== 'done'
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const sendForConfirmation = ({ phone, message }: { name: string; phone: string; message: string }) => {
-    setConfirmOpen(false)
-    window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')   // on the press — a popup blocker eats one opened after the round trip (REG-534)
-    void run('send the quote', async () => { const r = await sendQuoteForConfirmation(quote.id); setStatus(r.status); setUpdatedAt(r.updatedAt); setClock(Date.now()); setRecord((x) => ({ ...x, clientSentAt: x.clientSentAt ?? r.updatedAt, sentAt: x.sentAt ?? r.sentAt })) }, 'Sent for confirmation — the quote is marked Sent to Client', { guard: 'send' })
-  }
   /* (REG-624, parity Q-22) The approval bar's two answers. */
   const approve = () => {
     setApprovalBusy(true)
@@ -317,18 +305,21 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
       setRecord((x) => ({ ...x, reviewNote: note, reviewedBy: me?.id ?? null, reviewedAt: r.updatedAt })); setChangesDismissed(false)
     }, `Sent back to ${nameOf(record.submittedBy) ?? 'the sender'} with your note`).finally(() => setApprovalBusy(false))
   }
-  const changeStatus = (s: QuoteStatus) => {
-    setStatusOpen(false)
-    if (s === status) return
-    void run('change the status', async () => { await setQuoteStatus(quote.id, s); setStatus(s); setUpdatedAt(Date.now()); setClock(Date.now()) }, `Quote marked ${s}`)
-  }
+  /* (UX audit Q3) The pill's statuses go through the house status change: Sent for Approval tells the approvers, the client's statuses ask
+     first, every mark answers with Undo (components/leads/quotes/use-quote-status.tsx). */
+  const statusChange = useQuoteStatus(({ status: s, undo, undone }) => {
+    setStatus(s); stamp(Date.now())
+    if (undone) setRecord((x) => ({ ...x, sentAt: undo.sentAt, clientSentAt: undo.clientSentAt, submittedAt: undo.submittedAt, submittedBy: undo.submittedBy, confirmedAt: undo.confirmedAt, confirmedBy: undo.confirmedBy }))
+    else setRecord((x) => ({ ...x, sentAt: x.sentAt ?? Date.now(), ...(s === 'Sent for Approval' ? { submittedBy: me?.id ?? null, submittedAt: Date.now() } : {}), ...(s === 'Sent to Client' || s === 'Confirmed' || s === 'Signed' ? { clientSentAt: x.clientSentAt ?? Date.now() } : {}), ...(s === 'Confirmed' ? { confirmedAt: x.confirmedAt ?? Date.now() } : {}) }))
+  })
+  const changeStatus = (s: QuoteStatus) => { setStatusOpen(false); statusChange.change({ id: quote.id, number: quote.number, status }, s) }
   /* Preview, Download as PDF and Print open the quote through its template (REG-490); Save as Template makes a draft template
      (REG-489); Rename, Duplicate and Edit, Export and Delete are live (REG-538); Version History and Comments still answer coming soon (owner 2026-09-11). */
   const onMenu = (action: HeaderMenuAction) => {
     if (action === 'preview') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview`, from)); return }
     if (action === 'pdf' || action === 'print') { void flushRef.current(); router.push(withFrom(`/quotes/${quote.id}/preview?print=1`, from)); return }
     if (action === 'template') { setSaveAsOpen(true); return }
-    if (action === 'contract') { void flushRef.current(); setContractPicker(true); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
+    if (action === 'contract') { quoteSend.openContract(); return }   /* (REG-534 → REG-538) the contract template picker first; the contract reads this quote */
     if (action === 'confirmLink') { const open = status === 'Approved' || status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed'; void navigator.clipboard?.writeText(confirmLink(quote.id)).then(() => snackbar({ message: open ? 'Confirmation link copied' : 'Confirmation link copied — it opens for the client once the quote is sent' }), () => snackbar({ message: 'Couldn’t copy the link — please try again' })); return }   /* (REG-587; REG-626: the link confirms only a sent quote) */
     if (action === 'xray') { void flushRef.current(); router.push(`/quote-x-ray?lead=${lead.id}&quote=${quote.id}&from=${encodeURIComponent(withFrom(`/quotes/${quote.id}`, from))}`); return }   /* (REG-529) Quote X-Ray on this quote; (REG-639) the editor keeps its own origin for the way back */
     if (action === 'rename') { setRenameOpen(true); return }
@@ -343,11 +334,11 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   /* (REG-565) Revise is for a quote the client has seen (or the studio approved): a Draft never sent is simply edited. */
   const canRevise = status !== 'Draft' || !!quote.sentAt
   const reviseHint = 'A draft that was never sent is edited, not revised — Revise once it has gone out.'
-  const doRevise = () => {
+  const doRevise = (note: string) => {
     setReviseOpen(false)
     void run('start the new version', async () => {
       await flushRef.current()
-      const r = await reviseQuote(quote.id)
+      const r = await reviseQuote(quote.id, note || undefined)   /* (UX audit Q10) the client's request, kept with the version it answers */
       setVersion(r.version); setStatus('Draft'); stamp(r.updatedAt); setHistoryOpen(false)
       setRecord({ submittedBy: null, submittedAt: null, sentAt: null, reviewNote: null, reviewedBy: null, reviewedAt: null, clientSentAt: null, confirmedAt: null, confirmedBy: null })   // (REG-624) the new version starts clean
       router.refresh()
@@ -408,16 +399,14 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
   /* (REG-538) The pane's view: the quote's own client view over the design, with the editor's Terms / Notes switches on top — Preview draws the same. */
   const clientPaneView = useMemo(() => ({ ...parseClientView(quote.clientViewJson, clientViewFromDesign(clientPaneDesign)), terms: textVisible.terms, notes: textVisible.notes }), [quote.clientViewJson, clientPaneDesign, textVisible])
   const sendReadiness = useMemo(() => readiness(clientData, clientPaneDesign, clientPaneView), [clientData, clientPaneDesign, clientPaneView])   /* (REG-626) Preview's own rules */
-  const send = (mode: SendMode) => {
-    /* (REG-626, parity §8.2 · E-106) The header's Send runs the checks Preview's Send runs: a blocking issue — no priced line, no client
-       name, a schedule that does not add up to 100% — is named, with the way to the section that fixes it. */
-    const block = sendReadiness.issues.find((i) => i.blocking)
-    if (block) { snackbar({ message: `Before you send: ${block.label}`, actionLabel: 'Show me', onAction: () => selectTab(block.section === 'payments' ? 'payment' : block.section) }); return }
-    if (mode === 'signature') { onMenu('contract'); return }
-    if (mode === 'confirmation') { void flushRef.current(); setConfirmOpen(true); return }
-    if (!nextStep) return
-    void run('send the quote', async () => { const r = await sendQuote(quote.id); setStatus(r.status); setUpdatedAt(r.updatedAt); setClock(Date.now()); if (r.status === 'Sent for Approval') setRecord((x) => ({ ...x, submittedBy: me?.id ?? null, submittedAt: r.updatedAt, sentAt: x.sentAt ?? r.updatedAt })) }, `Quote marked ${nextStep}`, { guard: 'send' })
-  }
+  /* (UX audit Q1 · Q2 · Q11) Send — every path through the quote's one Send (components/quotes/send/use-quote-send.tsx), Preview's too. */
+  const quoteSend = useQuoteSend({
+    quote: { id: quote.id, number: quote.number, leadId: lead.id, version }, status: status as QuoteStatus, lead: { name: lead.name, phone: lead.phone }, studioName: studio.name,
+    approval: quoteApproval, canApprove, readiness: sendReadiness, flush: () => flushRef.current(),
+    onShowIssue: (block) => selectTab(block.section === 'payments' ? 'payment' : block.section),
+    onChange: (c) => { setStatus(c.status); stamp(c.updatedAt); setRecord((x) => ({ ...x, sentAt: x.sentAt ?? c.sentAt ?? null, clientSentAt: c.clientSentAt !== undefined ? c.clientSentAt ?? null : x.clientSentAt, ...(c.submittedAt ? { submittedBy: me?.id ?? null, submittedAt: c.submittedAt } : {}) })) },
+    contractFrom: from ? withFrom(`/quotes/${quote.id}`, from) : `/quotes/${quote.id}`,
+  })
   const clientDesign = templateState.current?.design ?? null
   const clientColumns = useMemo(() => (clientDesign ? clientColumnsOf(clientDesign) : null), [clientDesign])
   const updateTemplate = () => {
@@ -471,12 +460,17 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
       {/* (REG-728) A status list: the 240 width; "current" is the row's meta — the tab's mark (910:36673), so no Selected fill.
           (REG-590) "approvers only" on Approved while the studio asks for an approver. */}
       <Dropdown open={statusOpen} onClose={() => setStatusOpen(false)} align="left" width={MENU_WIDTH.wide} sheetTitle="Status">
-        {steps.map((s) => (
-          <DropdownItem key={s} role="menuitemradio" checked={s === status} selected={false} disabled={s === 'Approved' && quoteApproval === 'required' && !canApprove} onSelect={() => changeStatus(s)}
-                        meta={s === status ? 'current' : s === 'Approved' && quoteApproval === 'required' && !canApprove ? 'approvers only' : undefined}>
-            {s}
-          </DropdownItem>
-        ))}
+        {steps.map((s) => {
+          /* (REG-590) Approved is an approver's; (UX audit Q3) the client's statuses wait for an approver's OK — the row says so. */
+          const approverOnly = s === 'Approved' && quoteApproval === 'required' && !canApprove
+          const waits = s !== status && !!statusBlock({ target: s, current: status, approval: quoteApproval, approver: canApprove })
+          return (
+            <DropdownItem key={s} role="menuitemradio" checked={s === status} selected={false} disabled={approverOnly || waits} onSelect={() => changeStatus(s)}
+                          meta={s === status ? 'current' : approverOnly ? 'approvers only' : waits ? STATUS_BLOCK_META : undefined}>
+              {s}
+            </DropdownItem>
+          )
+        })}
       </Dropdown>
     </span>
   )
@@ -516,7 +510,8 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
     quoteId: quote.id, required: quote.clientSignatureRequired, memberName: me?.name ?? '', studioName: studio.name, clientName: lead.name, nric: quote.nric,
     signature: me?.signatureKind === 'draw' || me?.signatureKind === 'type' ? { kind: me.signatureKind, name: me.signatureName ?? me.name, data: me.signatureData ?? null } : null,
   }))
-  const stamp = (t: number) => { setUpdatedAt(t); setClock(Date.now()) }
+  /* (UX audit Q10) On a revision the Items table tints what changed since the kept version — live, as the lines change. */
+  const lineChangeMap = useMemo(() => lineChanges(data.prevLines, lines, version), [data.prevLines, lines, version])
   const stripExpanded = useStripExpanded()   // the Items bulk bar centres on the section column, not the viewport (quote-editor.module.css)
 
   /* (REG-518) The picker's selection lives here; the dialog footer acts on it. */
@@ -530,9 +525,9 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
           deleteBlock={canDeleteQuote({ id: me?.id ?? null, role: me?.role }, quote) ? null : DELETE_RULE}
           lead={lead} quoteId={quote.id} title={general.title} number={quote.number} version={version} status={status} siblings={siblings}
           savedLabel={savedLabel(updatedAt, clock)}
-          canSend={canSend} sendKind={sendKind} sendHint={`Quote is ${status}`} statusSlot={statusPill}
+          canSend={quoteSend.canSend} sendKind={quoteSend.kind} sendHint={quoteSend.hint} statusSlot={statusPill}
           onSwitch={(id) => router.push(withFrom(`/quotes/${id}`, from))}
-          onSend={send} onMenu={onMenu} onClose={close}
+          onSend={quoteSend.send} onMenu={onMenu} onClose={close}
           clientViewOn={clientView} onClientView={() => setClientView((o) => !o)}
           contract={contract} contractHref={contract ? withFrom(`/contracts/${contract.id}`, from ? withFrom(`/quotes/${quote.id}`, from) : `/quotes/${quote.id}`) : undefined}
         />
@@ -548,6 +543,7 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
         {/* (REG-624, parity Q-04) No hard lock: a quote the client has says so and offers Revise. */}
         {status === 'Sent to Client' || status === 'Confirmed' || status === 'Signed' ? (
           <SentBanner status={status} version={version} now={clock} confirmedBy={record.confirmedBy} onRevise={() => { void flushRef.current(); setReviseOpen(true) }}
+                      onMove={offersQuoteSent(lead.stage, status) ? () => { void flushRef.current(); router.push(moveStageHref(lead.id, 'quote-sent', { quote: quote.id })) } : null}
                       validityEnded={(() => { const d = general.validUntil ? parseInputDate(general.validUntil) : null; return d && validityPassed({ status, validUntil: d }, clock) ? displayDate(d) : null })()}
                       at={status === 'Sent to Client' ? record.clientSentAt ?? record.sentAt : status === 'Confirmed' ? record.confirmedAt : null} />
         ) : null}
@@ -561,7 +557,7 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
             <ItemsCard key={`items-${seedNonce}`} seed={itemsSeed} open={openOf('items')} onToggle={() => toggle('items')} exportTick={exportTick}
                        onSaved={(t, _amount) => stamp(t)} onOpenAi={() => setAiOpen(true)} onCount={setItemCount}
                        onTotal={setAmountMinor} onLines={setLines} onPricing={(p) => setGstOn(p.gstEnabled)} clientColumns={clientColumns} forceView={forceView} bookTick={bookTick} propertyType={general.propertyType || null}
-                       commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} />
+                       commentCounts={commentCounts} onOpenComments={(itemId) => setCommentsView({ open: true, focus: itemId })} changes={lineChangeMap} />
             <Reorder.Group as="div" axis="y" values={movable.map((s) => s.key)} onReorder={reorder} className={styles.group}>
               {movable.map((s) => (
                 <MovableSection key={s.key} section={s} title={titleOf(s.key)} onToggle={() => toggle(s.key)}
@@ -625,21 +621,14 @@ export function QuoteEditor({ data, from, section, apply, restored }: { data: Qu
                          const v = bringBack; setBringBack(null); if (v === null) return
                          void run('bring the version back', async () => { await flushRef.current(); await restoreQuoteVersion(quote.id, v); const u = new URL(window.location.href); u.searchParams.set('restored', String(v)); window.location.assign(u.toString()) })
                        }} />
-        <ConfirmDialog open={reviseOpen} title={`Start version ${version + 1}?`} tone="primary" confirmLabel={`Start version ${version + 1}`} cancelLabel="Not now"
-                       message={`Version ${version} is kept as it stands — ${status}, ${money2(amountMinor)} — and opens read-only from Version History. The quote becomes a Draft again under ${quote.number} with the same lines, ready for the changes.`}
-                       onCancel={() => setReviseOpen(false)} onConfirm={doRevise} />
+        {/* (UX audit Q10) Revise asks what the client asked for — optional, kept with the version it answers (Version History, the kept preview). */}
+        <ReviseDialog open={reviseOpen} version={version} number={quote.number}
+                      message={`Version ${version} is kept as it stands — ${status}, ${money2(amountMinor)} — and opens read-only from Version History. The quote becomes a Draft again under ${quote.number} with the same lines, ready for the changes.`}
+                      onClose={() => setReviseOpen(false)} onRevise={doRevise} />
         <DeleteQuotesDialog open={deleteOpen} count={1} onNo={() => setDeleteOpen(false)}
                             onYes={() => { setDeleteOpen(false); void run('delete the quote', async () => { const r = await deleteQuotes([quote.id]); if (!r.deleted) { snackbar({ message: DELETE_RULE }); return } snackbar({ message: 'Quote deleted — find it under Deleted Quotes' }); router.push(backHref) }) }} />
-        <ContractTemplatePicker open={contractPicker} onClose={() => setContractPicker(false)} load={fetchContractTemplateOptionsAction}
-                                onUse={(templateId) => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id, templateId }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }}
-                                onStarter={() => { setContractPicker(false); void run('create the contract', async () => { const id = await createContractDoc({ leadId: lead.id, fromQuoteId: quote.id }); router.push(withFrom(`/contracts/${id}`, `/quotes/${quote.id}`)) }, 'Contract created from this quote') }} />
-      {/* (REG-587) Send for confirmation: the contract's send dialog with the quote's words — name, number, the WhatsApp draft, the confirmation link. */}
-      <SendContractDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} link={confirmLink(quote.id)} defaults={{ name: lead.name, phone: lead.phone }}
-                          title="Send for confirmation" subtitle="Your client reads the quote in their browser and confirms it. The agreement and the signature come after."
-                          copyDone="Confirmation link copied" phoneLabel="Client phone (WhatsApp)"
-                          draft={(name) => confirmMessage({ clientFirst: firstName(name), studio: studio.name, number: quote.number, link: confirmLink(quote.id) })}
-                          onSend={sendForConfirmation}
-                          onCopy={() => { if (status !== 'Draft' && status !== 'Approved') return true; return run('send the quote', async () => { const r = await sendQuoteForConfirmation(quote.id); setStatus(r.status); setUpdatedAt(r.updatedAt); setClock(Date.now()); setRecord((x) => ({ ...x, clientSentAt: x.clientSentAt ?? r.updatedAt, sentAt: x.sentAt ?? r.sentAt })) }, 'The quote is Sent to Client — the link opens for your client now', { guard: 'send' }) }} />   {/* (sweep S1 · U-06) copying the link sends it, the contract's rule (REG-631): a link handed out opens */}
+        {quoteSend.dialogs}
+        {statusChange.dialog}
         {/* (REG-627, parity Q-30) Comments on the lines — the Tasks comments panel for a line. */}
         <LineCommentsDrawer open={commentsView.open} focus={commentsView.focus} lines={lines.filter((l) => l.kind === 'item').map((l) => ({ id: l.id, name: l.name }))} comments={comments} me={me} members={members} now={clock}
                             onFocus={(focus) => setCommentsView((v) => ({ ...v, focus }))} onClose={() => setCommentsView({ open: false, focus: null })}

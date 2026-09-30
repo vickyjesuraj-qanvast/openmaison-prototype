@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ templateI
 }
 
 /** The quote template editor (REG-486): a full-page surface without the rail, like the quote editor beside it. */
-export default async function TemplateEditorPage({ params, searchParams }: { params: Promise<{ templateId: string }>; searchParams: Promise<{ preview?: string; from?: string; quote?: string; lead?: string }> }) {
+export default async function TemplateEditorPage({ params, searchParams }: { params: Promise<{ templateId: string }>; searchParams: Promise<{ preview?: string; from?: string; quote?: string; lead?: string; tab?: string }> }) {
   const { templateId } = await params
   const sp = await searchParams
   const data = await fetchTemplateEditor(templateId)
@@ -32,5 +32,6 @@ export default async function TemplateEditorPage({ params, searchParams }: { par
     /* (audit 2026-09-26, round 3) opened from Company › Templates (a folder, a search): Back returns there (REG-465) */
     origin = { from }
   }
-  return <TemplateEditor data={data} initialPreview={sp.preview === '1'} origin={origin} />
+  /* (UX audit S4) Settings › New quotes start with opens the template on its New quotes tab (`?tab=new-quotes`) */
+  return <TemplateEditor data={data} initialPreview={sp.preview === '1'} origin={origin} initialTab={sp.tab === 'new-quotes' ? 'defaults' : undefined} />
 }

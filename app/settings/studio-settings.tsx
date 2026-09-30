@@ -9,6 +9,8 @@ import { withFrom } from '@/lib/nav'
 import { permissionRows, REACH_LABEL, ROLE_COLUMNS, type StudioRules } from '@/lib/settings/permissions'
 import { settingsHref } from '@/lib/settings/modules'
 import { ModuleHead } from './module-head'
+import { leaveThen } from '@/components/company/leave-guard'
+import { HelpLink } from '@/components/company/help-link'
 import styles from './settings.module.css'
 
 export type TeamMember = { id: string; name: string; role: string; color: string; isYou: boolean; managerId: string | null; isActive: boolean }
@@ -45,9 +47,9 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
         <div className={styles.settingHeadRow}>
           <div className={styles.settingHead}>
             <span className={styles.settingTitle}>Team</span>
-            <span className={styles.settingHelp}>{active.length} {active.length === 1 ? 'member' : 'members'}, by role. Roles, who reports to whom and who is added or deactivated are set under Company › Members.</span>
+            <span className={styles.settingHelp}>{active.length} {active.length === 1 ? 'member' : 'members'}, by role. Roles, who reports to whom and who is added or deactivated are set under <HelpLink href="/company/members">Company › Members</HelpLink>.</span>
           </div>
-          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="group" size={20} />} onPress={() => router.push(membersHref)}>Manage members</Button>
+          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="group" size={20} />} onPress={() => leaveThen(() => router.push(membersHref))}>Manage members</Button>
         </div>
         <div className={styles.roleList}>
           {ROLE_COLUMNS.map((role) => {
@@ -83,9 +85,9 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
         <div className={styles.settingHeadRow}>
           <div className={styles.settingHead}>
             <span className={styles.settingTitle}>Issuing entities</span>
-            <span className={styles.settingHelp}>The companies a quote or a contract can be issued under — the first is the studio itself. Their bank details, PayNow and letterheads are kept under Company › Profile.</span>
+            <span className={styles.settingHelp}>The companies a quote or a contract can be issued under — the first is the studio itself. Their bank details, PayNow and letterheads are kept under <HelpLink href="/company/profile#entities">Company › Profile</HelpLink>.</span>
           </div>
-          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="store" size={20} />} onPress={() => router.push(`${profileHref}#entities`)}>Manage entities</Button>
+          <Button variant="secondary" appearance="outlined" iconStart={<Icon name="store" size={20} />} onPress={() => leaveThen(() => router.push(`${profileHref}#entities`))}>Manage entities</Button>
         </div>
         <div className={`${styles.eventTable} ${styles.entityTable}`} role="table" aria-label="Issuing entities" data-card-table="">
           <div className={styles.eventHead} role="row">
@@ -105,7 +107,7 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
       <div className={styles.setting} data-testid="studio-roles">
         <div className={styles.settingHead}>
           <span className={styles.settingTitle}>Who may do what</span>
-          <span className={styles.settingHelp}>What each role may do, as the app checks it. The rows follow this studio’s settings — quote and template approval, the payment schedule and who sees leads. Roles are fixed; a member’s role is set under Company › Members.</span>
+          <span className={styles.settingHelp}>What each role may do, as the app checks it. The rows follow this studio’s settings — quote and template approval, the payment schedule and who sees leads. Roles are fixed; a member’s role is set under <HelpLink href="/company/members">Company › Members</HelpLink>.</span>
         </div>
         <div className={`${styles.eventTable} ${styles.roleTable}`} role="table" aria-label="Who may do what" data-card-table="">
           <div className={styles.eventHead} role="row">
@@ -128,7 +130,7 @@ export function StudioSettings({ studioName, team, entities, rules, backupName }
             </div>
           ))}
         </div>
-        {backupName ? <span className={styles.settingHelp} data-testid="backup-line">{backupName} is the backup approver: approves quotes and publishes templates as an Owner or an Admin does (Settings › Quotes & pricing).</span> : null}
+        {backupName ? <span className={styles.settingHelp} data-testid="backup-line">{backupName} is the backup approver: approves quotes and publishes templates as an Owner or an Admin does (<HelpLink href="/settings?section=quotes#backup-approver">Settings › Quotes & pricing</HelpLink>).</span> : null}
       </div>
     </section>
   )

@@ -232,6 +232,69 @@ export function PinThread({ pin, index, now, onReply, onStatus, onDelete, onClos
   )
 }
 
+/** (UX audit V1) One of the client's notes on a version, with the studio's replies to it. */
+export type ClientNote = { id: string; who: string; body: string; at: number; replies: { id: string; who: string; body: string; at: number }[] }
+
+/**
+ * (UX audit V1) From the client: the notes the client left on a version, readable where the studio works — the pin card's look (a card at the
+ * photo's top corner on a desk or a tablet, the house bottom sheet on a phone), oldest first, each with the studio's replies, and a reply box
+ * that answers the latest one on the renders link (the client reads it there). Opened by the version tile's notes badge, the version's ⋯ and
+ * the bell's `?note=` link.
+ */
+export function ClientNotes({ version, notes, now, client, onReply, onClose }: {
+  /** "V2 · Walls, Floor" — the version the notes are on */
+  version: string
+  notes: ClientNote[]
+  now: number
+  /** who the reply reaches, by name ("Kevin") — "the client" when the design has no lead */
+  client: string
+  onReply: (body: string) => Promise<boolean>
+  onClose: () => void
+}) {
+  const ready = useClient()
+  const sheet = usePinSheet()
+  const anchor = useRef<HTMLSpanElement>(null)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const send = async () => { if (!text.trim() || busy) return; setBusy(true); const ok = await onReply(text.trim()); setBusy(false); if (ok) setText('') }
+  const meta = `${version} · ${notes.length} ${notes.length === 1 ? 'note' : 'notes'}`
+  const list = notes.map((n) => (
+    <div key={n.id} className={styles.noteItem} data-testid="viz-client-note">
+      <span className={styles.replyWho}><b>{n.who}</b>{byRole(n.who) ? '' : ' · Client'} · {when(n.at, now)}</span>
+      <p className={styles.text}>{n.body}</p>
+      {n.replies.map((r) => <div key={r.id} className={styles.reply} data-testid="viz-client-note-reply"><span className={styles.replyWho}><b>{r.who}</b> · {when(r.at, now)}</span><span>{r.body}</span></div>)}
+    </div>
+  ))
+  const replyBox = (
+    <>
+      <NoteBox label="Reply" placeholder={`Reply — ${client} sees it on the renders link`} value={text} onChange={setText} onSubmit={() => { void send() }} onEscape={onClose} />
+      <span className={styles.actions}><Button isDisabled={!text.trim() || busy} onPress={() => { void send() }} data-testid="viz-client-note-send">{busy ? 'Sending…' : 'Reply'}</Button></span>
+    </>
+  )
+  return (
+    <>
+      <span ref={anchor} className={styles.anchor} style={{ left: '100%', top: '0%' }} aria-hidden />
+      {!ready ? null : sheet ? (
+        <span className={styles.contents} {...stops}>
+          <Sheet open onClose={onClose} title="From the client" subtitle={meta} footer={<div className={styles.sheetFoot}>{replyBox}</div>} bodyClassName={styles.fadeBody}>
+            <div className={styles.sheetBody} data-card="" data-testid="viz-client-notes"><div className={styles.sheetThread}>{list}</div></div>
+          </Sheet>
+        </span>
+      ) : (
+        <FloatCard anchor={anchor} label="From the client" testId="viz-client-notes" onEscape={onClose} fallback={() => document.querySelector<HTMLElement>('[data-viz-strip] [data-on] [data-notes]')}>
+          <div className={styles.head}>
+            <span className={styles.num} data-role="client"><Icon name="comment" size={14} fill /></span>
+            <span className={styles.who}><b>From the client</b><span>{meta}</span></span>
+            <Tooltip label="Close"><IconButton icon="close" label="Close the client’s notes" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={onClose} /></Tooltip>
+          </div>
+          <div className={styles.body}>{list}</div>
+          <div className={styles.foot}>{replyBox}</div>
+        </FloatCard>
+      )}
+    </>
+  )
+}
+
 /** A new pin's note (1.0's add-pin box): tap the photo, write it, Pin it. The dot stays on the photo; the box floats beside it (a sheet on a phone). */
 /* (D1) the studio's own pins stay off the client's link — the draft says who sees it; the client's page passes its own hint */
 export function DraftPin({ x, y, onSave, onCancel, label = 'Pin a note here', hint = 'Only your team sees it', image }: {

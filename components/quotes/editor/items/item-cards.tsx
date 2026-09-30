@@ -14,6 +14,7 @@ import type { ItemPatch } from '@/app/quotes/items-actions'
 import type { RowHandlers } from './item-row'
 import { DescriptionDialog } from './description-dialog'
 import { RowMenu } from './table-menus'
+import { changeTag, type LineChange, type LineChanges } from './line-change'
 import styles from './item-cards.module.css'
 
 export type CardRow = { kind: 'row'; item: QuoteItem; number: string } | { kind: 'bucket'; key: string; name: string; number: string; lines: QuoteItem[] }
@@ -26,8 +27,10 @@ type CardLabels = { rooms: string[]; categories: string[]; sections: string[]; v
  * on blur through the same patch — so nothing the desktop grid does is lost; the kebab is the row menu, itself a sheet here.
  * Rendered only at ≤767 (items-table.tsx); the desktop and the tablet keep the grid.
  */
-export function ItemCards({ rows, items, selected, groups, labels, brandColors, h, collapsedBuckets, onToggleBucket, showDescription, showCost = true, commentCounts = {} }: {
+export function ItemCards({ rows, items, selected, groups, labels, brandColors, h, collapsedBuckets, onToggleBucket, showDescription, showCost = true, commentCounts = {}, changes }: {
   commentCounts?: Record<string, number>
+  /** (UX audit Q10) On a revision: the lines new or changed since the kept version. */
+  changes?: LineChanges
   rows: CardRow[]
   items: QuoteItem[]
   selected: Set<string>
@@ -52,7 +55,7 @@ export function ItemCards({ rows, items, selected, groups, labels, brandColors, 
           </button>
         </div>
       ) : (
-        <ItemCard key={d.item.id} item={d.item} number={d.number} all={items} selected={selected.has(d.item.id)} groups={groups} labels={labels} brandColors={brandColors} h={h} selectedCount={selected.size} showDescription={showDescription} showCost={showCost} comments={commentCounts[d.item.id] ?? 0} />
+        <ItemCard key={d.item.id} item={d.item} number={d.number} all={items} selected={selected.has(d.item.id)} groups={groups} labels={labels} brandColors={brandColors} h={h} selectedCount={selected.size} showDescription={showDescription} showCost={showCost} comments={commentCounts[d.item.id] ?? 0} change={changes?.get(d.item.id) ?? null} />
       ))}
     </div>
   )
@@ -63,9 +66,9 @@ export function ItemCards({ rows, items, selected, groups, labels, brandColors, 
 const toMinor = (s: string) => { const n = Number(s.replace(/,/g, '')); return Number.isFinite(n) ? Math.round(n * 100) : 0 }
 const toNum = (s: string, max?: number) => { const n = Number(s.replace(/,/g, '')); const v = Number.isFinite(n) && n >= 0 ? n : 0; return max === undefined ? v : Math.min(max, v) }
 
-function ItemCard({ item, number, all, selected, groups, labels, brandColors, h, selectedCount, showDescription, showCost, comments }: {
+function ItemCard({ item, number, all, selected, groups, labels, brandColors, h, selectedCount, showDescription, showCost, comments, change }: {
   item: QuoteItem; number: string; all: QuoteItem[]; selected: boolean; groups: QuoteItem[]; labels: CardLabels
-  brandColors: Record<string, string>; h: Omit<RowHandlers, 'onDragPointerDown'>; selectedCount: number; showDescription: boolean; showCost: boolean; comments: number
+  brandColors: Record<string, string>; h: Omit<RowHandlers, 'onDragPointerDown'>; selectedCount: number; showDescription: boolean; showCost: boolean; comments: number; change: LineChange | null
 }) {
   const [menu, setMenu] = useState(false)
   const [open, setOpen] = useState(false)
@@ -80,7 +83,7 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
   const patch = (p: ItemPatch) => h.onPatch(item.id, p)
   const desc = item.descriptionHtml ? htmlToPlain(item.descriptionHtml) : item.description ?? ''
   return (
-    <div className={styles.card} role="listitem" data-testid="item-card" data-item-id={item.id} data-group={isGroup || undefined} data-depth={depth || undefined} data-selected={selected || undefined} data-status={item.status !== 'Pending' ? item.status : undefined}>
+    <div className={styles.card} role="listitem" data-testid="item-card" data-item-id={item.id} data-change={!isGroup && change ? change.kind : undefined} data-group={isGroup || undefined} data-depth={depth || undefined} data-selected={selected || undefined} data-status={item.status !== 'Pending' ? item.status : undefined}>
       <span className={styles.check}><Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on)} aria-label={`Select ${item.name || 'item'}`} /></span>
       <button type="button" className={styles.open} aria-label={`Edit ${item.name || (isGroup ? 'section' : 'item')}`} onClick={() => setOpen(true)}>
         <span className={styles.thumb} data-group={isGroup || undefined}>
@@ -106,6 +109,7 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
             {isGroup ? <Tag appearance="outlined" color="blue">{depth ? 'Sub-section' : 'Section'}</Tag> : null}
             {item.status !== 'Pending' ? <Tag appearance="outlined" color={item.status === 'Approved' ? 'green' : 'red'}>{item.status}</Tag> : null}
             {!isGroup && item.optional ? <Tag appearance="outlined">Optional</Tag> : null}
+            {!isGroup && change ? <span data-testid="line-change" aria-label={changeTag(change).help}><Tag appearance="outlined" color="yellow">{changeTag(change).label}</Tag></span> : null}   {/* (UX audit Q10) */}
             {!isGroup && comments > 0 ? <span data-testid="line-comment-count"><Tag appearance="outlined">{comments} {comments === 1 ? 'comment' : 'comments'}</Tag></span> : null}   {/* (REG-627) the kebab's Comment opens them */}
             {!isGroup && item.optional && item.clientChoice ? <span data-testid="client-choice"><Tag appearance="outlined" color={item.clientChoice === 'want' ? 'green' : undefined}>{item.clientChoice === 'want' ? 'Client wants it' : 'Client said no'}</Tag></span> : null}   {/* (REG-626) */}
             {word ? <Tag appearance="outlined">{word}</Tag> : null}

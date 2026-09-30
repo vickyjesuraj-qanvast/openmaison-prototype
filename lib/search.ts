@@ -19,6 +19,22 @@ export type Searchable = (string | null | undefined)[]
 const digits = (s: string) => s.replace(/\D/g, '')
 
 /**
+ * (UX audit L11) The digit runs a query can mean in a phone column: as typed, and — when it opens with Singapore's country code, the way
+ * caller ID and WhatsApp show a number ("+65 9123 4599", "65 9123 4599", "6591234599") — without it. The header comment always promised
+ * "+65 9812 0443" finds "98120443"; digits-only on both sides turned it into "6598120443", which no stored number contains. A bare "65…"
+ * counts as the code only when a space or dash follows it, or the run is ten digits long — "6512" typed alone is the start of a landline.
+ * The last entry is the local number.
+ */
+export function phoneNeedles(query: string): string[] {
+  const q = query.trim()
+  const d = digits(q)
+  if (!d) return []
+  const coded = /^\+\s*65/.test(q) || /^0065/.test(q) || /^65[\s-]/.test(q) || (d.length === 10 && d.startsWith('65'))
+  const local = coded ? d.replace(/^(?:00)?65/, '') : ''
+  return local && local !== d ? [d, local] : [d]
+}
+
+/**
  * @param query      what the user typed (raw; trimmed and lowercased here)
  * @param fields     every piece of text the row shows
  * @param phones     phone-like values, matched digits-to-digits at any length (a prefix counts)
@@ -29,8 +45,8 @@ export function matchesQuery(query: string, fields: Searchable, phones: Searchab
   if (fields.some((f) => f && f.toLowerCase().includes(q))) return true
   // A number typed with spaces, dashes or a country code still matches the stored digits — but only when the
   // query actually carries a digit, so a plain word never falls through to the phone columns.
-  const qd = digits(q)
-  return qd.length > 0 && phones.some((p) => p && digits(p).includes(qd))
+  const needles = phoneNeedles(q)
+  return needles.length > 0 && phones.some((p) => { const pd = p ? digits(p) : ''; return !!pd && needles.some((n) => pd.includes(n)) })
 }
 
 /** Convenience for the common `list.filter(...)` shape. */

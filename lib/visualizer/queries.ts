@@ -12,7 +12,7 @@ import { currentSampleReading, descriptor, sampleDetection, NO_FINISHES, readPen
 import type { LibraryMaterial, OwnSwatch } from './materials'
 import { sampleByKey } from './samples'
 import { renderAddress, withToken } from './images'
-import { clientLines, clientRoomNames, clientVersionLabel, roomsInSentence, type Quotable } from './outputs'
+import { clientLines, clientRoomNames, clientVersionLabel, shareHeadline, type Quotable } from './outputs'
 import { isRateUnit } from '@/lib/settings/types'
 
 /* AI Visualizer (REG-673) — what the pages read. Pictures stored as data URLs leave as /visualizer/img addresses (the page payload
@@ -171,7 +171,9 @@ export type EditorJob = { id: string; roomId: string; kind: string; model: strin
 export type Pin = { id: string; key: string; x: number; y: number; body: string; status: 'open' | 'resolved'; authorRole: 'studio' | 'client'; authorName: string; authorMemberId: string | null; comments: { id: string; authorRole: 'studio' | 'client'; authorName: string; body: string; createdAt: number }[]; createdAt: number }
 /** Why a link that was sent no longer opens: stopped by the studio, its design deleted, its lead returned or deleted, every version gone. */
 export type LinkEnd = 'stopped' | 'design' | 'lead' | 'versions'
-export type ShareRow = { id: string; token: string; createdAt: number; expiresAt: number; revokedAt: number | null; viewCount: number; lastViewedAt: number | null; sentVia: string | null; keys: string[]; responses: { id: string; kind: string; versionKey: string | null; clientName: string | null; message: string | null; createdAt: number }[]
+export type ShareRow = { id: string; token: string; createdAt: number; expiresAt: number; revokedAt: number | null; viewCount: number; lastViewedAt: number | null; sentVia: string | null; keys: string[]
+  /** What came back on the link — a favourite, a note, a call back — and (UX audit V1) the studio's `reply` to a note, `replyTo` naming it. */
+  responses: { id: string; kind: string; versionKey: string | null; clientName: string | null; message: string | null; createdAt: number; replyTo: string | null }[]
   /** (audit 2026-09-26) the link no longer opens although nobody pressed Stop — its lead was returned or deleted, or every version on it was deleted. */
   ended: LinkEnd | null }
 export type VisualizerEditorData = {
@@ -272,7 +274,7 @@ async function fetchVisualizerEditorUncached(designId: string): Promise<Visualiz
     shares: shares.map((s) => {
       const keys = parseSnapshot(s.snapshot).versions.map((v) => v.key)
       const ended: LinkEnd | null = s.revokedAt ? 'stopped' : d.deletedAt ? 'design' : closed ? 'lead' : keys.length && !keys.some((k) => liveKeys.has(k)) ? 'versions' : null
-      return { id: s.id, token: s.token, createdAt: s.createdAt.getTime(), expiresAt: s.expiresAt.getTime(), revokedAt: s.revokedAt?.getTime() ?? null, viewCount: s.viewCount, lastViewedAt: s.lastViewedAt?.getTime() ?? null, sentVia: s.sentVia, keys, responses: responses.filter((r) => r.shareLinkId === s.id).map((r) => ({ id: r.id, kind: r.kind, versionKey: r.versionKey, clientName: r.clientName, message: r.message, createdAt: r.createdAt.getTime() })), ended }
+      return { id: s.id, token: s.token, createdAt: s.createdAt.getTime(), expiresAt: s.expiresAt.getTime(), revokedAt: s.revokedAt?.getTime() ?? null, viewCount: s.viewCount, lastViewedAt: s.lastViewedAt?.getTime() ?? null, sentVia: s.sentVia, keys, responses: responses.filter((r) => r.shareLinkId === s.id).map((r) => ({ id: r.id, kind: r.kind, versionKey: r.versionKey, clientName: r.clientName, message: r.message, createdAt: r.createdAt.getTime(), replyTo: r.kind === 'reply' ? r.taskId : null })), ended }
     }),
     leadImages: files.filter((f) => f.kind === 'image' && f.thumb && !renderFiles.has(f.id) && !f.thumb.startsWith('/visualizer/img/')).map((f) => ({ id: f.id, name: f.name, url: f.thumb! })),
     quotes: quoteRows.map((q) => ({ ...q, versions: sections.filter((x) => x.quoteId === q.id && x.name.endsWith(' finishes')).map((x) => x.name) })),
@@ -354,6 +356,8 @@ export type PublicShare = {
   now: number
   studio: { name: string; logo: string | null; accent: string; phone: string; email: string }
   lead: { name: string } | null
+  /** (UX audit V10) the page's headline — "2 design ideas for Kevin Ng" (shareHeadline) — whose design it is, never a room's name. */
+  headline: string
   /** (F099) a link made from a lead's design: the studio has the client's number on the lead, so a call back may leave the box empty. */
   hasLead: boolean
   sender: string | null
@@ -362,7 +366,8 @@ export type PublicShare = {
   /** (F077) how many of the link's versions the studio has deleted since — they are no longer on the page. */
   gone: number
   favourite: string | null
-  notes: { id: string; versionKey: string | null; message: string; clientName: string | null; createdAt: number }[]
+  /** The client's notes — (UX audit V1) with the studio's replies to each, in order. */
+  notes: { id: string; versionKey: string | null; message: string; clientName: string | null; createdAt: number; replies: { id: string; who: string; message: string; createdAt: number }[] }[]
   calledBack: boolean
   pins: Pin[]
 }
@@ -378,7 +383,7 @@ export async function readShareLink(token: string) {
   const snap = parseSnapshot(s.snapshot)
   const jobIds = [...new Set(snap.versions.map((v) => v.key.split(':')[0]!))]
   const [design, jobs, closed, designRooms] = await Promise.all([
-    db.select({ deletedAt: visualizerDesigns.deletedAt }).from(visualizerDesigns).where(eq(visualizerDesigns.id, s.designId)).then((r) => r[0] ?? null),
+    db.select({ deletedAt: visualizerDesigns.deletedAt, name: visualizerDesigns.name }).from(visualizerDesigns).where(eq(visualizerDesigns.id, s.designId)).then((r) => r[0] ?? null),
     jobIds.length ? db.select({ id: renderJobs.id, roomId: renderJobs.roomId, variantsJson: renderJobs.variantsJson }).from(renderJobs).where(inArray(renderJobs.id, jobIds)) : Promise.resolve([]),
     s.leadId ? leadClosed(s.leadId) : Promise.resolve(false),
     snap.versions.some((v) => !v.clientRoom) ? db.select({ name: projectRooms.name }).from(projectRooms).where(and(eq(projectRooms.designId, s.designId), isNull(projectRooms.deletedAt))) : Promise.resolve([]),
@@ -402,7 +407,7 @@ export async function readShareLink(token: string) {
   const now = Date.now()
   const ended: LinkEnd | null = s.revokedAt ? 'stopped' : !design || design.deletedAt ? 'design' : closed ? 'lead' : !live.length ? 'versions' : null
   const state: PublicShare['state'] = ended ? 'stopped' : s.expiresAt.getTime() < now ? 'expired' : 'open'
-  return { s, live, gone: worded.length - live.length, state, ended, now, facts }
+  return { s, live, gone: worded.length - live.length, state, ended, now, facts, designName: design?.name ?? null }
 }
 export type ShareLinkRead = NonNullable<Awaited<ReturnType<typeof readShareLink>>>
 /** The words a closed link's client action answers with — (verify round 1) naming whoever shared it, as the page does. */
@@ -420,7 +425,7 @@ export async function closedLinkMessage(r: Pick<ShareLinkRead, 'state' | 's'> | 
 export async function fetchShare(token: string): Promise<PublicShare | null> {
   const got = await readShareLink(token)
   if (!got) return null
-  const { s, live, state, ended, now, facts } = got
+  const { s, live, state, ended, now, facts, designName } = got
   const [brand, lead, sender, reqs] = await Promise.all([
     fetchBrand(),
     s.leadId ? db.select({ name: leads.name }).from(leads).where(eq(leads.id, s.leadId)).then((r) => r[0] ?? null) : Promise.resolve(null),
@@ -429,7 +434,7 @@ export async function fetchShare(token: string): Promise<PublicShare | null> {
   ])
   const base = { state, ended, token: s.token, message: s.message, createdAt: s.createdAt.getTime(), expiresAt: s.expiresAt.getTime(), now,
     studio: { name: brand.details.name, logo: brand.kit.logo, accent: brand.kit.colors.accent, phone: brand.details.phone, email: brand.details.email },
-    lead, hasLead: !!s.leadId, sender }
+    lead, hasLead: !!s.leadId, sender, headline: shareHeadline(live.length, { leadName: lead?.name ?? null, designName }) }
   /* a link that no longer opens carries nothing of the design — its page says it ended, and its pictures are not served */
   if (state !== 'open') return { ...base, versions: [], gone: 0, favourite: null, notes: [], calledBack: false, pins: [] }
   const keys = live.map((v) => v.key)
@@ -453,7 +458,8 @@ export async function fetchShare(token: string): Promise<PublicShare | null> {
     versions: live.map((v) => { const t = told(v); return { ...v, ...t, imageUrl: withToken(v.imageUrl, s.token) ?? v.imageUrl, beforeUrl: withToken(t.beforeUrl, s.token) } }),
     gone: got.gone,
     favourite: fav?.versionKey && keys.includes(fav.versionKey) ? fav.versionKey : null,
-    notes: reqs.filter((r) => r.kind === 'note' && r.message && (!r.versionKey || keys.includes(r.versionKey))).map((r) => ({ id: r.id, versionKey: r.versionKey, message: r.message!, clientName: r.clientName, createdAt: r.createdAt.getTime() })),
+    notes: reqs.filter((r) => r.kind === 'note' && r.message && (!r.versionKey || keys.includes(r.versionKey))).map((r) => ({ id: r.id, versionKey: r.versionKey, message: r.message!, clientName: r.clientName, createdAt: r.createdAt.getTime(),
+      replies: reqs.filter((x) => x.kind === 'reply' && x.taskId === r.id && x.message).map((x) => ({ id: x.id, who: x.clientName ?? sender ?? brand.details.name, message: x.message!, createdAt: x.createdAt.getTime() })) })),
     calledBack: reqs.some((r) => r.kind === 'call_back'),
     pins: pins.filter((p) => keys.includes(versionKey(p.jobId, p.variantId))).map(pinOf),
   }
@@ -469,9 +475,9 @@ export async function shareMeta(token: string): Promise<ShareMeta | null> {
   const title = `Design ideas · ${brand.details.name}`
   if (got.state !== 'open') return { title, description: null, image: null, open: false }
   const sender = got.s.createdBy ? (await db.select({ name: members.name }).from(members).where(eq(members.id, got.s.createdBy)))[0]?.name ?? null : null
-  const rooms = [...new Set(got.live.map((v) => v.clientRoom))]
-  const n = got.live.length
-  const what = `${n === 1 ? 'A design idea' : `${n} design ideas`} for your ${roomsInSentence(rooms)}`
+  const lead = got.s.leadId ? (await db.select({ name: leads.name }).from(leads).where(eq(leads.id, got.s.leadId)))[0]?.name ?? null : null
+  /* (UX audit V10) the page's own headline — whose design it is, never a room's name */
+  const what = shareHeadline(got.live.length, { leadName: lead, designName: got.designName })
   return { title, description: `${what} — from ${sender ? `${sender}, ` : ''}${brand.details.name}`, image: withToken(got.live[0]?.imageUrl ?? null, got.s.token), open: true }
 }
 export type { RenderShareLink }

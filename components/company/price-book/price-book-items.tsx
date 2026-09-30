@@ -13,7 +13,7 @@ import { BOOK_RULE, itemChangeBlock } from '@/lib/company/price-book-rules'
 import { ITEM_KINDS, ITEM_KIND_ICON, ITEM_KIND_LABEL, isItemKind, type ItemKind } from '@/lib/quotes/items-model'
 import { PRICE_BOOK_KINDS, PRICE_BOOK_TABS } from '@/lib/company/sections'
 import type { PriceBookData, PriceBookItemRow } from '@/lib/company/price-book'
-import { approvePriceBookItem, bulkUpdatePriceBookItems, undoBulkPriceBook, createPriceBookItem, deletePriceBookItems, deletePriceBookItemsForever, duplicatePriceBookItem, emptyPriceBookItemTrash, importPriceBookItems, renamePriceBookItem, restorePriceBookItems, sendBackPriceBookItem, updatePriceBookItem, type PriceBookItemInput } from '@/app/company/price-book-actions'
+import { approvePriceBookItem, bulkUpdatePriceBookItems, undoBulkPriceBook, createPriceBookItem, deletePriceBookItems, deletePriceBookItemsForever, duplicatePriceBookItem, emptyPriceBookItemTrash, importPriceBookItems, renamePriceBookItem, restorePriceBookItems, sendBackPriceBookItem, undoPriceBookImport, updatePriceBookItem, type ImportBatch, type PriceBookItemInput } from '@/app/company/price-book-actions'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { BulkEditDialog, type BulkEdit } from './bulk-edit-dialog'
 import { LibraryGallery, settle, type LibraryItem } from '@/components/company/templates/library-gallery'
@@ -23,7 +23,7 @@ import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import styles from './price-book.module.css'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
-import { PriceBookGhost } from '@/components/company/company-ghosts'
+import { PriceBookItemsGhost } from './price-book-ghost'
 
 type Row = PriceBookItemRow & LibraryItem
 const toRow = (i: PriceBookItemRow): Row => ({ ...i, title: i.name, updatedAt: i.updatedAt ?? i.createdAt })
@@ -33,7 +33,7 @@ const toDeletedRow = (i: PriceBookItemRow): Row => ({ ...toRow(i), author: i.mak
 const inUseReason = (t: PriceBookItemRow) => (t.usedBy > 0 ? `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'} — restore it instead` : null)
 const kindOf = (i: PriceBookItemRow): ItemKind => (isItemKind(i.kind) ? i.kind : 'purchase')
 const unitPrice = (i: PriceBookItemRow) => i.costMinor + i.markupMinor
-const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookGhost /> }   /* (REG-708) the ghost its loading.tsx draws */
+const SHELL = { title: 'Price book', tabs: [...PRICE_BOOK_TABS], skeleton: <PriceBookItemsGhost /> }   /* (REG-708) the ghost its loading.tsx draws — (UX audit S8) the list, or the member's own grid */
 
 /**
  * Company › Price book › My Items (REG-594; Mavid / Urban Home: "a price book page", "import our item list", "the same item
@@ -53,6 +53,13 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
   /* (REG-709) `?open=<id>` — an item the global search found — opens its dialog on arrival */
   const opening = useSearchParams().get('open')
   const [edit, setEdit] = useState<{ open: boolean; item: PriceBookItemRow | null }>(() => { const it = opening ? items.find((i) => i.id === opening) ?? null : null; return { open: !!it, item: it } })
+  /* (UX audit V11) a bell notice pressed while this page is already open changes only `?open=` — the item it names opens then too */
+  const [seenOpening, setSeenOpening] = useState(opening)
+  if (opening !== seenOpening) { setSeenOpening(opening); const it = opening ? items.find((i) => i.id === opening) ?? null : null; if (it) setEdit({ open: true, item: it }) }
+  /* (UX audit S7) What the last import touched — added and updated — as the list's "just imported" to-do: the list narrows to them when the
+     import lands (the "Show them"), a press on the chip gives the whole book back; the snackbar's Undo takes the import back. */
+  const [imported, setImported] = useState<Set<string> | null>(null)
+  const [focus, setFocus] = useState<{ key: string } | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [exportShown, setExportShown] = useState<PriceBookItemRow[] | null>(null)
   /* (REG-627, parity Q-18) The export's sheet: the list's own columns plus the description, money with its two decimals.
@@ -105,7 +112,8 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
         { label: 'Set markup', onClick: () => setBulkEdit({ kind: 'markup', ids, clear }) },
         { label: 'Delete', tone: 'danger', onClick: () => setBulkDelete({ ids, clear }) },
       ] : undefined}
-      filters={[...(proposedCount ? [{ key: 'proposed', label: 'Proposed', test: (t: Row) => t.status === 'proposed', attention: (n: number) => `${n} proposed` }] : []), ...kindsPresent.map((k) => ({ key: k, label: ITEM_KIND_LABEL[k], test: (t: Row) => t.status !== 'proposed' && kindOf(t) === k }))]}
+      filters={[...(imported && imported.size ? [{ key: 'imported', label: 'Just imported', test: (t: Row) => imported.has(t.id), attention: (n: number) => `${n} just imported`, icon: 'upload_file' }] : []), ...(proposedCount ? [{ key: 'proposed', label: 'Proposed', test: (t: Row) => t.status === 'proposed', attention: (n: number) => `${n} proposed` }] : []), ...kindsPresent.map((k) => ({ key: k, label: ITEM_KIND_LABEL[k], test: (t: Row) => t.status !== 'proposed' && kindOf(t) === k }))]}
+      focusFilter={focus} defaultView="list"   /* (UX audit S8) a member who never picked a view gets the list — the listing's table model */
       filterLabel="Kind"   /* (REG-666) a proposal counts once — under Proposed, the to-do — so the kinds add up to All */
       chips={(t) => (t.status === 'proposed' ? <MetaChip color="yellow">Proposed</MetaChip> : null)}
       byColumn openLabel={(t) => (block(t) ? 'Open' : 'Edit')} mayChange={block} duplicateBlock={() => (runsBook ? null : BOOK_RULE)}
@@ -158,9 +166,17 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       <ExportDialog open={!!exportShown} title="Export My Items" download={downloadItems} onClose={() => setExportShown(null)} scope={exportShown ? { all: items.length, shown: exportShown.length, noun: 'items' } : undefined}
                     onDone={(name, format, count) => snackbar({ message: `Exported ${count ?? items.length} ${(count ?? items.length) === 1 ? 'item' : 'items'} as ${format} · ${name}` })} />
       <ImportItemsDialog open={importOpen} onClose={() => setImportOpen(false)} book={items.filter((i) => i.status === 'live')} trades={data.trades}
-                         onImport={(lines, vendor, match) => { setImportOpen(false); void run('import the items', async () => {
-                           const r = (await settle(importPriceBookItems(lines, vendor, match))) as { added: number; updated: number; skipped: number }; router.refresh()
-                           snackbar({ message: [r.added ? `${r.added} ${r.added === 1 ? 'item' : 'items'} added` : null, r.updated ? `${r.updated} updated` : null, r.skipped ? `${r.skipped} skipped` : null].filter(Boolean).join(' · ') || 'Nothing imported' })
+                         onImport={(lines, vendor, match, kind) => { setImportOpen(false); void run('import the items', async () => {
+                           const r = (await settle(importPriceBookItems(lines, vendor, match, kind))) as { added: number; updated: number; skipped: number; batch: ImportBatch; touched: string[] }; router.refresh()
+                           const said = [r.added ? `${r.added} ${r.added === 1 ? 'item' : 'items'} added` : null, r.updated ? `${r.updated} updated` : null, r.skipped ? `${r.skipped} skipped` : null].filter(Boolean).join(' · ') || 'Nothing imported'
+                           /* (UX audit S7) the list shows what came in (the "just imported" chip), and Undo takes the import back — added rows go,
+                              updated rows take their old values from History */
+                           if (r.touched.length) { setImported(new Set(r.touched)); setFocus({ key: 'imported' }) }
+                           const undoable = r.batch.added.length + r.batch.changes.length > 0
+                           snackbar({ key: 'price-book-import', message: said, ...(undoable ? { actionLabel: 'Undo', onAction: () => { void run('undo the import', async () => {
+                             const u = (await settle(undoPriceBookImport(r.batch))) as { removed: number; restored: number }; setImported(null); router.refresh()
+                             snackbar({ key: 'price-book-import', message: `Import undone${[u.removed ? ` — ${u.removed} ${u.removed === 1 ? 'item' : 'items'} removed` : '', u.restored ? `${u.removed ? ',' : ' —'} ${u.restored} put back as ${u.restored === 1 ? 'it was' : 'they were'}` : ''].join('')}` })
+                           }) } } : {}) })
                          }) }} />
       <BulkEditDialog open={!!bulkEdit} kind={bulkEdit?.kind ?? 'category'} count={bulkEdit?.ids.length ?? 0} categories={data.trades} vendors={data.vendors} onClose={() => setBulkEdit(null)}
                       onApply={(change) => {

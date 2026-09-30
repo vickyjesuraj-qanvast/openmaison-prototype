@@ -40,6 +40,8 @@
 .composerCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
 .composerRow { display: flex; align-items: center; justify-content: space-between; gap: var(--om-spacing-2); height: 36px; }
 .privacy { font: var(--om-type-body-xs); color: var(--om-color-on-surface-secondary); }
+/* (UX audit 2026-09-30, T8) The composer's field is the DS TextArea — two lines tall at rest (the Task name area's 64), scrolling past that. */
+.composerField textarea { block-size: 64px; min-block-size: 64px; resize: none; }
 
 /* Touch ergonomics (REG-273): this panel's kebab is the house IconButton, whose own transparent overlay takes the 44 target on a
    touch pointer (om/icon-button.module.css); the line comments' 20px `.kebab` keeps its 20px glyph and wash, the target alone growing to

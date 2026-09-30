@@ -17,12 +17,13 @@ import { parseInputDateTime } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
 import { detailHref } from '@/lib/leads/stage-policy'
 import { fetchStageDocuments, type StageDocuments } from '@/app/leads/quotes-actions'
+import { fetchQuoteSendRule } from '@/app/leads/actions'
 import type { Member } from '@/lib/db/schema'
 import type { StageMovement } from '@/lib/settings/types'
-import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel, approvedQuoteRows, signedContractRows, signedQuoteRows } from './panels'
+import { NewPanel, ContactedPanel, MetPanel, QuoteSentPanel, WonPanel, approvedQuoteRows, signedContractRows, signedQuoteRows, type SendRule } from './panels'
 import { AutoFillDialog, SuggestedTasksDialog } from './dialogs'
 import { LinkButton } from './fields'
-import { emptyLog, emptyMeeting, emptyWizardData, validateStage, SYSTEM_CONTRACT, SYSTEM_QUOTE, type StageErrors, type WizardData } from './types'
+import { defaultMilestones, emptyLog, emptyMeeting, emptyWizardData, validateStage, SYSTEM_CONTRACT, SYSTEM_QUOTE, type ContactLog, type StageErrors, type WizardData } from './types'
 import styles from './wizard.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -32,6 +33,11 @@ const SUGGESTED = 'Prepare sample designs and floor plan illustrations for the c
 
 type RailState = 'done' | 'active' | 'todo' | 'locked'
 
+/** (UX audit 2026-09-30, Q1 · C1 · L2) What a hand-off link (`?move=<step>&quote=|contract=|log=`, lib/leads/move-link.ts) brings
+    already picked: a quote (for a contract, the quote it was raised from), a signed contract, a Notes-tab contact log. */
+export type MovePick = { quoteId?: string | null; contractId?: string | null; log?: ContactLog | null }
+const isBlankLog = (l: ContactLog | undefined) => !!l && !l.channel && !l.when && !l.outcome && !l.nextStepWhen && !l.nextStepMode && !l.files.length && !l.notes.trim()
+
 /**
  * Move stage (780:83579 / 780:91593) under stage-movement policy (user 2026-08-29):
  * one stage is open for capture — the one the lead is moving into. Stages the lead
@@ -40,7 +46,7 @@ type RailState = 'done' | 'active' | 'todo' | 'locked'
  * window for Won (it creates the project), with the same rail.
  */
 export function MoveStageWizard({
-  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate, onCreateQuote, onCreateContract, assignable = null,
+  lead, team, targetStage, mode = 'linear', onClose, onSave, onUpdate, onCreateQuote, onCreateContract, assignable = null, pick = null,
 }: {
   lead: LeadRow
   team: Member[]
@@ -58,6 +64,8 @@ export function MoveStageWizard({
    *  the Overview passes its own so the Qanvast origin rides along. */
   onCreateQuote?: () => void
   onCreateContract?: () => void
+  /** (UX audit 2026-09-30) The documents a hand-off link brings — applied to the step being entered, never to a completed one. */
+  pick?: MovePick | null
 }) {
   useScrollLock(true)   // the page never scrolls behind this surface
   /* (REG-273) Touch: a locked stage explains itself through a Tooltip, and the DS Tooltip never fires for a
@@ -76,11 +84,19 @@ export function MoveStageWizard({
   // On Hold / Lost leads resume from the stage they left; a lead with no history starts before New.
   const fromIdx = STAGES.indexOf((STAGES as readonly string[]).includes(lead.stage) ? lead.stage as (typeof STAGES)[number] : lead.resumeStage as (typeof STAGES)[number])
   const [active, setActive] = useState<Stage>(targetStage)
-  const [data, setData] = useState<WizardData>(() => ({
-    ...emptyWizardData(lead.assignees.map((m) => m.id)),
-    ...lead.stageData,                              // what earlier saves recorded, so completed stages open filled in
-    assignees: lead.assignees.map((m) => m.id),
-  }))
+  /* (UX audit 2026-09-30) A hand-off fills the step being ENTERED; a completed stage opens as it was recorded. */
+  const entering = STAGES.indexOf(targetStage as (typeof STAGES)[number]) > fromIdx
+  const [data, setData] = useState<WizardData>(() => {
+    const base: WizardData = {
+      ...emptyWizardData(lead.assignees.map((m) => m.id)),
+      ...lead.stageData,                              // what earlier saves recorded, so completed stages open filled in
+      assignees: lead.assignees.map((m) => m.id),
+    }
+    /* (L2) A contact log saved on the Notes tab arrives as the Contacted entry: the blank first log takes it, else it joins the list. */
+    const log = pick?.log
+    if (!log || targetStage !== 'Contacted' || !entering) return base
+    return { ...base, logs: base.logs.length === 1 && isBlankLog(base.logs[0]) ? [log] : [...base.logs.map((l) => ({ ...l, collapsed: true })), log] }
+  })
   const [dir, setDir] = useState(1)
   /* (REG-340) The From System lists are the lead's own quotes and contracts, read once when the window opens (the listing
      and the Overview never load them). Until they land the lists draw nothing; a failed read lists nothing, which leaves
@@ -88,21 +104,45 @@ export function MoveStageWizard({
      what emptyWizardData and every earlier stage log hold) resolve to the first row this lead actually has — or to nothing,
      so a lead without an approved quote is asked to choose or upload (validateStage), never let through on a name it lacks. */
   const [docs, setDocs] = useState<StageDocuments | null>(null)
+  /* (UX audit 2026-09-30, Q1) The studio's quote-approval rule, read with the documents: Quote Sent lists the quotes the move may send
+     and names the approval one still needs. A failed read keeps the old list (approved and sent quotes only). */
+  const [rule, setRule] = useState<SendRule | null>(null)
+  const pickRef = useRef({ pick, entering, targetStage })
   useEffect(() => {
     let live = true
-    void fetchStageDocuments(lead.id).then(
-      (d) => {
+    void Promise.all([fetchStageDocuments(lead.id), fetchQuoteSendRule().catch(() => null)]).then(
+      ([d, r]) => {
         if (!live) return
         setDocs(d)
+        setRule(r)
+        const { pick: p, entering: fresh, targetStage: into } = pickRef.current
         setData((cur) => {
           const resolve = (stored: string | null, sentinel: string, names: string[]) =>
             stored === sentinel && !names.includes(sentinel) ? names[0] ?? null : stored
-          return {
+          const sendable = approvedQuoteRows(d, r).filter((q) => !q.hold)
+          const quoteSelected = resolve(cur.quoteSelected, SYSTEM_QUOTE, sendable.map((q) => q.name))
+          const next: WizardData = {
             ...cur,
-            quoteSelected: resolve(cur.quoteSelected, SYSTEM_QUOTE, approvedQuoteRows(d).map((r) => r.name)),
-            wonQuote: resolve(cur.wonQuote, SYSTEM_QUOTE, signedQuoteRows(d).map((r) => r.name)),
-            wonContract: resolve(cur.wonContract, SYSTEM_CONTRACT, signedContractRows(d).map((r) => r.name)),
+            quoteSelected,
+            quoteSelectedId: cur.quoteSelectedId ?? sendable.find((q) => q.name === quoteSelected)?.id ?? null,
+            wonQuote: resolve(cur.wonQuote, SYSTEM_QUOTE, signedQuoteRows(d).map((q) => q.name)),
+            wonContract: resolve(cur.wonContract, SYSTEM_CONTRACT, signedContractRows(d).map((c) => c.name)),
           }
+          if (!p || !fresh) return next
+          /* The hand-off's documents, picked on the step being entered: the sent / confirmed quote for Quote Sent (Q1); the signed
+             contract and the quote it was raised from for Won (C1) — each only where that step's list carries it. */
+          const q = p.quoteId ? d.quotes.find((x) => x.id === p.quoteId) : undefined
+          const c = p.contractId ? signedContractRows(d).find((x) => x.id === p.contractId) : undefined
+          if (into === 'Quote Sent' && q) return { ...next, quoteTab: 'system', quoteSelected: q.title, quoteSelectedId: q.id }
+          if (into === 'Won') {
+            const signed = q ? signedQuoteRows(d).find((x) => x.id === q.id) : undefined
+            return {
+              ...next,
+              ...(signed ? { wonQuoteTab: 'system' as const, wonQuote: signed.name, wonQuoteUploaded: null, milestones: defaultMilestones() } : {}),
+              ...(c ? { wonContractTab: 'system' as const, wonContract: c.name } : {}),
+            }
+          }
+          return next
         })
       },
       () => { if (live) setDocs({ quotes: [], contracts: [] }) },
@@ -140,8 +180,19 @@ export function MoveStageWizard({
   }, [active])
 
   const update = (patch: Partial<WizardData>) => setData((d) => ({ ...d, ...patch }))
+  /* (UX audit 2026-09-30, Q1) A system quote the studio's approval still holds back can't be marked sent — the step says why. */
+  const quoteHoldOf = (d: WizardData): string | null => {
+    if (d.quoteTab !== 'system' || !docs) return null
+    const row = approvedQuoteRows(docs, rule).find((q) => (d.quoteSelectedId ? q.id === d.quoteSelectedId : q.name === d.quoteSelected))
+    return row?.hold ?? null
+  }
+  const check = (stage: Stage, d: WizardData): StageErrors => {
+    const e = validateStage(stage, d)
+    const hold = stage === 'Quote Sent' ? quoteHoldOf(d) : null
+    return hold && !e.quote ? { ...e, quote: hold } : e
+  }
   // Errors only surface after the first Save attempt, then re-compute live so each clears as the user fixes it.
-  const errors: StageErrors = showErrors ? validateStage(active, data) : {}
+  const errors: StageErrors = showErrors ? check(active, data) : {}
 
   const activeIdx = STAGES.indexOf(active as (typeof STAGES)[number])
   const editing = activeIdx <= fromIdx           // a completed stage is open
@@ -212,10 +263,17 @@ export function MoveStageWizard({
     setAutoFillFor(null)
   }
 
+  /* (UX audit 2026-09-30, L2) A refused Save brings its first message into view — the attach row's sat below the fold, and only the
+     foot said anything was wrong. Two frames: a collapsed log that holds the error opens in the first. */
+  const revealError = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = panelRef.current?.querySelector<HTMLElement>('[role="alert"], [aria-invalid="true"]')
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }))
   const save = () => {
-    const errs = validateStage(active, data)
+    const errs = check(active, data)
     if (Object.keys(errs).length) {
       setShowErrors(true)
+      revealError()
       // Never hide an error inside a collapsed log (REG-124) — for both log-list stages.
       if (logKey) {
         const errored = (i: number) => Object.keys(errs).some((k) => k.startsWith(`${logKey}.${i}.`))
@@ -232,7 +290,9 @@ export function MoveStageWizard({
       // the first match dated the task from a superseded log.
       // (REG-319) The reminder the helper promises: from the last log that scheduled something — none scheduled, no auto-added task.
       const last = [...data.logs].reverse().find((l) => l.nextStepWhen)
-      setAutoAddedTask(last ? reminderTaskTitle(last.nextStepWhen, last.nextStepMode) : '')
+      const reminder = last ? reminderTaskTitle(last.nextStepWhen, last.nextStepMode) : ''
+      /* (UX audit 2026-09-30, L2) A log brought over from the Notes tab may already have raised its reminder there — never twice. */
+      setAutoAddedTask(reminder && !lead.tasks.some((t) => t.title === reminder) ? reminder : '')
       setAutoAddedDue(last ? parseInputDateTime(last.nextStepWhen)?.toISOString() ?? null : null)   // (REG-608)
       setSuggestOpen(true)
       return
@@ -274,7 +334,7 @@ export function MoveStageWizard({
       case 'New': return <NewPanel team={team} data={data} update={update} editable={newOpen} error={errors.assignees} assignable={assignable} />
       case 'Contacted': return <ContactedPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`logs.${i}`) : undefined} onDeleteLog={deleteLog} />
       case 'Met': return <MetPanel data={data} update={update} errors={errors} today={today} onAutoFill={setAutoFillFor} lockedLog={lockedLog} onEditLog={editing ? (i) => unlock(`meetings.${i}`) : undefined} onDeleteLog={deleteLog} />
-      case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} onCreateQuote={createQuote} />
+      case 'Quote Sent': return <QuoteSentPanel data={data} update={update} errors={errors} docs={docs} rule={rule} onCreateQuote={createQuote} />
       case 'Won': return <WonPanel data={data} update={update} errors={errors} leadBudgetMinor={lead.budgetMinor} leadName={lead.name} docs={docs} onCreateQuote={createQuote} onCreateContract={createContract} />
       default: return null
     }
@@ -367,7 +427,10 @@ export function MoveStageWizard({
         <AutoFillDialog open={autoFillOpen} onClose={() => setAutoFillFor(null)} onUpload={handleAutoFillUpload} />
         <SuggestedTasksDialog
           open={suggestOpen}
-          onClose={() => finishWithTasks([])}   /* Cancel / ✕: the stage details are already valid — complete the move without tasks */
+          /* (UX audit 2026-09-30, L10 — supersedes REG-148's Cancel) ✕ / Esc go back to the log, nothing moved; the footer's
+             "Move without tasks" says what it does — the stage details are valid, the move completes with no tasks. */
+          onClose={() => setSuggestOpen(false)}
+          onSkip={() => finishWithTasks([])} skipLabel="Move without tasks"
           onSave={() => finishWithTasks([autoAddedTask, ...Array.from(pickedTasks)].filter(Boolean))}
           autoAdded={autoAddedTask}
           suggestions={[SUGGESTED]}

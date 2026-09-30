@@ -5,7 +5,7 @@ import { and, eq, inArray, sql, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contracts, leadTasks, leads, members, notifications, quoteComparisons, quoteFiles, quoteItemComments, quoteTemplates, quoteTextTemplates, quoteVersions, quotes, quotePayments, taskAssignees, type QuoteItem, type QuotePayment } from '@/lib/db/schema'
 import { fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
-import { canDeleteQuote } from '@/lib/quotes/policy'
+import { canDeleteQuote, statusBlock } from '@/lib/quotes/policy'
 import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { displayDate } from '@/lib/format'
 import { revalidatePath } from 'next/cache'
@@ -252,6 +252,9 @@ export async function setQuoteStatus(quoteId: string, status: QuoteStatus): Prom
   const [meRow] = await db.select({ id: members.id, role: members.role }).from(members).where(eq(members.isYou, true))
   /* (REG-590) With approval required, Approved is an approver's word: an Owner, an Admin or the studio's backup approver. */
   if (status === 'Approved' && (await fetchQuoteApproval()) === 'required') { if (!(await isApprover(meRow?.id, meRow?.role))) throw new Error('only an approver marks a quote Approved') }
+  /* (UX audit Q3) Nothing reaches the client's statuses before an approver's OK (lib/quotes/policy.ts `statusBlock`). */
+  const blocked = statusBlock({ target: status, current: q.status, approval: await fetchQuoteApproval(), approver: await isApprover(meRow?.id, meRow?.role) })
+  if (blocked) throw new Error(blocked)
   const now = new Date()
   const patch: Partial<typeof quotes.$inferInsert> = { status, updatedAt: now }
   if ((status === 'Sent for Approval' || status === 'Sent to Client') && !q.sentAt) patch.sentAt = now

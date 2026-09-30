@@ -19,7 +19,8 @@ import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 import { signQuoteThrough } from '@/lib/quotes/sign'
 import { CONTRACT_HTML_MAX, sanitizeContractHtml } from '@/lib/contracts/sanitize'
 import { deviceOf, DRAWN_PATH, linkState, MASKED_NRIC, type LinkState } from '@/lib/contracts/policy'
-import { fingerprintOf, liveValuesFor, setHashOf, signedSnapshot } from '@/lib/contracts/queries'
+import { fingerprintOf, liveValuesFor, namedQuoteBlock, setHashOf, signedSnapshot } from '@/lib/contracts/queries'
+import { moveStageHref } from '@/lib/leads/move-link'
 import { applyContractStatus } from '@/lib/contracts/status'
 import { sendBlock } from '@/lib/contracts/readiness'
 import { actingMember, afterSent, afterSigned, freshContract } from '@/lib/contracts/automation'
@@ -46,11 +47,20 @@ const safeHtml = (h: string) => { if (h.length > CONTRACT_HTML_MAX) throw new Er
 const maskedNric = (v: string | null | undefined) => { const t = (v ?? '').trim().toUpperCase(); return MASKED_NRIC.test(t) ? t : t && isNric(t) ? maskNric(t) : null }
 const leadGone = async (leadId: string) => !!(await db.select({ deletedAt: leads.deletedAt }).from(leads).where(eq(leads.id, leadId)))[0]?.deletedAt
 
-/** "Interior Design Service Agreement", then "… 2", "… 3" for the lead's later ones (the tab's numbering rule, REG-178). */
+/** "Interior Design Service Agreement", then "… 2", "… 3" for the lead's later ones (the tab's numbering rule, REG-178). (UX audit C10)
+ *  Numbered against the same title only — a lead's first Variation Order is "Variation Order", never "Variation Order 2" because an
+ *  agreement came before it. */
 async function nextTitle(leadId: string, base: string): Promise<string> {
-  const [row] = await db.select({ n: sql<number>`count(*)` }).from(contracts).where(and(eq(contracts.leadId, leadId), isNull(contracts.deletedAt)))
-  const n = row?.n ?? 0
-  return n === 0 ? base : `${base} ${n + 1}`
+  const rows = await db.select({ title: contracts.title }).from(contracts).where(and(eq(contracts.leadId, leadId), isNull(contracts.deletedAt)))
+  const same = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: (\\d+))?$`)
+  let top = 0
+  for (const r of rows) { const m = same.exec(r.title.trim()); if (m) top = Math.max(top, m[1] ? Number(m[1]) : 1) }
+  return top === 0 ? base : `${base} ${top + 1}`
+}
+/** (UX audit C1) A signed contract's next step, when its lead isn't Won yet: the Move stage window at Won with this contract picked. */
+async function wonNext(leadId: string, contractId: string): Promise<{ href: string; line: string } | null> {
+  const [l] = await db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, leadId))
+  return l && l.stage !== 'Won' ? { href: moveStageHref(leadId, 'won', { contract: contractId }), line: `The lead is still in ${l.stage} — move it to Won` } : null
 }
 
 export type CreateContractInput = {
@@ -141,10 +151,11 @@ export async function setContractAutomation(contractId: string, patch: { reminde
 }
 
 /** Send for digital signature: the recipient as confirmed in the dialog, status Sent to Client, the Sent date stamped once. */
-export async function sendContract(contractId: string, recipient: { name: string; phone: string }): Promise<{ status: string; sentAt: number; updatedAt: number }> {
+export async function sendContract(contractId: string, recipient: { name: string; phone: string }): Promise<{ status: string; sentAt: number; updatedAt: number } | { error: string }> {
   const c = await load(contractId)
   if (!c) throw new Error('contract not found')
   const block = sendBlock(c); if (block) throw new Error(block)   // (REG-634, parity Q-22) empty, or nowhere for the client to sign
+  if (c.status !== 'Signed') { const why = await namedQuoteBlock(c); if (why) return { error: why } }   // (UX audit C2) the quote it signs is still a Draft
   if (c.deletedAt || c.archivedAt) throw new Error('inactive')
   if (!isSgPhone(digits(recipient.phone) || c.recipientPhone || '')) throw new Error('phone')
   const now = new Date()
@@ -161,12 +172,13 @@ export async function sendContract(contractId: string, recipient: { name: string
  * (REG-631, contracts parity Q-07) Copying a Draft's signing link shares it, so the contract is Sent to Client from that moment — a
  * link pasted into any chat opens, and the lists say it is out. A blank document is not shared. Returns the status now.
  */
-export async function shareContractLink(contractId: string): Promise<{ status: string; sentAt: number | null }> {
+export async function shareContractLink(contractId: string): Promise<{ status: string; sentAt: number | null } | { error: string }> {
   const c = await load(contractId)
   if (!c) throw new Error('contract not found')
   if (c.deletedAt || c.archivedAt) throw new Error('inactive')
   if (c.status !== 'Draft') return { status: c.status, sentAt: c.sentAt?.getTime() ?? null }
   const block = sendBlock(c); if (block) throw new Error(block)   // (REG-634, parity Q-22)
+  { const why = await namedQuoteBlock(c); if (why) return { error: why } }   // (UX audit C2)
   if (!isSgPhone(c.recipientPhone ?? '')) throw new Error('phone')
   const now = new Date()
   await db.update(contracts).set({ status: 'Sent to Client', sentAt: c.sentAt ?? now, sentBy: await actingMember(), updatedAt: now }).where(eq(contracts.id, contractId))
@@ -231,7 +243,8 @@ export async function signContractOnline(contractId: string, name: string, nric?
   const masked = maskedNric(nric)
   await db.update(contracts).set({ status: 'Signed', signedAt: now, signedBy: who, signedNric: masked, sentAt: c.sentAt ?? now, signedCopy: `${c.title} — signed online.pdf`, ...await signedSnapshot(c, now), acceptedAt: accepted, ...recordOf(signing, c.recipientPhone), updatedAt: now }).where(eq(contracts.id, contractId))
   await signQuoteThrough(c, now)   // (REG-626, parity Q-31)
-  await notify('quote_signed', [...await leadMemberIds(c.leadId), ...await studioRunnerIds()], { title: `${who} signed ${c.title}`, body: 'The signed copy is on the lead', href: `/leads/${c.leadId}/contracts`, leadId: c.leadId, actorId: null })   /* (REG-604) */
+  /* (REG-604) (UX audit C1) the bell's row leads on to Won while the lead isn't there — the Move stage window with this contract picked */
+  { const won = await wonNext(c.leadId, c.id); await notify('quote_signed', [...await leadMemberIds(c.leadId), ...await studioRunnerIds()], { title: `${who} signed ${c.title}`, body: won ? `${won.line} — the signed copy is on the lead` : 'The signed copy is on the lead', href: won?.href ?? `/leads/${c.leadId}/contracts`, leadId: c.leadId, actorId: null }) }
   { const fresh = await freshContract(contractId); if (fresh) await afterSigned(fresh, now) }   // (REG-634, Q-25)
   touch(c.leadId, contractId)
   return { signedAt: now.getTime() }
@@ -305,7 +318,9 @@ export async function sendBundle(bundleId: string, contractIds: string[], recipi
   const ids = [...new Set(contractIds)].slice(0, 20)
   const found = ids.length ? await db.select().from(contracts).where(and(inArray(contracts.id, ids), isNull(contracts.deletedAt))) : []
   const rows = ids.map((id) => found.find((c) => c.id === id)).filter((c): c is Contract => !!c)   // (REG-633, parity Q-16) the order the studio ticked them
-  const live = rows.filter((c) => c.status !== 'Signed' && !sendBlock(c))   // (REG-634, parity Q-22) each with something to sign
+  const quoteHeld = new Set<string>()
+  for (const c of rows) if (c.status !== 'Signed' && await namedQuoteBlock(c)) quoteHeld.add(c.id)   // (UX audit C2) nor a Draft quote under approval
+  const live = rows.filter((c) => c.status !== 'Signed' && !sendBlock(c) && !quoteHeld.has(c.id))   // (REG-634, parity Q-22) each with something to sign
   if (live.length < 2) throw new Error('pick two or more documents')
   const leadId = live[0]!.leadId
   if (live.some((c) => c.leadId !== leadId)) throw new Error('one lead')
@@ -357,7 +372,8 @@ export async function signBundleOnline(bundleId: string, name: string, nric?: st
   }
   const { verificationMethod: _vm, ...bundleRecord } = record
   await db.update(contractBundles).set({ signedAt: now, signedBy: who, signedNric: masked, signingHash: setHash, ...bundleRecord }).where(eq(contractBundles.id, bundleId))
-  await notify('quote_signed', [...await leadMemberIds(b.leadId), ...await studioRunnerIds()], { title: `${who} signed ${open.length} documents`, body: 'The signed copies are on the lead', href: `/leads/${b.leadId}/contracts`, leadId: b.leadId, actorId: null })   /* (REG-604) */
+  /* (REG-604) (UX audit C1) on to Won with the first document picked — the agreement, in the order the studio ticked them */
+  { const won = await wonNext(b.leadId, open[0]!.id); await notify('quote_signed', [...await leadMemberIds(b.leadId), ...await studioRunnerIds()], { title: `${who} signed ${open.length} documents`, body: won ? `${won.line} — the signed copies are on the lead` : 'The signed copies are on the lead', href: won?.href ?? `/leads/${b.leadId}/contracts`, leadId: b.leadId, actorId: null }) }
   touch(b.leadId); for (const c of rows) touch(b.leadId, c.id)
   return { signedAt: now.getTime(), count: open.length }
 }

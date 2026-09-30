@@ -1,0 +1,19 @@
+/* (UX audit Q6) The confirmation page's reading cards: the Items table's phone card (REG-597, items/item-cards.module.css) — its box, its
+   name, description and figures — read-only, with the amount at the card's end; a section is the cards' caption row with its amount.
+   Where this differs from the composed rule, the rule here is one step more specific, so the order the sheets load in never decides. */
+.list { display: flex; flex-direction: column; gap: var(--om-spacing-4); width: 100%; }
+.section { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.cards { display: flex; flex-direction: column; gap: var(--om-spacing-2); list-style: none; margin: 0; padding: 0; }
+.card { composes: card from '../editor/items/item-cards.module.css'; }
+.cards > .card { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.text { composes: text from '../editor/items/item-cards.module.css'; }
+.name { composes: name from '../editor/items/item-cards.module.css'; }
+.desc { composes: desc from '../editor/items/item-cards.module.css'; }
+.card .desc { -webkit-line-clamp: 3; white-space: pre-line; }
+.sub { composes: sub from '../editor/items/item-cards.module.css'; }
+.amount { composes: total from '../editor/items/item-cards.module.css'; }
+.caption { display: flex; align-items: baseline; justify-content: space-between; gap: var(--om-spacing-3); padding: 0 var(--om-spacing-1); }
+.captionName { composes: bucketName from '../editor/items/item-cards.module.css'; }
+.captionAmount { composes: bucketMeta from '../editor/items/item-cards.module.css'; font-variant-numeric: tabular-nums; }
+.captionHint { composes: bucketMeta from '../editor/items/item-cards.module.css'; }
+.total { composes: total from './confirm-page.module.css'; }

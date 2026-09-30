@@ -7,7 +7,8 @@
    flex items of .titleRow — while giving the ≤767 rule below something to move. (REG-269) */
 .chips { display: contents; }
 .actions { display: flex; align-items: center; gap: var(--om-spacing-3); }
-.convert { display: inline-flex; width: 180px; }
+.convert { display: inline-flex; width: 140px; }
+.convertLocked { display: inline-flex; }
 .kebabDesk { display: inline-flex; }
 .kebabPhone { display: none; }
 .infoPhone { display: none; }
@@ -42,6 +43,7 @@ body:has(aside[aria-label='Create'][data-state='expanded']) .tools { width: 140p
    differently-shaped page are the REG-74 failure this ghost exists to prevent. Every rule below names the file
    it mirrors. */
 @media (max-width: 1024px) {
+  .convertLocked { display: none; }   /* (UX audit 2026-09-30, L6) the page's pair up to 1024 (overview.module.css) */
   .info { width: 300px; }                                  /* info-column.module.css ≤1024 */
   /* Tablet locks the quick-links strip collapsed (quick-links.module.css ≤1024 pins .aside AND
      .aside[data-state='expanded'] to 72), so the ghost stops honouring the remembered expanded width. Same

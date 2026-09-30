@@ -10,7 +10,7 @@ import styles from './detail-bulk-bar.module.css'
 export type DetailBulkBarProps = {
   count: number
   /** Link-text actions left to right; `tone: 'danger'` paints the label red (Delete / Delete All). */
-  actions: { label: string; onClick: () => void; tone?: 'danger' }[]
+  actions: { label: string; onClick: (e?: React.MouseEvent<HTMLButtonElement>) => void; tone?: 'danger' }[]
   onClear: () => void
   /** Render inside a modal panel (absolute, bottom 24) instead of fixed to the viewport — the Deleted Files sheet. */
   inset?: boolean
@@ -54,7 +54,7 @@ export function DetailBulkBar({ count, actions, onClear, inset = false }: Detail
           <span className={styles.count}>{count}</span>
           {actions.map((a) => (
             /* (REG-713) ⌫ presses Delete — it asks first, as the press does; Delete Forever never gets a key (Q-19) */
-            <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={a.onClick}
+            <button key={a.label} type="button" className={styles.link} data-danger={a.tone === 'danger' || undefined} onClick={(e) => a.onClick(e)}
                     data-kb={a.tone === 'danger' && /^Delete( All)?$/.test(a.label) ? 'delete' : undefined}>
               {a.label}
             </button>

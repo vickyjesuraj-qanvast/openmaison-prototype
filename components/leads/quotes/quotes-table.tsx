@@ -17,16 +17,19 @@ import { Tooltip } from '@/components/om/tooltip'
 import type { Member, Quote } from '@/lib/db/schema'
 import { Avatar } from '@/components/om/avatar'
 import { displayDate, money } from '@/lib/format'
-import { isQuoteOverdue, quoteStatuses, type QuoteStatus } from '@/lib/leads/quote-filters'
-import { validityPassed } from '@/lib/quotes/policy'
+import { clientValidityPassed, isQuoteOverdue, quoteStatuses, sentToClientOf, type QuoteListRow, type QuoteSort, type QuoteStatus } from '@/lib/leads/quote-filters'
+import { STATUS_BLOCK_META, statusBlock } from '@/lib/quotes/policy'
 import type { QuoteApproval } from '@/lib/settings/types'
 import styles from './quotes-table.module.css'
 
 /** Row kebab (910:36723): Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. */
-export type QuoteRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'xray' | 'archive' | 'delete'
+export type QuoteRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'xray' | 'contract' | 'archive' | 'delete'   /* (UX audit C6) contract */
 
 export type QuotesTableProps = {
-  quotes: (Quote & { creator?: Member | null })[]
+  quotes: (QuoteListRow & { creator?: Member | null })[]
+  /** (UX audit Q5) The list's order — the Valid until head sorts by it (soonest first) and lets go on a second press. */
+  sort?: QuoteSort
+  onSortValid?: () => void
   /** Clock captured by the caller (purity rule) — overdue = not Signed + due before today. */
   now: number
   /** Settings › Leads › Quote approval — decides which statuses the row menu can offer. */
@@ -62,7 +65,8 @@ export const QUOTE_COLUMN_DEFS: readonly TableColumnDef[] = [
   { key: 'total', label: 'Total', track: '120px' },
   { key: 'due', label: 'Due', track: '120px' },
   { key: 'created', label: 'Created', track: '120px' },
-  { key: 'sent', label: 'Sent', track: '120px' },
+  { key: 'sent', label: 'Sent to client', track: '168px' },   /* (UX audit Q5) the day it went to the client (client_sent_at), not to the approvers */
+  { key: 'valid', label: 'Valid until', track: '144px' },   /* (UX audit Q5) the quote's Valid until — sortable, red once passed while the client holds it */
   { key: 'updated', label: 'Updated', track: '120px' },
   { key: 'approval', label: 'Approval Date', track: '157px' },
 ]
@@ -71,7 +75,7 @@ export const quoteShowApproval = (quotes: readonly Pick<Quote, 'approvedAt'>[], 
 export const quoteColumnDefs = (withClient: boolean, withApproval: boolean) => QUOTE_COLUMN_DEFS.filter((d) => (d.key !== 'client' || withClient) && (d.key !== 'approval' || withApproval))
 /* (REG-468) No sort glyph where ordering means nothing — see the sort audit of 2026-09-16. */
 const SORTABLE: Record<string, boolean> = { title: false, creator: false }
-const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, creator: styles.colCreator, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, updated: styles.colUpdated, approval: styles.colApproval }
+const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, client: styles.colClient, status: styles.colStatus, creator: styles.colCreator, total: styles.colTotal, due: styles.colDue, created: styles.colCreated, sent: styles.colSent, valid: styles.colValid, updated: styles.colUpdated, approval: styles.colApproval }
 
 /* (REG-639) The row kebab opens through the body portal (PortalMenu flips on the viewport), so no count of its items is needed. */
 
@@ -81,7 +85,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * Structure copied from components/leads/tasks/tasks-table.tsx: every icon-only control carries a Tooltip (REG-75);
  * sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function QuotesTable({ quotes, now, approval, canApprove = true, canDelete, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf, columns, onReorder }: QuotesTableProps) {
+export function QuotesTable({ quotes, now, approval, canApprove = true, canDelete, selected, onSelect, onStatus, onDue, onView, onRowMenu, clientOf, columns, onReorder, sort = 'newest', onSortValid }: QuotesTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [statusRow, setStatusRow] = useState<string | null>(null)
@@ -119,6 +123,12 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
           <div key={c.key} className={`${styles.hCell} ${COL_CLASS[c.key] ?? ''} ${c.pinned ? styles.pin : ''}`} role="columnheader" data-col={c.key} data-pin-edge={L.edge(c.key) || undefined} style={L.style(c.key)} {...D.head(c.key)}>
             {SORTABLE[c.key] === false ? (
               <span className={styles.hLabel}>{c.label}</span>
+            ) : c.key === 'valid' && onSortValid ? (
+              /* (UX audit Q5) Valid until sorts for real — soonest first; a second press goes back to the newest first (the Filters' Sort says the same). */
+              <button type="button" className={styles.hSort} onClick={onSortValid} aria-sort={sort === 'valid' ? 'ascending' : undefined} aria-label={sort === 'valid' ? 'Valid until — sorted soonest first; press for newest first' : 'Sort by Valid until, soonest first'} data-sorted={sort === 'valid' || undefined}>
+                <span className={styles.hLabel}>{c.label}</span>
+                <Icon name={sort === 'valid' ? 'arrow_upward' : 'unfold_more'} size={16} />
+              </button>
             ) : (
               /* Sort is inert in this prototype — the head answers coming soon. */
               <button type="button" className={styles.hSort} onClick={comingSoon}>
@@ -140,6 +150,7 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
           onToggleSelect={() => toggleOne(quote.id)}
           statuses={statuses}
           lockApproved={approval === 'required' && !canApprove}
+          approval={approval} canApprove={canApprove}
           deletable={canDelete ? canDelete(quote) : true}
           showApproval={showApproval}
           statusOpen={statusRow === quote.id}
@@ -160,14 +171,16 @@ export function QuotesTable({ quotes, now, approval, canApprove = true, canDelet
 /* ---------------------------------------------------------------------------------------------- */
 
 function QuoteRowView({
-  quote, now, selected, onToggleSelect, statuses, lockApproved, deletable, showApproval,
+  quote, now, selected, onToggleSelect, statuses, lockApproved, approval, canApprove, deletable, showApproval,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose,
   onStatus, onDue, onView, onRowMenu, client, L,
 }: {
-  quote: Quote & { creator?: Member | null }
+  quote: QuoteListRow & { creator?: Member | null }
   now: number
   client: { name: string; href: string } | null
+  approval: QuoteApproval
+  canApprove: boolean
   selected: boolean
   onToggleSelect: () => void
   statuses: readonly QuoteStatus[]
@@ -211,7 +224,7 @@ function QuoteRowView({
             <span>·</span>
             <span>{quote.visibility}</span>
             {/* (REG-625, parity Q-29) Out with the client past its Valid until: marked, never blocked. */}
-            {validityPassed(quote, now) ? <><span>·</span><Tooltip label={`Valid until ${displayDate(quote.validUntil!)} has passed — nothing is blocked; extend Quote Valid Until if the price still stands`}><span className={styles.expired} data-testid="validity-passed" tabIndex={0}>Expired {displayDate(quote.validUntil!)}</span></Tooltip></> : null}
+            {clientValidityPassed(quote, now) ? <><span>·</span><Tooltip label={`Valid until ${displayDate(quote.validUntil!)} has passed — nothing is blocked; extend Quote Valid Until if the price still stands`}><span className={styles.expired} data-testid="validity-passed" tabIndex={0}>Expired {displayDate(quote.validUntil!)}</span></Tooltip></> : null}
             {client ? <><span className={styles.subClient}>·</span><span className={styles.subClient}>{client.name}</span></> : null}
           </span>
         </div>
@@ -245,8 +258,10 @@ function QuoteRowView({
             {statuses.map((s) => {
               const isCurrent = s === quote.status
               const locked = lockApproved && s === 'Approved' && !isCurrent
+              /* (UX audit Q3) the client's statuses wait for an approver's OK — the row says so, as "approvers only" does */
+              const waits = !isCurrent && !locked && !!statusBlock({ target: s, current: quote.status, approval, approver: canApprove })
               return (
-                <DropdownItem key={s} disabled={locked} meta={isCurrent ? 'current' : locked ? 'approvers only' : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
+                <DropdownItem key={s} disabled={locked || waits} meta={isCurrent ? 'current' : locked ? 'approvers only' : waits ? STATUS_BLOCK_META : undefined} onSelect={pickStatus(s)}>{s}</DropdownItem>
               )
             })}
           </PortalMenu>
@@ -282,7 +297,11 @@ function QuoteRowView({
 
       {/* Created · Sent · Updated · Approval Date — "17 Jul ’26" 14/Regular, "-" when empty (910:36324). */}
       <div className={`${styles.cell} ${styles.colCreated} ${L.pinned('created') ? styles.pin : ''}`} role="cell" data-col="created" data-pin-edge={L.edge('created') || undefined} style={L.style('created')}>{displayDate(quote.createdAt)}</div>
-      <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>{quote.sentAt ? displayDate(quote.sentAt) : '-'}</div>
+      <div className={`${styles.cell} ${styles.colSent} ${L.pinned('sent') ? styles.pin : ''}`} role="cell" data-col="sent" data-pin-edge={L.edge('sent') || undefined} style={L.style('sent')}>{(() => { const d = sentToClientOf(quote); return d ? displayDate(d) : '-' })()}</div>
+      {/* (UX audit Q5) Valid until: the date, red once it has passed while the client holds the quote (the row's "Expired" mark says the same). */}
+      <div className={`${styles.cell} ${styles.colValid} ${L.pinned('valid') ? styles.pin : ''}`} role="cell" data-col="valid" data-pin-edge={L.edge('valid') || undefined} style={L.style('valid')}>
+        {quote.validUntil ? <span className={styles.validDate} data-passed={clientValidityPassed(quote, now) || undefined}>{displayDate(quote.validUntil)}</span> : '-'}
+      </div>
       <div className={`${styles.cell} ${styles.colUpdated} ${L.pinned('updated') ? styles.pin : ''}`} role="cell" data-col="updated" data-pin-edge={L.edge('updated') || undefined} style={L.style('updated')}>{displayDate(quote.updatedAt ?? quote.createdAt)}</div>
       {showApproval ? <div className={`${styles.cell} ${styles.colApproval} ${L.pinned('approval') ? styles.pin : ''}`} role="cell" data-col="approval" data-pin-edge={L.edge('approval') || undefined} style={L.style('approval')}>{quote.approvedAt ? displayDate(quote.approvedAt) : '-'}</div> : null}
 
@@ -307,6 +326,8 @@ function QuoteRowView({
             <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
             {/* (REG-639, X-Ray parity Q-12) the quote editor's kebab entry, on the row — and a phone's way into X-Ray from a lead */}
             <DropdownItem onSelect={pick('xray')}>Compare with another quote</DropdownItem>
+            {/* (UX audit C6) the quote editor kebab's "Create contract from this quote", on the row — the same picker, the same contract */}
+            <DropdownItem onSelect={pick('contract')}>Create contract</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>
             {/* (sweep S1) the rule's own people — Admins may too. (REG-728) The row's own tone — a locked Delete reads disabled, not red — and
                 its reason in the row's reason line, under its words (the full rule was a native title, which never shows on touch). */}

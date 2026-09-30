@@ -19,7 +19,10 @@ import { Dropdown, DropdownItem } from '@/components/leads/dropdown'
 import { PickOneDialog, type PickOption } from '@/components/company/templates/pick-one-dialog'
 import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import { fromLabel, withFrom } from '@/lib/nav'
-import { displayDate } from '@/lib/format'
+import { displayDate, displayDateTimeDot } from '@/lib/format'
+import { firstName } from '@/lib/contracts/model'
+import { FollowUpDialog } from '@/components/leads/detail/follow-up-dialog'
+import { setFollowUp as setLeadFollowUp } from '@/app/leads/actions'
 import { draftMessage, money, moneyK, type XrayRow } from '@/lib/xray/compare'
 import type { XrayRecord } from '@/lib/xray/queries'
 import { COMPARISON_DELETE_RULE } from '@/lib/xray/policy'
@@ -73,7 +76,14 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
   const checked = r.brands.filter((b) => b.tone === 'checked' || (b.tone === 'note' && b.side === 'theirs'))
   const questions = new Set(Object.entries(asQuestion).filter(([, on]) => on).map(([n]) => Number(n)))
   /* (Q-08) the draft follows the screen: a point switched to its question goes out as the question */
-  const draft = draftMessage(r, questions)
+  /* (UX audit C12) …and its greeting follows the recipient's name in the Send dialog */
+  const draftFor = (name: string) => draftMessage({ ...r, client: firstName(name) || r.client }, questions)
+  /* (UX audit C12) after a WhatsApp send, the next step — a follow-up on the lead (the Overview's Set a follow-up) */
+  const [followUpAt, setFollowUpAt] = useState<Date | null>(null)
+  const onSent = ({ via, name }: { via: 'whatsapp' | 'copy'; name: string }) => {
+    router.refresh()
+    if (via === 'whatsapp') snackbar({ message: `Sent to ${name} on WhatsApp`, ...(record.leadId ? { actionLabel: 'Add a follow-up', onAction: () => setFollowUpAt(new Date()) } : {}) })
+  }
 
   const fail = (what: string) => snackbar({ message: `Couldn’t ${what} — please try again` })
   /* (Q-14) a correction reads the comparison again; Undo puts the corrections back as they were */
@@ -154,8 +164,9 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
             <span className={styles.eyebrow}>Comparing your quote ({r.yourStudio} · {quoteHref ? <Link href={quoteHref} className={styles.link} data-testid="xray-quote-link">{r.yourLabel}</Link> : r.yourLabel}{record.quote?.gone ? ` — the quote was ${record.quote.gone}` : ''}) with the quote from <b>{r.otherStudio}</b></span>
             <h2 className={styles.headline}>{r.headline}</h2>
             <div className={styles.tiles}>
-              <StatTile label={`Yours (${r.yourStudio})`} value={moneyK(r.yoursMinor)} testId="xray-tile-yours" />
-              <StatTile label={r.otherStudio} value={moneyK(r.theirsMinor)} testId="xray-tile-theirs" />
+              {/* (UX audit C11) what the two figures count — the quote's own total has discounts and GST in it (the footnote gives it) */}
+              <StatTile label={`Yours (${r.yourStudio})`} value={moneyK(r.yoursMinor)} testId="xray-tile-yours" help={r.engine && r.engine >= 2 ? 'line totals, before GST' : undefined} />
+              <StatTile label={r.otherStudio} value={moneyK(r.theirsMinor)} testId="xray-tile-theirs" help={r.engine && r.engine >= 2 ? 'line totals, before GST' : undefined} />
               <StatTile label="Real difference" tone="primary" value={moneyK(r.realDiffMinor)} testId="xray-tile-real"
                         help={r.realDiffMinor > 0 ? 'ours more, like-for-like' : r.realDiffMinor < 0 ? 'ours less, like-for-like' : 'level, like-for-like'} />
             </div>
@@ -220,7 +231,15 @@ export function XrayResult({ record, from }: { record: XrayRecord; from: string 
           </span>
         </div>
 
-        <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} comparisonId={record.id} draft={draft} sent={record.sent} phone={record.leadPhone} onSent={() => router.refresh()} />
+        <SendDialog open={sendOpen} onClose={() => setSendOpen(false)} comparisonId={record.id} draft={draftFor} sent={record.sent} defaults={{ name: record.leadName ?? r.client ?? '', phone: record.leadPhone }} onSent={onSent} />
+        {record.leadId ? (
+          <FollowUpDialog open={!!followUpAt} leadName={record.leadName ?? 'the client'} today={followUpAt ?? new Date(record.createdAt)} onClose={() => setFollowUpAt(null)}
+                          onSave={({ title, dueAt }) => {
+                            const leadId = record.leadId!
+                            /* the dialog closes once the task is saved (sweep rule); a refusal keeps it open and says so */
+                            void setLeadFollowUp(leadId, { title, dueAt: dueAt.toISOString() }).then(() => { setFollowUpAt(null); snackbar({ message: `Follow-up set for ${displayDateTimeDot(dueAt)}` }) }, () => snackbar({ message: 'Couldn’t set the follow-up — please try again' }))
+                          }} />
+        ) : null}
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />
         <PickOneDialog open={!!pairing} onClose={() => setPairing(null)} title="Same item as…" label={pairing?.row.yourIds?.length ? `${r.otherStudio}’s line` : 'Your line'}
                        placeholder={pairing?.row.yourIds?.length ? `Choose one of ${r.otherStudio}’s lines` : 'Choose one of your lines'} empty="No line to pair with"

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'motion/react'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { ListingGhost } from '@/components/leads/listing-ghost'
+import { GhostShape, useRememberShape } from '@/lib/ghost-shape'
 import { Tooltip } from '@/components/om/tooltip'
 import { PageHeader } from '@/components/shell/page-header'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
@@ -35,7 +36,7 @@ import { StageDropdown } from '@/components/leads/stage-dropdown'
 import { StageFilterDropdown } from '@/components/leads/stage-filter-dropdown'
 import { FiltersModal } from '@/components/leads/filters-modal'
 import { SearchEmpty } from '@/components/leads/search-empty'
-import { EMPTY_FILTERS, activeFilterCount, applyFilters, type LeadFilters } from '@/lib/leads/filters'
+import { ATTENTION_LABEL, EMPTY_FILTERS, activeFilterCount, applyFilters, inAttention, type AttentionScope, type LeadFilters } from '@/lib/leads/filters'
 import { KanbanBoard, type PendingDrop } from '@/components/leads/kanban/board'
 import { DeleteLeadDialog } from '@/components/leads/delete-dialog'
 import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
@@ -48,8 +49,8 @@ import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
 import { OnHoldDialog, LostDialog } from '@/components/leads/move-stage/dialogs'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
 import { fetchLeadFilesForReturn, returnLead, undoReturn, type ReturnInput } from './return-actions'
-import { displayDate, money, phoneDisplay, phoneLocal } from '@/lib/format'
-import { filterByQuery } from '@/lib/search'
+import { displayDate, isSgPhone, money, phoneDisplay, phoneLocal } from '@/lib/format'
+import { filterByQuery, phoneNeedles } from '@/lib/search'
 import { type Stage } from '@/lib/leads/enums'
 import { blockedReason, detailHref, isCompletedFor, journeyIdx, stageIntent } from '@/lib/leads/stage-policy'
 import { liveReasonNames, type LeadReasons, type StageMovement } from '@/lib/settings/types'
@@ -81,7 +82,7 @@ const BULK = '__bulk__'
 const tasksPos = (el: HTMLElement) => clampPos(el, 400, 532)   /* (REG-725) the popover's head is the house 64: a full list with the composer stands 532 */
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > usableViewportHeight() }
 
-function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement, sources, liveSources, viewer, leadReasons, customFields, memberStats }: { /** (REG-612) the studio's active custom fields · what the suggestion scores members on */ customFields: CustomFieldDef[]; memberStats: MemberStats; rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; /** (REG-599) every source to filter by · the live ones the form offers */ sources: string[]; liveSources: string[]; /** (REG-601) who is looking, for the assignment rules */ viewer: Viewer; /** (REG-607) the studio's Lost and On Hold reasons for the two dialogs */ leadReasons: LeadReasons }) {
+function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stageMovement, sources, liveSources, importSources, viewer, leadReasons, customFields, memberStats }: { /** (REG-612) the studio's active custom fields · what the suggestion scores members on */ customFields: CustomFieldDef[]; memberStats: MemberStats; rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; /** (REG-599) every source to filter by · the live ones the form offers */ sources: string[]; liveSources: string[]; /** (UX audit L4) every name on the studio's source list, retired ones too — what the import reads a Lead Source cell against */ importSources: string[]; /** (REG-601) who is looking, for the assignment rules */ viewer: Viewer; /** (REG-607) the studio's Lost and On Hold reasons for the two dialogs */ leadReasons: LeadReasons }) {
   const assignable = assignableIds(viewer, team)   /* (REG-601) */
   const assignHintText = assignHint(viewer)
   /* (REG-607) The studio's reasons for the two dialogs, "Others" last; only Owners and Admins delete (parity Q-41). */
@@ -96,6 +97,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   const [query, setQuery] = useState('')
   const [stageScope, setStageScope] = useState<Stage | null>(null)
+  /* (UX audit L3) The pill's other kind of scope — Mine or one of Needs attention; a stage and these exclude each other. */
+  const [attention, setAttention] = useState<AttentionScope | null>(null)
   const [stageMenuOpen, setStageMenuOpen] = useState(false)
   const [filters, setFilters] = useState<LeadFilters>(EMPTY_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -107,12 +110,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
      not in the row there. Server snapshot = desktop, so the markup hydrates as the mock and the width takes over. */
   const mobile = useMediaQuery(MOBILE)
   const setView = (v: ListingView) => { setChosenView(v); rememberView(v) }
+  useRememberShape('leads', rows.length === 0)   // (UX audit build) the shape the listing opened on — its loading ghost draws the same one next time
   const columns = useColumnPrefs<ColumnConfig>('leads', DEFAULT_COLUMNS)   // per user, in the browser (REG-454)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [kebabOpen, setKebabOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [assign, setAssign] = useState<Anchored>(null)
+  /* (UX audit L5) The leads the BULK Assign popover acts on when it was opened for an import's new leads, not the selection. */
+  const [bulkIds, setBulkIds] = useState<string[] | null>(null)
   const [optimisticAssignees, setOptimisticAssignees] = useState<Record<string, string[]>>({})
   // An optimistic assignee set is released once the refreshed row carries it (render-phase adjust, like pendingDrop below); a failed action drops its entry in applyAssign.
   const settledAssignees = Object.keys(optimisticAssignees).filter((id) => {
@@ -127,7 +133,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   // Drop resolved: the refreshed rows show the lead in its target column → release the hold (render-phase adjust).
   if (pendingDrop && rows.find((r) => r.id === pendingDrop.leadId)?.stage === pendingDrop.stage) setPendingDrop(null)
   const [lost, setLost] = useState<string | null>(null)
-  const [confirmMove, setConfirmMove] = useState<{ leadId: string; stage: Stage } | null>(null)   // linear: moving back needs no details, just a nod
+  const [confirmMove, setConfirmMove] = useState<{ leadId: string; stage: Stage; step?: boolean } | null>(null)   // linear: moving back needs no details, just a nod
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
   const [lostReason, setLostReason] = useState('')
@@ -179,10 +185,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     const intent = stageIntent(lead, stage, stageMovement)
     switch (intent.kind) {
       case 'none': setPendingDrop(null); return
-      case 'hold': setHoldReason(holdOptions[0] ?? ''); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
-      case 'lost': setLostReason(lostOptions[0] ?? ''); setLost(lead.id); return
+      /* (UX audit 2026-09-30, L10) no reason pre-chosen — the required field asks for one (the Overview's rule too) */
+      case 'hold': setHoldReason(''); setHoldOpenedAt(Date.now()); setOnHold(lead.id); return
+      case 'lost': setLostReason(''); setLost(lead.id); return
       case 'blocked': setPendingDrop(null); snackbar({ message: intent.message }); return
-      case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage }); return
+      case 'confirm-resume': setConfirmMove({ leadId: lead.id, stage: intent.stage, step: intent.step }); return
       case 'wizard': setWizard({ leadId: lead.id, target: intent.stage }); return
       case 'quick': void quickMove(lead, intent.stage); return
     }
@@ -194,8 +201,25 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     return { ...r, assignees: o.map((id) => team.find((m) => m.id === id)).filter((m): m is Member => !!m) }
   }), [rows, optimisticAssignees, team])
 
+  // The primary band on a row = a new lead nobody has seen or clicked yet (user 2026-08-29). First interaction clears it.
+  const [seenLocally, setSeenLocally] = useState<Set<string>>(() => new Set())
+  const unseenIds = useMemo(() => new Set(rows.filter((r) => r.seenAt === null && !seenLocally.has(r.id)).map((r) => r.id)), [rows, seenLocally])
+  const markSeen = (row: LeadRow) => {
+    if (!unseenIds.has(row.id)) return
+    setSeenLocally((s) => new Set(s).add(row.id))
+    void markLeadSeen(row.id)
+  }
   // Pipeline: stage scope (pill) → Filters modal → live search.
-  const scoped = useMemo(() => (stageScope ? effectiveRows.filter((r) => r.stage === stageScope) : effectiveRows), [effectiveRows, stageScope])
+  /* (UX audit L3) …or the pill's attention scope: Mine, Overdue follow-ups (parked and Lost leads left out), Unassigned, Unseen (the band's own rule). */
+  const scopeCtx = useMemo(() => ({ now: nowTick, viewerId: viewer.id, unseen: (r: LeadRow) => unseenIds.has(r.id) }), [nowTick, viewer.id, unseenIds])
+  const scoped = useMemo(() => (stageScope ? effectiveRows.filter((r) => r.stage === stageScope)
+    : attention ? effectiveRows.filter((r) => inAttention(r, attention, scopeCtx))
+    : effectiveRows), [effectiveRows, stageScope, attention, scopeCtx])
+  const attentionCounts = useMemo(() => {
+    const c: Record<AttentionScope, number> = { mine: 0, overdue: 0, unassigned: 0, unseen: 0 }
+    for (const r of effectiveRows) for (const k of Object.keys(c) as AttentionScope[]) if (inAttention(r, k, scopeCtx)) c[k]++
+    return c
+  }, [effectiveRows, scopeCtx])
   const filtered = useMemo(() => {
     const base = applyFilters(scoped, filters, nowTick)
     /* Search stays the LAST step of the pipeline, and now matches everything a row SHOWS (REG-274, user
@@ -212,7 +236,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     return filterByQuery(base, query, (r) => ({
       fields: [
         r.name, r.stage, r.source, r.propertyType, r.email, r.propertyAddress,
-        money(r.budgetMinor), displayDate(r.createdAt),
+        r.budgetMinor > 0 ? money(r.budgetMinor) : null, displayDate(r.createdAt),   /* (UX audit L8) an unknown budget shows "--", so "0" finds nothing */
         r.onHoldFollowUp ? displayDate(new Date(r.onHoldFollowUp)) : null,
         ...r.tasks.map((t) => t.title),
         ...r.assignees.map((m) => m.name),
@@ -236,17 +260,11 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
     for (const r of effectiveRows) c[r.stage] = (c[r.stage] ?? 0) + 1
     return c
   }, [effectiveRows])
-  const clearAll = () => { setQuery(''); setStageScope(null); setFilters(EMPTY_FILTERS) }
-  const nothingMatches = rows.length > 0 && filtered.length === 0 && (query.trim() !== '' || activeFilterCount(filters) > 0 || stageScope !== null)
+  const clearAll = () => { setQuery(''); setStageScope(null); setAttention(null); setFilters(EMPTY_FILTERS) }
+  const nothingMatches = rows.length > 0 && filtered.length === 0 && (query.trim() !== '' || activeFilterCount(filters) > 0 || stageScope !== null || attention !== null)
+  /* (UX audit L11) A search that is a Singapore number ("+65 9123 4599", caller ID's way) and finds nobody offers to add the lead with it. */
+  const phoneQuery = (() => { if (/[a-z@]/i.test(query)) return null; const local = phoneNeedles(query).at(-1) ?? ''; return isSgPhone(local) ? local : null })()
 
-  // The primary band on a row = a new lead nobody has seen or clicked yet (user 2026-08-29). First interaction clears it.
-  const [seenLocally, setSeenLocally] = useState<Set<string>>(() => new Set())
-  const unseenIds = useMemo(() => new Set(rows.filter((r) => r.seenAt === null && !seenLocally.has(r.id)).map((r) => r.id)), [rows, seenLocally])
-  const markSeen = (row: LeadRow) => {
-    if (!unseenIds.has(row.id)) return
-    setSeenLocally((s) => new Set(s).add(row.id))
-    void markLeadSeen(row.id)
-  }
   const newest = useMemo(() => [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0], [rows])
 
   // Tasks popover anchored under a task box — table cell or kanban card (user 2026-08-29).
@@ -273,9 +291,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
 
   const applyAssign = async (memberIds: string[]) => {
     if (!assign) return
-    if (assign.id === BULK) {   /* (REG-610) the bulk bar's Assign: add the ticked members to every selected lead */
-      const ids = [...liveSelected]
-      setAssign(null)
+    if (assign.id === BULK) {   /* (REG-610) the bulk bar's Assign: add the ticked members to every selected lead — (UX audit L5) or to an import's new leads */
+      const ids = bulkIds ?? [...liveSelected]
+      setAssign(null); setBulkIds(null)
       try {
         const { assigned } = await addLeadMembers(ids, memberIds)
         const names = team.filter((m) => memberIds.includes(m.id)).map((m) => m.name).join(', ')
@@ -301,6 +319,22 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   const assignValue = assign
     ? (optimisticAssignees[assign.id] ?? rows.find((r) => r.id === assign.id)?.assignees.map((m) => m.id) ?? [])
     : []
+
+  /* (UX audit L5) An import's next step: its new leads are selected (the table shows them, the bulk bar holds them) and the bulk Assign
+     popover opens on them — hung from Add Lead, where the import began; a phone draws it as its sheet. */
+  const canAssignImports = !assignHintText
+  const openImportAssign = (ids: string[]) => {
+    if (ids.length === 0) return
+    setImportOpen(false)
+    setStageMenu(null); setTasksFor(null)
+    setSelected(new Set(ids))
+    setBulkIds(ids)
+    requestAnimationFrame(() => {
+      const el = addRef.current ?? document.querySelector<HTMLElement>('[data-kb="create"]') ?? document.body
+      setAssign({ id: BULK, ...anchorRect(el) })
+    })
+  }
+  const openReviewFromImport = () => { setImportOpen(false); setNowTick(Date.now()); setReviewOpen(true) }
 
 
   const aiSuggestions = useMemo(() => {
@@ -333,7 +367,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   )
 
   return (
-    <PageReveal skeleton={<ListingGhost />}>   {/* (REG-708) the view's ghost, the one loading.tsx drew */}
+    <PageReveal skeleton={<GhostShape first={rows.length === 0}><ListingGhost /></GhostShape>}>   {/* (REG-708) the view's ghost, the one loading.tsx drew */}
         {/* (REG-401) The listing is the one surface that asked for it: ≤767 the chrome slides away as the list
             scrolls down and comes back on the way up. Renders nothing; inert at every wider width. */}
         <AutoHideChrome />
@@ -393,14 +427,15 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           />
           <div className={styles.content}>
             <LeadsToolbar bare={rows.length === 0}
-              chipLabel={rows.length === 0 ? 'All Leads' : `${stageScope ?? 'All Leads'} (${filtered.length})`}
-              onChipClick={() => setStageMenuOpen((o) => !o)}
+              chipLabel={rows.length === 0 ? 'All Leads' : `${attention ? ATTENTION_LABEL[attention] : stageScope ?? 'All Leads'} (${filtered.length})`}   /* (UX audit L3) the pill names the scope it holds */
+              onChipClick={() => { setNowTick(Date.now()); setStageMenuOpen((o) => !o) }}   /* the counts' clock: Overdue is "before today" */
               chipOpen={stageMenuOpen}
-              chipScoped={stageScope !== null}   // (REG-295) a stage scope is a filter — say so
+              chipScoped={stageScope !== null || attention !== null}   // (REG-295) a stage scope is a filter — say so; (UX audit L3) so is an attention scope
               chipMenu={
                 <StageFilterDropdown open={stageMenuOpen} onClose={() => setStageMenuOpen(false)}
                                      counts={stageCounts} value={stageScope}
-                                     onSelect={(s) => setStageScope(s)} onManage={comingSoon} />
+                                     onSelect={(s) => { setStageScope(s); setAttention(null) }} onManage={comingSoon}
+                                     attention={{ counts: attentionCounts, value: attention, onSelect: (k) => { setAttention(k); setStageScope(null) } }} />
               }
               query={query}
               onQueryChange={setQuery}
@@ -413,7 +448,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
             {rows.length === 0 ? (
               <LeadsEmptyState onImport={() => setImportOpen(true)} onCreate={() => setLeadForm({ mode: 'create' })} />
             ) : nothingMatches && (mobile || view === 'table') ? (
-              <SearchEmpty onClearAll={clearAll} searching={query.trim() !== ''} />
+              <SearchEmpty onClearAll={clearAll} searching={query.trim() !== ''}
+                           phone={phoneQuery ? phoneLocal(phoneQuery) : null}
+                           onAddPhone={phoneQuery ? () => setLeadForm({ mode: 'create', prefill: { phone: phoneQuery } }) : undefined} />
             ) : mobile ? (
               /* (REG-299) The mock's cards — the table's anchors and popovers, one code path for every action. */
               <LeadCards
@@ -435,7 +472,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
                 unseenIds={unseenIds}
                 onClearSearch={clearAll}
                 stageScope={stageScope}
-                filtering={activeFilterCount(filters) > 0 || (stageScope !== null && filtered.length === 0)}
+                filtering={activeFilterCount(filters) > 0 || attention !== null || (stageScope !== null && filtered.length === 0)}
                 onKebabDelete={(lead) => { openDelete([lead.id]) }}
                 onKebabReturn={(lead) => { void openReturn(lead) }}
                 onAssign={(row, anchor) => setAssign((a) => (a?.id === row.id ? null : { id: row.id, ...anchorRect(anchor) }))}
@@ -519,7 +556,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       {view === 'table' && !mobile ? (
         <BulkBar count={liveSelected.size} onClear={() => setSelected(new Set())}
                  actions={[
-                   ...(assignHintText ? [] : [{ label: 'Assign', onClick: (e: React.MouseEvent<HTMLButtonElement>) => setAssign({ id: BULK, ...anchorRect(e.currentTarget) }) }]),
+                   ...(assignHintText ? [] : [{ label: 'Assign', onClick: (e: React.MouseEvent<HTMLButtonElement>) => { setBulkIds(null); setAssign({ id: BULK, ...anchorRect(e.currentTarget) }) } }]),
                    ...(canDelete ? [{ label: 'Delete', tone: 'danger' as const, kb: 'delete', onClick: () => openDelete([...liveSelected]) }] : []),
                  ]} />
       ) : null}
@@ -527,7 +564,9 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         open={!!confirmMove}
         tone="primary"
         title={`Resume at ${confirmMove?.stage ?? ''}?`}
-        message={`${rows.find((r) => r.id === confirmMove?.leadId)?.stage ?? 'On Hold'} ends and the lead continues from ${confirmMove?.stage ?? ''}. Details already recorded stay on its journey.`}
+        message={confirmMove?.step
+          ? `The ${confirmMove.stage} step opens next — ${rows.find((r) => r.id === confirmMove.leadId)?.stage ?? 'On Hold'} ends once it is saved. Details already recorded stay on its journey.`   /* (UX audit 2026-09-30, L1) */
+          : `${rows.find((r) => r.id === confirmMove?.leadId)?.stage ?? 'On Hold'} ends and the lead continues from ${confirmMove?.stage ?? ''}. Details already recorded stay on its journey.`}
         confirmLabel="Resume"
         onCancel={() => { setConfirmMove(null); setPendingDrop(null) }}
         onConfirm={async () => {
@@ -535,6 +574,8 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
           setConfirmMove(null)
           const lead = move ? rows.find((r) => r.id === move.leadId) : undefined
           if (!move || !lead) { setPendingDrop(null); return }
+          /* (UX audit 2026-09-30, L1) a resume into an unreached Quote Sent or Won opens that step, never a silent jump */
+          if (move.step) { setWizard({ leadId: lead.id, target: move.stage }); return }
           await quickMove(lead, move.stage)
         }}
       />
@@ -636,7 +677,7 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
         anchor={assign?.el}
         assignable={assignHintText ? [] : assignable} hint={assignHintText}
         suggestion={(() => { const r = assign && assign.id !== BULK ? rows.find((x) => x.id === assign.id) : null; return r && r.assignees.length === 0 ? suggestMember({ propertyType: r.propertyType, budgetMinor: r.budgetMinor, style: r.style, area: r.area }, team, memberStats) : null })()}   /* (REG-612) */
-        onClose={() => setAssign(null)}
+        onClose={() => { setAssign(null); setBulkIds(null) }}
         onApply={applyAssign}
         requireOne={(rows.find((r) => r.id === assign?.id)?.stage ?? 'New') !== 'New'}
         position={assign}
@@ -764,13 +805,23 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
       <ImportWizard
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        sources={importSources} batchSources={liveSources}   /* (UX audit L4) what a Lead Source cell is read against · step 2's one source */
+        onAssign={canAssignImports ? openImportAssign : undefined}   /* (UX audit L5) "Assign these n" */
+        onReview={openReviewFromImport}   /* (UX audit L5) "Review n duplicates" */
         onImport={async (payload) => {
           try { return await importLeads(payload) }
           catch { snackbar({ message: 'Couldn’t import the file — please try again' }); return null }
         }}
         onDone={(r) => {
           setImportOpen(false)
-          snackbar(r.destination === 'listing' ? (r.approved === 0 && r.duplicates + r.flagged > 0 ? { message: `${r.duplicates + r.flagged} possible duplicate${r.duplicates + r.flagged === 1 ? '' : 's'} sent to review` } : { message: `${r.approved} lead${r.approved === 1 ? '' : 's'} added to your listing` }) : { message: `${r.imported} lead${r.imported === 1 ? '' : 's'} ready for review` })
+          /* (UX audit L5) The snackbar carries the next step: Assign for leads that arrived, Review for what waits in the queue. */
+          const dups = r.duplicates + r.flagged
+          const review = { actionLabel: 'Review', onAction: openReviewFromImport }
+          snackbar(r.destination === 'listing'
+            ? (r.approved === 0 && dups > 0
+                ? { message: `${dups} possible duplicate${dups === 1 ? '' : 's'} sent to review`, ...review }
+                : { message: `${r.approved} lead${r.approved === 1 ? '' : 's'} added to your listing`, ...(canAssignImports && r.leadIds.length > 0 ? { actionLabel: 'Assign', onAction: () => openImportAssign(r.leadIds) } : dups > 0 ? review : {}) })
+            : { message: `${r.imported} lead${r.imported === 1 ? '' : 's'} ready for review`, ...(r.imported > 0 ? review : {}) })
         }}
       />
       <DeletedLeadsSheet
@@ -796,6 +847,6 @@ function Workspace({ rows, team, now: initialNow, deleted, review, urlView, stag
   )
 }
 
-export function LeadsWorkspace(props: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; sources: string[]; liveSources: string[]; viewer: Viewer; leadReasons: LeadReasons; customFields: CustomFieldDef[]; memberStats: MemberStats }) {
+export function LeadsWorkspace(props: { rows: LeadRow[]; team: Member[]; now: number; deleted: Lead[]; review: ReviewRow[]; urlView: ListingView | null; stageMovement: StageMovement; sources: string[]; liveSources: string[]; importSources: string[]; viewer: Viewer; leadReasons: LeadReasons; customFields: CustomFieldDef[]; memberStats: MemberStats }) {
   return <Workspace {...props} />
 }

@@ -16,6 +16,7 @@ import { PortalMenu } from '@/components/om/portal-menu'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { FileCommentsPanel } from './file-comments-panel'
+import { useFileShare } from './use-file-share'
 import { ViewerSkeleton } from './viewer-skeleton'
 import { FileInfoPanel } from './file-info-panel'
 import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
@@ -52,6 +53,7 @@ export function FileViewer({ data }: { data: FileViewData }) {
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
   const { run, fail, refresh } = useRun()
+  const share = useFileShare({ lead, sender: me.name })   // (UX audit 2026-09-30, T9) the client's read-only link
 
   const [zoomIdx, setZoomIdx] = useState(FIT)
   // `?panel=comments` opens the panel with the page — the listings' comment chips land here (REG-253).
@@ -151,6 +153,9 @@ export function FileViewer({ data }: { data: FileViewData }) {
                 {/* (REG-269) Mobile only: the header's Download folds in here. (audit 2026-09-26) A row of the sheet itself, not one wrapped
                     in a `display: contents` span — the sheet's 16px row gutter is `.menuBody > button`, and the wrapper left it at 12. */}
                 {sheet ? <DropdownItem onSelect={() => { setKebabOpen(false); void download() }}>Download</DropdownItem> : null}
+                {/* (UX audit 2026-09-30, T9) a drawing goes back to the client as a link — no Download and a manual message */}
+                {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.copyLink(file) }}>Copy link</DropdownItem> : null}
+                {file.share ? <DropdownItem onSelect={() => { setKebabOpen(false); share.sendWhatsApp(file) }}>Send on WhatsApp</DropdownItem> : null}
                 {visualize ? <DropdownItem onSelect={() => { setKebabOpen(false); void openInVisualizer() }}>{visualize}</DropdownItem> : null}   {/* (REG-675, AI Visualizer Q-31; F095 a render opens its version) */}
                 <DropdownItem onSelect={() => { setKebabOpen(false); setMoving(true) }}>Move</DropdownItem>
                 <DropdownItem onSelect={() => { setKebabOpen(false); void run('duplicate the file', () => duplicateFiles([file.id]), 'File duplicated', REFRESH) }}>Duplicate</DropdownItem>

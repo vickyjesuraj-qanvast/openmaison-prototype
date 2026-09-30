@@ -41,11 +41,8 @@
    the Tasks comments panel. The edit field carries no label: the empty floated label is hidden. */
 .field label:empty { display: none; }
 
-/* Footer (931:39946) 400×88 at the mock = 16 + 36 + 8 + 12 + 16 → 100 with the 48 field: the house foot (p16/24, top rule) holding
-   the composer, which fills its row. Two Line: H g12 → avatar 36 + column V g8 (field 36 · caption row 12). */
-.composer { display: flex; align-items: flex-start; gap: var(--om-spacing-3); flex: 1; min-width: 0; }
-.composerCol { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-2); }
-.privacy { display: block; height: 12px; font: var(--om-type-body-xs); line-height: 12px; color: var(--om-color-on-surface-secondary); white-space: nowrap; }
+/* Footer (931:39946): the house foot (p16/24, top rule) holding the composer — (UX audit 2026-09-30, T8) the task panel's own
+   (components/leads/tasks/comment-composer.tsx, styled by comments-panel.module.css), so nothing of it lives here. */
 
 /* Avatar Generic 36 r4 (fill = the member's tint, initial 14/Medium).
    (REG-287) om/avatar DOES ship 36 (`<Avatar size={36}>`) — the JSDoc in file-comments-panel.tsx saying it "only

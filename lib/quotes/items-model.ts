@@ -230,3 +230,15 @@ export function htmlToPlain(html: string): string {
     .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
     .split('\n').map((l) => l.trim()).filter(Boolean).join('\n')
 }
+
+/**
+ * (UX audit Q7) The quote's own section for a trade: an item picked from the price book lands at the end of the section its Category
+ * names — "Carpentry" finds "Carpentry", "Carpentry Works" or "Carpentry work" (a template's starter sections, REG-582) — else nowhere
+ * (the caller adds it at the end). Top-level sections only; the first match wins.
+ */
+export function sectionForTrade<T extends { name: string }>(sections: readonly T[], category: string | null | undefined): T | null {
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/\s+works?$/, '')
+  const want = category ? norm(category) : ''
+  if (!want) return null
+  return sections.find((g) => norm(g.name) === want) ?? null
+}

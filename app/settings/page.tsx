@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { fetchCustomFields } from '@/lib/company/custom-fields'
 import { db } from '@/lib/db'
 import { members, quotes } from '@/lib/db/schema'
-import { fetchLeadCapture, fetchLeadReasons, fetchLeadSources, fetchLeadVisibility, fetchNumbering, fetchStudio, fetchQuoteApproval, fetchQuoteRules, fetchStageMovement, fetchTemplateApproval, fetchTradeNotes, fetchTrades } from '@/lib/settings/queries'
+import { fetchLeadCapture, fetchLeadReasons, fetchLeadSources, fetchLeadVisibility, fetchNewQuoteDefaults, fetchNumbering, fetchStudio, fetchQuoteApproval, fetchQuoteRules, fetchStageMovement, fetchTemplateApproval, fetchTradeNotes, fetchTrades } from '@/lib/settings/queries'
 import { inArray, isNull, sql } from 'drizzle-orm'
 import { imports, leads, stageLogs } from '@/lib/db/schema'
 import { like, or } from 'drizzle-orm'
@@ -34,12 +34,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     fetchBrand(), db.select({ number: quotes.number }).from(quotes),   /* (REG-645) the issuing entities; every number given, for the real next one */
   ])
   /* (REG-607) The Lost / On Hold reasons and how many leads each has ever carried (the parking logs' payloads); only Owners and Admins edit the Leads cards (parity Q-41). */
-  const [reasonList, reasonRows, viewer, customFields, tradeNotes] = await Promise.all([
+  const [reasonList, reasonRows, viewer, customFields, tradeNotes, newQuoteDefaults] = await Promise.all([
     fetchLeadReasons(),
     db.select({ reason: sql<string | null>`json_extract(${stageLogs.payload}, '$.reason')`, toStage: stageLogs.toStage, n: sql<number>`count(distinct ${stageLogs.leadId})` }).from(stageLogs).where(inArray(stageLogs.toStage, ['Lost', 'On Hold'])).groupBy(sql`json_extract(${stageLogs.payload}, '$.reason')`, stageLogs.toStage),
     fetchViewer(),
     fetchCustomFields(false),   /* (REG-612) */
     fetchTradeNotes(trades.trades),   /* (REG-617, parity Q-08) a note per trade */
+    fetchNewQuoteDefaults(),   /* (UX audit S4) what a new quote starts with — the default template's New quotes settings */
   ])
   const reasonCounts = { lost: {} as Record<string, number>, hold: {} as Record<string, number> }
   for (const r of reasonRows) if (r.reason) reasonCounts[r.toStage === 'Lost' ? 'lost' : 'hold'][r.reason] = Number(r.n)
@@ -55,5 +56,5 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                        leadReasons={reasonList.reasons} reasonsManaged={reasonList.managed} reasonCounts={reasonCounts} canManage={runsStudio(viewer.role)} customFields={customFields}
                        leadSources={leadSources.sources} sourcesManaged={leadSources.managed} sourceCounts={Object.fromEntries(counts.map((c) => [c.source, Number(c.n)]))} leadVisibility={leadVisibility}
                        leadCapture={withoutSecrets(leadCapture)} studioName={studio.name} arrivals={arrivals.map((a) => ({ fileName: a.fileName, at: a.createdAt.getTime(), rows: a.importedRows }))}
-                       notificationRules={notificationRules} messageTemplates={messageTemplates} />
+                       notificationRules={notificationRules} messageTemplates={messageTemplates} newQuoteDefaults={newQuoteDefaults} />
 }

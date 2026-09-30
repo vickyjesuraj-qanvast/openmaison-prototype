@@ -11,6 +11,7 @@ import { TextField } from '@/components/om/text-field'
 import { ConfirmDialog } from '@/components/om/confirm-dialog'
 import { EMAIL_PLATFORMS, WEBHOOK_PLATFORMS, webhookUrl, type Webhook, type WebhookPlatform } from '@/lib/settings/types'
 import { connectGmail, createWebhook, disconnectGmail, regenerateWebhook, revokeWebhook, simulateWebhook, syncGmail } from '@/app/leads/capture-actions'
+import { HelpLink } from './help-link'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { useCopy } from '@/components/om/use-copy'
 import { CompanyShell } from './company-shell'
@@ -99,7 +100,16 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
   }
   const regen = async (w: Webhook) => { try { const next = await regenerateWebhook(w.id); if (next) { setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? next : x)) })); setCreated({ webhook: next, key: next.key }); snackbar({ message: 'Token regenerated — copy the new URL' }) } } catch { snackbar({ message: 'Couldn’t regenerate the token — please try again' }) } }
   const revoke = async (w: Webhook) => { try { await revokeWebhook(w.id); setCapture((c) => ({ ...c, webhooks: c.webhooks.map((x) => (x.id === w.id ? { ...x, active: false } : x)) })); if (created?.webhook.id === w.id) setCreated(null); snackbar({ message: 'Webhook revoked' }); router.refresh() } catch { snackbar({ message: 'Couldn’t revoke the webhook — please try again' }) } }
-  const connect = async () => { try { setCapture(await connectGmail()); snackbar({ message: 'Gmail connected — the platforms below are monitored' }); router.refresh() } catch { snackbar({ message: 'Couldn’t connect Gmail — please try again' }) } }
+  /* (UX audit S12) Connected, the card grows to its Sync now row: that row is brought into view clear of the snackbar (it sat under it),
+     and the snackbar offers Sync now itself — the next step, where the eye is. */
+  const connect = async () => {
+    try {
+      setCapture(await connectGmail()); router.refresh()
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('[data-testid="gmail-sync-row"]')?.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })))
+      snackbar({ message: 'Gmail connected — the platforms below are monitored', actionLabel: 'Sync now', onAction: () => { void sync() } })
+    } catch { snackbar({ message: 'Couldn’t connect Gmail — please try again' }) }
+  }
   const disconnect = async () => { try { setCapture(await disconnectGmail()); snackbar({ message: 'Gmail disconnected' }); router.refresh() } catch { snackbar({ message: 'Couldn’t disconnect Gmail — please try again' }) } }
   const sync = async () => {
     if (busy) return
@@ -120,7 +130,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
         <section className={styles.card} aria-labelledby="int-qanvast">
           <div className={styles.cardHead}>
             <div className={styles.titleRow}><h2 id="int-qanvast" className={styles.cardTitle}>Qanvast</h2><MetaChip color="green">Connected</MetaChip></div>
-            <p className={styles.cardHelp}>Leads from your Qanvast profile arrive as New with the source Qanvast. Return Lead sends one back with a reason; Qanvast Ops › Leads shows every return.</p>
+            <p className={styles.cardHelp}>Leads from your Qanvast profile arrive as New with the source Qanvast. Return Lead sends one back with a reason; <HelpLink href="/qanvast-ops">Qanvast Ops › Leads</HelpLink> shows every return.</p>
           </div>
         </section>
 
@@ -284,7 +294,7 @@ export function IntegrationsView({ capture: initial, studioName, arrivals, from,
                   {([['Emails found', email.stats.found], ['Leads created', email.stats.created], ['Duplicates', email.stats.duplicates], ['Parse fails', email.stats.failed]] as [string, number][]).map(([l, n]) => <StatTile key={l} label={l} value={n} />)}
                 </div>
               </div>
-              <div className={styles.row}>
+              <div className={styles.row} data-testid="gmail-sync-row">
                 {canManage ? <Button iconStart={<Icon name="refresh" size={20} />} isDisabled={busy !== null || email.platforms.length + email.custom.length === 0} onPress={() => { void sync() }}>{busy === 'gmail' ? 'Syncing…' : 'Sync now'}</Button> : null}
                 {canManage ? <Button variant="secondary" appearance="outlined" onPress={() => { void disconnect() }}>Disconnect</Button> : null}
               </div>

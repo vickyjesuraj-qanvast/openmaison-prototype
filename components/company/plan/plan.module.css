@@ -134,3 +134,6 @@
   .facts dd { margin-bottom: var(--om-spacing-2); }
   .box { padding: var(--om-spacing-4); }   /* (REG-729) the Company cards' phone padding: 24 → 16 */
 }
+
+/* (UX audit S5) The pace tile's way to buy, for the Owner while the credits run low: the top-up and Plans, under the tile's words. */
+.tileActions { display: flex; flex-wrap: wrap; gap: var(--om-spacing-2); margin-top: var(--om-spacing-2); }

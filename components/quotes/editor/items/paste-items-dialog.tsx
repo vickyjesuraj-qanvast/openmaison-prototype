@@ -31,7 +31,7 @@ export const bookKey = (name: string, vendor: string | null | undefined) => `${n
  * fields are offered (Kind among them), each row is matched to an item by name and vendor — the preview says which rows match,
  * repeat an earlier row, or bring a new trade — and one choice answers every match: Update the price · Add as new · Skip.
  */
-export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, onBack, onAdd, target = 'quote', book = [], trades = [], vendor = null }: {
+export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, onBack, onAdd, target = 'quote', book = [], trades = [], vendor = null, bookKind }: {
   open: boolean
   text: string
   /** (REG-653) Rows read from a file — they win over `text` — and the file's name for the caption. */
@@ -49,6 +49,9 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
   book?: { name: string; vendor: string | null }[]
   trades?: string[]
   vendor?: string | null
+  /** (UX audit S7) The book's import asks, where the columns are mapped, what Kind a row without one takes — its select sits where a quote's
+      paste asks where the lines go. */
+  bookKind?: { label: string; options: string[]; value: string; onChange: (v: string) => void }
 }) {
   const rows = useMemo(() => (grid && grid.length ? grid.map((r) => r.map((c) => (c ?? '').toString().trim())) : parseBlock(text)), [grid, text])
   const fields = target === 'book' ? BOOK_PASTE_FIELDS : QUOTE_PASTE_FIELDS
@@ -115,7 +118,7 @@ export function PasteItemsDialog({ open, text, grid, source, anchor, onClose, on
       </div>
       <div className={styles.foot}>
         <span className={styles.more}>{body.length > PREVIEW_ROWS ? `+ ${body.length - PREVIEW_ROWS} more ${body.length - PREVIEW_ROWS === 1 ? 'row' : 'rows'}` : named ? '' : `Map one column to Item to ${isBook ? 'import these rows' : 'add these lines'}.`}</span>
-        {isBook ? null : (
+        {isBook ? (bookKind ? <div className={styles.place} data-testid="import-kind"><TextField label={bookKind.label} size="s" mode="select" options={bookKind.options} value={bookKind.value} onChange={bookKind.onChange} /></div> : null) : (
           <div className={styles.place}>
             <TextField label="Add" size="s" mode="select" options={placeOptions} value={anchor && place === 'after' ? placeOptions[0]! : 'At the end'}
                        onChange={(v) => setPlace(v === 'At the end' ? 'end' : 'after')} />

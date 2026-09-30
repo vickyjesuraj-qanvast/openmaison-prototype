@@ -10,6 +10,9 @@
 .actions { composes: actions from '../../om/tab-toolbar.module.css'; flex-shrink: 0; }
 .menuWrap { composes: menuWrap from '../../om/tab-toolbar.module.css'; }   /* New File button · header kebab */
 .chev { composes: chev from '../../om/tab-toolbar.module.css'; }
+/* (UX audit 2026-09-30, T9) Filters is live: its count badge, as every tab toolbar's (the house tab toolbar's). */
+.filterWrap { composes: filterWrap from '../../om/tab-toolbar.module.css'; }
+.filterBadge { composes: filterBadge from '../../om/tab-toolbar.module.css'; }
 
 /* Breadcrumb row (931:39719): the shared crumb lives in components/om/folders/folder-crumbs (REG-664); this box keeps its place in the bar. */
 .crumbRow { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--om-spacing-3); }

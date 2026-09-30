@@ -45,3 +45,11 @@
   .inactiveRow > :nth-child(n + 3) { grid-column: 2; justify-self: start; }
   .addForm { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* (UX audit S6) The member just added: their row pulses once, as a new line does in the Items table (REG-575's attention look, items-table.module.css).
+   (S11) "Signature: not set" in the preferences line — its own words, never cut by the summary beside it. */
+.row[data-fresh] { position: relative; }
+.row[data-fresh]::after { content: ''; position: absolute; inset: 0 calc(-1 * var(--om-spacing-3)); pointer-events: none; border-radius: var(--om-radius-2); background: color-mix(in srgb, var(--om-color-primary-default) 14%, transparent); animation: fresh 1.4s ease-out forwards; }
+@keyframes fresh { 0% { opacity: 1; } 55% { opacity: 1; } 100% { opacity: 0; } }
+.sigState { display: inline-flex; align-items: center; gap: var(--om-spacing-2); flex-shrink: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; border-radius: var(--om-radius-1); }
+.sigState:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }

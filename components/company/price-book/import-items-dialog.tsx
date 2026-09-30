@@ -14,6 +14,7 @@ import { isBlock } from '@/lib/quotes/clipboard'
 import type { PasteLine } from '@/lib/quotes/clipboard'
 import { parseCsv } from '@/lib/csv'
 import { parseXlsx } from '@/lib/xlsx'
+import { ITEM_KINDS, ITEM_KIND_LABEL, type ItemKind } from '@/lib/quotes/items-model'
 import styles from './price-book.module.css'
 
 /**
@@ -24,16 +25,18 @@ import styles from './price-book.module.css'
  * what matches, what repeats and which trades are new, and the vendor typed here fills only the rows without one.
  */
 export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
-  open: boolean; onClose: () => void; onImport: (lines: PasteLine[], vendor: string | null, match: BookMatch) => void | Promise<void>
+  open: boolean; onClose: () => void; onImport: (lines: PasteLine[], vendor: string | null, match: BookMatch, kind: ItemKind) => void | Promise<void>
   book: { name: string; vendor: string | null }[]; trades: string[]
 }) {
   const snackbar = useSnackbar()
   const [text, setText] = useState('')
   const [file, setFile] = useState<{ name: string; rows: string[][] } | null>(null)
   const [vendor, setVendor] = useState('')
+  /* (UX audit S7) The Kind a row without one takes — every such row became Purchase unasked */
+  const [kind, setKind] = useState<ItemKind>('purchase')
   const [mapping, setMapping] = useState(false)
   const [wasOpen, setWasOpen] = useState(open)
-  if (open !== wasOpen) { setWasOpen(open); if (open) { setText(''); setFile(null); setVendor(''); setMapping(false) } }
+  if (open !== wasOpen) { setWasOpen(open); if (open) { setText(''); setFile(null); setVendor(''); setKind('purchase'); setMapping(false) } }
   const ready = !!file || (text.trim().length > 0 && isBlock(text, 'add'))
   const read = async (f?: File) => {
     if (!f) return
@@ -68,7 +71,8 @@ export function ImportItemsDialog({ open, onClose, onImport, book, trades }: {
         </div>
       </Dialog>
       <PasteItemsDialog open={open && mapping} text={text} grid={file?.rows ?? null} source={file?.name ?? null} anchor={null} target="book" book={book} trades={trades} vendor={vendor.trim() || null}
-                        onClose={onClose} onBack={() => setMapping(false)} onAdd={(lines, _place, match) => { setMapping(false); void onImport(lines, vendor.trim() || null, match ?? 'update') }} />
+                        bookKind={{ label: 'Rows with no Kind', options: ITEM_KINDS.map((k) => ITEM_KIND_LABEL[k]), value: ITEM_KIND_LABEL[kind], onChange: (v) => setKind(ITEM_KINDS.find((k) => ITEM_KIND_LABEL[k] === v) ?? 'purchase') }}
+                        onClose={onClose} onBack={() => setMapping(false)} onAdd={(lines, _place, match) => { setMapping(false); void onImport(lines, vendor.trim() || null, match ?? 'update', kind) }} />
     </>
   )
 }

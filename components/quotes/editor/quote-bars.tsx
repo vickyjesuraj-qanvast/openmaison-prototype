@@ -52,7 +52,9 @@ export function ApprovalBar({ waiting, changes, canApprove, now, busy, onApprove
  * (REG-624, parity Q-04) No hard lock: a quote the client has — sent, confirmed or signed — still edits, and says so. The banner names what
  * the client has and offers Revise, which keeps that version whole and starts the next one.
  */
-export function SentBanner({ status, version, at, confirmedBy, now, onRevise, validityEnded = null }: { status: 'Sent to Client' | 'Confirmed' | 'Signed'; version: number; at: number | null; confirmedBy: string | null; now: number; onRevise: () => void; /** (REG-625, parity Q-29) the Valid until that has passed, while the client still has it — said, never blocked */ validityEnded?: string | null }) {
+export function SentBanner({ status, version, at, confirmedBy, now, onRevise, validityEnded = null, onMove }: { status: 'Sent to Client' | 'Confirmed' | 'Signed'; version: number; at: number | null; confirmedBy: string | null; now: number; onRevise: () => void; /** (REG-625, parity Q-29) the Valid until that has passed, while the client still has it — said, never blocked */ validityEnded?: string | null
+  /** (UX audit Q1) The lead is still before Quote Sent: its next stage, as the banner's own action (the Move stage window, this quote picked). */
+  onMove?: (() => void) | null }) {
   const when = at ? ` ${ago(at, now)}` : ''
   const text = status === 'Sent to Client'
     ? <>Sent to the client{when} — they have version {version}. Edits here change what they see on their link; to change the quote and keep what they saw, revise it.</>
@@ -63,7 +65,10 @@ export function SentBanner({ status, version, at, confirmedBy, now, onRevise, va
     <div className={styles.banner} role="status" data-testid="sent-banner" data-tone="sent">
       <span className={styles.bannerIcon}><Icon name={status === 'Signed' ? 'lock' : status === 'Confirmed' ? 'task_alt' : 'send'} size={20} weight={300} /></span>
       <span className={styles.bannerText}>{text}{validityEnded ? <> <b data-testid="validity-ended">Its validity ended on {validityEnded}</b> — extend Quote Valid Until if the price still stands.</> : null}</span>
-      <span className={styles.bannerActions}><Button variant="secondary" appearance="outlined" onPress={onRevise}>Revise — new version</Button></span>
+      <span className={styles.bannerActions}>
+        <Button variant="secondary" appearance="outlined" onPress={onRevise}>Revise — new version</Button>
+        {onMove ? <Button onPress={onMove} data-testid="move-to-quote-sent">Move to Quote Sent</Button> : null}
+      </span>
     </div>
   )
 }

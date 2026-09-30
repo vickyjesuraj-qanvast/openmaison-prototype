@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/om/avatar'
 import { MetaChip } from '@/components/om/meta-chip'
@@ -22,6 +22,9 @@ import { ReadOnlyNote } from './read-only-note'
 import { EMAIL_RE, MSG } from '@/lib/forms'
 import { Button, Switch } from '@/components/ds'
 import { PreferencesDialog } from './preferences-dialog'
+import { HelpLink } from './help-link'
+import { SignatureSettings } from '@/components/quotes/editor/signature/signature-section'
+import { saveMemberSignature } from '@/app/quotes/signature-actions'
 import { parsePreferences, summarisePreferences, type LeadPreferences } from '@/lib/company/preferences'
 import styles from './members-view.module.css'
 
@@ -79,7 +82,27 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     } catch { setRows(prev); snackbar({ message: 'Couldn’t change the role — please try again' }) }
   }
   /* Add member — name, phone, email, role; the rules decide the roles offered. */
-  const [adding, setAdding] = useState<{ name: string; phone: string; email: string; role: Role; tried: boolean } | null>(null)
+  const [adding, setAdding] = useState<{ name: string; phone: string; email: string; role: Role; managerId: string | null; tried: boolean } | null>(null)
+  /* (UX audit S6) The member just added: their row comes into view and pulses once (REG-575's attention look), and the snackbar's action
+     opens their Reports to — the next step a Designer needs. */
+  const [fresh, setFresh] = useState<string | null>(null)
+  useEffect(() => {
+    if (!fresh || !rows.some((m) => m.id === fresh)) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.querySelector(`[data-member-id="${CSS.escape(fresh)}"]`)?.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
+    const t = window.setTimeout(() => setFresh(null), 1600)
+    return () => window.clearTimeout(t)
+  }, [fresh, rows])
+  const openReportsTo = (id: string) => {
+    const el = document.querySelector<HTMLElement>(`[data-reports-to="${CSS.escape(id)}"] [role="combobox"]`)
+    if (!el) return
+    /* the select's menu closes on a scroll (PortalMenu) — bring the row into view first, then open its list once the page has settled,
+       the keyboard's way (the field opens on ↓ as it does on a press) */
+    const r = el.getBoundingClientRect(), away = r.top < 0 || r.bottom > window.innerHeight
+    if (away) el.scrollIntoView({ block: 'center' })
+    el.focus({ preventScroll: true })
+    window.setTimeout(() => el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })), away ? 300 : 0)
+  }
   const [busy, setBusy] = useState(false)
   /* (sweep S4 #23) the house messages (lib/forms.ts) — the lead form's words for a name, a phone and an email */
   const addErrors = adding ? {
@@ -92,9 +115,17 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     if (addErrors.name || addErrors.phone || addErrors.email) { setAdding({ ...adding, tried: true }); return }
     setBusy(true)
     try {
-      const r = await addMember({ name: adding.name, phone: adding.phone, email: adding.email, role: adding.role })
+      const designer = adding.role === 'Designer'
+      const mgr = designer && adding.managerId ? managers.find((x) => x.id === adding.managerId) ?? null : null
+      const r = await addMember({ name: adding.name, phone: adding.phone, email: adding.email, role: adding.role, managerId: mgr?.id ?? null })
       if ('error' in r) { snackbar({ message: r.error }); return }
-      setAdding(null); snackbar({ message: `${adding.name.trim()} added as ${adding.role === 'Owner' || adding.role === 'Admin' ? 'an' : 'a'} ${adding.role}` }); router.refresh()
+      const name = adding.name.trim(), id = r.id ?? null
+      setAdding(null); if (id) setFresh(id); router.refresh()
+      const added = `${name} added as ${adding.role === 'Owner' || adding.role === 'Admin' ? 'an' : 'a'} ${adding.role}`
+      /* (UX audit S6) the next step rides the snackbar: a Designer who reports to nobody yet is one press from their Reports to */
+      snackbar(mgr ? { message: `${added}, reporting to ${mgr.name}` }
+        : designer && id && managers.length ? { message: `${name} added`, actionLabel: 'Set who they report to', onAction: () => openReportsTo(id) }   // the role is the dialog's; the line keeps to the 344 bar
+        : { message: added })
     } catch { snackbar({ message: 'Couldn’t add the member — please try again' }) } finally { setBusy(false) }
   }
   /* Deactivate — the member's open work named first; Undo brings them straight back. */
@@ -123,6 +154,14 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
     const lets = [team.length ? `${listNames(team)} will report to nobody` : '', data.backupApproverId === m.id ? 'they stop being the backup approver for quotes' : ''].filter(Boolean).join(', and ')
     return `${m.name} leaves every picker and stops getting new leads. ${work ? `Their ${work} ${one ? 'stays' : 'stay'} with them — reassign ${one ? 'it' : 'them'} from the listing.` : 'Nothing open is on their name.'}${lets ? ` ${lets.charAt(0).toUpperCase()}${lets.slice(1)}; Undo gives ${team.length + (data.backupApproverId === m.id ? 1 : 0) === 1 ? 'it' : 'them'} back.` : ''} Their notes, tasks and history stay as they are; Reactivate brings them back.`
   }
+  /* (UX audit S11) Your own signature, set here as in a quote's Signature section — the same dialog and the same save. */
+  const [signing, setSigning] = useState<{ kind: 'draw' | 'type'; name: string; data: string } | null>(null)
+  const saveSignature = async () => {
+    const v = signing
+    if (!v || !v.name.trim() || (v.kind === 'draw' && !v.data)) return
+    try { await saveMemberSignature({ kind: v.kind, name: v.name.trim(), data: v.kind === 'draw' ? v.data : null }); setSigning(null); snackbar({ message: 'Signature saved — it prints on the quotes you prepare' }); router.refresh() }
+    catch { snackbar({ message: 'Couldn’t save the signature — please try again' }) }   // the dialog stays with what was drawn or typed
+  }
   const changeManager = async (m: MemberRow, name: string) => {
     const mgr = name === NOBODY ? null : managers.find((x) => x.name === name) ?? null
     if ((mgr?.id ?? null) === (m.managerId ?? null)) return
@@ -133,13 +172,13 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
   }
   return (
     <CompanyShell title="Members" from={from} skeleton={<MembersGhost />}
-                  actions={canEdit ? <Button iconStart={<Icon name="person_add" size={20} />} onPress={() => setAdding({ name: '', phone: '', email: '', role: 'Designer', tried: false })}>Add member</Button> : null}>
+                  actions={canEdit ? <Button iconStart={<Icon name="person_add" size={20} />} onPress={() => setAdding({ name: '', phone: '', email: '', role: 'Designer', managerId: null, tried: false })}>Add member</Button> : null}>
       <div className={styles.layout} data-testid="members">
         {canEdit ? null : <ReadOnlyNote text="Only Owners and Admins add members and change roles or reporting lines." />}   {/* (sweep S4 #16) */}
         <section className={styles.card} aria-labelledby="members-title">
           <div className={styles.cardHead}>
             <h2 id="members-title" className={styles.cardTitle}>People and roles</h2>
-            <p className={styles.cardHelp}>Owners and Admins run the studio and assign any lead; only an Owner makes another Owner, and nobody changes their own role. A Manager assigns within their team — the Designers who report to them. A Designer keeps the leads assigned to them. Who sees which leads is set under Settings › Lead management.</p>
+            <p className={styles.cardHelp}>Owners and Admins run the studio and assign any lead; only an Owner makes another Owner, and nobody changes their own role. A Manager assigns within their team — the Designers who report to them. A Designer keeps the leads assigned to them. Who sees which leads is set under <HelpLink href="/settings?section=leads#lead-visibility" testId="members-visibility-link">Settings › Lead management</HelpLink>.</p>
           </div>
           <ul className={styles.list} aria-label="Members">
             {active.map((m) => {
@@ -147,7 +186,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
               const block = roleBlock(m)
               const leaveBlock = deactivateBlock(viewer, m, activeOwners)
               return (
-                <li key={m.id} className={styles.row} data-testid="member-row" data-role={m.role}>
+                <li key={m.id} className={styles.row} data-testid="member-row" data-role={m.role} data-member-id={m.id} data-fresh={fresh === m.id || undefined}>
                   <Avatar name={m.name} color={m.color} size={40} tooltip={false} />
                   <span className={styles.who}>
                     <span className={styles.name}>{m.name}{m.isYou ? <MetaChip>you</MetaChip> : null}</span>
@@ -158,7 +197,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
                       <Tooltip label={block}><span><TextField label="Role" mode="select" size="s" options={[...ROLES]} value={m.role} disabled onChange={() => {}} /></span></Tooltip>
                     ) : <TextField label="Role" mode="select" size="s" options={roleOptions} value={m.role} onChange={(v) => { void changeRole(m, v) }} />}
                   </span>
-                  <span className={styles.field}>
+                  <span className={styles.field} data-reports-to={m.id}>
                     {m.role === 'Designer' ? (
                       <TextField label="Reports to" mode="select" size="s" options={[NOBODY, ...managers.map((x) => x.name)]} value={m.reportsTo ?? NOBODY} disabled={!canEdit} onChange={(v) => { void changeManager(m, v) }} />
                     ) : m.role === 'Manager' ? (
@@ -174,6 +213,13 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
                     </label>
                     {!m.acceptingLeads ? <MetaChip color="yellow">Closed to new leads</MetaChip> : null}
                     <span className={styles.prefSummary}>{[m.specialty, summarisePreferences(parsePreferences(m.leadPreferences))].filter(Boolean).join(' · ') || 'No preferences set'}</span>
+                    {/* (UX audit S11, REG-421) A signature is set by its member, inside a quote — the row says when it isn't, and the way: your own
+                        opens Signature Settings here; anyone else's names where they add it. */}
+                    {m.signatureKind ? null : m.isYou ? (
+                      <span className={styles.sigState} data-testid="member-signature">Signature: not set<Button appearance="text" onPress={() => setSigning({ kind: 'type', name: m.name, data: '' })}>Set it up</Button></span>
+                    ) : (
+                      <Tooltip label={`${m.name} adds it from Signature on any quote they prepare`}><span className={styles.sigState} tabIndex={0} data-testid="member-signature">Signature: not set</span></Tooltip>
+                    )}
                     {mayPrefs(m) ? <Button appearance="text" onPress={() => setPrefsFor(m)}>Preferences</Button> : null}
                     {canEdit && !m.isYou ? (leaveBlock ? <Tooltip label={leaveBlock}><span><Button appearance="text" isDisabled>Deactivate</Button></span></Tooltip>
                       : <Button appearance="text" onPress={() => setLeaving(m)}>Deactivate</Button>) : null}
@@ -211,6 +257,7 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
         ) : null}
       </div>
       <PreferencesDialog open={!!prefsFor} member={prefsFor} onClose={() => setPrefsFor(null)} onSave={savePrefs} />
+      <SignatureSettings open={!!signing} value={signing} onChange={setSigning} onClose={() => setSigning(null)} onSave={() => { void saveSignature() }} />
       <ConfirmDialog open={!!leaving} title={leaving ? `Deactivate ${leaving.name}?` : ''} message={leaving ? leaveMessage(leaving) : ''} confirmLabel="Deactivate" tone="danger"
                      onConfirm={() => { void deactivate() }} onCancel={() => setLeaving(null)} />
       <Dialog open={!!adding} onClose={() => setAdding(null)} title="Add member" size="modal" width={600}
@@ -220,7 +267,12 @@ export function MembersView({ data, from }: { data: MembersData; from?: string }
             <TextField label="Name" required value={adding.name} maxLength={60} autoFocus onChange={(v) => setAdding({ ...adding, name: v })} error={adding.tried ? addErrors.name : undefined} />
             <TextField label="Role" mode="select" options={roleOptions} value={adding.role} onChange={(v) => { if (isRole(v) && !addBlock(viewer, v)) setAdding({ ...adding, role: v }) }} />
             <TextField label="Phone" value={phoneTyped(adding.phone)} numeric="digits" maxLength={9} inputMode="tel" onChange={(v) => setAdding({ ...adding, phone: phoneDigits(v) })} error={adding.tried ? addErrors.phone : undefined} helper="Optional" />
-            <TextField label="Email" value={adding.email} maxLength={120} inputMode="email" onChange={(v) => setAdding({ ...adding, email: v })} error={adding.tried ? addErrors.email : undefined} helper="Optional — what {prepared_by_email} prints" />
+            <TextField label="Email" value={adding.email} maxLength={120} inputMode="email" onChange={(v) => setAdding({ ...adding, email: v })} error={adding.tried ? addErrors.email : undefined} helper="Optional — printed as their email on the quotes they prepare" />
+            {/* (UX audit S6) A Designer's manager, picked as they are added — who they report to decides who assigns their leads */}
+            {adding.role === 'Designer' && managers.length ? (
+              <TextField label="Reports to" mode="select" options={[NOBODY, ...managers.map((x) => x.name)]} value={managers.find((x) => x.id === adding.managerId)?.name ?? NOBODY}
+                         onChange={(v) => setAdding({ ...adding, managerId: managers.find((x) => x.name === v)?.id ?? null })} helper="Their Manager assigns them leads and sees their team’s" />
+            ) : null}
           </div>
         ) : null}
       </Dialog>

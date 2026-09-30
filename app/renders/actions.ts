@@ -34,10 +34,11 @@ const CLIENT = 'Your client'
 const GONE: Err = { error: 'That design is no longer on this link.', gone: true }
 const clean = (v: unknown, max: number) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
 const leadName = async (leadId: string | null) => (leadId ? (await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)))[0]?.name ?? null : null)
-/** (F098) The bell opens the design on the room and the version the client answered on — and on the pin itself when it is one. */
-async function tell(s: Link, title: string, body: string | null, at?: { roomId: string; key: string; pinId?: string }) {
+/** (F098) The bell opens the design on the room and the version the client answered on — and on the pin itself when it is one; (UX audit V1)
+    on a note, the client's notes on that version, open. */
+async function tell(s: Link, title: string, body: string | null, at?: { roomId: string; key: string; pinId?: string; noteId?: string }) {
   const to = await renderFeedbackIds(s)   // (round 1, D2) the lead's members and the link's sharer, once each
-  const q = [at ? `room=${at.roomId}` : null, at ? `v=${encodeURIComponent(at.key)}` : null, at?.pinId ? `pin=${at.pinId}` : null, s.leadId ? `from=${encodeURIComponent(`/leads/${s.leadId}`)}` : null].filter(Boolean).join('&')
+  const q = [at ? `room=${at.roomId}` : null, at ? `v=${encodeURIComponent(at.key)}` : null, at?.pinId ? `pin=${at.pinId}` : null, at?.noteId ? `note=${at.noteId}` : null, s.leadId ? `from=${encodeURIComponent(`/leads/${s.leadId}`)}` : null].filter(Boolean).join('&')
   await notify('render_feedback', to, { title, body, href: `/visualizer/${s.designId}${q ? `?${q}` : ''}`, leadId: s.leadId, actorId: null })
 }
 const refresh = (s: Link) => { revalidatePath(`/renders/${s.token}`); revalidatePath(`/visualizer/${s.designId}`); if (s.leadId) revalidatePath(`/leads/${s.leadId}`, 'layout') }
@@ -60,8 +61,9 @@ export async function leaveNote(token: string, key: string | null, message: stri
   const v = key ? versionIn(o, key) : null
   if (key && !v) return GONE
   const name = await leadName(o.s.leadId)
-  await db.insert(renderConsultationRequests).values({ id: randomUUID(), shareLinkId: o.s.id, kind: 'note', versionKey: v ? key : null, clientName: name, clientPhone: null, message: text, taskId: null, createdAt: new Date() })
-  await tell(o.s, `${name ?? CLIENT} left a note on the renders`, v ? `${v.roomName} · ${v.label}: “${text}”` : `“${text}”`, v ? { roomId: v.roomId, key: v.key } : undefined)
+  const id = randomUUID()
+  await db.insert(renderConsultationRequests).values({ id, shareLinkId: o.s.id, kind: 'note', versionKey: v ? key : null, clientName: name, clientPhone: null, message: text, taskId: null, createdAt: new Date() })
+  await tell(o.s, `${name ?? CLIENT} left a note on the renders`, v ? `${v.roomName} · ${v.label}: “${text}”` : `“${text}”`, v ? { roomId: v.roomId, key: v.key, noteId: id } : undefined)
   refresh(o.s); return { ok: true }
 }
 

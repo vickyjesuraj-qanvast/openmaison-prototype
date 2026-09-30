@@ -14,7 +14,20 @@
   background-color: var(--om-color-surface-bg); color: var(--om-color-on-surface-default);
   transition: background-image var(--motion-hover);
 }
+/* (UX audit Q4) A tile's count at its top-right corner — the rail's badge (app-rail.module.css .badge): Quotes waiting for your approval. */
+.tile { position: relative; }
+.count {
+  position: absolute; top: 6px; right: 6px; box-sizing: border-box; min-width: 16px; height: 16px; padding: 0 3px; border-radius: var(--om-radius-full);
+  display: inline-flex; align-items: center; justify-content: center; background: var(--om-color-tertiary-red-default); color: var(--om-color-on-tertiary-red-default);
+  font: var(--om-type-caption-xs); pointer-events: none;
+}
 .tile:hover { background-image: linear-gradient(var(--om-color-hover-04p), var(--om-color-hover-04p)); }
+.tile { position: relative; }
+/* (UX audit V7) the tool you are in — the Company panel's marked row: the primary variant, the glyph filled */
+.tile[data-on] { background-color: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); }
+.tile[data-on] .label { color: var(--om-color-on-primary-variant); }
+/* (UX audit V6) a tool not built yet: the Company panel's "Soon" tag (company-popover.module.css .soon), on the tile's top-right corner */
+.soon { composes: soon from '../company/company-popover.module.css'; position: absolute; top: var(--om-spacing-1); right: var(--om-spacing-1); padding: 0 var(--om-spacing-1); font: var(--om-type-caption-xs); background: var(--om-color-surface-default); }   /* the tile's size of it: clear of the centred glyph */
 .tile:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; }
 /* Two-line label box so the glyphs line up across a row whatever the name's length. */
 .label { width: 100%; height: 32px; display: flex; align-items: center; justify-content: center; font: var(--om-type-caption-s); color: var(--om-color-on-surface-default); text-align: center; overflow-wrap: anywhere; }

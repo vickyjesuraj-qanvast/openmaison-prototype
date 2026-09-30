@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
+import { leaveThen } from '@/components/company/leave-guard'
 import styles from './settings.module.css'
 
 /**
@@ -26,7 +27,7 @@ export function ModuleHead({ id, title, help, readOnly = false, links = [] }: {
       {links.length ? (
         <div className={styles.moduleLinks} data-testid="module-links">
           <span className={styles.settingHelp}>Kept in Company:</span>
-          {links.map((l) => <Button key={l.href} appearance="text" iconStart={<Icon name={l.icon} size={18} />} onPress={() => router.push(l.href)}>{l.label}</Button>)}
+          {links.map((l) => <Button key={l.href} appearance="text" iconStart={<Icon name={l.icon} size={18} />} onPress={() => leaveThen(() => router.push(l.href))}>{l.label}</Button>)}
         </div>
       ) : null}
     </div>

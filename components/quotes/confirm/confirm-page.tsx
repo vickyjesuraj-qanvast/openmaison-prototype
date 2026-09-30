@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Checkbox } from '@/components/ds'
+import { Button, Checkbox, TextArea } from '@/components/ds'
+import { Dialog } from '@/components/om/dialog'
+import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { readingSections } from '@/components/templates/render/slices'
+import { ReadingCards } from './reading-cards'
 import { Icon } from '@/components/om/icon'
 import { MetaChip } from '@/components/om/meta-chip'
 import { TextField } from '@/components/om/text-field'
@@ -14,7 +18,7 @@ import { money2 } from '@/lib/quotes/math'
 import { fallbackDesignClient } from '@/lib/templates/presets'
 import type { QuotePreviewData } from '@/lib/templates/queries'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
-import { confirmQuoteOnline } from '@/app/quotes/actions'
+import { askQuoteChange, confirmQuoteOnline } from '@/app/quotes/actions'
 import type { ConfirmExtras } from '@/lib/quotes/confirm-data'
 import shell from '@/components/contracts/sign/signing-page.module.css'
 import styles from './confirm-page.module.css'
@@ -44,6 +48,30 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
   const pickedMinor = optional.filter((o) => picks.has(o.id)).reduce((s, o) => s + o.minor, 0)
   const toggle = (id: string, on: boolean) => setPicks((p) => { const n = new Set(p); if (on) n.add(id); else n.delete(id); return n })
   const wanted = extras.optional.filter((o) => o.choice === 'want')
+
+  /* (UX audit Q6) On a phone the lines read as cards; "View as printed" shows the A4. The cards are drawn from the print's own sections. */
+  const phone = useMediaQuery(MOBILE)
+  const [printed, setPrinted] = useState(false)
+  const reading = useMemo(() => readingSections(design, data.data, data.view), [design, data.data, data.view])
+  const lineCount = reading ? reading.sections.reduce((n, s) => n + s.lines.length, 0) : 0
+  /* (UX audit Q6) Ask for a change: the client's words to the designer on WhatsApp (opened on the press — a popup blocker eats one opened
+     after the round trip, REG-534) and to the studio's bell (`askQuoteChange`). */
+  const [askOpen, setAskOpen] = useState(false)
+  const [askNote, setAskNote] = useState('')
+  const [asked, setAsked] = useState(false)
+  const ask = () => {
+    const who = name.trim() || clientName
+    const note = askNote.trim()
+    const digits = extras.designer.phone.replace(/\D/g, '')
+    const to = digits.length === 8 ? `65${digits}` : digits
+    const text = `Hi ${extras.designer.name.split(' ')[0]}, it’s ${who} about quote ${quote.number}. ${note || 'I’d like to ask for a change before I confirm.'}`
+    setAskOpen(false)
+    if (to) window.open(`https://wa.me/${to}?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+    void askQuoteChange(quote.id, { name: who, note }).then((r) => {
+      if ('error' in r) { snackbar({ message: `Couldn’t send your request — ${r.error.replace(/^./, (c) => c.toLowerCase())}` }); return }
+      setAsked(true); snackbar({ message: `${studioName} has your request — finish your message in WhatsApp` })
+    }, () => snackbar({ message: 'Couldn’t send your request — please try again' }))
+  }
 
   /* Fit the page to the stage, never above 1:1 (the preview's rule). */
   const areaRef = useRef<HTMLDivElement>(null)
@@ -82,7 +110,22 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
       <div className={shell.body}>
         <div className={`${shell.stage} ${styles.stage}`} ref={areaRef}>
           {/* (sweep S1) a link opened before the studio sent the quote shows nothing of it — no draft, no prices — only the card's "Not ready yet" */}
-          {extras.open || confirmed || signed ? <TemplateDocument design={design} brand={brand} data={data.data} view={data.view} zoom={zoom} onPaginated={onPaginated} /> : null}
+          {extras.open || confirmed || signed ? (
+            <>
+              {/* (UX audit Q6) ≤767: the reading cards, or — "View as printed" — the A4. Above 767 the print as before. The CSS shows the cards on
+                  a phone from the first paint (the media query answers only after hydration); the print mounts on a phone only when asked for. */}
+              {reading ? (
+                <div className={styles.phoneRead} data-printed={printed || undefined}>
+                  <div className={styles.readHead}>
+                    <span className={styles.readCount}>{printed ? `As printed${pages ? ` · ${pages} ${pages === 1 ? 'page' : 'pages'}` : ''}` : `${lineCount} ${lineCount === 1 ? 'line' : 'lines'}`}</span>
+                    <Button appearance="text" iconStart={<Icon name={printed ? 'view_list' : 'description'} size={20} />} onPress={() => setPrinted((p) => !p)} data-testid="view-as-printed">{printed ? 'View as a list' : 'View as printed'}</Button>
+                  </div>
+                  {printed ? null : <ReadingCards sections={reading.sections} optional={reading.optional} amounts={reading.amounts} totalMinor={totals.totalMinor} />}
+                </div>
+              ) : null}
+              {!phone || printed || !reading ? <div className={styles.print} data-cards={reading ? '' : undefined} data-printed={printed || undefined}><TemplateDocument design={design} brand={brand} data={data.data} view={data.view} zoom={zoom} onPaginated={onPaginated} /></div> : null}
+            </>
+          ) : null}
         </div>
         <aside className={shell.card} aria-label="Confirm this quote" data-state={signed ? 'signed' : confirmed ? 'confirmed' : 'open'}>
           {signed ? (
@@ -97,7 +140,7 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
               <h2 className={shell.cardTitle}>Confirmed</h2>
               <p className={shell.cardText}>Confirmed by <strong>{confirmed.by}</strong> on {displayDateLong(confirmed.at)}. {studioName} will send the agreement for your signature next.</p>
               {wanted.length ? <p className={shell.cardText} data-testid="confirm-wanted">You asked for {wanted.map((o) => o.name).join(', ')} as well — {studioName} will add {wanted.length === 1 ? 'it' : 'them'} to the quote.</p> : null}
-              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => window.print()}>Download a copy</Button>
+              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="download" size={20} />} onPress={() => { if (phone && !printed) { setPrinted(true); window.setTimeout(() => window.print(), 600) } else window.print() }}>Download a copy</Button>   {/* (UX audit Q6) a phone reading the cards prints the A4 */}
             </>
           ) : !extras.open ? (
             /* (REG-626, parity §8.2 · E-110) A link opened before the studio sent the quote: nothing to confirm yet. */
@@ -133,6 +176,9 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
               <TextField label="Your full name" required value={name} onChange={setName} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void confirm() } }} />
               <p className={shell.fine}>Confirming tells {studioName} you accept this quote as shown. It is not a signature.</p>
               <Button isDisabled={!name.trim() || busy} onPress={() => { void confirm() }}>{busy ? 'Confirming…' : 'Confirm quote'}</Button>
+              {/* (UX audit Q6) Not ready to confirm? Ask for a change — the designer on WhatsApp, the studio told. */}
+              <Button variant="secondary" appearance="outlined" iconStart={<Icon name="chat" size={20} />} onPress={() => { setAskNote(''); setAskOpen(true) }} data-testid="ask-change">Ask for a change</Button>
+              {asked ? <p className={shell.fine} data-testid="ask-sent">You asked for a change — {extras.designer.name} will get back to you.</p> : null}
             </>
           )}
           {/* (REG-626, parity §8.2 · E-91) The files the studio shares with the quote — its Files section's "Show in client view". */}
@@ -151,6 +197,11 @@ export function ConfirmPage({ data, extras }: { data: QuotePreviewData; /** (REG
           ) : null}
         </aside>
       </div>
+      <Dialog open={askOpen} onClose={() => setAskOpen(false)} title="Ask for a change" size="form" width={400} closeOnScrim={false}
+              subtitle={`Tell ${extras.designer.name} what you’d like changed on ${quote.number}. WhatsApp opens with your message.`}
+              footer={<><Button variant="secondary" appearance="outlined" onPress={() => setAskOpen(false)}>Cancel</Button><Button iconStart={<Icon name="chat" size={20} />} onPress={ask} data-testid="ask-send">Send on WhatsApp</Button></>}>
+        <TextArea label="What would you like changed? (optional)" value={askNote} onChange={(v: string) => setAskNote(v)} maxLength={500} />
+      </Dialog>
     </div>
   )
 }

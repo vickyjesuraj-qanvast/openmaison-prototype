@@ -9,13 +9,16 @@ import { Tooltip } from '@/components/om/tooltip'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
 import { AutoFillDialog, SuggestedTasksDialog } from '@/components/leads/move-stage/dialogs'
 import { LinkButton } from '@/components/leads/move-stage/fields'
-import { AttachFilesModal } from '@/components/leads/tasks/attach-files-modal'
-import { useRun } from '@/components/leads/tasks/use-run'
+import { AttachFilesModal, type UploadAnswer } from '@/components/leads/tasks/attach-files-modal'
+import { refusalOf, useRun } from '@/components/leads/tasks/use-run'
+import { uploadPicked as uploadPickedFile } from '@/components/leads/files/upload-picture'
+import { moveStageHref } from '@/lib/leads/move-link'
+import { withFrom } from '@/lib/nav'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import type { LeadFile } from '@/lib/db/schema'
 import { displayDateTimeDot, formatInputDateTime, parseInputDateTime } from '@/lib/format'
 import { bodyText, draftFrom, emptyDraft, filterNotes, listSecondary, listTitle, validateDraft, type NoteDraft, type NoteFilter, type NoteKind } from '@/lib/leads/note-model'
-import type { LeadNotesData } from '@/lib/leads/notes'
+import type { LeadNotesData, NoteRow } from '@/lib/leads/notes'
 import { filterByQuery } from '@/lib/search'
 import { reminderTaskTitle } from '@/lib/leads/enums'
 import { createNote, deleteNote, setNoteAttachments, updateNote } from '@/app/leads/notes-actions'
@@ -67,7 +70,16 @@ const AUTO_FILL_DAYS = 3
 const AUTO_FILL_HOUR = 19
 const SUGGESTIONS = ['Prepare sample designs and floor plan illustrations for the client']
 
-export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesData }) {
+/* (UX audit 2026-09-30, T3) A Met-stage meeting log reads as what it is — "Meeting log", its remarks or where it happened. */
+const isMeetingRow = (n: NoteRow | undefined) => n?.stageKind === 'Met'
+const titleOf = (n: NoteRow, cur: NoteDraft) => (isMeetingRow(n) ? 'Meeting log' : listTitle(cur))
+const secondaryOf = (n: NoteRow, cur: NoteDraft) => {
+  if (!isMeetingRow(n)) return listSecondary(cur)
+  return bodyText(cur.body).split('\n').map((l) => l.trim()).find(Boolean) ?? cur.channel ?? 'No notes yet'
+}
+
+/** `stage` (UX audit 2026-09-30, L2): the lead's stage — a contact log saved on a New lead offers the move to Contacted. */
+export function LeadNotes({ leadId, data, stage = null }: { leadId: string; data: LeadNotesData; stage?: string | null }) {
   const { notes, files, now } = data
   const router = useRouter()
   const snackbar = useSnackbar()
@@ -115,6 +127,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
   const fileById = new Map(files.map((f) => [f.id, f]))
   /** Derived from the Contacted stage's logs (REG-265): view-only here — edited in the Move stage window, never deleted. */
   const isStage = (id: string | null): boolean => !!id && id !== DRAFT_ID && byId.get(id)?.origin === 'stage'
+  const isMeeting = (id: string | null): boolean => !!id && id !== DRAFT_ID && isMeetingRow(byId.get(id))
   /** The item's live fields: the draft, the note's edit, or the note as saved. */
   const currentOf = (id: string): NoteDraft | null => {
     if (id === DRAFT_ID) return draft ? fieldsOf(draft) : null
@@ -159,7 +172,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
      included) so the search reads the same words the item shows. No phone column here — notes hold no numbers. */
   const rows = filterNotes(notes, filter).map((n) => ({ note: n, cur: edits[n.id] ?? draftFrom(n) }))
   const matched = filterByQuery(rows, query, ({ note, cur }) => ({
-    fields: [listTitle(cur), listSecondary(cur), bodyText(cur.body), displayDateTimeDot(note.createdAt)],
+    fields: [titleOf(note, cur), secondaryOf(note, cur), bodyText(cur.body), displayDateTimeDot(note.createdAt)],
   }))
   // The list, newest first (REG-262): the draft on top — it is the item being written, the newest of all, and it is
   // never filtered out (no chip and no query hides the thing you are typing) — then the matched notes (created desc).
@@ -168,7 +181,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
        and not a row: an untitled row above the notes you already have is noise, and the thing being typed is
        already on screen. A contact-log draft still takes a row — it opens as a sheet, not in the composer. */
     ...(draft && !(sheetLayout && draft.kind === 'note') ? [{ id: DRAFT_ID, kind: draft.kind, title: listTitle(draft), secondary: listSecondary(draft), createdAt: new Date(draft.createdAt), draft: true }] : []),
-    ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: listTitle(cur), secondary: listSecondary(cur), createdAt: note.createdAt, locked: note.origin === 'stage' })),
+    ...matched.map(({ note, cur }) => ({ id: note.id, kind: cur.kind, title: titleOf(note, cur), secondary: secondaryOf(note, cur), createdAt: note.createdAt, locked: note.origin === 'stage', meeting: isMeetingRow(note) })),
   ]
   // 4. Selection follows the visible list: default = the draft, else the top item — the newest.
   if (!(selectedId && items.some((i) => i.id === selectedId))) {
@@ -250,8 +263,8 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     }
     const noun = d.kind === 'contact' ? 'contact log' : 'note'
     /* A note saves ITSELF (REG-263, autosave) — announcing every pause would be noise, so only the contact
-       log's explicit Save gets the toast. */
-    const done = d.kind === 'contact' ? 'Contact log saved' : null
+       log's explicit Save gets the toast — and (UX audit 2026-09-30, L2 · T3) its next step as the action. */
+    const contact = d.kind === 'contact'
     if (id === DRAFT_ID) {
       /* One draft creates ONE note (REG-285). `savingId` clears the moment createNote resolves, while the draft
          is still mounted and still dirty — so the autosave key went live again and, if the revalidated data did
@@ -261,7 +274,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
       if (savedDraftId) return
       const fileIds = draft?.fileIds ?? []
       inflight.current.add(id); setSavingId(id)
-      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (done) snackbar({ message: done }); offerReminder(id, d) }
+      try { const newId = await createNote(leadId, d, fileIds); setSavedDraftId(newId); if (contact) snackbar(logSaved(newId)); offerReminder(id, d) }
       catch { fail(`save the ${noun}`) }
       finally { inflight.current.delete(id); setSavingId(null) }
       return
@@ -269,7 +282,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
     const n = byId.get(id); if (!n) return
     if (same(d, draftFrom(n))) { clearEdit(id); return }   // nothing changed — just leave editing
     inflight.current.add(id); setSavingId(id)
-    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (done) snackbar({ message: done }); offerReminder(id, d) }
+    try { await updateNote(id, d); setEdits((e) => ({ ...e, [id]: d })); setPending((p) => ({ ...p, [id]: d })); if (contact) snackbar(logSaved(id)); offerReminder(id, d) }
     catch { fail(`save the ${noun}`) }
     finally { inflight.current.delete(id); setSavingId(null) }
   }
@@ -284,6 +297,28 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
       return
     }
     const n = byId.get(id); if (n) setDeleting({ id, kind: n.kind === 'contact' ? 'contact' : 'note' })
+  }
+
+  /* (UX audit 2026-09-30, L2 · T3) What a saved contact log leads to, on the save's own snackbar: on a New lead the move to Contacted
+     (the Move stage window with this log filled in); otherwise Add tasks (the Tasks tab's add row). `?from=` rides along (REG-465). */
+  const origin = useSearchParams().get('from')
+  const keepFrom = (href: string) => (origin ? withFrom(href, origin) : href)
+  const logSaved = (id: string) => (stage === 'New'
+    ? { message: 'Contact log saved', actionLabel: 'Move to Contacted', onAction: () => router.push(keepFrom(moveStageHref(leadId, 'contacted', { log: id }))) }
+    : { message: 'Contact log saved', actionLabel: 'Add tasks', onAction: () => router.push(keepFrom(`/leads/${leadId}/tasks?add=1`)) })
+  /* (UX audit 2026-09-30, T1 — supersedes REG-149's stand-in here) Attach files › a picked file goes through the Files tab's own upload
+     (`uploadFile`, REG-684: an image keeps its picture) and hands its real id back, so the modal ticks it and the log / note saves with a
+     file that exists. A refused upload says so and the modal's row reads Failed. */
+  /* (UX audit 2026-09-30, T1) The Files tab's own upload (uploadPicked, shared with the Tasks tab): the modal lists and ticks the file it hands
+     back; a refusal reads Failed with Retry and says why. */
+  const uploadPicked = async (file?: File): Promise<UploadAnswer> => {
+    if (!file) return null
+    try {
+      const r = await uploadPickedFile(leadId, file)
+      if (r && 'error' in r) fail(`upload ${file.name}`, r.error)
+      else router.refresh()
+      return r
+    } catch (e) { fail(`upload ${file.name}`, refusalOf(e)); return null }
   }
 
   /* ── attachments ── */
@@ -441,7 +476,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           /* (REG-292) The contact log's own header: the kind on the left, the actions that used to sit inline
              with the block title (REG-256 Edit · Auto Fill · the REG-268 lock hint) on the right. It has to be
              a child of the pane, not of the editor, so the rule spans the pane and the fields scroll under it. */
-          <PaneHeader title="Contact log">
+          <PaneHeader title={isMeeting(contactId) ? 'Meeting log' : 'Contact log'}>
             {isEditing(contactId)
               // eslint-disable-next-line @next/next/no-img-element
               ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
@@ -467,6 +502,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
               selected.kind === 'contact' ? (
                 logInSheet ? null : <ContactEditor
                   key={editorKey}
+                  meeting={isMeeting(selectedId)}
                   draft={selected}
                   onChange={(patch) => change(selectedId, patch)}
                   onAttach={() => { if (selectedId) setAttachFor(selectedId) }}
@@ -594,7 +630,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
         <Sheet
           open={mobilePane}
           onClose={() => { cancel(contactId); setMobilePane(false) }}
-          title="Contact log"
+          title={isMeeting(contactId) ? 'Meeting log' : 'Contact log'}
           headActions={isEditing(contactId)
             // eslint-disable-next-line @next/next/no-img-element
             ? <LinkButton leading={<img src="/figma-assets/brief-sparkle.svg" alt="" />} onClick={() => setAutoFillFor(contactId)}>Auto Fill</LinkButton>
@@ -620,6 +656,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           <div className={styles.sheetEditor}>
             <ContactEditor
               key={editorKey}
+              meeting={isMeeting(contactId)}
               draft={selected}
               onChange={(patch) => change(contactId, patch)}
               onAttach={() => setAttachFor(contactId)}
@@ -650,7 +687,7 @@ export function LeadNotes({ leadId, data }: { leadId: string; data: LeadNotesDat
           const fresh = fileIds.filter((f) => !have.includes(f))
           setAttached(id, [...have, ...fresh], 'attach the files', `${fresh.length === 1 ? '1 file' : `${fresh.length} files`} attached`)
         }}
-        onUploadPicked={() => { /* REG-149: the picked file becomes the mock's file — the modal shows the upload toast and lists it in "Your files" */ }}
+        onUploadPicked={uploadPicked}   /* (UX audit 2026-09-30, T1) the real upload; the modal ticks the file it hands back */
       />
       {/* AutoFillDialog / SuggestedTasksDialog = the Move stage window's, in their Notes variant (164 · 166, spec 02): 600 wide,
           the 64px modal header (20/Bold + rule, 779:26016), body p24; Add tasks with 14/Semi Bold group labels, leading boxes and the rule. */}

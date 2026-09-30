@@ -76,6 +76,8 @@ export function MaterialsView({ data, from }: { data: MaterialsData; from?: stri
       mayChange={(t) => t.mayChange} duplicateBlock={() => null} restoreBlock={(t) => (t.mayChange ? restoreRule(t) : null)} purgeRule={(t) => (t.mayChange ? purgeRule(t) : null)}
       from={from} folders={{ library: 'materials', list: data.folders, block: folderBlockFor('materials', data.viewer) }} items={items} deleted={data.deleted.map(toRow)} now={data.now} ariaLabel="Materials" tableKey="materials"
       newMenu={(close, place) => (<DropdownItem onSelect={() => { close(); setEdit({ open: true, m: null, folderId: place.folderId }) }}>New material</DropdownItem>)} newBlock={null}
+      /* (UX audit S12) one way in: a plain "New material" button, not a New ▾ of one row */
+      newAction={(place) => ({ label: 'New material', onPress: () => setEdit({ open: true, m: null, folderId: place.folderId }) })}
       searchText={(t) => [t.category, finishWord(t.finish), t.hex, t.description ?? '', quotedAs(t) ?? ''].join(' ')}
       facets={[
         { key: 'category', label: 'Category', options: categories, test: (t, v) => t.category === v },

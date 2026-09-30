@@ -7,6 +7,7 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
 import { useSheetLayout } from '@/components/om/sheet'
+import { ScopePill } from '@/components/om/scope-pill'
 import styles from './quotes-toolbar.module.css'
 
 export type QuotesToolbarProps = {
@@ -26,6 +27,9 @@ export type QuotesToolbarProps = {
   filterCount: number
   /** Header kebab (910:36729): Manage Templates · Quotes Settings · Deleted Quotes; (sweep S1 · U-07) Archived Quotes before Deleted. */
   onMenu: (action: 'templates' | 'settings' | 'archived' | 'deleted') => void
+  /** (UX audit Q4 · Q5) The to-do chips — "Waiting for my approval · 2", "Waiting on client · 3", "Expiring this week · 1" — each shown only
+      while something waits on it (REG-666's attention pill); a press narrows the list, a second press lets go. */
+  todos?: { key: string; label: string; count: number; icon: string; selected: boolean; onClick: () => void }[]
 }
 
 /**
@@ -35,7 +39,7 @@ export type QuotesToolbarProps = {
  * Copied from components/leads/tasks/tasks-toolbar.tsx — same geometry, the quotes' copy and menus.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu, bare = false }: QuotesToolbarProps) {
+export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', onCreate, onFilter, onColumns, filterCount, onMenu, bare = false, todos = [] }: QuotesToolbarProps) {
   const [menu, setMenu] = useState<'more' | null>(null)
   const sheet = useSheetLayout()   // (REG-354) the mobile canvas' one-row toolbar
   const pick = (fn: () => void) => () => { setMenu(null); fn() }
@@ -43,6 +47,14 @@ export function QuotesToolbar({ query, onQuery, searchPlaceholder = 'Search', on
   return (
     <div className={styles.bar}>
       <h2 className={styles.title}>All Quotes</h2>
+      {/* (UX audit Q4 · Q5) What waits today, before the tools — REG-666's to-do pills, the libraries' way; on a phone their own line under the row. */}
+      {!bare && todos.some((t) => t.count > 0) ? (
+        <span className={styles.todos} data-testid="quote-todos">
+          {todos.filter((t) => t.count > 0).map((t) => (
+            <ScopePill key={t.key} tone="attention" icon={t.icon} menu={false} label={t.label} short={sheet ? undefined : String(t.count)} selected={t.selected} onClick={t.onClick} />
+          ))}
+        </span>
+      ) : null}
       <div className={styles.actions}>
         {bare ? null : (<>
         {/* (REG-354) ≤767 the canvas' toolbar is one row of glyphs, so the labelled primary is its icon. */}

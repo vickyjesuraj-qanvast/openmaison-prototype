@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ designId:
   return { title: title ? `${title} · AI Visualizer` : 'AI Visualizer' }
 }
 
-type Search = { room?: string; from?: string; file?: string; v?: string; version?: string; pin?: string }
+type Search = { room?: string; from?: string; file?: string; v?: string; version?: string; pin?: string; note?: string }
 const one = (v: unknown) => (typeof v === 'string' && v ? v : null)
 
 /**
@@ -21,7 +21,7 @@ const one = (v: unknown) => (typeof v === 'string' && v ? v : null)
  * Arriving on a place in it (audit 2026-09-26):
  * - `?room=` opens a room; `?v=` (or `?version=`) the version on screen — its room with it (F095 · F098, the bell's link); `?v=original`
  *   the room's Original (a `from` made while the studio looked at it);
- * - `?pin=` a pin's thread, on its version (F098);
+ * - `?pin=` a pin's thread, on its version (F098); (UX audit V1) `?note=` the client's notes on the version one was left on, open;
  * - `?file=` a lead's file: a render filed from here opens the version it was (F095 — never a new room made of the render); a photo
  *   opens its room on that photo — its Original, not its newest render (fresh-tablet 20) — else the editor adds it as one on arrival (Q-31).
  * What no longer exists lands on the room (or the first one) with a line that says so.
@@ -38,6 +38,7 @@ export default async function VisualizerDesignPage({ params, searchParams }: { p
   let room: string | null = hasRoom(one(sp.room)) ? one(sp.room) : null
   let version: string | null = null
   let pin: string | null = null
+  let note: string | null = null
   let notice: string | null = null
   let file: { id: string; name: string; url: string } | null = null
 
@@ -71,5 +72,12 @@ export default async function VisualizerDesignPage({ params, searchParams }: { p
     if (p && at && hasRoom(at) && liveKey(p.key)) { room = at; version = p.key; pin = p.id }
     else notice = 'That pin is no longer in the design'
   }
-  return <VisualizerEditor data={data} from={readFrom(sp.from)} initialRoom={room} initialVersion={version} initialPin={pin} initialNotice={notice} initialFile={file} />
+  const noteId = one(sp.note)
+  if (noteId) {
+    const n = data.shares.flatMap((s) => s.responses).find((r) => r.id === noteId && r.kind === 'note')
+    const at = n?.versionKey ? roomOfKey(n.versionKey) : null
+    if (n?.versionKey && at && hasRoom(at) && liveKey(n.versionKey)) { room = at; version = n.versionKey; note = n.versionKey }
+    else notice = 'That version is no longer in the design'
+  }
+  return <VisualizerEditor data={data} from={readFrom(sp.from)} initialRoom={room} initialVersion={version} initialPin={pin} initialNote={note} initialNotice={notice} initialFile={file} />
 }

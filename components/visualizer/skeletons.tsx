@@ -24,7 +24,8 @@ export function VisualizerEditorSkeleton() {
             <span className={`${styles.topRooms} ${styles.wide}`}><Bone w={110} h={32} r={4} className={styles.chip} /><Bone w={96} h={32} r={4} className={styles.chip} /><Bone w={120} h={32} r={4} className={styles.chip} /><Bone w={24} h={24} r={4} /><Bone w={120} h={40} r={4} className={styles.full} /><Bone w={36} h={36} r={4} className={styles.snug} /></span>
             <span className={styles.topEnd}>
               <span className={styles.wide}><Bone w={24} h={24} r={4} /><Bone w={24} h={24} r={4} /></span>
-              <Bone w={169} h={40} r={4} className={styles.full} /><Bone w={36} h={36} r={4} className={styles.snugOrNarrow} /><Bone w={24} h={24} r={4} />
+              {/* (UX audit V4) Share is a filled "Share" where the bar is tight, as the page draws it */}
+              <Bone w={169} h={40} r={4} className={styles.full} /><Bone w={96} h={40} r={4} className={styles.snugOrNarrow} /><Bone w={24} h={24} r={4} />
             </span>
           </div>
           <div className={styles.roomsRow}><Bone w={96} h={32} r={4} className={styles.chip} /><Bone w={120} h={32} r={4} className={styles.chip} /><Bone w={80} h={32} r={4} className={styles.chip} /><span className={styles.roomsEnd}><Bone w={24} h={24} r={4} /><Bone w={24} h={24} r={4} /></span></div>
@@ -81,7 +82,7 @@ export function RenderShareSkeleton() {
             <div className={styles.shareIntro}><Bone w={90} h={12} /><Bone w="70%" h={32} className={styles.shareTitle} /><Bone w="100%" h={104} r={8} /><Bone w="60%" h={16} /></div>
             <div className={styles.shareRoom}>
               <Bone w={120} h={20} className={styles.shareRoomName} />
-              <div className={styles.shareCard}><span className={styles.shareCardHead}><Bone w={160} h={18} /><Bone w={80} h={28} r={4} /></span><div className={styles.sharePhoto} /><span className={styles.shareTools}><Bone w={150} h={36} r={4} /><Bone w={150} h={36} r={4} /><Bone w={120} h={36} r={4} /></span></div>
+              <div className={styles.shareCard}><span className={styles.shareCardHead}><Bone w={190} h={18} /><Bone w={80} h={28} r={4} /></span><div className={styles.sharePhoto} /><span className={styles.shareTools}><Bone w={150} h={36} r={4} /><Bone w={150} h={36} r={4} /><Bone w={120} h={36} r={4} /></span></div>
             </div>
           </div>
         </div>

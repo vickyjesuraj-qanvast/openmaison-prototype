@@ -7,8 +7,9 @@ import { isWizardPayload } from '@/lib/leads/stage-data'
 
 /* Lead Details › Notes (931-44865) — one loader for the tab. */
 
-/** `origin: 'stage'` = derived from the Contacted stage's own logs (REG-265) — shown read-only, never deletable here. */
-export type NoteRow = LeadNote & { attachments: LeadFile[]; author: Member | null; origin?: 'stage' }
+/** `origin: 'stage'` = derived from the Contacted stage's own logs (REG-265) — shown read-only, never deletable here.
+    `stageKind` (UX audit 2026-09-30, T3): which stage's log it is — 'Met' marks a meeting log (Where · Date & Time · Remarks). */
+export type NoteRow = LeadNote & { attachments: LeadFile[]; author: Member | null; origin?: 'stage'; stageKind?: 'Contacted' | 'Met' }
 export type LeadNotesData = {
   /** Creation order — the note sits above the newer contact log (frames 162/165). */
   notes: NoteRow[]
@@ -45,8 +46,11 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     .where(and(eq(stageLogs.leadId, leadId), eq(stageLogs.toStage, 'Contacted')))
     .orderBy(desc(stageLogs.createdAt))
   const stageRow = contactedRows.find((r) => isWizardPayload(r.payload))
-  type PayloadLog = { channel?: string | null; when?: string; outcome?: string; nextStepWhen?: string; nextStepMode?: string; notes?: string }
-  const stageNotes: NoteRow[] = ((stageRow?.payload as { logs?: PayloadLog[] } | null)?.logs ?? []).map((l, i) => ({
+  type PayloadLog = { channel?: string | null; when?: string; outcome?: string; nextStepWhen?: string; nextStepMode?: string; notes?: string; noteId?: string }
+  /* (UX audit 2026-09-30, L2) A contact log saved here and then carried into the Contacted step (`?move=contacted&log=<id>`) is the
+     same contact: it stays listed once, as the note it is, not again as a stage row. */
+  const noteIds = new Set(rows.map((n) => n.id))
+  const stageNotes: NoteRow[] = ((stageRow?.payload as { logs?: PayloadLog[] } | null)?.logs ?? []).flatMap((l, i) => l.noteId && noteIds.has(l.noteId) ? [] : [{
     id: `stage-${stageRow!.id}-${i}`,
     leadId, kind: 'contact', title: '', body: l.notes ?? '',
     channel: l.channel ?? null,
@@ -55,9 +59,26 @@ export async function fetchLeadNotes(leadId: string): Promise<LeadNotesData> {
     nextStepAt: l.nextStepWhen ? parseInputDateTime(l.nextStepWhen) : null,
     nextStepMode: l.nextStepMode ?? null,
     authorId: null, createdAt: stageRow!.createdAt, updatedAt: null,
-    attachments: [], author: null, origin: 'stage',
+    attachments: [], author: null, origin: 'stage' as const, stageKind: 'Contacted' as const,
+  }])
+
+  /* (UX audit 2026-09-30, T3 — extends REG-265) The Met stage's meeting logs appear beside Contacted's, read-only the same way: the
+     latest Met row the wizard wrote holds the full list. A site visit now has a home under All Notes & Logs. */
+  const metRows = await db.select().from(stageLogs)
+    .where(and(eq(stageLogs.leadId, leadId), eq(stageLogs.toStage, 'Met')))
+    .orderBy(desc(stageLogs.createdAt))
+  const metRow = metRows.find((r) => isWizardPayload(r.payload) && Array.isArray((r.payload as { meetings?: unknown }).meetings))
+  type PayloadMeeting = { where?: string; when?: string; notes?: string }
+  const meetingNotes: NoteRow[] = ((metRow?.payload as { meetings?: PayloadMeeting[] } | null)?.meetings ?? []).filter((m) => m.where || m.when).map((m, i) => ({
+    id: `stage-${metRow!.id}-m${i}`,
+    leadId, kind: 'contact', title: '', body: m.notes ?? '',
+    channel: m.where ?? null,
+    contactedAt: m.when ? parseInputDateTime(m.when) : null,
+    outcome: null, nextStepAt: null, nextStepMode: null,
+    authorId: null, createdAt: metRow!.createdAt, updatedAt: null,
+    attachments: [], author: null, origin: 'stage' as const, stageKind: 'Met' as const,
   }))
 
-  const merged = [...notes, ...stageNotes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  const merged = [...notes, ...stageNotes, ...meetingNotes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   return { notes: merged, files, team, now: Date.now() }
 }

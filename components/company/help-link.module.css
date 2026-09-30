@@ -1,0 +1,4 @@
+/* (UX audit S3) A link inside a help sentence: the house text link (REG-729), composed — at the sentence's own size, so the line wraps as it
+   did. The house link sits in a cascade layer and the global `a { color: inherit }` reset does not, so on an anchor its ink is said again here. */
+.link { composes: link from '../om/text-link.module.css'; font: inherit; color: var(--om-color-primary-default); }
+.link:hover { color: var(--om-color-primary-hover); }

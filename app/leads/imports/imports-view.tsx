@@ -41,7 +41,7 @@ function TemplateButton() {
   )
 }
 
-function View({ imports }: { imports: ImportBatch[] }) {
+function View({ imports, sources, liveSources }: { imports: ImportBatch[]; /** (UX audit L4) the import reader's source list · step 2's offer */ sources: string[]; liveSources: string[] }) {
   const importWidths = useColumnWidths('imports')   // REG-427: a dragged column is fixed at that width, the others keep their pro-rata growth
   const colStyle = (key: string, mock: number): CSSProperties => (importWidths[key] ? { flex: `0 0 ${importWidths[key]}px` } : ({ '--col': mock } as CSSProperties))
   const searchRef = useRef<HTMLInputElement>(null)
@@ -178,7 +178,7 @@ function View({ imports }: { imports: ImportBatch[] }) {
             </div>
           )}
         </div>
-      <ImportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} onImport={onImport}
+      <ImportWizard open={wizardOpen} onClose={() => setWizardOpen(false)} onImport={onImport} sources={sources} batchSources={liveSources}
                     onDone={(r) => {
                       setWizardOpen(false)
                       router.refresh()
@@ -188,6 +188,6 @@ function View({ imports }: { imports: ImportBatch[] }) {
   )
 }
 
-export function ImportsView(props: { imports: ImportBatch[] }) {
+export function ImportsView(props: { imports: ImportBatch[]; sources: string[]; liveSources: string[] }) {
   return <View {...props} />
 }

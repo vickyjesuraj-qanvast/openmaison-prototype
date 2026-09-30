@@ -80,6 +80,13 @@ Three kinds, never mixed: **first run** (a list with nothing in it — `EmptySta
 - [ ] ④ **Say it once.** An intro card and an empty state never repeat each other — a page with its own welcome (the AI Visualizer, `empty.welcome`) drops the intro and the toolbar while it shows.
 - [ ] ⑤ **A sample is a door, not a record.** Sample rooms and ready-made designs sit on the first-run card and become the studio's only when opened.
 - [ ] ⑥ **"No results found" only after a search or a filter** — never on a list that is simply new.
+- [ ] ⑦ **The ghost knows the shape** (REG-817). A page with a first-run shape wraps its reveal ghost in `<GhostShape first={…}>` and calls `useRememberShape(page, first)`; its ghost reads `useFirstRunShape(page)` and draws the bare bar and start card (`FirstRunCardGhost` · `EmptyCardGhost` · `FirstRunTabGhost`) — `lib/ghost-shape.tsx`.
+
+## Hand-offs and "what needs me" (UX audit build, REG-738…818)
+- [ ] **A document that changes state offers the lead's next stage right there** — a sent or confirmed quote, a signed contract, a saved contact log: the snackbar, the banner and the bell line carry "Move to <stage>" → `moveStageHref(leadId, step, { quote | contract | log })` (`lib/leads/move-link.ts`); the Overview opens the Move stage window from it. Never a silent jump: a step that needs its fields opens them.
+- [ ] **Work that waits on a person is a to-do chip on its list** (`ScopePill tone="attention"`, REG-666) — waiting for my approval, awaiting signature, overdue, due today, unassigned, waiting on client, expiring — and a count the rail or dock shows is the viewer's own, and leads straight to that filtered list.
+- [ ] **A status set by hand that the client never saw asks first and offers Undo**; one that skips a rule (approval) is refused in the row with the reason.
+- [ ] **Unsaved edits ask before an in-app move** (`leaveThen` / the leave guard, `components/company/leave-guard.tsx`) — Save · Discard · Keep editing.
 
 ## Rows that can overflow
 - Frozen / pinned columns: 1px border on the inner edge at rest; the shadow shows only while scrolled sideways (`data-scrolled` on the scroll container — see table.tsx / review-sheet.tsx).

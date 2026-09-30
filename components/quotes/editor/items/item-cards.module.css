@@ -38,3 +38,5 @@
 .descLabel { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .descText { font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-width: 0; }
 .descText[data-empty] { color: var(--om-color-on-surface-secondary); }
+/* (UX audit Q10) A line new or changed since the kept version: the table's yellow tint, on the card. */
+.card[data-change]:not([data-selected]) { background: var(--om-color-tertiary-yellow-variant2); }

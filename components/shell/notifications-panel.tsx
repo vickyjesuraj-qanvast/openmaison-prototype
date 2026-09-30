@@ -16,15 +16,29 @@ import { IconButton } from '@/components/om/icon-button'
 import { Tooltip } from '@/components/om/tooltip'
 import { useSnackbar } from '@/components/om/snackbar'
 import { ago } from '@/lib/templates/ago'
+import { displayDayShortMonth } from '@/lib/format'
 import { eventDef, type FeedRow } from '@/lib/notifications/model'
 import { fetchFeedAction, markAllNotificationsRead, markNotificationRead } from '@/app/notifications/actions'
 import styles from './notifications-panel.module.css'
+import { leaveThen } from '@/components/company/leave-guard'   // (UX audit S2) unsaved Company / Settings edits ask before the move
 
 /** The rail's bell and the phone bar's bell both raise this; the panel lives once in the shell. */
 export const OPEN_NOTIFICATIONS = 'om:notifications:open'
 export const openNotifications = () => window.dispatchEvent(new CustomEvent(OPEN_NOTIFICATIONS))
 
 const CHANNEL_WORD: Record<string, string> = { email: 'email', whatsapp: 'WhatsApp' }
+
+/** (UX audit V8) A follow-up's due line — "Due 28 Sep · 2 days late", "Due today · 3 h late", "Due in 12 min" — so an overdue row says how late
+    it is, never a bare "Due". `at` is when it came due (a due-soon row: 30 minutes before it does). */
+export function dueLine(r: Pick<FeedRow, 'kind' | 'at'>, now: number): string {
+  if (r.kind === 'task_due_soon') { const m = Math.max(1, Math.round((r.at + 30 * 60_000 - now) / 60_000)); return `Due in ${m} min` }
+  const due = new Date(r.at), today = new Date(now)
+  const day = due.toDateString() === today.toDateString() ? 'today' : displayDayShortMonth(due)
+  const late = now - r.at
+  if (late < 60_000) return `Due ${day}`
+  const days = Math.floor(late / 86_400_000), hours = Math.floor(late / 3_600_000), mins = Math.floor(late / 60_000)
+  return `Due ${day} · ${days >= 1 ? `${days} ${days === 1 ? 'day' : 'days'}` : hours >= 1 ? `${hours} h` : `${mins} min`} late`
+}
 
 /**
  * (REG-604) The bell's feed: a drawer from the right (a bottom sheet on a phone, the Drawer's own rule) listing what happened —
@@ -81,7 +95,10 @@ export function NotificationsPanel() {
     window.addEventListener('resize', onResize)
     return () => { clearTimeout(t); document.removeEventListener('pointerdown', onDown); window.removeEventListener('keydown', onKey); window.removeEventListener('resize', onResize) }
   }, [open, sheet, close])
-  const unread = rows?.filter((r) => r.readAt === null).length ?? 0
+  /* (UX audit V8) what counts as unread is a notice nobody has opened — a follow-up that is due is work, listed apart ("Due") and never in the count */
+  const unread = rows?.filter((r) => r.readAt === null && !r.derived).length ?? 0
+  const due = rows?.filter((r) => r.derived) ?? []
+  const notices = rows?.filter((r) => !r.derived) ?? []
   const openRow = (r: FeedRow) => {
     setOpen(false)
     if (!r.derived && r.readAt === null) {
@@ -89,7 +106,7 @@ export function NotificationsPanel() {
       void markNotificationRead(r.id).then(() => router.refresh(), () => setRows((rs) => rs?.map((x) => (x.id === r.id ? { ...x, readAt: null } : x)) ?? rs))   // (sweep S4 #10) a refused mark stays unread
     }
     if (r.href === '#shortcuts') { setOpen(false); openShortcuts(); return }   // (REG-715) the keyboard's arrival note opens the ? panel here
-    if (r.href) router.push(r.href)
+    const href = r.href; if (href) leaveThen(() => router.push(href))
   }
   /* (sweep S4 #8) Mark all as read reads the notices; a follow-up that is due is work, not a notice — it stays until the work is done, and the
      snackbar says so instead of "All caught up" beside it. A due row wears "Due", never the unread dot it could not lose. */
@@ -101,8 +118,8 @@ export function NotificationsPanel() {
       () => { router.refresh(); snackbar({ message: due ? `All read — ${due} ${due === 1 ? 'follow-up is' : 'follow-ups are'} due and ${due === 1 ? 'stays' : 'stay'} until done` : 'All caught up' }) },
       () => { setRows(prev); snackbar({ message: 'Couldn’t mark the notifications as read — please try again' }) })
   }
-  const footer = <div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); router.push(withFrom('/settings?section=notifications', pathname)) }}>Notification settings</Button></div>
-  const actions = unread > 0 && rows?.some((r) => !r.derived && r.readAt === null) ? (
+  const footer = <div className={styles.foot}><Button appearance="text" onPress={() => { setOpen(false); leaveThen(() => router.push(withFrom('/settings?section=notifications', pathname))) }}>Notification settings</Button></div>
+  const actions = unread > 0 ? (
     <Tooltip label="Mark all as read"><IconButton icon="check_circle" label="Mark all as read" size={36} variant="bare" iconSize={24} iconWeight={300} onClick={readAll} /></Tooltip>
   ) : undefined
   const content = (
@@ -117,25 +134,33 @@ export function NotificationsPanel() {
             <span className={styles.emptyHelp}>New leads, assignments, stage changes, tasks, approvals, confirmations, signatures and the follow-ups due land here.</span>
           </div>
         ) : (
-          <ul className={styles.list}>
-            {rows.map((r) => {
-              const def = eventDef(r.kind)
-              const sent = r.channels.filter((c) => c !== 'in_app').map((c) => CHANNEL_WORD[c] ?? c)
-              return (
-                <li key={r.id} className={styles.row} data-unread={r.readAt === null || undefined} data-derived={r.derived || undefined} data-testid="notification-row">
-                  <button type="button" className={styles.rowBtn} onClick={() => openRow(r)}>
-                    <span className={styles.glyph} data-kind={r.kind}><Icon name={def?.icon ?? ((r.kind as string) === 'shortcuts_ready' ? 'keyboard' : 'notifications')} size={20} weight={300} /></span>
-                    <span className={styles.text}>
-                      <span className={styles.title}>{r.title}</span>
-                      {r.body ? <span className={styles.sub}>{r.body}</span> : null}
-                      <span className={styles.meta}>{r.derived ? 'Due' : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
-                    </span>
-                    {r.readAt === null && !r.derived ? <span className={styles.dot} aria-label="Unread" /> : null}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          /* (UX audit V8) two groups: the notices (what the badge counts) and what is due (work that stays until it's done, out of the count), each newest first */
+          <>
+            {[{ key: 'notices', label: 'Updates', list: notices }, { key: 'due', label: 'Due', list: due }].filter((g) => g.list.length).map((g) => (
+              <section key={g.key} className={styles.group} aria-label={g.label} data-testid={`notifications-${g.key}`}>
+                {due.length && notices.length ? <h3 className={styles.groupHead} data-menu-label="">{g.label}<span className={styles.groupCount}>{g.list.length}</span></h3> : null}
+                <ul className={styles.list}>
+                  {g.list.map((r) => {
+                    const def = eventDef(r.kind)
+                    const sent = r.channels.filter((c) => c !== 'in_app').map((c) => CHANNEL_WORD[c] ?? c)
+                    return (
+                      <li key={r.id} className={styles.row} data-unread={(r.readAt === null && !r.derived) || undefined} data-derived={r.derived || undefined} data-testid="notification-row">
+                        <button type="button" className={styles.rowBtn} onClick={() => openRow(r)}>
+                          <span className={styles.glyph} data-kind={r.kind}><Icon name={def?.icon ?? ((r.kind as string) === 'shortcuts_ready' ? 'keyboard' : 'notifications')} size={20} weight={300} /></span>
+                          <span className={styles.text}>
+                            <span className={styles.title}>{r.title}</span>
+                            {r.body ? <span className={styles.sub}>{r.body}</span> : null}
+                            <span className={styles.meta}>{r.derived ? <span className={styles.due} data-late={(r.kind !== 'task_due_soon' && (now || r.at) - r.at >= 60_000) || undefined}>{dueLine(r, now || r.at)}</span> : ago(r.at, now || r.at)}{sent.length ? ` · also by ${sent.join(' and ')}` : ''}</span>
+                          </span>
+                          {r.readAt === null && !r.derived ? <span className={styles.dot} aria-label="Unread" /> : null}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            ))}
+          </>
         )}
       </div>
   )

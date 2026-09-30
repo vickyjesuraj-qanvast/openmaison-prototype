@@ -5,6 +5,7 @@ import { DateTimeField } from '@/components/om/date-field'
 import { TextField } from '@/components/om/text-field'
 import { CONTACT_CHANNELS, CONTACT_MODES, OUTCOMES, SCHEDULE } from '@/lib/leads/enums'
 import type { NoteDraft } from '@/lib/leads/note-model'
+import { attachLabel } from '@/lib/leads/stage-data'
 import { displayDateTime, parseInputDateTime } from '@/lib/format'
 import styles from './contact-editor.module.css'
 
@@ -26,8 +27,10 @@ import styles from './contact-editor.module.css'
  * and the editor footer, frame 165, both moved there — the host renders them beside the formatting).
  */
 export function ContactEditor({
-  draft, onChange, onAttach, errors, editing, autoFocus = true, today,
+  draft, onChange, onAttach, errors, editing, autoFocus = true, today, meeting = false,
 }: {
+  /** (UX audit 2026-09-30, T3) A Met-stage meeting log, view only: Where · Date & Time · Remarks (no outcome, no schedule). */
+  meeting?: boolean
   draft: NoteDraft
   onChange: (patch: Partial<NoteDraft>) => void
   /** The Attach row's link — opens the files library (the Tasks Attach files modal) for this log (REG-324). */
@@ -50,7 +53,7 @@ export function ContactEditor({
             <ChoiceChips label="Contacted via" required options={CONTACT_CHANNELS} value={draft.channel}
                          onChange={(v) => onChange({ channel: v })} error={errors.channel} />
             <div className={styles.fieldPair}>
-              <DateTimeField label="Date & Time" value={draft.when} required today={today}
+              <DateTimeField label="Date & Time" value={draft.when} required today={today} defaultNow   /* (UX audit 2026-09-30, L9) */
                              onChange={(v) => onChange({ when: v })} error={errors.when} />
               {/* Opens focused on its first field, as the note editor does — when the user came here to enter data (REG-294). */}
               <TextField label="Outcome" required autoFocus={autoFocus} value={draft.outcome} mode="select" options={OUTCOMES}
@@ -82,7 +85,8 @@ export function ContactEditor({
             {onAttach ? (
               <>
                 <Divider />
-                <SectionRow label="Attach screenshots of your call attempts"
+                {/* (UX audit 2026-09-30, T3) worded by the channel: photos from a visit, screenshots of a call or a message */}
+                <SectionRow label={attachLabel(draft.channel)}
                             action={<LinkButton icon="attach_file" onClick={onAttach}>Attach</LinkButton>} />
               </>
             ) : null}
@@ -90,9 +94,9 @@ export function ContactEditor({
         ) : (
           <div className={styles.rows}>
             <div className={styles.labels}>
-              <span className={styles.label}>Contacted via</span>
+              <span className={styles.label}>{meeting ? 'Where' : 'Contacted via'}</span>
               <span className={styles.label}>Date & Time</span>
-              <span className={styles.label}>Outcome</span>
+              {meeting ? null : <span className={styles.label}>Outcome</span>}
               {scheduled ? <span className={styles.label}>Next follow-up</span> : null}
               {scheduled ? <span className={styles.label}>Preferred mode</span> : null}
               {/* Last row on both sides, so a remark that wraps cannot pull the columns out of step. */}
@@ -101,7 +105,7 @@ export function ContactEditor({
             <div className={styles.values}>
               <span className={styles.value}>{draft.channel ?? ''}</span>
               <span className={styles.value}>{viewDateTime(draft.when)}</span>
-              <span className={styles.value}>{draft.outcome}</span>
+              {meeting ? null : <span className={styles.value}>{draft.outcome}</span>}
               {scheduled ? <span className={styles.value}>{draft.nextStepWhen ? viewDateTime(draft.nextStepWhen) : '--'}</span> : null}
               {scheduled ? <span className={styles.value}>{draft.nextStepMode || '--'}</span> : null}
               {remarks ? <span className={`${styles.value} ${styles.remarksValue}`}>{remarks}</span> : null}

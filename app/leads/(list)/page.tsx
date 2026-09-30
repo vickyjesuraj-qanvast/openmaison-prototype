@@ -20,5 +20,5 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   /* (REG-599) The pickers offer the live sources; a retired source still on a lead stays filterable. */
   const live = liveSourceNames(sourceList.sources)
   const sources = [...live, ...[...new Set(rows.map((r) => r.source))].filter((s) => !live.includes(s))]
-  return <LeadsWorkspace rows={rows} team={team} now={now} deleted={deleted} review={review} urlView={parseView(params.view)} stageMovement={stageMovement} sources={sources} liveSources={live} viewer={viewer} leadReasons={reasonList.reasons} customFields={customFields} memberStats={memberStats} />
+  return <LeadsWorkspace rows={rows} team={team} now={now} deleted={deleted} review={review} urlView={parseView(params.view)} stageMovement={stageMovement} sources={sources} liveSources={live} importSources={sourceList.sources.map((s) => s.name)} viewer={viewer} leadReasons={reasonList.reasons} customFields={customFields} memberStats={memberStats} />
 }

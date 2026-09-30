@@ -107,6 +107,9 @@
 .refRemove button[data-variant]::after { content: ''; position: absolute; inset: -6px; }
 .note { display: flex; gap: var(--om-spacing-2); padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-surface-bg); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }
 .note > :first-child { flex-shrink: 0; color: var(--om-color-primary-default); }
+/* (UX audit V5) a note with its way out beside it (the rough reading's Draw a surface): the words take the room, the DS text button keeps its 36 */
+.note[data-action] { align-items: center; flex-wrap: wrap; padding-block: var(--om-spacing-1); }
+.noteText { flex: 1; min-width: 160px; }
 .lead { display: flex; align-items: center; gap: var(--om-spacing-3); padding: var(--om-spacing-3); border-radius: var(--om-radius-2); background: var(--om-color-primary-variant); color: var(--om-color-on-primary-variant); font: var(--om-type-body-m); }
 .lead b { font-weight: 600; }
 .lead > :first-child { flex-shrink: 0; color: var(--om-color-primary-default); }

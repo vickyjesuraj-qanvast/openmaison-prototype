@@ -46,6 +46,15 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
   rough?: boolean
 }) {
   const SKETCH_WHY = 'Render the sketch into a photo first — then trace what it didn’t mark'
+  /* (UX audit V5) A photo read roughly says so wherever its surfaces are picked — in the list and inside each surface — with the way to do
+     better beside it: Draw a surface (Add a surface, traced), or on one surface Redraw its outline. A tablet's tap on the photo lands inside
+     a surface, so the list's note alone was never seen there. */
+  const roughNote = (target: SurfaceDef | null) => (rough && !sketch ? (
+    <div className={styles.note} data-action="" data-testid="viz-rough"><Icon name="info" size={20} weight={300} />
+      <span className={styles.noteText}>Marked roughly on your photo — check the highlight first.</span>
+      <Button appearance="text" onPress={() => onDraw(target)}>{target ? 'Redraw its outline' : 'Draw a surface'}</Button>
+    </div>
+  ) : null)
   const [open, setOpen] = useState<Record<string, boolean>>({})
   /* (surfaces-13) a group opened by its chevron brings its rows into view, the group's own row kept at the top */
   const listRef = useRef<HTMLDivElement>(null)
@@ -111,6 +120,7 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
              sub={<>{scope.length > 1 ? `${scope.length} surfaces · ` : ''}Now: {nowName}{pickName ? <> · <b>→ {pickName}</b></> : mixed ? <> · <b>→ Mixed ({changing} of {scope.length} changing)</b></> : null}</>}
              actions={sel.kind === 'label' ? <Tooltip label="Redraw its outline on the photo"><IconButton icon="draw" label="Redraw its outline" size={36} variant="bare" iconSize={20} iconWeight={300} onClick={() => onDraw(scope[0]!)} /></Tooltip> : undefined}>
         {scopeChips}
+        {roughNote(sel.kind === 'label' ? scope[0]! : null)}
         <MaterialPicker scope={label} categories={cats} style={style} pick={pick} mixed={mixed} partial={partial} now={now} kept={keptChip} nowEdited={edited} onPick={(id) => onPick(scope.map((s) => s.id), id)} library={library} own={own} recent={recent} onUpload={() => onUpload(cats[0] ?? null)} onRemoveOwn={onRemoveOwn} />
       </Panel>
     )
@@ -128,9 +138,7 @@ export function SurfacesPanel({ surfaces, finishes, pending, resolve, sel, onSel
         </div>
       ) : (
         <>
-        {rough ? (
-          <div className={styles.note} data-testid="viz-rough"><Icon name="info" size={20} weight={300} /><span>Marked roughly on your photo — check the highlight, or <button type="button" className={styles.inlineLink} onClick={() => onDraw(null)}>draw a surface</button> to trace it.</span></div>
-        ) : null}
+        {roughNote(null)}
         <div ref={listRef} className={styles.list} data-testid="viz-surface-list">
           {groups.map(({ g, members }) => {
             const labels = [...new Map(members.map((m) => [m.label.toLowerCase(), m])).values()]

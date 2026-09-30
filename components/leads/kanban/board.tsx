@@ -16,6 +16,7 @@ import { spring } from '@/lib/motion'
 import { highlightMatch, highlightPhone } from '@/components/leads/highlight'
 import type { LeadRow } from '@/lib/leads/queries'
 import { canReturnLead } from '@/lib/leads/stage-policy'
+import { BLANK, stageAge } from '@/lib/leads/row-text'
 import styles from './board.module.css'
 
 type Band = { tone: 'green' | 'yellow'; label: string; stages: readonly Stage[] }
@@ -261,7 +262,8 @@ function KanbanCard({
           {hit(lead.name)}
         </span>
         <span className={styles.cardMetaRight}>
-          <span className={styles.cardAgo}>{relativeTime(lead.updatedAt, new Date(now))}</span>
+          {/* (UX audit L3) The date says what it is: the lead's last update (it read as a bare "2d ago" — taken for the lead's age). */}
+          <span className={styles.cardAgo}>Updated {relativeTime(lead.updatedAt, new Date(now))}</span>
           <span className={styles.kebabWrap} ref={kebabWrap}>
             <Tooltip label="More actions" disabled={menuOpen}>
               <button type="button" className={styles.cardKebab} aria-label={`More actions for ${lead.name}`}
@@ -285,9 +287,11 @@ function KanbanCard({
       </div>
       <div className={styles.cardMeta}>
         <span>{hitPhone(lead.phone)}</span><span>·</span>
-        <span>{hit(moneySGD(lead.budgetMinor))}</span><span>·</span>
+        <span>{lead.budgetMinor > 0 ? hit(moneySGD(lead.budgetMinor)) : BLANK}</span><span>·</span>   {/* (UX audit L8) no budget known reads "--" */}
         <span>{hit(lead.source)}</span>
         {lead.stage === 'On Hold' && lead.onHoldFollowUp ? <><span>·</span><span>On hold till: {hit(displayDate(new Date(lead.onHoldFollowUp)))}</span></> : null}
+        {/* (UX audit L3) how long the lead has sat in this column */}
+        <span>·</span><span data-testid="card-stage-age">{stageAge(lead, now)}</span>
       </div>
       </div>
       {firstTask ? (

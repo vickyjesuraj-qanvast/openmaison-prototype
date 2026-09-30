@@ -124,6 +124,36 @@ function sections(b: ItemsBlock, items: DocItem[], view: ClientView, tradeNotes:
   return { main: main.filter((s) => s.lines.length), optional }
 }
 
+/** (UX audit Q6) One line as the client's phone reads it — the words the print gives it, nothing the print leaves out. */
+export type ReadingLine = { id: string; name: string; description: string | null; qty: number; unit: string | null; unitPriceMinor: number; totalMinor: number; word: string | null; noPrice: boolean; optional: boolean }
+export type ReadingSection = { id: string; label: string; totalMinor: number; lines: ReadingLine[] }
+/**
+ * (UX audit Q6, REG-597's phone cards for the client) The quote's lines as the confirmation page's reading cards: the SAME sections, lines,
+ * hidden-line and optional rules and amounts the printed page draws (`sections`), from the template's Items block and the quote's client
+ * view — so the cards never show what the print would not. `amounts` = what the client sees priced (REG-585). `null` = the template prints
+ * no Items block (the page then shows the print).
+ */
+export function readingSections(design: TemplateDesign, data: RenderCtx['data'], view: ClientView): { sections: ReadingSection[]; optional: ReadingLine[]; amounts: ClientView['amounts'] } | null {
+  const b = design.blocks.find((x): x is ItemsBlock => x.kind === 'items' && !x.hidden)
+  if (!b) return null
+  const cols = b.columns.filter((c) => c.on && view.columns[c.key] !== false)
+  const { main, optional } = sections(b, data.items, view, data.studio.tradeNotes ?? {}, cols.some((c) => c.key === 'optional'))
+  const descriptions = view.descriptions && b.descriptions !== 'none'
+  const line = (l: Line): ReadingLine => {
+    const plain = l.descriptionHtml ? htmlToPlain(l.descriptionHtml) : l.description
+    return {
+      id: l.id, name: l.name, description: descriptions && plain ? (b.descriptions === 'first' ? plain.split('\n')[0] ?? null : plain) : null,
+      qty: l.qty, unit: l.unit, unitPriceMinor: unitPriceMinor(l), totalMinor: l.noPrice ? 0 : lineTotalMinor(l),
+      word: printsWord(l) ? printAsWord(l) : null, noPrice: l.noPrice, optional: l.optional,
+    }
+  }
+  return {
+    sections: main.map((s) => ({ id: s.id, label: s.label, totalMinor: s.totalMinor, lines: s.lines.filter((l) => l.change !== 'removed').map(line) })),
+    optional: b.optionalSection && view.optionalWorks ? optional.map(line) : [],
+    amounts: view.amounts,
+  }
+}
+
 function itemsSlices(b: ItemsBlock, design: TemplateDesign, ctx: RenderCtx, view: ClientView, out: Slice[], tables: Record<string, TableExtras>) {
   const { brand, data, values } = ctx
   const tid = b.id
@@ -391,10 +421,19 @@ function paymentsNode(b: PaymentsBlock, ctx: RenderCtx): ReactNode {
   )
 }
 
-/** (REG-562) Bank details: the issuing entity's bank, account name and number, PayNow — and its QR beside, when uploaded. */
+/** (REG-562) The rows a Bank details block prints for the document's entity — none when the entity has no bank details. */
+export function bankRows(data: RenderCtx['data']): { entity: ReturnType<typeof docEntity>; filled: boolean } {
+  const e = docEntity(data)
+  return { entity: e, filled: !!e && !!(e.bankName || e.accountName || e.accountNo || e.swift || e.payNow || e.payNowQr) }
+}
+
+/** (REG-562) Bank details: the issuing entity's bank, account name and number, PayNow — and its QR beside, when uploaded.
+ *  (UX audit S1) With nothing to print, the block prints nothing on the client's pages — Preview, the confirmation and signing links; the
+ *  "add them in Company › Profile" hint is the template editor's alone (its canvas is interactive), and Preview's readiness names the gap. */
 function bankNode(b: BankBlock, ctx: RenderCtx): ReactNode {
   const { brand, data, values } = ctx
   const e = docEntity(data)
+  if (!ctx.interactive && !bankRows(data).filled) return null
   const style = textCss(b.style, brand)
   // (REG-618, parity Q-24) The studio's own words for each row, and the SWIFT code beside the account.
   const word = (k: keyof typeof BANK_ROW_LABEL) => resolveFields(b.labels?.[k]?.trim() || BANK_ROW_LABEL[k], values)
@@ -404,7 +443,7 @@ function bankNode(b: BankBlock, ctx: RenderCtx): ReactNode {
     <table className={styles.kv} style={{ borderSpacing: `0 ${mm(0.6)}px` }}><tbody>
       {rows.map(([k, v]) => <tr key={k}><td className={styles.kvLabel} style={{ width: mm(30), opacity: .75 }}>{k}</td><td>{v}</td></tr>)}
     </tbody></table>
-  ) : <div className={styles.muted}>{e ? `No bank details for ${e.name} yet — add them in Company › Profile.` : 'No issuing entity.'}</div>
+  ) : ctx.interactive ? <div className={styles.muted}>{e ? `No bank details for ${e.name} yet — add them in Company › Profile.` : 'No issuing entity.'}</div> : null
   const qr = b.qr && e?.payNowQr ? <img src={e.payNowQr} alt="PayNow QR" style={{ width: mm(b.qrWidth), height: mm(b.qrWidth), objectFit: 'contain', flex: '0 0 auto' }} /> : null
   return (
     <div className={styles.textBlock} data-box={b.box !== 'none' ? b.box : undefined} style={{ ...style, ['--tint' as string]: resolveColor('band', brand), ['--ink' as string]: resolveColor('ink', brand) }}>
@@ -475,7 +514,7 @@ export function buildSlices(design: TemplateDesign, ctx: RenderCtx, view: Client
       case 'items': itemsSlices(b, design, ctx, view, out, tables); break
       case 'totals': out.push({ key: b.id, blockId: b.id, node: totalsNode(b, ctx, view, totals) }); break
       case 'payments': if (view.paymentSchedule) out.push({ key: b.id, blockId: b.id, node: paymentsNode(b, ctx) }); break
-      case 'bank': out.push({ key: b.id, blockId: b.id, node: bankNode(b, ctx) }); break
+      case 'bank': { const node = bankNode(b, ctx); if (node) out.push({ key: b.id, blockId: b.id, node }); break }   /* (UX audit S1) an empty block leaves no slice — no gap on the client's page */
       case 'terms': if (view.terms) textSourceSlices(b, ctx, out); break
       case 'notes': if (view.notes) textSourceSlices(b, ctx, out); break
       case 'signature': if (view.signature) out.push({ key: b.id, blockId: b.id, node: <SignatureColumns columns={(b as SignatureBlock).columns} style={b.style} headingStyle={b.headingStyle} lineWeight={b.lineWeight} lineColor={b.lineColor} preamble={b.preamble} ctx={ctx} /> }); break

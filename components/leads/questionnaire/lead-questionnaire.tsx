@@ -9,12 +9,11 @@ import { useSnackbar } from '@/components/om/snackbar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadQuestionsData } from '@/lib/leads/questions'
 import { summarise } from '@/lib/leads/question-model'
-import { answerQuestion } from '@/app/leads/questions-actions'
+import { answerQuestion, askClientQuestions } from '@/app/leads/questions-actions'
 import { QuestionCard } from './question-card'
 import { SummaryCard } from './summary-card'
 import { QuestionnaireEmpty } from './questionnaire-empty'
 import { AskClientDialog } from './ask-client-dialog'
-import { askClient } from '@/app/leads/portal-actions'
 import { addStudioQuestions } from '@/app/leads/questions-actions'
 import styles from './lead-questionnaire.module.css'
 
@@ -30,7 +29,7 @@ import styles from './lead-questionnaire.module.css'
  * "Send via WhatsApp" (REG-288) → "Notification sent to <lead>" (REG-188).
  */
 export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
-  const { questions, leadName, now, askedAt, leadId, bankCount } = data
+  const { questions, leadName, now, askedAt, leadId, bankCount, askedOn } = data
   const snackbar = useSnackbar()
   const router = useRouter()
   const { fail } = useRun()
@@ -49,12 +48,19 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
     catch { fail('save the answer') }
     finally { setSaving(false) }
   }
-  /* (REG-609, parity Q-22) The ask is recorded on the portal link, then the notice — "Client asked on …" joins the summary. */
-  const send = () => {
+  /* (REG-609, parity Q-22) The ask is recorded on the portal link, then the notice — "Client asked on …" joins the summary.
+     (UX audit 2026-09-30, T12) It names what it asked: the ticked questions go on the record (each card then wears "Asked · 30 Sep") and the
+     snackbar says how many went to whom. */
+  const unanswered = questions.filter((q) => !q.answeredBy).map((q) => ({ id: q.id, text: q.text }))
+  const send = (ids?: string[]) => {
     setAskOpen(false)
+    const list = ids ?? unanswered.map((q) => q.id)
     void (async () => {
-      try { await askClient(leadId); snackbar({ message: `Notification sent to ${leadName}` }); router.refresh() }
-      catch { snackbar({ message: 'Couldn’t record the ask — please try again' }) }
+      try {
+        const r = await askClientQuestions(leadId, list)
+        if (typeof r !== 'number') { fail('ask the client', r.error); return }
+        snackbar({ message: `${r === 1 ? '1 question' : `${r} questions`} sent to ${leadName}` }); router.refresh()
+      } catch { fail('record the ask') }
     })()
   }
 
@@ -91,6 +97,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
                 onCancel={() => { setAnswering((cur) => (cur === q.id ? null : cur)) }}
                 onSave={(value: string | string[]) => { void saveAnswer(q.id, value) }}
                 saving={saving && answering === q.id}
+                askedAt={askedOn[q.id] ?? null}   /* (T12) the card says it was asked, and when */
               />
             ))}
           </div>
@@ -102,7 +109,7 @@ export function LeadQuestionnaire({ data }: { data: LeadQuestionsData }) {
         </div>
       )}
 
-      <AskClientDialog open={askOpen} leadName={leadName} onClose={() => setAskOpen(false)} onSend={send} />
+      <AskClientDialog open={askOpen} leadName={leadName} onClose={() => setAskOpen(false)} onSend={send} questions={unanswered} />
     </div>
   )
 }

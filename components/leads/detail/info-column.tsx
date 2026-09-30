@@ -5,10 +5,10 @@ import { displayCustomValue, type CustomFieldDef, type CustomValues } from '@/li
 import { Button } from '@/components/ds'
 import { Sheet } from '@/components/om/sheet'
 import { setFlagPref, useFlagPref } from '@/lib/prefs'
-import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
+import { MOBILE, TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import type { Member } from '@/lib/db/schema'
 import type { LeadRow } from '@/lib/leads/queries'
-import { displayDate, groupDigits, money, phoneLocal } from '@/lib/format'
+import { displayDate, groupDigits, money, phoneDigits, phoneLocal } from '@/lib/format'
 import { Avatar } from '@/components/om/avatar'
 import { Icon } from '@/components/om/icon'
 import { Tooltip } from '@/components/om/tooltip'
@@ -75,7 +75,7 @@ export type InfoColumnProps = {
   /** (REG-609, parity Q-22) The portal link's invite stamp — the "Portal" row. */
   portal?: { invitedAt: Date | null } | null
   lead: LeadRow
-  /** The studio's members — resolves the Owner row ("You" = the member with `isYou`). Falls back to `lead.assignees`. */
+  /** The studio's members. (UX audit 2026-09-30, L7) The Owner row reads the lead's own assignees now; kept for the callers. */
   team?: Member[]
   onEdit: () => void
   onAssign: (anchor: HTMLElement) => void
@@ -88,7 +88,7 @@ export type InfoColumnProps = {
 const DASH = '--'
 
 export function InfoColumn({
-  lead, team, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
+  lead, onEdit, onAssign, onAssigneeMenu, onCopy, onWhatsApp, onDirections, portal = null, customFields = [], customValues = {},
 }: InfoColumnProps) {
   /* (REG-612) The Custom fields section — after Other info, on the desktop column and the phone's sheet alike. */
   const customSection = customFields.length ? (
@@ -102,9 +102,13 @@ export function InfoColumn({
     </>
   ) : null
   const assignees = lead.assignees
-  // Owner: the mock (858:24806) shows "You" even before anyone is assigned — the signed-in member (isYou) owns the studio's leads.
-  const youKnown = (team ?? []).some((m) => m.isYou) || assignees.some((m) => m.isYou)
-  const owner = youKnown ? 'You' : assignees[0]?.name ?? DASH
+  /* (UX audit 2026-09-30, L7 — supersedes the mock 858:24806's standing "You") The Owner is the lead's first assigned member — "You" only
+     when that is the signed-in member — and "--" until someone is assigned, the owner the New gate asks for ("Assign a member first").
+     It used to read "You" on every lead, beside Members showing only Sarah. */
+  const first = assignees[0]
+  const owner = first ? (first.isYou ? 'You' : first.name) : DASH
+  /* (UX audit 2026-09-30, L11) On a touch screen the number calls: a tel: link beside Copy and WhatsApp (the +65 the column leaves implied). */
+  const touch = useMediaQuery(TOUCH_TABLET)
 
   /* (REG-304) Whole-column state — see the file comment. */
   const mobile = useMediaQuery(MOBILE)
@@ -173,7 +177,9 @@ export function InfoColumn({
         <div className={styles.contact}>
           <div className={styles.contactRow}>
             {/* eight unbroken digits (REG-162) */}
-            <span className={styles.contactText}>{phoneLocal(lead.phone)}</span>
+            {touch && phoneDigits(lead.phone)
+              ? <a className={`${styles.contactText} ${styles.callLink}`} href={`tel:+65${phoneDigits(lead.phone)}`} aria-label={`Call ${phoneLocal(lead.phone)}`}>{phoneLocal(lead.phone)}</a>
+              : <span className={styles.contactText}>{phoneLocal(lead.phone)}</span>}
             <Tooltip label="Copy phone number">
               <button type="button" className={styles.iconBtn} data-size="16" aria-label="Copy phone number"
                       onClick={() => onCopy('phone', lead.phone)}>
@@ -248,7 +254,7 @@ export function InfoColumn({
         <KVList>
           <Row k="Stage" text={lead.stage} />
           <Row k="Source" text={lead.source} />
-          <Row k="Budget (S$)" text={money(lead.budgetMinor)} />
+          <Row k="Budget (S$)" text={lead.budgetMinor > 0 ? money(lead.budgetMinor) : DASH} />   {/* (UX audit 2026-09-30, L8) unknown = "--" */}
           <Row k="Created" text={displayDate(lead.createdAt)} />
           {/* (REG-607, parity Q-35) 1.0's client IC and customer reference, printed on the quotes. */}
           <Row k="NRIC / FIN" text={lead.icNumber ?? DASH} />
@@ -325,7 +331,7 @@ export function InfoColumn({
               <KVList>
                 <Row k="Stage" text={lead.stage} />
                 <Row k="Source" text={lead.source} />
-                <Row k="Budget (S$)" text={money(lead.budgetMinor)} />
+                <Row k="Budget (S$)" text={lead.budgetMinor > 0 ? money(lead.budgetMinor) : DASH} />   {/* (UX audit 2026-09-30, L8) unknown = "--" */}
                 <Row k="Created" text={displayDate(lead.createdAt)} />
               </KVList>
             </Section>

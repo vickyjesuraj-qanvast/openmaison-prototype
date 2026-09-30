@@ -86,15 +86,17 @@ export async function updatePriceBookItem(id: string, patch: Partial<PriceBookIt
   if (block) return refuse(block)
   return writeItem(cur, patch, note ?? null, v)
 }
-/** The edit itself, once the rule has let it through (import, bulk changes and their Undo check the rule once for every item). */
-async function writeItem(cur: PriceBookItem, patch: Partial<PriceBookItemInput>, note: string | null, v: { id: string | null }): Promise<PriceBookItem> {
+/** The edit itself, once the rule has let it through (import, bulk changes and their Undo check the rule once for every item). `logged`
+    collects the History row it wrote (UX audit S7: an import's Undo puts those changes back). */
+async function writeItem(cur: PriceBookItem, patch: Partial<PriceBookItemInput>, note: string | null, v: { id: string | null }, logged?: string[]): Promise<PriceBookItem> {
   const id = cur.id
   const keep = <K extends keyof PriceBookItemInput>(k: K, fallback: PriceBookItemInput[K]) => (patch[k] === undefined ? fallback : patch[k])
   /* a new plain description without its formatted copy drops the old formatting — the plain words are what was typed */
   const html = patch.descriptionHtml !== undefined ? patch.descriptionHtml : patch.description !== undefined ? null : cur.descriptionHtml
   const next = row(id, { name: patch.name ?? cur.name, description: keep('description', cur.description), descriptionHtml: html, kind: patch.kind ?? cur.kind, unit: patch.unit ?? cur.unit, costMinor: patch.costMinor ?? cur.costMinor, markupMinor: patch.markupMinor ?? cur.markupMinor, category: keep('category', cur.category), vendor: keep('vendor', cur.vendor), link: keep('link', cur.link), thumb: keep('thumb', cur.thumb) }, new Date(), cur.createdAt)
   await db.update(priceBookItems).set({ name: next.name, description: next.description, descriptionHtml: next.descriptionHtml, kind: next.kind, unit: next.unit, costMinor: next.costMinor, markupMinor: next.markupMinor, category: next.category, vendor: next.vendor, link: next.link, thumb: next.thumb, updatedAt: next.updatedAt, updatedBy: v.id }).where(eq(priceBookItems.id, id))
-  await logBookChange(id, 'edited', v.id, diffItem(cur, next), note, next.updatedAt)
+  const changeId = await logBookChange(id, 'edited', v.id, diffItem(cur, next), note, next.updatedAt)
+  if (changeId && logged) logged.push(changeId)
   touch()
   const [r] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, id))
   return r!
@@ -117,7 +119,8 @@ export async function duplicatePriceBookItem(id: string): Promise<string | Refus
     (REG-653, price book parity Q-13) At most 500 rows; a row that repeats an earlier one (the same name from the same vendor) is
     dropped; a row that matches a live item updates its price (and whatever else the row brings), is added as new, or is skipped —
     the one choice the preview asked; every write is kept in History; an unknown category joins the trades. */
-export async function importPriceBookItems(lines: PasteLine[], vendor?: string | null, onMatch: 'update' | 'new' | 'skip' = 'update'): Promise<{ added: number; updated: number; skipped: number } | Refusal> {
+export type ImportBatch = { added: string[]; changes: string[] }
+export async function importPriceBookItems(lines: PasteLine[], vendor?: string | null, onMatch: 'update' | 'new' | 'skip' = 'update', defaultKind?: string | null): Promise<{ added: number; updated: number; skipped: number; batch: ImportBatch; touched: string[] } | Refusal> {
   const { v, block } = await runner(); if (block) return refuse(block)
   const now = new Date()
   const key = (name: string, ven: string | null | undefined) => `${name.trim().toLowerCase()}|${(ven ?? '').trim().toLowerCase()}`
@@ -127,6 +130,10 @@ export async function importPriceBookItems(lines: PasteLine[], vendor?: string |
   const seen = new Set<string>()
   let skipped = 0, updated = 0
   const fresh: ReturnType<typeof row>[] = []
+  /* (UX audit S7) What this import did, for its Undo — the rows it added and the History rows its updates wrote — and every item it touched
+     (the list's "just imported" chip). A row without a Kind takes the one the member picked for the file (default Purchase). */
+  const changes: string[] = [], updatedIds: string[] = []
+  const kindFor = (k: string | undefined) => k ?? (isItemKind(defaultKind) ? defaultKind : 'purchase')
   for (const [i, l] of lines.filter((x) => x.name.trim()).slice(0, 500).entries()) {
     const ven = l.vendor?.trim().slice(0, 80) || vendor || null   // (REG-623) a mapped Vendor column wins over the one typed for all
     const k = key(l.name, ven)
@@ -136,11 +143,12 @@ export async function importPriceBookItems(lines: PasteLine[], vendor?: string |
     const hit = shelf.get(k)
     if (hit && onMatch === 'skip') { skipped++; continue }
     if (hit && onMatch === 'update') {
-      await writeItem(hit, { ...(l.costMinor !== undefined ? { costMinor: l.costMinor } : {}), ...(l.markupMinor !== undefined ? { markupMinor: l.markupMinor } : {}), ...(unit ? { unit } : {}), ...(l.description ? { description: l.description } : {}), ...(l.category ? { category: l.category } : {}), ...(l.kind ? { kind: l.kind } : {}), ...(l.link ? { link: l.link } : {}) }, 'Imported', v)
+      await writeItem(hit, { ...(l.costMinor !== undefined ? { costMinor: l.costMinor } : {}), ...(l.markupMinor !== undefined ? { markupMinor: l.markupMinor } : {}), ...(unit ? { unit } : {}), ...(l.description ? { description: l.description } : {}), ...(l.category ? { category: l.category } : {}), ...(l.kind ? { kind: l.kind } : {}), ...(l.link ? { link: l.link } : {}) }, 'Imported', v, changes)
+      updatedIds.push(hit.id)
       updated++
       continue
     }
-    fresh.push(row(randomUUID(), { name: l.name, description: l.description ?? null, kind: l.kind ?? 'purchase', unit: unit ?? 'Pieces', costMinor: l.costMinor ?? 0, markupMinor: l.markupMinor ?? 0, category: l.category ?? null, vendor: ven, link: l.link ?? null }, new Date(now.getTime() + i)))
+    fresh.push(row(randomUUID(), { name: l.name, description: l.description ?? null, kind: kindFor(l.kind), unit: unit ?? 'Pieces', costMinor: l.costMinor ?? 0, markupMinor: l.markupMinor ?? 0, category: l.category ?? null, vendor: ven, link: l.link ?? null }, new Date(now.getTime() + i)))
   }
   const rows = fresh.map((r) => ({ ...r, status: 'live', createdBy: v.id, updatedBy: v.id }))
   if (rows.length) {
@@ -151,7 +159,47 @@ export async function importPriceBookItems(lines: PasteLine[], vendor?: string |
   const cats = [...new Set(lines.map((l) => l.category?.trim()).filter((c): c is string => !!c))]
   if (cats.length) { try { const { addTrades } = await import('@/app/settings/actions'); await addTrades(cats) } catch { /* the trades are the Owners' and Admins' (REG-646) */ } }
   touch()
-  return { added: rows.length, updated, skipped }
+  return { added: rows.length, updated, skipped, batch: { added: rows.map((r) => r.id), changes }, touched: [...rows.map((r) => r.id), ...updatedIds] }
+}
+
+/** (UX audit S7) An import's Undo: the items it added leave the book (for good — nothing quotes them yet; one a quote took meanwhile goes to
+    Deleted Items instead), and every item it updated takes back the values its History row says it had, field by field, where nothing has
+    changed them since (History keeps both steps). Owners and Admins, as the import. */
+export async function undoPriceBookImport(batch: ImportBatch): Promise<{ removed: number; restored: number } | Refusal> {
+  const { v, block } = await runner(); if (block) return refuse(block)
+  const added = (batch?.added ?? []).filter((x): x is string => typeof x === 'string').slice(0, 1000)
+  const changeIds = (batch?.changes ?? []).filter((x): x is string => typeof x === 'string').slice(0, 1000)
+  let removed = 0, restored = 0
+  if (added.length) {
+    const used = await inUse(added)
+    const gone = added.filter((id) => !used.has(id)), kept = added.filter((id) => used.has(id))
+    if (gone.length) {
+      await db.delete(priceBookChanges).where(inArray(priceBookChanges.itemId, gone))
+      await db.delete(priceBookItems).where(inArray(priceBookItems.id, gone))
+    }
+    if (kept.length) {
+      const now = new Date()
+      await db.update(priceBookItems).set({ deletedAt: now, updatedAt: now, updatedBy: v.id }).where(inArray(priceBookItems.id, kept))
+      for (const id of kept) await logBookChange(id, 'deleted', v.id, null, 'Import undone', now)
+    }
+    removed = added.length
+  }
+  if (changeIds.length) {
+    const logs = await db.select().from(priceBookChanges).where(inArray(priceBookChanges.id, changeIds))
+    for (const log of logs) {
+      const [cur] = await db.select().from(priceBookItems).where(eq(priceBookItems.id, log.itemId))
+      if (!cur || cur.deletedAt) continue
+      let diff: Record<string, [unknown, unknown]> = {}
+      try { diff = log.changes ? JSON.parse(log.changes) as Record<string, [unknown, unknown]> : {} } catch { diff = {} }
+      const back: Record<string, unknown> = {}
+      for (const [field, [before, after]] of Object.entries(diff)) if (((cur as Record<string, unknown>)[field] ?? null) === (after ?? null)) back[field] = before
+      if (!Object.keys(back).length) continue
+      await writeItem(cur, back as Partial<PriceBookItemInput>, 'Import undone', v)
+      restored++
+    }
+  }
+  touch()
+  return { removed, restored }
 }
 
 /** (REG-653, price book parity Q-15) The list's bulk changes: a category, a vendor, or a markup as a share of each item's cost (the item is
@@ -226,7 +274,7 @@ async function proposeNotice(itemId: string, by: string | null) {
   const { notify } = await import('@/lib/notifications/emit')
   const { studioRunnerIds } = await import('@/lib/notifications/queries')
   const [it] = await db.select({ name: priceBookItems.name }).from(priceBookItems).where(eq(priceBookItems.id, itemId))
-  await notify('price_book_proposed', await studioRunnerIds(), { title: `${await nameOf(by)} proposed “${it?.name ?? 'an item'}” for My Items`, body: 'Approve it, or send it back with a note', href: '/company/price-book', actorId: by })
+  await notify('price_book_proposed', await studioRunnerIds(), { title: `${await nameOf(by)} proposed “${it?.name ?? 'an item'}” for My Items`, body: 'Approve it, or send it back with a note', href: `/company/price-book?open=${encodeURIComponent(itemId)}`, actorId: by })   // (UX audit V11) the item itself, not the grid (REG-709's ?open=)
 }
 export async function approvePriceBookItem(id: string): Promise<void | Refusal> {
   const { v, block } = await runner(); if (block) return refuse(block)
@@ -236,7 +284,7 @@ export async function approvePriceBookItem(id: string): Promise<void | Refusal> 
   await db.update(priceBookItems).set({ status: 'live', reviewedBy: v.id, reviewedAt: now, reviewNote: null, updatedAt: now, updatedBy: v.id }).where(eq(priceBookItems.id, id))
   await logBookChange(id, 'approved', v.id, null, null, now)
   const { notify } = await import('@/lib/notifications/emit')
-  if (cur.createdBy) await notify('price_book_answered', [cur.createdBy], { title: `${await nameOf(v.id)} approved “${cur.name}” — it’s in My Items for the studio`, href: '/company/price-book', actorId: v.id })
+  if (cur.createdBy) await notify('price_book_answered', [cur.createdBy], { title: `${await nameOf(v.id)} approved “${cur.name}” — it’s in My Items for the studio`, href: `/company/price-book?open=${encodeURIComponent(cur.id)}`, actorId: v.id })   // (UX audit V11) the item itself
   touch()
 }
 export async function sendBackPriceBookItem(id: string, note: string): Promise<void | Refusal> {

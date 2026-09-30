@@ -30,6 +30,13 @@
 .label { display: block; min-width: 0; font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .label b { color: var(--om-color-on-surface-default); font-weight: 600; }
 .badges { position: absolute; bottom: var(--om-spacing-1); right: var(--om-spacing-1); max-width: calc(100% - 2 * var(--om-spacing-1)); display: inline-flex; justify-content: flex-end; gap: 2px; }
+/* (UX audit V1) the marks sit beside the tile's button now (the thumbnail is their frame); a press on one shows the version, the notes open */
+.badges > * { cursor: pointer; }
+button.badge[data-notes] { border: 0; cursor: pointer; font: var(--om-type-caption-s); color: var(--om-color-primary-default); transition: background-color var(--motion-hover); }
+button.badge[data-notes]::before { content: ''; position: absolute; inset: -8px -4px; }
+button.badge[data-notes] { position: relative; }
+button.badge[data-notes]:hover, button.badge[data-notes][aria-pressed='true'] { background: var(--om-color-primary-variant); }
+button.badge[data-notes]:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 1px; }
 .mark { display: inline-flex; }
 .badge, .fav, .more { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 5px; border-radius: var(--om-radius-full); background: var(--om-color-surface-default); color: var(--om-color-on-surface-secondary); font: var(--om-type-caption-s); box-shadow: var(--om-elevation-level-1); }
 .fav { color: var(--om-color-tertiary-red-default); }
@@ -62,7 +69,7 @@
   /* (F139 · F174) the end stays reserved for the Maison AI button — the editor sets --viz-strip-end (72px narrow, 96px otherwise). */
   .strip { padding: var(--om-spacing-2) calc(var(--viz-strip-end, var(--om-spacing-3)) + var(--viz-inset-r, 0px)) var(--om-spacing-2) calc(var(--om-spacing-3) + var(--viz-inset-l, 0px)); gap: var(--om-spacing-3); } .head { width: auto; } .count { font: var(--om-type-subtitle-m); } .tile { flex-basis: 96px; width: 96px; } .open { width: 96px; height: 60px; }
   /* one mark and "+n" on a 96px tile */
-  .mark[data-rank='1'] { display: none; } .more[data-at='wide'] { display: none; } .more[data-at='narrow'] { display: inline-flex; }
+  .mark[data-rank='1']:not([data-notes]) { display: none; } .more[data-at='wide'] { display: none; } .more[data-at='narrow'] { display: inline-flex; }   /* (UX audit V1) the client's notes stay pressable */
 }
 
 /* (wave E · E3) A phone held sideways: the versions are a slim row of small tiles — the picture keeps the height. The captions step aside

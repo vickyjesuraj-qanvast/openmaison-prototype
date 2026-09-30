@@ -85,6 +85,7 @@
 .meta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Kebab: bare more_vert 24 on the name row's right (the Files grid's tile kebab), a sibling of the action. */
 .kebab { position: absolute; right: 12px; bottom: 28px; display: inline-flex; }
+.tile[data-starts] .kebab { bottom: 48px; }   /* (UX audit Q8) the caption's "Starts with …" line under the name: the kebab stays on the name row */
 
 /* MORE WAYS TO START: one bordered list r8; rows 64 = p12/16 · 36×36 r4 glyph tile with a 20 glyph · text · trailing 24 glyph. */
 .list { border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-2); overflow: hidden; }

@@ -16,7 +16,7 @@ import { mm, PAPER_MM, ITEM_COLUMN_LABEL, type ItemsColumnKey } from '@/lib/temp
 import { docTotals } from '@/lib/templates/data'
 import { money2, pct } from '@/lib/quotes/math'
 import { displayDate } from '@/lib/format'
-import { readiness, type ReadinessSection } from '@/lib/templates/readiness'
+import { readiness, type ReadinessIssue, type ReadinessSection } from '@/lib/templates/readiness'
 import { clientViewDiff, type ClientView, AMOUNTS_LABEL } from '@/lib/templates/client-view'
 import { fallbackDesignClient } from '@/lib/templates/presets'
 import type { QuotePreviewData } from '@/lib/templates/queries'
@@ -25,14 +25,18 @@ import { Dialog } from '@/components/om/dialog'
 import { TABLET_DOWN, useMediaQuery } from '@/lib/breakpoint'
 import { Drawer } from '@/components/om/drawer'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
-import { sendQuote } from '@/app/quotes/actions'
+import { SendButton } from '@/components/quotes/send/send-button'
+import { useQuoteSend } from '@/components/quotes/send/use-quote-send'
+import type { QuoteStatus } from '@/lib/leads/quote-filters'
+import type { QuoteApproval } from '@/lib/settings/types'
+import header from '@/components/quotes/editor/editor-header.module.css'
 import { setQuoteTextVisible } from '@/app/quotes/text-actions'
 import { TemplateDocument, type Paginated } from '@/components/templates/render/document'
 import { PageReveal } from '@/components/shell/page-reveal'
 import { PreviewSkeleton } from './preview-skeleton'
 import styles from './quote-preview.module.css'
 
-const SECTION_ANCHOR: Record<ReadinessSection, string> = { general: 'general', items: 'items', payments: 'payment', terms: 'terms', notes: 'notes', signature: 'signature' }
+const SECTION_ANCHOR: Record<ReadinessSection, string> = { general: 'general', items: 'items', payments: 'payment', terms: 'terms', notes: 'notes', signature: 'signature', bank: 'general' }
 const VIEW_ROWS: { key: keyof Omit<ClientView, 'columns' | 'hiddenItems' | 'amounts'>; label: string; help: string }[] = [
   { key: 'descriptions', label: 'Item descriptions', help: 'The lines under each item name' },
   { key: 'photos', label: 'Item photos', help: 'Thumbnails beside the items' },
@@ -50,7 +54,7 @@ const VIEW_ROWS: { key: keyof Omit<ClientView, 'columns' | 'hiddenItems' | 'amou
  * quote's own "What your client sees" switches — plus what is still missing before it is sent, an internal copy with the
  * cost and margin the client never sees, Copy link, Download PDF (the same pages, printed) and Send. `?print=1` prints.
  */
-export function QuotePreview({ data, from, print }: { data: QuotePreviewData; from?: string; print: boolean }) {
+export function QuotePreview({ data, from, print, send: sendCtx }: { data: QuotePreviewData; from?: string; print: boolean; /** (UX audit Q2) what the quote's Send needs: the studio's approval rule and whether this member approves */ send: { approval: QuoteApproval; canApprove: boolean } }) {
   const { quote, template, brand, baseView, kept } = data   /* (REG-565) `kept` = an earlier version, read-only */
   const router = useRouter()
   const snackbar = useSnackbar()
@@ -93,14 +97,19 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
   const printed = useRef(false)
   useEffect(() => { if (print && pages > 0 && !printed.current) { printed.current = true; const t = setTimeout(() => window.print(), 300); return () => clearTimeout(t) } }, [print, pages])
 
-  const canSend = status === 'Draft' || status === 'Approved'
-  const send = async () => {
-    setBusy(true)
-    try { const r = await sendQuote(quote.id); setStatus(r.status); snackbar({ message: `Quote marked ${r.status}` }); router.refresh() }
-    catch { snackbar({ message: 'Couldn’t send the quote — please try again' }) }
-    finally { setBusy(false) }
-  }
   const back = withFrom(`/quotes/${quote.id}`, from)
+  const here = withFrom(`/quotes/${quote.id}/preview`, from)
+  /* (UX audit S1) An issue fixed outside the quote opens its own page (Company › Profile), with the way back here; the rest open the editor at the section. */
+  const openIssue = (i: ReadinessIssue) => router.push(i.href ? withFrom(i.href, here) : `${back}${back.includes('?') ? '&' : '?'}section=${SECTION_ANCHOR[i.section]}`)
+  /* (UX audit Q2, extends REG-657) Preview's main button is the editor's Send ▾ — the same menu, the same dialogs; "Mark as sent" is its
+     last row now, "Sent it another way". */
+  const quoteSend = useQuoteSend({
+    quote: { id: quote.id, number: quote.number, leadId: quote.leadId, version: quote.version }, status: status as QuoteStatus,
+    lead: { name: data.data.client.name, phone: data.data.client.phone }, studioName: data.data.studio.name,
+    approval: sendCtx.approval, canApprove: sendCtx.canApprove, readiness: ready, onShowIssue: openIssue,
+    onChange: (c) => { setStatus(c.status); router.refresh() },
+    contractFrom: here,
+  })
   const changed = clientViewDiff(view, baseView).length
   const columns = (Object.keys(view.columns) as ItemsColumnKey[]).filter((k) => baseView.columns[k] || view.columns[k])
 
@@ -137,9 +146,10 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
           <Button appearance="outlined" variant="secondary" iconStart={<Icon name="download" size={20} />} onPress={() => window.print()}>Download PDF</Button>
           {kept ? <Button onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Current version</Button>
             /* (sweep S1) this press sends nothing — no link, no WhatsApp — it records that the quote went out; the editor's Send ▾ sends */
-            : canSend ? <Tooltip label="Records that the quote went to the client — send its link from the editor’s Send"><span><Button onPress={() => { void send() }} isDisabled={busy || !ready.ready}>Mark as sent</Button></span></Tooltip> : <Tooltip label={`Quote is ${status}`}><span><Button isDisabled>Mark as sent</Button></span></Tooltip>}
+            : <span className={header.anchor}><SendButton kind={quoteSend.kind} canSend={quoteSend.canSend && !busy} hint={quoteSend.hint} status={status} onSend={quoteSend.send} /></span>}
         </div>
       </header>
+      {quoteSend.dialogs}
       <Dialog open={pickerOpen} onClose={() => { setPickerOpen(false); setPickedTpl(null) }} title="Choose a template" size="modal" width={1200} portal subtitle="The quote keeps its lines; the template decides how they print."
               footer={<><Button variant="secondary" appearance="outlined" onPress={() => { setPickerOpen(false); setPickedTpl(null) }}>Cancel</Button><Button onPress={() => { if (pickerSel) applyTemplate(pickerSel) }} isDisabled={!pickerSel || pickerSel === (template?.id ?? null)}>{pickerSel && pickerSel === template?.id ? 'On this quote' : 'Use this template'}</Button></>}>
         <TemplatePicker data={data.picker} picked={pickerSel} onPick={setPickedTpl} currentId={template?.id ?? null} now={data.now} onUse={applyTemplate} />
@@ -155,7 +165,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
               </div>
               <ul className={styles.issues}>
                 <li className={styles.issue}>
-                  <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was {kept.status} at {money2(kept.amountMinor)}{kept.note ? ` · ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
+                  <span className={styles.issueText}><b>Kept on {displayDate(kept.at)}{kept.by ? ` by ${kept.by.name}` : ''}</b> <span className={styles.issueDetail}>It was {kept.status} at {money2(kept.amountMinor)}{kept.note ? ` · the client’s request: ${kept.note}` : ''}. Version {kept.current} is the one being worked on.</span></span>
                   <Button appearance="text" onPress={() => router.push(withFrom(`/quotes/${quote.id}/preview`, from))}>Open version {kept.current}</Button>
                 </li>
               </ul>
@@ -171,7 +181,7 @@ export function QuotePreview({ data, from, print }: { data: QuotePreviewData; fr
                 {ready.issues.map((i) => (
                   <li key={i.key} className={styles.issue} data-blocking={i.blocking || undefined}>
                     <span className={styles.issueText}><b>{i.label}</b> <span className={styles.issueDetail}>{i.detail}</span></span>
-                    <Button appearance="text" onPress={() => router.push(`${back}${back.includes('?') ? '&' : '?'}section=${SECTION_ANCHOR[i.section]}`)}>Open</Button>
+                    <Button appearance="text" onPress={() => openIssue(i)}>Open</Button>
                   </li>
                 ))}
               </ul>

@@ -82,16 +82,18 @@
 .menuIcon > :first-child { color: var(--om-color-on-surface-secondary); }
 /* (F155) The narrowest phones (the 320 gate): one card a row — two would cut every name to a few letters. */
 @media (max-width: 359px) { .cards.cards { grid-template-columns: minmax(0, 1fr); } }
+/* (wave E, gallery-4 → UX audit S10) A chip beside the name (Default · Studio default · Proposed) wraps under it when the two don't fit —
+   the name keeps the card's width, never "Default: 1…" / "Def / au…"; words break only when one alone is wider than the card (break-word,
+   not anywhere). The phone's rule, now at every width. */
+.cardNameRow.cardNameRow { height: auto; min-height: 20px; align-items: flex-start; flex-wrap: wrap; row-gap: var(--om-spacing-1); }
+.cardName.cardName { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* (verify round 1, F117) A phone's card gives its words the card's width: the kebab rides the thumb's top-right corner (the cardSel's chip,
    as the folder card's sits at its corner), the name takes up to two lines and the second line two — "Showroom — kitchen concept" and the
    render count read whole at 390. A ribbon on a card that takes a tick drops to the thumb's foot, out of the kebab's corner. */
 @media (max-width: 767px) {
   .cardKebab.cardKebab { top: var(--om-spacing-2); right: var(--om-spacing-2); height: auto; z-index: 2; border-radius: var(--om-radius-1); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); }
   .cardBody.cardBody { padding-right: var(--om-spacing-4); }
-  /* (wave E, gallery-4) A chip beside the name (Default · Studio default · Terms) wraps under it when the two don't fit — the name keeps
-     the card's width, never "Def / au…"; words break only when one alone is wider than the card (break-word, not anywhere). */
-  .cardNameRow.cardNameRow { height: auto; align-items: flex-start; flex-wrap: wrap; row-gap: var(--om-spacing-1); }
-  .cardName.cardName, .cardMeta.cardMeta { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .cardMeta.cardMeta { white-space: normal; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
   .cards.cards > [data-selectable] [class*='ribbon'] { top: auto; bottom: var(--om-spacing-2); left: var(--om-spacing-2); right: auto; }
 }
 /* (verify round 1) The list's sortable heads keep their 44px touch box inside the 56 head — the 10 either side given back (the tasks table's
@@ -172,7 +174,7 @@
 .gBox { display: inline-flex; flex-shrink: 0; width: 36px; height: 36px; }
 .gIcon { width: 36px; }
 .gPill { width: 114px; }
-.gNew { width: 86px; }
+.gNew { width: var(--g-new, 86px); }   /* (UX audit S12) a plain New button names its thing: --g-new */
 .gSearch { width: 280px; }
 .gView { width: 72px; }
 .gLine { vertical-align: middle; }
@@ -191,3 +193,12 @@
 
 /* (audit 2026-09-26) a ghost card's second foot line (Materials: quoted as · edited by) */
 .gFoot2 { display: block; margin: 4px 0; }   /* 4 + 12 + 4 = the 20px line the real foot takes */
+
+/* (UX audit S8) A list-view ghost: the table from 768 up, the cards on a phone — the page's own rule (a phone is always the grid). */
+.gListOnly { display: contents; }
+.gGridOnly.gGridOnly { display: none; }
+@media (max-width: 767px) { .gListOnly { display: none; } .gGridOnly.gGridOnly { display: flex; } }
+/* (UX audit S8) the list ghost's selection box: the DS checkbox's 18 square inside its 24 box */
+.gCheck { margin: 3px; flex-shrink: 0; }
+/* (UX audit S8) the list ghost's Column settings box: a phone has the cards, and no Column settings */
+@media (max-width: 767px) { .gDeskOnly.gDeskOnly { display: none; } }

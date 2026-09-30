@@ -18,11 +18,13 @@ import type { Contract } from '@/lib/db/schema'
 import { displayDate } from '@/lib/format'
 import { CONTRACT_STATUSES, type ContractStatus } from '@/lib/leads/contract-filters'
 import { CLIENT_SIGNED_RULE, UNSIGN_ROLE_RULE } from '@/lib/contracts/policy'
+import { awaitingLine } from '@/lib/contracts/model'
 import styles from './contracts-table.module.css'
 
 /** Row kebab — not mocked for Contracts; copied from the Quotes row kebab (910:36723, REG-177…179):
- *  Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. */
-export type ContractRowAction = 'share' | 'copy' | 'pdf' | 'print' | 'archive' | 'delete'
+ *  Preview and Share · Copy Link · Download as PDF · Print · Archive · Delete. (UX audit C5 · C9) After Copy Link: Send a reminder (out for
+ *  signature) and Mark as signed… (not signed yet). */
+export type ContractRowAction = 'share' | 'copy' | 'remind' | 'signed' | 'pdf' | 'print' | 'archive' | 'delete'
 
 export type ContractsTableProps = {
   contracts: Contract[]
@@ -38,6 +40,8 @@ export type ContractsTableProps = {
   statusBlock?: (contract: Contract, status: ContractStatus) => string | null
   /** (REG-634, contracts parity Q-21) Why this row's Delete is out of reach (not its creator, an Owner or an Admin), else null. */
   deleteBlock?: (contract: Contract) => string | null
+  /** (UX audit C5) The host's clock (never Date.now() in render) — "Sent 3d ago · not opened" under a status out for signature. */
+  now?: number
 }
 
 /* Column order + head copy — exactly as the mock types it (931:38691, spec 01-listing-empty.txt). Every head carries unfold_more 16. */
@@ -67,7 +71,7 @@ const COL_CLASS: Record<string, string | undefined> = { title: styles.colTitle, 
  * No selection column, no bottom bar. Structure copied from components/leads/quotes/quotes-table.tsx (the Quotes twin):
  * every icon-only control carries a Tooltip (REG-75); sorting is inert (coming soon); menus toggle on their own trigger (REG-153).
  */
-export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder, statusBlock, deleteBlock }: ContractsTableProps) {
+export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf, columns, onReorder, statusBlock, deleteBlock, now }: ContractsTableProps) {
   const comingSoon = useComingSoon()
   const [menuRow, setMenuRow] = useState<string | null>(null)
   const [statusRow, setStatusRow] = useState<string | null>(null)
@@ -111,7 +115,7 @@ export function ContractsTable({ contracts, onStatus, onView, onRowMenu, leadOf,
           menuOpen={menuRow === contract.id}
           onMenuToggle={() => setMenuRow((m) => (m === contract.id ? null : contract.id))}
           onMenuClose={() => setMenuRow(null)}
-          onStatus={onStatus} onView={onView} onRowMenu={onRowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock}
+          onStatus={onStatus} onView={onView} onRowMenu={onRowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock} now={now}
           lead={leadOf ? leadOf(contract) : null} showLead={columns.some((c) => c.key === 'lead')}
         />
       ))}
@@ -125,7 +129,7 @@ function ContractRowView({
   contract,
   statusOpen, onStatusToggle, onStatusClose,
   menuOpen, onMenuToggle, onMenuClose,
-  onStatus, onView, onRowMenu, L, lead, showLead, statusBlock, deleteBlock,
+  onStatus, onView, onRowMenu, L, lead, showLead, statusBlock, deleteBlock, now,
 }: {
   contract: Contract
   lead: { name: string; href: string } | null
@@ -142,7 +146,10 @@ function ContractRowView({
   L: ReturnType<typeof useColumnLayout>
   statusBlock?: (contract: Contract, status: ContractStatus) => string | null
   deleteBlock?: (contract: Contract) => string | null
+  now?: number
 }) {
+  /* (UX audit C5) how long it has waited, and whether the client opened it */
+  const waiting = contract.status === 'Sent to Client' && now ? awaitingLine(contract, now) : null
   const pick = (action: ContractRowAction) => () => { onMenuClose(); onRowMenu(contract, action) }
   const noDelete = deleteBlock?.(contract) ?? null
   const pickStatus = (status: ContractStatus) => () => { onStatusClose(); onStatus(contract, status) }
@@ -166,7 +173,8 @@ function ContractRowView({
 
       {/* Status cell: "Draft" 14/Regular + keyboard_arrow_down 20 (H g4) → status menu over CONTRACT_STATUSES
           (not mocked — the Quotes status menu 910:36673 pattern, current marked; REG-178). */}
-      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')}>
+      <div className={`${styles.cell} ${styles.colStatus} ${L.pinned('status') ? styles.pin : ''}`} role="cell" data-col="status" data-pin-edge={L.edge('status') || undefined} style={L.style('status')} data-sub={waiting ? '' : undefined}>
+        <span className={styles.statusStack}>
         <span className={styles.statusWrap} ref={statusAnchor}>
           <button
             type="button" className={styles.statusBtn}
@@ -190,6 +198,11 @@ function ContractRowView({
               )
             })}
           </PortalMenu>
+        </span>
+        {waiting ? <>
+          <span className={styles.waiting} data-form="short" data-testid="contract-waiting">{waiting.short}</span>
+          <span className={styles.waiting} data-form="full" data-testid="contract-waiting-full">{waiting.full}</span>
+        </> : null}
         </span>
       </div>
 
@@ -223,10 +236,16 @@ function ContractRowView({
                           aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenuToggle} />
             </Tooltip>
           </span>
-          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={contract.title}>
+          {/* (REG-728) 240: rows with a second line (Copy Link on a Draft, a refused Delete) */}
+          <PortalMenu open={menuOpen} anchor={kebab} onClose={onMenuClose} align="right" width={MENU_WIDTH.wide} role="menu" sheetTitle={contract.title}>
             {/* Quotes row kebab 910:36723 — verbatim order (REG-177). */}
             <DropdownItem onSelect={pick('share')}>Preview and Share</DropdownItem>
-            <DropdownItem onSelect={pick('copy')}>Copy Link</DropdownItem>
+            {/* (UX audit C8) on a Draft the copy sends it — said in the row before the press */}
+            <DropdownItem onSelect={pick('copy')} help={contract.status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy Link</DropdownItem>
+            {/* (UX audit C5) a nudge on WhatsApp with the same link, through the Send dialog */}
+            {contract.status === 'Sent to Client' ? <DropdownItem onSelect={pick('remind')}>Send a reminder</DropdownItem> : null}
+            {/* (UX audit C9) a paper signature, or one made elsewhere — the status pill was the only way in */}
+            {contract.status !== 'Signed' ? <DropdownItem onSelect={pick('signed')}>Mark as signed…</DropdownItem> : null}
             <DropdownItem onSelect={pick('pdf')}>Download as PDF</DropdownItem>
             <DropdownItem onSelect={pick('print')}>Print</DropdownItem>
             <DropdownItem onSelect={pick('archive')}>Archive</DropdownItem>

@@ -1,6 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ds'
+import { Icon } from '@/components/om/icon'
+import { moneySGD } from '@/lib/format'
 import styles from './contracts-empty.module.css'
 
 /**
@@ -9,7 +11,11 @@ import styles from './contracts-empty.module.css'
  * asset as Quotes), texts 931:38647, buttons 931:38650 (From Scratch 931:38651 · From Template 931:38652).
  * Copied from components/leads/quotes/quotes-empty.tsx with the contracts' copy.
  */
-export function ContractsEmpty({ onFromScratch, onFromTemplate, onImport }: { onFromScratch: () => void; onFromTemplate: () => void; onImport?: () => void }) {
+export function ContractsEmpty({ onFromScratch, onFromTemplate, onImport, names }: {
+  onFromScratch: () => void; onFromTemplate: () => void; onImport?: () => void
+  /** (UX audit C6) The lead's tab: the quote a new contract will name — "Names OM-10006 · S$67,393" — so the studio knows before it starts. */
+  names?: { number: string; amountMinor: number } | null
+}) {
   return (
     <div className={styles.card} data-testid="contracts-empty">
       <div className={styles.inner}>
@@ -19,6 +25,7 @@ export function ContractsEmpty({ onFromScratch, onFromTemplate, onImport }: { on
         <div className={styles.texts}>
           <p className={styles.title}>Create your first contract</p>
           <p className={styles.body}>Create contracts and share it with your clients</p>
+          {names ? <p className={styles.names} data-testid="contracts-empty-quote"><Icon name="request_quote" size={18} weight={300} />Names {names.number} · {moneySGD(names.amountMinor)}</p> : null}
         </div>
         <div className={styles.buttons}>
           <Button variant="secondary" appearance="outlined" onPress={onFromScratch}>From the studio agreement</Button>   {/* (sweep S2 #20) the mock's "From Scratch" made the full agreement — one name for one action, the picker's */}

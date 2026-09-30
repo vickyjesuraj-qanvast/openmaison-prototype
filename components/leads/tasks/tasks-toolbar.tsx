@@ -24,6 +24,9 @@ export type TasksToolbarProps = {
   onFilter: () => void
   /** The rail's Tasks page (REG-466): the scope chip in place of the "All Tasks" title, and a search placeholder that names the lead. */
   scope?: { value: TaskScope; onChange: (s: TaskScope) => void; count: number }
+  /** (UX audit 2026-09-30, T5 · T4) The rail page's to-do chips after the scope pill — "Overdue · 3" · "Due today · 2" · "Unassigned · 5": the
+      house ScopePill's attention tone (REG-666), shown only while something waits; a press narrows the list to it, a second press lets go. */
+  todos?: { key: string; label: string; short: string; icon: string; selected: boolean; onClick: () => void }[]
   searchPlaceholder?: string
   /** Column settings (REG-454) — omitted on a phone, where the cards place every cell themselves. */
   onColumns?: () => void
@@ -95,7 +98,7 @@ export function TasksMoreButton({ onMenu }: { onMenu: (action: TasksMenuAction) 
  * "All Tasks" · Add Task (primary outlined, trailing chevron) · Search 280 · Filters · kebab.
  * Menus toggle on their own trigger (REG-153); every icon-only control carries a Tooltip (REG-75).
  */
-export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, searchPlaceholder, inHeader = false, bare = false }: TasksToolbarProps) {
+export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filterCount, onMenu, scope, todos, searchPlaceholder, inHeader = false, bare = false }: TasksToolbarProps) {
   const [scopeOpen, setScopeOpen] = useState(false)
   const pick = (fn: () => void) => () => { setScopeOpen(false); fn() }
 
@@ -111,6 +114,13 @@ export function TasksToolbar({ query, onQuery, onAdd, onFilter, onColumns, filte
               <DropdownItem key={k} role="menuitemradio" checked={scope.value === k} onSelect={pick(() => scope.onChange(k))}>{TASK_SCOPE_LABEL[k]}</DropdownItem>
             ))}
           </Dropdown>
+          {todos?.length ? (
+            <span className={styles.todos} data-testid="task-todos">
+              {todos.map((t) => (
+                <ScopePill key={t.key} tone="attention" icon={t.icon} menu={false} label={t.label} short={t.short} selected={t.selected} onClick={t.onClick} />
+              ))}
+            </span>
+          ) : null}
         </span>
       ) : (
         <h2 className={styles.title}>All Tasks</h2>

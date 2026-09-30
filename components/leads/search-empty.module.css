@@ -5,6 +5,8 @@
 .title { composes: title from '../om/empty-card.module.css'; }
 .sub { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }
 .clear { composes: link from '../om/text-link.module.css'; margin-top: var(--om-spacing-1); }
+/* (UX audit L11) the number's way in, a line above Clear All */
+.add { display: inline-flex; margin-top: var(--om-spacing-2); }
 
 /* ── Responsive (REG-269, design-source/context/responsive.md) ────────────────────────────────────────
    The mock's 480px floor is taller than what is left under a wrapped mobile header, which pushed the block

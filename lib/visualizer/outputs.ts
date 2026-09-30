@@ -202,6 +202,15 @@ const ROOM_WORD = /^(living|dining|master|common|guest|family|kids|children|bed\
 export const roomInSentence = (room: string) => (ROOM_WORD.test(room) && room.slice(1) === room.slice(1).toLowerCase() ? room.charAt(0).toLowerCase() + room.slice(1) : room)
 /** The rooms of a link inside a sentence — "your living room, master bedroom and kitchen". */
 export const roomsInSentence = (rooms: string[]) => joinWords(rooms.map(roomInSentence))
+/**
+ * (UX audit V10) The client link's headline — and its WhatsApp preview — name whose it is, never the studio's name for a room ("A design idea
+ * for your Original"): the lead ("2 design ideas for Kevin Ng"), else a personal design's own name when the studio gave it one, else "you".
+ */
+export function shareHeadline(n: number, o: { leadName: string | null; designName: string | null }): string {
+  const what = n === 1 ? 'A design idea' : `${n} design ideas`
+  const named = o.designName?.trim() && !/^(Design|Sample) · /.test(o.designName.trim()) ? o.designName.trim() : null
+  return `${what} for ${o.leadName?.trim() || named || 'you'}`
+}
 /** Names joined the way a sentence says them — "living room, master bedroom and kitchen" (F102). */
 export function joinWords(words: string[]): string {
   try { return new Intl.ListFormat('en-SG', { style: 'long', type: 'conjunction' }).format(words) } catch { return words.join(', ') }

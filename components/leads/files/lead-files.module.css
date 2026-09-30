@@ -1,2 +1,12 @@
 /* Files tab body (931:40157 "Section container" 1292×892, V g24 p24 — the same frame as Tasks / Quotes / Contracts; copy of quotes/lead-quotes.module.css): the centre already pads 24; toolbar and content stack 24 apart. */
-.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; }
+.tab { display: flex; flex-direction: column; gap: var(--om-spacing-6); min-width: 0; flex: 1; position: relative; }
+
+/* (UX audit 2026-09-30, T2) Files dropped anywhere on the tab upload into the open folder: while a drag carries files over it the tab wears the
+   Dropzone's own "over" look (move-stage/fields.module.css — the dashed primary stroke on the primary tint) with one line saying where they go. */
+.drop {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  border: var(--om-border-2) dashed var(--om-color-primary-default); border-radius: var(--om-radius-2);
+  background: color-mix(in srgb, var(--om-color-primary-variant) 85%, transparent);
+}
+.dropLine { font: var(--om-type-subheading-l); color: var(--om-color-primary-default); padding: var(--om-spacing-3) var(--om-spacing-5); }

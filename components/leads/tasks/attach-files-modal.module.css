@@ -134,7 +134,7 @@
 /* Uploading toast (902:28261): 360×200, white, 1px #e5e5e5, r4, at right 16 / bottom 76 of the modal. */
 .toast {
   position: absolute; right: 16px; bottom: 76px; z-index: 5;
-  width: 360px; height: 200px;
+  width: 360px; max-height: calc(56px + 4 * 64px + 2px);   /* (UX audit 2026-09-30, T2) the height follows the rows — the Files tab's toast's rule — and past four rows they scroll */
   background: var(--om-color-surface-default);
   border: var(--om-border-1) solid var(--om-color-surface-variant);
   border-radius: var(--om-radius-1);
@@ -142,6 +142,9 @@
   display: flex; flex-direction: column; overflow: hidden;
 }
 .toast[data-collapsed] { height: auto; }
+/* (T2) One row per picked file under the head; the list scrolls inside the toast, the head stays. */
+.toastRows { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.toastRows .toastRow:last-child { border-bottom: 0; }
 /* Head 56: H g16 p16, fill #1a1a1a, "Uploading 2 files" 16/Bold white + keyboard_arrow_down 24 + close 24. */
 .toastHead {
   display: flex; align-items: center; gap: var(--om-spacing-4);

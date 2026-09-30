@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react'
 import { fromLabel, withFrom } from '@/lib/nav'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -23,7 +23,9 @@ import { useSheetLayout } from '@/components/om/sheet'
 import { LeadFormModal, type LeadFormOpen } from '@/components/leads/lead-form'
 import { LostDialog, OnHoldDialog } from '@/components/leads/move-stage/dialogs'
 import { AskClientDialog } from '@/components/leads/questionnaire/ask-client-dialog'
-import { MoveStageWizard } from '@/components/leads/move-stage/wizard'
+import { MoveStageWizard, type MovePick } from '@/components/leads/move-stage/wizard'
+import { GHOST_MIN_MS } from '@/components/shell/page-reveal'
+import { readMoveParams, type MoveStep } from '@/lib/leads/move-link'
 import { StageDropdown } from '@/components/leads/stage-dropdown'
 import { CREATE_EVENTS } from '@/components/leads/tasks/use-create-intent'
 import { TasksPopover, type TasksPos } from '@/components/leads/tasks-popover'
@@ -45,7 +47,9 @@ import { responseLine } from '@/lib/leads/tat'
 import { suggestMember } from '@/lib/leads/suggest'
 import { ReturnDetailsModal } from '@/components/leads/return/return-details-modal'
 import { ReturnLeadWizard } from '@/components/leads/return/return-lead-wizard'
-import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, moveStage, quickMoveStage, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
+import { assignMembers, addTask, completeTask, countLiveSigningLinks, deleteLead, moveStage, quickMoveStage, resolveMoveHandoff, setFollowUp, setTaskDue, undoStageMove, updateLead, updateStageDetails } from '@/app/leads/actions'
+import { createQuote } from '@/app/leads/quotes-actions'
+import { askClientQuestions } from '@/app/leads/questions-actions'
 import { returnLead, undoReturn, type ReturnInput } from '@/app/leads/return-actions'
 import type { LeadFile } from '@/lib/db/schema'
 import type { LeadDetail } from '@/lib/leads/detail'
@@ -53,7 +57,7 @@ import { returnTags } from '@/lib/leads/return-tags'
 import { type Stage } from '@/lib/leads/enums'
 import { briefsFor } from '@/lib/leads/briefs'
 import { displayDateTimeDot, isOverdue, moneyCompact, phoneDigits, phoneDisplay, phoneLocal } from '@/lib/format'
-import { DETAIL_TABS, blockedReason, canReturnLead, detailHref, journeyIdx, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
+import { DETAIL_TABS, blockedReason, canReturnLead, convertBlock, detailHref, isActiveStage, journeyIdx, nextStageOf, resumeStageOf, stageIntent, type DetailTabSlug } from '@/lib/leads/stage-policy'
 import { runsStudio } from '@/lib/leads/assign-policy'
 import { liveReasonNames } from '@/lib/settings/types'
 import { openLeadDesign } from '@/app/visualizer/actions'
@@ -71,6 +75,8 @@ const stagePos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); re
 const anchorRect = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { el, top: clampAxis(r.bottom + 4, 456, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
 const tasksPos = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return { top: clampAxis(r.bottom + 4, 532, window.innerHeight), left: clampAxis(r.left, 400, window.innerWidth) } }
 const offscreen = (el: HTMLElement) => { const r = el.getBoundingClientRect(); return r.bottom < 0 || r.top > window.innerHeight }
+/** (UX audit 2026-09-30) The hand-off link's step (lib/leads/move-link.ts) as the stage it opens. */
+const STEP_STAGE: Record<MoveStep, Stage> = { contacted: 'Contacted', met: 'Met', 'quote-sent': 'Quote Sent', won: 'Won' }
 
 /**
  * Lead Details › Overview (858-24770): the lead's home. Every rule the listing already settled applies here unchanged —
@@ -99,9 +105,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   /* ── stage movement (shared policy helpers) ── */
   const [stageMenu, setStageMenu] = useState<{ top: number; left: number; el: HTMLElement } | null>(null)
   const [wizard, setWizard] = useState<Stage | null>(null)
+  /* (UX audit 2026-09-30, Q1 · C1 · L2) The documents a hand-off link brought, picked in the window it opens. */
+  const [movePick, setMovePick] = useState<MovePick | null>(null)
+  const closeWizard = () => { setWizard(null); setMovePick(null) }
   const [onHold, setOnHold] = useState(false)
   const [lost, setLost] = useState(false)
-  const [confirmMove, setConfirmMove] = useState<Stage | null>(null)
+  /* `step` (UX audit 2026-09-30, L1): the resume opens that stage's step in the Move stage window instead of moving at once. */
+  const [confirmMove, setConfirmMove] = useState<{ stage: Stage; step: boolean } | null>(null)
   const [holdOpenedAt, setHoldOpenedAt] = useState(0)
   const [holdReason, setHoldReason] = useState('')   // set from the studio's list when the dialog opens (REG-607)
   const [lostReason, setLostReason] = useState('')
@@ -119,32 +129,6 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     })
     refresh()
   }, 'Couldn’t move the lead — please try again')
-  /** Every stage change on this page — pill, stages card, quick links — comes through here.
-      The branch set is `stageIntent` in lib/leads/stage-policy, the one copy the listing runs too (REG-286);
-      this half only maps the intent onto this page's dialogs and snackbar. */
-  const requestStageChange = (stage: Stage) => {
-    const intent = stageIntent(lead, stage, stageMovement)
-    switch (intent.kind) {
-      case 'none': return
-      case 'hold': setHoldReason(holdOptions[0] ?? ''); setHoldOpenedAt(Date.now()); setOnHold(true); return
-      case 'lost': setLostReason(lostOptions[0] ?? ''); setLost(true); return
-      case 'blocked': snackbar({ message: intent.message }); return
-      case 'confirm-resume': setConfirmMove(intent.stage); return
-      case 'wizard': setWizard(intent.stage); return
-      case 'quick': void quickMove(intent.stage); return
-    }
-  }
-  /** A LEAD STAGES row, and the card's head arrow at the lead's current position (REG-259): the Move stage
-      window for a reached stage, the resume flow for a parked lead, the guarded request for a future one. */
-  /** (REG-469) Why this lead cannot reach Won right now — null when Convert to Project may open the Won step. */
-  const wonBlock = lead.stage === 'Won' ? null : blockedReason(lead, 'Won', stageMovement)
-  const openStageStep = (stage: string) => {
-    if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
-    const step = timeline.find((s) => s.stage === stage)
-    if (step && step.state !== 'future') { setWizard(stage as Stage); return }
-    requestStageChange(stage as Stage)
-  }
-
   /* ── popovers, dialogs ── */
   const [kebabOpen, setKebabOpen] = useState(false)
   /* (audit 2026-09-26, D7) ≤767 the Create quick links are gone (quick-links.module.css), so the kebab's sheet carries the lead's way
@@ -192,6 +176,106 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
     if (anchor) { setAssign(anchorRect(anchor)); setTasksFor(null); setStageMenu(null) }
   }, [])
   useShortcut('assign', assignByKey, true, 'Assign')
+
+  /* The stage moves come after the popovers: `refuse` offers Assign (assignByKey) as the way on (UX audit 2026-09-30). */
+  /** (UX audit 2026-09-30, Q1 · L6) A refused move names the way on as the snackbar's action: assign someone, resume the parked lead,
+      or move to the next stage — the window, where the lock only said "Complete Quote Sent first". `stage` null = Assign. */
+  const wayOn = (): { label: string; stage: Stage | null } | null => {
+    if (lead.assignees.length === 0 && isActiveStage(lead.stage)) return { label: 'Assign', stage: null }
+    if (!isActiveStage(lead.stage)) { const at = resumeStageOf(lead); return { label: `Resume at ${at}`, stage: at } }
+    const next = nextStageOf(lead)
+    return next ? { label: `Move to ${next}`, stage: next } : null
+  }
+  /** The refusal snackbar. Its action reaches the stage request through a ref (set after each commit): the request refuses, and the
+      refusal requests — a loop the React Compiler reads as a render-time call when the two name each other. */
+  const stageRequest = useRef<((stage: Stage) => void) | null>(null)
+  const refusal = (message: string) => {
+    const w = wayOn()
+    return w ? { message, actionLabel: w.label, onAction: () => { if (w.stage) stageRequest.current?.(w.stage); else assignByKey() } } : { message }
+  }
+  /** Every stage change on this page — pill, stages card, quick links — comes through here.
+      The branch set is `stageIntent` in lib/leads/stage-policy, the one copy the listing runs too (REG-286);
+      this half only maps the intent onto this page's dialogs and snackbar. */
+  const requestStageChange = (stage: Stage): void => {
+    const intent = stageIntent(lead, stage, stageMovement)
+    switch (intent.kind) {
+      case 'none': return
+      /* (UX audit 2026-09-30, L10 — supersedes REG-607's pre-pick) Both dialogs open with no reason chosen: the required field asks for
+         one, where a hurried Save used to file every lost lead under the list's first reason. */
+      case 'hold': setHoldReason(''); setHoldOpenedAt(Date.now()); setOnHold(true); return
+      case 'lost': setLostReason(''); setLost(true); return
+      case 'blocked': snackbar(refusal(intent.message)); return
+      case 'confirm-resume': setConfirmMove({ stage: intent.stage, step: intent.step }); return
+      case 'wizard': setWizard(intent.stage); return
+      case 'quick': void quickMove(intent.stage); return
+    }
+  }
+  const refuse = (message: string) => snackbar(refusal(message))
+  useEffect(() => { stageRequest.current = requestStageChange })
+  /** A LEAD STAGES row, and the card's head arrow at the lead's current position (REG-259): the Move stage
+      window for a reached stage, the resume flow for a parked lead, the guarded request for a future one. */
+  /** (REG-469 · UX audit 2026-09-30, L1 · L6) Why Convert to Project cannot open the Won step right now — null when it may. A parked lead
+      resumes first (Convert stays locked while it is On Hold or Lost); in Linear the reason names the whole path left. */
+  const wonBlock = convertBlock(lead, stageMovement)
+  /* (UX audit 2026-09-30, L6 — Vicky's call on mock 858-24770 · REG-165 · REG-469) One filled primary, and it is the step that is
+     possible now: "Move to Met" (the window at the next stage) until Won is reachable, "Resume at X" while the lead is parked, then
+     Convert to Project. While it is locked, Convert stays beside it outlined with its lock, and its press says the path and offers the move. */
+  const nextStage = nextStageOf(lead)
+  const primaryKind: 'won' | 'convert' | 'resume' | 'next' | 'locked' = lead.stage === 'Won' ? 'won' : !wonBlock ? 'convert'
+    : !isActiveStage(lead.stage) ? 'resume' : nextStage ? 'next' : 'locked'
+  const primaryLabel = primaryKind === 'resume' ? `Resume at ${resumeStageOf(lead)}` : primaryKind === 'next' ? `Move to ${nextStage}` : 'Convert to Project'
+  const convertPrimary = primaryKind === 'won' || primaryKind === 'convert'
+  const pressPrimary = () => {
+    if (primaryKind === 'won') comingSoon()
+    else if (primaryKind === 'convert') requestStageChange('Won')
+    else if (primaryKind === 'resume') requestStageChange(resumeStageOf(lead))
+    else if (primaryKind === 'next' && nextStage) requestStageChange(nextStage)
+    else if (wonBlock) refuse(wonBlock)
+  }
+  const openStageStep = (stage: string) => {
+    if (stage === 'On Hold' || stage === 'Lost') { setWizard(lead.resumeStage ?? 'New'); return }
+    const step = timeline.find((s) => s.stage === stage)
+    if (step && step.state !== 'future') { setWizard(stage as Stage); return }
+    requestStageChange(stage as Stage)
+  }
+
+  /* ── (UX audit 2026-09-30, Q1 · C1 · L2) The hand-off: `?move=<step>&quote=|contract=|log=` (lib/leads/move-link.ts) — a sent or
+     confirmed quote, a signed contract, a saved contact log offering the lead's next stage — opens the Move stage window at that step
+     with the document already picked, once, then the parameters leave the address. The stage policy still decides: a step the lead
+     can't reach answers as the pill would, with the way on; a parked lead confirms its resume first. The window opens as the page
+     reveals (GHOST_MIN_MS), never under the ghost. ── */
+  const openHandoff = async (h: NonNullable<ReturnType<typeof readMoveParams>>) => {
+    const stage = STEP_STAGE[h.step]
+    const [resolved] = await Promise.all([
+      h.quote || h.contract || h.log ? resolveMoveHandoff(lead.id, { quote: h.quote, contract: h.contract, log: h.log }).catch(() => null) : Promise.resolve(null),
+      new Promise((r) => setTimeout(r, GHOST_MIN_MS)),
+    ])
+    const pick: MovePick | null = resolved ? { quoteId: resolved.quoteId, contractId: resolved.contractId, log: resolved.log } : null
+    const intent = stageIntent(lead, stage, stageMovement)
+    if (intent.kind === 'blocked') { refuse(intent.message); return }
+    if (intent.kind === 'hold' || intent.kind === 'lost') return
+    setMovePick(pick)
+    if (intent.kind === 'confirm-resume') { setConfirmMove({ stage: intent.stage, step: true }); return }
+    setWizard(stage)   // the next step, Won, a Flexible move, or the stage the lead is in (its details) — the window, the document picked
+  }
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const handoff = readMoveParams(searchParams)
+  const handoffKey = handoff ? [handoff.step, handoff.quote, handoff.contract, handoff.log].join('|') : ''
+  const handoffRun = useRef<typeof openHandoff | null>(null)   // set after each commit, read in the effect below — never during render
+  useEffect(() => { handoffRun.current = openHandoff })
+  const handoffDone = useRef('')
+  useEffect(() => {
+    if (!handoffKey) { handoffDone.current = ''; return }
+    if (handoffDone.current === handoffKey) return
+    handoffDone.current = handoffKey
+    const here = new URLSearchParams(window.location.search)
+    const h = readMoveParams(here)
+    for (const k of ['move', 'quote', 'contract', 'log']) here.delete(k)
+    const rest = here.toString()
+    router.replace(rest ? `${pathname}?${rest}` : pathname, { scroll: false })
+    if (h) void handoffRun.current?.(h)
+  }, [handoffKey, pathname, router])
   // Popovers follow their anchor while the page scrolls and close once it leaves the viewport (REG-129).
   const anyAnchored = !!(stageMenu || assign || tasksFor)
   useEffect(() => {
@@ -230,6 +314,9 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   /* The tab window events come from CREATE_EVENTS, the map the listening tabs already read (REG-286) — these three
      dispatchers used to hard-code the same strings, so a rename on one side broke the quick link in silence. */
   /** New quote (QUOTES card › From Scratch, Create quick links › Quote): the Quotes tab handles it in place, elsewhere it opens with `?new=1`. */
+  /* (UX audit Q12, the Overview's QUOTES card) From Scratch makes the blank quote at once, as the Quotes tab's empty card does; From Template
+     keeps the Create Quote modal. */
+  const onBlankQuote = () => { void run(async () => { const id = await createQuote(lead.id, null); router.push(withFrom(`/quotes/${id}`, `${window.location.pathname}${window.location.search}`)) }, 'Couldn’t create the quote — please try again') }
   const onNewQuote = () => { if (tab === 'quotes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.quotes)); else router.push(href('quotes', 'new=1')) }
   /** New note (Create quick links › Note, 931-44865): the Notes tab starts the draft in place, elsewhere it opens with `?new=note`. */
   const onNewNote = () => { if (tab === 'notes') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.notes, { detail: { kind: 'note' } })); else router.push(href('notes', 'new=note')) }
@@ -243,7 +330,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
   /* The briefs read the questionnaire off the lead, so hand them the counts the QUESTIONNAIRE card already prints —
      otherwise a lead with answers still reads "no questionnaire yet" beside a card saying 7 / 11 answered. */
   const briefLead = useMemo(
-    () => ({ ...lead, questionnaire: questionnaire ? { answered: questionnaire.clientAnswered + questionnaire.studioAnswered, total: questionnaire.total } : null }),
+    /* (UX audit 2026-09-30, L2) `contacted`: a logged contact — the New brief stops saying "No contact yet" beside Last contact. */
+    () => ({ ...lead, contacted: !!lead.lastContact, questionnaire: questionnaire ? { answered: questionnaire.clientAnswered + questionnaire.studioAnswered, total: questionnaire.total } : null }),
     [lead, questionnaire],
   )
   const aiSuggestions = useMemo(() => Array.from(new Set(briefsFor(lead.stage, briefLead).flatMap((b) => b.actions))).slice(0, 3), [lead.stage, briefLead])
@@ -260,7 +348,8 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           chips={
             <>
               <MetaChip icon="call">{phoneLocal(lead.phone)}</MetaChip>
-              <MetaChip icon="money_bag">{moneyCompact(lead.budgetMinor)}</MetaChip>
+              {/* (UX audit 2026-09-30, L8) An unknown budget is stored as 0; it reads "--" like every other blank, never "S$ 0". */}
+              <MetaChip icon="money_bag">{lead.budgetMinor > 0 ? moneyCompact(lead.budgetMinor) : '--'}</MetaChip>
               <MetaChip icon="home">{lead.propertyType}</MetaChip>
               {/* Green marks a Qanvast lead — the source that behaves differently (Return Lead, Qanvast Ops).
                   Every other source is a plain chip, so the colour means something (user 2026-08-30).
@@ -289,12 +378,20 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                   Convert to Project IS winning the lead: where the policy lets this lead reach Won, the button opens the Move stage
                   window at the Won step (the same path as picking Won on the pill); where it does not, the lock stays and the press
                   says why (blockedReason — "Complete Quote Sent first", "Assign a member first"). A Won lead's button converts (REG-204). */}
-              <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : wonBlock ?? 'Opens the Won step — it creates the project'}>
-                <span className={`${styles.anchor} ${styles.convertAction}`}>
-                  <Button variant="primary" iconStart={lead.stage === 'Won' || !wonBlock ? undefined : <Icon name="lock" size={20} />}
-                          onPress={() => (lead.stage === 'Won' ? comingSoon() : wonBlock ? snackbar({ message: wonBlock }) : requestStageChange('Won'))}>
-                    Convert to Project
-                  </Button>
+              {/* (UX audit 2026-09-30, L6 · Q1) While Won is out of reach Convert stays, outlined with its lock (≥1025; up to 1024 the row
+                  keeps the pill and the primary), and its press names the whole path left with the way on as the snackbar's action. */}
+              {!convertPrimary && wonBlock ? (
+                <Tooltip label={wonBlock}>
+                  <span className={`${styles.anchor} ${styles.convertLocked}`} data-testid="convert-locked">
+                    <Button variant="secondary" appearance="outlined" iconStart={<Icon name="lock" size={20} />} onPress={() => refuse(wonBlock)}>
+                      Convert to Project
+                    </Button>
+                  </span>
+                </Tooltip>
+              ) : null}
+              <Tooltip label={lead.stage === 'Won' ? 'Convert to Project' : convertPrimary ? 'Opens the Won step — it creates the project' : ''} disabled={!convertPrimary}>
+                <span className={`${styles.anchor} ${styles.convertAction}`} data-testid="header-primary">
+                  <Button variant="primary" onPress={pressPrimary}>{primaryLabel}</Button>
                 </span>
               </Tooltip>
             </>
@@ -364,7 +461,7 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
                         onOpenTab={() => goTab('tasks')}
                       />
                     </div>
-                    <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onNewQuote} onFromTemplate={onNewQuote} />   {/* both land in the Create Quote modal (REG-412) */}</div>
+                    <div data-card="quotes"><QuoteCard quote={quote} approval={quoteApproval} onOpenTab={() => goTab('quotes')} onFromScratch={onBlankQuote} onFromTemplate={onNewQuote} />   {/* (UX audit Q12) From Scratch makes the blank quote; From Template opens the modal */}</div>
                     <div data-card="questionnaire"><QuestionnaireCard q={questionnaire} onAsk={() => setAskOpen(true)} onOpenTab={() => goTab('questionnaire')} /></div>
                   </div>
                   <div className={styles.column}>
@@ -433,15 +530,20 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       <ConfirmDialog
         open={!!confirmMove}
         tone="primary"
-        title={`Resume at ${confirmMove ?? ''}?`}
-        message={`${lead.stage} ends and the lead continues from ${confirmMove ?? ''}. Details already recorded stay on its journey.`}
+        title={`Resume at ${confirmMove?.stage ?? ''}?`}
+        message={confirmMove?.step
+          ? `The ${confirmMove.stage} step opens next — ${lead.stage} ends once it is saved. Details already recorded stay on its journey.`   /* (UX audit 2026-09-30, L1) */
+          : `${lead.stage} ends and the lead continues from ${confirmMove?.stage ?? ''}. Details already recorded stay on its journey.`}
         confirmLabel="Resume"
-        onCancel={() => setConfirmMove(null)}
+        onCancel={() => { setConfirmMove(null); setMovePick(null) }}
         onConfirm={() => {
           // `quickMove` reports its own failure now (REG-286), so the resume confirm no longer wraps it a second time.
-          const stage = confirmMove
+          const c = confirmMove
           setConfirmMove(null)
-          if (stage) void quickMove(stage)
+          if (!c) return
+          /* (UX audit 2026-09-30, L1) A resume into an unreached Quote Sent or Won runs that step — its checks and fields — never a silent jump. */
+          if (c.step) setWizard(c.stage)
+          else void quickMove(c.stage)
         }}
       />
       {wizard ? (
@@ -451,12 +553,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
           team={team}
           targetStage={wizard}
           mode={stageMovement}
-          onClose={() => setWizard(null)}
+          pick={movePick}
+          onClose={closeWizard}
           /* (REG-340) The From System empty states hand off the way the Create column does, keeping the Qanvast origin. */
-          onCreateQuote={() => { setWizard(null); onNewQuote() }}
-          onCreateContract={() => { setWizard(null); if (tab === 'contracts') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.contracts)); else router.push(href('contracts', 'new=1')) }}
+          onCreateQuote={() => { closeWizard(); onNewQuote() }}
+          onCreateContract={() => { closeWizard(); if (tab === 'contracts') window.dispatchEvent(new CustomEvent(CREATE_EVENTS.contracts)); else router.push(href('contracts', 'new=1')) }}
           onUpdate={({ stage, data }) => {
-            setWizard(null)
+            closeWizard()
             void run(async () => {
               if (stage === 'New') { await assignMembers(lead.id, data.assignees); snackbar({ message: 'Members updated' }) }   // (REG-334) New's details are its members
               else { await updateStageDetails({ leadId: lead.id, stage, data }); snackbar({ message: `${stage} details updated` }) }
@@ -464,12 +567,13 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
             }, 'Couldn’t save the stage details — please try again')
           }}
           onSave={({ toStage, data, tasks, quoteNumber }) => {
-            setWizard(null)
+            closeWizard()
             void run(async () => {
-              await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
+              const { stamped } = await moveStage({ leadId: lead.id, fromStage: lead.stage, toStage, payload: data, tasks })
               // (REG-340) The number is the signed system quote's own; an uploaded quote has none to print.
               if (toStage === 'Won') snackbar({ message: `Project created for ${lead.name}${quoteNumber ? ` · ${quoteNumber}` : ''}`, actionLabel: 'View', onAction: comingSoon })
-              else snackbar({ message: `Moved to ${toStage}` })
+              /* (UX audit 2026-09-30, Q1) The move marks its system quote sent to the client — the snackbar says which one. */
+              else snackbar({ message: stamped ? `Moved to ${toStage} · ${stamped} marked sent to the client` : `Moved to ${toStage}` })
               refresh()
             }, 'Couldn’t move the lead — please try again')
           }}
@@ -588,9 +692,14 @@ export function LeadOverview({ detail, tab, body, wide = false, origin }: { deta
       <AskClientDialog
         open={askOpen} leadName={lead.name}
         onClose={() => setAskOpen(false)}
-        onSend={() => {   /* (REG-609, parity Q-22) recorded on the portal link — "Client asked on …" */
+        questions={detail.unansweredQuestions}   /* (UX audit T12) the quick ask lists what it will ask, as the Questionnaire tab's does */
+        onSend={(ids) => {   /* (REG-609, parity Q-22) recorded on the portal link — "Client asked on …" */
           setAskOpen(false)
-          void run(async () => { await askClient(lead.id); snackbar({ message: `Notification sent to ${lead.name}` }); refresh() }, 'Couldn’t record the ask — please try again')
+          void run(async () => {
+            if (ids?.length) { const r = await askClientQuestions(lead.id, ids); if (typeof r !== 'number') { snackbar({ message: `Couldn’t ask ${lead.name} — ${r.error.charAt(0).toLowerCase()}${r.error.slice(1)}` }); return } snackbar({ message: `${r === 1 ? '1 question' : `${r} questions`} sent to ${lead.name}` }) }
+            else { await askClient(lead.id); snackbar({ message: `Notification sent to ${lead.name}` }) }
+            refresh()
+          }, 'Couldn’t record the ask — please try again')
         }}
       />
       <ReturnLeadWizard

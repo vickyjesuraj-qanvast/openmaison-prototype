@@ -8,6 +8,7 @@ import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds, studioRunnerIds } from '@/lib/notifications/queries'
 import { revalidatePath } from 'next/cache'
 import { fetchViewer } from '@/lib/leads/visibility'
+import { moveStageHref } from '@/lib/leads/move-link'
 
 /** (REG-634) Who is acting — the member the session stands for (the prototype's `is_you`), stamped on sends, markings, deletes and edits. */
 export const actingMember = async (): Promise<string> => (await fetchViewer()).id ?? SESSION_MEMBER_ID
@@ -41,7 +42,13 @@ export async function afterSent(c: Contract, at: Date, o: { quiet?: boolean } = 
 export async function afterSigned(c: Contract, at: Date, o: { marked?: boolean } = {}): Promise<void> {
   await db.update(leadTasks).set({ done: true, updatedAt: new Date() }).where(openFollowUps(c.id))
   if (c.thankYou) await addTask(c, `Thank ${c.recipientName ?? 'the client'} for signing “${c.title}”`, at, c.sentBy ?? c.createdBy ?? await actingMember())
-  if (o.marked) await notify('quote_signed', [...await leadMemberIds(c.leadId), ...await studioRunnerIds()], { title: `“${c.title}” was marked signed`, body: c.signedCopy ? `Signed copy: ${c.signedCopy}` : 'Signed on paper or elsewhere', href: `/leads/${c.leadId}/contracts`, leadId: c.leadId })
+  if (o.marked) {
+    /* (UX audit C1) while the lead isn't Won, the bell's row leads on to Won — the Move stage window with this contract picked */
+    const [l] = await db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, c.leadId))
+    const won = !!l && l.stage !== 'Won'
+    const copy = c.signedCopy ? `Signed copy: ${c.signedCopy}` : 'Signed on paper or elsewhere'
+    await notify('quote_signed', [...await leadMemberIds(c.leadId), ...await studioRunnerIds()], { title: `“${c.title}” was marked signed`, body: won ? `The lead is still in ${l!.stage} — move it to Won · ${copy}` : copy, href: won ? moveStageHref(c.leadId, 'won', { contract: c.id }) : `/leads/${c.leadId}/contracts`, leadId: c.leadId })
+  }
 }
 /** The latest row, for a caller holding a stale one. */
 export const freshContract = async (id: string) => (await db.select().from(contracts).where(and(eq(contracts.id, id), isNull(contracts.deletedAt))))[0] ?? null

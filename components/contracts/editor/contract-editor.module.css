@@ -23,7 +23,8 @@
 .dateBox { width: 200px; }
 /* (REG-729) Quote · Issued by: the house compact select (components/om/select-trigger), the value led by its glyph and capped as the
    recipient chip beside it. Signed, the chevron steps aside (the recipient's pencil does the same). */
-.metaSelect { max-width: 320px; }
+.metaSelect { max-width: 400px; }   /* (UX audit C2) the quote's number, amount and status */
+.quoteStatus { display: inline-flex; flex-shrink: 0; }
 .metaSelect[aria-disabled='true'] > :last-child { display: none; }
 .metaSelectValue { display: flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; }
 
@@ -170,3 +171,8 @@
 /* (REG-634, contracts parity E-114) At ≤1024 the Outline opens as a drawer — the pane itself is hidden there. */
 .outlineDrawer { display: flex; flex-direction: column; min-width: 0; }
 .doc:focus-visible { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 8px; border-radius: var(--om-radius-1); }   /* (sweep S2 #10) a keyboard sees where it is */
+
+/* (UX audit C9) "Signed in person? Mark as signed" — the Send dialog's last line, under the link: the note in the body's grey, the house text
+   button after it. */
+.markSigned { display: inline-flex; align-items: center; gap: var(--om-spacing-2); min-width: 0; flex-wrap: wrap; }
+.footNote { font: var(--om-type-body-m); color: var(--om-color-on-surface-secondary); }

@@ -28,7 +28,8 @@ import { contractLink, firstName, longDate, savedLabel, signingLink, signingMess
 import { contractIssuer, issuerChoices } from '@/lib/contracts/issuer'
 import { money2 } from '@/lib/quotes/math'
 import bannerStyles from '@/components/quotes/editor/template-bar.module.css'
-import { isBlankDoc, outlineOf, type TokenValues } from '@/lib/contracts/tokens'
+import { isBlankDoc, outlineOf, TOKEN_LABEL, type TokenKey, type TokenValues } from '@/lib/contracts/tokens'
+import { moveStageHref } from '@/lib/leads/move-link'
 import type { ContractEditorData } from '@/lib/contracts/queries'
 import { duplicateContract, markContractSigned, saveContractAsTemplate, saveContractDoc, sendContract, setContractAutomation, setContractStatusDoc, shareContractLink } from '@/app/contracts/actions'
 import { canDeleteContract, CONTRACT_DELETE_RULE, contractsDeletedLine, unsignBlock } from '@/lib/contracts/policy'
@@ -138,7 +139,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const [aiOpen, setAiOpen] = useState(false)
   const fabRef = useRef<HTMLSpanElement>(null)
   const link = signingLink(contract.id)
-  const { copied, copy } = useCopy(contractLink({ id: contract.id, bundleId: contract.bundleId, status }), {   /* (REG-633, E-118) a bundled document copies the bundle's link */ done: status === 'Draft' ? 'Signing link copied — the contract is Sent to Client now' : 'Signing link copied' })
+  const { copied, copy } = useCopy(contractLink({ id: contract.id, bundleId: contract.bundleId, status }), {   /* (REG-633, E-118) a bundled document copies the bundle's link */ done: 'Signing link copied' })
   const [unsignTo, setUnsignTo] = useState<'Draft' | 'Sent to Client' | null>(null)
   const [recordOpen, setRecordOpen] = useState(false)
   const [sentAt, setSentAt] = useState<number | null>(contract.sentAt ? contract.sentAt.getTime() : null)
@@ -162,9 +163,22 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
   const canSend = status !== 'Signed' && !blank
   const sendHint = status === 'Signed' ? 'Contract is signed' : 'Add some content first'
   /* (REG-634, parity Q-22) Send's checks — the quote's readiness pattern: a blocking one is named with the way to fix it, the rest ride in the dialog. */
-  const issues = useMemo(() => contractReadiness({ source: contract.source, body, values, hasStudioSignature: !!data.studioSignature, hasQuote: !!namedQuote }), [contract.source, body, values, data.studioSignature, namedQuote])
+  /* (UX audit C2) …and the quote it names: a Draft — or one waiting for approval — where Settings requires approval keeps it from going out */
+  const issues = useMemo(() => contractReadiness({ source: contract.source, body, values, hasStudioSignature: !!data.studioSignature, hasQuote: !!namedQuote,
+    quote: namedQuote ? { number: namedQuote.number, status: namedQuote.status } : null, approvalRequired: data.approvalRequired }), [contract.source, body, values, data.studioSignature, namedQuote, data.approvalRequired])
   const blockIssue = issues.find((i) => i.blocking) ?? null
-  const sayBlocked = () => { if (blockIssue) snackbar({ message: `Before you send: ${blockIssue.label}`, ...(blockIssue.fix === 'esign' ? { actionLabel: 'Show me', onAction: () => setEsign(true) } : {}) }) }
+  const openQuote = () => { if (namedQuote) go(withFrom(`/quotes/${namedQuote.id}`, `/contracts/${contract.id}`)) }
+  const sayBlocked = () => { if (blockIssue) snackbar({ message: `Before you send: ${blockIssue.label}`, ...(blockIssue.fix === 'esign' ? { actionLabel: 'Show me', onAction: () => setEsign(true) } : blockIssue.fix === 'open-quote' && namedQuote ? { actionLabel: 'Open the quote', onAction: openQuote } : {}) }) }
+  /* (UX audit C1) A signed contract's next step while its lead isn't Won: the Move stage window at Won with this contract picked (REG-469's path). */
+  const wonHref = data.leadStage && data.leadStage !== 'Won' ? moveStageHref(lead.id, 'won', { contract: contract.id }) : null
+  const moveToWon = () => { if (wonHref) go(wonHref) }
+  /* (UX audit C7) Each Smart Text chip names what it prints here — the house tooltip over the chip */
+  const chipTip = useCallback((key: string) => {
+    const label = TOKEN_LABEL[key as TokenKey]
+    if (!label) return null
+    const v = values[key as TokenKey]?.trim()
+    return v ? `Prints as: ${v}` : `Empty — prints “[${label}]” until it is filled in`
+  }, [values])
   const sendError = (e: unknown) => { const m = e instanceof Error ? e.message : ''; return m === 'no-client-field' ? 'Insert a Client signature field before sending' : m === 'phone' ? `${MSG.phone} for the client first — Edit recipient` : m === 'empty' ? 'Add some content before sending' : 'Couldn’t send the contract — please try again' }
 
   const applyStatus = (s: 'Draft' | 'Sent to Client') => {
@@ -181,17 +195,22 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
     if (status === 'Signed') { if (!unsignBlock({ status, signedBy: contract.signedBy }, viewer)) setUnsignTo(s); return }
     applyStatus(s)
   }
-  /* (REG-631, parity Q-07) Copying a Draft's link shares it: the contract is Sent to Client from then on. */
+  /* (REG-631, parity Q-07) Copying a Draft's link shares it: the contract is Sent to Client from then on. (UX audit C8) Called once the link is
+     on the clipboard: the status moves only after a copy that worked, and a refusal leaves it a Draft and says why. */
   const shareDraft = (): Promise<boolean> => {
     if (status !== 'Draft') return Promise.resolve(true)
-    return flushRef.current().then(() => shareContractLink(contract.id)).then((r) => { setStatus(r.status); setSentAt(r.sentAt); router.refresh(); return true }, (e: unknown) => { snackbar({ message: sendError(e) }); return false })
+    return flushRef.current().then(() => shareContractLink(contract.id)).then((r) => {
+      if ('error' in r) { snackbar({ message: `Couldn’t mark it Sent — ${r.error}` }); return false }
+      setStatus(r.status); setSentAt(r.sentAt); router.refresh(); snackbar({ message: 'Signing link copied — the contract is Sent to Client now' }); return true
+    }, (e: unknown) => { snackbar({ message: sendError(e) }); return false })
   }
   const copyLink = () => {
     if (status === 'Draft' && blank) { snackbar({ message: 'Add some content before sharing the link' }); return }
     if (status === 'Draft' && blockIssue) { sayBlocked(); return }   // (REG-634, parity Q-22) sharing is sending
-    /* (sweep S2 #2) a Draft is shared first and copied once the server has it — a copied link the server then refused never opened */
     if (status !== 'Draft') { void copy(); return }
-    void flushRef.current().then(() => shareContractLink(contract.id)).then((r) => { setStatus(r.status); setSentAt(r.sentAt); router.refresh(); void copy() }, (e: unknown) => snackbar({ message: sendError(e) }))
+    /* (UX audit C8, supersedes sweep S2 #2's order) the checks above first, then the copy, then the share — never Sent over a failed copy */
+    const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink({ id: contract.id, bundleId: contract.bundleId, status })) : Promise.reject(new Error('no clipboard'))
+    void write.then(() => { void shareDraft() }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
   }
   /* A refused save puts the switch back (sweep S2) — the panel said on while the record said off. */
   const changeAuto = (p: { reminders?: boolean; thankYou?: boolean }) => { const prev = auto; setAuto((a) => ({ ...a, ...p })); void setContractAutomation(contract.id, p).catch(() => { setAuto(prev); snackbar({ message: 'Couldn’t save the automation — please try again' }) }) }
@@ -233,22 +252,29 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                         onSwitch={(id) => go(withFrom(`/contracts/${id}`, from))}
                         chips={<>{signedAt ? <MetaChip>Signed {displayDate(signedAt)}</MetaChip> : null}{uploaded ? <MetaChip>Uploaded PDF</MetaChip> : null}{contract.templateId ? <MetaChip>From template</MetaChip> : null}{contract.bundleId && status === 'Sent to Client' ? <MetaChip>Sent together</MetaChip> : null}</>}
                         savedLabel={savedLabel(updatedAt, clock)} statusSlot={statusPill}
-                        primary={{ label: 'Send', onPress: () => { if (blockIssue) { sayBlocked(); return } setSendOpen(true) }, disabled: !canSend, hint: sendHint }}
+                        primary={status === 'Signed'
+                          /* (UX audit C1) a signed contract's main press is its signed copy — Send was a dead button */
+                          ? { label: 'Download signed copy', onPress: () => onMenu('pdf') }
+                          : { label: 'Send', onPress: () => { if (blockIssue) { sayBlocked(); return } setSendOpen(true) }, disabled: !canSend, hint: sendHint }}
                         actions={<>
                           <Tooltip label="Preview" shortcut="preview"><Button variant="secondary" appearance="outlined" onPress={() => onMenu('preview')} data-kb="preview">Preview</Button></Tooltip>
                           <span className={quoteStyles.anchor}>
                             <Tooltip label="Automation" disabled={autoOpen}><IconButton icon="notifications" label="Automation" selected={autoOpen || auto.reminders || auto.thankYou} aria-haspopup="menu" aria-expanded={autoOpen} onClick={() => onMenu('auto')} /></Tooltip>
                             <AutomationPopover open={autoOpen} onClose={() => setAutoOpen(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
                           </span>
-                          <Tooltip label={copied ? 'Copied' : 'Copy signing link'}><IconButton icon="link" label="Copy signing link" onClick={() => onMenu('copy')} /></Tooltip>
+                          {/* (UX audit C8) on a Draft the copy sends it — the tooltip says so before the press */}
+                          <Tooltip label={copied ? 'Copied' : status === 'Draft' ? 'Copy link — marks it Sent' : 'Copy signing link'}><IconButton icon="link" label={status === 'Draft' ? 'Copy link — marks it Sent' : 'Copy signing link'} onClick={() => onMenu('copy')} /></Tooltip>
                         </>}
                         foldedItems={<>
                           <DropdownItem onSelect={() => onMenu('preview')} shortcut="preview">Preview</DropdownItem>
-                          <DropdownItem onSelect={() => onMenu('copy')}>Copy signing link</DropdownItem>
+                          <DropdownItem onSelect={() => onMenu('copy')} help={status === 'Draft' ? 'Marks it Sent to Client' : undefined}>Copy signing link</DropdownItem>
                           <DropdownItem onSelect={() => setAutoDialog(true)}>Automation</DropdownItem>
                           <DropdownDivider />
                         </>}
                         menu={<>
+                          {/* (UX audit C9) the way a paper or elsewhere signature is recorded — it hid in the status pill */}
+                          <DropdownItem onSelect={() => setSignedOpen(true)} disabled={status === 'Signed'} title={status === 'Signed' ? 'It is signed' : undefined}>Mark as signed…</DropdownItem>
+                          <DropdownDivider />
                           <DropdownItem onSelect={() => onMenu('duplicate')}>Duplicate and Edit</DropdownItem>
                           <DropdownItem onSelect={() => onMenu('template')} disabled={uploaded} title={uploaded ? 'An uploaded PDF has no document to save' : undefined}>Save as Template</DropdownItem>
                           <DropdownDivider />
@@ -277,12 +303,14 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
               {/* (REG-729) The house compact select (m, a form row); signed, it stays focusable with its rule in the tooltip and no chevron. */}
               <Tooltip label={signedLock ? 'Signed — the quote stays as signed' : 'The quote this contract reads'} disabled={quoteOpen}>
                 <SelectTrigger className={styles.metaSelect} open={quoteOpen} onClick={() => { if (!signedLock) setQuoteOpen((o) => !o) }} aria-disabled={signedLock || undefined} data-testid="contract-quote"
-                               label={`Quote: ${namedQuote ? `${namedQuote.number} · ${money2(namedQuote.amountMinor)}` : 'No quote'}${quoteGone ? `. The quote was ${quoteGone}` : ''}`}
+                               label={`Quote: ${namedQuote ? `${namedQuote.number} · ${money2(namedQuote.amountMinor)} · ${namedQuote.status}` : 'No quote'}${quoteGone ? `. The quote was ${quoteGone}` : ''}`}
                                value={(
                                  <span className={styles.metaSelectValue}>
                                    <Icon name="request_quote" size={20} weight={300} />
                                    <span className={styles.recipientName}>{namedQuote ? namedQuote.number : 'No quote'}</span>
                                    {namedQuote ? <span className={styles.recipientMeta}>· {money2(namedQuote.amountMinor)}</span> : null}
+                                   {/* (UX audit C2) the quote's status, where the contract names it — a Draft reads as one */}
+                                   {namedQuote ? <span className={styles.quoteStatus} data-testid="contract-quote-status"><MetaChip color={namedQuote.status === 'Signed' ? 'green' : namedQuote.status === 'Draft' || namedQuote.status === 'Sent for Approval' ? 'yellow' : 'default'}>{namedQuote.status}</MetaChip></span> : null}
                                    {quoteGone ? <span className={styles.quoteWarn}><Icon name="warning" size={16} /></span> : null}
                                  </span>
                                )} />
@@ -333,7 +361,8 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
           </div>
         ) : null}
         <ContractBanner status={status} recipient={recipientName || lead.name} sentAt={sentAt} signedAt={signedAt ? signedAt.getTime() : null} signedBy={status === 'Signed' ? contract.signedBy : null} now={clock}
-                        viewedAt={contract.viewedAt ? contract.viewedAt.getTime() : null} onRecord={status === 'Signed' && data.signed ? () => setRecordOpen(true) : undefined} />
+                        viewedAt={contract.viewedAt ? contract.viewedAt.getTime() : null} onRecord={status === 'Signed' && data.signed ? () => setRecordOpen(true) : undefined}
+                        leadStage={data.leadStage} onMoveWon={status === 'Signed' && wonHref ? moveToWon : undefined} />
         {/* (REG-633, parity Q-19) the signing record, as the client's page and the print carry it */}
         <Dialog open={recordOpen} onClose={() => setRecordOpen(false)} title="Signing record" size="modal" width={600}>
           <SigningRecord compact r={{ signedBy: contract.signedBy, signedAt, nric: contract.signedNric, signatureKind: contract.signatureKind, phone: contract.signerPhone, device: contract.signerUserAgent, timezone: contract.signerTimezone, viewedAt: contract.viewedAt, acceptedAt: contract.acceptedAt, hash: data.signed?.hash ?? null }} />
@@ -365,7 +394,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
             ) : (
               <div className={styles.paper} onClick={(e) => { if (e.target === e.currentTarget) editor.current?.focus() }}>
                 <DocEditor ref={editor} value={body} onChange={(h) => { setBody(h); queue({ body: h }) }} onState={setDocState} label="Contract document"
-                           placeholder="Start writing, or insert a record with Smart Text…" readOnly={status === 'Signed'} />
+                           placeholder="Start writing, or insert a record with Smart Text…" readOnly={status === 'Signed'} chipTip={chipTip} />
               </div>
             )}
           </div>
@@ -378,6 +407,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
         <ESignPanel open={esign} onClose={() => setEsign(false)} hasStudioSignature={!!me?.signatureKind} onInsert={(html) => editor.current?.insertHtml(html)}
                     gates={gates} uploaded={uploaded} locked={signedLock} onGates={(p) => { setGates((g) => ({ ...g, ...p })); queue(p) }} />
         <SendContractDialog open={sendOpen} onClose={() => setSendOpen(false)} link={link} defaults={{ name: recipientName || lead.name, phone: recipientPhone || lead.phone }} onCopy={status === 'Draft' ? shareDraft : undefined}
+                            onMarkSigned={() => { setSendOpen(false); setSignedOpen(true) }}   /* (UX audit C9) signed in person: the other way it comes back */
                             notes={issues.filter((i) => !i.blocking).map((i) => i.label)}
                             draft={(name) => signingMessage({ clientFirst: firstName(name), studio: values['studio.name'] ?? studio.name, title: title.trim() || 'agreement', link })}
                             onSend={async ({ name, phone, message }) => {
@@ -386,6 +416,7 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
                               await flushRef.current()
                               try {
                                 const r = await sendContract(contract.id, { name, phone })
+                                if ('error' in r) { snackbar({ message: `Couldn’t send the contract — ${r.error}` }); return }   // (UX audit C2) the named quote's rule
                                 setStatus(r.status); setRecipientName(name); setRecipientPhone(phone); setUpdatedAt(r.updatedAt); setSentAt(r.sentAt); setSendOpen(false)
                                 snackbar({ message: `Sent to ${name} for signature` })
                               } catch (e) { snackbar({ message: sendError(e) }) }
@@ -393,7 +424,11 @@ export function ContractEditor({ data, from }: { data: ContractEditorData; from?
         <AutomationDialog open={autoDialog} onClose={() => setAutoDialog(false)} reminders={auto.reminders} thankYou={auto.thankYou} onChange={changeAuto} />
         <MarkSignedDialog open={signedOpen} onClose={() => setSignedOpen(false)} today={new Date(now)}
                           onSave={async (o) => {
-                            try { await flushRef.current(); await markContractSigned(contract.id, o); setStatus('Signed'); setSignedAt(new Date(o.signedOn)); setSignedOpen(false); snackbar({ message: 'Contract marked Signed' }); router.refresh() }
+                            try {
+                              await flushRef.current(); await markContractSigned(contract.id, o); setStatus('Signed'); setSignedAt(new Date(o.signedOn)); setSignedOpen(false)
+                              snackbar({ message: `${title.trim() || 'Contract'} marked Signed`, ...(wonHref ? { actionLabel: 'Move to Won', onAction: moveToWon } : {}) })   // (UX audit C1) the next step
+                              router.refresh()
+                            }
                             catch { snackbar({ message: 'Couldn’t mark the contract signed — please try again' }) }
                           }} />
         <RecipientDialog open={recipientOpen} onClose={() => setRecipientOpen(false)} name={recipientName} phone={recipientPhone}

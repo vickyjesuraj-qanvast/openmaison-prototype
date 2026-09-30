@@ -14,18 +14,20 @@ export type Badge = { favourite: boolean; pins: number; shared: boolean; notes: 
     first (DeleteVersionDialog) when it does, and deletes straight away with Undo when it doesn't. */
 export const carriesClientInput = (b: Badge | undefined) => !!b && (b.shared || b.favourite || b.notes > 0 || b.pins > 0)
 
-type Mark = { key: string; node: ReactNode; words: string }
+type Mark = { key: string; node: ReactNode; words: string; notes?: number }
 /** A tile's marks in the order they matter: the client's favourite, their notes, the pins, whether it went out. */
 function marksOf(b: Badge | undefined): Mark[] {
   if (!b) return []
   const out: Mark[] = []
   if (b.favourite) out.push({ key: 'fav', words: 'the client’s favourite', node: <span className={styles.fav}><Icon name="star" size={14} fill /></span> })
-  if (b.notes) out.push({ key: 'notes', words: `${b.notes} ${b.notes === 1 ? 'note' : 'notes'} from the client`, node: <span className={styles.badge}><Icon name="comment" size={12} fill />{b.notes}</span> })
+  if (b.notes) out.push({ key: 'notes', notes: b.notes, words: `${b.notes} ${b.notes === 1 ? 'note' : 'notes'} from the client`, node: <><Icon name="comment" size={12} fill />{b.notes}</> })
   if (b.pins) out.push({ key: 'pins', words: `${b.pins} ${b.pins === 1 ? 'pin' : 'pins'}`, node: <span className={styles.badge}><Icon name="push_pin" size={12} fill />{b.pins}</span> })
   if (b.shared) out.push({ key: 'shared', words: 'shared with the client', node: <span className={styles.badge}><Icon name="send" size={12} fill /></span> })
   return out
 }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+/** How many marks a 96px tile (≤1024) shows before "+n": the first, and (UX audit V1) the client's notes too when they come second. */
+const narrowShown = (marks: Mark[]) => (marks[1]?.key === 'notes' ? 2 : 1)
 
 /**
  * The versions (REG-673 · 674; 1.0's gallery strip, C-40…C-44): the Original, then V1…Vn oldest first, a placeholder for each variant
@@ -35,7 +37,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
  * surface with a 36px target, *Before* top-left, the marks bottom-right, two at most then "+n" (F005 · F074 · F150); the list is named,
  * and each tile's name carries its descriptor and marks (F171); the head counts the deleted versions and opens them (F077).
  */
-export function VersionsStrip({ original, versions, viewKey, compareKey, inFlight, badges, onPick, onMenu, menuFor, deleted = 0, onDeleted, originalSub = 'the photo', lineage }: {
+export function VersionsStrip({ original, versions, viewKey, compareKey, inFlight, badges, onPick, onMenu, menuFor, deleted = 0, onDeleted, originalSub = 'the photo', lineage, onNotes, notesFor = null }: {
   original: string | null
   versions: VersionView[]
   viewKey: string
@@ -53,6 +55,10 @@ export function VersionsStrip({ original, versions, viewKey, compareKey, inFligh
   /** (surfaces-24) Every version of the room, deleted ones too — a version whose parent was deleted then says the nearest live one up the
       line ("made from V2"), as Present and Compare do. Without it, only a live parent is named. */
   lineage?: Pick<VersionView, 'key' | 'parentKey' | 'deleted'>[]
+  /** (UX audit V1) The notes badge opens the client's notes on that version (From the client). */
+  onNotes?: (key: string) => void
+  /** The version whose notes are open — its badge reads as pressed. */
+  notesFor?: string | null
 }) {
   const titleId = useId()
   const rowRef = useRef<HTMLDivElement>(null)
@@ -138,15 +144,25 @@ export function VersionsStrip({ original, versions, viewKey, compareKey, inFligh
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="" loading="lazy" decoding="async" />
           {before ? <span className={styles.beforeTag} aria-hidden>Before</span> : null}
-          {marks.length ? (
-            <span className={styles.badges} aria-hidden>
-              {marks.slice(0, 2).map((m, i) => <Tooltip key={m.key} label={cap(m.words)}><span className={styles.mark} data-rank={i}>{m.node}</span></Tooltip>)}
-              {/* two marks and "+n" at desktop widths; one and "+n" on the 96px tiles (≤1024) */}
-              {marks.length > 2 ? <Tooltip label={cap(rest(2).join(' · '))}><span className={styles.more} data-at="wide">+{marks.length - 2}</span></Tooltip> : null}
-              {marks.length > 1 ? <Tooltip label={cap(rest(1).join(' · '))}><span className={styles.more} data-at="narrow">+{marks.length - 1}</span></Tooltip> : null}
-            </span>
-          ) : null}
         </button>
+        {marks.length ? (
+          /* (UX audit V1) the marks sit on the tile's corner beside its button (not inside it) — the client's notes are a button of their
+             own that opens them; the other marks show the version when pressed, as the tile does */
+          <span className={styles.badges}>
+            {marks.slice(0, 2).map((m, i) => (
+              <Tooltip key={m.key} label={m.notes && onNotes ? `Read ${m.words}` : cap(m.words)}>
+                {m.notes && onNotes ? (
+                  <button type="button" className={`${styles.mark} ${styles.badge}`} data-rank={i} data-notes="" aria-pressed={notesFor === key} aria-label={`Read ${m.words} on ${label}`} onClick={() => onNotes(key)} data-testid="viz-notes-badge">{m.node}</button>
+                ) : (
+                  <span className={styles.mark} data-rank={i} aria-hidden onClick={() => onPick(key)}>{m.key === 'notes' ? <span className={styles.badge}>{m.node}</span> : m.node}</span>
+                )}
+              </Tooltip>
+            ))}
+            {/* two marks and "+n" at desktop widths; one and "+n" on the 96px tiles (≤1024) — the notes button stays at every width */}
+            {marks.length > 2 ? <Tooltip label={cap(rest(2).join(' · '))}><span className={styles.more} data-at="wide" aria-hidden onClick={() => onPick(key)}>+{marks.length - 2}</span></Tooltip> : null}
+            {marks.length > narrowShown(marks) ? <Tooltip label={cap(rest(narrowShown(marks)).join(' · '))}><span className={styles.more} data-at="narrow" aria-hidden onClick={() => onPick(key)}>+{marks.length - narrowShown(marks)}</span></Tooltip> : null}
+          </span>
+        ) : null}
         {key !== ORIGINAL ? (
           <span className={styles.kebab}>
             <Tooltip label="More options" disabled={menuFor === key}>

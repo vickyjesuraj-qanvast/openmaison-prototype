@@ -13,7 +13,7 @@ import type { FileRow } from '@/lib/leads/file-model'
 import styles from './files-grid.module.css'
 
 /** File tile kebab (931:40131, 200×226): Open · Move · Duplicate · Download · Rename · Delete. */
-export type FileAction = 'open' | 'move' | 'duplicate' | 'download' | 'rename' | 'delete' | 'visualize'
+export type FileAction = 'open' | 'move' | 'duplicate' | 'download' | 'rename' | 'delete' | 'visualize' | 'copyLink' | 'whatsapp'
 /** Folder card kebab (931:40130, 200×154): Open · Move · Rename · Delete. */
 export type FolderAction = 'open' | 'move' | 'rename' | 'delete'
 
@@ -123,7 +123,7 @@ export function FilesGrid({ folders, groups, selected, onSelect, onOpenFolder, o
         </FolderGroup>
       ) : null}
       <FolderMenu open={!!menuFolder} anchor={folderAnchor} onClose={() => setFolderMenu(null)} name={menuFolder?.name ?? ''} onPick={pickFolder} />
-      <FileMenu open={!!menuFile} anchor={fileAnchor} onClose={() => setMenu(null)} name={menuFile?.name} visualize={menuFile ? visualizeLabel?.(menuFile) ?? null : null} onPick={pickFile} />
+      <FileMenu open={!!menuFile} anchor={fileAnchor} onClose={() => setMenu(null)} name={menuFile?.name} visualize={menuFile ? visualizeLabel?.(menuFile) ?? null : null} share={!!menuFile?.share} onPick={pickFile} />
 
       {groups.map((g) => {
         const ids = g.files.map((f) => f.id)
@@ -223,9 +223,11 @@ export function FolderMenu({ open, anchor, onClose, onPick, name }: { open: bool
 
 /** File kebab menu 931:40131 (200×226) — verbatim order; Delete #db382a. Shared by the grid's tiles and the list's file rows.
  *  (REG-728) Through the body portal, anchored to the kebab (`anchor` must hold it, so a second press on it toggles). */
-export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FileAction) => void; name?: string
+export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null, share = false }: { open: boolean; anchor: RefObject<HTMLElement | null>; onClose: () => void; onPick: (a: FileAction) => void; name?: string
   /** (REG-675, AI Visualizer Q-31) the item's words: a photo opens as a room of the lead's design, a filed render as its own version (F095); null hides it */
-  visualize?: string | null }) {
+  visualize?: string | null
+  /** (UX audit 2026-09-30, T9) the file has a client link — Copy link · Send on WhatsApp after Download */
+  share?: boolean }) {
   return (
     <PortalMenu open={open} anchor={anchor} onClose={onClose} align="right" width={MENU_WIDTH.standard} role="menu" sheetTitle={name || 'File'}>
       <DropdownItem onSelect={() => onPick('open')}>Open</DropdownItem>
@@ -233,6 +235,8 @@ export function FileMenu({ open, anchor, onClose, onPick, name, visualize = null
       <DropdownItem onSelect={() => onPick('move')}>Move</DropdownItem>
       <DropdownItem onSelect={() => onPick('duplicate')}>Duplicate</DropdownItem>
       <DropdownItem onSelect={() => onPick('download')}>Download</DropdownItem>
+      {share ? <DropdownItem onSelect={() => onPick('copyLink')}>Copy link</DropdownItem> : null}
+      {share ? <DropdownItem onSelect={() => onPick('whatsapp')}>Send on WhatsApp</DropdownItem> : null}
       <DropdownItem onSelect={() => onPick('rename')}>Rename</DropdownItem>
       <DropdownItem tone="danger" onSelect={() => onPick('delete')}>Delete</DropdownItem>
     </PortalMenu>

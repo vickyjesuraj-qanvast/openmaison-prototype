@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Bone } from '@/components/shell/skeleton'
-import { Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
+import { GhostField, Line, Slot, Words, cycle } from '@/components/shell/ghost-kit'
 import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
 import { SETTINGS_MODULES, parseSettingsModule } from '@/lib/settings/modules'
 import { QUOTE_APPROVAL_OPTIONS, STAGE_MOVEMENT_OPTIONS, TEMPLATE_APPROVAL_OPTIONS } from '@/lib/settings/types'
@@ -12,7 +12,7 @@ import choice from '@/components/om/choice-card.module.css'
 /**
  * (REG-708) Settings' ghost, per module: the frame (Settings and its modules' strip, as CompanyShell draws it), then the open module
  * (`?section=`, read here as the page reads it) — its head in its own words with the Company pages it keeps its records in, and its first
- * cards: Studio's Team and entities, Lead management's Stage movement and Lead sources, Quotes & pricing's two approvals, Notifications'
+ * cards: Studio's Team and entities, Lead management's Stage movement, Untouched leads and Lead sources, Quotes & pricing's two approvals, Notifications'
  * event table. The route's `loading.tsx` and the page's PageReveal draw the same one. The studio's name in a help line is the demo's.
  */
 const HEADS = {
@@ -74,6 +74,10 @@ export function SettingsGhost() {
           <>
             <Setting title="Stage movement" help="How leads move from one stage to the next. The stages are New, Contacted, Met, Quote Sent and Won, with On Hold and Lost beside them; On Hold and Lost always ask for a reason.">
               <Choices options={STAGE_MOVEMENT_OPTIONS} />
+            </Setting>
+            {/* (UX audit S9) the untouched-lead delay, moved here from Notifications */}
+            <Setting title="Untouched leads" help="A New lead with no contact logged is raised as “untouched” after this delay — to the members on it, in the bell and on the channels Notifications sets for it.">
+              <div className={styles.numGrid}><GhostField /></div>
             </Setting>
             <Setting title="Lead sources" help="Where a lead can come from — the Lead source field, the import mapping and the Source filter offer these. Retire a source to keep its leads and stop offering it; a source with no leads can be removed.">
               <ul className={styles.trades}>{Array.from({ length: 18 }, (_, i) => <li key={i}><Bone w={cycle([74, 92, 80, 70, 88, 76, 84, 78, 66], i)} h={32} r={4} /></li>)}</ul>   {/* (REG-729) the tokens are r4 now */}

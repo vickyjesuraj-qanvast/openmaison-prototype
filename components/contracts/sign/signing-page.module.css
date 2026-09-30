@@ -65,3 +65,5 @@
   .nextText { font: var(--om-type-subtitle-m); color: var(--om-color-on-surface-default); }
 }
 @media print { .nextBar { display: none !important; } }
+/* (UX audit C3) Send together's next document opens at its own top, clear of the 64 letterhead bar. */
+.bundleDoc { scroll-margin-top: calc(64px + var(--om-spacing-4)); }

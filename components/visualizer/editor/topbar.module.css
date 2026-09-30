@@ -38,3 +38,5 @@
 .bar[data-short] .rooms { gap: var(--om-spacing-1); padding-left: var(--om-spacing-2); }
 .bar[data-short] .roomChips > [role='radio'] { line-height: 34px; }
 .bar[data-short] .rule { margin: 0 var(--om-spacing-1); }
+/* (UX audit V4) the tight bar's "Share": the filled DS button, kept whole (the title gives way first) */
+.share { flex-shrink: 0; white-space: nowrap; }

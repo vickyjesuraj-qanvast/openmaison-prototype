@@ -11,6 +11,25 @@ export function signingMessage(o: { clientFirst: string; studio: string; title: 
   return `Hi ${o.clientFirst}, here is the ${o.title} from ${o.studio} for your review and signature: ${o.link}\n\nOpen the link, check the details, and sign at the bottom. You’ll get a one-time code on this number to confirm it’s you. Do let me know if anything needs a change first.`
 }
 export const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name
+/** (UX audit C5, invented copy) Send a reminder's WhatsApp draft — the same link, a nudge. */
+export function reminderMessage(o: { clientFirst: string; studio: string; title: string; link: string }): string {
+  return `Hi ${o.clientFirst}, a gentle reminder — the ${o.title} from ${o.studio} is still waiting for your signature: ${o.link}\n\nIt takes a minute: open the link, read it through and sign at the bottom. Do let me know if anything needs a change first.`
+}
+/**
+ * (UX audit C5) How long a contract has waited for its signature, and whether the client opened it. `full` — "Sent 3d ago · not opened",
+ * "Sent 3d ago · opened 2d ago" — where there is room (a phone's card, which has no Sent column); `short` — "Not opened in 3d", "Opened 2d
+ * ago" — under the status in the table's 128 column, beside the Sent date.
+ */
+export function awaitingLine(c: { sentAt: Date | null; viewedAt: Date | null }, now: number): { full: string; short: string } | null {
+  if (!c.sentAt) return null
+  const span = (at: number) => { const d = Math.floor((now - at) / 86_400_000); if (d >= 1) return `${d}d`; const h = Math.floor((now - at) / 3_600_000); return h >= 1 ? `${h}h` : '' }
+  const ago = (at: number) => { const t = span(at); return t ? `${t} ago` : 'just now' }
+  const sent = c.sentAt.getTime(), seen = c.viewedAt?.getTime() ?? null
+  return {
+    full: `Sent ${ago(sent)} · ${seen ? `opened ${ago(seen)}` : 'not opened'}`,
+    short: seen ? `Opened ${ago(seen)}` : span(sent) ? `Not opened in ${span(sent)}` : 'Not opened yet',
+  }
+}
 
 /** "Saved just now" / "Saved 2 mins ago" — the quote editor's stamp (quote-editor.tsx). */
 export function savedLabel(updatedAt: number, now: number): string {

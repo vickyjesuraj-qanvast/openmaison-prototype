@@ -21,3 +21,5 @@
 @media (max-width: 767px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* (REG-664) The folders above the cards, and the crumb inside one. */
 .browse { display: flex; flex-direction: column; gap: var(--om-spacing-5); }
+/* (UX audit C6) The templates lead and the folders follow: with folders under it the grid keeps to its cards (its 320 floor is for the grid alone). */
+.grid[data-rows='fit'] { min-height: 0; }

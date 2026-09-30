@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Button, Switch, TextArea } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { MSG } from '@/lib/forms'
@@ -8,6 +8,7 @@ import { DateField } from '@/components/om/date-field'
 import { Icon } from '@/components/om/icon'
 import { TextField } from '@/components/om/text-field'
 import { useCopy } from '@/components/om/use-copy'
+import { useSnackbar } from '@/components/om/snackbar'
 import { Dropdown, MENU_WIDTH } from '@/components/leads/dropdown'
 import { Dropzone, FileTile, useUploadSim } from '@/components/leads/move-stage/fields'
 import { digitsOnly, inputDate, isSgPhone, parseInputDate, phoneTyped } from '@/lib/format'
@@ -18,19 +19,23 @@ import styles from './contract-editor.module.css'
 
 /** Send: the signing card's fields (client name · phone for the code) over the message the link travels in. Send via
  *  WhatsApp opens the chat with the message and marks the contract Sent to Client; Copy link copies the signing page. */
-export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, title = 'Send for digital signature', subtitle = 'Your client reviews and signs in their browser. A one-time code on their phone confirms it’s them.', copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)' }: {
+export function SendContractDialog({ open, onClose, defaults, link, draft, onSend, onCopy, notes, extra, title = 'Send for digital signature', subtitle = 'Your client reviews and signs in their browser. A one-time code on their phone confirms it’s them.', copyDone = 'Signing link copied', phoneLabel = 'Client phone (for the code)', onMarkSigned, sendLabel = 'Send via WhatsApp' }: {
   open: boolean; onClose: () => void
   defaults: { name: string; phone: string }
   link: string
   draft: (name: string) => string
   onSend: (o: { name: string; phone: string; message: string }) => void | Promise<void>
-  /** (REG-631, contracts parity Q-07) Copying the link shares it: the host marks a Draft Sent to Client. */
-  /** (sweep S2 #2) Shares a Draft before its link is copied: resolves true when the server has it; false keeps the link uncopied. */
+  /** (REG-631, contracts parity Q-07) Copying the link shares it: the host marks a Draft Sent to Client. (UX audit C8) Called once the
+      link is on the clipboard — a failed copy leaves the contract a Draft; resolves true when the server has it (the host says so). */
   onCopy?: () => boolean | Promise<boolean>
   /** (REG-634, contracts parity Q-22) What is worth knowing before it goes (the readiness list's warnings). */
   notes?: string[]
-  /** (REG-587) The quote's Send for confirmation reuses this dialog with its own words. */
-  title?: string; subtitle?: string; copyDone?: string; phoneLabel?: string
+  /** (REG-587) The quote's Send for confirmation reuses this dialog with its own words. (UX audit C5) So does Send a reminder. */
+  title?: string; subtitle?: string; copyDone?: string; phoneLabel?: string; sendLabel?: string
+  /** (UX audit C9) "Signed in person? Mark as signed" as the body's last line — the dialog closes and Mark as signed opens. */
+  onMarkSigned?: () => void
+  /** (UX audit Q11) A host's own control above the link — the quote's "Follow up in 3 days ▾". */
+  extra?: ReactNode
 }) {
   const [name, setName] = useState(defaults.name)
   const [phone, setPhone] = useState(defaults.phone)
@@ -39,6 +44,16 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
   const [wasOpen, setWasOpen] = useState(open)
   if (open !== wasOpen) { setWasOpen(open); if (open) { setName(defaults.name); setPhone(defaults.phone); setText(draft(defaults.name)); setTouched(false) } }
   const { copied, copy } = useCopy(link, { done: copyDone })
+  const snackbar = useSnackbar()
+  const [sharedAt, setSharedAt] = useState(0)   // a Draft's copy that shared it reads "Copied" too (REG-283)
+  /* (UX audit C8) A Draft: the copy first, and it is marked Sent only once the link is on the clipboard — never over a copy that failed. */
+  const copyLink = () => {
+    if (!onCopy) { void copy(); return }
+    const write = navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject(new Error('no clipboard'))
+    /* a host that only answers (nothing to share — the quote's confirmation link once sent) leaves the words to the dialog; one that shares says its own */
+    void write.then(() => { const r = onCopy(); if (r instanceof Promise) return r; if (r) snackbar({ message: copyDone }); return r }, () => { snackbar({ message: 'Couldn’t copy the link — nothing was sent' }); return false })
+      .then((ok) => { if (ok) { const at = Date.now(); setSharedAt(at); setTimeout(() => setSharedAt((x) => (x === at ? 0 : x)), 2000) } })
+  }
   const phoneOk = isSgPhone(digitsOnly(phone))   // (REG-547)
   const nameOk = name.trim().length > 0
   const err = touched && !phoneOk ? MSG.phone : undefined   // (sweep S2 #25) the house words
@@ -46,8 +61,8 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
     <Dialog open={open} onClose={onClose} title={title} size="modal" width={600}
             subtitle={subtitle}
             footer={<>
-              <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={() => { void Promise.resolve(onCopy ? onCopy() : true).then((ok) => { if (ok) void copy() }) }}>{copied ? 'Copied' : 'Copy link'}</Button>
-              <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk} onPress={() => { setTouched(true); if (!phoneOk || !nameOk) return; void onSend({ name: name.trim(), phone: digitsOnly(phone), message: text }) }}>Send via WhatsApp</Button>
+              <Button appearance="outlined" variant="secondary" iconStart={<Icon name="content_copy" size={20} />} onPress={copyLink}>{copied || sharedAt ? 'Copied' : 'Copy link'}</Button>
+              <Button iconStart={<Icon name="chat" size={20} />} isDisabled={!nameOk} onPress={() => { setTouched(true); if (!phoneOk || !nameOk) return; void onSend({ name: name.trim(), phone: digitsOnly(phone), message: text }) }}>{sendLabel}</Button>
             </>}>
       <div className={styles.sendFields}>
         {notes?.length ? (
@@ -56,21 +71,53 @@ export function SendContractDialog({ open, onClose, defaults, link, draft, onSen
             <ul>{notes.map((n) => <li key={n}>{n}</li>)}</ul>
           </div>
         ) : null}
-        <TextField label="Client name" required value={name} onChange={(v) => { setName(v); setText((t) => (t === draft(name) ? draft(v) : t)) }} error={touched && !nameOk ? 'Enter the client’s name' : undefined} />
-        <div className={styles.phoneRow}>
-          <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
-          <span className={styles.phoneNum}><TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
-        </div>
-        {/* (REG-729) The DS field with its own label and stroke — the box around it doubled the stroke and clipped a label. */}
-        <TextArea className={styles.sendBox} label="Message to the client" value={text} onChange={(v: string) => setText(v)} />
-        <div className={styles.sendUnder}>
-          <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => setText(draft(name))} isDisabled={text === draft(name)}>Reset to draft</Button>
-          <span>{text.length} characters</span>
-        </div>
+        <RecipientFields name={name} phone={phone} phoneLabel={phoneLabel} onName={(v) => { setName(v); setText((t) => (t === draft(name) ? draft(v) : t)) }} onPhone={setPhone}
+                         nameError={touched && !nameOk ? 'Enter the client’s name' : undefined} phoneError={err} />
+        <MessageField value={text} onChange={setText} onReset={() => setText(draft(name))} canReset={text !== draft(name)} />
+        {extra}
         <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div>
+        {/* (UX audit C9) the other way a contract comes back signed — the body's last line: the foot's Copy link and Send via WhatsApp leave
+            no room for it at 600 without crowding them */}
+        {onMarkSigned ? <span className={styles.markSigned} data-testid="send-mark-signed"><span className={styles.footNote}>Signed in person?</span><Button appearance="text" onPress={onMarkSigned}>Mark as signed</Button></span> : null}
       </div>
     </Dialog>
   )
+}
+
+/**
+ * (UX audit 2026-09-30, C12) Who a WhatsApp message goes to — the client's name over the +65 number — one piece for Send for digital
+ * signature, Send together, Send a reminder and Quote X-Ray's Send to client, so the two kinds of WhatsApp dialog ask the same way.
+ */
+export function RecipientFields({ name, phone, onName, onPhone, nameError, phoneError, phoneLabel = 'Client phone (for the code)' }: {
+  name: string; phone: string; onName: (v: string) => void; onPhone: (digits: string) => void
+  nameError?: string; phoneError?: string; phoneLabel?: string
+}) {
+  return (
+    <>
+      <TextField label="Client name" required value={name} onChange={onName} error={nameError} />
+      <div className={styles.phoneRow}>
+        <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
+        <span className={styles.phoneNum}><TextField label={phoneLabel} required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => onPhone(digitsOnly(v).slice(0, 8))} error={phoneError} maxLength={9} /></span>
+      </div>
+    </>
+  )
+}
+/** (UX audit C12) The message and its line under it — Reset message (it put the draft back; "Reset to draft" read like moving a contract back
+    to Draft) and the count. (REG-729) The DS field with its own label and stroke. */
+export function MessageField({ value, onChange, onReset, canReset }: { value: string; onChange: (v: string) => void; onReset: () => void; canReset: boolean }) {
+  return (
+    <>
+      <TextArea className={styles.sendBox} label="Message to the client" value={value} onChange={(v: string) => onChange(v)} />
+      <div className={styles.sendUnder}>
+        <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={onReset} isDisabled={!canReset}>Reset message</Button>
+        <span>{value.length} characters</span>
+      </div>
+    </>
+  )
+}
+/** (UX audit C12) The send dialogs' body column. */
+export function SendFields({ children }: { children: React.ReactNode }) {
+  return <div className={styles.sendFields}>{children}</div>
 }
 
 /** Mark as signed: the date it was signed and, optionally, the signed copy (a PDF) — the Contracts tab's Signed Copy column. */

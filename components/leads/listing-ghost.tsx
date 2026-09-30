@@ -6,6 +6,7 @@ import { KanbanSkeleton } from '@/components/leads/kanban/skeleton'
 import { parseView } from '@/lib/leads/view'
 import { useStoredView } from '@/lib/leads/view-pref'
 import styles from './listing-ghost.module.css'
+import { useFirstRunShape } from '@/lib/ghost-shape'
 
 /**
  * (REG-708) The listing's ghost, as the workspace picks its view: `?view=` in the address, else the remembered view, else the table — and
@@ -17,6 +18,9 @@ export function ListingGhost() {
   const url = parseView(useSearchParams().get('view') ?? undefined)
   const stored = useStoredView()
   const view = url ?? stored ?? 'table'
+  /* (UX audit build) a studio with no lead opens on the empty card, whatever the view (REG-737) — the shape the listing showed last */
+  const first = useFirstRunShape('leads')
+  if (first) return <LeadsSkeleton first />
   if (view !== 'kanban') return <LeadsSkeleton />   /* the table and the cards ship together already (REG-309) */
   return (
     <div className={styles.byWidth}>

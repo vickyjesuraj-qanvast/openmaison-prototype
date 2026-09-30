@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button, Switch } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
@@ -13,6 +13,8 @@ import { ReadOnlyNote } from './read-only-note'
 import { MetaChip } from '@/components/om/meta-chip'
 import { CompanyShell } from './company-shell'
 import { ProfileGhost } from './company-ghosts'
+import { LeaveGuard } from './leave-guard'
+import { useHashLanding } from './use-hash-landing'
 import { saveBrand } from '@/app/company/templates-actions'
 import { reasonOf, settle } from './templates/refusal'
 import { couldnt } from '@/components/leads/tasks/use-run'
@@ -49,6 +51,7 @@ export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand:
   /** (REG-647, settings parity Q-10) How many live quotes and contracts name each entity (by its saved name) — an entity in use is retired, not removed. */
   usage?: Record<string, number> }) {
   const snackbar = useSnackbar()
+  useHashLanding()   // (UX audit S3) Settings' "kept under Company › Profile" and Manage entities land on #entities
   const [details, setDetails] = useState<StudioDetails>(brand.details)
   const [saved, setSaved] = useState<StudioDetails>(brand.details)
   const [busy, setBusy] = useState(false)
@@ -68,27 +71,22 @@ export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand:
     fax: val('fax') && !isSgPhone(phoneDigits(val('fax'))) ? MSG.phone : undefined,
     email: val('email') && !EMAIL_RE.test(val('email')) ? MSG.email : undefined,
   }
-  const save = async () => {
-    if (Object.values(detailErrors).some(Boolean)) { setTried(true); document.getElementById('details')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return }
+  /* (UX audit S2) true when the details landed — the leave guard's Save goes on only then */
+  const save = async (): Promise<boolean> => {
+    if (Object.values(detailErrors).some(Boolean)) { setTried(true); document.getElementById('details')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return false }
     const names = entities.slice(1).map((e) => e.name.trim().toLowerCase())
-    if (names.some((n) => !n)) { snackbar({ message: 'Give every entity a name' }); return }
-    if (new Set([details.name.trim().toLowerCase(), ...names]).size !== names.length + 1) { snackbar({ message: 'Two entities can’t share a name' }); return }
+    if (names.some((n) => !n)) { snackbar({ message: 'Give every entity a name' }); return false }
+    if (new Set([details.name.trim().toLowerCase(), ...names]).size !== names.length + 1) { snackbar({ message: 'Two entities can’t share a name' }); return false }
     setBusy(true)
     try {
       const next = { ...details, entities: entities.map((e, i) => (i === 0 ? { ...e, name: details.name } : e)) }
       await settle(saveBrand({ details: next })); setDetails(next); setSaved(next); snackbar({ message: 'Company details saved' })   // (REG-646) its own half only
+      return true
     }
-    catch (e) { snackbar({ message: couldnt('save the company details', reasonOf(e)) }) }   // (wave E, E7) a refusal answers { error: the rule }
+    catch (e) { snackbar({ message: couldnt('save the company details', reasonOf(e)) }); return false }   // (wave E, E7) a refusal answers { error: the rule }
     finally { setBusy(false) }
   }
   const discard = () => setDetails(saved)
-  /* Unsaved edits are not lost to a tab or a reload without a word (checklist: discarding edits asks first). */
-  useEffect(() => {
-    if (!dirty) return
-    const onUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
-    window.addEventListener('beforeunload', onUnload)
-    return () => window.removeEventListener('beforeunload', onUnload)
-  }, [dirty])
   /* (REG-618, parity Q-26) An entity's logo is kept as the picture itself, downscaled — as the brand kit keeps its logo. */
   const pickLogo = (i: number) => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'
@@ -108,6 +106,8 @@ export function ProfileView({ brand, from, canRun = true, usage = {} }: { brand:
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </> : null}>
       {canRun ? null : <ReadOnlyNote />}
+      {/* (UX audit S2) Unsaved edits are not lost to a move inside the app — nor to a tab or a reload (checklist: discarding edits asks first). */}
+      <LeaveGuard dirty={dirty && canRun} what="the company details" onSave={save} onDiscard={discard} />
       <ReadOnlyScope readOnly={!canRun}>
       <div className={styles.layout} data-testid="profile">
         <div className={styles.form}>

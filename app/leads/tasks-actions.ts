@@ -1,14 +1,14 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { logLeadEvent } from '@/lib/leads/events'
+import { dropLeadEvents, firstWords, logLeadEvent, logTaskEvent, printField } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { leadTasks, leads, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
+import { leadTasks, leads, members, tags, taskAssignees, taskAttachments, taskComments, taskTags, taskTemplates, templateTasks } from '@/lib/db/schema'
 import { notify } from '@/lib/notifications/emit'
 import { leadMemberIds } from '@/lib/notifications/queries'
-import { sessionMemberSql } from '@/lib/db/session'
+import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
 import { TASK_KINDS } from '@/lib/leads/enums'
 import { revalidateEveryLead, revalidateLead } from '@/lib/leads/queries'
 
@@ -48,7 +48,7 @@ export async function createTask(leadId: string | null, title: string, opts?: { 
 }
 
 export async function updateTask(taskId: string, patch: { title?: string; description?: string | null; dueAt?: Date | null; done?: boolean; kind?: string }): Promise<void> {
-  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, taskId))
+  const [t] = await db.select().from(leadTasks).where(eq(leadTasks.id, taskId))
   if (!t) return
   /* The patch is built column by column, never spread (REG-285). A server action is a public endpoint and its
      TypeScript parameter type is not a runtime guarantee: Drizzle's update builder walks the TABLE's columns and
@@ -62,7 +62,52 @@ export async function updateTask(taskId: string, patch: { title?: string; descri
   if (typeof patch.done === 'boolean') set.done = patch.done
   if (typeof patch.kind === 'string' && (TASK_KINDS as readonly string[]).includes(patch.kind)) set.kind = patch.kind
   await db.update(leadTasks).set(set).where(eq(leadTasks.id, taskId))
+  /* (UX audit 2026-09-30, T10) who did it, on the lead's record: a completion, a reopening, or the fields an edit changed */
+  if (set.done !== undefined && set.done !== t.done) await logTaskEvent(taskId, set.done ? 'task_completed' : 'task_reopened')
+  const fields = taskChanges(t, set)
+  if (fields.length) await logTaskEvent(taskId, 'task_edited', { fields })
   touch(t.leadId)
+}
+
+/** (T10) What an edit changed, in the panel's words — the name, the due date, the type, and that the description changed (never its text). */
+function taskChanges(before: typeof leadTasks.$inferSelect, set: Partial<typeof leadTasks.$inferInsert>) {
+  const out: { key: string; label: string; from: string; to: string }[] = []
+  if (set.title !== undefined && set.title !== before.title) out.push({ key: 'title', label: 'Task name', from: before.title, to: set.title })
+  if (set.dueAt !== undefined && (set.dueAt?.getTime() ?? null) !== (before.dueAt?.getTime() ?? null)) out.push({ key: 'dueAt', label: 'Due date', from: printField('dueAt', before.dueAt), to: printField('dueAt', set.dueAt) })
+  if (set.kind !== undefined && set.kind !== before.kind) out.push({ key: 'kind', label: 'Type', from: before.kind, to: set.kind })
+  if (set.description !== undefined && (set.description ?? '') !== (before.description ?? '')) out.push({ key: 'description', label: 'Description', from: '', to: '' })
+  return out
+}
+
+/**
+ * (UX audit 2026-09-30, T7 · T11) Complete or reopen several tasks at once — the bulk bar's Mark as completed, and the one-task tick.
+ * Answers the tasks it changed and the Activity lines it wrote, so the Undo reverses exactly this press.
+ */
+/** (T7 · T11) A task's last-change stamp before a press, so its Undo leaves the task exactly as it was (no "was updated" line in Activity). */
+type Stamp = { id: string; at: number | null }
+const restoreStamps = async (stamps: Stamp[] | undefined) => {
+  for (const s of stamps ?? []) await db.update(leadTasks).set({ updatedAt: s.at === null ? null : new Date(s.at) }).where(eq(leadTasks.id, s.id))
+}
+export async function setTasksDone(taskIds: string[], done: boolean): Promise<{ changed: string[]; eventIds: string[]; stamps: Stamp[] }> {
+  if (!taskIds.length) return { changed: [], eventIds: [], stamps: [] }
+  const rows = await db.select({ id: leadTasks.id, leadId: leadTasks.leadId, done: leadTasks.done, updatedAt: leadTasks.updatedAt }).from(leadTasks).where(inArray(leadTasks.id, taskIds))
+  const changed = rows.filter((r) => r.done !== done).map((r) => r.id)
+  const stamps = rows.filter((r) => r.done !== done).map((r) => ({ id: r.id, at: r.updatedAt?.getTime() ?? null }))
+  if (!changed.length) return { changed, eventIds: [], stamps }
+  await db.update(leadTasks).set({ done, updatedAt: new Date() }).where(inArray(leadTasks.id, changed))
+  const eventIds: string[] = []
+  for (const id of changed) { const e = await logTaskEvent(id, done ? 'task_completed' : 'task_reopened'); if (e) eventIds.push(e) }
+  for (const leadId of new Set(rows.map((r) => r.leadId))) touch(leadId)
+  return { changed, eventIds, stamps }
+}
+/** (T7 · T11) Undo: the tasks go back to how they were — their last-change stamp too — and the lines the press wrote leave Activity with it. */
+export async function undoTasksDone(o: { taskIds: string[]; done: boolean; eventIds: string[]; stamps?: Stamp[] }): Promise<void> {
+  if (!o.taskIds.length) return
+  const rows = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(inArray(leadTasks.id, o.taskIds))
+  await db.update(leadTasks).set({ done: !o.done, updatedAt: new Date() }).where(inArray(leadTasks.id, o.taskIds))
+  await restoreStamps(o.stamps)
+  await dropLeadEvents(o.eventIds)
+  for (const leadId of new Set(rows.map((r) => r.leadId))) touch(leadId)
 }
 
 export async function markTaskSeen(taskId: string): Promise<void> {
@@ -84,7 +129,52 @@ export async function setTaskAssignees(taskId: string, memberIds: string[]): Pro
     await tx.update(leadTasks).set({ updatedAt: new Date() }).where(eq(leadTasks.id, taskId))
   })
   await notifyAssigned(taskId, t.leadId, t.title, memberIds.filter((m) => !before.includes(m)))   /* (REG-608) only the members just added */
+  await logAssignment(taskId, memberIds.filter((m) => !before.includes(m)), before.filter((m) => !memberIds.includes(m)))   /* (T10) */
   touch(t.leadId)
+}
+
+/** (UX audit 2026-09-30, T10) Who was put on a task and who was taken off, by name as they were — one line per change. */
+async function logAssignment(taskId: string, added: string[], removed: string[]): Promise<string | null> {
+  if (!added.length && !removed.length) return null
+  const team = await db.select({ id: members.id, name: members.name }).from(members)
+  const name = (id: string) => team.find((m) => m.id === id)?.name ?? 'a member'
+  return logTaskEvent(taskId, 'task_assigned', { names: added.map(name), removed: removed.map(name) })
+}
+
+/**
+ * (UX audit 2026-09-30, T11) The bulk bar's Assign — the listing's rule (REG-610): the ticked members JOIN every selected task, nobody
+ * is taken off. Answers the pairs it added and the lines it wrote, for the Undo.
+ */
+export async function addTaskAssignees(taskIds: string[], memberIds: string[]): Promise<{ added: { taskId: string; memberId: string }[]; eventIds: string[]; stamps: Stamp[] }> {
+  if (!taskIds.length || !memberIds.length) return { added: [], eventIds: [], stamps: [] }
+  const rows = await db.select({ id: leadTasks.id, leadId: leadTasks.leadId, title: leadTasks.title, updatedAt: leadTasks.updatedAt }).from(leadTasks).where(inArray(leadTasks.id, taskIds))
+  const have = rows.length ? await db.select().from(taskAssignees).where(inArray(taskAssignees.taskId, rows.map((r) => r.id))) : []
+  const added: { taskId: string; memberId: string }[] = []
+  for (const r of rows) for (const m of memberIds) if (!have.some((h) => h.taskId === r.id && h.memberId === m)) added.push({ taskId: r.id, memberId: m })
+  if (!added.length) return { added, eventIds: [], stamps: [] }
+  const stamps = rows.filter((r) => added.some((a) => a.taskId === r.id)).map((r) => ({ id: r.id, at: r.updatedAt?.getTime() ?? null }))
+  await db.transaction(async (tx) => {
+    await tx.insert(taskAssignees).values(added)
+    await tx.update(leadTasks).set({ updatedAt: new Date() }).where(inArray(leadTasks.id, [...new Set(added.map((a) => a.taskId))]))
+  })
+  const eventIds: string[] = []
+  for (const r of rows) {
+    const mine = added.filter((a) => a.taskId === r.id).map((a) => a.memberId)
+    if (!mine.length) continue
+    await notifyAssigned(r.id, r.leadId, r.title, mine)   /* (REG-608) */
+    const e = await logAssignment(r.id, mine, []); if (e) eventIds.push(e)
+  }
+  for (const leadId of new Set(rows.map((r) => r.leadId))) touch(leadId)
+  return { added, eventIds, stamps }
+}
+/** (T11) Undo of the bulk Assign: exactly the pairs it added come off again, the tasks keep their last-change stamp, and its lines leave Activity. */
+export async function undoTaskAssignees(o: { added: { taskId: string; memberId: string }[]; eventIds: string[]; stamps?: Stamp[] }): Promise<void> {
+  if (!o.added.length) return
+  const rows = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(inArray(leadTasks.id, [...new Set(o.added.map((a) => a.taskId))]))
+  for (const a of o.added) await db.delete(taskAssignees).where(and(eq(taskAssignees.taskId, a.taskId), eq(taskAssignees.memberId, a.memberId)))
+  await restoreStamps(o.stamps)
+  await dropLeadEvents(o.eventIds)
+  for (const leadId of new Set(rows.map((r) => r.leadId))) touch(leadId)
 }
 
 export async function setTaskTags(taskId: string, tagIds: string[]): Promise<void> {
@@ -140,11 +230,28 @@ export async function deleteTag(tagId: string): Promise<void> {
 
 /* ── comments (902:28517) ── */
 export async function addComment(taskId: string, body: string): Promise<void> {
-  const [t] = await db.select({ leadId: leadTasks.leadId }).from(leadTasks).where(eq(leadTasks.id, taskId))
+  const [t] = await db.select({ leadId: leadTasks.leadId, title: leadTasks.title }).from(leadTasks).where(eq(leadTasks.id, taskId))
   if (!t || !body.trim()) return
   const now = new Date()
   await db.insert(taskComments).values({ id: randomUUID(), taskId, authorId: ME, body: body.trim(), createdAt: now, updatedAt: now })
+  await notifyTaskComment(taskId, t.leadId, t.title, body.trim())   /* (UX audit 2026-09-30, T8) */
   touch(t.leadId)
+}
+
+/**
+ * (UX audit 2026-09-30, T8) Comments were silent: the task's members hear it (the lead's members when nobody is on the task), never the
+ * author — `notify` drops the actor. The row opens the task's comments; its body is the comment's first words.
+ */
+async function notifyTaskComment(taskId: string, leadId: string | null, title: string, body: string): Promise<void> {
+  const on = (await db.select({ memberId: taskAssignees.memberId }).from(taskAssignees).where(eq(taskAssignees.taskId, taskId))).map((r) => r.memberId)
+  const to = on.length ? on : leadId ? await leadMemberIds(leadId) : []
+  if (!to.length) return
+  const [who] = await db.select({ name: members.name }).from(members).where(eq(members.id, await sessionMemberId()))
+  const [l] = leadId ? await db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)) : [null]
+  await notify('task_comment', to, {
+    title: `${who?.name ?? 'Someone'} commented on “${title}”`, body: `“${firstWords(body)}”${l ? ` · ${l.name}` : ''}`,
+    href: leadId ? `/leads/${leadId}/tasks?open=${taskId}&panel=comments` : `/tasks?open=${taskId}&panel=comments`, leadId,
+  })
 }
 export async function editComment(commentId: string, body: string): Promise<void> {
   const [c] = await db.select().from(taskComments).where(eq(taskComments.id, commentId))

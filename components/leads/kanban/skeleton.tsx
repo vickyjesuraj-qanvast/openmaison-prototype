@@ -52,8 +52,9 @@ export function KanbanSkeleton() {
                   <div className={styles.colBody}>
                     {(CARDS[stage] ?? []).map((w, i) => (
                       <div key={i} className={styles.card}>
-                        <div className={styles.cardHead}><Bone w={w} h={16} /><Bone w={40} h={12} /></div>
-                        <Bone w={196} h={12} />
+                        {/* (UX audit L3) the head's date reads "Updated 2d ago" now — its bone is that wide */}
+                        <div className={styles.cardHead}><Bone w={w} h={16} /><Bone w={96} h={12} /></div>
+                        <Bone w={240} h={12} />   {/* (UX audit L3) the meta line runs on to "· 9d in New" */}
                         <Bone w="100%" h={36} r="var(--om-radius-1)" />
                         <span className={styles.divider} />
                         <span className={shell.avatars}><Bone w={24} h={24} r="50%" /><Bone w={24} h={24} r="50%" /></span>

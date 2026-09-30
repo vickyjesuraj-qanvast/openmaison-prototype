@@ -13,18 +13,20 @@ import { Tooltip } from '@/components/om/tooltip'
 import { Avatar } from '@/components/om/avatar'
 import { displayDate, isOverdue, money, phoneLocal, displayDateTimeDot } from '@/lib/format'
 import type { LeadRow } from '@/lib/leads/queries'
+import { BLANK, daysInStage, stageAge, stageSinceText } from '@/lib/leads/row-text'
 import { canReturnLead } from '@/lib/leads/stage-policy'
 import { TOUCH_TABLET, useMediaQuery } from '@/lib/breakpoint'
 import styles from './table.module.css'
 
 export type ColumnKey =
-  | 'name' | 'stage' | 'tasks' | 'assignees' | 'source' | 'budget' | 'propertyType' | 'created' | 'address' | 'lastContact' | 'district' | 'nextFollowUp'
+  | 'name' | 'stage' | 'inStage' | 'tasks' | 'assignees' | 'source' | 'budget' | 'propertyType' | 'created' | 'address' | 'lastContact' | 'district' | 'nextFollowUp'
 
 export type ColumnConfig = { key: ColumnKey; label: string; visible: boolean; pinned: boolean }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'name', label: 'Lead Name', visible: true, pinned: true },
   { key: 'stage', label: 'Stage', visible: true, pinned: false },
+  { key: 'inStage', label: 'In stage', visible: false, pinned: false },   /* (UX audit L3) how long in the stage — "5d in Met", off until switched on */
   { key: 'tasks', label: 'Tasks', visible: true, pinned: false },
   { key: 'assignees', label: 'Members', visible: true, pinned: false },   /* REG-290: the key stays `assignees` (data), the label is Members */
   { key: 'source', label: 'Source', visible: true, pinned: false },
@@ -38,13 +40,13 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 ]
 
 const WIDTHS: Record<ColumnKey, number> = {
-  name: 240, stage: 146, tasks: 321, assignees: 160,
+  name: 240, stage: 146, inStage: 180, tasks: 321, assignees: 160,
   source: 132, budget: 138, propertyType: 158, created: 115, address: 240, lastContact: 200, district: 120, nextFollowUp: 200,
 }
 /* (REG-468, sort audit 2026-09-16: "Remove the 17") A glyph only where ordering answers a question: names, stage, budget, dates.
    Members (several per cell), Source and Property Type (categories the filter serves) lost theirs. */
 const SORTABLE: Record<ColumnKey, boolean> = {
-  name: true, stage: true, tasks: false, assignees: false,
+  name: true, stage: true, inStage: true, tasks: false, assignees: false,
   source: false, budget: true, propertyType: false, created: true, address: false, lastContact: true, district: false, nextFollowUp: true,
 }
 
@@ -99,6 +101,7 @@ function sortValue(row: LeadRow, key: ColumnKey): string | number {
     case 'created': return row.createdAt.getTime()
     case 'lastContact': return row.lastContact?.at.getTime() ?? 0
     case 'nextFollowUp': return nextDue(row)?.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER   /* (REG-608) undated last */
+    case 'inStage': return -row.stageSince.getTime()   /* (UX audit L3) ascending = the fewest days in the stage first */
     default: return ''
   }
 }
@@ -358,16 +361,17 @@ export function LeadsTable({
       case 'source':
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(row.source)}</span></div>
       case 'budget':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(money(row.budgetMinor))}</span></div>
+        /* (UX audit L8) a budget nobody gave is "--", not 0 */
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.budgetMinor > 0 ? hit(money(row.budgetMinor)) : BLANK}</span></div>
       case 'propertyType':
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(row.propertyType)}</span></div>
       case 'created':
         // The DISPLAYED date, through the column's own formatter — exactly the string search matches (REG-274).
         return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{hit(displayDate(row.createdAt))}</span></div>
       case 'address':
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ? hit(row.propertyAddress) : '—'}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.propertyAddress ? hit(row.propertyAddress) : BLANK}</span></div>
       case 'district':   /* (REG-607) */
-        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.area ? hit(row.area) : '—'}</span></div>
+        return <div key={col.key} {...cellProps(col, styles.cell)}><span className={styles.plain}>{row.area ? hit(row.area) : BLANK}</span></div>
       case 'nextFollowUp': {   /* (REG-608) when, then the task; overdue reads red */
         const t = nextDue(row)
         return (
@@ -377,17 +381,26 @@ export function LeadsTable({
                 <span className={styles.plain} style={isOverdue(t.dueAt, now) ? { color: 'var(--om-color-tertiary-red-default)' } : undefined}>{hit(displayDateTimeDot(t.dueAt))}</span>
                 <span className={styles.sub}>{hit(t.title)}</span>
               </span>
-            ) : <span className={styles.plain}>—</span>}
+            ) : <span className={styles.plain}>{BLANK}</span>}
           </div>
         )
       }
+      case 'inStage':   /* (UX audit L3) how long the lead has sat in its stage, then since when */
+        return (
+          <div key={col.key} {...cellProps(col, styles.cell)} data-days={daysInStage(row, now)}>
+            <span className={styles.twoLine}>
+              <span className={styles.plain}>{stageAge(row, now)}</span>
+              <span className={styles.sub}>{stageSinceText(row)}</span>
+            </span>
+          </div>
+        )
       case 'lastContact':   /* (REG-600) the latest contact log: when, then how and what came of it */
         return (
           <div key={col.key} {...cellProps(col, styles.cell)}>
             {row.lastContact ? (
               <span className={styles.twoLine}>
                 <span className={styles.plain}>{hit(displayDateTimeDot(row.lastContact.at))}</span>
-                <span className={styles.sub}>{[row.lastContact.channel, row.lastContact.outcome].filter(Boolean).join(' · ') || '—'}</span>
+                <span className={styles.sub}>{[row.lastContact.channel, row.lastContact.outcome].filter(Boolean).join(' · ') || BLANK}</span>
               </span>
             ) : <span className={styles.muted}>No contact yet</span>}
           </div>

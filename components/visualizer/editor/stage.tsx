@@ -67,12 +67,14 @@ const traceArea = (poly: Pt[]) => {
  * Zoom: the bar's buttons, Ctrl / ⌘ + wheel, two-finger pinch; a double-click or double-tap fits; drag (mouse or one finger) to pan
  * once zoomed in, bounded to the photo. Markers and pins keep their size at every zoom.
  */
-export function Stage({ image, alt, compare, preview, highlight, markers, onDot, mode, pins, activePin, onPin, running, onCancelRun, toolbar, chip, children, empty }: {
+export function Stage({ image, alt, compare, preview, highlight, wash = null, markers, onDot, mode, pins, activePin, onPin, running, onCancelRun, toolbar, chip, children, empty }: {
   image: string | null
   alt: string
   compare: { before: string; beforeLabel: string; afterLabel: string } | null
   preview: string | null
   highlight: string | null
+  /** (UX audit V5) Every pick still waiting for Generate, washed in its own colour (engine `washOverlay`) — under the lit selection. */
+  wash?: string | null
   markers: Marker[]
   onDot: (m: Marker) => void
   mode: StageMode
@@ -465,6 +467,14 @@ export function Stage({ image, alt, compare, preview, highlight, markers, onDot,
                 <motion.div key="preview" className={styles.fill} {...fade}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className={styles.fill} src={preview} alt="" aria-hidden data-testid="viz-preview" />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+            <AnimatePresence initial={false}>
+              {wash && !compare && !path ? (
+                <motion.div key={wash} className={styles.fill} {...fade}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className={`${styles.fill} ${styles.highlight}`} src={wash} alt="" aria-hidden data-testid="viz-wash" />
                 </motion.div>
               ) : null}
             </AnimatePresence>

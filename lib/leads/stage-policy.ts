@@ -47,8 +47,9 @@ export type StageIntent =
   | { kind: 'lost' }
   /** The gate refuses this stage; `message` is the snackbar copy (same string the dropdown shows as a tooltip). */
   | { kind: 'blocked'; message: string }
-  /** A parked lead resuming: the "Resume at X?" confirm, then a quick move. */
-  | { kind: 'confirm-resume'; stage: Stage }
+  /** A parked lead resuming: the "Resume at X?" confirm, then a quick move — or, `step` (UX audit 2026-09-30, L1), the Move stage
+      window at that stage: a resume into a Quote Sent or Won the lead never reached runs that step's checks and fields. */
+  | { kind: 'confirm-resume'; stage: Stage; step: boolean }
   /** The Move stage window: the next stage in linear, Won always (it creates the project), a completed stage read-only. */
   | { kind: 'wizard'; stage: Stage }
   /** Flexible: move now, Undo in the snackbar. */
@@ -68,7 +69,7 @@ export function stageIntent(
   // That gate is what keeps a Lost lead's un-reached stages shut (REG-225); active leads keep their path below.
   if (!isActiveStage(lead.stage)) {
     const parkedBlock = blockedReason(lead, stage, mode)
-    return parkedBlock ? { kind: 'blocked', message: parkedBlock } : { kind: 'confirm-resume', stage }
+    return parkedBlock ? { kind: 'blocked', message: parkedBlock } : { kind: 'confirm-resume', stage, step: resumeNeedsStep(lead, stage) }
   }
   // A completed stage is never "moved back to" (user 2026-08-29): it opens for viewing in the window, Edit lives inside.
   if (to <= from) return { kind: 'wizard', stage }
@@ -78,6 +79,41 @@ export function stageIntent(
   }
   if (stage === 'Won') return { kind: 'wizard', stage }
   return { kind: 'quick', stage }
+}
+
+/**
+ * (UX audit 2026-09-30, L1 — supersedes the silent half of REG-132) Parking was a way round every mandatory field: an On Hold lead
+ * that had only reached Met resumed straight at Won, with no Won step, no signed quote and no project. Resuming anywhere stays
+ * (REG-132), but a resume into Quote Sent or Won that the lead never reached opens that step in the Move stage window after the
+ * "Resume at X?" confirm. Resuming at the stage it left — or any stage it already passed — stays a quick resume.
+ */
+export function resumeNeedsStep(lead: Pick<LeadRow, 'stage' | 'resumeStage'>, stage: Stage): boolean {
+  if (stage !== 'Quote Sent' && stage !== 'Won') return false
+  return STAGES.indexOf(stage) > journeyIdx(lead)
+}
+
+/** The stage an active lead moves into next (null at Won, or for a parked lead — it resumes instead). */
+export function nextStageOf(lead: Pick<LeadRow, 'stage' | 'resumeStage'>): ActiveStage | null {
+  if (!isActiveStage(lead.stage)) return null
+  return STAGES[journeyIdx(lead) + 1] ?? null
+}
+
+/** Where a parked lead picks up again when nothing else is chosen: the stage it left, else New. */
+export const resumeStageOf = (lead: Pick<LeadRow, 'resumeStage'>): ActiveStage => lead.resumeStage && isActiveStage(lead.resumeStage) ? lead.resumeStage : 'New'
+
+/**
+ * (UX audit 2026-09-30, L1 · L6 — extends REG-469) Why Convert to Project cannot open the Won step for this lead right now; null when
+ * it may. A parked lead resumes first — Convert stays locked while it is On Hold or Lost. In Linear movement the reason names the
+ * whole path left ("Complete Met and Quote Sent first"), where `blockedReason` names only the next stage the pill is gated on.
+ */
+export function convertBlock(lead: Pick<LeadRow, 'stage' | 'resumeStage' | 'assignees'>, mode: StageMovement): string | null {
+  if (lead.stage === 'Won') return null
+  if (!isActiveStage(lead.stage)) return `Resume at ${resumeStageOf(lead)} first`
+  const base = blockedReason(lead, 'Won', mode)
+  if (!base || !base.startsWith('Complete ')) return base
+  const left = STAGES.slice(journeyIdx(lead) + 1, STAGES.indexOf('Won'))
+  if (left.length < 2) return base
+  return `Complete ${left.slice(0, -1).join(', ')} and ${left[left.length - 1]} first`
 }
 
 /** A stage the lead has already passed (never a drop target — REG-132). */

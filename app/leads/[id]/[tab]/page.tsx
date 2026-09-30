@@ -82,7 +82,7 @@ export default async function LeadTabPage({ params, searchParams }: { params: Pr
   if (tab === 'notes') {
     // Notes (931-44865): the same wide frame; the tab owns its list, editors, toolbar, attachments and dialogs.
     const { detail, data } = await loadFrame(id, fetchLeadNotes)
-    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadNotes leadId={id} data={data} />} />
+    return <LeadOverview detail={detail} tab={tab} origin={origin} wide body={<LeadNotes leadId={id} data={data} stage={detail.lead.stage} />} />   /* (UX audit 2026-09-30, L2) the stage decides the saved log's next step */
   }
   if (tab === 'questionnaire') {
     // Questionnaire (931-46769): the same wide frame; the tab owns its toolbar, cards, summary and the Ask the client dialog.

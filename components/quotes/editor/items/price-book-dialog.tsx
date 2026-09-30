@@ -28,8 +28,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  * (REG-662, owner 2026-09-25: "when I am in the quote editor the price book should open in a modal within the same window, like the
  * template modal") The price book inside the quote editor — the Templates modal's shell (xl 1200, the modal header standard): My Items ·
  * My Sections as on Company › Price book, a search, the kinds as the house chips (items) or the quote's property type (sections), a tick
- * per row, and Add for everything ticked in both tabs — each lands at the end of the quote, in the order ticked. The Create strip's
- * My Items and the Items table's *Price book* open it; typing in Add Item keeps its dropdown. Editing the book is Company's: the
+ * per row, and Add for everything ticked in both tabs, in the order ticked — (UX audit Q7) an item at the end of the quote's section for its
+ * trade, else at the end of the quote; a section at the end. The Create strip's *Price book*, Create ▾ › From Price book and the Items
+ * table's *Price book* open it; typing in Add Item keeps its dropdown. Editing the book is Company's: the
  * toolbar's *Manage Price book* opens it (the Templates modal's *Manage Templates*), with the way back.
  */
 export function PriceBookDialog({ open, tab, onTab, items, sections, propertyType, onClose, onAdd, onManage, itemFolders = [], sectionFolders = [] }: {

@@ -55,6 +55,11 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
   const readEnd = !needsScroll || !!read[doc!.contract.id]
   const gatesMet = readEnd && (!needsAccept || !!accepted[doc!.contract.id])
   const endRef = useRef<HTMLDivElement>(null)
+  /* (UX audit C3) On a phone or a tablet the card sits above the paper: the single page's sticky bar (REG-660) says at the paper's foot what is
+     next and does it — "Document 1 of 2 read · Next document", then "Continue to sign"; the next document starts at its own top. */
+  const cardRef = useRef<HTMLElement>(null)
+  const walkRef = useRef<HTMLElement>(null)
+  const toCard = () => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   const docId = doc?.contract.id
   useEffect(() => {
     if (step !== 'review' || !docId || !needsScroll) return
@@ -65,7 +70,13 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
     return () => io.disconnect()
   }, [step, docId, needsScroll])
   const last = at >= documents.length - 1
-  const next = () => { if (last) { setStep('code'); snackbar({ message: `Code sent to ${masked}` }) } else { setAt((i) => i + 1); window.scrollTo({ top: 0 }) } }
+  const next = () => {
+    if (last) { setStep('code'); snackbar({ message: `Code sent to ${masked}` }); return }
+    setAt((i) => i + 1)
+    /* at a desk the page's top is the walk's; where the card stacks above the paper (≤1024), the next document's own top */
+    if (window.matchMedia('(max-width: 1024px)').matches) requestAnimationFrame(() => walkRef.current?.scrollIntoView({ block: 'start' }))
+    else window.scrollTo({ top: 0 })
+  }
 
   const titles = documents.map((d) => d.contract.title)
   const agreement = `I, ${name.trim() || 'your name'}, agree to ${titles.length === 1 ? `the ${titles[0]}` : `these ${titles.length} documents — ${titles.join(', ')} —`} from ${studioName}, as set out above. I understand that this is my digital agreement to proceed.`
@@ -129,7 +140,7 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
       <div className={styles.body}>
         <div className={`${styles.stage} ${styles.bundle}`}>
           {walking ? (
-            <section className={styles.bundleDoc} aria-label={`Document ${at + 1} of ${documents.length}: ${doc.contract.title}`} data-testid="bundle-walk">
+            <section ref={walkRef} className={styles.bundleDoc} aria-label={`Document ${at + 1} of ${documents.length}: ${doc.contract.title}`} data-testid="bundle-walk">
               <div className={styles.walk}>
                 <span className={styles.walkHead}><span>Document {at + 1} of {documents.length} · {doc.contract.title}</span>{doc.contract.status === 'Signed' ? <span>Signed already</span> : null}</span>
                 <span className={styles.walkBar} aria-hidden>{documents.map((d, i) => <span key={d.contract.id} className={styles.walkSeg} data-on={i <= at || undefined} />)}</span>
@@ -147,7 +158,7 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
             <SigningRecord r={{ signedBy: bundle.signedBy, signedAt: bundle.signedAt, nric: bundle.signedNric, signatureKind: bundle.signatureKind, phone: bundle.signerPhone, device: bundle.signerUserAgent, timezone: bundle.signerTimezone, viewedAt: bundle.viewedAt, acceptedAt: null, hash: bundle.signingHash, documents: titles }} />
           ) : null}
         </div>
-        <aside className={styles.card} aria-label="Sign these documents" data-step={step}>
+        <aside ref={cardRef} className={styles.card} aria-label="Sign these documents" data-step={step}>
           {step === 'done' && (signed || state === 'signed') ? (
             <>
               <span className={styles.done}><Icon name="check_circle" size={40} /></span>
@@ -203,6 +214,13 @@ export function BundleSigningPage({ data }: { data: BundleSigningData }) {
           )}
         </aside>
       </div>
+      {walking && !signed ? (
+        <div className={styles.nextBar} data-testid="sign-next">
+          {gatesMet
+            ? <><span className={styles.nextText}>Document {at + 1} of {documents.length} read</span><Button onPress={() => { next(); if (last) toCard() }}>{last ? 'Continue to sign' : 'Next document'}</Button></>
+            : <><span className={styles.nextText}>{!readEnd ? 'Read to the end of this document' : 'Tick that you accept, in the box at the top'}</span>{readEnd ? <Button variant="secondary" appearance="outlined" onPress={toCard}>Go to the box</Button> : null}</>}
+        </div>
+      ) : null}
     </div>
   )
 }

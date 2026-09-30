@@ -42,3 +42,10 @@
   .portal button { position: relative; }
   .portal button::after { content: ''; position: absolute; inset: -4px; }
 }
+
+/* (UX audit 2026-09-30, T12) What the ask covers: a caption and one ticked row per unanswered question (the DS Checkbox with its label), the
+   list scrolling past ~6 rows so the portal box and the footer stay in view. */
+.questions { display: flex; flex-direction: column; gap: var(--om-spacing-2); }
+.questionsHead { font: var(--om-type-subheading-s); color: var(--om-color-on-surface-secondary); }
+.questionList { display: flex; flex-direction: column; gap: var(--om-spacing-2); max-height: 240px; overflow-y: auto; }
+.question { align-items: flex-start; font: var(--om-type-body-m); color: var(--om-color-on-surface-default); overflow-wrap: anywhere; }

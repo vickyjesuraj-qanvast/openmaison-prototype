@@ -81,6 +81,8 @@ export type LeadDetail = {
   quote: Quote | null
   files: LeadFile[]
   questionnaire: QuestionnaireSummary | null
+  /** (UX audit T12) The questions still unanswered — what the Overview's quick Ask Client will send, listed in its dialog. */
+  unansweredQuestions: { id: string; text: string }[]
   ret: ReturnDetail | null   // the latest return with its attachments + people (Qanvast lead return, REG-192)
   /** (REG-609, parity Q-44) How many times the lead was returned — Qanvast's two-return cap reads it. */
   returnsCount: number
@@ -114,7 +116,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     fetchQuoteApproval(),
     db.select().from(quotes).where(and(eq(quotes.leadId, id), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),   // archived / deleted quotes leave the card (Quotes tab, REG-175)
     db.select().from(leadFiles).where(and(eq(leadFiles.leadId, id), isNull(leadFiles.deletedAt))).orderBy(asc(leadFiles.createdAt)),   // trashed files leave the card (Files tab)
-    db.select({ answeredBy: questions.answeredBy, createdAt: questions.createdAt }).from(questions).where(eq(questions.leadId, id)),   // the card's counts derive from the Questionnaire tab's rows (REG-187)
+    db.select({ id: questions.id, text: questions.text, answeredBy: questions.answeredBy, createdAt: questions.createdAt }).from(questions).where(eq(questions.leadId, id)),   // the card's counts derive from the Questionnaire tab's rows (REG-187)
     fetchReturnDetail(id),
     fetchLeadSources(),
     fetchViewer(),
@@ -187,6 +189,7 @@ async function fetchLeadDetailUncached(id: string): Promise<LeadDetail | null> {
     timeline, parked,
     activity: activity.slice(0, 4),
     quote, files,
+    unansweredQuestions: qRows.filter((q) => !q.answeredBy).map((q) => ({ id: q.id, text: q.text })),
     questionnaire: (() => { const sum = summarise(qRows); return sum ? { leadId: id, ...sum, updatedAt: qRows.reduce((m, q) => (q.createdAt > m ? q.createdAt : m), qRows[0]!.createdAt), askedAt: portal?.askedAt ?? null } satisfies QuestionnaireSummary : null })(),
     ret,
     returnsCount: retIds.length,

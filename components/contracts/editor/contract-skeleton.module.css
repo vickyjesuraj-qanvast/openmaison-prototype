@@ -10,7 +10,7 @@
    the quote and the date wrap under it, 44 tall, as contract-editor.module.css lays them out. */
 .mRec, .mQuote, .mDate { display: inline-flex; height: 36px; }
 .mRec { width: 261px; }
-.mQuote { width: 247px; }
+.mQuote { width: 300px; }   /* (UX audit C2) the quote's number, amount and status tag */
 .mDate { width: 200px; }
 .bar { display: flex; align-items: center; gap: var(--om-spacing-4); height: 52px; padding: 0 var(--om-spacing-6); background: var(--om-color-surface-default); box-shadow: var(--om-elevation-level-1); position: relative; z-index: 1; }
 .barEnd { margin-left: auto; }

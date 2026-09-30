@@ -9,7 +9,7 @@ import { fetchBrand, fetchQuoteTemplateState, type QuoteTemplateState, reviveSna
 import type { BrandKit, StudioDetails } from '@/lib/templates/model'
 import { fetchPaymentSplits } from '@/lib/company/payment-templates'
 import type { PaymentSplit } from '@/lib/quotes/payments'
-import { diffQuoteItems } from '@/lib/quotes/diff'
+import { diffQuoteItems, type Diffable } from '@/lib/quotes/diff'
 import { canOpenLead, fetchViewer } from '@/lib/leads/visibility'
 import { itemPickable, runsBook } from '@/lib/company/price-book-rules'
 import { fetchQuoteContract, type QuoteContract } from './contract-link'
@@ -19,7 +19,7 @@ import type { FolderNode } from '@/lib/folders'
 /* Quote editor (1271:40301) — one loader for the page: the quote, its lead, the lead's other quotes (the title chevron
    switches between them), the studio's members (Prepared by) and the lifecycle setting that decides what Send does. */
 
-export type EditorLead = { id: string; name: string; phone: string; email: string | null; propertyType: string; propertyAddress: string | null; estimatedStartDate: Date | null }
+export type EditorLead = { id: string; name: string; phone: string; email: string | null; propertyType: string; propertyAddress: string | null; estimatedStartDate: Date | null; /** (UX audit Q1) the lead's stage — a quote with the client on a lead before Quote Sent offers the move */ stage: string }
 export type QuoteSibling = { id: string; number: string; title: string; status: string }
 export type { QuoteContract }
 export type QuoteEditorData = {
@@ -39,6 +39,8 @@ export type QuoteEditorData = {
   canApprove: boolean
   /** (REG-595) Since the last kept version: how many lines were added, removed and changed — Version History's word. */
   changes: { added: number; removed: number; changed: number } | null
+  /** (UX audit Q10) The last kept version's lines (what the diff reads) — the Items table tints what changed since, live as it is edited. */
+  prevLines: Diffable[] | null
   /** Items section (REG-415): the quote's lines, the studio's price book ("My Items") and the studio record. */
   items: QuoteItem[]
   priceBook: PriceBookItem[]
@@ -79,7 +81,7 @@ export async function fetchQuoteEditor(quoteId: string): Promise<QuoteEditorData
   const viewer = await fetchViewer()
   if (!(await canOpenLead(viewer, quote.leadId))) return null   /* (REG-625, parity §8.2 · E-135) Who sees leads reaches the quote's own URL: not your lead, not your quote */
   const [leadRows, siblings, team, quoteApproval, items, priceBook, studio, files, payments, attachedRows, textTemplates, templateState, brandSetting, paymentSplits, sections, trades, versions, rules] = await Promise.all([
-    db.select({ id: leads.id, name: leads.name, phone: leads.phone, email: leads.email, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate }).from(leads).where(eq(leads.id, quote.leadId)),
+    db.select({ id: leads.id, name: leads.name, phone: leads.phone, email: leads.email, propertyType: leads.propertyType, propertyAddress: leads.propertyAddress, estimatedStartDate: leads.estimatedStartDate, stage: leads.stage }).from(leads).where(eq(leads.id, quote.leadId)),
     db.select({ id: quotes.id, number: quotes.number, title: quotes.title, status: quotes.status }).from(quotes)
       .where(and(eq(quotes.leadId, quote.leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),
     db.select().from(members),
@@ -113,6 +115,7 @@ export async function fetchQuoteEditor(quoteId: string): Promise<QuoteEditorData
   const [fTexts, fPayments, fItems, fSections] = await Promise.all([fetchFolders('texts'), fetchFolders('payments'), fetchFolders('book-items'), fetchFolders('book-sections')])   // (REG-664)
   const libraryFolders = { texts: fTexts.map(node), payments: fPayments.map(node), bookItems: fItems.map(node), bookSections: fSections.map(node) }
   /* (REG-652, price book parity Q-04) The Add Item popover offers the live book and the viewer's own proposals. */
-  return { libraryFolders, contract, lineComments, quote, lead, siblings, members: team, me, quoteApproval, rules, canApprove, changes, items, priceBook: priceBook.filter((p) => itemPickable(viewer, p)), priceBookSections: sections, runsBook: runsBook(viewer), trades: trades.trades, teamIds: assignees.map((a) => a.memberId), versions: [...versions].reverse(), studio, files, payments, quoteFiles: attachedRows.map((r) => r.file), textTemplates, paymentSplits, activity: deriveQuoteActivity(quote, items, payments, attachedRows.map((r) => ({ createdAt: r.at })), team, versions), templateState, brand: brandSetting.kit, studioDetails: brandSetting.details, now: Date.now() }
+  const prevLines: Diffable[] | null = prev ? prev.items.map((i) => ({ id: i.id, parentId: i.parentId, kind: i.kind, status: i.status, name: i.name, qty: i.qty, costMinor: i.costMinor, markupMinor: i.markupMinor, discountPct: i.discountPct, position: i.position })) : null
+  return { prevLines, libraryFolders, contract, lineComments, quote, lead, siblings, members: team, me, quoteApproval, rules, canApprove, changes, items, priceBook: priceBook.filter((p) => itemPickable(viewer, p)), priceBookSections: sections, runsBook: runsBook(viewer), trades: trades.trades, teamIds: assignees.map((a) => a.memberId), versions: [...versions].reverse(), studio, files, payments, quoteFiles: attachedRows.map((r) => r.file), textTemplates, paymentSplits, activity: deriveQuoteActivity(quote, items, payments, attachedRows.map((r) => ({ createdAt: r.at })), team, versions), templateState, brand: brandSetting.kit, studioDetails: brandSetting.details, now: Date.now() }
 }
 

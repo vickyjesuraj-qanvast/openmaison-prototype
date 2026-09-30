@@ -1,4 +1,4 @@
-import { LibraryGalleryGhost } from '@/components/company/templates/library-gallery.skeleton'
+import { LibraryGhostFor } from '@/components/company/templates/library-ghost-for'
 import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
 
 /**
@@ -10,7 +10,7 @@ import { CompanyGhostFrame } from '@/components/company/company-ghost-frame'
 export function MaterialsGhost() {
   return (
     <CompanyGhostFrame title={90} label="Loading materials">
-      <LibraryGalleryGhost filters folders={1} cards={4} footLines={2} />
+      <LibraryGhostFor page="materials" filters folders={1} cards={4} footLines={2} newW={122} />   {/* (UX audit S12) the plain "New material" button's width */}
     </CompanyGhostFrame>
   )
 }

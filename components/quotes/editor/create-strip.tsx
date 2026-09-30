@@ -35,7 +35,7 @@ const serverSnapshot = (): StripState => 'collapsed'
 export type StripLink = 'ai' | 'items' | 'templates' | 'catalog'
 const LINKS: { key: StripLink; icon: string | null; label: string }[] = [
   { key: 'ai', icon: null, label: 'Maison AI' },
-  { key: 'items', icon: 'list_alt', label: 'My Items' },
+  { key: 'items', icon: 'list_alt', label: 'Price book' },   /* (UX audit Q7) one name for the book on every way in (REG-662's pick) */
   { key: 'templates', icon: 'description', label: 'Templates' },
   { key: 'catalog', icon: 'menu_book', label: 'Brand Catalog' },
 ]

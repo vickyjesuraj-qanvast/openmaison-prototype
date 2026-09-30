@@ -34,8 +34,9 @@ export function DateField({ value, onChange, today, onKeyDown, icon = 'event', .
   )
 }
 
-/** Date & Time field: the same trigger with the picker's time row. Picking a day keeps the picker open for the time. */
-export function DateTimeField({ value, onChange, today, onKeyDown, icon = 'event', ...rest }: Common) {
+/** Date & Time field: the same trigger with the picker's time row. Picking a day keeps the picker open for the time.
+    `defaultNow` (UX audit 2026-09-30, L9): a day picked with no time yet takes the time it is now — for logs of what happened. */
+export function DateTimeField({ value, onChange, today, onKeyDown, icon = 'event', defaultNow = false, ...rest }: Common & { defaultNow?: boolean }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement | null>(null)
   const key = useId()
@@ -44,7 +45,7 @@ export function DateTimeField({ value, onChange, today, onKeyDown, icon = 'event
       <TextField {...rest} mode="trigger" value={value} trailingIcon={icon} boxRef={box} open={open}
                  onOpen={() => setOpen((o) => !o)}
                  onKeyDown={(e) => { if (e.key === 'ArrowDown' && open) { e.preventDefault(); focusDatePicker() } onKeyDown?.(e) }} />
-      <DatePicker open={open} anchorRef={box} anchorKey={key} value={parseInputDateTime(value)} today={today} label={rest.label} withTime
+      <DatePicker open={open} anchorRef={box} anchorKey={key} value={parseInputDateTime(value)} today={today} label={rest.label} withTime defaultNow={defaultNow}
                   onSelect={(d) => onChange(formatInputDateTime(d))} onClose={() => setOpen(false)} />
     </>
   )

@@ -41,3 +41,10 @@
 /* (REG-466) The rail's Tasks page: the scope pill (components/om/scope-pill, REG-729) stands where the title would — this box takes
    the title's room and anchors the pill's menu. */
 .scopeWrap { flex: 1; min-width: 0; display: flex; align-items: center; position: relative; }
+
+/* (UX audit 2026-09-30, T5 · T4) The to-do chips beside the scope pill, 8 apart — the galleries' to-do pills (REG-666). They say only their count
+   where the bar is narrow (ScopePill `short`), and a phone's row lets them scroll sideways rather than push the tools off the screen. */
+.todos { display: inline-flex; align-items: center; gap: var(--om-spacing-2); margin-left: var(--om-spacing-2); min-width: 0; }
+@media (max-width: 767px) { .todos { overflow-x: auto; scrollbar-width: none; } .todos::-webkit-scrollbar { display: none; } }
+/* The ghost's to-do chips (components/leads/detail/tab-ghosts.tsx): each chip's own width at a desk, its count-only width below 1025. */
+@media (max-width: 1024px) { .todoGhost { --slot-w: 66px !important; } }   /* a count alone: 64–71 as its digits run */

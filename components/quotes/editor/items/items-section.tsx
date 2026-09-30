@@ -22,7 +22,7 @@ import { NameDialog } from '@/components/leads/files/name-dialog'
 import { useRun } from '@/components/leads/tasks/use-run'
 import type { LeadFile, Member, PriceBookItem, PriceBookSection, QuoteItem } from '@/lib/db/schema'
 import type { Studio } from '@/lib/settings/types'
-import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
+import { DEFAULT_DENSITY, DENSITIES, DENSITY_LABEL, HIGHLIGHT_LABEL, ITEM_VIEWS, ITEM_VIEW_LABEL, parseColumns, parseLabels, PRINT_AS_LABEL, sectionForTrade, UNLABELLED, type ColumnKey, type ColumnSettings, type Highlight, type ItemLabels, type ItemsDensity, type ItemsView, type PrintAs, type RowMenuAction } from '@/lib/quotes/items-model'
 import { categoryShares, counts, descendantIds, lineTotalMinor, quoteTotals, unitPriceMinor, type QuoteTotals } from '@/lib/quotes/math'
 import { scrollParentOf } from '@/components/om/use-stuck'
 import { EXPORT_HEAD, EXPORT_MONEY_COLS, exportRows, toTsv, type PasteLine } from '@/lib/quotes/clipboard'
@@ -45,6 +45,7 @@ import styles from './items-section.module.css'
 import { roundToStep, type RoundStep } from '@/lib/settings/types'
 import type { FolderNode } from '@/lib/folders'
 import { isRefusal } from '@/lib/company/template-rules'
+import type { LineChanges } from './line-change'
 
 const AUTOSAVE_MS = 600
 
@@ -100,7 +101,9 @@ export type ItemsSeed = {
  * Ordering (REG-417): a structural write settles every queued cell write first, so the reload never shows a stored row
  * that the edit has yet to reach; undo / redo drop the queue instead — the snapshot already carries the intended state.
  */
-export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, bookTick = 0, exportTick = 0, propertyType = null, commentCounts = {}, onOpenComments }: {
+export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, onTotal, onLines, onPricing, clientColumns, forceView, addTick = 0, bookTick = 0, exportTick = 0, propertyType = null, commentCounts = {}, onOpenComments, changes }: {
+  /** (UX audit Q10) On a revision: the lines new or changed since the kept version — tinted and tagged in the table. */
+  changes?: LineChanges
   /** (REG-627, parity Q-30) Each line's comment count, and the thread's opener (the editor owns the drawer). */
   commentCounts?: Record<string, number>
   onOpenComments?: (itemId: string) => void
@@ -305,20 +308,36 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     const r = await structural('add the item', () => createQuoteItem(quoteId, input))
     if (r.ok) attention([r.value.id], { focus: focusName })
   }
-  /* (REG-662) Everything ticked in the Price book modal, in the order ticked: items, then sections, each at the end of the quote — one step
-     for Undo (⌘Z), every new row brought into view and pulsed. */
+  /* (REG-662) Everything ticked in the Price book modal, in the order ticked: items, then sections — one step for Undo (⌘Z, and the
+     snackbar's Undo), every new row brought into view and pulsed. (UX audit Q7, extends REG-662) An item lands at the end of the quote's
+     section for its trade — its Category against the section's name, "Carpentry" in "Carpentry Works" — else at the end of the quote; a
+     saved section lands at the end. */
   const addFromBook = async (pick: PriceBookPick): Promise<boolean> => {
-    const before = new Set(itemsRef.current.map((i) => i.id))
+    const before = itemsRef.current.map((i) => ({ ...i }))
+    const beforeIds = new Set(before.map((i) => i.id))
+    const tops = before.filter((i) => i.kind === 'group' && !i.parentId)
+    const placed = pick.map((x) => {
+      if (x.tab !== 'items') return { x, parentId: null as string | null }
+      const cat = priceBook.find((b) => b.id === x.id)?.category ?? null
+      return { x, parentId: sectionForTrade(tops, cat)?.id ?? null }
+    })
     const n = pick.filter((x) => x.tab === 'items').length, m = pick.length - n
-    const done = n && m ? `${n} ${n === 1 ? 'item' : 'items'} and ${m} ${m === 1 ? 'section' : 'sections'} added from the price book`
-      : n ? `${n} ${n === 1 ? 'item' : 'items'} added from My Items` : `${m} ${m === 1 ? 'section' : 'sections'} added from My Sections`
+    const into = [...new Set(placed.filter((p) => p.parentId).map((p) => tops.find((t) => t.id === p.parentId)?.name ?? ''))].filter(Boolean)
+    const atEnd = placed.filter((p) => p.x.tab === 'items' && !p.parentId).length
+    const what = n && m ? `${n} ${n === 1 ? 'item' : 'items'} and ${m} ${m === 1 ? 'section' : 'sections'}` : n ? `${n} ${n === 1 ? 'item' : 'items'}` : `${m} ${m === 1 ? 'section' : 'sections'}`
+    const where = into.length ? ` — into ${into.length > 2 ? `${into.slice(0, 2).join(', ')} and ${into.length - 2} more` : into.join(' and ')}${atEnd ? `, ${atEnd} at the end` : ''}` : ''
     const r = await structural('add from the price book', async () => {
-      for (const x of pick) {   // in the order ticked, across both tabs — each at the end
-        if (x.tab === 'items') await createQuoteItem(quoteId, { priceBookItemId: x.id })
-        else await insertPriceBookSection(quoteId, x.id, {})
+      for (const p of placed) {   // in the order ticked, across both tabs
+        if (p.x.tab === 'items') await createQuoteItem(quoteId, { priceBookItemId: p.x.id, ...(p.parentId ? { parentId: p.parentId } : {}) })
+        else await insertPriceBookSection(quoteId, p.x.id, {})
       }
-    }, done)
-    if (r.ok) { setBookOpen(null); attention(before) }
+      /* a folded section that took a pick opens, so the new line is seen where it landed */
+      for (const g of tops.filter((t) => t.collapsed && placed.some((p) => p.parentId === t.id))) await updateQuoteItem(g.id, { collapsed: false })
+    })
+    if (r.ok) {
+      setBookOpen(null); attention(beforeIds)
+      snackbar({ message: `${what} added from the price book${where}`, actionLabel: 'Undo', onAction: () => { void restore(before, true) } })
+    }
     return r.ok
   }
   const removeItems = (list: string[]) => {
@@ -641,6 +660,8 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
     snackbar({ message: v ? `Highlighted — ${HIGHLIGHT_LABEL[v]}` : 'Highlight removed' })
   }
   const fromMyItems = () => { closeMenus(); setAddOpenTick((t) => t + 1); addInputRef.current?.focus() }
+  /* (UX audit Q7, extends REG-662) Create ▾ › From Price book opens the Price book modal, as the strip's tile and the table's link do. */
+  const fromPriceBook = () => { closeMenus(); setBookOpen('items') }
 
   /* Find (REG-477): a search glyph that opens the DS SearchBar and folds back when left empty (Escape clears it). The tab toolbars' box
      (components/om/toolbar-search.tsx) stands open on desktop; the mock's Items toolbar has no room for a standing box. */
@@ -676,7 +697,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
       <DropdownItem onSelect={() => { closeMenus(); void create({}, true) }}>New Item</DropdownItem>
       <DropdownItem onSelect={() => { closeMenus(); createGroup([]) }}>New section</DropdownItem>
       <DropdownDivider />
-      <DropdownItem onSelect={fromMyItems}>From My Items</DropdownItem>
+      <DropdownItem onSelect={fromPriceBook}>From Price book</DropdownItem>
     </PortalMenu>
   )
 
@@ -779,7 +800,7 @@ export function ItemsCard({ seed, open, onToggle, onSaved, onOpenAi, onCount, on
             onReorder={(keys) => saveColumns({ ...columns, columns: [...keys.map((k) => columns.columns.find((c) => c.key === k)!), ...columns.columns.filter((c) => !c.on)] })}
             items={items} priceBook={shownBook} priceBookSections={priceBookSections} brandColors={seed.brandColors} view={view} density={density} columns={visibleColumns} details={columns.details} labels={usedLabels} clientColumns={clientColumns ?? null} propertyType={propertyType}
             selected={selected} collapsedBuckets={collapsedBuckets} showFull={showFull} nextNumber={nextNumber}
-            query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })} commentCounts={commentCounts}
+            query={query} onPasteBlock={(text, anchorId) => setPasting({ text, anchorId })} commentCounts={commentCounts} changes={changes}
             h={{
               onPatch: patchItem,
               onFill: fillDown,

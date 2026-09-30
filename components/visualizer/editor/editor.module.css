@@ -73,7 +73,7 @@
    inside it); (phone-tablet 1 · surfaces-furniture 6) a short phone keeps more of the photo, now the panel scrolls */
 @media (max-width: 767px) and (max-height: 700px) { .tray { height: 40dvh; } }
 .goDock { flex-shrink: 0; display: flex; flex-direction: column; }
-.editor[data-narrow] { --viz-strip-end: 72px; }
+.editor[data-narrow] { --viz-strip-end: var(--om-spacing-3); }   /* (UX audit V12) the Maison AI button left the versions band — the strip has its whole width */
 /* (tablet-2) the tray rising: the bar fades as its row closes on the rise's beat, so the photo gives it back smoothly — never gone in one
    frame (its padding and rule close too, so no sliver of a row stays reserved) */
 .editor[data-tray] [role='toolbar'][aria-label='Canvas'] { pointer-events: none; animation: vizBarOut 180ms cubic-bezier(0.4, 0, 0.2, 1) both; }
@@ -90,9 +90,12 @@
 @keyframes vizBarIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .editor[data-narrow]:not([data-tray]):not([data-tray-leaving]) [role='toolbar'][aria-label='Canvas'] { animation: none; } }
 .trayDescribe { flex-shrink: 0; padding: var(--om-spacing-3) calc(var(--om-spacing-4) + var(--viz-inset-r, 0px)) 0 calc(var(--om-spacing-4) + var(--viz-inset-l, 0px)); }
-/* (F139 · F174) the FAB rides in the versions band, over the strip's reserved end (`--viz-strip-end`), clear of the go bar and the dock */
-.editor[data-narrow] .fab { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(60px + 68px + 12px + env(safe-area-inset-bottom, 0px)); }
-.editor[data-narrow] [aria-label='Maison AI suggestions'] { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(60px + 68px + 12px + 48px + 12px + env(safe-area-inset-bottom, 0px)); }
+/* (UX audit V12, supersedes F139 · F174's seat in the versions band) The camera model: the Maison AI button rides the stage's top corner,
+   level with the version chip (`--viz-stage-top`, measured by the editor) — clear of the versions, the canvas bar, the go bar and the dock;
+   its sheet opens under it. It steps aside while a mode owns the photo (place, draw, pin) or a card sits on the photo's corner. */
+.editor[data-narrow] .fab { top: calc(var(--viz-stage-top, 120px) + 12px); bottom: auto; right: calc(16px + env(safe-area-inset-right, 0px)); }
+.editor[data-narrow] [aria-label='Maison AI suggestions'] { top: calc(var(--viz-stage-top, 120px) + 12px + 48px + 8px); bottom: auto; right: calc(16px + env(safe-area-inset-right, 0px)); max-height: calc(100dvh - var(--viz-stage-top, 120px) - 88px); overflow-y: auto; }
+.editor[data-narrow]:has([data-pin-bounds]:not([data-mode='view'])) .fab, .editor[data-narrow][data-card] .fab { display: none; }
 .editor[data-tray] .fab, .editor[data-tray-leaving] .fab { display: none; }
 @media (max-width: 767px) { .note { align-items: flex-start; padding: var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-right, 0px)) var(--om-spacing-2) calc(var(--om-spacing-3) + env(safe-area-inset-left, 0px)); font: var(--om-type-body-s); } .empty { width: calc(100% - 24px); padding: var(--om-spacing-5) var(--om-spacing-4); } .stageChip { max-width: calc(100vw - 48px); } }
 

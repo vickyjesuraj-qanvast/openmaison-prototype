@@ -447,3 +447,8 @@
   .itemText:has(> .input[data-desc]) .expand:hover { background: var(--om-color-hover-08p); }
   .itemText:has(> .input[data-desc]) .expandGlyph { font-size: 16px !important; }   /* the 24px box's own glyph size (the inline 20 is the hanging button's) */
 }
+
+/* (UX audit Q10) On a revision, a line new or changed since the kept version wears the kit's yellow tint — every cell, the frozen ones too —
+   under its tag ("New since v1" · "Changed since v1"); a selection's tint wins, as it wins over a child's. */
+.row[data-change]:not([data-selected]) { background: var(--om-color-tertiary-yellow-variant2); }
+.row[data-change]:not([data-selected]) .colSel, .row[data-change]:not([data-selected]) .colNum, .row[data-change]:not([data-selected]) .colItem, .row[data-change]:not([data-selected]) .colTotal { background: var(--om-color-tertiary-yellow-variant2); }

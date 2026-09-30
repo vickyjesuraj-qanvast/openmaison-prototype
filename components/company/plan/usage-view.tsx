@@ -21,9 +21,9 @@ import { SelectTrigger } from '@/components/om/select-trigger'
 import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { TextField } from '@/components/om/text-field'
 import { ToolbarSearch } from '@/components/om/toolbar-search'
-import { openTopUp, refreshCredits, useCredits } from '@/components/credits/credits-client'
+import { openPlans, openTopUp, refreshCredits, useCredits } from '@/components/credits/credits-client'
 import { setDefaultMonthlyAmount, setMonthlyAmount } from '@/app/credits/actions'
-import { aboutRenders, dayMonth, fmtCredits, refreshLine, runOutAt, type CreditSummary } from '@/lib/credits/model'
+import { aboutRenders, dayMonth, fmtCredits, refreshLine, runOutAt, toneOf, type CreditSummary } from '@/lib/credits/model'
 import { sgd, TOPUP_CREDITS, TOPUP_PRICE } from '@/lib/credits/plans'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import { displayDateTimeDot } from '@/lib/format'
@@ -149,6 +149,11 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
   const runOut = trusted && s.counting ? runOutAt({ used: s.usedThisPeriod ?? 0, balance: s.balance ?? 0, periodStart: s.periodStart, periodEnd: s.periodEnd, now: s.now }) : null
   const delta = usage.previous != null && usage.previous > 0 ? Math.round(((used - usage.previous) / usage.previous) * 100) : null
   const plan = s.planCredits ?? 0, top = s.topupCredits ?? 0, whole = Math.max(1, (s.allowance ?? 0) + top)
+  /* (UX audit S5, REG-704) Low — the pool is low or out, or this pace runs out before the refresh: the Owner buys from where it is said,
+     through the credits openers every other surface uses (the top-up and Plans dialogs). */
+  const tone = toneOf(s)
+  const lowNow = s.counting && (tone === 'low' || tone === 'empty' || !!runOut)
+  const buyHere = s.viewer.canBuy && lowNow
 
   /* Activity: a search and a page at a time */
   const [query, setQuery] = useState('')
@@ -245,7 +250,14 @@ export function UsageView({ summary, usage, asks, from, focus }: { summary: Cred
               {delta != null ? <span className={styles.tileNote}><MetaChip icon={delta > 0 ? 'arrow_upward' : 'arrow_downward'}>{`${Math.abs(delta)}% vs the month before`}</MetaChip></span> : null}
             </StatTile>
             <StatTile label="At this pace" value={!s.counting ? 'Not counted yet' : runOut ? `Runs out ~${dayMonth(runOut)}` : `Lasts past ${dayMonth(s.periodEnd)}`} grade={!s.counting ? undefined : runOut ? ((s.balance ?? 0) <= 0 ? 'bad' : 'warn') : 'good'}
-                      help={!s.counting ? 'AI tools don’t use AI credits yet' : runOut ? `Before the refresh on ${dayMonth(s.periodEnd)} — top up or pick Fast` : `This month’s credits refresh on ${dayMonth(s.periodEnd)}`} testId="tile-pace" />
+                      help={!s.counting ? 'AI tools don’t use AI credits yet' : runOut ? `Before the refresh on ${dayMonth(s.periodEnd)} — top up or pick Fast` : `This month’s credits refresh on ${dayMonth(s.periodEnd)}`} testId="tile-pace">
+              {buyHere ? (
+                <span className={styles.tileActions} data-testid="pace-buy">
+                  <Button onPress={openTopUp}>{`Buy ${fmtCredits(TOPUP_CREDITS)} AI credits · ${sgd(TOPUP_PRICE)}`}</Button>
+                  <Button variant="secondary" appearance="outlined" onPress={openPlans}>See plans</Button>
+                </span>
+              ) : null}
+            </StatTile>
           </div>
         ) : (
           <>

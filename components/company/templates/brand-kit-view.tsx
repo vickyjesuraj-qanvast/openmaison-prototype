@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ds'
 import { Icon } from '@/components/om/icon'
 import { IconButton } from '@/components/om/icon-button'
@@ -22,6 +22,7 @@ import { hexOf, hexTyped } from '@/lib/format'
 import styles from '../profile-view.module.css'
 import { ReadOnlyScope } from '@/components/om/read-only'
 import { ReadOnlyNote } from '@/components/company/read-only-note'
+import { LeaveGuard } from '@/components/company/leave-guard'
 
 const WEIGHTS: { label: string; value: 400 | 600 | 700 }[] = [{ label: 'Regular', value: 400 }, { label: 'Semibold', value: 600 }, { label: 'Bold', value: 700 }]
 
@@ -41,13 +42,14 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
   const stampInput = useRef<HTMLInputElement>(null)
   const badgeInput = useRef<HTMLInputElement>(null)
 
-  const save = async () => {
+  /* (UX audit S2) true when the kit landed — the leave guard's Save goes on only then */
+  const save = async (): Promise<boolean> => {
     /* (F121) a colour box still holding a half-typed value says so rather than saving the colour it had before */
     const bad = Object.keys(colorDraft).filter((k) => !hexOf(colorDraft[k]!))
-    if (bad.length) { setColorShown((d) => ({ ...d, ...Object.fromEntries(bad.map((k) => [k, true])) })); return }
+    if (bad.length) { setColorShown((d) => ({ ...d, ...Object.fromEntries(bad.map((k) => [k, true])) })); return false }
     setBusy(true)
-    try { await settle(saveBrand({ kit }));   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }) }   /* saveBrand revalidates the layout; a refresh here rendered twice */
-    catch (e) { snackbar({ message: couldnt('save the brand kit', reasonOf(e)) }) }   /* (wave E, E7) a refusal answers { error: the rule } — said, never "saved" */
+    try { await settle(saveBrand({ kit }));   /* (REG-646) its own half only */ setSaved(kit); snackbar({ message: 'Brand kit saved' }); return true }   /* saveBrand revalidates the layout; a refresh here rendered twice */
+    catch (e) { snackbar({ message: couldnt('save the brand kit', reasonOf(e)) }); return false }   /* (wave E, E7) a refusal answers { error: the rule } — said, never "saved" */
     finally { setBusy(false) }
   }
   const discard = () => { setKit(saved); setColorDraft({}); setColorShown({}) }
@@ -70,13 +72,6 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
     setColorShown((d) => { const n = { ...d }; delete n[key]; return n })
   }
   const [sizeDraft, setSizeDraft] = useState<Record<string, string>>({})
-  /* Unsaved edits are not lost to a tab or a reload without a word (checklist: discarding edits asks first). */
-  useEffect(() => {
-    if (!dirty) return
-    const onUnload = (e: BeforeUnloadEvent) => { e.preventDefault() }
-    window.addEventListener('beforeunload', onUnload)
-    return () => window.removeEventListener('beforeunload', onUnload)
-  }, [dirty])
 
   return (
     <CompanyShell title="Templates" tabs={templateTabs()} from={from} skeleton={<BrandKitGhost />} actions={!canRun ? null : <>
@@ -84,6 +79,8 @@ export function BrandKitView({ brand, previewDesign, previewName, sample, from, 
       <Button onPress={() => { void save() }} isDisabled={!dirty || busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
     </>}>
       {canRun ? null : <ReadOnlyNote />}
+      {/* (UX audit S2) Unsaved edits are not lost to a move inside the app — a tab, the rail, a card — nor to a tab or a reload. */}
+      <LeaveGuard dirty={dirty && canRun} what="the brand kit" onSave={save} onDiscard={discard} />
       <ReadOnlyScope readOnly={!canRun}>
       <div className={styles.layout} data-testid="brand-kit">
         <div className={styles.form}>

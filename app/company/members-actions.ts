@@ -66,8 +66,9 @@ export async function setMemberPreferences(memberId: string, input: { preference
 
 /* ── (REG-646, settings parity Q-06) Adding a member, deactivating one, bringing one back ─────────────────────────────── */
 
-/** Company › Members › Add member: name, phone, email and a role — 1.0's *Invite Member* asked OpenMaison staff to do this (A-12). */
-export async function addMember(input: { name: string; phone: string; email: string; role: Role }): Promise<MemberResult & { id?: string }> {
+/** Company › Members › Add member: name, phone, email and a role — 1.0's *Invite Member* asked OpenMaison staff to do this (A-12).
+    (UX audit S6) A Designer may be added with the Manager they report to — an active Manager, or nobody. */
+export async function addMember(input: { name: string; phone: string; email: string; role: Role; managerId?: string | null }): Promise<MemberResult & { id?: string }> {
   const viewer = await fetchViewer()
   const role = isRole(input.role) ? input.role : 'Designer'
   const block = addBlock(viewer, role)
@@ -78,11 +79,13 @@ export async function addMember(input: { name: string; phone: string; email: str
   if (phone && !isSgPhone(phone)) return { error: 'A Singapore number has 8 digits and starts with 6, 8 or 9' }
   const email = input.email.trim().toLowerCase().slice(0, 120)
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'That email doesn’t look right' }
-  const team = await db.select({ name: members.name, email: members.email, color: members.color }).from(members)
+  const team = await db.select({ id: members.id, name: members.name, email: members.email, color: members.color, role: members.role, isActive: members.isActive }).from(members)
   if (team.some((m) => m.name.toLowerCase() === name.toLowerCase())) return { error: `${name} is already a member` }
   if (email && team.some((m) => (m.email ?? '').toLowerCase() === email)) return { error: 'Another member has that email' }
+  const manager = role === 'Designer' && input.managerId ? team.find((m) => m.id === input.managerId && m.role === 'Manager' && m.isActive) ?? null : null
+  if (role === 'Designer' && input.managerId && !manager) return { error: 'A Designer reports to an active Manager' }
   const id = randomUUID()
-  await db.insert(members).values({ id, name, role, color: nextTint(team.map((m) => m.color)), isYou: false, email: email || null, phone: phone || null, isActive: true })
+  await db.insert(members).values({ id, name, role, color: nextTint(team.map((m) => m.color)), isYou: false, email: email || null, phone: phone || null, isActive: true, managerId: manager?.id ?? null })
   /* (REG-704, AI credits Q-25 · integration B-16) the studio's monthly amount for new members, when the Owner set one — a cap row as 1.0 writes it */
   const [defaults] = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, 'credit_defaults'))
   const amount = defaults ? (JSON.parse(defaults.value) as { monthlyAmount?: number | null }).monthlyAmount ?? null : null

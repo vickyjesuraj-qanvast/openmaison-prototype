@@ -12,6 +12,7 @@ import type { ItemPatch } from '@/app/quotes/items-actions'
 import { LinkCell, MoneyCell, NumberCell, TextCell } from './cell-input'
 import { DescriptionDialog } from './description-dialog'
 import { LabelMenu, RowMenu, ThumbMenu, UnitMenu, VisibilityMenu } from './table-menus'
+import { changeTag, type LineChange } from './line-change'
 import styles from './items-table.module.css'
 
 export const COL_CLASS: Record<ColumnKey, string | undefined> = {
@@ -57,8 +58,10 @@ export type RowHandlers = {
  * inset and the client-visibility eye. Every cell edits in place and the row autosaves (items-section.tsx).
  * `details` (column settings › ITEM DETAILS) switches the description line, the thumbnail and the number off (REG-417).
  */
-export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors, comments = 0,
+export function ItemRow({ item, all, number, columns, colW, details, density, selected, groups, selectedCount, labels, dragging, shift, dropDepth, dragStyle, fresh, colStyle, showFull, fillCol, inFill, onFillStart, h, brandColors, comments = 0, change = null,
 }: {
+  /** (UX audit Q10) On a revision: the line is new since the kept version, or its name, quantity, price or discount changed — tinted, tagged. */
+  change?: LineChange | null
   /** (REG-627) How many comments the line's thread holds. */
   comments?: number
   item: QuoteItem
@@ -217,7 +220,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
 
   const total = isGroup ? sums!.totalMinor : lineTotalMinor(item)
   return (
-    <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-group={item.kind === 'group' || undefined} data-child={child || undefined} data-depth={depth || undefined} data-selected={selected || undefined}
+    <div className={styles.row} role="row" data-item-id={item.id} data-density={density} data-group={item.kind === 'group' || undefined} data-change={!isGroup && change ? change.kind : undefined} data-child={child || undefined} data-depth={depth || undefined} data-selected={selected || undefined}
          data-highlight={hl ? HIGHLIGHT_KIND[hl] : undefined} style={hl || dragStyle ? ({ ...(hl ? { '--hl': brandColors[hl] } : {}), ...dragStyle } as CSSProperties) : undefined}
          data-active={editing || menu === 'unit' || menu === 'room' || menu === 'category' || menu === 'section' || menu === 'vendor' || undefined}
          data-dragging={dragging || undefined} data-drop-depth={dropDepth ?? undefined} data-shift={shift ? '' : undefined} data-fresh={fresh || undefined} data-full={showFull || undefined}
@@ -272,6 +275,7 @@ export function ItemRow({ item, all, number, columns, colW, details, density, se
             {!isGroup && item.optional ? <span className={styles.groupTag}><Tag appearance="outlined">Optional</Tag></span> : null}   {/* (REG-492) */}
             {!isGroup && item.optional && item.clientChoice ? <span className={styles.groupTag} data-testid="client-choice"><Tooltip label={item.clientChoice === 'want' ? 'Ticked on the confirmation link — clear its Optional mark to add it to the totals' : 'Left unticked on the confirmation link'}><span><Tag appearance="outlined" color={item.clientChoice === 'want' ? 'green' : undefined}>{item.clientChoice === 'want' ? 'Client wants it' : 'Client said no'}</Tag></span></Tooltip></span> : null}   {/* (REG-626, parity Q-32) */}
             {under ? <span className={styles.groupTag} data-testid="below-cost"><Tooltip label={`Sells for ${money2(lineTotalMinor(item))}, costs ${money2(lineCostMinor(item))} — ${money2(lineCostMinor(item) - lineTotalMinor(item))} under its cost`}><span><Tag appearance="outlined" color="red">Below cost</Tag></span></Tooltip></span> : null}   {/* (REG-623) */}
+            {!isGroup && change ? <span className={styles.groupTag} data-testid="line-change"><Tooltip label={changeTag(change).help}><span tabIndex={0}><Tag appearance="outlined" color="yellow">{changeTag(change).label}</Tag></span></Tooltip></span> : null}   {/* (UX audit Q10) */}
             {!isGroup && comments > 0 ? <Tooltip label={`${comments} ${comments === 1 ? 'comment' : 'comments'} — open the thread`}><button type="button" className={styles.commentCount} data-testid="line-comment-count" aria-label={`${comments} ${comments === 1 ? 'comment' : 'comments'} on ${item.name}`} onClick={() => h.onComments(item)}><Icon name="comment" size={16} weight={300} />{comments}</button></Tooltip> : null}   {/* (REG-627) */}
             {isGroup && childCount > 0 ? <span className={styles.groupCount}>{childCount} {childCount === 1 ? 'item' : 'items'}</span> : null}   {/* (REG-463) only once the group holds something */}   {/* a word, not a glyph nobody could read (owner 2026-09-16, REG-445) */}
             {child || vis !== 'visible' ? (   /* (sweep S1) a top-level line that isn't fully shown keeps its eye too — its state and the way back */

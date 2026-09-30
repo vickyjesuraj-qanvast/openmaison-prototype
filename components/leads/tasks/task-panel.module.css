@@ -84,3 +84,15 @@
 }
 .leadLink { font: var(--om-type-subheading-m); color: var(--om-color-primary-default); text-decoration: none; }   /* (REG-729) 14/20/600 from the token, as it drew */
 .leadLink:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* (UX audit 2026-09-30, T8) The head's comment icon carries the thread's count — a small primary badge on its top-right corner (the rail badge's
+   geometry, in the primary tone: a count, not an alarm). */
+.countHost { position: relative; display: inline-flex; }
+.count {
+  position: absolute; top: -6px; right: -8px; pointer-events: none; box-sizing: border-box;
+  min-width: 16px; height: 16px; padding: 0 3px; border-radius: var(--om-radius-full);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--om-color-primary-default); color: var(--om-color-on-primary-default);
+  box-shadow: 0 0 0 2px var(--om-color-surface-default);
+  font: var(--om-type-caption-xs);
+}

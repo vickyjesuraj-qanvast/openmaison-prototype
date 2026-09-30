@@ -119,6 +119,28 @@ export function Tooltip({
   )
 }
 
+/**
+ * (UX audit 2026-09-30, C7) The same one bubble for an element React does not render as a child — a Smart Text chip inside the contract's
+ * contenteditable paper, which a <Tooltip> cannot wrap. The same delay, warm window, placement and dismissals (scroll, a press, Esc):
+ * `showTooltipFor(el, label)` as the pointer comes over it, `hideTooltipFor(el)` as it leaves.
+ */
+const domOwners = new WeakMap<Element, string>()
+let domSeq = 0
+let domTimer: ReturnType<typeof setTimeout> | null = null
+export function showTooltipFor(el: HTMLElement, label: string, side: TooltipSide = 'top') {
+  let owner = domOwners.get(el)
+  if (!owner) { owner = `dom-tip-${++domSeq}`; domOwners.set(el, owner) }
+  if (domTimer) { clearTimeout(domTimer); domTimer = null }
+  const next = { owner, label, ...place(el, side) }
+  if (state || Date.now() - lastHiddenAt < WARM_WINDOW_MS) commit(next)
+  else domTimer = setTimeout(() => { domTimer = null; commit(next) }, SHOW_DELAY_MS)
+}
+export function hideTooltipFor(el: HTMLElement) {
+  if (domTimer) { clearTimeout(domTimer); domTimer = null }
+  const owner = domOwners.get(el)
+  if (owner && state?.owner === owner) commit(null)
+}
+
 function Marker({ side }: { side: TooltipSide }) {
   // Mock marker is a 24×4 triangle (tooltip-marker.svg); one path per orientation.
   if (side === 'bottom') return <svg className={styles.marker} width="24" height="4" viewBox="0 0 24 4" aria-hidden><path d="M12 0L16 4H8Z" /></svg>

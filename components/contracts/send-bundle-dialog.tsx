@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Checkbox, TextArea } from '@/components/ds'
+import { Button, Checkbox } from '@/components/ds'
 import { Dialog } from '@/components/om/dialog'
 import { Icon } from '@/components/om/icon'
-import { TextField } from '@/components/om/text-field'
+import { MessageField, RecipientFields } from './editor/dialogs'
 import { useCopy } from '@/components/om/use-copy'
-import { digitsOnly, isSgPhone, phoneTyped } from '@/lib/format'
+import { digitsOnly, isSgPhone } from '@/lib/format'
 import { bundleSigningLink } from '@/lib/contracts/model'
 import { SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
 import { MSG } from '@/lib/forms'
@@ -22,7 +22,7 @@ const makeId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? 
  * signature". The Send for digital signature dialog (REG-534) with a checklist on top: tick two or more, the client's name and
  * number, the WhatsApp draft, the link. The bundle's id is made when the dialog opens so the link is known on the press.
  */
-export function SendBundleDialog({ open, onClose, contracts, defaults, draft, onSend, onShare }: {
+export function SendBundleDialog({ open, onClose, contracts, defaults, draft, onSend, onShare, quoteBlock }: {
   open: boolean; onClose: () => void
   /** The lead's documents that can still be signed (not Signed, not deleted). */
   contracts: Contract[]
@@ -31,11 +31,13 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
   onSend: (o: { bundleId: string; contractIds: string[]; name: string; phone: string; message: string; link: string }) => void | Promise<void>
   /** (REG-633, parity Q-07 · E-118) Copy link shares the bundle: it is recorded (Sent to Client) without WhatsApp, so the copied link opens. */
   onShare?: (o: { bundleId: string; contractIds: string[]; name: string; phone: string }) => void | Promise<void>
+  /** (UX audit C2) Why a document's named quote keeps it out (a Draft under required approval), else null. */
+  quoteBlock?: (c: Contract) => string | null
 }) {
   const [bundleId, setBundleId] = useState('')
   /* (sweep S2 #7) Only what can go out is ticked or tickable — an empty document, or one with nowhere to sign, says why and stays out
      (the server dropped them after WhatsApp had named them, and a set left under two threw with WhatsApp already open). */
-  const blockOf = (c: Contract) => { const b = sendBlock(c); return b ? SEND_BLOCK_WORDS[b] ?? 'It can’t go out yet' : null }
+  const blockOf = (c: Contract) => { const b = sendBlock(c); return b ? SEND_BLOCK_WORDS[b] ?? 'It can’t go out yet' : quoteBlock?.(c) ?? null }
   const sendable = contracts.filter((c) => !blockOf(c))
   /* (REG-633, parity Q-16) The order the documents are ticked is the order the client reads them. */
   const [picked, setPicked] = useState<string[]>(() => sendable.map((c) => c.id))
@@ -78,17 +80,9 @@ export function SendBundleDialog({ open, onClose, contracts, defaults, draft, on
             )
           })}
         </div>
-        <TextField label="Client name" required value={name} onChange={setName} error={touched && !nameOk ? MSG.required : undefined} />
-        <div className={styles.phoneRow}>
-          <span className={styles.phoneCode}><TextField label="Code" value="+65" mode="select" options={['+65']} disabled /></span>
-          <span className={styles.phoneNum}><TextField label="Client phone (for the code)" required type="tel" inputMode="numeric" value={phoneTyped(phone)} onChange={(v) => setPhone(digitsOnly(v).slice(0, 8))} error={err} maxLength={9} /></span>
-        </div>
-        {/* (REG-729) The DS field with its own label and stroke, as the Send dialog's. */}
-        <TextArea className={styles.sendBox} label="Message to the client" value={message} onChange={(v: string) => setText(v)} />
-        <div className={styles.sendUnder}>
-          <Button appearance="text" iconStart={<Icon name="restart_alt" size={18} />} onPress={() => setText(null)} isDisabled={text === null || text === auto}>Reset to draft</Button>
-          <span>{message.length} characters</span>
-        </div>
+        {/* (UX audit C12) the Send dialog's own recipient and message pieces */}
+        <RecipientFields name={name} phone={phone} onName={setName} onPhone={setPhone} nameError={touched && !nameOk ? MSG.required : undefined} phoneError={err} />
+        <MessageField value={message} onChange={(v) => setText(v)} onReset={() => setText(null)} canReset={text !== null && text !== auto} />
         <div className={styles.linkRow}><Icon name="link" size={18} /><code>{link}</code></div>
       </div>
     </Dialog>

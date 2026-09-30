@@ -1,5 +1,6 @@
 'use client'
 
+import { useRememberShape } from '@/lib/ghost-shape'
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withFrom } from '@/lib/nav'
@@ -20,14 +21,15 @@ import { MOBILE, useMediaQuery } from '@/lib/breakpoint'
 import type { Contract } from '@/lib/db/schema'
 import { EMPTY_CONTRACT_FILTERS, activeContractFilterCount, applyContractFilters, searchContracts, type ContractFilters, type ContractStatus } from '@/lib/leads/contract-filters'
 import type { StudioContractsData } from '@/lib/contracts/queries'
-import { bundleMessage, contractLink, firstName } from '@/lib/contracts/model'
+import { bundleMessage, contractLink, firstName, reminderMessage } from '@/lib/contracts/model'
+import { moveStageHref } from '@/lib/leads/move-link'
 import { SendBundleDialog } from '@/components/contracts/send-bundle-dialog'
 import { archiveContract, deleteContracts, listArchivedContracts, setContractStatus, unarchiveContracts } from '@/app/leads/contracts-actions'
 import { ArchivedContractsSheet } from '@/components/contracts/archived-contracts-sheet'
 import { createContractDoc, deleteContractsForever, emptyContractTrash, restoreContracts, sendBundle, shareContractLink } from '@/app/contracts/actions'
 import { canDeleteContract, CONTRACT_DELETE_RULE, contractsDeletedLine, unsignBlock } from '@/lib/contracts/policy'
-import { SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
-import { MarkSignedDialog } from '@/components/contracts/editor/dialogs'
+import { bundleBlockLine, quoteSendBlock, SEND_BLOCK_WORDS, sendBlock } from '@/lib/contracts/readiness'
+import { MarkSignedDialog, SendContractDialog } from '@/components/contracts/editor/dialogs'
 import { markContractSigned } from '@/app/contracts/actions'
 import { UnsignDialog } from '@/components/contracts/unsign-dialog'
 import { fetchContractTemplateOptionsAction, fetchDeletedContractsAction } from '@/app/contracts/read-actions'
@@ -47,6 +49,7 @@ type Pending = { kind: 'blank' } | { kind: 'template'; templateId: string | null
  */
 export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const { contracts, leads, now } = data
+  useRememberShape('tools.contracts', contracts.length === 0)   // (UX audit build) the shape this list opened on — its loading ghost draws the same one next time
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -74,7 +77,24 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
   const loadArchived = useCallback(() => listArchivedContracts(null), [])
   /* (REG-634, parity E-125) Send together from the studio list: the lead first (those with two or more documents to sign), then the tab's dialog. */
   const bundleable = useMemo(() => contracts.filter((c) => c.status !== 'Signed'), [contracts])
-  const bundleLeads = useMemo(() => leads.filter((l) => bundleable.filter((c) => c.leadId === l.id && !sendBlock(c)).length >= 2), [leads, bundleable])   // (sweep S2 #7) two that can go out
+  /* (UX audit C2) the quote a contract names keeps it from going out while it is a Draft under required approval — checked here first, as Send is */
+  const quoteBlockOf = useCallback((c: Contract) => quoteSendBlock(c.fromQuoteId ? data.quotes[c.fromQuoteId] : null, data.approvalRequired), [data.quotes, data.approvalRequired])
+  const sayQuoteBlock = (c: Contract, why: string) => snackbar({ message: why, ...(c.fromQuoteId ? { actionLabel: 'Open the quote', onAction: () => router.push(withFrom(`/quotes/${c.fromQuoteId}`, '/contracts')) } : {}) })
+  const bundleLeads = useMemo(() => leads.filter((l) => bundleable.filter((c) => c.leadId === l.id && !sendBlock(c) && !quoteBlockOf(c)).length >= 2), [leads, bundleable, quoteBlockOf])   // (sweep S2 #7) two that can go out
+  /* (UX audit C4) Send together's greyed row names what holds it back — on the first lead with two or more documents to sign */
+  const bundleBlock = useMemo(() => {
+    if (bundleLeads.length) return null
+    const held = leads.map((l) => bundleable.filter((c) => c.leadId === l.id)).find((docs) => docs.length >= 2)
+    return held ? bundleBlockLine(held.map((c) => ({ title: `${c.title} (${c.leadName})`, why: sendBlock(c) ?? quoteBlockOf(c) }))) : 'needs a lead with two documents ready to go'
+  }, [bundleLeads, leads, bundleable, quoteBlockOf])
+  /* (UX audit C5) "Awaiting signature (n)" — a press narrows the list to what is out for signature, a second press lets go */
+  const awaitingCount = contracts.filter((c) => c.status === 'Sent to Client').length
+  const awaitingOn = filters.status.length === 1 && filters.status[0] === 'Sent to Client'
+  const [remind, setRemind] = useState<{ c: (typeof contracts)[number]; open: boolean } | null>(null)   // the last one stays while the dialog closes
+  const reminding = remind?.c ?? null
+  const closeRemind = () => setRemind((r) => (r ? { ...r, open: false } : r))
+  /* (UX audit C1) a contract marked signed leads on to Won while its lead isn't there */
+  const wonNext = (c: Contract) => { const stage = contracts.find((x) => x.id === c.id)?.leadStage; return stage && stage !== 'Won' ? { actionLabel: 'Move to Won', onAction: () => router.push(moveStageHref(c.leadId, 'won', { contract: c.id })) } : {} }
   const [bundlePick, setBundlePick] = useState(false)
   const [bundleLead, setBundleLead] = useState<string | null>(null)
   const bundleDocs = useMemo(() => bundleable.filter((c) => c.leadId === bundleLead), [bundleable, bundleLead])
@@ -101,20 +121,28 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
     if (status === c.status) return
     if (c.status === 'Signed' && status !== 'Signed') { setUnsign({ contract: c, to: status }); return }   // (REG-631, parity Q-04) asks first
     /* (sweep S2 #3) the status menu keeps Send's checks, and Signed goes through Mark as signed — its date and its copy, as the editor asks */
-    if (status === 'Sent to Client' && c.status === 'Draft') { const why = sendBlock(c); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return } }
+    if (status === 'Sent to Client' && c.status === 'Draft') {
+      const why = sendBlock(c); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return }
+      const q = quoteBlockOf(c); if (q) { sayQuoteBlock(c, q); return }
+    }
     if (status === 'Signed') { setMarking(c); return }
     void run('change the status', () => setContractStatus(c.id, status), `Contract marked ${status}`)
   }
   const rowMenu = (c: Contract, action: ContractRowAction) => {
     if (action === 'share') router.push(withFrom(`/contracts/${c.id}/preview`, from))
     else if (action === 'copy') {
-      /* (REG-631, parity Q-07) Copying a Draft's link shares it — Sent to Client from then on. */
-      /* (sweep S2 #2) Send's checks first, then the share, then the copy (REG-633, E-118: a bundled document copies the bundle's link) */
-      if (c.status === 'Draft') { const why = sendBlock(c); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return } }
-      const copyNow = (done: string) => (navigator.clipboard ? navigator.clipboard.writeText(contractLink(c)) : Promise.reject(new Error('no clipboard'))).then(() => snackbar({ message: done }), () => fail('copy the link'))
-      if (c.status === 'Draft') void run('share the link', () => shareContractLink(c.id)).then((ok) => { if (ok) void copyNow('Signing link copied — the contract is Sent to Client now') })
-      else void copyNow('Signing link copied')
+      /* (REG-631, parity Q-07) Copying a Draft's link shares it — Sent to Client from then on. (REG-633, E-118: a bundled document copies the bundle's link) */
+      /* (UX audit C8, supersedes sweep S2 #2's order) Send's checks first, then the copy, then the share — never Sent over a copy that failed */
+      if (c.status === 'Draft') {
+        const why = sendBlock(c); if (why) { snackbar({ message: SEND_BLOCK_WORDS[why] ?? 'It can’t go out yet' }); return }
+        const q = quoteBlockOf(c); if (q) { sayQuoteBlock(c, q); return }
+      }
+      const write = navigator.clipboard ? navigator.clipboard.writeText(contractLink(c)) : Promise.reject(new Error('no clipboard'))
+      if (c.status === 'Draft') void write.then(() => { void run('share the link', () => shareContractLink(c.id), 'Signing link copied — the contract is Sent to Client now') }, () => snackbar({ message: 'Couldn’t copy the link — the contract stays a Draft' }))
+      else void write.then(() => snackbar({ message: 'Signing link copied' }), () => fail('copy the link'))
     }
+    else if (action === 'remind') setRemind({ c: contracts.find((x) => x.id === c.id) ?? { ...c, leadName: '', leadStage: '' }, open: true })
+    else if (action === 'signed') setMarking(c)
     else if (action === 'pdf' || action === 'print') router.push(withFrom(`/contracts/${c.id}/preview?print=1`, from))
     else if (action === 'archive') void run('archive the contract', () => archiveContract(c.id), { message: 'Contract archived', actionLabel: 'Undo', onAction: () => { void run('restore the contract', () => archiveContract(c.id, true), 'Contract restored') } })
     else setDeleting([c.id])
@@ -129,18 +157,19 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <div className={styles.frame}>
           <ContractsToolbar onColumns={phone ? undefined : () => setColumnsOpen(true)} bare={contracts.length === 0} query={query} onQuery={setQuery} onNew={onNew} onFilter={() => setFiltersOpen(true)} filterCount={filterCount}
                             onMenu={(a) => (a === 'templates' ? router.push(withFrom('/company/templates/contracts', from)) : a === 'archived' ? setArchivedOpen(true) : a === 'deleted' ? setDeletedOpen(true) : a === 'bundle' ? setBundlePick(true) : comingSoon())}
-                            bundleCount={bundleLeads.length ? 2 : 0} />
+                            bundleBlock={bundleBlock}   /* (UX audit C4) */
+                            awaiting={{ count: awaitingCount, on: awaitingOn, onToggle: () => setFilters((f) => ({ ...f, status: awaitingOn ? [] : ['Sent to Client'] })) }} />
           {contracts.length === 0 ? (
             <ContractsEmpty onFromScratch={() => setPending({ kind: 'blank' })} onFromTemplate={() => setPickerOpen(true)} onImport={() => onNew('import')} />
           ) : nothingMatches ? (
             <TabSearchEmpty noun="contracts" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_CONTRACT_FILTERS) }} />
           ) : (
-            <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} contracts={visible} onStatus={onStatus} onView={(c) => openEditor(c.id)} onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock}
+            <ContractsTable columns={columnPrefs.columns} onReorder={columnPrefs.reorder} contracts={visible} onStatus={onStatus} onView={(c) => openEditor(c.id)} onRowMenu={rowMenu} statusBlock={statusBlock} deleteBlock={deleteBlock} now={now}
                             leadOf={(c) => ({ name: leadName.get(c.id) ?? '', href: withFrom(`/leads/${c.leadId}/contracts`, from) })} />
           )}
         </div>
         <PickLeadDialog open={bundlePick} onClose={() => setBundlePick(false)} leads={bundleLeads} title="Send together — which lead?" onPick={(leadId) => { setBundlePick(false); setBundleLead(leadId) }} />
-        <SendBundleDialog open={!!bundleLead} onClose={() => setBundleLead(null)} contracts={bundleDocs}
+        <SendBundleDialog open={!!bundleLead} onClose={() => setBundleLead(null)} contracts={bundleDocs} quoteBlock={quoteBlockOf}
                           defaults={{ name: bundleDocs[0]?.recipientName || bundleDocs[0]?.leadName || '', phone: bundleDocs[0]?.recipientPhone || '' }}
                           draft={(name, titles, link) => bundleMessage({ clientFirst: firstName(name), studio: data.studioName, titles, link })}
                           onShare={({ bundleId, contractIds, name, phone }) => { void run('share the link', () => sendBundle(bundleId, contractIds, { name, phone }), 'Signing link copied — the documents are Sent to Client now') }}
@@ -152,7 +181,17 @@ export function ContractsWorkspace({ data }: { data: StudioContractsData }) {
         <ArchivedContractsSheet open={archivedOpen} onClose={() => setArchivedOpen(false)} load={loadArchived} crumb="Tools / Contracts" showLead
                               onUnarchive={async (ids) => { const r = await unarchiveContracts(ids); snackbar({ message: r.restored > 1 ? `${r.restored} contracts unarchived` : 'Contract unarchived' }); refresh() }} />
       <MarkSignedDialog open={!!marking} onClose={() => setMarking(null)} today={new Date(now)}
-                        onSave={async (o) => { const m = marking; if (!m) return; const ok = await run('mark the contract signed', () => markContractSigned(m.id, o), 'Contract marked Signed'); if (ok) setMarking(null) }} />
+                        onSave={async (o) => { const m = marking; if (!m) return; const ok = await run('mark the contract signed', () => markContractSigned(m.id, o), { message: `${m.title} marked Signed`, ...wonNext(m) }); if (ok) setMarking(null) }} />
+      {/* (UX audit C5) Send a reminder: the Send dialog with the same link and a nudge — WhatsApp opens on the press */}
+      <SendContractDialog open={!!remind?.open} onClose={closeRemind} title="Send a reminder" subtitle={reminding ? `${reminding.title} is still waiting for a signature. Send via WhatsApp opens your chat with the client, the same link in the message.` : ''}
+                          link={reminding ? contractLink(reminding) : ''} defaults={{ name: reminding?.recipientName || reminding?.leadName || '', phone: reminding?.recipientPhone || '' }}
+                          draft={(name) => reminderMessage({ clientFirst: firstName(name), studio: data.studioName, title: reminding?.title ?? 'agreement', link: reminding ? contractLink(reminding) : '' })}
+                          onMarkSigned={() => { const r = reminding; closeRemind(); if (r) setMarking(r) }}
+                          onSend={({ name, phone, message }) => {
+                            window.open(`https://wa.me/65${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener')
+                            closeRemind()
+                            snackbar({ message: `Reminder sent to ${name}` })
+                          }} />
       <UnsignDialog to={unsign?.to ?? null} signedAt={unsign?.contract.signedAt ?? null} onCancel={() => setUnsign(null)}
                       onConfirm={() => { const u = unsign; setUnsign(null); if (u) void run('change the status', () => setContractStatus(u.contract.id, u.to), `Contract marked ${u.to}`) }} />
         <ColumnSettingsDrawer open={columnsOpen} onClose={() => setColumnsOpen(false)} pinning={{ max: 3 }} columns={columnPrefs.all} onSave={columnPrefs.save} onReset={columnPrefs.reset} />

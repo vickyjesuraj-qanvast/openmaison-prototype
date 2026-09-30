@@ -21,7 +21,7 @@ import type { QuoteTemplate } from '@/lib/db/schema'
 import { TemplateThumb } from '@/components/templates/render/document'
 import { TemplatePicker, defaultPick } from '@/components/templates/template-picker'
 import { ago } from '@/lib/templates/ago'
-import { pickerTemplates, type PickerData, type PickerExtras } from '@/lib/templates/picker'
+import { pickerTemplates, startsLine, type PickerData, type PickerExtras } from '@/lib/templates/picker'
 import type { BrandKit } from '@/lib/templates/model'
 import type { DocData } from '@/lib/templates/data'
 import { isSheet, readDocument, readRows, UPLOAD_ACCEPT, type UploadRead } from '@/lib/quotes/upload'
@@ -203,7 +203,7 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                         </button>
                       </div>
                       {rail.map((t) => (
-                        <div key={t.id} className={styles.tile} data-kebab>
+                        <div key={t.id} className={styles.tile} data-kebab data-starts={'defaults' in t || undefined}>
                           <button type="button" className={styles.action} onClick={() => start(t.id)} aria-label={`Use ${t.name}`}>
                             <span className={styles.well} aria-hidden>
                               {picker && 'design' in t ? (
@@ -221,6 +221,8 @@ export function CreateQuoteModal({ open, leadName, templates, now, onClose, onSt
                                 <span className={styles.name}>{t.name}</span>
                                 {t.isDefault ? <MetaChip>Default</MetaChip> : null}
                               </span>
+                              {/* (UX audit Q8) what the new quote gets — its starter sections — not the sample quote's priced lines the page draws */}
+                              {'defaults' in t ? <span className={styles.meta} data-testid="template-starts">{startsLine(t)}</span> : null}
                               <span className={styles.meta}>{meta(t)}</span>
                             </span>
                           </button>

@@ -1,12 +1,14 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { logLeadEvent } from '@/lib/leads/events'
+import { firstWords, logLeadEvent } from '@/lib/leads/events'
 import { revalidatePath } from 'next/cache'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { fileComments, leadFileRenders, leadFiles, type LeadFile, leadFileImages } from '@/lib/db/schema'
-import { sessionMemberSql } from '@/lib/db/session'
+import { fileComments, leadFileRenders, leadFiles, leads, members, type LeadFile, leadFileImages } from '@/lib/db/schema'
+import { sessionMemberId, sessionMemberSql } from '@/lib/db/session'
+import { notify } from '@/lib/notifications/emit'
+import { leadMemberIds } from '@/lib/notifications/queries'
 import { descendantIds } from '@/lib/leads/file-model'
 import { folderNameProblem } from '@/lib/folders'
 import { revalidateLead } from '@/lib/leads/queries'
@@ -75,6 +77,19 @@ export async function uploadFile(leadId: string, o: { parentId?: string | null; 
   await db.insert(leadFiles).values({ id, leadId, kind: pdf ? 'pdf' : 'image', name, thumb: pdf ? null : picture ? `/files/img/${id}` : '/figma-assets/file-thumb-1.png', createdAt: now, parentId, ownerId: ME, sizeBytes: picture ? Math.round((picture.length - picture.indexOf(',')) * 0.75) : 728064, mime: pdf ? 'application/pdf' : picture ? picture.slice(5, picture.indexOf(';')) : 'image/jpeg', updatedAt: now })
   if (picture) await db.insert(leadFileImages).values({ fileId: id, data: picture })
   touch(leadId); return id
+}
+
+/**
+ * (UX audit 2026-09-30, T1) The same upload, answering the row it made — the Attach files modal (a task's, a note's) lists the real file,
+ * ticked, where a stand-in with a local id used to sit and fail on Attach. A long picture travels inside the one object (F205).
+ */
+export async function uploadFileRecord(leadId: string, o: { parentId?: string | null; name?: string; image?: string | null } = {}): Promise<LeadFile | { error: string }> {
+  if (!leadId) return { error: 'A studio task has no lead’s Files to keep the upload in' }
+  const [lead] = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId))
+  if (!lead) return { error: 'The lead is gone' }
+  const id = await uploadFile(leadId, o)
+  const [row] = await db.select().from(leadFiles).where(eq(leadFiles.id, id))
+  return row ?? { error: 'The upload didn’t land' }
 }
 
 /** Rename File / Rename Folder (931:39434 / 931:39178). */
@@ -173,7 +188,23 @@ export async function addFileComment(fileId: string, body: string): Promise<stri
   const leadId = await leadOf(fileId); if (!leadId) throw new Error('file not found')
   const id = randomUUID()
   await db.insert(fileComments).values({ id, fileId, authorId: ME, body, createdAt: new Date() })
+  await notifyFileComment(fileId, leadId, body)   /* (UX audit 2026-09-30, T8) */
   touch(leadId, fileId); return id
+}
+
+/** (UX audit 2026-09-30, T8) A file's comment reaches the lead's team — never its author (`notify` drops the actor); the row opens the file's comments. */
+async function notifyFileComment(fileId: string, leadId: string, body: string): Promise<void> {
+  const to = await leadMemberIds(leadId)
+  if (!to.length) return
+  const [[f], [l], [who]] = await Promise.all([
+    db.select({ name: leadFiles.name }).from(leadFiles).where(eq(leadFiles.id, fileId)),
+    db.select({ name: leads.name }).from(leads).where(eq(leads.id, leadId)),
+    db.select({ name: members.name }).from(members).where(eq(members.id, await sessionMemberId())),
+  ])
+  await notify('file_comment', to, {
+    title: `${who?.name ?? 'Someone'} commented on ${f?.name ?? 'a file'}`, body: `“${firstWords(body)}”${l ? ` · ${l.name}` : ''}`,
+    href: `/leads/${leadId}/files/${fileId}?panel=comments`, leadId,
+  })
 }
 export async function editFileComment(commentId: string, body: string): Promise<void> {
   const [c] = await db.select({ fileId: fileComments.fileId }).from(fileComments).where(eq(fileComments.id, commentId)); if (!c) return

@@ -9,6 +9,7 @@ import { TextField } from '@/components/om/text-field'
 import { Tooltip } from '@/components/om/tooltip'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
 import { relativeTime } from '@/lib/format'
+import { CommentComposer } from './comment-composer'
 import type { Member } from '@/lib/db/schema'
 import type { TaskRow } from '@/lib/leads/tasks'
 import styles from './comments-panel.module.css'
@@ -30,7 +31,6 @@ export function CommentsPanel({
   onEdit: (id: string, body: string) => void
   onDelete: (id: string) => void
 }) {
-  const [draft, setDraft] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
   /* (REG-728) One menu at a time, through the body portal, anchored to the pressed kebab. */
   const kebab = useRef<HTMLElement | null>(null)
@@ -38,12 +38,6 @@ export function CommentsPanel({
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null)
   const count = task.comments.length
 
-  const submit = () => {
-    const body = draft.trim()
-    if (!body) return
-    onAdd(body)
-    setDraft('')
-  }
   const saveEdit = () => {
     if (!editing) return
     const body = editing.body.trim()
@@ -60,24 +54,9 @@ export function CommentsPanel({
       onClose={onClose}
       label="Comments"
       footer={
-        /* Footer 112 (V g12 p16/24): composer H g12 → my avatar 36 + column V g8 (field 36 · caption + Submit row 36). */
-        <div className={styles.composer}>
-          <CommentAvatar member={me} />
-          <div className={styles.composerCol}>
-            <TextField
-              className={styles.field}
-              label="Chat with your team here"
-              placeholder="Chat with your team here"
-              value={draft}
-              onChange={setDraft}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit() } }}
-            />
-            <div className={styles.composerRow}>
-              <span className={styles.privacy}>Clients can’t see these comments</span>
-              <Button onPress={submit}>Submit</Button>
-            </div>
-          </div>
-        </div>
+        /* Footer (V g12 p16/24): composer H g12 → my avatar 36 + column V g8 (field · caption + Submit row 36). (UX audit 2026-09-30, T8) the
+           field is multi-line — Enter posts, Shift+Enter breaks the line — and the file viewer's comments share this composer. */
+        <CommentComposer me={me} onSubmit={onAdd} />
       }
     >
       <div className={styles.thread}>

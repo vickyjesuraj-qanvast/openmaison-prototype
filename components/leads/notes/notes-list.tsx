@@ -22,6 +22,8 @@ export type NotesListItem = {
   draft?: boolean
   /** The Contacted stage's own log (REG-265): view-only — Edit and Delete render disabled. */
   locked?: boolean
+  /** (UX audit 2026-09-30, T3) A Met-stage meeting log — the same view-only row with the meeting's glyph. */
+  meeting?: boolean
 }
 
 export type NotesListProps = {
@@ -111,7 +113,7 @@ export function NotesList({ items, searching, onClearAll, selectedId, onSelect, 
             return (
               <div key={it.id} role="listitem" className={styles.item} data-testid="note-item" data-kb-row data-kb-id={it.id} data-selected={selected || undefined} data-draft={it.draft || undefined}>
                 <button type="button" className={styles.itemMain} aria-pressed={selected} onClick={() => onSelect(it.id)} data-kb-open>
-                  <Icon name={it.kind === 'contact' ? 'call_log' : 'sticky_note_2'} size={20} className={styles.itemIcon} />
+                  <Icon name={it.meeting ? 'group' : it.kind === 'contact' ? 'call_log' : 'sticky_note_2'} size={20} className={styles.itemIcon} />
                   <span className={styles.cellData}>
                     <span className={styles.titleBlock}>
                       <span className={styles.titleRow}>

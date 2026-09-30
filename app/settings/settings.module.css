@@ -165,3 +165,5 @@
 @media (max-width: 767px) {
   .captureTable .eventHead, .captureTable .eventRow { grid-template-columns: minmax(0, 1fr); }   /* the stack's one column, as the entities' */
 }
+/* (UX audit S4) New quotes start with: Plan & billing's facts list (the label, then what a new quote takes), composed — one copy. */
+.defaults { composes: facts from '../../components/company/plan/plan.module.css'; }

@@ -2,7 +2,9 @@ import type { CSSProperties } from 'react'
 import { Bone } from '@/components/shell/skeleton'
 import folderStyles from '@/components/om/folders/folder-card.module.css'
 import gallery from './quote-templates-gallery.module.css'
+import table from './templates-table.module.css'
 import styles from './library-gallery.module.css'
+import emptyStyles from '@/components/om/empty-state.module.css'
 
 /** A bone whose box the stylesheet sizes per width (the pill is 114 × 36 at a desk, 72 × 44 on a touch tablet or a phone). */
 const Box = ({ cls }: { cls: string }) => <span className={`${styles.gBox} ${cls}`}><Bone w="100%" style={{ height: '100%' }} /></span>
@@ -30,7 +32,7 @@ export function GhostFolderGroup({ count, min, check = false }: { count: number;
  * the bones stand where the page lands: two cards a row at 390, one at 320, the kebab-free body a phone gets. The host draws its header (and
  * an intro) around it; `loading.tsx` and the page's PageReveal draw the same thing.
  */
-export function LibraryGalleryGhost({ pill = false, filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1 }: {
+export function LibraryGalleryGhost({ pill = false, filters = false, newFolder = true, folders = 0, cards = 8, footLines = 1, newW, list, first = false }: {
   /** A scope pill leads the tools (the AI Visualizer's Kind). */
   pill?: boolean
   /** The Filters button (a library with facets). */
@@ -41,7 +43,24 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
   cards?: number
   /** (audit 2026-09-26) Lines in the card's foot — Materials says where it is quoted and who edited it on two. */
   footLines?: 1 | 2
+  /** (UX audit S12) The New button's desk width when it is not New ▾ (Materials' "New material"). */
+  newW?: number
+  /** (UX audit S8) The list view (the listing's table model) from 768 up — its tracks, the name column's selection box, how many rows —
+      while a phone keeps the cards, as the page does. */
+  list?: ListGhost
+  /** (UX audit build, REG-735's first run) The library holds nothing: the bar keeps the name and ⋮, the body is the start card
+      (EmptyState's own classes) — what the page opens on (lib/ghost-shape.tsx says which). */
+  first?: boolean
 }) {
+  if (first) return (
+    <>
+      <div className={`${gallery.toolbar} ${styles.bar}`} aria-hidden>
+        <div className={styles.where}><h2 className={styles.here}><Bone w={104} h={20} className={styles.gLine} /></h2></div>
+        <div className={`${gallery.toolbarEnd} ${styles.end}`}><div className={styles.tools}><Box cls={styles.gIcon!} /></div></div>
+      </div>
+      <FirstRunCardGhost />
+    </>
+  )
   return (
     <>
       <div className={`${gallery.toolbar} ${styles.bar}`} aria-hidden>
@@ -52,15 +71,17 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
           {pill ? <div className={styles.scopes}><Box cls={styles.gPill!} /></div> : null}
           <div className={styles.tools}>
             {newFolder ? <span className={styles.folderSlot}><Box cls={styles.gIcon!} /></span> : null}
-            <Box cls={styles.gNew!} />
+            <span className={`${styles.gBox} ${styles.gNew}`} style={newW ? ({ '--g-new': `${newW}px` } as CSSProperties) : undefined}><Bone w="100%" style={{ height: '100%' }} /></span>
             <Box cls={styles.gSearch!} />
             {filters ? <Box cls={styles.gIcon!} /> : null}
+            {list ? <span className={`${styles.columnsTool} ${styles.gDeskOnly}`}><Box cls={styles.gIcon!} /></span> : null}
             <Box cls={styles.gView!} />
             <Box cls={styles.gIcon!} />
           </div>
         </div>
       </div>
-      <div className={styles.gridStack} aria-hidden>
+      {list ? <span className={styles.gListOnly}><LibraryTableGhost {...list} folders={folders} /></span> : null}
+      <div className={`${styles.gridStack}${list ? ` ${styles.gGridOnly}` : ''}`} aria-hidden>
         {folders > 0 ? <GhostFolderGroup count={folders} min={248} /> : null}
         {cards > 0 ? (
           <div className={`${gallery.grid} ${styles.cards}`}>
@@ -78,5 +99,47 @@ export function LibraryGalleryGhost({ pill = false, filters = false, newFolder =
         ) : null}
       </div>
     </>
+  )
+}
+
+/** (UX audit S8) A library's list view as a ghost: the list's own stylesheet (templates-table on the table core) — head 56, rows 60, the folder
+    rows first, the name cell's selection box, glyph and name, a line per column. `tracks` are the list's default columns in order (the name's
+    fluid track first); the frame is drawn as scrolled sideways, as the real one is once its columns pass the page's width. */
+export type ListGhost = { tracks: string[]; rows: number; select?: boolean; cells?: (number | string)[] }
+function LibraryTableGhost({ tracks, rows, select = false, cells = [], folders = 0 }: ListGhost & { folders?: number }) {
+  const cols = tracks.length
+  const line = (c: number, r: number) => <Bone w={cells[c] ?? cycle([56, 72, 48, 64], r + c)} h={12} />
+  const name = (r: number, folder: boolean) => (
+    <div className={`${table.cell} ${table.colName}`}>
+      {select ? <Bone w={18} h={18} className={styles.gCheck} /> : null}
+      <Bone w={26} h={36} r={4} style={{ flexShrink: 0 }} />
+      <Bone w={folder ? cycle([72, 88], r) : cycle(['46%', '58%', '40%', '52%', '62%', '44%'], r)} h={14} />
+    </div>
+  )
+  return (
+    <div className={table.card} data-overflow="" aria-hidden style={{ '--tracks': [...tracks, '48px'].join(' ') } as CSSProperties}>
+      <div className={table.head}>
+        {tracks.map((_, c) => <div key={c} className={`${table.hCell}${c === 0 ? ` ${table.colName}` : ''}`}>{c === 0 && select ? <Bone w={18} h={18} className={styles.gCheck} /> : null}<Bone w={c === 0 ? 40 : cycle([36, 44, 52, 40, 64], c)} h={10} /></div>)}
+      </div>
+      {Array.from({ length: folders + rows }, (_, r) => (
+        <div key={r} className={table.row}>
+          {name(r, r < folders)}
+          {Array.from({ length: cols - 1 }, (_, c) => <div key={c} className={table.cell}>{r < folders ? (c === cols - 3 ? line(c, r) : null) : line(c, r)}</div>)}
+        </div>
+      ))}
+    </div>
+  )
+}
+const cycle = <T,>(list: readonly T[], i: number): T => list[i % list.length]!
+
+/** (UX audit build) The house first-run card's ghost (components/om/empty-state): the tinted well, the title, two lines of help, two buttons. */
+export function FirstRunCardGhost() {
+  return (
+    <div className={emptyStyles.empty} data-tone="first" aria-hidden>
+      <Bone w={72} h={72} r={8} style={{ marginBottom: 8 }} />
+      <Bone w={170} h={18} />
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><Bone w={300} h={12} /><Bone w={230} h={12} /></span>
+      <span className={emptyStyles.actions}><Bone w={176} h={36} r={4} /><Bone w={132} h={36} r={4} /></span>
+    </div>
   )
 }

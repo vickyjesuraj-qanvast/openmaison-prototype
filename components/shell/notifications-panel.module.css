@@ -29,3 +29,11 @@
 /* (REG-731) Beside the rail, in the Search popover's frame (global-search.module.css .panel); head and foot are the house surface's */
 .panel { width: 400px; max-width: calc(100vw - 96px); display: flex; flex-direction: column; overflow: hidden; background: var(--om-color-surface-default); border: var(--om-border-1) solid var(--om-color-surface-variant); border-radius: var(--om-radius-1); box-shadow: var(--om-elevation-level-3); }
 .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--om-spacing-4); }
+
+/* (UX audit V8) Due and Updates: each group headed by the house menu group title (DropdownLabel's — components/leads/menus.module.css .label),
+   composed, its count at the end, as the Search popover heads its groups; a due row's lateness reads in the red it is drawn in. */
+.group + .group { margin-top: var(--om-spacing-2); }
+.groupHead { composes: label from '../leads/menus.module.css'; }
+.groupHead.groupHead { margin: 0; justify-content: space-between; padding-inline: var(--om-spacing-2); }
+.groupCount { font-variant-numeric: tabular-nums; }
+.due[data-late] { color: var(--om-color-tertiary-red-default); }

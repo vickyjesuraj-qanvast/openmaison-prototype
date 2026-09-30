@@ -1,5 +1,7 @@
 'use client'
 
+import { useRememberShape } from '@/lib/ghost-shape'
+import { leadTabShape } from '@/components/leads/detail/tab-ghost-for'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { readFrom, withFrom } from '@/lib/nav'
@@ -8,13 +10,16 @@ import { DetailBulkBar } from '@/components/leads/tasks/detail-bulk-bar'
 import { useRun } from '@/components/leads/tasks/use-run'
 import { CREATE_EVENTS, useCreateIntent } from '@/components/leads/tasks/use-create-intent'
 import { useComingSoon, useSnackbar } from '@/components/om/snackbar'
-import { childrenOf, folderPath, groupByDay, isFolder, searchFiles, type FileRow } from '@/lib/leads/file-model'
+import { EMPTY_FILE_FILTERS, activeFileFilterCount, applyFileFilters, childrenOf, descendantIds, fileTypesIn, folderPath, groupByDay, isFolder, searchFiles, type FileFilters, type FileRow } from '@/lib/leads/file-model'
 import type { LeadFilesData } from '@/lib/leads/files'
 import { downloadBlob } from '@/lib/leads/export'
-import { uploadablePicture } from './upload-picture'
+import { uploadPicked } from './upload-picture'
 import {
-  createFolder, deleteFilesForever, duplicateFiles, emptyFileTrash, moveFiles, renameFile, restoreFiles, trashFiles, uploadFile,
+  createFolder, deleteFilesForever, duplicateFiles, emptyFileTrash, moveFiles, renameFile, restoreFiles, trashFiles,
 } from '@/app/leads/files-actions'
+import { FilesFiltersModal } from './files-filters-modal'
+import { useFileShare } from './use-file-share'
+import { TabSearchEmpty } from '@/components/leads/tasks/tab-search-empty'
 import { FilesToolbar } from './files-toolbar'
 import { FilesEmpty } from './files-empty'
 import { FilesGrid } from './files-grid'
@@ -26,7 +31,7 @@ import { FolderEmpty } from '@/components/om/folders/folder-empty'
 import { Button } from '@/components/ds'
 import { folderNameProblem, foldersIn, placeOf, type FolderNode } from '@/lib/folders'
 import { DeletedFilesSheet } from './deleted-files-sheet'
-import { UploadToast } from './upload-toast'
+import { UploadToast, type UploadRow } from './upload-toast'
 import { liveOrigin, renderHref, visualizeLabel } from './render-origin'
 import { ColumnSettingsDrawer } from '@/components/om/column-settings'
 import { useTableColumns } from '@/components/om/table-columns'
@@ -37,7 +42,7 @@ import styles from './lead-files.module.css'
 /** Folder card kebab (931:40130): Open · Move · Rename · Delete. */
 type FolderMenuAction = 'open' | 'move' | 'rename' | 'delete'
 /** File tile kebab (931:40131): Open · Move · Duplicate · Download · Rename · Delete. */
-type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize'
+type FileMenuAction = FolderMenuAction | 'duplicate' | 'download' | 'visualize' | 'copyLink' | 'whatsapp'
 
 type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
 /**
@@ -46,10 +51,11 @@ type NameDialogState = { mode: 'create' } | { mode: 'rename'; target: FileRow }
  * (the quotes twin guards the same beat with `count={deleting?.length ?? 1}`).
  */
 type Shown<T> = { payload: T; open: boolean }
-type UploadToastState = { name: string; state: 'uploading' | 'done' | 'failed'; thumb: string | null }
+/** (T2) A toast row with the file behind it, so Retry sends the same file to the same folder. */
+type Upload = UploadRow & { file: File; parentId: string | null }
 
-/** How long the simulated upload takes before the toast row shows the green check (= tasks attach-files modal). */
-const UPLOAD_MS = 1400
+/** (T2) The least a row reads "Uploading…" — a local upload lands in a blink, and a row that flashes past reads as nothing happening. */
+const UPLOAD_MS = 400
 
 /**
  * Lead Details › Files (section 931-39056: 87 empty 931:40314 · 90 list 931:40141 · 85 grid 931:39057 · 89 menus 931:40007 ·
@@ -61,13 +67,11 @@ const UPLOAD_MS = 1400
  * attach-files modal's toast timer. Actions run through the tabs' shared `useRun` (files-actions revalidates this route).
  * Plan: design-source/context/lead-files/00-build-plan.md · specs 01–04.
  */
-/** (audit 2026-09-26, round 3) A picture redrawn as a JPEG (too big, or a GIF / BMP) lands under a .jpg name — its Information, Download and the
-    grid's Download then agree ("sofa.png" held JPEG bytes and downloaded as "sofa.png.jpg"). */
-const landedName = (name: string, img: string | null) =>
-  img?.startsWith('data:image/jpeg') && !/\.jpe?g$/i.test(name) ? `${name.replace(/\.[a-z0-9]{2,5}$/i, '')}.jpg` : name
-
 export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesData }) {
-  const { files, trashed, renders } = data
+  const { files, trashed, renders, team, lead, now } = data
+  useRememberShape(leadTabShape(leadId, 'files'), files.length === 0)   // (UX audit build) the shape this list opened on — its loading ghost draws the same one next time
+  /* (UX audit 2026-09-30, T9) the client's read-only link: Copy link · Send on WhatsApp, signed by whoever sends it */
+  const share = useFileShare({ lead, sender: (team.find((m) => m.isYou) ?? team[0])?.name ?? '' })
   const router = useRouter()
   const snackbar = useSnackbar()
   const comingSoon = useComingSoon()
@@ -107,16 +111,23 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  /* (UX audit 2026-09-30, T9) Files › Filters — Type · Owner · Updated, live (REG-464). Like a search they look past the open folder: in it
+     and everything inside it (REG-666's "filter where you are"), each hit wearing its place. */
+  const [filters, setFilters] = useState<FileFilters>(EMPTY_FILE_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const filterCount = activeFileFilterCount(filters)
   // Search spans every folder (a hit outside the open folder is still a hit); otherwise the open folder's children.
   // (REG-664) Folders come first in both views — the list mixed them in among the files by date.
   const visible = useMemo(() => {
-    const rows = query.trim() ? searchFiles(files, query) : childrenOf(files, currentId)
+    const inside = currentId ? new Set(descendantIds(files, currentId)) : null
+    const base = query.trim() ? searchFiles(files, query) : filterCount ? files.filter((f) => !f.deletedAt && (!inside || inside.has(f.id))) : childrenOf(files, currentId)
+    const rows = filterCount ? applyFileFilters(base, filters) : base
     return [...rows.filter(isFolder), ...rows.filter((f) => !isFolder(f))]
-  }, [files, query, currentId])
+  }, [files, query, currentId, filters, filterCount])
   /* (REG-664) The folders as the shared kit reads them — the crumb, the Move dialog, the name check, a hit's location. */
   const folderNodes = useMemo<FolderNode[]>(() => files.filter(isFolder).map((f) => ({ id: f.id, name: f.name, parentId: f.parentId ?? null })), [files])
   const trail = useMemo(() => folderPath(files, currentId), [files, currentId])
-  const searching = query.trim() !== ''
+  const searching = query.trim() !== '' || filterCount > 0   // (T9) a filter reaches past the open folder, as a search does
   const hitPlace = searching ? (f: FileRow) => placeOf(folderNodes, f.parentId ?? null) || 'All Files' : undefined
   const folders = useMemo(() => visible.filter(isFolder), [visible])
   const groups = useMemo(() => groupByDay(visible.filter((f) => !isFolder(f))), [visible])
@@ -142,49 +153,62 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const closeTrash = () => setTrash((s) => (s ? { ...s, open: false } : s))
   const closeMove = () => setMove((s) => (s ? { ...s, open: false } : s))
 
-  /* ── upload: the picked file's own name persists (REG-149: only the bytes behind it stay the mock's JPEG) ── */
+  /* ── upload: the picked file's own name persists (REG-149: only the bytes behind it stay the mock's JPEG) ──
+     (UX audit 2026-09-30, T2) a pick or a drop takes several files: one toast row each, uploaded one after another into the open folder,
+     one snackbar once they have all landed. */
   const picker = useRef<HTMLInputElement | null>(null)
-  const [toast, setToast] = useState<UploadToastState | null>(null)
+  const [toast, setToast] = useState<Upload[] | null>(null)
   const [toastCollapsed, setToastCollapsed] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  /* (F113) The toast shows the picked picture itself (an object URL, released when the toast goes or the next file replaces it). */
-  const thumbUrl = useRef<string | null>(null)
-  const releaseThumb = () => { if (thumbUrl.current) URL.revokeObjectURL(thumbUrl.current); thumbUrl.current = null }
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); if (thumbUrl.current) URL.revokeObjectURL(thumbUrl.current) }, [])
+  /* (F113) The toast shows each picked picture itself (object URLs, released when the toast goes). */
+  const thumbUrls = useRef<string[]>([])
+  const releaseThumbs = () => { for (const u of thumbUrls.current) URL.revokeObjectURL(u); thumbUrls.current = [] }
+  useEffect(() => () => { for (const u of thumbUrls.current) URL.revokeObjectURL(u) }, [])
 
   const nameOf = (id: string) => files.find((f) => f.id === id)?.name ?? trashed.find((f) => f.id === id)?.name ?? ''
   const rowsOf = (ids: string[]) => ids.map((id) => files.find((f) => f.id === id)).filter((f): f is FileRow => !!f)
 
   const pickFiles = () => picker.current?.click()
-  /* (audit 2026-09-26, F205) The file being uploaded stays at hand, so a failed row's Retry sends it again. */
-  const uploading = useRef<{ file: File; parentId: string | null } | null>(null)
-  const send = (file: File, parentId: string | null) => {
-    if (timer.current) clearTimeout(timer.current)
-    setToast((t) => (t ? { ...t, state: 'uploading' } : t))
-    /* (REG-684) the picture itself — (F203) a GIF / BMP the browser can draw arrives as PNG / JPEG, so its real picture is kept;
-       (F205) one past the request's limit is redrawn smaller as a JPEG rather than failing on the server */
-    const picture = file.type.startsWith('image/') ? uploadablePicture(file) : Promise.resolve(null)
-    timer.current = setTimeout(() => {
-      timer.current = null
-      // The name the toast just showed is the name that lands (= the Return Lead wizard's call); dropping it left every
-      // upload named "Living Room" — the action's default — a beat after the real name was on screen.
-      void picture.then((img) => uploadFile(leadId, { parentId, name: landedName(file.name, img), image: img })).then(
-        () => { if (uploading.current?.file !== file) return; setToast((t) => (t ? { ...t, state: 'done' } : t)); snackbar({ message: 'File uploaded' }) },
-        /* (F205) A refused upload no longer leaves the row spinning "Uploading…" for good: it reads Failed, with Retry. */
-        () => { if (uploading.current?.file !== file) return; setToast((t) => (t ? { ...t, state: 'failed' } : t)); fail(`upload ${file.name}`) },
-      )
-    }, UPLOAD_MS)
+  const setRow = (key: string, state: Upload['state']) => setToast((t) => (t ? t.map((r) => (r.key === key ? { ...r, state } : r)) : t))
+  /** One file to the server — the shared upload (upload-picture.ts `uploadPicked`); true when it landed. */
+  const send = async (row: Upload): Promise<boolean> => {
+    setRow(row.key, 'uploading')
+    const [r] = await Promise.all([uploadPicked(leadId, row.file, row.parentId).catch(() => null), new Promise((ok) => setTimeout(ok, UPLOAD_MS))])
+    const ok = !!r && !('error' in r)
+    setRow(row.key, ok ? 'done' : 'failed')
+    return ok
   }
-  const onPicked = (file: File | undefined) => {
-    if (!file) return
-    releaseThumb()
-    if (file.type.startsWith('image/')) { try { thumbUrl.current = URL.createObjectURL(file) } catch { thumbUrl.current = null } }
-    setToast({ name: file.name, state: 'uploading', thumb: thumbUrl.current })
+  const onPicked = (list: File[]) => {
+    if (!list.length) return
+    const at = Date.now()
+    const rows: Upload[] = list.map((file, i) => {
+      let thumb: string | null = null
+      if (file.type.startsWith('image/')) { try { thumb = URL.createObjectURL(file); thumbUrls.current.push(thumb) } catch { thumb = null } }
+      return { key: `${at}-${i}`, name: file.name, state: 'uploading', thumb, file, parentId: currentId }
+    })
+    setToast((t) => [...rows, ...(t ?? []).filter((r) => r.state === 'uploading')])
     setToastCollapsed(false)
-    uploading.current = { file, parentId: currentId }
-    send(file, currentId)
+    void (async () => {
+      let landed = 0
+      for (const row of rows) if (await send(row)) landed++
+      const failed = rows.length - landed
+      /* one line for the whole pick — the rows say which; a failure names what failed */
+      if (!failed) snackbar({ message: landed === 1 ? 'File uploaded' : `${landed} files uploaded` })
+      else fail(rows.length === 1 ? `upload ${rows[0]!.name}` : `upload ${failed} of ${rows.length} files`)
+    })()
   }
-  const retryUpload = () => { const u = uploading.current; if (u) send(u.file, u.parentId) }
+  const retryUpload = (key: string) => {
+    const row = toast?.find((r) => r.key === key)
+    if (row) void send(row).then((ok) => { if (ok) snackbar({ message: 'File uploaded' }); else fail(`upload ${row.name}`) })
+  }
+  /* (T2) Files dragged onto the tab: the grid / list shows where they will land and a drop uploads them all. Only a drag that carries files
+     counts — a tile or a column head being dragged inside the page does not. */
+  const [dropping, setDropping] = useState(false)
+  const carriesFiles = (e: React.DragEvent) => [...e.dataTransfer.types].includes('Files')
+  const dropHandlers = {
+    onDragOver: (e: React.DragEvent) => { if (!carriesFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!dropping) setDropping(true) },
+    onDragLeave: (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropping(false) },
+    onDrop: (e: React.DragEvent) => { if (!carriesFiles(e)) return; e.preventDefault(); setDropping(false); onPicked([...e.dataTransfer.files]) },
+  }
   // Parity with the other tabs' window events (om:tasks:add / om:quotes:new): a future quick link raises `om:files:upload` here.
   useCreateIntent({ event: CREATE_EVENTS.files, onIntent: pickFiles })
 
@@ -219,6 +243,8 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
     else if (action === 'delete') openTrash([f.id])
     else if (action === 'duplicate') duplicate([f.id])
     else if (action === 'visualize') void openInVisualizer(f)
+    else if (action === 'copyLink') share.copyLink(f)   // (T9)
+    else if (action === 'whatsapp') share.sendWhatsApp(f)
     else download(f)
   }
 
@@ -230,18 +256,22 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
   const moveFolder = moveParentId ? files.find((f) => f.id === moveParentId && isFolder(f)) ?? null : null
 
   return (
-    <div className={styles.tab}>
+    <div className={styles.tab} {...dropHandlers}>
+      {dropping ? <div className={styles.drop} aria-hidden><span className={styles.dropLine}>{`Drop to upload to ${folder?.name ?? 'All Files'}`}</span></div> : null}
       <FilesToolbar onColumns={phone || view !== 'list' ? undefined : () => setColumnsOpen(true)} bare={files.length === 0}   /* (REG-735) the empty card carries Upload and Create Folder */
         trail={trail} onGo={goTo} onNewFolder={() => openName({ mode: 'create' })}
         onFolderMenu={(action: FolderMenuAction) => { if (folder) itemMenu(folder, action) }}
         query={query} onQuery={setQuery}
         onNew={(kind) => (kind === 'local' ? pickFiles() : comingSoon())}   // From Company Files · From Google Drive — no mock beyond the menu item
-        onFilter={comingSoon}   // no Files filter mock (931:40164)
+        onFilter={() => setFiltersOpen(true)} filterCount={filterCount}   /* (T9) Type · Owner · Updated */
         view={view} onView={setView}
         onMenu={() => setDeletedOpen(true)}
       />
       {files.length === 0 ? (
         <FilesEmpty onCreateFolder={() => openName({ mode: 'create' })} onUpload={pickFiles} />
+      ) : searching && visible.length === 0 ? (
+        /* (T9) a search or a filter that finds nothing — the tabs' shared No-results card, with the way back */
+        <TabSearchEmpty noun="files" searching={query.trim() !== ''} onClearAll={() => { setQuery(''); setFilters(EMPTY_FILE_FILTERS) }} />
       ) : folder && !searching && visible.length === 0 ? (
         /* (REG-664) An empty folder says so (it showed nothing at all). */
         <FolderEmpty help="Upload files here with New File, or move files in from their ⋯ menu.">
@@ -265,8 +295,8 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
       )}
       {/* Hidden picker behind New File › From Local Files and the empty state's Upload Files (REG-149: any file works). */}
       <input
-        ref={picker} type="file" hidden data-testid="files-picker"
-        onChange={(e) => { onPicked(e.target.files?.[0]); e.target.value = '' }}
+        ref={picker} type="file" hidden multiple data-testid="files-picker"
+        onChange={(e) => { onPicked([...(e.target.files ?? [])]); e.target.value = '' }}
       />
       <DetailBulkBar
         count={selected.size}
@@ -326,11 +356,14 @@ export function LeadFiles({ leadId, data }: { leadId: string; data: LeadFilesDat
         onEmptyTrash={() => run('empty the trash', () => emptyFileTrash(leadId), 'Trash emptied')}
       />
       <UploadToast
-        toast={toast} collapsed={toastCollapsed}
+        rows={toast} collapsed={toastCollapsed}
         onToggle={() => setToastCollapsed((c) => !c)}
-        onClose={() => { setToast(null); releaseThumb() }}
+        onClose={() => { setToast(null); releaseThumbs() }}
         onRetry={retryUpload}
       />
+      <FilesFiltersModal open={filtersOpen} team={team} types={fileTypesIn(files)} value={filters} now={now}
+        onApply={setFilters}   /* (REG-464) live — the modal closes on Done */
+        onClose={() => setFiltersOpen(false)} />
     </div>
   )
 }

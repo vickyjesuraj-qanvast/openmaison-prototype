@@ -35,6 +35,8 @@
   overflow-wrap: anywhere;   /* wraps rather than truncating — the detail page shows the whole value (user 2026-08-30) */
 }
 .whatsapp { display: block; width: 14px; height: 14px; }
+/* (UX audit 2026-09-30, L11) The tap-to-call number on a touch screen: the link ink, so it reads as something to press. */
+.callLink { color: var(--om-color-primary-default); text-decoration: none; }
 
 /* Bare icon controls (edit · copy · WhatsApp · directions · chevron · more_vert): 20 box (16 for the copy icons), on-surface.
    Hover = "Link icon 20px" row of context/interaction-states.md: bg rgba(0,0,0,.08), radius 4. */

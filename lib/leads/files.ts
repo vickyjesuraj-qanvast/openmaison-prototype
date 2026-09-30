@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { fileComments, leadFiles, leads, members, noteAttachments, returnAttachments, taskAttachments, type FileComment, type Member } from '@/lib/db/schema'
 import type { FileRow } from './file-model'
 import { renderOrigins, type RenderOrigin } from '@/lib/visualizer/queries'
+import { fileSharePath } from './file-share'
 
 /* Lead Details › Files (931-39056) — loaders for the tab and the viewer. */
 
@@ -18,6 +19,8 @@ export type LeadFilesData = {
   /** (audit 2026-09-26, F095 · F113) Renders filed from the AI Visualizer, by file id: the design, room and version each one is — Files offers
       "Open this version" (`live`) and Information says where it came from. A file not listed here is an upload. */
   renders: Record<string, RenderOrigin>
+  /** (UX audit 2026-09-30, T9) Who a shared file goes to — Send on WhatsApp drafts to the lead's number. */
+  lead: { name: string; phone: string | null }
 }
 const byFile = (list: RenderOrigin[]) => Object.fromEntries(list.map((r) => [r.fileId, r])) as Record<string, RenderOrigin>
 
@@ -52,18 +55,20 @@ async function loadRows(leadId: string): Promise<{ rows: FileRow[]; team: Member
     commentCount: commentCount.get(f.id) ?? 0,
     attachedTo: attachedTo(f.id),
     itemCount: f.kind === 'folder' ? all.filter((c) => c.parentId === f.id && !c.deletedAt).length : 0,
+    share: f.kind === 'folder' || f.deletedAt ? null : fileSharePath(f.id),   // (T9) the client's read-only link
   }))
   return { rows, team }
 }
 
 export async function fetchLeadFiles(leadId: string): Promise<LeadFilesData> {
-  const { rows, team } = await loadRows(leadId)
+  const [{ rows, team }, [lead]] = await Promise.all([loadRows(leadId), db.select({ name: leads.name, phone: leads.phone }).from(leads).where(eq(leads.id, leadId))])
   const renders = byFile(await renderOrigins(rows.filter((f) => f.kind === 'image').map((f) => f.id)))
-  return { files: rows.filter((f) => !f.deletedAt), trashed: rows.filter((f) => !!f.deletedAt), team, now: Date.now(), renders }
+  return { files: rows.filter((f) => !f.deletedAt), trashed: rows.filter((f) => !!f.deletedAt), team, now: Date.now(), renders, lead: { name: lead?.name ?? '', phone: lead?.phone ?? null } }
 }
 
 export type FileViewData = {
-  lead: { id: string; name: string }
+  /** (T9) the lead's number — Send on WhatsApp drafts to it */
+  lead: { id: string; name: string; phone: string | null }
   file: FileRow
   /** The folder the file sits in (null at the root) — Information › Location and the back link. */
   folder: FileRow | null
@@ -82,7 +87,7 @@ export type FileViewData = {
 }
 
 async function fetchFileViewUncached(leadId: string, fileId: string): Promise<FileViewData | null> {
-  const [lead] = await db.select({ id: leads.id, name: leads.name }).from(leads).where(and(eq(leads.id, leadId), isNull(leads.deletedAt)))
+  const [lead] = await db.select({ id: leads.id, name: leads.name, phone: leads.phone }).from(leads).where(and(eq(leads.id, leadId), isNull(leads.deletedAt)))
   if (!lead) return null
   const { rows, team } = await loadRows(leadId)
   const file = rows.find((f) => f.id === fileId && !f.deletedAt && f.kind !== 'folder')

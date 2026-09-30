@@ -13,6 +13,9 @@ export type ContactLog = {
   files: string[]
   notes: string
   collapsed?: boolean
+  /** (UX audit 2026-09-30, L2) The Notes-tab contact log this entry was filled from (`?move=contacted&log=<id>`) — the Notes list
+      shows that log once, as the note it is, and never again as a stage row. */
+  noteId?: string
 }
 
 export type MeetingLog = {
@@ -29,6 +32,8 @@ export type WizardData = {
   meetings: MeetingLog[]                   // Met (780:90234 — a log list like Contacted)
   quoteTab: 'system' | 'upload'
   quoteSelected: string | null             // From System quote name
+  /** (UX audit 2026-09-30, Q1) The picked system quote's id — the move stamps THAT quote Sent to Client (names can repeat). Older logs lack it. */
+  quoteSelectedId?: string | null
   quoteUploaded: string | null             // Uploaded file name
   quoteAmount: string
   wonQuoteTab: 'system' | 'upload'
@@ -149,6 +154,16 @@ export function validateStage(stage: Stage, d: WizardData): StageErrors {
   return e
 }
 
+/**
+ * (UX audit 2026-09-30, T3 — extends REG-324) The contact log's Attach row names what proves THIS contact: a visit leaves photos, a
+ * call or a message leaves screenshots. One wording for the Move stage window and the Notes tab.
+ */
+export function attachLabel(channel: string | null | undefined): string {
+  if (channel === 'In person') return 'Attach photos from the visit'
+  if (channel === 'WhatsApp' || channel === 'Email' || channel === 'SMS') return 'Attach screenshots of your messages'
+  return 'Attach screenshots of your call attempts'   // Call, Others, nothing chosen yet — the wording REG-324 kept
+}
+
 /** Per-stage completeness — drives rail states and Save validation (A1). */
 export function stageComplete(stage: Stage, d: WizardData): boolean {
   return Object.keys(validateStage(stage, d)).length === 0
@@ -159,7 +174,7 @@ export const STAGE_FIELDS: Record<(typeof STAGES)[number], (keyof WizardData)[]>
   'New': [],
   'Contacted': ['logs'],
   'Met': ['meetings'],
-  'Quote Sent': ['quoteTab', 'quoteSelected', 'quoteUploaded', 'quoteAmount'],
+  'Quote Sent': ['quoteTab', 'quoteSelected', 'quoteSelectedId', 'quoteUploaded', 'quoteAmount'],
   'Won': ['wonQuoteTab', 'wonQuote', 'wonQuoteUploaded', 'wonQuoteAmount', 'wonContractTab', 'wonContract', 'wonContractUploaded', 'milestones', 'projectType'],
 }
 

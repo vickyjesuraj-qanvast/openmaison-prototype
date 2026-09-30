@@ -55,7 +55,7 @@ const ZOOMS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5]
  * paginate live. Autosaved as a draft; Publish makes a version; Cmd+Z everywhere. Tablets get the panes as drawers, phones
  * read only (REG-493).
  */
-export function TemplateEditor({ data, initialPreview = false, origin = null }: { data: TemplateEditorData; initialPreview?: boolean; /** (REG-495) where the editor was opened from: a quote or a lead's Create Quote */ origin?: EditorOrigin | null }) {
+export function TemplateEditor({ data, initialPreview = false, origin = null, initialTab }: { data: TemplateEditorData; initialPreview?: boolean; /** (REG-495) where the editor was opened from: a quote or a lead's Create Quote */ origin?: EditorOrigin | null; /** (UX audit S4) the left tab it opens on — Settings' "Change in … › New quotes" */ initialTab?: 'structure' | 'brand' | 'defaults' }) {
   useShortcutsHere(TEMPLATE_KEYS)   // (REG-714) the ? panel lists the template editor's own keys
   const { template, brand, studio, sample, quotes, textTemplates, paymentPresets } = data
   const router = useRouter()
@@ -186,7 +186,7 @@ export function TemplateEditor({ data, initialPreview = false, origin = null }: 
   }, [selection, undo, redo, deleteBlock, deleteElement])
 
   /* ── panes ── */
-  const [leftTab, setLeftTab] = useState<LeftTab>('structure')
+  const [leftTab, setLeftTab] = useState<LeftTab>(initialTab ?? 'structure')
   const [rightTab, setRightTab] = useState<'inspector' | 'reference'>('inspector')
   const [leftOpen, setLeftOpen] = useState(false)     // tablets: the panes as drawers
   const [rightOpen, setRightOpen] = useState(false)

@@ -1,5 +1,5 @@
 import 'server-only'   // (REG-286) libSQL never reaches the browser bundle
-import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractTemplates, contracts, leads, members, quotes, type Contract, type ContractTemplate, type Member, contractBundles, type ContractBundle } from '@/lib/db/schema'
 import { SESSION_MEMBER_ID } from '@/lib/db/session'
@@ -11,6 +11,8 @@ import { fingerprintOf, letterheadOf, pickQuote, setHashOf, snapshotColumns, stu
 import { linkState, signedCopyOf, type ContractViewer, type LinkState, type SignedCopy, type SignedLetterhead, type SignedStudioSignature } from './policy'
 import { canOpenLead, fetchViewer, visibleLeadIds } from '@/lib/leads/visibility'
 import { canDeleteContract } from './policy'
+import { fetchQuoteApproval } from '@/lib/settings/queries'
+import { quoteSendBlock, type QuoteForSend } from './readiness'
 
 /* Contracts (REG-534): the editor, the preview, the signing page, Tools › Contracts and Company › Templates › Contracts. */
 
@@ -37,6 +39,10 @@ export type ContractEditorData = {
   studioSignature: SignedStudioSignature
   /** (REG-631, Q-05) The copy kept at signing, for a Signed contract. */
   signed: SignedCopy | null
+  /** (UX audit C2) Settings › quote approval — a Draft quote blocks the send where approval is required. */
+  approvalRequired: boolean
+  /** (UX audit C1) The lead's stage — a signed contract offers Move to Won until the lead is there. */
+  leadStage: string
   now: number
 }
 
@@ -80,13 +86,15 @@ export async function fetchContractEditor(contractId: string): Promise<ContractE
   const [c] = await db.select().from(contracts).where(and(eq(contracts.id, contractId), isNull(contracts.deletedAt)))
   if (!c) return null
   if (!(await canOpenLead(await fetchViewer(), c.leadId))) return null   /* (REG-634, parity §8.2 · E-98) Who sees leads reaches a contract's own URL and its Preview */
-  const [[lead], sibs, qs, named, brand, team] = await Promise.all([
+  const [[lead], sibs, qs, named, brand, team, approval, [stage]] = await Promise.all([
     db.select(LEAD_COLS).from(leads).where(eq(leads.id, c.leadId)),
     db.select({ id: contracts.id, title: contracts.title, status: contracts.status }).from(contracts).where(and(eq(contracts.leadId, c.leadId), isNull(contracts.archivedAt), isNull(contracts.deletedAt))).orderBy(asc(contracts.createdAt)),
     db.select({ ...QUOTE_COLS, issuingEntity: quotes.issuingEntity }).from(quotes).where(and(eq(quotes.leadId, c.leadId), isNull(quotes.archivedAt), isNull(quotes.deletedAt))).orderBy(asc(quotes.createdAt)),
     namedQuote(c),
     fetchBrand(),
     db.select().from(members),
+    fetchQuoteApproval(),
+    db.select({ stage: leads.stage }).from(leads).where(eq(leads.id, c.leadId)),
   ])
   if (!lead) return null
   const now = Date.now()
@@ -96,8 +104,26 @@ export async function fetchContractEditor(contractId: string): Promise<ContractE
   return {
     contract: c, lead, siblings: sibs, studio: brand.details, brand: brand.kit, quote, quoteGone: named?.gone ?? null, quotes: qs, me,
     values: tokenValuesFor(c, lead, brand.details, quote, now), studioSignature: studioSignatureFor(c.createdBy, team), signed,
-    letterhead: signed?.letterhead ?? letterheadOf(c, brand.details), now,
+    letterhead: signed?.letterhead ?? letterheadOf(c, brand.details), approvalRequired: approval === 'required', leadStage: stage?.stage ?? '', now,
   }
+}
+
+/**
+ * (UX audit 2026-09-30, C2) The server's side of the named-quote check: why the quote a contract names keeps it from going out — a Draft,
+ * or a quote waiting for approval, where Settings requires approval — else null. Send, Copy link, a list's status menu and Send together
+ * all ask it.
+ */
+export async function namedQuoteBlock(c: Pick<Contract, 'fromQuoteId'>): Promise<string | null> {
+  if (!c.fromQuoteId) return null
+  const [q] = await db.select({ number: quotes.number, status: quotes.status }).from(quotes).where(eq(quotes.id, c.fromQuoteId))
+  return q ? quoteSendBlock(q, (await fetchQuoteApproval()) === 'required') : null
+}
+/** (UX audit C2 · C5) The quotes a list's contracts name — number and status, for the send checks a list runs before the server does. */
+export async function namedQuotesOf(rows: Pick<Contract, 'fromQuoteId'>[]): Promise<Record<string, QuoteForSend>> {
+  const ids = [...new Set(rows.map((r) => r.fromQuoteId).filter((x): x is string => !!x))]
+  if (!ids.length) return {}
+  const qs = await db.select({ id: quotes.id, number: quotes.number, status: quotes.status }).from(quotes).where(inArray(quotes.id, ids))
+  return Object.fromEntries(qs.map((q) => [q.id, { number: q.number, status: q.status }]))
 }
 
 /**
@@ -139,20 +165,26 @@ export async function fetchSigning(contractId: string): Promise<SigningData | nu
 }
 
 /* ── Tools › Contracts: every live contract in the studio with its lead ── */
-export type StudioContractRow = Contract & { leadName: string }
-export type StudioContractsData = { contracts: StudioContractRow[]; leads: { id: string; name: string }[]; viewer: ContractViewer; /** (REG-634) Send together's WhatsApp draft */ studioName: string; now: number }
+export type StudioContractRow = Contract & { leadName: string; /** (UX audit C1) Mark as signed's next step */ leadStage: string }
+export type StudioContractsData = {
+  contracts: StudioContractRow[]; leads: { id: string; name: string }[]; viewer: ContractViewer; /** (REG-634) Send together's WhatsApp draft */ studioName: string
+  /** (UX audit C2) the quotes the contracts name, by id, and Settings' quote approval — the list's send checks */ quotes: Record<string, QuoteForSend>; approvalRequired: boolean
+  now: number
+}
 export async function fetchStudioContracts(): Promise<StudioContractsData> {
   const viewer = await fetchViewer()
-  const [rows, clients, visible, brand] = await Promise.all([
-    db.select({ contract: contracts, leadName: leads.name }).from(contracts).innerJoin(leads, eq(leads.id, contracts.leadId))
+  const [rows, clients, visible, brand, approval] = await Promise.all([
+    db.select({ contract: contracts, leadName: leads.name, leadStage: leads.stage }).from(contracts).innerJoin(leads, eq(leads.id, contracts.leadId))
       .where(and(isNull(contracts.archivedAt), isNull(contracts.deletedAt), isNull(leads.deletedAt))).orderBy(asc(contracts.createdAt)),
     db.select({ id: leads.id, name: leads.name }).from(leads).where(isNull(leads.deletedAt)).orderBy(asc(leads.name)),
     visibleLeadIds(viewer),
     fetchBrand(),
+    fetchQuoteApproval(),
   ])
   /* (REG-634, parity §8.2 · E-98) Who sees leads: the studio list, and the lead picker behind New Contract, hold only the leads the member sees. */
   const sees = (leadId: string) => !visible || visible.has(leadId)
-  return { contracts: rows.filter((r) => sees(r.contract.leadId)).map((r) => ({ ...r.contract, leadName: r.leadName })), leads: clients.filter((l) => sees(l.id)), viewer: { id: viewer.id, role: viewer.role }, studioName: brand.details.name, now: Date.now() }
+  const list = rows.filter((r) => sees(r.contract.leadId)).map((r) => ({ ...r.contract, leadName: r.leadName, leadStage: r.leadStage }))
+  return { contracts: list, leads: clients.filter((l) => sees(l.id)), viewer: { id: viewer.id, role: viewer.role }, studioName: brand.details.name, quotes: await namedQuotesOf(list), approvalRequired: approval === 'required', now: Date.now() }
 }
 
 /** Deleted Contracts (the tab's kebab; the studio list's): the lead's, or every lead's when `leadId` is null. */
@@ -205,12 +237,12 @@ export async function fetchContractTemplateEditor(templateId: string): Promise<C
   return { template: t, studio: brand.details, brand: brand.kit, usedBy: uses.length, values, now, changeBlock: templateChangeBlock(await fetchViewer(), t.createdBy) }
 }
 /** The contract picker (New Contract › From Template): the live templates, light. */
-export type ContractTemplateOption = { id: string; title: string; body: string; updatedAt: Date; isDefault: boolean; /** (REG-664) */ folderId: string | null }
+export type ContractTemplateOption = { id: string; title: string; body: string; updatedAt: Date; isDefault: boolean; /** (REG-664) */ folderId: string | null; /** (UX audit C6) the picker opens on the last-used one when no default is set */ lastUsedAt: Date | null }
 /** (REG-664) The picker's data: the live templates and Templates › Contracts' folders, browsed as the gallery files them. */
 export type ContractPickerData = { templates: ContractTemplateOption[]; folders: { id: string; name: string; parentId: string | null }[] }
 /** (REG-632, Q-13) The default first, then the most recently used. */
 export async function fetchContractTemplateOptions(): Promise<ContractTemplateOption[]> {
-  return db.select({ id: contractTemplates.id, title: contractTemplates.title, body: contractTemplates.body, updatedAt: contractTemplates.updatedAt, isDefault: contractTemplates.isDefault, folderId: contractTemplates.folderId }).from(contractTemplates).where(isNull(contractTemplates.deletedAt)).orderBy(desc(contractTemplates.isDefault), desc(contractTemplates.lastUsedAt), asc(contractTemplates.title))
+  return db.select({ id: contractTemplates.id, title: contractTemplates.title, body: contractTemplates.body, updatedAt: contractTemplates.updatedAt, isDefault: contractTemplates.isDefault, folderId: contractTemplates.folderId, lastUsedAt: contractTemplates.lastUsedAt }).from(contractTemplates).where(isNull(contractTemplates.deletedAt)).orderBy(desc(contractTemplates.isDefault), desc(contractTemplates.lastUsedAt), asc(contractTemplates.title))
 }
 /** (REG-538) New template › From a contract…: every composed contract with a document, newest first. */
 export async function fetchContractOptions(): Promise<{ id: string; title: string; leadName: string; updatedAt: Date }[]> {

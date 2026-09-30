@@ -104,8 +104,8 @@
 .cardName mark { color: var(--om-color-primary-default); }
 /* Card hover turns the name primary — same as the table row (user 2026-08-29: "like how we do it in the list view") */
 .card:hover .cardName, .cardName:hover { color: var(--om-color-primary-default); }
-.cardMetaRight { display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); }
-.cardAgo { font: var(--om-type-body-s); }
+.cardMetaRight { display: inline-flex; align-items: center; gap: var(--om-spacing-1); color: var(--om-color-on-surface-secondary); flex-shrink: 0; }
+.cardAgo { font: var(--om-type-body-s); white-space: nowrap; }   /* (UX audit L3) "Updated 2d ago" holds one line; the name gives way */
 .cardKebab { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; display: inline-flex; }
 .kebabWrap { display: inline-flex; }   /* (REG-728) the card menu's anchor; the menu opens through the body portal, so it needs no positioned box */
 .cardMeta {

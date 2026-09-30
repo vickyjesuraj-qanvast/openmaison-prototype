@@ -9,6 +9,7 @@ import { useOverflow } from '@/components/om/use-overflow'
 import { overlayFade, modalPanel } from '@/lib/motion'
 import { displayDate, relativeTime, phoneLocal } from '@/lib/format'
 import type { ReviewRow } from '@/lib/leads/queries'
+import { readAmount } from '@/lib/leads/import-values'
 import styles from './review-sheet.module.css'
 import { useScrollLock } from '@/components/om/use-scroll-lock'
 import { useDialogFocus, useEscapeLayer } from '@/components/om/surface'
@@ -39,7 +40,8 @@ const FIELDS: { label: string; key: string; leadKey: MergeKey; radio: boolean }[
   { label: 'Start date', key: 'Estimated Start Date', leadKey: 'estimatedStartDate', radio: true },
   { label: 'Remarks', key: 'Remarks', leadKey: 'notes', radio: false },
 ]
-const fmtBudget = (v: string) => { const d = v.replace(/\D/g, ''); return d ? Number(d).toLocaleString('en-SG') : '' }
+/* (UX audit L4) The import's one reader: a row queued before it existed ("S$80k") shows the 80,000 the lead will get, not "80". */
+const fmtBudget = (v: string) => { const n = readAmount(v).value; return n && n > 0 ? n.toLocaleString('en-SG') : '' }
 /** The "All" chip's value — no source is ever called this. */
 const ALL_SOURCES = '__all__'
 

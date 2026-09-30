@@ -1,5 +1,5 @@
 import type { LeadFile, Member } from '@/lib/db/schema'
-import { displayDateWeekday, startOfDay } from '@/lib/format'
+import { displayDateWeekday, parseInputDate, startOfDay } from '@/lib/format'
 import { filterByQuery } from '@/lib/search'
 
 /* Lead Details › Files (931-39056) — pure model shared by the grid, the list, the move dialog and the viewer. */
@@ -12,6 +12,9 @@ export type FileRow = LeadFile & {
   attachedTo: 'Task' | 'Note' | 'Return' | null
   /** Folders: direct children (files + folders) that are not trashed → "17 items". */
   itemCount: number
+  /** (UX audit 2026-09-30, T9) The client's read-only link, as a path (`/f/<id>.<signature>`) — null for a folder, a trashed file, or an app
+      with no signing secret. */
+  share: string | null
 }
 
 export const isFolder = (f: Pick<LeadFile, 'kind'>) => f.kind === 'folder'
@@ -67,4 +70,34 @@ export function searchFiles<T extends LeadFile & Partial<Pick<FileRow, 'owner' |
   return filterByQuery(files, query, (f) => ({
     fields: [f.name, f.owner?.name, fileTypeLabel(f), f.attachedTo],
   }))
+}
+
+/* ── (UX audit 2026-09-30, T9) Files › Filters: Type · Owner · Updated — the Tasks filter modal's panes (REG-464, live) ── */
+export type FileFilters = {
+  /** File type labels as the File type column prints them (fileTypeLabel): "JPEG" · "PNG" · "PDF" · "Folder" … */
+  types: string[]
+  /** Owner member ids. */
+  owners: string[]
+  /** d/m/yyyy (DateField — picked, never typed, REG-119) — the last change's day, from and to. */
+  from: string
+  to: string
+}
+export const EMPTY_FILE_FILTERS: FileFilters = { types: [], owners: [], from: '', to: '' }
+export const activeFileGroups = (f: FileFilters) => ({ types: f.types.length > 0, owners: f.owners.length > 0, updated: !!(parseInputDate(f.from) || parseInputDate(f.to)) })
+export const activeFileFilterCount = (f: FileFilters) => Object.values(activeFileGroups(f)).filter(Boolean).length
+/** The type labels a lead's files carry, in the column's words — the Type pane's chips. */
+export const fileTypesIn = (files: Pick<LeadFile, 'kind' | 'mime' | 'name'>[]) => [...new Set(files.map(fileTypeLabel))].sort((a, b) => (a === 'Folder' ? -1 : b === 'Folder' ? 1 : a.localeCompare(b)))
+/** Rows that pass every active group; Updated reads the last change (the upload when nothing changed since). */
+export function applyFileFilters<T extends LeadFile>(rows: T[], f: FileFilters): T[] {
+  const from = parseInputDate(f.from)?.getTime() ?? null
+  const toDay = parseInputDate(f.to)
+  const to = toDay ? toDay.getTime() + 86_400_000 : null
+  return rows.filter((r) => {
+    if (f.types.length && !f.types.includes(fileTypeLabel(r))) return false
+    if (f.owners.length && (!r.ownerId || !f.owners.includes(r.ownerId))) return false
+    const at = (r.updatedAt ?? r.createdAt).getTime()
+    if (from !== null && at < from) return false
+    if (to !== null && at >= to) return false
+    return true
+  })
 }

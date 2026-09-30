@@ -61,7 +61,8 @@ export function VersionHistoryDrawer({ open, onClose, current, versions, members
                 <span className={styles.dot} aria-hidden />
                 <span className={styles.text}>
                   <span className={styles.title}>Version {v.version}</span>
-                  <span className={styles.meta}>{snap.status} · {money2(snap.amountMinor)} · kept {displayDate(v.createdAt)} {displayTime(v.createdAt)} by {who(v.createdBy)}{v.note ? ` · ${v.note}` : ''}</span>
+                  <span className={styles.meta}>{snap.status} · {money2(snap.amountMinor)} · kept {displayDate(v.createdAt)} {displayTime(v.createdAt)} by {who(v.createdBy)}</span>
+                  {v.note ? <span className={styles.meta} data-testid="version-request">Client’s request: {v.note}</span> : null}   {/* (UX audit Q10) Revise's own field */}
                 </span>
                 <span className={styles.actions}>
                   <Button appearance="text" onPress={() => onOpen(v.version)}>Open</Button>

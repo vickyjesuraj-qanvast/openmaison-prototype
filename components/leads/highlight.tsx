@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { phoneNeedles } from '@/lib/search'
 import styles from './highlight.module.css'
 
 /** C2: emphasise the matched substring of a search hit (weight only — no background). */
@@ -25,15 +26,16 @@ export function highlightMatch(text: string, query: string): ReactNode {
  * A query with no digits, or digits this number does not contain, leaves the text exactly as it was.
  */
 export function highlightPhone(text: string, query: string): ReactNode {
-  const needle = query.replace(/\D/g, '')
-  if (!needle) return text
+  const needles = phoneNeedles(query)   /* (UX audit L11) "+65 9123 4599" marks the local number it found */
+  if (!needles.length) return text
   const at: number[] = []   // where each digit of `text` sits in `text`
   let flat = ''
   for (let i = 0; i < text.length; i++) {
     const ch = text.charAt(i)
     if (ch >= '0' && ch <= '9') { at.push(i); flat += ch }
   }
-  const j = flat.indexOf(needle)
+  const needle = needles.find((n) => flat.includes(n)) ?? ''
+  const j = needle ? flat.indexOf(needle) : -1
   if (j === -1) return text
   const start = at[j] ?? 0
   const end = (at[j + needle.length - 1] ?? start) + 1

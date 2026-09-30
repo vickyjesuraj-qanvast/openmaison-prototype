@@ -75,6 +75,15 @@
   transition: background-color var(--motion-hover);
 }
 .barIcon:hover, .barIcon:active { background: var(--om-color-hover-08p); }
+/* (UX audit V3) The rail's counts on a phone: the bell's unread on the bar's bell, a dot on More when a row inside counts, the count on the
+   row — the rail's badge (app-rail.module.css .badge: the DS Badge's count look), composed, never copied. */
+.barIcon { position: relative; }
+.barBadge { composes: badge from './app-rail.module.css'; top: 4px; right: 4px; }
+.dockIcon { position: relative; }
+.moreDot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: var(--om-radius-full); background: var(--om-color-tertiary-red-default); box-shadow: 0 0 0 2px var(--om-color-surface-default); pointer-events: none; }
+.rowCount { composes: badge from './app-rail.module.css'; position: static; flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px; box-shadow: none; }
+/* (UX audit V6) a row that isn't built yet: the Company panel's "Soon" tag */
+.soon { composes: soon from '../company/company-popover.module.css'; }
 .avatarBtn {
   position: relative;   /* the 36 avatar takes a 44 touch box through ::after (REG-306) */
   width: 36px; height: 36px; flex-shrink: 0;

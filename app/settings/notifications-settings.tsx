@@ -13,6 +13,7 @@ import { ModuleHead } from './module-head'
 import { Tooltip } from '@/components/om/tooltip'
 import { PortalMenu } from '@/components/om/portal-menu'
 import { DropdownItem, MENU_WIDTH } from '@/components/leads/dropdown'
+import { HelpLink } from '@/components/company/help-link'
 import styles from './settings.module.css'
 
 /**
@@ -106,11 +107,9 @@ export function NotificationsSettings({ rules: initial, templates: initialTempla
       <div className={styles.setting} data-testid="notification-followups">
         <div className={styles.settingHead}>
           <span className={styles.settingTitle}>Follow-ups</span>
-          <span className={styles.settingHelp}>A New lead with no contact logged raises “untouched” after the delay; a task with a time is raised 30 minutes before it; the rule below keeps closed leads quiet.</span>
-        </div>
-        <div className={styles.numGrid}>
-          <TextField label="Raise an untouched lead after" mode="select" options={UNTOUCHED_OPTIONS.map((o) => o.label)} value={UNTOUCHED_OPTIONS.find((o) => o.minutes === rules.untouchedMinutes)?.label ?? '30 minutes'}
-                     onChange={(v) => { const o = UNTOUCHED_OPTIONS.find((x) => x.label === v); if (o) void save({ untouchedMinutes: o.minutes }, `Untouched leads raised after ${o.label}`) }} />
+          <span className={styles.settingHelp}>A task with a time is raised 30 minutes before it; the rule below keeps closed leads quiet.</span>
+          {/* (UX audit S9) The untouched-lead delay is a response rule — it lives under Lead management now; this line says where. */}
+          <span className={styles.settingHelp} data-testid="untouched-pointer">A New lead with no contact logged is raised as “untouched” after {UNTOUCHED_OPTIONS.find((o) => o.minutes === rules.untouchedMinutes)?.label ?? '30 minutes'} — set under <HelpLink href="/settings?section=leads#untouched-leads" testId="untouched-link">Lead management › Untouched leads</HelpLink>.</span>
         </div>
         <label className={styles.switchRow}>
           <Switch size="sm" isSelected={rules.stopWhenClosed} isDisabled={readOnly} onChange={(on: boolean) => { void save({ stopWhenClosed: on }, on ? 'Closed leads get no follow-ups' : 'Follow-ups continue on closed leads') }} aria-label="No follow-ups once a lead is Won, Lost or On Hold" />
