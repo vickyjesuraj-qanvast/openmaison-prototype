@@ -5,12 +5,15 @@ import { Button } from '@/components/ds'
 import { CompareSlider } from '@/components/om/compare-slider'
 import { Icon } from '@/components/om/icon'
 import { SAMPLE_ROOMS } from '@/lib/visualizer/samples'
+import { WELCOME_AFTER } from '@/lib/visualizer/welcome-after'
 import { ROOM_ACCEPT } from '@/components/visualizer/editor/dialogs/add-room'
 import styles from './welcome.module.css'
 
-/** The sample the welcome shows first: the living room, before and restyled Japandi. */
-const SHOWN = SAMPLE_ROOMS.find((s) => s.key === 'living-room') ?? SAMPLE_ROOMS[0]!
-const SHOWN_LOOK = 'Japandi'
+/** The sample the welcome shows first: the living room, its own photo before and after — the after is that same photo painted by the
+    engine (lib/visualizer/welcome-after.ts, scripts/viz/welcome-render.mts), so the divider shows only what the picks change. (Owner
+    2026-09-30: "this before and after image looks different … keep one image and do perfect before and after of the same image" — the
+    1.0 Japandi render it used was a different camera.) */
+const SHOWN = SAMPLE_ROOMS.find((s) => s.key === WELCOME_AFTER.sample) ?? SAMPLE_ROOMS[0]!
 /** The row under it — the living room, the kitchen, the master bedroom (the canvas' order). */
 const ROW = ['living-room', 'kitchen', 'bedroom'].map((k) => SAMPLE_ROOMS.find((s) => s.key === k)).filter((s): s is (typeof SAMPLE_ROOMS)[number] => !!s)
 const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -30,7 +33,6 @@ export function VisualizerWelcome({ busy, onUpload, onLead, onSample }: {
   onSample: (key: string) => void
 }) {
   const input = useRef<HTMLInputElement>(null)
-  const look = SHOWN.looks[SHOWN_LOOK]
   return (
     <section className={styles.welcome} aria-labelledby="viz-welcome-title" data-testid="viz-welcome">
       <div className={styles.hero}>
@@ -52,11 +54,11 @@ export function VisualizerWelcome({ busy, onUpload, onLead, onSample }: {
             <Button variant="primary" appearance="outlined" isDisabled={busy} onPress={onLead} data-testid="viz-welcome-lead">Use a lead’s photos</Button>
           </div>
         </div>
-        {look ? (
+        {SHOWN ? (
           <figure className={styles.figure}>
-            <CompareSlider before={SHOWN.original} after={look} afterLabel={`After · ${SHOWN_LOOK}`} className={styles.compare} testId="viz-welcome-compare" />
+            <CompareSlider before={SHOWN.original} after={WELCOME_AFTER.image} className={styles.compare} testId="viz-welcome-compare" />
             <figcaption className={styles.caption}>
-              <span>Sample · {SHOWN.name}, restyled {SHOWN_LOOK} — drag to compare</span>
+              <span>Sample · {SHOWN.name}: {WELCOME_AFTER.label} — drag to compare</span>
               <Button appearance="text" isDisabled={busy} iconEnd={<Icon name="arrow_forward" size={20} />} onPress={() => onSample(SHOWN.key)}>Open this sample</Button>
             </figcaption>
           </figure>
