@@ -58,7 +58,7 @@ export function PriceBookSections({ data, from, folders = [] }: { data: PriceBoo
           {names(t).length === 0 ? <span className={gallery.checkMore}>No items yet</span> : null}   {/* (sweep S5 #31) "items", as the card's count says */}
         </span>
       )}
-      glyph={() => <span className={styles.glyph}><Icon name="format_list_bulleted" size={18} weight={300} /></span>}   /* (REG-664) a section is a set of lines — the folder glyph now means a folder */
+      glyph={() => <span className={styles.glyph}><Icon name="format_list_bulleted" size={20} weight={300} /></span>}   /* (REG-664) a section is a set of lines — the folder glyph now means a folder */
       meta={(t) => `${t.lineCount} ${t.lineCount === 1 ? 'item' : 'items'} · ${money2(total(t))}${t.body?.subs.length ? ` · ${t.body.subs.length} sub-section${t.body.subs.length === 1 ? '' : 's'}` : ''}${t.propertyType ? ` · ${t.propertyType}` : ''}`}
       usage={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'}`)}
       usageWord={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)}   /* (REG-653, Q-18) */

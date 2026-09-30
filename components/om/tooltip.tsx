@@ -66,6 +66,7 @@ export function Tooltip({
   disabled = false,
   keys,
   shortcut,
+  whenCut = false,
   children,
 }: {
   label: string
@@ -76,6 +77,8 @@ export function Tooltip({
   shortcut?: string
   /** Hide and never show — e.g. rail items once their labels are visible, a kebab while its menu is open. */
   disabled?: boolean
+  /** (REG-820) Only while the control's text is cut (its ellipsis shows) — a name in a narrow column says itself in full on hover. */
+  whenCut?: boolean
   children: ReactNode
 }) {
   const owner = useId()
@@ -95,6 +98,7 @@ export function Tooltip({
     if (disabled) return
     clear()
     const el = (wrapper.firstElementChild as HTMLElement | null) ?? wrapper
+    if (whenCut && el.scrollWidth <= el.clientWidth + 1) return
     const next = { owner, label, keys: keys ?? (shortcut ? keysOf(shortcut) : undefined), ...place(el, side) }
     if (state || Date.now() - lastHiddenAt < WARM_WINDOW_MS) commit(next)
     else timer.current = setTimeout(() => commit(next), SHOW_DELAY_MS)

@@ -87,10 +87,10 @@ function ItemCard({ item, number, all, selected, groups, labels, brandColors, h,
       <span className={styles.check}><Checkbox isSelected={selected} onChange={(on: boolean) => h.onSelect(item.id, on)} aria-label={`Select ${item.name || 'item'}`} /></span>
       <button type="button" className={styles.open} aria-label={`Edit ${item.name || (isGroup ? 'section' : 'item')}`} onClick={() => setOpen(true)}>
         <span className={styles.thumb} data-group={isGroup || undefined}>
-          {isGroup ? <Icon name={item.collapsed ? 'folder' : 'folder_open'} size={22} weight={300} /> : item.thumb ? (
+          {isGroup ? <Icon name={item.collapsed ? 'folder' : 'folder_open'} size={20} weight={300} /> : item.thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.thumb} alt="" />
-          ) : <Icon name={kind ? ITEM_KIND_ICON[kind] : 'category'} size={22} weight={300} />}
+          ) : <Icon name={kind ? ITEM_KIND_ICON[kind] : 'category'} size={20} weight={300} />}
         </span>
         <span className={styles.text}>
           <span className={styles.nameRow}>

@@ -46,8 +46,8 @@
 .cell.colTitle { gap: var(--om-spacing-3); }
 .cell.colOwner { gap: var(--om-spacing-3); }   /* Avatar 24 + name, H g12 */
 
-/* Thumb: image cover, or the folder icon 24/Regular #666666 centred. (REG-820) The house square (components/om/thumb.module.css) —
-   the mock drew 48×36 r2; the owner keeps every table's thumbnail square. */
+/* Thumb: image cover, or the folder / PDF icon centred. (REG-820) The house square (components/om/thumb.module.css) with its 20/Light
+   icon — the mock drew 48×36 r2 with a 24/Regular folder; the owner keeps every table's thumbnail square. */
 .thumb { composes: thumb from '../../om/thumb.module.css'; }
 .thumbImg { display: block; width: 100%; height: 100%; object-fit: cover; }
 .thumbIcon { color: var(--om-color-on-surface-secondary); }
@@ -140,3 +140,6 @@
 .nameStack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .nameStack .name { flex: none; }
 .place { display: inline-flex; align-items: center; gap: var(--om-spacing-1); font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
+   own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
+.cell.colSel + .cell, .hCell.colSel + .hCell { padding-left: var(--om-spacing-3); }

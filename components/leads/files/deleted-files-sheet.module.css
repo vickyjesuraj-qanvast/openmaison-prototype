@@ -166,3 +166,6 @@
   .card { overflow: auto; min-height: 0; flex-shrink: 1; }
   .head { position: sticky; top: 0; z-index: 4; background: var(--om-color-surface-default); }
 }
+/* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
+   own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
+@media (min-width: 768px) { .cell.colTitle, .hCell.colTitle { padding-left: var(--om-spacing-3); } }

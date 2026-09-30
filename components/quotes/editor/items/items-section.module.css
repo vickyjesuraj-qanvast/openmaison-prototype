@@ -85,8 +85,7 @@
 .popToggle:focus-visible, .popToggle[data-active] { outline: var(--om-border-2) solid var(--om-color-primary-default); outline-offset: 2px; border-radius: var(--om-radius-1); }   /* (sweep S5 #12) the key walk's active toggle reads as the focused one */
 .popCreate { padding: var(--om-spacing-3) var(--om-spacing-4); }
 .popCreate > * { width: 100%; }
-.popThumb { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--om-radius-0-5); background: var(--om-color-surface-bg); box-shadow: inset 0 0 0 var(--om-border-1) var(--om-color-surface-variant); display: flex; align-items: center; justify-content: center; color: var(--om-color-on-surface-secondary); overflow: hidden; }
-.popThumb img { width: 100%; height: 100%; object-fit: cover; }
+.popThumb { composes: thumb from '../../../om/thumb.module.css'; width: 48px; height: 48px; }   /* (REG-820) the house square — the Items table's own thumb, in Add Item's list */
 .popText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--om-spacing-1); }
 .popName { font: var(--om-type-subheading-m); color: var(--om-color-on-surface-default); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .popMeta { font: var(--om-type-body-s); color: var(--om-color-on-surface-secondary); }

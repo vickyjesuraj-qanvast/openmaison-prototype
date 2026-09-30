@@ -155,7 +155,7 @@ export function DeletedFilesSheet({
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={f.thumb} alt="" className={styles.thumbImg} width={36} height={36} />
                           ) : (
-                            <Icon name={isFolder(f) ? 'folder' : 'picture_as_pdf'} size={24} />
+                            <Icon name={isFolder(f) ? 'folder' : 'picture_as_pdf'} size={20} weight={300} />
                           )}
                         </span>
                         <span className={styles.name}>{f.name}</span>

@@ -99,6 +99,9 @@ export type LibraryGalleryProps<T extends LibraryItem> = {
   meta: (t: T, at: { filter: string }) => string
   usage: (t: T) => string
   chips?: (t: T) => ReactNode
+  /** (REG-820) The list row's chips beside the name, when they differ from the card's — null where a column already says it (a Status or
+      Kind column), so no tag takes the name's width to repeat its row. Defaults to `chips`. */
+  listChips?: (t: T) => ReactNode
   /** The list's columns between Template and Updated. */
   columns: LibraryColumn<T>[]
   tableKey: string
@@ -631,7 +634,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
           <span className={gallery.emptyHelp}>{p.empty.help}</span>
         </div>
       ) : view === 'list' ? (
-        <LibraryTable kbNoun={noun.one} rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
+        <LibraryTable kbNoun={noun.one} rows={listed} now={now} tableKey={p.tableKey} columns={columnPrefs.columns} extra={p.columns} onReorder={columnPrefs.reorder} glyph={p.glyph} chips={p.listChips ?? p.chips} onOpen={p.onOpen} menuFor={menuFor} onMenu={openMenu} ariaLabel={p.ariaLabel}
                       sort={sort} sortable={(k) => sortValue(k) !== null} onSort={onSort} openLabel={openLabel}
                       place={F && finding ? placeText : undefined}
                       folders={shownFolders} folderCount={folderCount} onOpenFolder={(f) => go(f.id)} folderMenuFor={folderMenu} onFolderMenu={openFolderMenu}
@@ -655,7 +658,7 @@ export function LibraryGallery<T extends LibraryItem>(p: LibraryGalleryProps<T>)
                   <button type="button" className={gallery.open} onClick={() => p.onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>   {/* (REG-653, Q-18) the card's words are the menu's */}
                     <span className={gallery.thumb}>{p.thumb(t)}</span>
                     <span className={`${gallery.body} ${styles.cardBody}`}>
-                      <span className={`${gallery.nameRow} ${styles.cardNameRow}`}><span className={`${gallery.name} ${styles.cardName}`} title={t.title}>{t.title}</span>{p.chips?.(t)}</span>
+                      <span className={`${gallery.nameRow} ${styles.cardNameRow}`}><Tooltip label={t.title} whenCut><span className={`${gallery.name} ${styles.cardName}`}>{t.title}</span></Tooltip>{p.chips?.(t)}</span>
                       {/* (REG-664) While finding, where it lives leads the second line — the folder's name as it was typed. */}
                       <span className={`${gallery.meta} ${styles.cardMeta}`}>{F && finding && placeText(t) ? <><span className={styles.place}><Icon name="folder" size={14} weight={300} />{placeText(t)}</span>{' · '}</> : null}{p.meta(t, { filter: activeFilter })}</span>
                     </span>
@@ -797,7 +800,7 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={table.thumb} aria-hidden><Icon name="folder" size={20} /></span><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`} data-kb-open>{f.name}</button><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(f.id)} onChange={() => selection.toggle(f.id)} aria-label={`Select ${f.name}`} /></span> : null}<span className={table.thumb} aria-hidden><Icon name="folder" size={20} weight={300} /></span><Tooltip label={f.name} whenCut><button type="button" className={table.name} onClick={() => onOpenFolder?.(f)} aria-label={`Open ${f.name}`} data-kb-open>{f.name}</button></Tooltip><span className={styles.folderCount}>{folderCount?.(f)}</span></>, table.colName)
           if (key === 'updated') return cell('updated', ago(f.updatedAt, now))
           return cell(key, '')
         }
@@ -827,7 +830,7 @@ function LibraryTable<T extends LibraryItem>({ kbNoun, rows, now, tableKey, colu
           <div className={`${table.cell} ${cls ?? ''} ${L.pinned(key) ? table.pin : ''}`} role="cell" data-col={key} data-pin-edge={L.edge(key) || undefined} style={L.style(key)}>{children}</div>
         )
         const render = (key: string): ReactNode => {
-          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>{t.title}</button>{chips?.(t)}{place && place(t) ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
+          if (key === 'name') return cell('name', <>{selection ? <span className={styles.selBox} data-kb-select><Checkbox isSelected={selection.selected.has(t.id)} onChange={() => selection.toggle(t.id)} aria-label={`Select ${t.title}`} /></span> : null}<span className={table.thumb} aria-hidden>{glyph(t)}</span><Tooltip label={t.title} whenCut><button type="button" className={table.name} onClick={() => onOpen(t)} aria-label={`${openLabel(t)} ${t.title}`} data-kb-open>{t.title}</button></Tooltip>{chips?.(t)}{place && place(t) ? <span className={styles.folderCount}><Icon name="folder" size={14} weight={300} /> {place(t)}</span> : null}</>, table.colName)
           if (key === 'updated') return cell('updated', ago(t.updatedAt.getTime(), now))
           if (key === 'by') return cell('by', t.author ? <><Avatar name={t.author} color={t.authorColor ?? 'var(--om-color-on-surface-secondary)'} size={24} tooltip={false} /><span className={table.oneLine}>{t.author}</span></> : '--', table.colBy)
           const c = extra.find((x) => x.key === key)

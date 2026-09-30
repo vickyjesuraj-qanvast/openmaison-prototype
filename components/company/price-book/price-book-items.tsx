@@ -22,6 +22,7 @@ import { ImportItemsDialog } from './import-items-dialog'
 import { ExportDialog } from '@/components/leads/export-dialog'
 import { buildTable, downloadBlob, type ExportFormat } from '@/lib/leads/export'
 import styles from './price-book.module.css'
+import table from '@/components/company/templates/templates-table.module.css'
 import { folderBlock, type Folder } from '@/lib/company/folder-libraries'
 import { PriceBookItemsGhost } from './price-book-ghost'
 
@@ -116,6 +117,7 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
       focusFilter={focus} defaultView="list"   /* (UX audit S8) a member who never picked a view gets the list — the listing's table model */
       filterLabel="Kind"   /* (REG-666) a proposal counts once — under Proposed, the to-do — so the kinds add up to All */
       chips={(t) => (t.status === 'proposed' ? <MetaChip color="yellow">Proposed</MetaChip> : null)}
+      listChips={() => null}   /* (REG-820) the list says it in its Status column — the chip in the name cell cut "Skirting, PVC 80 mm" to "Skirting, PVC 8…" */
       byColumn openLabel={(t) => (block(t) ? 'Open' : 'Edit')} mayChange={block} duplicateBlock={() => (runsBook ? null : BOOK_RULE)}
       restoreBlock={block} purgeBlock={runsBook ? null : BOOK_RULE}
       kebab={(t) => (runsBook && t.status === 'proposed' ? [{ label: 'Approve', onSelect: () => { void approve(t) } }, { label: 'Send back…', onSelect: () => askSendBack(t) }] : [])}
@@ -129,11 +131,14 @@ export function PriceBookItems({ data, from, folders = [] }: { data: PriceBookDa
         </span>
       )}
       // eslint-disable-next-line @next/next/no-img-element
-      glyph={(t) => <span className={styles.glyph}>{t.thumb ? <img src={t.thumb} alt="" /> : <Icon name={ITEM_KIND_ICON[kindOf(t)]} size={18} weight={300} />}</span>}
+      glyph={(t) => <span className={styles.glyph}>{t.thumb ? <img src={t.thumb} alt="" /> : <Icon name={ITEM_KIND_ICON[kindOf(t)]} size={20} weight={300} />}</span>}
       meta={(t) => [t.vendor ? `by ${t.vendor}` : ITEM_KIND_LABEL[kindOf(t)], `${money2(unitPrice(t))} / ${t.unit}`, t.category].filter(Boolean).join(' · ')}   /* the vendor leads: the same tile from two suppliers must read apart at a glance */
       usage={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `On ${t.usedBy} ${t.usedBy === 1 ? 'quote' : 'quotes'}`)}
       usageWord={(t) => (t.usedBy === 0 ? 'Not on a quote yet' : `${t.usedBy} quote${t.usedBy === 1 ? '' : 's'}`)}   /* (REG-653, Q-18) zero use, said one way */
       columns={[
+        /* (REG-820) Status, as Templates › Quotes lists it (the status word and its note): 1.0's words — an item is Approved unless it waits */
+        { key: 'status', label: 'Status', track: '150px', sortable: (t) => (t.status === 'proposed' ? 0 : 1),
+          cell: (t) => <span className={table.status}><span className={table.statusWord} data-tone={t.status === 'proposed' ? 'await' : undefined}>{t.status === 'proposed' ? 'Proposed' : 'Approved'}</span>{t.status === 'proposed' && t.proposer ? <span className={table.statusNote}>by {t.proposer}</span> : null}</span> },
         { key: 'kind', label: 'Kind', track: '110px', cell: (t) => <span>{ITEM_KIND_LABEL[kindOf(t)]}</span> },
         { key: 'unit', label: 'Unit', track: '96px', cell: (t) => <span className={styles.oneLine}>{t.unit}</span> },
         { key: 'cost', label: 'Cost', track: '120px', sortable: (t) => t.costMinor, cell: (t) => <span className={styles.num}>{money2(t.costMinor)}</span> },

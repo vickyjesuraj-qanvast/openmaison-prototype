@@ -48,6 +48,7 @@ export function TextTemplatesGallery({ data, from, folders = [] }: { data: TextT
       usage={(t) => (t.usedBy === 0 ? 'Not a default anywhere' : `Default on ${t.usedBy} quote ${t.usedBy === 1 ? 'template' : 'templates'}`)}
       usageWord={(t) => (t.usedBy === 0 ? '--' : `${t.usedBy} quote template${t.usedBy === 1 ? '' : 's'}`)}
       chips={(t) => <MetaChip>{kindWord(t.kind)}</MetaChip>}   /* (REG-729) the house tag, as the sibling galleries' Default */
+      listChips={() => null}   /* (REG-820) the list's Kind column says it — the tag beside the name said it twice */
       columns={[
         { key: 'kind', label: 'Kind', track: '120px', cell: (t) => <MetaChip>{kindWord(t.kind)}</MetaChip> },
         { key: 'excerpt', label: 'Starts with', track: '320px', cell: (t) => <span className={`${styles.oneLine} ${styles.muted}`}>{textPreview(t.body, 120) || '—'}</span> },

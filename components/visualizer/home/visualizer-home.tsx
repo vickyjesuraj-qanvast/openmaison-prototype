@@ -166,7 +166,7 @@ export function VisualizerHome({ data }: { data: HomeData }) {
         glyph={(t) => (
           /* (F133) the list and the Deleted sheet show the design's own cover, as the card does; the wand only while it has no photo */
           // eslint-disable-next-line @next/next/no-img-element
-          <span className={styles.glyph}>{t.d.covers[0] ? <img src={t.d.covers[0]} alt="" loading="lazy" decoding="async" /> : <Icon name="wand_shine" size={18} weight={300} />}</span>
+          <span className={styles.glyph}>{t.d.covers[0] ? <img src={t.d.covers[0]} alt="" loading="lazy" decoding="async" /> : <Icon name="wand_shine" size={20} weight={300} />}</span>
         )}
         /* (F117 · F134) what the design is leads its own line — "Lead · Met" as the editor says it, or "Personal" — so no chip takes the
            name's width, at any card size */

@@ -251,3 +251,6 @@
 
 /* Row hover is the DS primary tint on every table (REG-449, owner 2026-09-16: "keep it consistent with the primary tint color that we have from our DS"); a selected row hovered steps to primary-variant-hover so the hover still reads. */
 .row[data-selected]:hover { background: var(--om-color-primary-variant-hover); }
+/* (REG-820) The first column after the selection box starts where the listing's does — 16 in, the 24 box, 12 — at 52 (REG-614); with its
+   own 16 it sat at 56, so a thumbnail here stood 4px right of every other table's. Whichever column the member put first. */
+@media (min-width: 768px) { .cell.colSel + .cell, .head .colSel + .hCell { padding-left: var(--om-spacing-3); } }
